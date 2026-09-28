@@ -1,0 +1,14 @@
+{
+  "downloadedAt": "2026-09-28",
+  "registry": "https://ui.shadcn.com/r/styles/new-york-v4/{name}.json",
+  "sha256": {
+    "sidebar.json": "421f1735955361a12466c5c6e7d4c1124cc7f76422b4fdd5dcdf8451b8ae4052",
+    "input.json": "b1fffa12ba72ce30a291749012b47235eda110648b8106725ced22b5b31c8f1b",
+    "dropdown-menu.json": "235b1231cf71d94225eccd6c19117e7fa7b09cf256d23a199d63aee53265fd52",
+    "dialog.json": "0115e3a57aa55a978c5fed0d77f7e98edd694215aae3e569def3fff722ba9f26",
+    "card.json": "c7ebaa49ba2a0613838558f3892c5007523c2dc26d6b36a244145d454a796106",
+    "sidebar-10.json": "2b7f0145d234399727edb2fc0933275b80a0c3a3056ac685344356e766af413d",
+    "button.json": "4b8d7d848742727973c1b088af8d15f0b628272a1316f2d2fa344e73ddff9e9c",
+    "select.json": "ca3189ea8101a04f144b6d0f0e7330841639bfa5f4d57e7cca0894d39b30817b"
+  }
+}

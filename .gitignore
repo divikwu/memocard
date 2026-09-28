@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.build/
+build/
+.DS_Store
+xcuserdata/
+*.xcuserstate
+.env*
+!.env.example
+*.sqlite*
+connection.json
+*.mobileprovision
+*.p12
+verification-artifacts/
+apps/apple/Resources/Web/

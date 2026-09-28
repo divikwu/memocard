@@ -1,0 +1,461 @@
+// !$*UTF8*$!
+{
+	"archiveVersion" = "1";
+	"classes" = {
+	};
+	"objectVersion" = "56";
+	"objects" = {
+		"4D84862F080D6BC4FE7AB667" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "MemoCardApp.swift";
+			"sourceTree" = "<group>";
+		};
+		"6D48209152F75DF9C0BE4D8E" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "NativeHost.swift";
+			"sourceTree" = "<group>";
+		};
+		"344D9DA5ACE44E43D04D08A0" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "LocalReadServer.swift";
+			"sourceTree" = "<group>";
+		};
+		"CFD1943E9D33250DDB8352B2" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "LocalWebServer.swift";
+			"sourceTree" = "<group>";
+		};
+		"7E89D7EAE8928C3FA1E09DAC" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "WebView.swift";
+			"sourceTree" = "<group>";
+		};
+		"CAF85B0888D78F1F83771A07" = {
+			"isa" = "PBXGroup";
+			"path" = "Sources";
+			"sourceTree" = "<group>";
+			"children" = (
+				"4D84862F080D6BC4FE7AB667",
+				"6D48209152F75DF9C0BE4D8E",
+				"344D9DA5ACE44E43D04D08A0",
+				"CFD1943E9D33250DDB8352B2",
+				"7E89D7EAE8928C3FA1E09DAC",
+			);
+		};
+		"2975104784A401E3880E2215" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder";
+			"path" = "Resources/Web";
+			"sourceTree" = "<group>";
+		};
+		"085827B649F7606E862BCEEB" = {
+			"isa" = "XCLocalSwiftPackageReference";
+			"relativePath" = "../../packages/native-core";
+		};
+		"7A203BE355F05D5784F6B715" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"path" = "MemoCard.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"AD9B1774223A5F3B09111557" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4D84862F080D6BC4FE7AB667";
+		};
+		"90C9E935A392C92299363762" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "6D48209152F75DF9C0BE4D8E";
+		};
+		"6FC3642BC66863FFFF817A41" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "344D9DA5ACE44E43D04D08A0";
+		};
+		"84EC15D9F20A600D500B2D03" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CFD1943E9D33250DDB8352B2";
+		};
+		"AC2AA6B78D68D88940CCFCF0" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "7E89D7EAE8928C3FA1E09DAC";
+		};
+		"0ED418E70B7E28EBD49E9F6E" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "085827B649F7606E862BCEEB";
+			"productName" = "MemoCardCore";
+		};
+		"6133FA500AF923E48EB10F26" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "0ED418E70B7E28EBD49E9F6E";
+		};
+		"20000EE8DA412F5FA43D9BAD" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"AD9B1774223A5F3B09111557",
+				"90C9E935A392C92299363762",
+				"6FC3642BC66863FFFF817A41",
+				"84EC15D9F20A600D500B2D03",
+				"AC2AA6B78D68D88940CCFCF0",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"C889691DE61EAF0FD6EBE5EE" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"6133FA500AF923E48EB10F26",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"D2FC074D6A18E03A891DEC43" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2975104784A401E3880E2215";
+		};
+		"B5C102CF301C99FDB826C94A" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"D2FC074D6A18E03A891DEC43",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"18CD4CE69498827B0B2D91B3" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ONLY_ACTIVE_ARCH" = "YES";
+				"PRODUCT_NAME" = "MemoCard";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "dev.divikwu.memocard";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "Config/Info.plist";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SDKROOT" = "macosx";
+				"SUPPORTED_PLATFORMS" = "macosx";
+				"ENABLE_HARDENED_RUNTIME" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"CODE_SIGN_ENTITLEMENTS" = "Config/Mac.entitlements";
+				"COMBINE_HIDPI_IMAGES" = "YES";
+			};
+		};
+		"B7823236DCC1C32AF7B55D61" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_COMPILATION_MODE" = "wholemodule";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"PRODUCT_NAME" = "MemoCard";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "dev.divikwu.memocard";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "Config/Info.plist";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SDKROOT" = "macosx";
+				"SUPPORTED_PLATFORMS" = "macosx";
+				"ENABLE_HARDENED_RUNTIME" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"CODE_SIGN_ENTITLEMENTS" = "Config/Mac.entitlements";
+				"COMBINE_HIDPI_IMAGES" = "YES";
+			};
+		};
+		"81BC586A9F40C12D01E6E640" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"18CD4CE69498827B0B2D91B3",
+				"B7823236DCC1C32AF7B55D61",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"EE9D98AEBA663752A733F520" = {
+			"isa" = "PBXNativeTarget";
+			"name" = "MemoCardMac";
+			"productName" = "MemoCard";
+			"productType" = "com.apple.product-type.application";
+			"productReference" = "7A203BE355F05D5784F6B715";
+			"buildConfigurationList" = "81BC586A9F40C12D01E6E640";
+			"buildPhases" = (
+				"20000EE8DA412F5FA43D9BAD",
+				"C889691DE61EAF0FD6EBE5EE",
+				"B5C102CF301C99FDB826C94A",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+			);
+			"packageProductDependencies" = (
+				"0ED418E70B7E28EBD49E9F6E",
+			);
+		};
+		"DDB9FDCE44F358F74EA5D245" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"path" = "MemoCard.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"C5905403BE299F7EECDA49C2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "4D84862F080D6BC4FE7AB667";
+		};
+		"D288BD72D30A6D1238CFC121" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "6D48209152F75DF9C0BE4D8E";
+		};
+		"8598EC6952A6164CB0DCAF15" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "344D9DA5ACE44E43D04D08A0";
+		};
+		"C5677B6AED4EF171E9D043D6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CFD1943E9D33250DDB8352B2";
+		};
+		"B5805894F4D8E9918FD7DA37" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "7E89D7EAE8928C3FA1E09DAC";
+		};
+		"98AA8D34EC412A1BDC5055D0" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "085827B649F7606E862BCEEB";
+			"productName" = "MemoCardCore";
+		};
+		"46DB743DCA1A6E775D1B9082" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "98AA8D34EC412A1BDC5055D0";
+		};
+		"3211118802AC901038EFA43C" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"C5905403BE299F7EECDA49C2",
+				"D288BD72D30A6D1238CFC121",
+				"8598EC6952A6164CB0DCAF15",
+				"C5677B6AED4EF171E9D043D6",
+				"B5805894F4D8E9918FD7DA37",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"1C00940AF9E0B89C1531B299" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"46DB743DCA1A6E775D1B9082",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"AE07E347987BCCD99115AD12" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2975104784A401E3880E2215";
+		};
+		"7825C6DB9F37C51029EF6E26" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"AE07E347987BCCD99115AD12",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"FCFD09F2366276203B934679" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ONLY_ACTIVE_ARCH" = "YES";
+				"PRODUCT_NAME" = "MemoCard";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "dev.divikwu.memocard";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "Config/Info.plist";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SDKROOT" = "iphoneos";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"ENABLE_HARDENED_RUNTIME" = "NO";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
+				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
+			};
+		};
+		"B62A515A30488CD79CFAF5DE" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_COMPILATION_MODE" = "wholemodule";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"PRODUCT_NAME" = "MemoCard";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "dev.divikwu.memocard";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "Config/Info.plist";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SDKROOT" = "iphoneos";
+				"SUPPORTED_PLATFORMS" = "iphoneos iphonesimulator";
+				"ENABLE_HARDENED_RUNTIME" = "NO";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"TARGETED_DEVICE_FAMILY" = "1,2";
+				"SUPPORTS_MACCATALYST" = "NO";
+				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
+				"INFOPLIST_KEY_UILaunchScreen_Generation" = "YES";
+			};
+		};
+		"470E91420DE259BE418CAD5B" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"FCFD09F2366276203B934679",
+				"B62A515A30488CD79CFAF5DE",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"2E959B2F8676D3A1B0CE5B4D" = {
+			"isa" = "PBXNativeTarget";
+			"name" = "MemoCardiOS";
+			"productName" = "MemoCard";
+			"productType" = "com.apple.product-type.application";
+			"productReference" = "DDB9FDCE44F358F74EA5D245";
+			"buildConfigurationList" = "470E91420DE259BE418CAD5B";
+			"buildPhases" = (
+				"3211118802AC901038EFA43C",
+				"1C00940AF9E0B89C1531B299",
+				"7825C6DB9F37C51029EF6E26",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+			);
+			"packageProductDependencies" = (
+				"98AA8D34EC412A1BDC5055D0",
+			);
+		};
+		"4EDC8BFAFC6BD936B849F38C" = {
+			"isa" = "PBXGroup";
+			"name" = "Products";
+			"sourceTree" = "<group>";
+			"children" = (
+				"7A203BE355F05D5784F6B715",
+				"DDB9FDCE44F358F74EA5D245",
+			);
+		};
+		"EB814BE3CA3B78C0734C5605" = {
+			"isa" = "PBXGroup";
+			"sourceTree" = "<group>";
+			"children" = (
+				"CAF85B0888D78F1F83771A07",
+				"2975104784A401E3880E2215",
+				"4EDC8BFAFC6BD936B849F38C",
+			);
+		};
+		"73EBF6644258C120893E685D" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ONLY_ACTIVE_ARCH" = "YES";
+			};
+		};
+		"0B0C687DF8B6B8DC790B519C" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_COMPILATION_MODE" = "wholemodule";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+			};
+		};
+		"9879E227F5AD614B3D33074F" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"73EBF6644258C120893E685D",
+				"0B0C687DF8B6B8DC790B519C",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"244210E48437B6556980A702" = {
+			"isa" = "PBXProject";
+			"attributes" = {
+				"BuildIndependentTargetsInParallel" = "YES";
+				"LastUpgradeCheck" = "2700";
+			};
+			"buildConfigurationList" = "9879E227F5AD614B3D33074F";
+			"compatibilityVersion" = "Xcode 14.0";
+			"developmentRegion" = "zh-Hans";
+			"hasScannedForEncodings" = "0";
+			"knownRegions" = (
+				"zh-Hans",
+				"en",
+				"Base",
+			);
+			"mainGroup" = "EB814BE3CA3B78C0734C5605";
+			"productRefGroup" = "4EDC8BFAFC6BD936B849F38C";
+			"projectDirPath" = "";
+			"projectRoot" = "";
+			"targets" = (
+				"EE9D98AEBA663752A733F520",
+				"2E959B2F8676D3A1B0CE5B4D",
+			);
+			"packageReferences" = (
+				"085827B649F7606E862BCEEB",
+			);
+		};
+	};
+	"rootObject" = "244210E48437B6556980A702";
+}

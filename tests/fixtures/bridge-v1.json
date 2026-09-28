@@ -1,0 +1,42 @@
+{
+  "formatVersion": 1,
+  "note": {
+    "ok": true,
+    "data": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "body": "测试中文 🌱 one note\n\n从随手记录开始。\n",
+      "tags": ["日常"],
+      "createdAt": "2026-09-28T04:00:00Z",
+      "updatedAt": "2026-09-28T04:00:00Z",
+      "contentHash": "b347a23b5a55deb4aca9f7ba14041579cf665a7f27ce0d80d69d9fd1d1ecb410",
+      "relativePath": "notes/11111111-1111-4111-8111-111111111111.md",
+      "sourceUrl": "memocard://note/11111111-1111-4111-8111-111111111111?vault=22222222-2222-4222-8222-222222222222"
+    }
+  },
+  "status": {
+    "ok": true,
+    "data": {
+      "connected": true,
+      "vaultId": "22222222-2222-4222-8222-222222222222",
+      "vaultName": "vault",
+      "coverage": {
+        "complete": true,
+        "indexed": 1,
+        "pending": 0,
+        "issues": 0,
+        "indexedAt": "2026-09-28T05:00:00.000Z"
+      },
+      "phase": "M1",
+      "syncState": "localReadComplete",
+      "capabilities": ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "saveDraft", "getDrafts", "importAttachment"]
+    }
+  },
+  "error": {
+    "ok": false,
+    "error": {
+      "code": "NOTE_NOT_FOUND",
+      "message": "找不到此笔记。",
+      "retryable": false
+    }
+  }
+}

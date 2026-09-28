@@ -1,0 +1,4 @@
+packages:
+  - apps/ui
+  - apps/mcp
+  - packages/contracts

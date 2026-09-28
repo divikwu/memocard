@@ -1,0 +1,16 @@
+{
+  "name": "memocard", "private": true, "version": "0.1.0", "type": "module",
+  "packageManager": "pnpm@10.34.1", "engines": {"node": ">=24 <25"},
+  "scripts": {
+    "build": "pnpm --filter @memocard/ui build && pnpm --filter @memocard/mcp build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "test": "pnpm -r --if-present test",
+    "test:native": "swift test --package-path packages/native-core",
+    "test:native-network": "node --test apps/apple/Tests/local-read-server.test.mjs",
+    "test:local-web": "node --test apps/apple/Tests/local-web-server.test.mjs",
+    "build:mac": "bash scripts/build-apple.sh mac",
+    "build:ios": "bash scripts/build-apple.sh ios",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build"
+  }
+}
