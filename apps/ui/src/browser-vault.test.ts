@@ -52,6 +52,7 @@ class TestDirectory implements BrowserDirectoryHandle {
   requested = 0;
   enumerationError = false;
   createdFile?: (file: TestFile) => void;
+  entriesCalls = 0;
   constructor(public name: string) {}
   async isSameEntry(other: BrowserFileHandle | BrowserDirectoryHandle): Promise<boolean> { return this === other; }
   async queryPermission() { return this.permission; }
@@ -72,6 +73,7 @@ class TestDirectory implements BrowserDirectoryHandle {
   }
   async removeEntry(name: string) { this.children.delete(name); }
   async *entries(): AsyncIterableIterator<[string, TestDirectory | TestFile]> {
+    this.entriesCalls++;
     if (this.enumerationError) throw error("NotReadableError");
     yield* this.children;
   }
@@ -150,6 +152,45 @@ function save(note: Note, body = "changed") { return { id: note.id, body, tags: 
 
 
 describe("independent browser vault", () => {
+  it("reuses one scan for a refresh batch and rescans the next query", async () => {
+    const h = await open();
+    expect(h.notes.entriesCalls).toBe(0);
+    await call(h.core, "getStatus");
+    expect(h.notes.entriesCalls).toBe(1);
+    await Promise.all([
+      call(h.core, "queryNotes"),
+      call(h.core, "listTags"),
+      call(h.core, "listFolders"),
+    ]);
+    expect(h.notes.entriesCalls).toBe(1);
+    await call(h.core, "queryNotes");
+    expect(h.notes.entriesCalls).toBe(2);
+  });
+
+  it("reuses exact-hash parse results across scans and drops deleted paths", async () => {
+    const root = await fixture(), storage = new TestStorage();
+    let parses = 0;
+    const core = new BrowserVault({ storage, lock, supported: () => true, picker: async () => root,
+      decodeImage: async () => undefined, parseLegacy: async (...args) => { parses++; return parseBrowserNote(...args); } });
+    await call(core, "selectVault");
+    await call(core, "getStatus");
+    expect(parses).toBe(1);
+    await call(core, "queryNotes");
+    await call(core, "queryNotes");
+    expect(parses).toBe(1);
+
+    const notes = await root.getDirectoryHandle("notes");
+    const file = await notes.getFileHandle(`${noteId}.md`);
+    file.bytes = bytes(source(noteId, "changed"));
+    await call(core, "queryNotes");
+    expect(parses).toBe(2);
+    notes.children.delete(`${noteId}.md`);
+    await call(core, "queryNotes");
+    notes.children.set(`${noteId}.md`, file);
+    await call(core, "queryNotes");
+    expect(parses).toBe(3);
+  });
+
   it("enters picker synchronously and creates an empty vault that can be opened after reload", async () => {
     const root = new TestDirectory("new vault"), h = harness(root);
     const pending = call(h.core, "selectVault", { create: true });

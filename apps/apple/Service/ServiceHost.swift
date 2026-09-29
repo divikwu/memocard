@@ -3,12 +3,6 @@ import Foundation
 import MemoCardCore
 import MemoCardLocalWeb
 
-private struct StoredVault: Codable {
-    let id: String
-    let name: String
-    let bookmark: Data
-}
-
 @MainActor
 final class ServiceHost {
     private let defaults = UserDefaults.standard
@@ -23,22 +17,21 @@ final class ServiceHost {
     private var webAuthorizationEpoch = 0
     private var selectingVault = false
     private var restoreTask: Task<Void, Never>?
-    private var storedVaults: [StoredVault]
+    private var vaultRegistry: VaultRegistry
     var stateChanged: (() -> Void)?
 
     init() throws {
         localDataURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("MemoCard", isDirectory: true)
         store = try VaultStore(localDataURL: localDataURL)
-        storedVaults = (defaults.data(forKey: "vaultBookmarks").flatMap { try? JSONDecoder().decode([StoredVault].self, from: $0) }) ?? []
+        let records = (defaults.data(forKey: "vaultBookmarks").flatMap { try? JSONDecoder().decode([StoredVaultRecord].self, from: $0) }) ?? []
+        vaultRegistry = VaultRegistry(records: records, activeID: defaults.string(forKey: "activeVaultID"))
         restoreTask = Task { [weak self] in await self?.restoreVault() }
     }
 
     var currentVaultName: String { vaultURL?.lastPathComponent ?? "未选择笔记库" }
     var webRunning: Bool { webServer != nil }
-    var registeredVaults: [(id: String, name: String, active: Bool)] {
-        storedVaults.map { ($0.id, $0.name, $0.id == vaultID) }
-    }
+    var registeredVaults: [(id: String, name: String, active: Bool)] { vaultRegistry.listed }
 
     func waitUntilRestored() async { await restoreTask?.value }
 
@@ -84,8 +77,7 @@ final class ServiceHost {
     }
 
     private func restoreVault() async {
-        let activeID = defaults.string(forKey: "activeVaultID")
-        let record = activeID.flatMap { id in storedVaults.first { $0.id == id } }
+        let record = vaultRegistry.activeID.flatMap { vaultRegistry.record(id: $0) }
         let bookmark = record?.bookmark ?? defaults.data(forKey: "vaultBookmark")
         guard let bookmark else { return }
         var restored: URL?
@@ -111,6 +103,7 @@ final class ServiceHost {
             restored?.stopAccessingSecurityScopedResource()
             defaults.removeObject(forKey: "vaultBookmark")
             defaults.removeObject(forKey: "activeVaultID")
+            vaultRegistry.clearActive()
             stateChanged?()
         }
     }
@@ -250,7 +243,7 @@ final class ServiceHost {
     private func activateVault(id: String, reconnect: Bool) async throws -> [String: Any] {
         guard id != vaultID else { return ["vaultId": id] }
         guard !selectingVault else { throw fault("BUSY", "请先完成当前笔记库选择") }
-        guard let record = storedVaults.first(where: { $0.id == id }) else { throw fault("NOT_FOUND", "找不到这个笔记库") }
+        guard let record = vaultRegistry.record(id: id) else { throw fault("NOT_FOUND", "找不到这个笔记库") }
         selectingVault = true
         defer { selectingVault = false }
 
@@ -270,6 +263,7 @@ final class ServiceHost {
             vaultGeneration = candidateGeneration
             vaultURL = selected
             vaultID = id
+            _ = vaultRegistry.activate(id: id)
             defaults.set(id, forKey: "activeVaultID")
             watch(selected)
             await previousStore.close()
@@ -294,9 +288,8 @@ final class ServiceHost {
     }
 
     private func rememberVault(id: String, name: String, bookmark: Data) {
-        storedVaults.removeAll { $0.id == id }
-        storedVaults.append(StoredVault(id: id, name: name, bookmark: bookmark))
-        if let data = try? JSONEncoder().encode(storedVaults) { defaults.set(data, forKey: "vaultBookmarks") }
+        vaultRegistry.remember(StoredVaultRecord(id: id, name: name, bookmark: bookmark))
+        if let data = try? JSONEncoder().encode(vaultRegistry.records) { defaults.set(data, forKey: "vaultBookmarks") }
         defaults.set(id, forKey: "activeVaultID")
         defaults.removeObject(forKey: "vaultBookmark")
     }
@@ -337,7 +330,13 @@ final class ServiceHost {
 
     private func watch(_ url: URL) {
         if let presenter { NSFileCoordinator.removeFilePresenter(presenter) }
-        let next = ServiceVaultPresenter(url: url) { [weak self] in Task { @MainActor in self?.stateChanged?() } }
+        let next = ServiceVaultPresenter(url: url) { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                await self.store.invalidateSnapshot()
+                self.stateChanged?()
+            }
+        }
         presenter = next
         NSFileCoordinator.addFilePresenter(next)
     }

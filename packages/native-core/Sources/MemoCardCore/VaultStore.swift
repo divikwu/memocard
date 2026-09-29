@@ -12,6 +12,18 @@ public actor VaultStore {
     private var binding = UUID()
     private var compatible: Bool { metadata?.formatVersion == 2 }
     private var identities: [FileIdentity] = []
+    private var refreshSnapshot: Snapshot?
+    private var refreshSnapshotConsumers = Set<String>()
+    private struct ParsedCacheEntry {
+        let hash: String
+        let vaultID: String
+        let identityID: String?
+        let createdAt: String?
+        let modified: Date?
+        let parsed: ParsedNote
+    }
+    private var parsedCache: [String: ParsedCacheEntry] = [:]
+    var parseMissCount = 0
 
     public init(localDataURL: URL) throws {
         guard localDataURL.isFileURL else {
@@ -22,9 +34,17 @@ public actor VaultStore {
     }
 
     public func close() {
+        invalidateSnapshot()
+        parsedCache.removeAll()
+        parseMissCount = 0
         binding = UUID()
         root = nil
         metadata = nil
+    }
+
+    public func invalidateSnapshot() {
+        refreshSnapshot = nil
+        refreshSnapshotConsumers.removeAll()
     }
 
     /// The host can serve attachments without exposing a general filesystem read operation.
@@ -52,6 +72,9 @@ public actor VaultStore {
     }
 
     public func open(url: URL, create: Bool, binding: UUID = UUID()) throws {
+        invalidateSnapshot()
+        parsedCache.removeAll()
+        parseMissCount = 0
         self.binding = binding
         // A failed selection must not silently continue serving a previously selected vault.
         root = nil
@@ -108,19 +131,22 @@ public actor VaultStore {
             case "getNote":
                 struct Request: Decodable { let id: String }
                 return try encode(getNote(id: try decode(Request.self, params).id))
-            case "saveNote": return try encode(saveNote(try decode(SaveRequest.self, params)))
+            case "saveNote":
+                invalidateSnapshot()
+                return try encode(saveNote(try decode(SaveRequest.self, params)))
             case "resolveLink":
                 struct LinkRequest: Decodable { let target: String; let sourcePath: String; let wiki: Bool? }
                 let link = try decode(LinkRequest.self, params)
                 return try resolveLink(link.target, sourcePath: link.sourcePath, wiki: link.wiki == true)
             case "listFolders":
-                let snapshot = try scan()
+                let snapshot = try snapshot(for: "listFolders")
                 struct Folders: Encodable { let folders: [String]; let coverage: Coverage }
                 return try encode(Folders(folders: snapshot.folders.sorted(), coverage: snapshot.coverage))
             case "listTags": return try listTags()
             case "saveDraft": return try saveDraft(try decode(SaveRequest.self, params))
             case "getDrafts": return try getDrafts()
             case "importAttachment":
+                invalidateSnapshot()
                 struct Request: Decodable { let name: String; let base64: String; let noteId: String?; let notePath: String? }
                 let request = try decode(Request.self, params)
                 return try importAttachment(name: request.name, base64: request.base64, noteID: request.noteId, requestedPath: request.notePath)
@@ -143,6 +169,20 @@ public actor VaultStore {
         var notes: [ParsedNote] = []
         var duplicateIDs = Set<String>()
         var coverage = Coverage(complete: true, indexed: 0, pending: 0, issues: 0, indexedAt: nil)
+    }
+
+    private func seedRefreshSnapshot(_ snapshot: Snapshot) {
+        refreshSnapshot = snapshot
+        refreshSnapshotConsumers = ["queryNotes", "listTags", "listFolders"]
+    }
+
+    private func snapshot(for consumer: String) throws -> Snapshot {
+        guard let snapshot = refreshSnapshot, refreshSnapshotConsumers.remove(consumer) != nil else {
+            return try scan()
+        }
+        _ = try active()
+        if refreshSnapshotConsumers.isEmpty { invalidateSnapshot() }
+        return snapshot
     }
 
     private func active() throws -> (URL, VaultMetadata) {
@@ -178,6 +218,7 @@ public actor VaultStore {
         var result = Snapshot()
         if compatible { result.folders = [""] }
         var sources: [(path: String, data: Data, modified: Date, hash: String)] = []
+        var scannedPaths = Set<String>()
         var enumerationFailed = false
         guard let enumerator = fm.enumerator(at: notesURL, includingPropertiesForKeys: nil,
                                              options: [.skipsHiddenFiles], errorHandler: { _, _ in
@@ -195,12 +236,23 @@ public actor VaultStore {
                 let parsed: ParsedNote? = try coordinateRead(url, inside: root) { coordinated in
                     try self.requireNoConflict(coordinated)
                     let data = try self.readSource(coordinated)
+                    let path = self.relative(coordinated, root: root)
+                    let hash = sha256(data)
+                    scannedPaths.insert(path)
                     if self.compatible {
                         let modified = try coordinated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? Date(timeIntervalSince1970: 0)
-                        sources.append((self.relative(coordinated, root: root), data, modified, sha256(data)))
+                        sources.append((path, data, modified, hash))
                         return nil
                     }
-                    return try parseNote(data, relativePath: self.relative(coordinated, root: root), vaultID: metadata.vaultId)
+                    if let cached = self.parsedCache[path], cached.hash == hash, cached.vaultID == metadata.vaultId,
+                       cached.identityID == nil, cached.createdAt == nil, cached.modified == nil {
+                        return cached.parsed
+                    }
+                    let value = try parseNote(data, relativePath: path, vaultID: metadata.vaultId)
+                    self.parseMissCount += 1
+                    self.parsedCache[path] = ParsedCacheEntry(hash: hash, vaultID: metadata.vaultId,
+                        identityID: nil, createdAt: nil, modified: nil, parsed: value)
+                    return value
                 }
                 if let parsed { result.notes.append(parsed) }
             } catch let error as VaultError where error.code == "FILE_PENDING" {
@@ -213,20 +265,35 @@ public actor VaultStore {
         if compatible {
             var next: [FileIdentity] = []
             let paths = Set(sources.map { $0.path })
+            let existingByPath = identities.reduce(into: [String: FileIdentity]()) { $0[$1.path] = $1 }
+            let missingByHash = Dictionary(grouping: identities.filter { !paths.contains($0.path) }, by: \.hash)
+            let newByHash = Dictionary(grouping: sources.filter { existingByPath[$0.path] == nil }, by: \.hash)
             for source in sources {
                 let hash = source.hash
-                let moved = identities.filter { !paths.contains($0.path) && $0.hash == hash }
-                let candidates = sources.filter { item in item.hash == hash && !identities.contains(where: { old in old.path == item.path }) }
-                let previous = identities.first { $0.path == source.path } ?? (moved.count == 1 && candidates.count == 1 ? moved.first : nil)
+                let moved = missingByHash[hash] ?? []
+                let candidates = newByHash[hash] ?? []
+                let previous = existingByPath[source.path] ?? (moved.count == 1 && candidates.count == 1 ? moved.first : nil)
                 let identity = FileIdentity(id: previous?.id ?? UUID().uuidString.lowercased(), path: source.path, hash: hash, createdAt: previous?.createdAt ?? timestamp(source.modified))
                 next.append(identity)
-                do { result.notes.append(try parseObsidianNote(source.data, relativePath: source.path, vaultID: metadata.vaultId, identity: identity, modified: source.modified)) }
+                do {
+                    if let cached = parsedCache[source.path], cached.hash == hash, cached.vaultID == metadata.vaultId,
+                       cached.identityID == identity.id, cached.createdAt == identity.createdAt, cached.modified == source.modified {
+                        result.notes.append(cached.parsed)
+                    } else {
+                        let value = try parseObsidianNote(source.data, relativePath: source.path, vaultID: metadata.vaultId, identity: identity, modified: source.modified)
+                        parseMissCount += 1
+                        parsedCache[source.path] = ParsedCacheEntry(hash: hash, vaultID: metadata.vaultId,
+                            identityID: identity.id, createdAt: identity.createdAt, modified: source.modified, parsed: value)
+                        result.notes.append(value)
+                    }
+                }
                 catch { result.coverage.issues += 1 }
             }
             if !enumerationFailed && result.coverage.issues == 0 && result.coverage.pending == 0 {
                 try persistIdentities(next)
             }
         }
+        parsedCache = parsedCache.filter { scannedPaths.contains($0.key) }
         let groups = Dictionary(grouping: result.notes, by: { $0.note.id })
         for (id, notes) in groups where notes.count > 1 {
             result.duplicateIDs.insert(id)
@@ -270,14 +337,16 @@ public actor VaultStore {
                 coverage: Coverage(complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: nil),
                 phase: "M1", syncState: "notConnected", capabilities: capabilities))
         }
-        let coverage = try scan().coverage
+        let snapshot = try scan()
+        seedRefreshSnapshot(snapshot)
+        let coverage = snapshot.coverage
         return try encode(Status(connected: true, vaultId: metadata.vaultId, vaultName: root.lastPathComponent,
             coverage: coverage, phase: "M1", syncState: coverage.complete ? "localReadComplete" : "incomplete",
             capabilities: capabilities))
     }
 
     private func queryNotes(_ query: Query) throws -> Data {
-        let snapshot = try scan()
+        let snapshot = try snapshot(for: "queryNotes")
         if let folder = query.folder, !folder.isEmpty {
             let parts = folder.split(separator: "/", omittingEmptySubsequences: false)
             guard (compatible || parts.first == "notes"), !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }), !folder.contains("\\"), !folder.contains("\0") else {
@@ -455,7 +524,7 @@ public actor VaultStore {
     }
 
     private func listTags() throws -> Data {
-        let snapshot = try scan()
+        let snapshot = try snapshot(for: "listTags")
         var counts: [String: Int] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
             let names = Set(parsed.note.tags.flatMap { tag -> [String] in

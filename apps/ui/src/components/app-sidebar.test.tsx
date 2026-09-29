@@ -48,6 +48,7 @@ describe("AppSidebar", () => {
     const props = createProps();
     renderSidebar(props);
     await userEvent.click(screen.getByRole("button", { name: "笔记库：我的笔记" }));
+    expect(screen.queryByText("⌥1")).toBeNull();
     const open = await screen.findByRole("menuitem", { name: "打开已有笔记库" });
     fireEvent.click(open);
     expect(props.onSelectVault).toHaveBeenCalledExactlyOnceWith(false);

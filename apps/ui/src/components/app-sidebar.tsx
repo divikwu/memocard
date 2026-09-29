@@ -53,13 +53,13 @@ export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, re
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-xs border"><Layers className="size-4" /></span>
                   <span className="min-w-0 flex-1 truncate" title={vault.name}>{vault.name}</span>
                   {vault.active && <Check className="size-4" aria-label="当前笔记库" />}
-                  {index < 9 && <DropdownMenuShortcut aria-hidden="true">⌥{index + 1}</DropdownMenuShortcut>}
+                  {registeredVaults.length > 1 && index < 9 && <DropdownMenuShortcut aria-hidden="true">⌥{index + 1}</DropdownMenuShortcut>}
                 </DropdownMenuItem>)}
               <DropdownMenuSeparator />
-              {canChooseVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(false)}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><FolderOpen className="size-4" aria-hidden="true" /></span><span className="font-medium text-muted-foreground">打开已有笔记库</span></DropdownMenuItem>}
-              {canCreateVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(true)}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><FolderPlus className="size-4" aria-hidden="true" /></span><span className="font-medium text-muted-foreground">创建新笔记库</span></DropdownMenuItem>}
-              {needsPermission && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={onReauthorize}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><ShieldCheck className="size-4" aria-hidden="true" /></span><span className="font-medium text-muted-foreground">重新授权文件夹</span></DropdownMenuItem>}
-              <DropdownMenuItem className="gap-2 p-2" onClick={() => onNavigate("settings")}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><Settings2 className="size-4" aria-hidden="true" /></span><span className="font-medium text-muted-foreground">笔记库设置</span></DropdownMenuItem>
+              {canChooseVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(false)}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><FolderOpen className="size-4" aria-hidden="true" /></span><span className="font-medium">打开已有笔记库</span></DropdownMenuItem>}
+              {canCreateVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(true)}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><FolderPlus className="size-4" aria-hidden="true" /></span><span className="font-medium">创建新笔记库</span></DropdownMenuItem>}
+              {needsPermission && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={onReauthorize}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><ShieldCheck className="size-4" aria-hidden="true" /></span><span className="font-medium">重新授权文件夹</span></DropdownMenuItem>}
+              <DropdownMenuItem className="gap-2 p-2" onClick={() => onNavigate("settings")}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><Settings2 className="size-4" aria-hidden="true" /></span><span className="font-medium">笔记库设置</span></DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>

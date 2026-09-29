@@ -14,9 +14,18 @@ export type { BrowserVaultStorage, BrowserDraft, StoredSelection } from "./brows
 type Metadata = { formatVersion: 1 | 2; vaultId: string };
 type Binding = StoredSelection & { binding: string };
 type Snapshot = { folders: string[]; parsed: ParsedBrowserNote[]; duplicateIds: Set<string>; coverage: Coverage };
+type ParsedCacheEntry = { hash: string; vaultId: string; identityId?: string; createdAt?: string; modified?: number; parsed: ParsedBrowserNote };
 type Save = { id: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
 type BrowserLock = <T>(name: string, task: () => Promise<T>) => Promise<T>;
-type Options = { storage?: BrowserVaultStorage; picker?: BrowserPicker; lock?: BrowserLock; supported?: () => boolean; decodeImage?: (blob: Blob) => Promise<void> };
+type Options = {
+  storage?: BrowserVaultStorage;
+  picker?: BrowserPicker;
+  lock?: BrowserLock;
+  supported?: () => boolean;
+  decodeImage?: (blob: Blob) => Promise<void>;
+  parseLegacy?: typeof parseBrowserNote;
+  parseCompatible?: typeof parseObsidianNote;
+};
 const operations = ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"];
 const coverageEmpty = (): Coverage => ({ complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: null });
 const now = () => new Date().toISOString();
@@ -51,8 +60,13 @@ export class BrowserVault {
   private readonly lock: BrowserLock;
   private readonly supported: () => boolean;
   private readonly decodeImage: (blob: Blob) => Promise<void>;
+  private readonly parseLegacy: typeof parseBrowserNote;
+  private readonly parseCompatible: typeof parseObsidianNote;
   private readonly sessionId = createId();
   private readonly recoveredDrafts = new Map<string, { key: string; original?: BrowserDraft }>();
+  private refreshSnapshot?: Snapshot;
+  private refreshSnapshotConsumers = new Set<string>();
+  private readonly parsedCache = new Map<string, ParsedCacheEntry>();
 
   constructor(options: Options = {}) {
     this.storage = options.storage ?? new IndexedDBVaultStorage();
@@ -65,9 +79,29 @@ export class BrowserVault {
       image.close();
       if (!valid) throw new Error("empty image");
     });
+    this.parseLegacy = options.parseLegacy ?? parseBrowserNote;
+    this.parseCompatible = options.parseCompatible ?? parseObsidianNote;
   }
 
   get binding(): string | null { return this.selection?.binding ?? null; }
+
+  private invalidateSnapshot(): void {
+    this.refreshSnapshot = undefined;
+    this.refreshSnapshotConsumers.clear();
+  }
+
+  private seedRefreshSnapshot(snapshot: Snapshot): void {
+    this.refreshSnapshot = snapshot;
+    this.refreshSnapshotConsumers = new Set(["queryNotes", "listTags", "listFolders"]);
+  }
+
+  private async snapshotFor(consumer: string, selected: Binding): Promise<Snapshot> {
+    const snapshot = this.refreshSnapshot;
+    if (!snapshot || !this.refreshSnapshotConsumers.delete(consumer)) return this.scan(selected);
+    await this.active(selected);
+    if (!this.refreshSnapshotConsumers.size) this.invalidateSnapshot();
+    return snapshot;
+  }
 
   private initialize(): Promise<void> {
     this.initialized ??= (async () => {
@@ -188,6 +222,8 @@ export class BrowserVault {
         catch (error) { if (missing(error)) throw new BrowserVaultError("INVALID_VAULT", "笔记库缺少 notes 或 assets 目录。"); throw error; }
         stage = "保存文件夹授权到浏览器";
         const remembered = await this.storage.remember(root, metadata.vaultId);
+        this.invalidateSnapshot();
+        this.parsedCache.clear();
         this.selection = { ...remembered, binding: createId() };
         return { vaultId: metadata.vaultId, vaultBinding: this.selection.binding };
       });
@@ -210,6 +246,7 @@ export class BrowserVault {
     const snapshot: Snapshot = { folders: [this.compatible ? "" : "notes"], parsed: [], duplicateIds: new Set(), coverage: { ...coverageEmpty(), complete: true } };
     const old = this.compatible ? await this.storage.identities(this.scope(selected)) : [];
     const files: { path: string; bytes: Uint8Array; modified: number; hash: string }[] = [];
+    const scannedPaths = new Set<string>();
     const walk = async (directory: BrowserDirectoryHandle, path: string): Promise<void> => {
       try {
         for await (const [name, child] of directory.entries()) {
@@ -220,8 +257,19 @@ export class BrowserVault {
           if (!/\.md$/i.test(name)) continue;
           try {
             const bytes = await readBytes(child);
-            if (this.compatible) files.push({ path: relativePath, bytes, modified: (await child.getFile()).lastModified, hash: await sha256(bytes) });
-            else snapshot.parsed.push(await parseBrowserNote(bytes, relativePath, selected.vaultId));
+            const hash = await sha256(bytes);
+            scannedPaths.add(relativePath);
+            if (this.compatible) files.push({ path: relativePath, bytes, modified: (await child.getFile()).lastModified, hash });
+            else {
+              const cached = this.parsedCache.get(relativePath);
+              if (cached?.hash === hash && cached.vaultId === selected.vaultId && cached.identityId === undefined && cached.modified === undefined) {
+                snapshot.parsed.push(cached.parsed);
+              } else {
+                const parsed = await this.parseLegacy(bytes, relativePath, selected.vaultId);
+                this.parsedCache.set(relativePath, { hash, vaultId: selected.vaultId, parsed });
+                snapshot.parsed.push(parsed);
+              }
+            }
           }
           catch (error) {
             const failure = fileError(error);
@@ -240,17 +288,40 @@ export class BrowserVault {
     if (this.compatible) {
       const identities = [];
       const paths = new Set(files.map(file => file.path));
+      const existingByPath = new Map(old.map(item => [item.path, item]));
+      const missingByHash = new Map<string, typeof old>();
+      for (const item of old) if (!paths.has(item.path)) {
+        const values = missingByHash.get(item.hash) ?? [];
+        values.push(item); missingByHash.set(item.hash, values);
+      }
+      const newByHash = new Map<string, typeof files>();
+      for (const item of files) if (!existingByPath.has(item.path)) {
+        const values = newByHash.get(item.hash) ?? [];
+        values.push(item); newByHash.set(item.hash, values);
+      }
       for (const file of files) {
-        const moved = old.filter(item => !paths.has(item.path) && item.hash === file.hash);
-        const identity = old.find(item => item.path === file.path)
-          ?? (moved.length === 1 && files.filter(item => item.hash === file.hash && !old.some(previous => previous.path === item.path)).length === 1 ? moved[0] : undefined);
+        const moved = missingByHash.get(file.hash) ?? [];
+        const candidates = newByHash.get(file.hash) ?? [];
+        const identity = existingByPath.get(file.path)
+          ?? (moved.length === 1 && candidates.length === 1 ? moved[0] : undefined);
         const entry = { id: identity?.id ?? createId(), path: file.path, hash: file.hash, createdAt: identity?.createdAt ?? new Date(file.modified || 0).toISOString() };
         identities.push(entry);
-        try { snapshot.parsed.push(await parseObsidianNote(file.bytes, file.path, selected.vaultId, entry, file.modified)); }
+        try {
+          const cached = this.parsedCache.get(file.path);
+          if (cached?.hash === file.hash && cached.vaultId === selected.vaultId && cached.identityId === entry.id
+            && cached.createdAt === entry.createdAt && cached.modified === file.modified) {
+            snapshot.parsed.push(cached.parsed);
+          } else {
+            const parsed = await this.parseCompatible(file.bytes, file.path, selected.vaultId, entry, file.modified);
+            this.parsedCache.set(file.path, { hash: file.hash, vaultId: selected.vaultId, identityId: entry.id, createdAt: entry.createdAt, modified: file.modified, parsed });
+            snapshot.parsed.push(parsed);
+          }
+        }
         catch { snapshot.coverage.issues++; }
       }
       if (!snapshot.coverage.issues && !snapshot.coverage.pending) await this.storage.saveIdentities(this.scope(selected), identities);
     }
+    for (const path of this.parsedCache.keys()) if (!scannedPaths.has(path)) this.parsedCache.delete(path);
     const counts = new Map<string, number>();
     for (const { note } of snapshot.parsed) counts.set(note.id, (counts.get(note.id) ?? 0) + 1);
     for (const [id, count] of counts) if (count > 1) { snapshot.duplicateIds.add(id); snapshot.coverage.issues += count; }
@@ -272,6 +343,7 @@ export class BrowserVault {
   }
 
   private async status(selected: Binding | undefined): Promise<VaultStatus & { vaultBinding: string | null }> {
+    this.invalidateSnapshot();
     const base = { connected: false, vaultId: selected?.vaultId ?? null, vaultName: selected?.handle.name ?? null, vaultBinding: selected?.binding ?? null,
       phase: "M1", syncState: "notConnected", capabilities: [] as string[], coverage: coverageEmpty() };
     if (!selected) return base;
@@ -280,6 +352,7 @@ export class BrowserVault {
       return { ...base, syncState: "unauthorized", capabilities: ["saveDraft", "getDrafts", "reauthorizeVault"] };
     }
     const snapshot = await this.scan(selected);
+    this.seedRefreshSnapshot(snapshot);
     return { ...base, connected: true, syncState: snapshot.coverage.complete ? "localReadComplete" : "incomplete", capabilities: operations, coverage: snapshot.coverage };
   }
 
@@ -323,6 +396,7 @@ export class BrowserVault {
   }
 
   private async save(selected: Binding, save: Save): Promise<Note & { vaultBinding: string }> {
+    this.invalidateSnapshot();
     // File writes only start after a durable local draft has succeeded.
     const draft = await this.storeDraft(selected, save);
     return this.lock(`memocard:browser:vault:${selected.vaultId}`, async () => {
@@ -418,7 +492,7 @@ export class BrowserVault {
     if (from !== undefined && to !== undefined && from > to) throw new BrowserVaultError("INVALID_PARAMS", "开始时间不能晚于结束时间。");
     const limit = params.limit ?? 50;
     if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > 100 || (params.deleted !== undefined && typeof params.deleted !== "boolean")) throw new BrowserVaultError("INVALID_PARAMS", "分页大小必须为 1 至 100，deleted 必须为布尔值。");
-    const snapshot = await this.scan(selected);
+    const snapshot = await this.snapshotFor("queryNotes", selected);
     const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, from, to, limit, folder: params.folder, deleted: params.deleted ?? false })));
     const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues })));
     let after: { id: string; createdAt: string } | undefined;
@@ -454,6 +528,7 @@ export class BrowserVault {
   }
 
   private async attachment(selected: Binding, params: Record<string, unknown>): Promise<unknown> {
+    this.invalidateSnapshot();
     const name = checkString(params.name, "name");
     if (!name || /[/\\]/.test(name) || name.includes("\0")) throw new BrowserVaultError("INVALID_ATTACHMENT", "图片名称不能包含目录。");
     let bytes: Uint8Array;
@@ -545,11 +620,11 @@ export class BrowserVault {
       return note ? { kind: "note", id: note.id, path: matches[0] } : { kind: "image", path: matches[0] };
     }
     if (operation === "listFolders") {
-      const snapshot = await this.scan(selected);
+      const snapshot = await this.snapshotFor("listFolders", selected);
       return { folders: snapshot.folders.sort(), coverage: snapshot.coverage };
     }
     if (operation === "listTags") {
-      const snapshot = await this.scan(selected), counts = new Map<string, number>();
+      const snapshot = await this.snapshotFor("listTags", selected), counts = new Map<string, number>();
       for (const { note } of snapshot.parsed) if (!note.deletedAt) {
         const names = new Set(note.tags.flatMap(tag => tag.split("/").map((_, index, parts) => parts.slice(0, index + 1).join("/"))));
         for (const tag of names) counts.set(tag, (counts.get(tag) ?? 0) + 1);

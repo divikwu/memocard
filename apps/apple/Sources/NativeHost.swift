@@ -254,7 +254,13 @@ final class NativeHost: ObservableObject {
     }
     private func watch(_ url: URL) {
         if let presenter { NSFileCoordinator.removeFilePresenter(presenter) }
-        let watcher = VaultPresenter(url: url) { [weak self] in Task { @MainActor in self?.notify("notesChanged") } }
+        let watcher = VaultPresenter(url: url) { [weak self] in
+            Task { @MainActor in
+                guard let self else { return }
+                if let store = try? self.store { await store.invalidateSnapshot() }
+                self.notify("notesChanged")
+            }
+        }
         presenter = watcher
         NSFileCoordinator.addFilePresenter(watcher)
     }
