@@ -35,6 +35,7 @@ it("searches full paths and saves icons without changing navigation", async () =
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
   expect(screen.queryByRole("button", { name: "使用图标 🎨" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "选择 Emoji" }));
+  expect(screen.getByRole("button", { name: "清除" }).hasAttribute("disabled")).toBe(true);
   await user.click(await screen.findByRole("button", { name: "选择画板" }));
   await user.click(screen.getByRole("button", { name: "保存" }));
   expect(screen.getByRole("button", { name: "工作/设计" }).textContent).toContain("🎨");
