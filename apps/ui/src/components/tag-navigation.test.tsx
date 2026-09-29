@@ -64,6 +64,7 @@ it("renames before saving display preferences and discards unsaved edits", async
 
 it("aligns hierarchy controls and stretches nested rows", () => {
   render(<TagNavigation {...props} tags={[...props.tags, { name: "工作/设计/界面", count: 1 }]} />);
+  expect(screen.getByRole("button", { name: "搜索标签" }).className).toContain("-mr-1.5");
   const nestedButton = screen.getByRole("button", { name: "工作/设计" });
   const nestedRow = nestedButton.parentElement;
   const nestedCollapsible = nestedRow?.parentElement;
