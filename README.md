@@ -37,7 +37,7 @@ Safari、Codex、Chrome 和 Edge 的推荐本机入口是独立菜单栏应用 `
 
 ### 本机 Web
 
-推荐通过 `MemoCardService.app` 或 `memocard serve` 打开本机 Web；Mac App 设置中的“在浏览器中打开”和“复制访问链接”作为兼容入口继续保留。浏览器复用同一套界面和笔记文件，可以查看、新建、编辑、保存草稿和导入图片。菜单栏服务提供打开、创建和多 Vault 切换；Mac App 宿主仍在原生界面中管理目录授权。
+推荐通过 `MemoCardService.app` 或 `memocard serve` 打开本机 Web。浏览器只连接菜单栏服务提供的 listener，并使用服务维护的多 Vault 列表；Mac App 设置中的“在浏览器中打开”和兼容 URL `memocard://web` 会转交给该服务，不再创建另一套网页会话或端口。浏览器复用同一套界面和笔记文件，可以查看、新建、编辑、保存草稿和导入图片。Mac App 仍在原生界面中管理自己的目录授权和只读 MCP。
 
 网页资源随宿主打包，不依赖 Vite 或 Node 后端。地址使用系统分配的本机端口；宿主重启后必须重新打开，旧页面不能通过“重试”发现新端口。不要保存或分享带一次性授权参数的链接。详细边界与验证见 [本机 Web](docs/LOCAL_WEB.md)。
 

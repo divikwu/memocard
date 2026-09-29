@@ -40,9 +40,6 @@ for platform in ['Mac','iOS']:
     source_builds=[add(platform+n,'PBXBuildFile',fileRef=r) for n,r in zip(source_names,source_refs)]
     dependency=add(platform+'core','XCSwiftPackageProductDependency',package=package,productName='MemoCardCore')
     dependencies=[dependency]; links=[add(platform+'link','PBXBuildFile',productRef=dependency)]
-    if platform == 'Mac':
-        local_dependency=add(platform+'localweb','XCSwiftPackageProductDependency',package=local_service_package,productName='MemoCardLocalWeb')
-        dependencies.append(local_dependency); links.append(add(platform+'localweblink','PBXBuildFile',productRef=local_dependency))
     phases=[add(platform+'sources','PBXSourcesBuildPhase',buildActionMask='2147483647',files=source_builds,runOnlyForDeploymentPostprocessing='0'),add(platform+'frameworks','PBXFrameworksBuildPhase',buildActionMask='2147483647',files=links,runOnlyForDeploymentPostprocessing='0'),add(platform+'resources','PBXResourcesBuildPhase',buildActionMask='2147483647',files=[add(platform+'webbuild','PBXBuildFile',fileRef=web)],runOnlyForDeploymentPostprocessing='0')]
     target=add('target'+platform,'PBXNativeTarget',name='MemoCard'+platform,productName='MemoCard',productType='com.apple.product-type.application',productReference=product,buildConfigurationList=configs(platform,platform),buildPhases=phases,buildRules=[],dependencies=[],packageProductDependencies=dependencies); targets.append(target)
 service_product=add('Serviceproduct','PBXFileReference',explicitFileType='wrapper.application',path='MemoCardService.app',sourceTree='BUILT_PRODUCTS_DIR'); product_refs.append(service_product)

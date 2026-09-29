@@ -4,9 +4,9 @@
 
 本文件整体替换原 Web/PWA + 服务端 SQLite 方案，是唯一执行依据。实现进度与证据记录在 docs/IMPLEMENTATION_STATUS.md；未验收能力不能标为已交付。
 
-2026-09-28 用户追加授权：支持本机 Web 查看、新建、编辑笔记及图片，复用当前 React 界面和 Swift 文件核心。Mac 应用提供仅监听 loopback 的经过鉴权的网页服务，并持续运行；同一授权笔记库仍为唯一内容来源。该模式不改变 iCloud Drive 文件存储方案，不包含独立云端 Web/PWA，不扩大只读 MCP 的权限。实现与验收记录见 docs/LOCAL_WEB.md。
+2026-09-28 历史授权：支持本机 Web 查看、新建、编辑笔记及图片，复用当前 React 界面和 Swift 文件核心。最初由 Mac 应用提供 loopback 服务；该宿主方式已被 2026-09-29 的统一菜单栏服务授权取代。文件存储和只读 MCP 边界不变，当前实现见 docs/LOCAL_WEB.md。
 
-2026-09-28 后续授权（优先于上述 Web 边界）：实现独立浏览器客户端，桌面 Chrome / Edge 经 File System Access API 直接授权本机文件夹，创建、打开、切换 MemoCard 笔记库并读写 Markdown 和图片，不要求 Mac App 运行。继续共用 React 界面、文件格式和操作契约；目录句柄和草稿存于浏览器 IndexedDB，正文仍以文件为准。换电脑需先将笔记库同步到当地磁盘并单独授权。已有 Mac 本机 Web 保留。范围不包含公开部署、账户云同步、Service Worker 离线安装、浏览器 MCP 后台服务或不支持该 API 的浏览器兼容层。
+2026-09-28 后续授权（优先于上述 Web 边界）：实现独立浏览器客户端，桌面 Chrome / Edge 经 File System Access API 直接授权本机文件夹，创建、打开、切换 MemoCard 笔记库并读写 Markdown 和图片，不要求 Mac App 运行。继续共用 React 界面、文件格式和操作契约；目录句柄和草稿存于浏览器 IndexedDB，正文仍以文件为准。换电脑需先将笔记库同步到当地磁盘并单独授权。原有本机 Web 能力继续保留，但宿主已在 2026-09-29 统一为菜单栏服务。范围不包含公开部署、账户云同步、Service Worker 离线安装、浏览器 MCP 后台服务或不支持该 API 的浏览器兼容层。
 
 浏览器实现必须验证：空目录建库、原库重开、换库与取消、草稿恢复与隔离、带图保存、外部编辑哈希冲突、外部重命名与删除、不完整扫描、权限失效、分页和跨语言格式。浏览器无法使用 Apple 文件协调或读取 iCloud 系统冲突版本；保存使用暂存写流并在提交前再次核对内容指纹，不能宣称与外部应用之间有原子比较替换保证。此扩展不代表原 M2–M5 或真机同步关卡完成。
 
@@ -20,6 +20,8 @@
 
 2026-09-29 用户追加授权：菜单栏服务支持注册多个已授权笔记库，并在侧栏和菜单栏中提供 Obsidian 式 Vault 切换。单次只激活一个 Vault；每个 Vault 独立保存 security-scoped bookmark，切换继续轮换 session 与 generation，不合并索引、草稿或文件目录。现有单 bookmark 自动迁移到注册表。
 
+2026-09-29 用户追加授权：浏览器访问统一由 `MemoCardService.app` 提供。Mac App 不再创建第二个 loopback listener；设置页“在浏览器中打开”及兼容 URL `memocard://web` 只负责把 `memocard-service://open-web` 交给已安装的菜单栏服务。浏览器统一使用服务维护的多 Vault 列表、会话和端口生命周期；Mac App 原生界面、目录 bookmark 与只读 MCP 保持独立，本轮不增加 App Group 或跨进程状态同步。
+
 ## 1. 目标、范围与默认选择
 
 交付个人使用的 Mac + iPhone 笔记应用：Markdown 文件保存在用户选择的 iCloud Drive 文件夹，支持外部编辑、离线记录、搜索统计，并通过只读 MCP 供 Becoming 项目内脚本读取。
@@ -27,7 +29,7 @@
 | 项目 | 首版决定 |
 | --- | --- |
 | 使用范围 | 单人、单个笔记库；每台设备分别授权同一个目录 |
-| 客户端 | Mac、iPhone、独立桌面 Web（Chrome / Edge）；保留 Mac 本机 Web；PWA 离线安装、Android 后置 |
+| 客户端 | Mac、iPhone、独立桌面 Web（Chrome / Edge）及菜单栏服务本机 Web；PWA 离线安装、Android 后置 |
 | 内容 | Markdown 正文、图片、标签；不强制标题 |
 | 存储 | Markdown 与附件为主数据；SQLite 仅做本机可重建索引 |
 | 同步 | 系统 iCloud Drive；应用处理文件访问、状态、冲突与恢复 |
@@ -57,7 +59,7 @@
 - React、TypeScript、Vite、Tailwind、Base UI/shadcn、Lucide、Recharts 按需引入；编辑用 CodeMirror 6 同区实时排版，列表展示用 react-markdown；Swift YAML 用 Yams；索引用系统 SQLite。
 - 开发环境 Node 24.18.0、pnpm 10.34.1、Xcode 27.0；独立锁文件，不升级 Becoming 依赖。最低 macOS 14、iOS 17，M1 核对实际设备。
 - 运行数据、授权、令牌、构建产物不提交 Git。
-- SwiftUI + WKWebView + 共享 React 页面；本机 Web 从 Mac 应用加载同一份打包页面，经独立的鉴权 HTTP 接口调用 Swift 核心。独立 Web 使用浏览器文件适配器直接读写已授权目录；原生与本机 Web 仍经过 Swift 核心，Node、Becoming 不直接写笔记。
+- SwiftUI + WKWebView + 共享 React 页面；本机 Web 只由菜单栏服务加载同一份打包页面，经独立的鉴权 HTTP 接口调用 Swift 核心。Mac App 的浏览器入口委托菜单栏服务，不创建 HTTP listener。独立 Web 使用浏览器文件适配器直接读写已授权目录；原生与本机 Web 仍经过 Swift 核心，Node、Becoming 不直接写笔记。
 - Vite 相对资源路径；HTML/JS/CSS/字体/图标随应用打包，本地 scheme + hash 路由。停 Vite、断网后也可运行。
 - 桥接请求 version/requestId/operation/params；响应成功 data 或 code/message/retryable 错误。写入带 baseHash；新草稿固定 UUID，重试沿用 ID。
 - 原生 notesChanged/statusChanged 通知前端，前台恢复再次核对。文件与索引不阻塞主线程；结构化传参，不拼接正文为 JS。

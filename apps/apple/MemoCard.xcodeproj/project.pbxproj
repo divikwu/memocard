@@ -106,15 +106,6 @@
 			"isa" = "PBXBuildFile";
 			"productRef" = "0ED418E70B7E28EBD49E9F6E";
 		};
-		"2A3BB2634FA75106EC64640C" = {
-			"isa" = "XCSwiftPackageProductDependency";
-			"package" = "7C13B0698F530FC8AC2CC30F";
-			"productName" = "MemoCardLocalWeb";
-		};
-		"FCD524FBE0B25BC8E7FB6246" = {
-			"isa" = "PBXBuildFile";
-			"productRef" = "2A3BB2634FA75106EC64640C";
-		};
 		"20000EE8DA412F5FA43D9BAD" = {
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
@@ -131,7 +122,6 @@
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"6133FA500AF923E48EB10F26",
-				"FCD524FBE0B25BC8E7FB6246",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -235,7 +225,6 @@
 			);
 			"packageProductDependencies" = (
 				"0ED418E70B7E28EBD49E9F6E",
-				"2A3BB2634FA75106EC64640C",
 			);
 		};
 		"DDB9FDCE44F358F74EA5D245" = {
