@@ -15,7 +15,14 @@ window.webkit = { messageHandlers: { memocard: { postMessage: async message => {
     case "getDrafts": data = { drafts: [] }; break;
     case "listTags": data = { tags: ["工作", "工作/设计", "工作/设计/界面", "生活"].map(name => ({ name, count: 1 })) }; break;
     case "saveNote": Object.assign(note, message.params); data = note; break;
-    case "selectVault": data = { cancelled: true }; break;
+    case "selectVault": return {
+      ok: false,
+      error: {
+        code: "PREVIEW_ONLY",
+        message: "当前页面是 UI 模拟预览，不会打开或读写本地文件夹。请运行 memocard serve，并使用服务打开的页面。",
+        retryable: false,
+      },
+    };
   }
   return { ok: true, data };
 } } } };
