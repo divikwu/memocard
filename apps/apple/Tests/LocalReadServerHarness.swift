@@ -17,7 +17,7 @@ struct LocalReadServerHarness {
             return ["ok": true, "data": ["operation": operation, "echo": params["echo"] ?? ""]]
         }
         let configuration = try await server.start()
-        let bytes = try JSONSerialization.data(withJSONObject: configuration)
+        let bytes = try JSONEncoder().encode(configuration)
         guard FileManager.default.createFile(atPath: configurationURL.path, contents: bytes, attributes: [.posixPermissions: 0o600]) else { exit(3) }
         FileHandle.standardOutput.write(Data("READY\n".utf8))
         while true { try await Task.sleep(for: .seconds(60)) }

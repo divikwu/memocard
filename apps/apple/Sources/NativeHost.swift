@@ -396,13 +396,15 @@ final class NativeHost: ObservableObject {
             service = candidate; startingServer = candidate
             let configuration = try await candidate.start()
             try requireEnableAttempt(generation, vaultGeneration: selectedGeneration)
-            guard let instanceID = configuration["instanceId"] as? String,
-                  configuration["vaultId"] as? String == selectedID else { throw fault("UNAUTHORIZED", "连接配置身份无效") }
+            guard configuration.vaultId == selectedID else { throw fault("UNAUTHORIZED", "连接配置身份无效") }
+            let instanceID = configuration.instanceId
             let root = try validatedMCPDirectory(directory, vaultURL: vaultURL)
             let file = root.appendingPathComponent("connection.json")
             let temporary = root.appendingPathComponent(".connection-\(UUID().uuidString).tmp")
             do {
-                let data = try JSONSerialization.data(withJSONObject: configuration, options: [.sortedKeys])
+                let encoder = JSONEncoder()
+                encoder.outputFormatting = [.sortedKeys]
+                let data = try encoder.encode(configuration)
                 guard FileManager.default.createFile(atPath: temporary.path, contents: data, attributes: [.posixPermissions: 0o600]) else { throw fault("STORE_UNAVAILABLE", "无法写入连接配置") }
                 if FileManager.default.fileExists(atPath: file.path) {
                     guard try file.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink == false else {
