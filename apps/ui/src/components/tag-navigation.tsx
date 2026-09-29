@@ -1,5 +1,5 @@
 import { useRef, useState, useSyncExternalStore } from "react";
-import { ChevronRight, MoreHorizontal, Search, X } from "lucide-react";
+import { ChevronRight, MoreHorizontal, Search, Tag, X } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuBadge, SidebarMenuAction, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton } from "@/components/ui/sidebar";
@@ -78,7 +78,7 @@ function TagBranch({ path, tags, selected, onSelect, preferences, onPin, onIcon,
   return <Item className="w-full min-w-0">
     <Collapsible defaultOpen className="w-full min-w-0">
       <div className="group/tag-row relative w-full min-w-0">
-        <MenuButton asChild isActive={selected === path}><button type="button" aria-label={path} onClick={() => onSelect(path)} title={path} className="w-full translate-x-0 pr-8"><span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">{preferences.icons[path] || "🏷️"}</span><span>{flat ? path : name}</span></button></MenuButton>
+        <MenuButton asChild isActive={selected === path}><button type="button" aria-label={path} onClick={() => onSelect(path)} title={path} className="w-full translate-x-0 pr-8"><span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">{preferences.icons[path] || <Tag className="size-3.5" />}</span><span>{flat ? path : name}</span></button></MenuButton>
         {children.length > 0 && <CollapsibleTrigger asChild><SidebarMenuAction aria-label={`展开或收起标签 ${path}`} className={`md:opacity-0 group-hover/tag-row:opacity-100 group-has-[:focus-visible]/tag-row:opacity-100 left-1.5 bg-sidebar-accent text-sidebar-accent-foreground data-[state=open]:rotate-90 ${nested ? " top-1" : ""}`}><ChevronRight aria-hidden="true" /></SidebarMenuAction></CollapsibleTrigger>}
         <SidebarMenuBadge aria-hidden="true" className={`${menuOpen ? "opacity-0" : ""} group-hover/tag-row:opacity-0 group-focus-within/tag-row:opacity-0 max-md:hidden text-muted-foreground/65 peer-hover/menu-button:text-muted-foreground/65 peer-data-[active=true]/menu-button:text-muted-foreground/65 ${nested ? "top-1" : ""}`}>{tags.find(item => item.name === path)?.count}</SidebarMenuBadge>
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
