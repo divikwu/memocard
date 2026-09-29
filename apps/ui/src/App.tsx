@@ -25,6 +25,8 @@ import { subscribeToOpenNotes } from "./open-note";
 type View = "notes" | "drafts" | "settings";
 type TagCount = { name: string; count: number };
 const getView = (): View => window.location.hash === "#/drafts" ? "drafts" : window.location.hash === "#/settings" ? "settings" : "notes";
+const bridgeErrorCode = (error: unknown): string | null => typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
+const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error === "object" && error !== null && "retryable" in error && typeof error.retryable === "boolean" ? error.retryable : null;
 
 export function App() {
   const [view, setView] = useState<View>(getView);
@@ -48,7 +50,7 @@ export function App() {
   const [working, setWorking] = useState(false);
   const [switchingVault, setSwitchingVault] = useState(false);
   const [paging, setPaging] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<unknown>("");
   const [notice, setNotice] = useState("");
   const [selectionNotice, setSelectionNotice] = useState("");
   const [editing, setEditing] = useState<Draft | null>(null);
@@ -101,7 +103,7 @@ export function App() {
       setNotes(page?.notes ?? []); setCursor(page?.nextCursor ?? null);
       setDrafts(draftResult.drafts); setTags(tagResult.tags); setFolders(folderResult.folders);
       hasLoadedMore.current = false;
-    } catch (cause) { if (current === generation.current) { setError(errorMessage(cause)); setWebConnected(false); connectionLost.current = true; } }
+    } catch (cause) { if (current === generation.current) { setError(cause); setWebConnected(false); connectionLost.current = true; } }
     finally { refreshCount.current--; if (current === generation.current) setLoading(false); }
   }, [debouncedQuery, tag]);
 
@@ -148,7 +150,7 @@ export function App() {
       hasLoadedMore.current = false;
       await refresh(false, true);
     }
-    catch (cause) { setError(errorMessage(cause)); }
+    catch (cause) { setError(cause); }
     finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
   }
 
@@ -161,7 +163,7 @@ export function App() {
       const result = await request<SelectVaultResult>("activateVault", { vaultId });
       if ("reconnectUrl" in result) { reconnectVault(result.reconnectUrl); return; }
       await refresh(false, true);
-    } catch (cause) { setError(errorMessage(cause)); }
+    } catch (cause) { setError(cause); }
     finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
   }, [refresh, status?.vaultId]);
 
@@ -184,7 +186,7 @@ export function App() {
   async function reauthorizeVault() {
     setWorking(true); setError("");
     try { await request("reauthorizeVault"); await refresh(); }
-    catch (cause) { setError(errorMessage(cause)); }
+    catch (cause) { setError(cause); }
     finally { setWorking(false); }
   }
 
@@ -215,7 +217,7 @@ export function App() {
     } catch (cause) {
       if (currentRequest !== editorGeneration.current) return;
       if (pending) showEditor(pending);
-      else setError(errorMessage(cause));
+      else setError(cause);
     } finally {
       if (currentRequest === editorGeneration.current) { setWorking(false); openingLink.current = null; }
     }
@@ -227,7 +229,7 @@ export function App() {
     const unsubscribe = subscribeToOpenNotes(window, (id) => { void openNote(id, true); });
     if (isNative && !readySent.current) {
       readySent.current = true;
-      void request("uiReady").catch((cause: unknown) => setError(errorMessage(cause)));
+      void request("uiReady").catch((cause: unknown) => setError(cause));
     }
     return unsubscribe;
   }, [openNote]);
@@ -254,25 +256,27 @@ export function App() {
       if (generation.current !== current) return;
       setNotes((previous) => [...previous, ...page.notes.filter((note) => !previous.some((item) => item.id === note.id))]); setCursor(page.nextCursor);
       hasLoadedMore.current = true;
-    } catch (cause) { if (generation.current === current) setError(errorMessage(cause)); }
+    } catch (cause) { if (generation.current === current) setError(cause); }
     finally { loadingMore.current = false; setPaging(false); }
   }
 
   async function toggleMCP() {
     setWorking(true); setError("");
     try { await request("setMCPEnabled", { enabled: !environment?.mcpEnabled }); await refresh(); }
-    catch (cause) { setError(errorMessage(cause)); }
+    catch (cause) { setError(cause); }
     finally { setWorking(false); }
   }
 
   async function changeWeb(operation: "openWeb" | "copyWebLink" | "stopWeb") {
     setWorking(true); setError("");
     try { await request(operation); if (operation === "copyWebLink") setNotice("访问链接已复制，请在 2 分钟内打开"); await refresh(); }
-    catch (cause) { setError(errorMessage(cause)); }
+    catch (cause) { setError(cause); }
     finally { setWorking(false); }
   }
 
   const canCreate = Boolean(status?.connected && capabilities.has("saveNote") && (!isLocalWeb || webConnected) && (!isBrowserVault || !loading) && !switchingVault);
+  const localWebReconnectRequired = isLocalWeb && ["BRIDGE_UNAVAILABLE", "WEB_UNAUTHORIZED"].includes(bridgeErrorCode(error) ?? "");
+  const retryableError = bridgeErrorRetryable(error) ?? true;
   const chooseAllowed = capabilities.has("selectVault");
   const createAllowed = chooseAllowed && (environment?.platform === "mac" || capabilities.has("createVault"));
   const needsPermission = isBrowserVault && capabilities.has("reauthorizeVault");
@@ -352,7 +356,7 @@ export function App() {
           {selectionNotice && !switchingVault && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription>{selectionNotice}</AlertDescription></Alert>}
           {unsupportedBrowser && <Alert><Info className="size-4" /><AlertTitle>需要启动 MemoCard 本机服务</AlertTitle><AlertDescription>Safari 和 Codex 通过本机服务读写笔记库；Chrome 和 Edge 也可以直接授权本地文件夹。请先运行 <code>memocard serve</code>，再从服务打开此页面。</AlertDescription></Alert>}
           {needsPermission && <Alert><FolderOpen className="size-4" /><AlertTitle>重新授权笔记文件夹</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>浏览器需要你确认文件夹访问权限，才能继续读取和保存笔记。</p><Button size="sm" onClick={() => void reauthorizeVault()} disabled={working}>重新授权</Button></AlertDescription></Alert>}
-          {error && <Alert variant="destructive"><CircleAlert className="size-4" /><AlertTitle>操作未完成</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>{error}</p><div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!isConnectedClient || loading || switchingVault}>重试</Button></div></AlertDescription></Alert>}
+          {Boolean(error) && <Alert variant="destructive"><CircleAlert className="size-4" /><AlertTitle>{localWebReconnectRequired ? "本机 Web 已断开" : "操作未完成"}</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>{errorMessage(error)}</p><div className="flex flex-wrap gap-2">{localWebReconnectRequired ? <Button asChild variant="outline" size="sm"><a href="memocard-service://open-web">重新打开本机 Web</a></Button> : retryableError && <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}</div></AlertDescription></Alert>}
           {status?.connected && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件尚未就绪</AlertTitle><AlertDescription>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件待读取。` : "部分文件尚未进入索引。"}当前结果可能不完整。</AlertDescription></Alert>}
 
           {view === "settings" ? <div className="space-y-8">

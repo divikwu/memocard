@@ -24,7 +24,7 @@ export class BridgeFailure extends Error {
 
 export function createBridge(transport?: Transport, timeoutMs = 15_000) {
   return async function request<T>(operation: string, params: Record<string, unknown> = {}): Promise<T> {
-    if (!transport) throw new BridgeFailure("NATIVE_REQUIRED", "请通过记忆卡 App 打开本机 Web，连接笔记文件夹。");
+    if (!transport) throw new BridgeFailure("NATIVE_REQUIRED", "请通过 MemoCard 本机服务或 Mac App 打开本机 Web，连接笔记文件夹。");
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       // Invoke within the click's user activation, before any asynchronous initialization.
@@ -91,9 +91,9 @@ export function createWebTransport(fetcher: typeof fetch = fetch): Transport {
     try {
       response = await fetcher(path, { method: "POST", credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) });
     } catch {
-      throw new BridgeFailure("BRIDGE_UNAVAILABLE", "与 Mac 上的记忆卡连接已中断。请保持 App 运行，再重试；编辑中的内容仍保留在此页面。", true);
+      throw new BridgeFailure("BRIDGE_UNAVAILABLE", "此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。");
     }
-    if (response.status === 401 || response.status === 403) throw new BridgeFailure("WEB_UNAUTHORIZED", "本机 Web 的授权已失效，请从 MemoCard 本机宿主重新打开。编辑中的内容仍保留在此页面。");
+    if (response.status === 401 || response.status === 403) throw new BridgeFailure("WEB_UNAUTHORIZED", "此页面的本机 Web 授权已失效。请重新打开本机 Web；编辑中的内容仍保留在此页面。");
     if (!response.ok) throw new BridgeFailure("WEB_UNAVAILABLE", "本机 Web 暂时无法完成操作，请重试。", true);
     try { return await response.json(); }
     catch { throw new BridgeFailure("INVALID_RESPONSE", "无法识别本机 Web 的响应，请从 MemoCard 本机宿主重新打开。"); }

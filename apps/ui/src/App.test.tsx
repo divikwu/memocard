@@ -430,21 +430,24 @@ describe("note workspace", () => {
     expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=other");
   });
 
-  it("retains the web editor when its local host disconnects without creating another note", async () => {
+  it("retains the web editor and offers a fresh service URL when its local host disconnects", async () => {
     bridge.native = false; bridge.web = true;
     render(<App />);
     await screen.findByText(note.body);
     fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
     replaceEditorText("断开时还在编辑的内容");
     const implementation = bridge.request.getMockImplementation()!;
-    bridge.request.mockImplementation((operation, params) => ["getStatus", "saveDraft", "saveNote"].includes(operation) ? Promise.reject(new Error("Mac App 已关闭，请重新连接")) : implementation(operation, params));
+    const disconnected = Object.assign(new Error("此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。"), { code: "BRIDGE_UNAVAILABLE", retryable: false });
+    bridge.request.mockImplementation((operation, params) => ["getStatus", "saveDraft", "saveNote"].includes(operation) ? Promise.reject(disconnected) : implementation(operation, params));
     fireEvent.focus(window);
     await screen.findByText("等待连接本机服务");
+    expect(screen.getByText("本机 Web 已断开")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "重新打开本机 Web", hidden: true }).getAttribute("href")).toBe("memocard-service://open-web");
+    expect(screen.queryByRole("button", { name: "重试", hidden: true })).toBeNull();
     expect((screen.getByRole("button", { name: "新建笔记", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "保存草稿并关闭" }));
-    await waitFor(() => expect(within(screen.getByRole("dialog")).getByText("Mac App 已关闭，请重新连接")).toBeTruthy());
+    await waitFor(() => expect(within(screen.getByRole("dialog")).getByText(disconnected.message)).toBeTruthy());
     expect(readEditorText()).toBe("断开时还在编辑的内容");
-    expect(screen.queryByRole("link", { name: "从 App 重新连接", hidden: true })).toBeNull();
   });
 
   it("checks local web connection without resetting pages already loaded", async () => {

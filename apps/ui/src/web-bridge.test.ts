@@ -45,10 +45,14 @@ describe("local web bridge", () => {
     expect(window.location.hash).toBe("#/notes");
   });
 
-  it("reports stopped Mac app and permits a later retry without claiming a save", async () => {
+  it("reports a stopped local service as requiring a fresh launch URL", async () => {
     const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce(response({ ok: true, data: { connected: true } }));
     const call = createBridge(createWebTransport(fetcher));
-    await expect(call("saveNote", { body: "retain me" })).rejects.toMatchObject({ code: "BRIDGE_UNAVAILABLE", retryable: true });
+    await expect(call("saveNote", { body: "retain me" })).rejects.toMatchObject({
+      code: "BRIDGE_UNAVAILABLE",
+      message: "此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。",
+      retryable: false,
+    });
     await expect(call("getStatus")).resolves.toEqual({ connected: true });
   });
 
