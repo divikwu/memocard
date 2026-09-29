@@ -17,6 +17,7 @@ CLI 仅把 `memocard-service://open-web` 交给指定 App。它不读取 App 容
 ## 笔记库与会话
 
 - 服务可以在未选择笔记库时打开 Web，页面显示未连接状态并提供打开或创建入口。
+- 服务可保存多个已授权笔记库并在侧栏或菜单栏中切换；同一时间只激活一个笔记库。
 - 目录选择由服务中的 `NSOpenPanel` 完成。授权通过 security-scoped bookmark 保存在服务自己的沙盒容器。
 - 取消或无效候选不会替换当前笔记库。
 - 成功切库时 HTTP 端口保持不变，旧 session 与未使用 token 全部失效；发起切换的标签页通过新的 `reconnectUrl` 换取会话。

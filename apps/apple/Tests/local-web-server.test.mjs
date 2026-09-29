@@ -173,6 +173,8 @@ test('requires exact Host and Origin and refuses cross-site requests and duplica
     assert.equal((await call(host.config, { body: envelope({}, { operation }), headers: { Cookie: cookie } })).status, 400);
   }
   assert.equal((await call(host.config, { body: envelope({ create: false }, { operation: 'selectVault' }), headers: { Cookie: cookie } })).status, 200);
+  assert.equal((await call(host.config, { body: envelope({}, { operation: 'listVaults' }), headers: { Cookie: cookie } })).status, 200);
+  assert.equal((await call(host.config, { body: envelope({ vaultId: 'vault-2' }, { operation: 'activateVault' }), headers: { Cookie: cookie } })).status, 200);
   assert.equal((await call(host.config, { headers: { Cookie: cookie } })).status, 200);
 });
 

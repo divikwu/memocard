@@ -393,6 +393,23 @@ describe("note workspace", () => {
     expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=next");
   });
 
+  it("loads registered local Web vaults and activates one without opening a picker", async () => {
+    bridge.native = false; bridge.web = true;
+    const implementation = bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation, params) => {
+      if (operation === "getEnvironment") return Promise.resolve({ platform: "web", phase: "M1", storage: "local-web", mcpEnabled: false, capabilities: ["selectVault", "createVault", "listVaults", "activateVault"] });
+      if (operation === "listVaults") return Promise.resolve({ vaults: [{ vaultId: status.vaultId, name: "当前库", active: true }, { vaultId: "other-vault", name: "另一个库", active: false }] });
+      if (operation === "activateVault") return Promise.resolve({ reconnectUrl: "http://127.0.0.1:5194/#/connect?token=other" });
+      return implementation(operation, params);
+    });
+    render(<App />);
+    await screen.findByText(note.body);
+    await userEvent.click(screen.getByRole("button", { name: `笔记库：${status.vaultName}` }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "另一个库" }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("activateVault", { vaultId: "other-vault" }));
+    expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=other");
+  });
+
   it("retains the web editor when its local host disconnects without creating another note", async () => {
     bridge.native = false; bridge.web = true;
     render(<App />);

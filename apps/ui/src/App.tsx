@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ThemeSettings } from "@/features/theme/ThemeSettings";
 import type { Note, NotePage, VaultStatus } from "@memocard/contracts";
-import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type Environment, type SelectVaultResult } from "./bridge";
+import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
 import { Editor } from "./Editor";
 import { NotePreview } from "./NotePreview";
 import { createId } from "./uuid";
@@ -40,6 +40,7 @@ export function App() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [folders, setFolders] = useState<string[]>([]);
+  const [registeredVaults, setRegisteredVaults] = useState<RegisteredVault[]>([]);
   const [tag, setTag] = useState<string | null>(null);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(isConnectedClient);
@@ -83,10 +84,13 @@ export function App() {
       if (current !== generation.current) return;
       setStatus(nextStatus); setEnvironment(nextEnvironment); setWebConnected(true);
       if (connectionLost.current) { connectionLost.current = false; setError(""); }
+      const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
+      const vaultResult = allowed.has("listVaults") ? await request<{ vaults: RegisteredVault[] }>("listVaults") : { vaults: [] };
+      if (current !== generation.current) return;
+      setRegisteredVaults(vaultResult.vaults);
       if (!nextStatus.connected) { setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null); return; }
       // Poll connection health without collapsing the pages the reader has loaded.
       if (background && hasLoadedMore.current) return;
-      const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
       const [page, draftResult, tagResult, folderResult] = await Promise.all([
         allowed.has("queryNotes") ? request<NotePage>("queryNotes", { query: resetFilters ? "" : debouncedQuery, tags: !resetFilters && tag ? [tag] : [], limit: 30 }) : Promise.resolve(null),
         allowed.has("getDrafts") ? request<{ drafts: Draft[] }>("getDrafts") : Promise.resolve({ drafts: [] }),
@@ -145,6 +149,19 @@ export function App() {
       await refresh(false, true);
     }
     catch (cause) { setError(errorMessage(cause)); }
+    finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
+  }
+
+  async function activateVault(vaultId: string) {
+    if (editingRef.current || selectingVault.current || vaultId === status?.vaultId) return;
+    selectingVault.current = true;
+    setSwitchingVault(true); setWorking(true); setError("");
+    generation.current++; editorGeneration.current++;
+    try {
+      const result = await request<SelectVaultResult>("activateVault", { vaultId });
+      if ("reconnectUrl" in result) { reconnectVault(result.reconnectUrl); return; }
+      await refresh(false, true);
+    } catch (cause) { setError(errorMessage(cause)); }
     finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
   }
 
@@ -287,12 +304,13 @@ export function App() {
     }}
     draftCount={drafts.length}
     connected={Boolean(status?.connected)}
-    vaultId={status?.vaultId} vaultName={status?.vaultName || "记忆卡"} vaultStatusText={vaultStatusText}
+    vaultId={status?.vaultId} vaultName={status?.vaultName || "记忆卡"} registeredVaults={registeredVaults} vaultStatusText={vaultStatusText}
     hasVaultIssue={Boolean(error || needsPermission || (status?.connected && !status.coverage.complete))}
     canCreate={canCreate} canChooseVault={chooseAllowed} canCreateVault={createAllowed}
     needsPermission={needsPermission} working={switchingVault || Boolean(editing)}
     onNavigate={navigate} onNewNote={() => { newNote(); setMenuOpen(false); }}
     onSearch={searchNotes} onSelectVault={(create) => void selectVault(create)}
+    onActivateVault={(vaultId) => void activateVault(vaultId)}
     onReauthorize={() => void reauthorizeVault()}
   />;
 

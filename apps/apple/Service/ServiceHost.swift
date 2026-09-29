@@ -3,6 +3,12 @@ import Foundation
 import MemoCardCore
 import MemoCardLocalWeb
 
+private struct StoredVault: Codable {
+    let id: String
+    let name: String
+    let bookmark: Data
+}
+
 @MainActor
 final class ServiceHost {
     private let defaults = UserDefaults.standard
@@ -17,17 +23,22 @@ final class ServiceHost {
     private var webAuthorizationEpoch = 0
     private var selectingVault = false
     private var restoreTask: Task<Void, Never>?
+    private var storedVaults: [StoredVault]
     var stateChanged: (() -> Void)?
 
     init() throws {
         localDataURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("MemoCard", isDirectory: true)
         store = try VaultStore(localDataURL: localDataURL)
+        storedVaults = (defaults.data(forKey: "vaultBookmarks").flatMap { try? JSONDecoder().decode([StoredVault].self, from: $0) }) ?? []
         restoreTask = Task { [weak self] in await self?.restoreVault() }
     }
 
     var currentVaultName: String { vaultURL?.lastPathComponent ?? "未选择笔记库" }
     var webRunning: Bool { webServer != nil }
+    var registeredVaults: [(id: String, name: String, active: Bool)] {
+        storedVaults.map { ($0.id, $0.name, $0.id == vaultID) }
+    }
 
     func waitUntilRestored() async { await restoreTask?.value }
 
@@ -68,8 +79,15 @@ final class ServiceHost {
         _ = try await selectVault(create: create, reconnect: false)
     }
 
+    func chooseRegisteredVault(id: String) async throws {
+        _ = try await activateVault(id: id, reconnect: false)
+    }
+
     private func restoreVault() async {
-        guard let bookmark = defaults.data(forKey: "vaultBookmark") else { return }
+        let activeID = defaults.string(forKey: "activeVaultID")
+        let record = activeID.flatMap { id in storedVaults.first { $0.id == id } }
+        let bookmark = record?.bookmark ?? defaults.data(forKey: "vaultBookmark")
+        guard let bookmark else { return }
         var restored: URL?
         do {
             let url = try restore(bookmark)
@@ -84,6 +102,7 @@ final class ServiceHost {
             vaultGeneration = generation
             vaultURL = url
             vaultID = id
+            rememberVault(id: id, name: url.lastPathComponent, bookmark: bookmark)
             restored = nil
             watch(url)
             await previous.close()
@@ -91,6 +110,7 @@ final class ServiceHost {
         } catch {
             restored?.stopAccessingSecurityScopedResource()
             defaults.removeObject(forKey: "vaultBookmark")
+            defaults.removeObject(forKey: "activeVaultID")
             stateChanged?()
         }
     }
@@ -125,7 +145,7 @@ final class ServiceHost {
     }
 
     private let webOperations: Set<String> = [
-        "getEnvironment", "getStatus", "selectVault", "queryNotes", "getNote", "listTags", "listFolders",
+        "getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "listTags", "listFolders",
         "resolveLink", "getDrafts", "saveDraft", "saveNote", "importAttachment",
     ]
 
@@ -142,10 +162,17 @@ final class ServiceHost {
                 let create = params["create"] as? Bool ?? false
                 return ["ok": true, "data": try await selectVault(create: create, reconnect: true)]
             }
+            if operation == "listVaults" {
+                return ["ok": true, "data": ["vaults": registeredVaults.map { ["vaultId": $0.id, "name": $0.name, "active": $0.active] }]]
+            }
+            if operation == "activateVault" {
+                guard let id = params["vaultId"] as? String else { throw fault("INVALID_ARGUMENT", "请选择笔记库") }
+                return ["ok": true, "data": try await activateVault(id: id, reconnect: true)]
+            }
             if operation == "getEnvironment" {
                 return ["ok": true, "data": [
                     "platform": "web", "phase": "M1", "storage": "local-web", "mcpEnabled": false,
-                    "webEnabled": true, "capabilities": ["selectVault", "createVault", "pickImage", "openExternal"],
+                    "webEnabled": true, "capabilities": ["selectVault", "createVault", "listVaults", "activateVault", "pickImage", "openExternal"],
                 ]]
             }
             let selectedStore = store
@@ -154,7 +181,7 @@ final class ServiceHost {
             if operation == "getStatus" {
                 var value = try await status(of: selectedStore, binding: vaultURL == nil ? nil : generation)
                 value["capabilities"] = (value["capabilities"] as? [String] ?? []).filter { webOperations.contains($0) }
-                    + ["selectVault", "createVault", "pickImage", "openExternal"]
+                    + ["selectVault", "createVault", "listVaults", "activateVault", "pickImage", "openExternal"]
                 data = value
             } else {
                 let encoded = try JSONSerialization.data(withJSONObject: params)
@@ -199,25 +226,14 @@ final class ServiceHost {
             let candidateStatus = try await status(of: candidate, binding: candidateGeneration)
             guard let id = candidateStatus["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
 
-            let reconnectURL: URL?
-            if let webServer {
-                if reconnect {
-                    reconnectURL = try await webServer.makeLaunchURL(revokingSessions: true)
-                } else {
-                    await webServer.revokeSessions()
-                    reconnectURL = nil
-                }
-                webAuthorizationEpoch &+= 1
-            } else {
-                reconnectURL = nil
-            }
+            let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
             let previousStore = store
             let previousURL = vaultURL
             store = candidate
             vaultGeneration = candidateGeneration
             vaultURL = selected
             vaultID = id
-            defaults.set(bookmark, forKey: "vaultBookmark")
+            rememberVault(id: id, name: selected.lastPathComponent, bookmark: bookmark)
             watch(selected)
             await previousStore.close()
             previousURL?.stopAccessingSecurityScopedResource()
@@ -229,6 +245,60 @@ final class ServiceHost {
             selected.stopAccessingSecurityScopedResource()
             throw error
         }
+    }
+
+    private func activateVault(id: String, reconnect: Bool) async throws -> [String: Any] {
+        guard id != vaultID else { return ["vaultId": id] }
+        guard !selectingVault else { throw fault("BUSY", "请先完成当前笔记库选择") }
+        guard let record = storedVaults.first(where: { $0.id == id }) else { throw fault("NOT_FOUND", "找不到这个笔记库") }
+        selectingVault = true
+        defer { selectingVault = false }
+
+        let selected = try restore(record.bookmark)
+        let candidate: VaultStore
+        do { candidate = try VaultStore(localDataURL: localDataURL) }
+        catch { selected.stopAccessingSecurityScopedResource(); throw error }
+        let candidateGeneration = UUID()
+        do {
+            try await candidate.open(url: selected, create: false, binding: candidateGeneration)
+            let candidateStatus = try await status(of: candidate, binding: candidateGeneration)
+            guard candidateStatus["vaultId"] as? String == id else { throw fault("UNAUTHORIZED", "笔记库身份已经变化，请重新打开文件夹") }
+            let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
+            let previousStore = store
+            let previousURL = vaultURL
+            store = candidate
+            vaultGeneration = candidateGeneration
+            vaultURL = selected
+            vaultID = id
+            defaults.set(id, forKey: "activeVaultID")
+            watch(selected)
+            await previousStore.close()
+            previousURL?.stopAccessingSecurityScopedResource()
+            stateChanged?()
+            if let reconnectURL { return ["reconnectUrl": reconnectURL.absoluteString] }
+            return ["vaultId": id]
+        } catch {
+            await candidate.close()
+            selected.stopAccessingSecurityScopedResource()
+            throw error
+        }
+    }
+
+    private func rotateAuthorization(reconnect: Bool) async throws -> URL? {
+        guard let webServer else { return nil }
+        let reconnectURL: URL?
+        if reconnect { reconnectURL = try await webServer.makeLaunchURL(revokingSessions: true) }
+        else { await webServer.revokeSessions(); reconnectURL = nil }
+        webAuthorizationEpoch &+= 1
+        return reconnectURL
+    }
+
+    private func rememberVault(id: String, name: String, bookmark: Data) {
+        storedVaults.removeAll { $0.id == id }
+        storedVaults.append(StoredVault(id: id, name: name, bookmark: bookmark))
+        if let data = try? JSONEncoder().encode(storedVaults) { defaults.set(data, forKey: "vaultBookmarks") }
+        defaults.set(id, forKey: "activeVaultID")
+        defaults.removeObject(forKey: "vaultBookmark")
     }
 
     private func pickVault(create: Bool) async throws -> URL {

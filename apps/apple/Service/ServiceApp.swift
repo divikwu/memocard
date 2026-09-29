@@ -52,6 +52,13 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         webStatus.isEnabled = false
         menu.addItem(webStatus)
         menu.addItem(.separator())
+        for vault in host.registeredVaults {
+            let entry = item(vault.name, #selector(activateVault(_:)), enabled: !vault.active)
+            entry.state = vault.active ? .on : .off
+            entry.representedObject = vault.id
+            menu.addItem(entry)
+        }
+        if !host.registeredVaults.isEmpty { menu.addItem(.separator()) }
         menu.addItem(item(host.currentVaultName == "未选择笔记库" ? "打开已有笔记库…" : "切换笔记库…", #selector(selectVault)))
         menu.addItem(item("创建新笔记库…", #selector(createVault)))
         menu.addItem(.separator())
@@ -85,6 +92,10 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     @objc private func selectVault() { run { try await self.host.chooseVault(create: false) } }
+    @objc private func activateVault(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        run { try await self.host.chooseRegisteredVault(id: id) }
+    }
     @objc private func createVault() { run { try await self.host.chooseVault(create: true) } }
     @objc private func openWeb() { run { try await self.host.openWeb() } }
     @objc private func copyLink() { run { try await self.host.copyWebLink() } }
