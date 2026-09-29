@@ -1,12 +1,13 @@
+import { imageSource, openVaultLink } from "./vault-links";
 import { forwardRef, useLayoutEffect, useRef } from "react";
 import { Annotation, Compartment, EditorState, StateEffect, StateField, type Range } from "@codemirror/state";
 import { Decoration, EditorView, keymap, placeholder, WidgetType, type DecorationSet } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { syntaxTree } from "@codemirror/language";
+import { ensureSyntaxTree, syntaxTree } from "@codemirror/language";
 import { decodeString } from "micromark-util-decode-string";
 import { request } from "./bridge";
-import { assetUrl, externalUrl } from "./urls";
+import { externalUrl, internalTarget } from "./urls";
 import { bindNoteImage } from "./note-image";
 
 type Props = {
@@ -50,7 +51,8 @@ function liveDecorations(state: EditorState, notePath: string, focused: boolean)
   const hide = (from: number, to: number) => {
     if (to > from && state.doc.lineAt(from).number === state.doc.lineAt(to).number) ranges.push(Decoration.replace({}).range(from, to));
   };
-  syntaxTree(state).iterate({ enter(reference) {
+  const tree = ensureSyntaxTree(state, Math.min(state.doc.length, 10000), 50) ?? syntaxTree(state);
+  tree.iterate({ enter(reference) {
     const node = reference.node;
     const { from, to, name } = node;
     const editing = active(from, to);
@@ -76,14 +78,14 @@ function liveDecorations(state: EditorState, notePath: string, focused: boolean)
       const closing = node.getChildren("LinkMark").find((child) => state.doc.sliceString(child.from, child.to) === "]");
       if (!closing) return false;
       if (name === "Image") {
-        const src = assetUrl(raw, notePath);
+        const src = imageSource(raw, notePath);
         if (!src) { mark(from, to, "mc-live-blocked"); return false; }
         const widget = new ImagePreview(src, state.doc.sliceString(from + 2, closing.from));
         if (!editing && state.doc.lineAt(from).number === state.doc.lineAt(to).number) {
           ranges.push(Decoration.replace({ widget }).range(from, to));
         } else ranges.push(Decoration.widget({ widget, side: 1 }).range(to));
       } else {
-        const href = externalUrl(raw);
+        const href = externalUrl(raw) ?? (internalTarget(raw) ? `memocard-internal:${encodeURIComponent(raw)}` : null);
         if (href) ranges.push(Decoration.mark({
           class: "mc-live-link", tagName: "a", attributes: { href, "data-memocard-link": href, title: "⌘ / Ctrl + 单击打开链接", tabindex: "-1" },
         }).range(from + 1, closing.from));
@@ -96,6 +98,22 @@ function liveDecorations(state: EditorState, notePath: string, focused: boolean)
       hide(from, to + (state.doc.sliceString(to, to + 1) === " " ? 1 : 0));
     }
   } });
+  for (const match of state.doc.toString().matchAll(/(!?)\[\[([^\]\n]+)\]\]/g)) {
+    const from = match.index!, to = from + match[0].length;
+    let node = tree.resolveInner(from, 1);
+    let code = false;
+    while (node.parent) { if (["InlineCode", "FencedCode", "CodeBlock", "Link", "Image"].includes(node.name)) code = true; node = node.parent; }
+    if (code) continue;
+    const [target, label] = match[2].split("|");
+    if (match[1]) {
+      if (!/\.(png|jpe?g|webp|gif|heic|heif)$/i.test(target)) continue;
+      const src = imageSource(target, notePath, true);
+      if (!src) continue;
+      const widget = new ImagePreview(src, label ?? target);
+      if (!active(from, to)) ranges.push(Decoration.replace({ widget }).range(from, to));
+      else ranges.push(Decoration.widget({ widget, side: 1 }).range(to));
+    } else ranges.push(Decoration.mark({ class: "mc-live-link", tagName: "a", attributes: { "data-memocard-wiki": target, title: "⌘ / Ctrl + 单击打开笔记", tabindex: "-1" } }).range(from, to));
+  }
   return Decoration.set(ranges, true);
 }
 
@@ -181,10 +199,13 @@ export const LiveMarkdownEditor = forwardRef<HTMLDivElement, Props>(function Liv
               return false;
             },
             click: (event) => {
-              const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[data-memocard-link]") : null;
+              const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>("a[data-memocard-link], a[data-memocard-wiki]") : null;
               if (!link) return false;
               event.preventDefault();
-              const url = externalUrl(link.dataset.memocardLink ?? "");
+              const raw = link.dataset.memocardLink ?? "";
+              const internal = link.dataset.memocardWiki ?? (raw.startsWith("memocard-internal:") ? decodeURIComponent(raw.slice("memocard-internal:".length)) : undefined);
+              if (internal !== undefined && (event.metaKey || event.ctrlKey)) void openVaultLink(internal, callbacks.current.notePath, link.dataset.memocardWiki !== undefined).catch((error: unknown) => callbacks.current.onError(error instanceof Error ? error.message : "无法打开笔记链接。"));
+              const url = externalUrl(raw);
               if (url && (event.metaKey || event.ctrlKey)) void request("openExternal", { url }).catch(() => callbacks.current.onError("无法打开链接，请在 App 中重试。"));
               return false;
             },

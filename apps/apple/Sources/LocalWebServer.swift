@@ -20,7 +20,7 @@ final class LocalWebServer: @unchecked Sendable {
     private let maximumResponseBytes = 64 * 1024 * 1024
     private let maximumHeaderBytes = 16 * 1024
     private final class StartState: @unchecked Sendable { var resumed = false }
-    private static let operations: Set<String> = ["getEnvironment", "getStatus", "queryNotes", "getNote", "listTags", "listFolders", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
+    private static let operations: Set<String> = ["getEnvironment", "getStatus", "queryNotes", "getNote", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
 
     init(resourceRoot: URL, handler: @escaping Handler, assetHandler: @escaping AssetHandler) {
         self.resourceRoot = resourceRoot.standardizedFileURL.resolvingSymlinksInPath()
@@ -219,7 +219,7 @@ final class LocalWebServer: @unchecked Sendable {
                 }
                 return
             }
-            if request.method == "GET", request.path.hasPrefix("/api/assets/assets/") {
+            if request.method == "GET", request.path.hasPrefix("/api/assets/") {
                 let path = String(request.path.dropFirst("/api/assets/".count))
                 guard let mime = Self.imageMIME(URL(fileURLWithPath: path).pathExtension) else { reply(id, status: 404); return }
                 Task { [self] in

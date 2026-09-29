@@ -296,7 +296,7 @@ final class NativeHost: ObservableObject {
     }
 
     #if os(macOS)
-    private let webOperations: Set<String> = ["getEnvironment", "getStatus", "queryNotes", "getNote", "listTags", "listFolders", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
+    private let webOperations: Set<String> = ["getEnvironment", "getStatus", "queryNotes", "getNote", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
 
     private func stopWeb() {
         // Rotate before yielding, so in-flight requests cannot access a newly selected vault.

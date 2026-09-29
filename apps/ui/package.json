@@ -12,7 +12,6 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@base-ui/react": "1.7.0",
     "@codemirror/commands": "6.11.1",
     "@codemirror/lang-markdown": "6.5.2",
     "@codemirror/language": "6.12.4",
@@ -48,6 +47,7 @@
     "clsx": "2.1.1",
     "lucide-react": "^1.31.0",
     "micromark-util-decode-string": "2.0.1",
+    "radix-ui": "^1.6.7",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",

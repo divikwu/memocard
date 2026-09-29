@@ -2,6 +2,9 @@
 
 个人使用的 Mac / iPhone / 独立 Web Markdown 笔记应用，也保留依赖 Mac 的本机 Web。正文与图片保存在用户授权的文件夹，目标是用 iCloud Drive 同步；Mac 提供本机只读 MCP。
 
+
+现已支持直接打开 Obsidian / 普通 Markdown 文件夹：无 YAML 的笔记、原目录、库内图片、正文标签和基础 Wikilink。仅改正文时保留原属性与注释。兼容范围和验收边界见 [Obsidian 共用说明](docs/OBSIDIAN_COMPATIBILITY.md)。新建库采用普通 Markdown，旧 MemoCard 库继续兼容。
+
 **当前是 M0/M1 平台验证版，不是已完成的首版。** 真实 iPhone 安装和双端 iCloud 同步关卡通过前，不启动依赖它的数据功能阶段。用户另行授权的 UI 重设计与本机外观设置已落地。当前能创建/打开笔记库、输入 Markdown、导入图片、保存草稿、搜索和通过 MCP 读取。SQLite、冲突解决、回收站、统计、备份恢复和 Becoming 项目脚本尚未交付。
 
 界面采用 **shadcn/ui new-york-v4/sidebar-10 原模板结构，Base UI + Tailwind CSS 4**。白色内容区、浅灰侧栏和紧凑控件；默认保留 Becoming 的浅色、Blue、Neutral、Geist、10px 选项，设置页支持浅深色/系统模式、8 种强调色、2 种中性色、27 种标题/正文字体选项及7档圆角，独立保存在当前设备。左上角菜单管理笔记库，侧栏包含搜索、笔记、草稿与可折叠标签；桌面可收起侧栏，手机使用抽屉导航。字体随应用打包，中文使用系统字体回退。`components.json` 与 `src/components/ui` 保存可维护的组件源码，本次不修改 Becoming 工程。

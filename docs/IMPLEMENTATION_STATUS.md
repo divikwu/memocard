@@ -267,3 +267,15 @@ Mac Apple Development 签名构建及 iOS Simulator 构建通过。最新模拟�
 验收：168 项前端测试、26 项 Swift 测试、8 项本机 Web 测试通过；lint 与 Mac 构建通过。独立测试库新增 notes/目录验收/项目/空目录 和一条合成笔记，原生 App 实测展开三级目录、显示空目录、点击项目后仅返回该目录的 1 条笔记。证据 build/verification/ui-rebuild/folders-native.png。未进行 iPhone 真机验证。
 
 补充验证：Mac 与 iOS Simulator 最终构建通过。Chrome 本机 Web 实测展开至空目录、空目录返回空列表、点击项目返回 1 条笔记；最终侧栏回归 14 项通过。重启后本机服务地址为 http://127.0.0.1:55715，已通过 App 在 Chrome 打开授权会话；旧 55636 地址已失效。浏览器截图 folders-web.png。
+
+## 2026-09-29：Obsidian 基础文件共用
+
+按用户“让两个应用共用同一份笔记”“制定目标，开始实现”的授权完成基础兼容层。新建/普通文件夹使用 manifest v2；原 manifest v1 保持兼容。普通库取消固定 notes/assets 目录和笔记 UUID/日期字段要求；仅编辑正文保留原 YAML 前缀；本机身份映射、正文标签、基础 Wikilink/Markdown 内链和库内图片已接入 Swift、浏览器文件核心与共享界面。
+
+最终 `pnpm verify` exit 0：UI 182、MCP 16、Swift 30、TCP 8、HTTP 8，共 **244 项测试通过**；TypeScript、ESLint、生产构建通过。`pnpm build:mac` 与 `pnpm build:ios` 均 BUILD SUCCEEDED，分别为本机 ad-hoc Debug 与 iOS Simulator 构建。现有大 JS chunk 提示仍存在，不是检查失败。
+
+隔离本机 Web 使用生产 Swift 核心和打包 UI 验证合成 Obsidian 格式库：显示两条笔记、任意目录、正文/属性标签；图片解码成功；正文保存后磁盘内容更新，自定义 id、aliases、注释保持原样，草稿清零；浏览器 warn/error 为空。UI 内链发现 Web 模式没有订阅打开事件，已修复并增加 Web/browser 两种模式回归测试。
+
+日志：`/tmp/memocard-obsidian-final-verify2.log`、`/tmp/memocard-obsidian-final-mac.log`、`/tmp/memocard-obsidian-final-ios.log`。合成库：`build/verification/obsidian-vault`。
+
+独立 Chrome 的目录选择器此次未完成选择，已取消；没有把本机 HTTP 验证替代独立浏览器目录授权验证。未接触用户真实笔记，未在 Obsidian 应用中完成双向操作，未完成 iPhone/iCloud 同步。基础兼容不等于完整 Obsidian 功能兼容，也不代表 M2–M5 完成。详见 [兼容说明](OBSIDIAN_COMPATIBILITY.md)。

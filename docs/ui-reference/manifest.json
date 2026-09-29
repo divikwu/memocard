@@ -9,6 +9,19 @@
     "card.json": "c7ebaa49ba2a0613838558f3892c5007523c2dc26d6b36a244145d454a796106",
     "sidebar-10.json": "2b7f0145d234399727edb2fc0933275b80a0c3a3056ac685344356e766af413d",
     "button.json": "4b8d7d848742727973c1b088af8d15f0b628272a1316f2d2fa344e73ddff9e9c",
-    "select.json": "ca3189ea8101a04f144b6d0f0e7330841639bfa5f4d57e7cca0894d39b30817b"
-  }
+    "select.json": "ca3189ea8101a04f144b6d0f0e7330841639bfa5f4d57e7cca0894d39b30817b",
+    "sheet.json": "bdf118300491675f05a9181af491217ba690929338aefd108437c2b07d25432f",
+    "tooltip.json": "1b7b452b34beab05b22bd653963abd1c88ebd8e9ebcc89dcaebf4ac4938c929e",
+    "popover.json": "78793171b536e0c335ad51b1313619e533566b514d3503ef60c94dc9d3ccfbef",
+    "collapsible.json": "fdc6666e9c728d7e731b0e4d67e11db81020aff47408c259549fc1aefcc8e3e7",
+    "separator.json": "4242a9fe839cae9083acff1280b7cccfda10e97bbc83283aed12d2d12bebdc6a",
+    "skeleton.json": "1ed4d99f9d632d9697a054eefcd19932abd68cef7808407986f6e14da401edf7",
+    "textarea.json": "2367d3964326b19ca2355f872d08153c86932abd4b103b5fd02039a3f2cb8ae5",
+    "badge.json": "0f988b37cf1c56e7ecc83b1dcf24c9af4e73ce4341da5caf2c9d9b07a551319b",
+    "switch.json": "cc526c3a4827be315be746355a988e22dacc99d663ed31924fd30c2507cdc005",
+    "alert.json": "413c97869ec0e53efa4a37f590833bcf4a7a57255f5a2e909c6bb5bac7b4570d",
+    "tabs.json": "49320e6dcf56570753bb14ed3f5d66acf07d12e183c0e9024466995b25be5b1d",
+    "breadcrumb.json": "18043f281e20e08fa017a3bba2b2dec462ebba2b0ebf9685b34225cf7b253bfa"
+  },
+  "supplementedAt": "2026-09-29"
 }

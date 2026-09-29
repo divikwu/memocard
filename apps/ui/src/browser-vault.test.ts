@@ -81,6 +81,9 @@ class TestStorage implements BrowserVaultStorage {
   selection?: StoredSelection;
   registry: StoredSelection[] = [];
   records = new Map<string, BrowserDraft>();
+  identitiesByScope = new Map<string, import("./browser-files").FileIdentity[]>();
+  async identities(scope: string) { return this.identitiesByScope.get(scope) ?? []; }
+  async saveIdentities(scope: string, items: import("./browser-files").FileIdentity[]) { this.identitiesByScope.set(scope, items); }
   failWrites = false;
   async loadSelection() { return this.selection; }
   async remember(handle: BrowserDirectoryHandle, id: string) {
@@ -157,7 +160,7 @@ describe("independent browser vault", () => {
     expect((await call<VaultStatus>(restored.core, "getStatus")).vaultName).toBe("new vault");
     expect(restored.pickerCalls()).toBe(0);
     const metadata = await (await root.getDirectoryHandle(".memocard")).getFileHandle("vault.json");
-    expect(JSON.parse(metadata.text).formatVersion).toBe(1);
+    expect(JSON.parse(metadata.text).formatVersion).toBe(2);
   });
 
   it("rejects creating in nonempty folders and preserves the previous selection on cancel or invalid selection", async () => {
@@ -438,4 +441,84 @@ it("keeps the draft when a destination folder disappears and never falls back to
   const result = await call<{drafts: BrowserDraft[]}>(h.core, "getDrafts");
   expect(result.drafts[0]?.body).toBe("保留草稿");
   await expect(call(h.core, "saveNote", { ...save, relativePath: "notes/../outside.md" })).rejects.toMatchObject({ code: "PATH_NOT_ALLOWED" });
+});
+
+describe("Obsidian shared folders", () => {
+  it("opens plain files, preserves custom properties byte-for-byte, follows rename and rejects stale writes", async () => {
+    const root = new TestDirectory("Obsidian");
+    const header = '---\r\nid: my-own-id\r\ncreatedAt: yesterday\r\n# Keep this comment\r\naliases: [Example]\r\ntags: [work]\r\n---\r\n';
+    const file = new TestFile("Example.md", header + "Original #inline/topic\r\n");
+    root.children.set(file.name, file);
+    const plain = new TestFile("Plain.md", "No properties"); root.children.set(plain.name, plain);
+    const h = harness(root); await call(h.core, "selectVault");
+    const page = await call<NotePage>(h.core, "queryNotes");
+    expect(page.coverage.complete).toBe(true);
+    const note = page.notes.find(note => note.relativePath === "Example.md")!;
+    expect(note.tags).toEqual(["work", "inline/topic"]);
+    expect(file.text).toBe(header + "Original #inline/topic\r\n");
+    const saved = await call<Note>(h.core, "saveNote", { id: note.id, body: "Updated #inline/topic\r\n", tags: note.tags, baseHash: note.contentHash });
+    expect(file.text).toBe(header + "Updated #inline/topic\r\n");
+    const folder = await root.getDirectoryHandle("Projects", { create: true });
+    root.children.delete(file.name); folder.children.set("Renamed.md", file);
+    const reopened = harness(root, h.storage); await call(reopened.core, "selectVault");
+    const moved = await call<Note>(reopened.core, "getNote", { id: note.id });
+    expect(moved.relativePath).toBe("Projects/Renamed.md");
+    file.bytes = bytes(header + "External edit");
+    await expect(call(reopened.core, "saveNote", { id: note.id, body: "Stale", tags: note.tags, baseHash: saved.contentHash })).rejects.toMatchObject({ code: "HASH_CONFLICT" });
+    expect(file.text).toBe(header + "External edit");
+    const plainNote = page.notes.find(note => note.relativePath === "Plain.md")!;
+    await call(reopened.core, "saveNote", { id: plainNote.id, body: "Still plain", tags: [], baseHash: plainNote.contentHash });
+    expect(plain.text).toBe("Still plain");
+  });
+
+  it("resolves root, relative and short-name links, rejecting ambiguous and private targets", async () => {
+    const root = new TestDirectory("Obsidian");
+    const folder = await root.getDirectoryHandle("Projects", { create: true });
+    folder.children.set("Target.md", new TestFile("Target.md", "Target"));
+    folder.children.set("pic.png", new TestFile("pic.png", "image"));
+    const h = harness(root); await call(h.core, "selectVault");
+    expect(await call(h.core, "resolveLink", { target: "Target", sourcePath: "Home.md", wiki: true })).toMatchObject({ kind: "note", path: "Projects/Target.md" });
+    expect(await call(h.core, "resolveLink", { target: "pic.png", sourcePath: "Projects/Target.md", wiki: false })).toEqual({ kind: "image", path: "Projects/pic.png" });
+    const second = await root.getDirectoryHandle("Other", { create: true }); second.children.set("Target.md", new TestFile("Target.md", "Other"));
+    await expect(call(h.core, "resolveLink", { target: "Target", sourcePath: "Home.md", wiki: true })).rejects.toMatchObject({ code: "AMBIGUOUS_LINK" });
+    await expect(h.core.asset(".obsidian/secret.png")).rejects.toMatchObject({ code: "PATH_NOT_ALLOWED" });
+    await expect(call(h.core, "resolveLink", { target: "../../secret.png", sourcePath: "Home.md", wiki: true })).rejects.toMatchObject({ code: "LINK_NOT_FOUND" });
+  });
+});
+
+it("creates readable plain Markdown and serializes simultaneous first scans", async () => {
+  const root = new TestDirectory("shared"), h = harness(root);
+  root.children.set("A.md", new TestFile("A.md", "same"));
+  root.children.set("B.md", new TestFile("B.md", "same"));
+  await call(h.core, "selectVault");
+  const [a, b] = await Promise.all([call<NotePage>(h.core, "queryNotes"), call<NotePage>(h.core, "queryNotes")]);
+  expect(a.notes.map(note => note.id)).toEqual(b.notes.map(note => note.id));
+  expect(new Set(a.notes.map(note => note.id)).size).toBe(2);
+  const note = await call<Note>(h.core, "saveNote", { id: secondId, body: "# 我的记录\n\n正文", tags: [], baseHash: null });
+  expect(note.relativePath).toBe(`我的记录-${secondId.slice(0, 8)}.md`);
+  expect((await root.getFileHandle(note.relativePath)).text).toBe("# 我的记录\n\n正文");
+});
+
+it("changes only the YAML tags property and leaves inline tags in the body", async () => {
+  const root = new TestDirectory("shared"), h = harness(root);
+  const file = new TestFile("A.md", '---\r\n# header\r\ntags: [old]\r\ncustom: "keep spelling"\r\n---\r\nBody #inline');
+  root.children.set("A.md", file);
+  await call(h.core, "selectVault");
+  const note = (await call<NotePage>(h.core, "queryNotes")).notes[0];
+  const saved = await call<Note>(h.core, "saveNote", { id: note.id, body: note.body, tags: ["new", "inline"], baseHash: note.contentHash });
+  expect(file.text).toBe('---\r\n# header\r\ntags: ["new"]\r\ncustom: "keep spelling"\r\n---\r\nBody #inline');
+  expect(saved.tags).toEqual(["new", "inline"]);
+});
+
+it("includes descendants in tag queries and counts each note once per ancestor", async () => {
+  const h = await open();
+  await call(h.core, "saveNote", { id: secondId, body: "Nested", tags: ["工作", "工作/项目/设计", "工作/项目/开发"], baseHash: null });
+  await call(h.core, "saveNote", { id: createId(), body: "Boundary", tags: ["工作室"], baseHash: null });
+  for (const tag of ["工作", "工作/项目", "工作/项目/设计"]) {
+    const page = await call<NotePage>(h.core, "queryNotes", { tags: [tag] });
+    expect(page.notes.map(note => note.id)).toEqual([secondId]);
+  }
+  const result = await call<{ tags: { name: string; count: number }[] }>(h.core, "listTags");
+  expect(result.tags).toContainEqual({ name: "工作/项目", count: 1 });
+  expect(result.tags).toContainEqual({ name: "工作", count: 1 });
 });

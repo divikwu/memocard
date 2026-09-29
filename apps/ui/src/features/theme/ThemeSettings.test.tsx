@@ -29,6 +29,9 @@ beforeEach(() => {
   })));
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   HTMLElement.prototype.scrollIntoView = vi.fn();
+  HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+  HTMLElement.prototype.setPointerCapture = vi.fn();
+  HTMLElement.prototype.releasePointerCapture = vi.fn();
 });
 
 afterEach(() => {
@@ -38,12 +41,12 @@ afterEach(() => {
 });
 
 describe("device appearance", () => {
-  it("starts with Becoming's light, blue, neutral and 10px defaults", () => {
+  it("starts with sidebar-10 light, mono, neutral and 10px defaults", () => {
     dark = true;
     mountSettings();
     const root = document.documentElement;
     expect(root.classList.contains("light")).toBe(true);
-    expect(root.dataset.palette).toBe("blue");
+    expect(root.dataset.palette).toBe("mono");
     expect(root.dataset.neutralPalette).toBe("neutral");
     expect(root.dataset.radius).toBe("lg");
     expect(root.style.getPropertyValue("--app-font-body")).toContain("Geist Variable");
@@ -79,7 +82,7 @@ describe("device appearance", () => {
     await chooseSetting(user, "强调色", "mono");
     await user.click(screen.getByRole("button", { name: "恢复默认" }));
     expect(document.documentElement.classList.contains("light")).toBe(true);
-    expect(document.documentElement.dataset.palette).toBe("blue");
+    expect(document.documentElement.dataset.palette).toBe("mono");
     expect(JSON.parse(localStorage.getItem(APPEARANCE_STORAGE_KEY)!)).toEqual(DEFAULT_APPEARANCE);
   });
 
@@ -87,7 +90,7 @@ describe("device appearance", () => {
     localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ palette: "unknown", radius: "-1", bodyFont: "missing", theme: "dark" }));
     mountSettings();
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    expect(document.documentElement.dataset.palette).toBe("blue");
+    expect(document.documentElement.dataset.palette).toBe("mono");
     expect(document.documentElement.dataset.radius).toBe("lg");
     expect(document.documentElement.dataset.bodyFont).toBe("geist");
   });

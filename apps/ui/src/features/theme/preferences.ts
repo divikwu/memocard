@@ -18,9 +18,9 @@ export type Appearance = {
   radius: RadiusChoice;
 };
 
-// Match Becoming's application defaults, including its explicit light-mode override.
+// Official sidebar-10 neutral defaults; existing device preferences remain valid.
 export const DEFAULT_APPEARANCE: Appearance = {
-  theme: "light", palette: "blue", neutralPalette: "neutral",
+  theme: "light", palette: "mono", neutralPalette: "neutral",
   headingFont: "geist", bodyFont: "geist", radius: "lg",
 };
 export const APPEARANCE_STORAGE_KEY = "memocard-appearance-v1";

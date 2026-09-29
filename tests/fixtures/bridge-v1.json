@@ -28,7 +28,7 @@
       },
       "phase": "M1",
       "syncState": "localReadComplete",
-      "capabilities": ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "saveDraft", "getDrafts", "importAttachment"]
+      "capabilities": ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"]
     }
   },
   "error": {

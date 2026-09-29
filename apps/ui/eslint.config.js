@@ -23,7 +23,7 @@ export default tseslint.config(
     rules: {
       "react-refresh/only-export-components": ["warn", {
         allowConstantExport: true,
-        allowExportNames: ["buttonVariants", "badgeVariants", "tabsListVariants"],
+        allowExportNames: ["buttonVariants", "badgeVariants", "tabsListVariants", "useSidebar"],
       }],
     },
   },

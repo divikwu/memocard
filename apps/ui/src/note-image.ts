@@ -1,9 +1,20 @@
+import { request } from "./bridge";
+import { resolvedImageURL, type ResolvedLink } from "./vault-links";
 import { isBrowserVault } from "./client-mode";
 import { getBrowserVaultBinding, readBrowserAsset } from "./browser-vault";
 
 // Only URLs already validated by assetUrl reach this renderer. Blob URLs are never
 // accepted from Markdown itself, and every renderer owns and revokes its own URL.
 export function bindNoteImage(image: HTMLImageElement, source: string): () => void {
+  if (source.startsWith("memocard-resolve:")) {
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
+    const params = JSON.parse(decodeURIComponent(source.slice("memocard-resolve:".length))) as Record<string, unknown>;
+    void request<ResolvedLink>("resolveLink", params).then(result => {
+      if (!disposed && result.kind === "image") cleanup = bindNoteImage(image, resolvedImageURL(result.path));
+    }).catch(() => { if (!disposed) image.title = "图片链接不存在或不唯一，请检查附件路径。"; });
+    return () => { disposed = true; cleanup?.(); };
+  }
   if (!isBrowserVault) {
     image.src = source;
     return () => {};
