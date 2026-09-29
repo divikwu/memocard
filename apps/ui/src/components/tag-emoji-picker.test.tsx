@@ -20,6 +20,7 @@ it("searches Chinese names across categories and returns the native emoji", asyn
   await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "调色板");
   const palette = screen.getByRole("button", { name: /调色板/ });
   expect(palette.getAttribute("aria-pressed")).toBe("true");
+  expect(palette.className).toContain("text-xl");
   expect(palette.className).toContain("bg-accent");
   await user.click(palette);
   expect(onSelect).toHaveBeenCalledExactlyOnceWith("🎨");
