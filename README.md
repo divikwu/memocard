@@ -1,6 +1,6 @@
 # 记忆卡 · MemoCard
 
-个人使用的 Mac / iPhone / 独立 Web Markdown 笔记应用，也保留依赖 Mac 的本机 Web。正文与图片保存在用户授权的文件夹，目标是用 iCloud Drive 同步；Mac 提供本机只读 MCP。
+个人使用的 Mac / iPhone / 独立 Web Markdown 笔记应用，并提供独立菜单栏服务支持 Safari、Codex、Chrome 和 Edge 访问本机笔记库。正文与图片保存在用户授权的文件夹，目标是用 iCloud Drive 同步；Mac App 提供本机只读 MCP。
 
 
 现已支持直接打开 Obsidian / 普通 Markdown 文件夹：无 YAML 的笔记、原目录、库内图片、正文标签和基础 Wikilink。仅改正文时保留原属性与注释。兼容范围和验收边界见 [Obsidian 共用说明](docs/OBSIDIAN_COMPATIBILITY.md)。新建库采用普通 Markdown，旧 MemoCard 库继续兼容。
@@ -37,9 +37,9 @@ Safari、Codex、Chrome 和 Edge 的推荐本机入口是独立菜单栏应用 `
 
 ### 本机 Web
 
-在 Mac 应用中选择笔记库，然后进入设置，点击“在浏览器中打开”。需要使用 Codex 内置浏览器等其他浏览器时，点击“复制访问链接”，在 2 分钟内粘贴打开。浏览器复用同一套界面和笔记文件，可以查看、新建、编辑、保存草稿和导入图片；应用关闭或停用 Web 后无法继续读写。切换笔记库后需从应用重新打开，旧网页不能继续写入其他库。
+推荐通过 `MemoCardService.app` 或 `memocard serve` 打开本机 Web；Mac App 设置中的“在浏览器中打开”和“复制访问链接”作为兼容入口继续保留。浏览器复用同一套界面和笔记文件，可以查看、新建、编辑、保存草稿和导入图片。菜单栏服务提供打开、创建和多 Vault 切换；Mac App 宿主仍在原生界面中管理目录授权。
 
-网页资源随 Mac 应用打包，不依赖 Vite 或 Node 后端。地址使用系统分配的本机端口，请通过应用入口重新打开，不要保存带一次性授权参数的链接。文件夹选择和 MCP 开关在 Mac 应用内操作。详细边界与验证见 [本机 Web](docs/LOCAL_WEB.md)。
+网页资源随宿主打包，不依赖 Vite 或 Node 后端。地址使用系统分配的本机端口；宿主重启后必须重新打开，旧页面不能通过“重试”发现新端口。不要保存或分享带一次性授权参数的链接。详细边界与验证见 [本机 Web](docs/LOCAL_WEB.md)。
 
 ### 开发界面预览
 
