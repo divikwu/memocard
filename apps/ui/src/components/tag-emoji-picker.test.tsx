@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import TagEmojiPicker from "./tag-emoji-picker";
+beforeEach(() => { vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} }); });
 afterEach(cleanup);
 it("searches Chinese names across categories and returns the native emoji", async () => {
   const onSelect = vi.fn();
@@ -11,6 +12,8 @@ it("searches Chinese names across categories and returns the native emoji", asyn
   const categories = screen.getAllByRole("button", { name: /Emoji 分类：/ });
   expect(categories).toHaveLength(8);
   expect(categories[0].getAttribute("aria-pressed")).toBe("true");
+  screen.getByRole("button", { name: "Emoji 分类：动物与自然" }).focus();
+  expect((await screen.findByRole("tooltip")).textContent).toContain("动物与自然");
   await user.click(screen.getByRole("button", { name: "Emoji 分类：动物与自然" }));
   expect(screen.getByRole("button", { name: "Emoji 分类：动物与自然" }).getAttribute("aria-pressed")).toBe("true");
   await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "调色板");
