@@ -54,3 +54,21 @@ it("renames before saving display preferences and discards unsaved edits", async
   await user.click(screen.getByRole("button", { name: "保存" }));
   expect(onRename).toHaveBeenCalledWith("工作", "职业");
 });
+
+it("aligns hierarchy controls and stretches nested rows", () => {
+  render(<TagNavigation {...props} tags={[...props.tags, { name: "工作/设计/界面", count: 1 }]} />);
+  const nestedButton = screen.getByRole("button", { name: "工作/设计" });
+  const nestedRow = nestedButton.parentElement;
+  const nestedCollapsible = nestedRow?.parentElement;
+  const nestedItem = nestedCollapsible?.parentElement;
+  const nestedMenu = nestedItem?.parentElement;
+
+  expect(nestedButton.className).toContain("w-full");
+  expect(nestedButton.querySelector("span")?.className).toContain("size-4");
+  expect(nestedRow?.className).toContain("w-full");
+  expect(nestedCollapsible?.className).toContain("w-full");
+  expect(nestedItem?.className).toContain("w-full");
+  expect(nestedMenu?.className).toContain("mr-0");
+  expect(nestedMenu?.className).toContain("pr-0");
+  expect(screen.getByRole("button", { name: "展开或收起标签 工作/设计" }).className).toContain("left-1.5");
+});

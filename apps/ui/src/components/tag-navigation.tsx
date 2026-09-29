@@ -75,18 +75,18 @@ function TagBranch({ path, tags, selected, onSelect, preferences, onPin, onIcon,
   const nested = !flat && path.includes("/");
   const Item = nested ? SidebarMenuSubItem : SidebarMenuItem;
   const MenuButton = nested ? SidebarMenuSubButton : SidebarMenuButton;
-  return <Item>
-    <Collapsible defaultOpen>
-      <div className="group/tag-row relative">
-        <MenuButton asChild isActive={selected === path}><button type="button" aria-label={path} onClick={() => onSelect(path)} title={path} className="translate-x-0 pr-8"><span aria-hidden="true" className="flex size-5 shrink-0 items-center justify-center">{preferences.icons[path] || "🏷️"}</span><span>{flat ? path : name}</span></button></MenuButton>
-        {children.length > 0 && <CollapsibleTrigger asChild><SidebarMenuAction aria-label={`展开或收起标签 ${path}`} className={`md:opacity-0 group-hover/tag-row:opacity-100 group-has-[:focus-visible]/tag-row:opacity-100 left-2 bg-sidebar-accent text-sidebar-accent-foreground data-[state=open]:rotate-90 ${nested ? " top-1" : ""}`}><ChevronRight aria-hidden="true" /></SidebarMenuAction></CollapsibleTrigger>}
+  return <Item className="w-full min-w-0">
+    <Collapsible defaultOpen className="w-full min-w-0">
+      <div className="group/tag-row relative w-full min-w-0">
+        <MenuButton asChild isActive={selected === path}><button type="button" aria-label={path} onClick={() => onSelect(path)} title={path} className="w-full translate-x-0 pr-8"><span aria-hidden="true" className="flex size-4 shrink-0 items-center justify-center">{preferences.icons[path] || "🏷️"}</span><span>{flat ? path : name}</span></button></MenuButton>
+        {children.length > 0 && <CollapsibleTrigger asChild><SidebarMenuAction aria-label={`展开或收起标签 ${path}`} className={`md:opacity-0 group-hover/tag-row:opacity-100 group-has-[:focus-visible]/tag-row:opacity-100 left-1.5 bg-sidebar-accent text-sidebar-accent-foreground data-[state=open]:rotate-90 ${nested ? " top-1" : ""}`}><ChevronRight aria-hidden="true" /></SidebarMenuAction></CollapsibleTrigger>}
         <SidebarMenuBadge aria-hidden="true" className={`${menuOpen ? "opacity-0" : ""} group-hover/tag-row:opacity-0 group-focus-within/tag-row:opacity-0 max-md:hidden text-muted-foreground/65 peer-hover/menu-button:text-muted-foreground/65 peer-data-[active=true]/menu-button:text-muted-foreground/65 ${nested ? "top-1" : ""}`}>{tags.find(item => item.name === path)?.count}</SidebarMenuBadge>
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild><SidebarMenuAction ref={menuAnchor} aria-label={`标签操作 ${path}`} className={`md:opacity-0 group-hover/tag-row:opacity-100 group-focus-within/tag-row:opacity-100 data-[state=open]:opacity-100 ${nested ? " top-1" : ""}`}><MoreHorizontal /></SidebarMenuAction></DropdownMenuTrigger>
           <DropdownMenuContent onCloseAutoFocus={event => { if (openingEditor.current) { event.preventDefault(); openingEditor.current = false; if (menuAnchor.current) onIcon(path, menuAnchor.current); } }}><DropdownMenuItem onClick={() => onPin(path)}>{preferences.pinned.includes(path) ? "取消置顶" : "置顶标签"}</DropdownMenuItem><DropdownMenuItem onSelect={() => { openingEditor.current = true; }}>编辑名称/图标</DropdownMenuItem></DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {children.length > 0 && <CollapsibleContent><SidebarMenuSub>
+      {children.length > 0 && <CollapsibleContent className="w-full min-w-0"><SidebarMenuSub className="mr-0 pr-0">
         {children.map(child => <TagBranch key={child.name} path={child.name} tags={tags} selected={selected} onSelect={onSelect} preferences={preferences} onPin={onPin} onIcon={onIcon} />)}
       </SidebarMenuSub></CollapsibleContent>}
     </Collapsible>
