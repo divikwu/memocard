@@ -23,12 +23,6 @@
 			"path" = "LocalReadServer.swift";
 			"sourceTree" = "<group>";
 		};
-		"CFD1943E9D33250DDB8352B2" = {
-			"isa" = "PBXFileReference";
-			"lastKnownFileType" = "sourcecode.swift";
-			"path" = "LocalWebServer.swift";
-			"sourceTree" = "<group>";
-		};
 		"7E89D7EAE8928C3FA1E09DAC" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -43,8 +37,28 @@
 				"4D84862F080D6BC4FE7AB667",
 				"6D48209152F75DF9C0BE4D8E",
 				"344D9DA5ACE44E43D04D08A0",
-				"CFD1943E9D33250DDB8352B2",
 				"7E89D7EAE8928C3FA1E09DAC",
+			);
+		};
+		"CC6B89C021AA369756BDE9C4" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "ServiceApp.swift";
+			"sourceTree" = "<group>";
+		};
+		"A71F9581AAF76A6D8EF1AB38" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "ServiceHost.swift";
+			"sourceTree" = "<group>";
+		};
+		"A2AA66E733A2082315B9FF64" = {
+			"isa" = "PBXGroup";
+			"path" = "Service";
+			"sourceTree" = "<group>";
+			"children" = (
+				"CC6B89C021AA369756BDE9C4",
+				"A71F9581AAF76A6D8EF1AB38",
 			);
 		};
 		"2975104784A401E3880E2215" = {
@@ -56,6 +70,10 @@
 		"085827B649F7606E862BCEEB" = {
 			"isa" = "XCLocalSwiftPackageReference";
 			"relativePath" = "../../packages/native-core";
+		};
+		"7C13B0698F530FC8AC2CC30F" = {
+			"isa" = "XCLocalSwiftPackageReference";
+			"relativePath" = "../../packages/local-service";
 		};
 		"7A203BE355F05D5784F6B715" = {
 			"isa" = "PBXFileReference";
@@ -75,10 +93,6 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "344D9DA5ACE44E43D04D08A0";
 		};
-		"84EC15D9F20A600D500B2D03" = {
-			"isa" = "PBXBuildFile";
-			"fileRef" = "CFD1943E9D33250DDB8352B2";
-		};
 		"AC2AA6B78D68D88940CCFCF0" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "7E89D7EAE8928C3FA1E09DAC";
@@ -92,6 +106,15 @@
 			"isa" = "PBXBuildFile";
 			"productRef" = "0ED418E70B7E28EBD49E9F6E";
 		};
+		"2A3BB2634FA75106EC64640C" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "7C13B0698F530FC8AC2CC30F";
+			"productName" = "MemoCardLocalWeb";
+		};
+		"FCD524FBE0B25BC8E7FB6246" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "2A3BB2634FA75106EC64640C";
+		};
 		"20000EE8DA412F5FA43D9BAD" = {
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
@@ -99,7 +122,6 @@
 				"AD9B1774223A5F3B09111557",
 				"90C9E935A392C92299363762",
 				"6FC3642BC66863FFFF817A41",
-				"84EC15D9F20A600D500B2D03",
 				"AC2AA6B78D68D88940CCFCF0",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
@@ -109,6 +131,7 @@
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"6133FA500AF923E48EB10F26",
+				"FCD524FBE0B25BC8E7FB6246",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -212,6 +235,7 @@
 			);
 			"packageProductDependencies" = (
 				"0ED418E70B7E28EBD49E9F6E",
+				"2A3BB2634FA75106EC64640C",
 			);
 		};
 		"DDB9FDCE44F358F74EA5D245" = {
@@ -231,10 +255,6 @@
 		"8598EC6952A6164CB0DCAF15" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "344D9DA5ACE44E43D04D08A0";
-		};
-		"C5677B6AED4EF171E9D043D6" = {
-			"isa" = "PBXBuildFile";
-			"fileRef" = "CFD1943E9D33250DDB8352B2";
 		};
 		"B5805894F4D8E9918FD7DA37" = {
 			"isa" = "PBXBuildFile";
@@ -256,7 +276,6 @@
 				"C5905403BE299F7EECDA49C2",
 				"D288BD72D30A6D1238CFC121",
 				"8598EC6952A6164CB0DCAF15",
-				"C5677B6AED4EF171E9D043D6",
 				"B5805894F4D8E9918FD7DA37",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
@@ -375,6 +394,159 @@
 				"98AA8D34EC412A1BDC5055D0",
 			);
 		};
+		"1DB03360AA9B219E59CE50F9" = {
+			"isa" = "PBXFileReference";
+			"explicitFileType" = "wrapper.application";
+			"path" = "MemoCardService.app";
+			"sourceTree" = "BUILT_PRODUCTS_DIR";
+		};
+		"33287AD28C4A37985A17C7C6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "CC6B89C021AA369756BDE9C4";
+		};
+		"7756A9F5688A60317B5F3A76" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "A71F9581AAF76A6D8EF1AB38";
+		};
+		"71C9DF0E71AAB63726BE53FE" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "085827B649F7606E862BCEEB";
+			"productName" = "MemoCardCore";
+		};
+		"61A5DDD51F13185B9BF699B9" = {
+			"isa" = "XCSwiftPackageProductDependency";
+			"package" = "7C13B0698F530FC8AC2CC30F";
+			"productName" = "MemoCardLocalWeb";
+		};
+		"ABED0C6FD099984B7A857480" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "71C9DF0E71AAB63726BE53FE";
+		};
+		"C1D65579E37BBDA50C4C5751" = {
+			"isa" = "PBXBuildFile";
+			"productRef" = "61A5DDD51F13185B9BF699B9";
+		};
+		"31C65DE8192C48F9FB5BAF1D" = {
+			"isa" = "PBXSourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"33287AD28C4A37985A17C7C6",
+				"7756A9F5688A60317B5F3A76",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"4BFD9061FB1AFA8C3CB7D23C" = {
+			"isa" = "PBXFrameworksBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"ABED0C6FD099984B7A857480",
+				"C1D65579E37BBDA50C4C5751",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"71839B26FDD8A4F7760C27FD" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2975104784A401E3880E2215";
+		};
+		"54C1932B5844DCF651B357A4" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = (
+				"71839B26FDD8A4F7760C27FD",
+			);
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
+		"9C07240C727B5F0F030621EE" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Debug";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
+				"SWIFT_ACTIVE_COMPILATION_CONDITIONS" = "DEBUG";
+				"ONLY_ACTIVE_ARCH" = "YES";
+				"PRODUCT_NAME" = "MemoCardService";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "dev.divikwu.memocard.service";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "Config/ServiceInfo.plist";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SDKROOT" = "macosx";
+				"SUPPORTED_PLATFORMS" = "macosx";
+				"ENABLE_HARDENED_RUNTIME" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"CODE_SIGN_ENTITLEMENTS" = "Config/Service.entitlements";
+				"COMBINE_HIDPI_IMAGES" = "YES";
+			};
+		};
+		"B4E235399CD546276E45EF59" = {
+			"isa" = "XCBuildConfiguration";
+			"name" = "Release";
+			"buildSettings" = {
+				"SWIFT_VERSION" = "5.0";
+				"CLANG_ENABLE_MODULES" = "YES";
+				"SWIFT_STRICT_CONCURRENCY" = "minimal";
+				"MACOSX_DEPLOYMENT_TARGET" = "14.0";
+				"IPHONEOS_DEPLOYMENT_TARGET" = "17.0";
+				"SWIFT_COMPILATION_MODE" = "wholemodule";
+				"SWIFT_OPTIMIZATION_LEVEL" = "-O";
+				"PRODUCT_NAME" = "MemoCardService";
+				"PRODUCT_BUNDLE_IDENTIFIER" = "dev.divikwu.memocard.service";
+				"GENERATE_INFOPLIST_FILE" = "YES";
+				"INFOPLIST_FILE" = "Config/ServiceInfo.plist";
+				"CODE_SIGN_STYLE" = "Automatic";
+				"MARKETING_VERSION" = "0.1.0";
+				"CURRENT_PROJECT_VERSION" = "1";
+				"SDKROOT" = "macosx";
+				"SUPPORTED_PLATFORMS" = "macosx";
+				"ENABLE_HARDENED_RUNTIME" = "YES";
+				"LD_RUNPATH_SEARCH_PATHS" = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"CODE_SIGN_ENTITLEMENTS" = "Config/Service.entitlements";
+				"COMBINE_HIDPI_IMAGES" = "YES";
+			};
+		};
+		"32AFAAE2A433C21DF26F87D4" = {
+			"isa" = "XCConfigurationList";
+			"buildConfigurations" = (
+				"9C07240C727B5F0F030621EE",
+				"B4E235399CD546276E45EF59",
+			);
+			"defaultConfigurationIsVisible" = "0";
+			"defaultConfigurationName" = "Release";
+		};
+		"BE3E4D270CB3725C8F8E4358" = {
+			"isa" = "PBXNativeTarget";
+			"name" = "MemoCardService";
+			"productName" = "MemoCardService";
+			"productType" = "com.apple.product-type.application";
+			"productReference" = "1DB03360AA9B219E59CE50F9";
+			"buildConfigurationList" = "32AFAAE2A433C21DF26F87D4";
+			"buildPhases" = (
+				"31C65DE8192C48F9FB5BAF1D",
+				"4BFD9061FB1AFA8C3CB7D23C",
+				"54C1932B5844DCF651B357A4",
+			);
+			"buildRules" = (
+			);
+			"dependencies" = (
+			);
+			"packageProductDependencies" = (
+				"71C9DF0E71AAB63726BE53FE",
+				"61A5DDD51F13185B9BF699B9",
+			);
+		};
 		"4EDC8BFAFC6BD936B849F38C" = {
 			"isa" = "PBXGroup";
 			"name" = "Products";
@@ -382,6 +554,7 @@
 			"children" = (
 				"7A203BE355F05D5784F6B715",
 				"DDB9FDCE44F358F74EA5D245",
+				"1DB03360AA9B219E59CE50F9",
 			);
 		};
 		"EB814BE3CA3B78C0734C5605" = {
@@ -389,6 +562,7 @@
 			"sourceTree" = "<group>";
 			"children" = (
 				"CAF85B0888D78F1F83771A07",
+				"A2AA66E733A2082315B9FF64",
 				"2975104784A401E3880E2215",
 				"4EDC8BFAFC6BD936B849F38C",
 			);
@@ -451,9 +625,11 @@
 			"targets" = (
 				"EE9D98AEBA663752A733F520",
 				"2E959B2F8676D3A1B0CE5B4D",
+				"BE3E4D270CB3725C8F8E4358",
 			);
 			"packageReferences" = (
 				"085827B649F7606E862BCEEB",
+				"7C13B0698F530FC8AC2CC30F",
 			);
 		};
 	};

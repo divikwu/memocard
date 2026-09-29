@@ -9,8 +9,11 @@
     "test:native": "swift test --package-path packages/native-core",
     "test:native-network": "node --test apps/apple/Tests/local-read-server.test.mjs",
     "test:local-web": "node --test apps/apple/Tests/local-web-server.test.mjs",
+    "test:service": "swift test --package-path packages/local-service && pnpm test:local-web",
     "build:mac": "bash scripts/build-apple.sh mac",
     "build:ios": "bash scripts/build-apple.sh ios",
+    "build:service": "bash scripts/build-service.sh",
+    "install:service": "bash scripts/install-service.sh",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build"
   }
 }

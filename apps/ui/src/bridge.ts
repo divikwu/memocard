@@ -93,10 +93,10 @@ export function createWebTransport(fetcher: typeof fetch = fetch): Transport {
     } catch {
       throw new BridgeFailure("BRIDGE_UNAVAILABLE", "与 Mac 上的记忆卡连接已中断。请保持 App 运行，再重试；编辑中的内容仍保留在此页面。", true);
     }
-    if (response.status === 401 || response.status === 403) throw new BridgeFailure("WEB_UNAUTHORIZED", "本机 Web 的授权已失效，请从记忆卡 App 重新打开。编辑中的内容仍保留在此页面。");
+    if (response.status === 401 || response.status === 403) throw new BridgeFailure("WEB_UNAUTHORIZED", "本机 Web 的授权已失效，请从 MemoCard 本机宿主重新打开。编辑中的内容仍保留在此页面。");
     if (!response.ok) throw new BridgeFailure("WEB_UNAVAILABLE", "本机 Web 暂时无法完成操作，请重试。", true);
     try { return await response.json(); }
-    catch { throw new BridgeFailure("INVALID_RESPONSE", "无法识别本机 Web 的响应，请从记忆卡 App 重新打开。"); }
+    catch { throw new BridgeFailure("INVALID_RESPONSE", "无法识别本机 Web 的响应，请从 MemoCard 本机宿主重新打开。"); }
   }
 
   return async (message) => {
@@ -148,6 +148,14 @@ export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "操作未完成，请稍后重试。";
 }
 
-export type Environment = { platform: "mac" | "ios" | "web"; phase: string; mcpEnabled: boolean; webEnabled?: boolean; capabilities: string[]; vaultBinding?: string };
+export type StorageMode = "native" | "local-web" | "browser";
+export type SelectVaultResult = { cancelled: true; diagnostic?: string } | { reconnectUrl: string } | { vaultId: string; vaultBinding?: string };
+export type Environment = { platform: "mac" | "ios" | "web"; phase: string; storage: StorageMode; mcpEnabled: boolean; webEnabled?: boolean; capabilities: string[]; vaultBinding?: string };
+export function reconnectVault(url: string, location: Pick<Location, "replace" | "reload"> = window.location): void {
+  location.replace(url);
+  // A same-origin reconnect only changes the hash, so force a document reload to
+  // construct a fresh transport that can redeem the new one-time credential.
+  location.reload();
+}
 export type Draft = { id: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; updatedAt?: string; vaultBinding?: string; draftKey?: string };
 export type Attachment = { relativePath: string; markdownPath: string; notePath?: string };

@@ -7,9 +7,10 @@ import type { Draft } from "./bridge";
 import { App } from "./App";
 import { readEditorText, replaceEditorText } from "./editor-test-utils";
 
-const bridge = vi.hoisted(() => ({ request: vi.fn(), native: true, web: false, browser: false }));
+const bridge = vi.hoisted(() => ({ request: vi.fn(), reconnect: vi.fn(), native: true, web: false, browser: false }));
 vi.mock("./bridge", () => ({
   request: bridge.request,
+  reconnectVault: bridge.reconnect,
   get isNative() { return bridge.native; },
   get isLocalWeb() { return bridge.web; },
   get isBrowserVault() { return bridge.browser; },
@@ -37,6 +38,7 @@ beforeEach(() => {
   bridge.browser = false;
   pendingDrafts = [];
   bridge.request.mockReset();
+  bridge.reconnect.mockReset();
   bridge.request.mockImplementation(async (operation: string, params?: Record<string, unknown>) => {
     switch (operation) {
       case "getEnvironment": return { platform: "mac", phase: "M1", mcpEnabled: false, capabilities: ["selectVault", "setMCPEnabled"] };
@@ -238,10 +240,10 @@ describe("note workspace", () => {
     bridge.request.mockImplementation((operation, params) => operation === "getEnvironment" ? Promise.resolve({ platform: "web", phase: "browser", mcpEnabled: false, capabilities: [] }) : operation === "getStatus" ? Promise.resolve({ ...status, connected: false, capabilities: [] }) : implementation(operation, params));
     render(<App />);
 
-    expect(await screen.findByText("当前浏览器无法直接读写文件夹")).toBeTruthy();
-    expect(screen.getByText(/请使用桌面版 Chrome 或 Edge/)).toBeTruthy();
+    expect(await screen.findByText("需要启动 MemoCard 本机服务")).toBeTruthy();
+    expect(screen.getByText(/Safari 和 Codex 通过本机服务读写笔记库/)).toBeTruthy();
     expect(screen.queryByRole("link", { name: "打开本机 Web" })).toBeNull();
-    expect(await screen.findByRole("heading", { name: "打开你的笔记文件夹" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "连接 MemoCard 本机服务" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "打开已有笔记库" })).toBeNull();
     expect(screen.queryByRole("textbox", { name: "搜索笔记" })).toBeNull();
     expect(screen.queryByText(note.body)).toBeNull();
@@ -281,7 +283,7 @@ describe("note workspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "打开已有笔记库" }));
     expect(await screen.findByText("正在打开笔记库")).toBeTruthy();
     await act(async () => { finish({ cancelled: true, diagnostic: "选择文件夹并授权 / AbortError" }); });
-    expect(await screen.findByText("未打开笔记库")).toBeTruthy();
+    expect(await screen.findByText("文件夹授权未完成")).toBeTruthy();
     expect(screen.getByText(/未完成文件夹授权/)).toBeTruthy();
     expect(screen.getByText(/选择文件夹并授权 \/ AbortError/)).toBeTruthy();
     expect(screen.queryByText("正在打开笔记库")).toBeNull();
@@ -309,6 +311,7 @@ describe("note workspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));
     await waitFor(() => expect((screen.getByRole("button", { name: "切换笔记库" }) as HTMLButtonElement).disabled).toBe(false));
 
+    if (cancelled) expect(screen.queryByText("文件夹授权未完成")).toBeNull();
     if (!cancelled) {
       expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)).toEqual(["queryNotes", { query: "", tags: [], limit: 30 }]);
       expect(screen.queryByRole("button", { name: /生活 1/ })).toBeNull();
@@ -374,7 +377,23 @@ describe("note workspace", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   });
 
-  it("retains the web editor when the Mac disconnects and offers reconnection without creating another note", async () => {
+  it("switches a local Web vault through the native picker and reconnects on the same origin", async () => {
+    bridge.native = false; bridge.web = true;
+    const implementation = bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation, params) => {
+      if (operation === "getEnvironment") return Promise.resolve({ platform: "web", phase: "M1", storage: "local-web", mcpEnabled: false, capabilities: ["selectVault", "createVault"] });
+      if (operation === "selectVault") return Promise.resolve({ reconnectUrl: "http://127.0.0.1:5194/#/connect?token=next" });
+      return implementation(operation, params);
+    });
+    window.history.replaceState(null, "", "#/settings");
+    render(<App />);
+    expect(await screen.findByRole("button", { name: "创建新笔记库" })).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("selectVault", { create: false }));
+    expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=next");
+  });
+
+  it("retains the web editor when its local host disconnects without creating another note", async () => {
     bridge.native = false; bridge.web = true;
     render(<App />);
     await screen.findByText(note.body);
@@ -383,12 +402,12 @@ describe("note workspace", () => {
     const implementation = bridge.request.getMockImplementation()!;
     bridge.request.mockImplementation((operation, params) => ["getStatus", "saveDraft", "saveNote"].includes(operation) ? Promise.reject(new Error("Mac App 已关闭，请重新连接")) : implementation(operation, params));
     fireEvent.focus(window);
-    await screen.findByText("等待连接 Mac App");
+    await screen.findByText("等待连接本机服务");
     expect((screen.getByRole("button", { name: "新建笔记", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "保存草稿并关闭" }));
     await waitFor(() => expect(within(screen.getByRole("dialog")).getByText("Mac App 已关闭，请重新连接")).toBeTruthy());
     expect(readEditorText()).toBe("断开时还在编辑的内容");
-    expect(screen.getByRole("link", { name: "从 App 重新连接", hidden: true }).getAttribute("href")).toBe("memocard://web");
+    expect(screen.queryByRole("link", { name: "从 App 重新连接", hidden: true })).toBeNull();
   });
 
   it("checks local web connection without resetting pages already loaded", async () => {

@@ -15,7 +15,6 @@ export interface AppSidebarProps {
   vaultId?: string | null;
   onRenameTag?: (from: string, to: string) => Promise<void>;
   connected?: boolean;
-  modeLabel?: string;
   vaultStatusText: string;
   hasVaultIssue: boolean;
   canCreate: boolean;
@@ -31,7 +30,7 @@ export interface AppSidebarProps {
 }
 
 
-export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, onRenameTag, connected = false, modeLabel, vaultStatusText, hasVaultIssue,
+export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, onRenameTag, connected = false, vaultStatusText, hasVaultIssue,
   canCreate, canChooseVault, canCreateVault, needsPermission, working,
   onNavigate, onNewNote, onSearch, onSelectVault, onReauthorize,
 }: AppSidebarProps) {
@@ -50,8 +49,6 @@ export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, on
                 <span className="flex size-6 shrink-0 items-center justify-center rounded-xs border"><Layers className="size-4" /></span>
                 <span className="min-w-0 truncate" title={vaultName}>{vaultName}</span>
               </DropdownMenuItem>}
-              {modeLabel && <p className="px-2 pb-1 text-xs text-muted-foreground">{modeLabel}</p>}
-              <p className="px-2 pb-2 text-xs text-muted-foreground">{vaultStatusText}</p>
               <DropdownMenuSeparator />
               {canChooseVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(false)}><FolderOpen />打开已有笔记库</DropdownMenuItem>}
               {canCreateVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(true)}><FolderPlus />创建新笔记库</DropdownMenuItem>}

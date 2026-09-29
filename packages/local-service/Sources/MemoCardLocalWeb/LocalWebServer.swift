@@ -3,9 +3,9 @@ import Network
 import Security
 
 // Listener, peers, bootstrap tokens and sessions are confined to queue.
-final class LocalWebServer: @unchecked Sendable {
-    typealias Handler = ([String: Any]) async -> [String: Any]
-    typealias AssetHandler = (String) async throws -> Data
+public final class LocalWebServer: @unchecked Sendable {
+    public typealias Handler = ([String: Any]) async -> [String: Any]
+    public typealias AssetHandler = (String) async throws -> Data
     private let resourceRoot: URL
     private let handler: Handler
     private let assetHandler: AssetHandler
@@ -16,19 +16,23 @@ final class LocalWebServer: @unchecked Sendable {
     private var peers: [UUID: NWConnection] = [:]
     private var bootstraps: [String: Date] = [:]
     private var sessions: Set<String> = []
+    private var authorizationEpoch: Int
+    private var interactivePeers: Set<UUID> = []
+    public static let maximumSessions = 16
     private let maximumBodyBytes = 32 * 1024 * 1024
     private let maximumResponseBytes = 64 * 1024 * 1024
     private let maximumHeaderBytes = 16 * 1024
     private final class StartState: @unchecked Sendable { var resumed = false }
-    private static let operations: Set<String> = ["getEnvironment", "getStatus", "queryNotes", "getNote", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
+    private static let operations: Set<String> = ["getEnvironment", "getStatus", "selectVault", "queryNotes", "getNote", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
 
-    init(resourceRoot: URL, handler: @escaping Handler, assetHandler: @escaping AssetHandler) {
+    public init(resourceRoot: URL, authorizationEpoch: Int = 0, handler: @escaping Handler, assetHandler: @escaping AssetHandler) {
         self.resourceRoot = resourceRoot.standardizedFileURL.resolvingSymlinksInPath()
+        self.authorizationEpoch = authorizationEpoch
         self.handler = handler
         self.assetHandler = assetHandler
     }
 
-    func start() async throws -> URL {
+    public func start() async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             queue.async { [self] in
                 guard listener == nil else { continuation.resume(throwing: failure("ALREADY_RUNNING")); return }
@@ -64,13 +68,17 @@ final class LocalWebServer: @unchecked Sendable {
         }
     }
 
-    func makeLaunchURL() async throws -> URL {
+    public func makeLaunchURL(revokingSessions: Bool = false) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             queue.async { [self] in
                 guard let origin, listener != nil else { continuation.resume(throwing: failure("APP_NOT_RUNNING")); return }
                 bootstraps = bootstraps.filter { $0.value > Date() }
                 // A newly requested launch supersedes unused launch links.
                 bootstraps.removeAll()
+                if revokingSessions {
+                    sessions.removeAll()
+                    authorizationEpoch &+= 1
+                }
                 let token = Self.randomToken()
                 bootstraps[token] = Date().addingTimeInterval(120)
                 continuation.resume(returning: URL(string: origin + "/#/connect?token=" + token)!)
@@ -78,11 +86,23 @@ final class LocalWebServer: @unchecked Sendable {
         }
     }
 
-    func stop() {
+    public func revokeSessions() async {
+        await withCheckedContinuation { continuation in
+            queue.async { [self] in
+                bootstraps.removeAll()
+                sessions.removeAll()
+                authorizationEpoch &+= 1
+                continuation.resume()
+            }
+        }
+    }
+
+    public func stop() {
         queue.async { [self] in
             let service = listener
             listener = nil; origin = nil
             bootstraps.removeAll(); sessions.removeAll()
+            interactivePeers.removeAll()
             peers.values.forEach { $0.cancel() }; peers.removeAll()
             service?.cancel()
         }
@@ -92,6 +112,7 @@ final class LocalWebServer: @unchecked Sendable {
         guard listener === service else { return }
         listener = nil; origin = nil
         bootstraps.removeAll(); sessions.removeAll()
+        interactivePeers.removeAll()
         peers.values.forEach { $0.cancel() }; peers.removeAll()
         service.cancel()
     }
@@ -106,7 +127,8 @@ final class LocalWebServer: @unchecked Sendable {
         }
         connection.start(queue: queue)
         queue.asyncAfter(deadline: .now() + 30) { [weak self] in
-            self?.peers.removeValue(forKey: id)?.cancel()
+            guard let self, !self.interactivePeers.contains(id) else { return }
+            self.peers.removeValue(forKey: id)?.cancel()
         }
         receive(id, buffer: Data())
     }
@@ -194,7 +216,7 @@ final class LocalWebServer: @unchecked Sendable {
                   let expires = bootstraps.removeValue(forKey: token), expires > Date() else { reply(id, status: 401); return }
             // Bound independently authorized browser sessions; existing sessions stay valid.
             let existingSession = authenticatedSession(request.headers)
-            guard existingSession != nil || sessions.count < 16 else { reply(id, status: 429); return }
+            guard existingSession != nil || sessions.count < Self.maximumSessions else { reply(id, status: 429); return }
             let session = existingSession ?? Self.randomToken(); sessions.insert(session)
             replyJSON(id, value: ["ok": true], headers: ["Set-Cookie": "\(cookieName)=\(session); Path=/; HttpOnly; SameSite=Strict"])
             return
@@ -208,8 +230,11 @@ final class LocalWebServer: @unchecked Sendable {
                     replyJSON(id, status: 400, value: ["ok": false, "error": ["code": "INVALID_ARGUMENT", "message": "Unsupported browser operation", "retryable": false]])
                     return
                 }
+                var dispatched = message
+                dispatched["_authorizationEpoch"] = authorizationEpoch
+                if operation == "selectVault" { interactivePeers.insert(id) }
                 Task { [self] in
-                    var response = await handler(message)
+                    var response = await handler(dispatched)
                     response["requestId"] = requestID
                     let bytes = try? JSONSerialization.data(withJSONObject: response)
                     queue.async { [self] in
@@ -283,6 +308,7 @@ final class LocalWebServer: @unchecked Sendable {
         fields.merge(headers) { _, new in new }
         let head = "HTTP/1.1 \(status) \(reason)\r\n" + fields.sorted { $0.key < $1.key }.map { "\($0.key): \($0.value)\r\n" }.joined() + "\r\n"
         connection.send(content: Data(head.utf8) + body, completion: .contentProcessed { [weak self] _ in
+            self?.interactivePeers.remove(id)
             self?.peers.removeValue(forKey: id)?.cancel()
         })
     }

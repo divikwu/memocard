@@ -41,6 +41,12 @@ struct LocalWebServerHarness {
             } else if command == "launch" {
                 try await publish()
                 FileHandle.standardOutput.write(Data("LAUNCH\n".utf8))
+            } else if command == "rotate" {
+                let launch = try await server.makeLaunchURL(revokingSessions: true)
+                let config: [String: Any] = ["baseURL": launch.absoluteString.components(separatedBy: "#")[0], "launchURL": launch.absoluteString]
+                let bytes = try JSONSerialization.data(withJSONObject: config)
+                try bytes.write(to: configurationURL, options: .atomic)
+                FileHandle.standardOutput.write(Data("ROTATE\n".utf8))
             }
         }
         server.stop()

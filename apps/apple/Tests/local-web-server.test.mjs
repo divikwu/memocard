@@ -16,7 +16,7 @@ before(async () => {
   buildDirectory = await mkdtemp(join(tmpdir(), 'memocard-web-network-'));
   executable = join(buildDirectory, 'LocalWebServerHarness');
   await promisify(execFile)('xcrun', ['swiftc', '-swift-version', '5', '-strict-concurrency=complete', '-warnings-as-errors',
-    fileURLToPath(new URL('../Sources/LocalWebServer.swift', import.meta.url)),
+    fileURLToPath(new URL('../../../packages/local-service/Sources/MemoCardLocalWeb/LocalWebServer.swift', import.meta.url)),
     fileURLToPath(new URL('./LocalWebServerHarness.swift', import.meta.url)), '-o', executable]);
 });
 after(async () => { if (buildDirectory) await rm(buildDirectory, { recursive: true, force: true }); });
@@ -169,9 +169,10 @@ test('requires exact Host and Origin and refuses cross-site requests and duplica
   }
   assert.equal((await call(host.config, { method: 'GET', path: '/api/assets/assets/image.png', body: null, headers: { Cookie: cookie, 'Sec-Fetch-Site': 'cross-site' } })).status, 401);
   assert.equal((await call(host.config, { headers: { Cookie: `${cookie}; ${cookie}` } })).status, 401);
-  for (const operation of ['setMCPEnabled', 'selectVault', 'openExternal', 'openWeb', 'stopWeb']) {
+  for (const operation of ['setMCPEnabled', 'openExternal', 'openWeb', 'stopWeb']) {
     assert.equal((await call(host.config, { body: envelope({}, { operation }), headers: { Cookie: cookie } })).status, 400);
   }
+  assert.equal((await call(host.config, { body: envelope({ create: false }, { operation: 'selectVault' }), headers: { Cookie: cookie } })).status, 200);
   assert.equal((await call(host.config, { headers: { Cookie: cookie } })).status, 200);
 });
 
@@ -251,4 +252,15 @@ test('reopening from the same browser reuses its session instead of exhausting a
     assert.equal(reply.headers['set-cookie'].split(';')[0], cookie);
   }
   assert.equal((await call(host.config, { headers: { Cookie: cookie } })).status, 200);
+});
+
+test('rotates browser authorization without changing the listener origin', async t => {
+  const host = await webHost(t);
+  const oldOrigin = new URL(host.config.baseURL).origin;
+  const oldCookie = await authenticate(host);
+  await host.command('rotate');
+  assert.equal(new URL(host.config.baseURL).origin, oldOrigin);
+  assert.equal((await call(host.config, { headers: { Cookie: oldCookie } })).status, 401);
+  const newCookie = await authenticate(host);
+  assert.equal((await call(host.config, { headers: { Cookie: newCookie } })).status, 200);
 });

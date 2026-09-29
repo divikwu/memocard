@@ -4,6 +4,7 @@ import WebKit
 import UniformTypeIdentifiers
 import MemoCardCore
 #if os(macOS)
+import MemoCardLocalWeb
 import AppKit
 #else
 import UIKit
@@ -96,7 +97,7 @@ final class NativeHost: ObservableObject {
             await startTask?.value
             let data: Any
             switch operation {
-            case "getEnvironment": data = ["platform": platform, "phase": "M1", "mcpEnabled": server != nil, "webEnabled": webEnabled, "capabilities": hostCapabilities]
+            case "getEnvironment": data = ["platform": platform, "phase": "M1", "storage": "native", "mcpEnabled": server != nil, "webEnabled": webEnabled, "capabilities": hostCapabilities]
             case "uiReady":
                 uiReady = true
                 await deliverPendingNote()
@@ -362,7 +363,7 @@ final class NativeHost: ObservableObject {
             }
             let data: Any
             if operation == "getEnvironment" {
-                data = ["platform": "web", "phase": "M1", "mcpEnabled": false, "webEnabled": true, "capabilities": ["pickImage", "openExternal"]]
+                data = ["platform": "web", "phase": "M1", "storage": "local-web", "mcpEnabled": false, "webEnabled": true, "capabilities": ["pickImage", "openExternal"]]
             } else if operation == "getStatus" {
                 var value = try await invoke("getStatus", [:], expectedBinding: vaultGeneration) as? [String: Any] ?? [:]
                 value["capabilities"] = (value["capabilities"] as? [String] ?? []).filter { webOperations.contains($0) } + ["pickImage", "openExternal"]

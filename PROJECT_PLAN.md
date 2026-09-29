@@ -16,6 +16,8 @@
 
 2026-09-29 用户授权：以两个应用共用同一份笔记为目标，实现 Obsidian 文件兼容，不进行导入转换。新增 formatVersion 2 普通文件库，取消强制 notes/assets 位置和笔记 frontmatter 字段；原始正文/属性为事实来源，本机身份映射独立保存。支持基础笔记内链、Wikilink 图片、正文标签和源文件冲突检查。保留 formatVersion 1 旧库，不自动迁移。此授权优先于原计划有关笔记 UUID、日期、固定目录的约束；不代表 M2–M5 或 iPhone 同步关卡完成。具体边界见 docs/OBSIDIAN_COMPATIBILITY.md。
 
+2026-09-29 用户追加授权：新增沙盒化的 macOS 菜单栏服务与轻量 `memocard serve` 启动器，目标覆盖 Safari、Codex、Chrome 和 Edge 的经过鉴权 loopback Web。服务通过系统目录选择器和 security-scoped bookmark 直接读写用户授权的原文件夹；切库保持同一 listener，成功提交时轮换浏览器 session，取消或候选验证失败不替换当前库。Chrome / Edge File System Access 直连继续作为可选零安装模式。Edge 仅在真实浏览器验收完成后标记为已支持。范围不包含账户、云端数据库、LAN 服务、公开分发、自动更新或浏览器间草稿同步。具体边界见 docs/LOCAL_SERVICE.md。
+
 ## 1. 目标、范围与默认选择
 
 交付个人使用的 Mac + iPhone 笔记应用：Markdown 文件保存在用户选择的 iCloud Drive 文件夹，支持外部编辑、离线记录、搜索统计，并通过只读 MCP 供 Becoming 项目内脚本读取。

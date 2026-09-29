@@ -55,9 +55,11 @@ describe("device appearance", () => {
   it("persists color, radius and font changes across a remount", async () => {
     const user = userEvent.setup();
     const view = mountSettings();
-    await chooseSetting(user, "强调色", "teal");
-    await chooseSetting(user, "中性色", "slate");
-    await chooseSetting(user, "圆角", "XL · 12px");
+    await chooseSetting(user, "强调色", "青绿");
+    expect(screen.queryByRole("combobox", { name: "中性色" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "高级外观" }));
+    await chooseSetting(user, "中性色", "冷灰");
+    await chooseSetting(user, "圆角", "大");
     await chooseSetting(user, "正文字体", "Inter");
     view.unmount();
     mountSettings();
@@ -79,7 +81,7 @@ describe("device appearance", () => {
       mediaEvents.dispatchEvent(event);
     });
     expect(document.documentElement.classList.contains("dark")).toBe(true);
-    await chooseSetting(user, "强调色", "mono");
+    await chooseSetting(user, "强调色", "黑白");
     await user.click(screen.getByRole("button", { name: "恢复默认" }));
     expect(document.documentElement.classList.contains("light")).toBe(true);
     expect(document.documentElement.dataset.palette).toBe("mono");

@@ -1,11 +1,17 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BridgeFailure, createBridge } from "./bridge";
+import { BridgeFailure, createBridge, reconnectVault } from "./bridge";
 import type { Note, NotePage, VaultStatus } from "@memocard/contracts";
 import fixture from "../../../tests/fixtures/bridge-v1.json";
 
 afterEach(() => vi.useRealTimers());
 
 describe("native bridge", () => {
+  it("replaces the current page with the newly authorized local Web URL", () => {
+    const location = { replace: vi.fn(), reload: vi.fn() };
+    reconnectVault("http://127.0.0.1:5194/#/connect?token=next", location);
+    expect(location.replace).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=next");
+    expect(location.reload).toHaveBeenCalledOnce();
+  });
   it("invokes directory selection synchronously within the user's click", async () => {
     const transport = vi.fn().mockResolvedValue({ ok: true, data: { connected: true } });
     const pending = createBridge(transport)("selectVault");
