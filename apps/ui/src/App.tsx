@@ -152,7 +152,7 @@ export function App() {
     finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
   }
 
-  async function activateVault(vaultId: string) {
+  const activateVault = useCallback(async (vaultId: string) => {
     if (editingRef.current || selectingVault.current || vaultId === status?.vaultId) return;
     selectingVault.current = true;
     setSwitchingVault(true); setWorking(true); setError("");
@@ -163,7 +163,23 @@ export function App() {
       await refresh(false, true);
     } catch (cause) { setError(errorMessage(cause)); }
     finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
-  }
+  }, [refresh, status?.vaultId]);
+
+  useEffect(() => {
+    const onVaultShortcut = (event: KeyboardEvent) => {
+      if (!event.altKey || event.metaKey || event.ctrlKey || event.shiftKey || event.repeat || event.isComposing || working) return;
+      const match = /^Digit([1-9])$/.exec(event.code);
+      if (!match) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest("input, textarea, select, [contenteditable='true']")) return;
+      const vault = registeredVaults[Number(match[1]) - 1];
+      if (!vault) return;
+      event.preventDefault();
+      if (!vault.active) void activateVault(vault.vaultId);
+    };
+    window.addEventListener("keydown", onVaultShortcut);
+    return () => window.removeEventListener("keydown", onVaultShortcut);
+  }, [activateVault, registeredVaults, working]);
 
   async function reauthorizeVault() {
     setWorking(true); setError("");
