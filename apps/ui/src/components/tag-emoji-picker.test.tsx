@@ -10,6 +10,7 @@ it("searches Chinese names across categories and returns the native emoji", asyn
   const user = userEvent.setup();
   render(<TagEmojiPicker selected="🎨" onSelect={onSelect} />);
   const categories = screen.getAllByRole("button", { name: /Emoji 分类：/ });
+  expect(screen.getByLabelText("Emoji 分类").className).toContain("-mx-3");
   expect(categories).toHaveLength(8);
   expect(categories[0].getAttribute("aria-pressed")).toBe("true");
   screen.getByRole("button", { name: "Emoji 分类：动物与自然" }).focus();

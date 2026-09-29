@@ -22,7 +22,7 @@ export function TagEditor({ path, initialIcon, anchor, onClose, onSave }: { path
           <p className="px-1 text-pretty text-xs leading-5 text-muted-foreground">使用 / 分隔多级标签；改名会更新笔记中的标签。</p>
           {error && <p role="alert" className="px-1 text-sm text-destructive">{error}</p>}
         </form>
-        {pickerOpen && <div className="mt-3 border-t pt-3"><div className="mb-2 flex items-center justify-between px-1"><span className="text-xs font-medium text-muted-foreground">选择图标</span><Button type="button" variant="ghost" size="xs" className="text-muted-foreground" disabled={busy || !icon} onClick={() => { setIcon(""); setPickerOpen(false); }}>清除</Button></div><Suspense fallback={<p role="status" className="px-1 py-3 text-sm text-muted-foreground">正在加载 Emoji…</p>}><EmojiPicker selected={icon} onSelect={emoji => { setIcon(emoji); setPickerOpen(false); }} /></Suspense></div>}
+        {pickerOpen && <div className="-mx-3 mt-3 border-t px-3 pt-3"><div className="mb-2 flex items-center justify-between px-1"><span className="text-xs font-medium text-muted-foreground">选择图标</span><Button type="button" variant="ghost" size="xs" className="text-muted-foreground" disabled={busy || !icon} onClick={() => setIcon("")}>清除</Button></div><Suspense fallback={<p role="status" className="px-1 py-3 text-sm text-muted-foreground">正在加载 Emoji…</p>}><EmojiPicker selected={icon} onSelect={setIcon} /></Suspense></div>}
     </PopoverContent>
   </Popover>;
 }

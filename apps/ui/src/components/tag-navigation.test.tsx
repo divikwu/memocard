@@ -37,9 +37,13 @@ it("searches full paths and saves icons without changing navigation", async () =
   expect(screen.getByRole("button", { name: "选择 Emoji" }).textContent).toBe("");
   expect(screen.queryByRole("button", { name: "使用图标 🎨" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "选择 Emoji" }));
+  expect(screen.getByText("选择图标").parentElement?.parentElement?.className).toContain("-mx-3");
   expect(screen.getByRole("button", { name: "清除" }).hasAttribute("disabled")).toBe(true);
   await user.click(await screen.findByRole("button", { name: "选择画板" }));
+  expect(screen.getByRole("button", { name: "选择画板" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "清除" }).hasAttribute("disabled")).toBe(false);
   await user.click(screen.getByRole("button", { name: "保存" }));
+  expect(screen.queryByLabelText("编辑标签")).toBeNull();
   expect(screen.getByRole("button", { name: "工作/设计" }).textContent).toContain("🎨");
   cleanup();
   render(<TagNavigation {...props} />);
