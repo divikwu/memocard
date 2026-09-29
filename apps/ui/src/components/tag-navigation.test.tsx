@@ -37,6 +37,7 @@ it("searches full paths and saves icons without changing navigation", async () =
   expect(screen.getByRole("button", { name: "选择 Emoji" }).textContent).toBe("");
   expect(screen.queryByRole("button", { name: "使用图标 🎨" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "选择 Emoji" }));
+  expect(screen.getByText("选择图标").parentElement?.parentElement?.className).toContain("-mx-3");
   expect(screen.getByRole("button", { name: "清除" }).hasAttribute("disabled")).toBe(true);
   await user.click(await screen.findByRole("button", { name: "选择画板" }));
   expect(screen.getByRole("button", { name: "选择画板" })).toBeTruthy();

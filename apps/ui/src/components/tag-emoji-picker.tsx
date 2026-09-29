@@ -15,14 +15,14 @@ export default function TagEmojiPicker({ selected = "", onSelect }: { selected?:
   const [category, setCategory] = useState(categories[0][0]);
   const needle = query.trim().toLocaleLowerCase();
   const items = (needle ? Object.values(emojis).flat() : emojis[category]).filter(item => !needle || item.n.some(name => name.toLocaleLowerCase().includes(needle)));
-  return <div className="space-y-2">
-    <Input autoFocus aria-label="搜索 Emoji" placeholder="搜索 Emoji" value={query} onChange={event => setQuery(event.target.value)} />
+  return <div>
+    <Input autoFocus aria-label="搜索 Emoji" placeholder="搜索 Emoji" value={query} onChange={event => setQuery(event.target.value)} className="mb-2" />
     <div aria-label="Emoji" className="-mx-1 grid max-h-56 grid-cols-[repeat(auto-fill,minmax(2rem,1fr))] gap-1 overflow-y-auto overscroll-contain px-1">
       {items.map(item => { const emoji = String.fromCodePoint(...item.u.split("-").map(code => parseInt(code, 16))); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" className={cn("text-lg", selected === emoji && "bg-accent text-accent-foreground")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}>{emoji}</Button>; })}
     </div>
-    {!items.length && <p role="status" className="text-sm text-muted-foreground">没有匹配的 Emoji</p>}
+    {!items.length && <p role="status" className="pb-2 text-sm text-muted-foreground">没有匹配的 Emoji</p>}
     <TooltipProvider>
-      <div aria-label="Emoji 分类" className="-mx-1 flex items-center justify-between border-t px-1 pt-2">
+      <div aria-label="Emoji 分类" className="-mx-3 flex items-center justify-between border-t px-3 pt-2">
         {categories.map(([key, label]) => { const Icon = categoryIcons[key]; return <Tooltip key={key}><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon-sm" className={cn("text-muted-foreground", category === key && !needle && "bg-accent text-accent-foreground")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} onClick={() => { setCategory(key); setQuery(""); }}><Icon /></Button></TooltipTrigger><TooltipContent side="top" sideOffset={6}>{label}</TooltipContent></Tooltip>; })}
       </div>
     </TooltipProvider>
