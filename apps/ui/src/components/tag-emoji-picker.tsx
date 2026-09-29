@@ -3,6 +3,7 @@ import { Flag, Lightbulb, PawPrint, Plane, Shapes, Smile, Trophy, Utensils } fro
 import emojiData from "@/lib/emoji-zh.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 const categoryNames: Record<string, string> = { smileys_people: "表情与人物", animals_nature: "动物与自然", food_drink: "食物与饮料", travel_places: "旅行与地点", activities: "活动", objects: "物品", symbols: "符号", flags: "旗帜" };
@@ -20,8 +21,10 @@ export default function TagEmojiPicker({ selected = "", onSelect }: { selected?:
       {items.map(item => { const emoji = String.fromCodePoint(...item.u.split("-").map(code => parseInt(code, 16))); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" className={cn("text-lg", selected === emoji && "bg-accent text-accent-foreground")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}>{emoji}</Button>; })}
     </div>
     {!items.length && <p role="status" className="text-sm text-muted-foreground">没有匹配的 Emoji</p>}
-    <div aria-label="Emoji 分类" className="-mx-1 flex items-center justify-between border-t px-1 pt-2">
-      {categories.map(([key, label]) => { const Icon = categoryIcons[key]; return <Button key={key} type="button" variant="ghost" size="icon-sm" className={cn("text-muted-foreground", category === key && !needle && "bg-accent text-accent-foreground")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} title={label} onClick={() => { setCategory(key); setQuery(""); }}><Icon /></Button>; })}
-    </div>
+    <TooltipProvider>
+      <div aria-label="Emoji 分类" className="-mx-1 flex items-center justify-between border-t px-1 pt-2">
+        {categories.map(([key, label]) => { const Icon = categoryIcons[key]; return <Tooltip key={key}><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon-sm" className={cn("text-muted-foreground", category === key && !needle && "bg-accent text-accent-foreground")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} onClick={() => { setCategory(key); setQuery(""); }}><Icon /></Button></TooltipTrigger><TooltipContent side="top" sideOffset={6}>{label}</TooltipContent></Tooltip>; })}
+      </div>
+    </TooltipProvider>
   </div>;
 }
