@@ -52,8 +52,12 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         webStatus.isEnabled = false
         menu.addItem(webStatus)
         menu.addItem(.separator())
-        for vault in host.registeredVaults {
+        for (index, vault) in host.registeredVaults.enumerated() {
             let entry = item(vault.name, #selector(activateVault(_:)), enabled: !vault.active)
+            if index < 9 {
+                entry.keyEquivalent = String(index + 1)
+                entry.keyEquivalentModifierMask = [.option]
+            }
             entry.state = vault.active ? .on : .off
             entry.representedObject = vault.id
             menu.addItem(entry)

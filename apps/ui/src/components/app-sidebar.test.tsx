@@ -69,6 +69,8 @@ describe("AppSidebar", () => {
     await userEvent.click(screen.getByRole("button", { name: "笔记库：我的笔记" }));
     expect(screen.getByRole("menu").getAttribute("data-align")).toBe("start");
     expect(await screen.findByRole("menuitem", { name: /工作/ })).toBeTruthy();
+    expect(screen.getByText("⌥1")).toBeTruthy();
+    expect(screen.getByText("⌥2")).toBeTruthy();
     fireEvent.click(screen.getByRole("menuitem", { name: "个人" }));
     expect(props.onActivateVault).toHaveBeenCalledExactlyOnceWith("vault-b");
   });

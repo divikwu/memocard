@@ -2,7 +2,7 @@
 import { Check, ChevronDown, FilePenLine, Files, FolderOpen, FolderPlus, Layers, Plus, Search, Settings2, ShieldCheck } from "lucide-react";
 import type { RegisteredVault } from "../bridge";
 import { TagNavigation } from "./tag-navigation";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuBadge, SidebarRail } from "@/components/ui/sidebar";
 
 type SidebarView = "notes" | "drafts" | "settings";
@@ -48,11 +48,12 @@ export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, re
           <DropdownMenuContent align="start" className="w-64 rounded-lg">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-xs text-muted-foreground">笔记库</DropdownMenuLabel>
-              {(registeredVaults.length ? registeredVaults : connected && vaultId ? [{ vaultId, name: vaultName, active: true }] : []).map(vault =>
-                <DropdownMenuItem key={vault.vaultId} className="gap-2 p-2" disabled={working} onClick={() => vault.active ? onNavigate("notes") : onActivateVault(vault.vaultId)}>
+              {(registeredVaults.length ? registeredVaults : connected && vaultId ? [{ vaultId, name: vaultName, active: true }] : []).map((vault, index) =>
+                <DropdownMenuItem key={vault.vaultId} aria-label={vault.name} className="gap-2 p-2" disabled={working} onClick={() => vault.active ? onNavigate("notes") : onActivateVault(vault.vaultId)}>
                   <span className="flex size-6 shrink-0 items-center justify-center rounded-xs border"><Layers className="size-4" /></span>
                   <span className="min-w-0 flex-1 truncate" title={vault.name}>{vault.name}</span>
                   {vault.active && <Check className="size-4" aria-label="当前笔记库" />}
+                  {index < 9 && <DropdownMenuShortcut aria-hidden="true">⌥{index + 1}</DropdownMenuShortcut>}
                 </DropdownMenuItem>)}
               <DropdownMenuSeparator />
               {canChooseVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(false)}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><FolderOpen className="size-4" aria-hidden="true" /></span><span className="font-medium text-muted-foreground">打开已有笔记库</span></DropdownMenuItem>}
