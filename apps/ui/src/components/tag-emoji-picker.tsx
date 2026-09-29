@@ -18,7 +18,7 @@ export default function TagEmojiPicker({ selected = "", onSelect }: { selected?:
   return <div>
     <Input autoFocus aria-label="搜索 Emoji" placeholder="搜索 Emoji" value={query} onChange={event => setQuery(event.target.value)} className="mb-2" />
     <div aria-label="Emoji" className="-mx-1 grid max-h-56 grid-cols-[repeat(auto-fill,minmax(2rem,1fr))] gap-1 overflow-y-auto overscroll-contain px-1">
-      {items.map(item => { const emoji = String.fromCodePoint(...item.u.split("-").map(code => parseInt(code, 16))); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" className={cn("text-lg", selected === emoji && "bg-accent text-accent-foreground")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}>{emoji}</Button>; })}
+      {items.map(item => { const emoji = String.fromCodePoint(...item.u.split("-").map(code => parseInt(code, 16))); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" className={cn("text-xl", selected === emoji && "bg-accent text-accent-foreground")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}>{emoji}</Button>; })}
     </div>
     {!items.length && <p role="status" className="pb-2 text-sm text-muted-foreground">没有匹配的 Emoji</p>}
     <TooltipProvider>
