@@ -9,7 +9,7 @@ const createProps = (overrides: Partial<AppSidebarProps> = {}): AppSidebarProps 
   view: "notes", tag: null, tags: [{ name: "生活", count: 2 }, { name: "工作", count: 1 }],
   draftCount: 3, vaultName: "我的笔记", connected: true, vaultStatusText: "已连接文件夹", hasVaultIssue: false,
   canCreate: true, canChooseVault: true, canCreateVault: true, needsPermission: false, working: false,
-  onNavigate: vi.fn(), onNewNote: vi.fn(), onSearch: vi.fn(), onSelectVault: vi.fn(), onReauthorize: vi.fn(),
+  onNavigate: vi.fn(), onNewNote: vi.fn(), onSearch: vi.fn(), onSelectVault: vi.fn(), onActivateVault: vi.fn(), onReauthorize: vi.fn(),
   ...overrides,
 });
 
@@ -55,6 +55,21 @@ describe("AppSidebar", () => {
     fireEvent.click(await screen.findByRole("menuitem", { name: "创建新笔记库" }));
     expect(props.onSelectVault).toHaveBeenLastCalledWith(true);
     expect(screen.queryByRole("menuitem", { name: "重新授权文件夹" })).toBeNull();
+  });
+
+  it("lists registered vaults and activates an inactive vault", async () => {
+    const props = createProps({
+      vaultId: "vault-a",
+      registeredVaults: [
+        { vaultId: "vault-a", name: "工作", active: true },
+        { vaultId: "vault-b", name: "个人", active: false },
+      ],
+    });
+    renderSidebar(props);
+    await userEvent.click(screen.getByRole("button", { name: "笔记库：我的笔记" }));
+    expect(await screen.findByRole("menuitem", { name: /工作/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("menuitem", { name: "个人" }));
+    expect(props.onActivateVault).toHaveBeenCalledExactlyOnceWith("vault-b");
   });
 
   it("shows only supported vault actions and offers permission recovery when required", async () => {

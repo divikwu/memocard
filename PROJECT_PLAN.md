@@ -18,6 +18,8 @@
 
 2026-09-29 用户追加授权：新增沙盒化的 macOS 菜单栏服务与轻量 `memocard serve` 启动器，目标覆盖 Safari、Codex、Chrome 和 Edge 的经过鉴权 loopback Web。服务通过系统目录选择器和 security-scoped bookmark 直接读写用户授权的原文件夹；切库保持同一 listener，成功提交时轮换浏览器 session，取消或候选验证失败不替换当前库。Chrome / Edge File System Access 直连继续作为可选零安装模式。Edge 仅在真实浏览器验收完成后标记为已支持。范围不包含账户、云端数据库、LAN 服务、公开分发、自动更新或浏览器间草稿同步。具体边界见 docs/LOCAL_SERVICE.md。
 
+2026-09-29 用户追加授权：菜单栏服务支持注册多个已授权笔记库，并在侧栏和菜单栏中提供 Obsidian 式 Vault 切换。单次只激活一个 Vault；每个 Vault 独立保存 security-scoped bookmark，切换继续轮换 session 与 generation，不合并索引、草稿或文件目录。现有单 bookmark 自动迁移到注册表。
+
 ## 1. 目标、范围与默认选择
 
 交付个人使用的 Mac + iPhone 笔记应用：Markdown 文件保存在用户选择的 iCloud Drive 文件夹，支持外部编辑、离线记录、搜索统计，并通过只读 MCP 供 Becoming 项目内脚本读取。

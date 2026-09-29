@@ -1,5 +1,6 @@
 // Sidebar-10 composition, adapted from the official registry snapshot in docs/ui-reference.
-import { ChevronDown, FilePenLine, Files, FolderOpen, FolderPlus, Layers, Plus, Search, Settings2, ShieldCheck } from "lucide-react";
+import { Check, ChevronDown, FilePenLine, Files, FolderOpen, FolderPlus, Layers, Plus, Search, Settings2, ShieldCheck } from "lucide-react";
+import type { RegisteredVault } from "../bridge";
 import { TagNavigation } from "./tag-navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuBadge, SidebarRail } from "@/components/ui/sidebar";
@@ -13,6 +14,7 @@ export interface AppSidebarProps {
   draftCount: number;
   vaultName: string;
   vaultId?: string | null;
+  registeredVaults?: RegisteredVault[];
   onRenameTag?: (from: string, to: string) => Promise<void>;
   connected?: boolean;
   vaultStatusText: string;
@@ -26,13 +28,14 @@ export interface AppSidebarProps {
   onNewNote: () => void;
   onSearch: () => void;
   onSelectVault: (create: boolean) => void;
+  onActivateVault: (vaultId: string) => void;
   onReauthorize: () => void;
 }
 
 
-export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, onRenameTag, connected = false, vaultStatusText, hasVaultIssue,
+export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, vaultStatusText, hasVaultIssue,
   canCreate, canChooseVault, canCreateVault, needsPermission, working,
-  onNavigate, onNewNote, onSearch, onSelectVault, onReauthorize,
+  onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize,
 }: AppSidebarProps) {
   return <Sidebar id="desktop-sidebar" aria-label="笔记导航" className="border-r-0">
     <SidebarHeader>
@@ -45,10 +48,12 @@ export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, on
           <DropdownMenuContent className="w-64 rounded-lg">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-xs text-muted-foreground">笔记库</DropdownMenuLabel>
-              {connected && <DropdownMenuItem className="gap-2 p-2" onClick={() => onNavigate("notes")}>
-                <span className="flex size-6 shrink-0 items-center justify-center rounded-xs border"><Layers className="size-4" /></span>
-                <span className="min-w-0 truncate" title={vaultName}>{vaultName}</span>
-              </DropdownMenuItem>}
+              {(registeredVaults.length ? registeredVaults : connected && vaultId ? [{ vaultId, name: vaultName, active: true }] : []).map(vault =>
+                <DropdownMenuItem key={vault.vaultId} className="gap-2 p-2" disabled={working} onClick={() => vault.active ? onNavigate("notes") : onActivateVault(vault.vaultId)}>
+                  <span className="flex size-6 shrink-0 items-center justify-center rounded-xs border"><Layers className="size-4" /></span>
+                  <span className="min-w-0 flex-1 truncate" title={vault.name}>{vault.name}</span>
+                  {vault.active && <Check className="size-4" aria-label="当前笔记库" />}
+                </DropdownMenuItem>)}
               <DropdownMenuSeparator />
               {canChooseVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(false)}><FolderOpen />打开已有笔记库</DropdownMenuItem>}
               {canCreateVault && <DropdownMenuItem className="gap-2 p-2" disabled={working} onClick={() => onSelectVault(true)}><FolderPlus />创建新笔记库</DropdownMenuItem>}
