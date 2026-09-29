@@ -467,20 +467,15 @@ describe("note workspace", () => {
     expect(screen.getByText(second.body)).toBeTruthy();
   });
 
-  it("opens and stops the native web service from Mac settings", async () => {
+  it("delegates the Mac browser entry to the menu bar service", async () => {
     window.history.replaceState(null, "", "#/settings");
     const implementation = bridge.request.getMockImplementation()!;
-    bridge.request.mockImplementation((operation, params) => operation === "getEnvironment" ? Promise.resolve({ platform: "mac", webEnabled: true, mcpEnabled: false, capabilities: ["openWeb", "copyWebLink", "stopWeb"] }) : ["openWeb", "copyWebLink", "stopWeb"].includes(operation) ? Promise.resolve({}) : implementation(operation, params));
+    bridge.request.mockImplementation((operation, params) => operation === "getEnvironment" ? Promise.resolve({ platform: "mac", mcpEnabled: false, capabilities: ["openWeb"] }) : operation === "openWeb" ? Promise.resolve({}) : implementation(operation, params));
     render(<App />);
     fireEvent.click(await screen.findByRole("button", { name: "在浏览器中打开" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("openWeb"));
-    await waitFor(() => expect((screen.getByRole("button", { name: "复制访问链接" }) as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "复制访问链接" }));
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("copyWebLink"));
-    expect(await screen.findByText("访问链接已复制，请在 2 分钟内打开")).toBeTruthy();
-    await waitFor(() => expect((screen.getByRole("button", { name: "关闭本机 Web" }) as HTMLButtonElement).disabled).toBe(false));
-    fireEvent.click(screen.getByRole("button", { name: "关闭本机 Web" }));
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("stopWeb"));
+    expect(screen.queryByRole("button", { name: "复制访问链接" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "关闭本机 Web" })).toBeNull();
   });
 });
 

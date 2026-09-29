@@ -267,9 +267,9 @@ export function App() {
     finally { setWorking(false); }
   }
 
-  async function changeWeb(operation: "openWeb" | "copyWebLink" | "stopWeb") {
+  async function openLocalWeb() {
     setWorking(true); setError("");
-    try { await request(operation); if (operation === "copyWebLink") setNotice("访问链接已复制，请在 2 分钟内打开"); await refresh(); }
+    try { await request("openWeb"); }
     catch (cause) { setError(cause); }
     finally { setWorking(false); }
   }
@@ -386,8 +386,8 @@ export function App() {
             </section>
             <ThemeSettings />
             {capabilities.has("openWeb") && <section aria-labelledby="web-settings-heading" className="space-y-3"><h2 id="web-settings-heading" className="text-balance text-base font-medium">本机 Web</h2><Card className="shadow-none"><CardContent className="space-y-4">
-              <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-6 text-muted-foreground">在这台 Mac 的浏览器中查看和编辑同一个笔记库，使用期间请保持记忆卡 App 运行。</p></div>
-              <div className="flex flex-wrap gap-2"><Button onClick={() => void changeWeb("openWeb")} disabled={!status?.connected || working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button>{capabilities.has("copyWebLink") && <Button variant="outline" onClick={() => void changeWeb("copyWebLink")} disabled={!status?.connected || working}>复制访问链接</Button>}{environment?.webEnabled && capabilities.has("stopWeb") && <Button variant="outline" onClick={() => void changeWeb("stopWeb")} disabled={working}>关闭本机 Web</Button>}</div>
+              <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-6 text-muted-foreground">通过 MemoCard 菜单栏服务，在浏览器中打开统一的多笔记库界面。</p></div>
+              <div className="flex flex-wrap gap-2"><Button onClick={() => void openLocalWeb()} disabled={working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button></div>
             </CardContent></Card></section>}
             {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="text-balance text-base font-medium">MCP 本机读取</h2><Card className="shadow-none"><CardContent className="space-y-4">
               <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-6 text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></div>

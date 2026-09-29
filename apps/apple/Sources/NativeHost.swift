@@ -4,7 +4,6 @@ import WebKit
 import UniformTypeIdentifiers
 import MemoCardCore
 #if os(macOS)
-import MemoCardLocalWeb
 import AppKit
 #else
 import UIKit
@@ -22,11 +21,6 @@ final class NativeHost: ObservableObject {
     private var configURL: URL?
     private var server: LocalReadServer?
     private var startingServer: LocalReadServer?
-    #if os(macOS)
-    private var webServer: LocalWebServer?
-    private var startingWebServer: LocalWebServer?
-    private var webGeneration = UUID()
-    #endif
     private var activeMCP: MCPBinding?
     private var mcpGeneration = UUID()
     private var vaultGeneration = UUID()
@@ -84,7 +78,7 @@ final class NativeHost: ObservableObject {
     var hostCapabilities: [String] {
         var operations = ["selectVault", "pickImage", "openExternal", "uiReady"]
         #if os(macOS)
-        operations += ["setMCPEnabled", "openWeb", "copyWebLink", "stopWeb"]
+        operations += ["setMCPEnabled", "openWeb"]
         #endif
         return operations
     }
@@ -97,7 +91,7 @@ final class NativeHost: ObservableObject {
             await startTask?.value
             let data: Any
             switch operation {
-            case "getEnvironment": data = ["platform": platform, "phase": "M1", "storage": "native", "mcpEnabled": server != nil, "webEnabled": webEnabled, "capabilities": hostCapabilities]
+            case "getEnvironment": data = ["platform": platform, "phase": "M1", "storage": "native", "mcpEnabled": server != nil, "capabilities": hostCapabilities]
             case "uiReady":
                 uiReady = true
                 await deliverPendingNote()
@@ -158,27 +152,8 @@ final class NativeHost: ObservableObject {
                 #endif
             case "openWeb":
                 #if os(macOS)
-                try await openWeb()
+                try await openLocalWebService()
                 data = ["opened": true]
-                #else
-                throw fault("INVALID_ARGUMENT", "本机 Web 只在 Mac 上提供")
-                #endif
-            case "stopWeb":
-                #if os(macOS)
-                stopWeb()
-                notify("statusChanged")
-                data = ["enabled": false]
-                #else
-                throw fault("INVALID_ARGUMENT", "本机 Web 只在 Mac 上提供")
-                #endif
-            case "copyWebLink":
-                #if os(macOS)
-                let url = try await makeWebLaunchURL()
-                NSPasteboard.general.clearContents()
-                guard NSPasteboard.general.setString(url.absoluteString, forType: .string) else {
-                    throw fault("STORE_UNAVAILABLE", "无法复制访问链接，请重试")
-                }
-                data = ["copied": true]
                 #else
                 throw fault("INVALID_ARGUMENT", "本机 Web 只在 Mac 上提供")
                 #endif
@@ -214,9 +189,6 @@ final class NativeHost: ObservableObject {
         vaultID = nil
         startupError = nil
         stopServer()
-        #if os(macOS)
-        stopWeb()
-        #endif
         if let presenter { NSFileCoordinator.removeFilePresenter(presenter); self.presenter = nil }
         vaultURL?.stopAccessingSecurityScopedResource()
         vaultURL = nil
@@ -226,7 +198,6 @@ final class NativeHost: ObservableObject {
         var value = (try await invoke("getStatus", [:])) as? [String: Any] ?? [:]
         value["capabilities"] = (value["capabilities"] as? [String] ?? []) + hostCapabilities
         value["mcpEnabled"] = server != nil
-        value["webEnabled"] = webEnabled
         return value
     }
     func failure(_ error: Error) -> [String: Any] {
@@ -247,7 +218,7 @@ final class NativeHost: ObservableObject {
         if url.scheme == "memocard", url.host == "web", url.path.isEmpty || url.path == "/" {
             Task {
                 await startTask?.value
-                do { try await openWeb() }
+                do { try await openLocalWebService() }
                 catch {
                     NSApp.activate(ignoringOtherApps: true)
                     let alert = NSAlert()
@@ -288,100 +259,12 @@ final class NativeHost: ObservableObject {
         NSFileCoordinator.addFilePresenter(watcher)
     }
 
-    private var webEnabled: Bool {
-        #if os(macOS)
-        return webServer != nil
-        #else
-        return false
-        #endif
-    }
-
     #if os(macOS)
-    private let webOperations: Set<String> = ["getEnvironment", "getStatus", "queryNotes", "getNote", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
-
-    private func stopWeb() {
-        // Rotate before yielding, so in-flight requests cannot access a newly selected vault.
-        webGeneration = UUID()
-        webServer?.stop(); webServer = nil
-        startingWebServer?.stop(); startingWebServer = nil
-    }
-
-    private func requireWebBinding(_ generation: UUID, vaultGeneration: UUID, vaultID: String) throws {
-        guard generation == webGeneration, vaultGeneration == self.vaultGeneration,
-              vaultID == self.vaultID, vaultURL != nil, !openingVault else {
-            throw fault("UNAUTHORIZED", "本机 Web 授权已失效，请从 Mac 应用重新打开")
+    private func openLocalWebService() async throws {
+        let command = URL(string: "memocard-service://open-web")!
+        guard NSWorkspace.shared.open(command) else {
+            throw fault("STORE_UNAVAILABLE", "无法打开 MemoCard 本机服务，请确认已完成安装")
         }
-    }
-
-    private func openWeb() async throws {
-        let url = try await makeWebLaunchURL()
-        guard NSWorkspace.shared.open(url) else { throw fault("STORE_UNAVAILABLE", "无法打开浏览器，请重试") }
-    }
-
-    private func makeWebLaunchURL() async throws -> URL {
-        guard !openingVault, let selectedID = vaultID, vaultURL != nil else {
-            throw fault("STORE_UNAVAILABLE", "请先在 Mac 应用中选择笔记文件夹，再打开本机 Web")
-        }
-        guard startingWebServer == nil else { throw fault("BUSY", "正在启动本机 Web，请稍后重试") }
-        let generation = webGeneration, selectedGeneration = vaultGeneration
-        if webServer == nil {
-            guard let root = Bundle.main.resourceURL?.appendingPathComponent("Web", isDirectory: true) else {
-                throw fault("STORE_UNAVAILABLE", "应用内的网页资源不可用，请重新安装")
-            }
-            let candidate = LocalWebServer(resourceRoot: root, handler: { [weak self] request in
-                guard let self else { return ["ok": false, "error": ["code": "APP_NOT_RUNNING", "message": "Mac 应用已退出", "retryable": true]] }
-                return await self.webRequest(request, generation: generation, vaultGeneration: selectedGeneration, vaultID: selectedID)
-            }, assetHandler: { [weak self] path in
-                guard let self else { throw URLError(.cannotConnectToHost) }
-                return try await self.webAsset(path, generation: generation, vaultGeneration: selectedGeneration, vaultID: selectedID)
-            })
-            startingWebServer = candidate
-            do {
-                _ = try await candidate.start()
-                try requireWebBinding(generation, vaultGeneration: selectedGeneration, vaultID: selectedID)
-                webServer = candidate; startingWebServer = nil
-            } catch {
-                candidate.stop()
-                if startingWebServer === candidate { startingWebServer = nil }
-                throw error
-            }
-        }
-        guard let service = webServer else { throw fault("STORE_UNAVAILABLE", "本机 Web 尚未启动") }
-        let url = try await service.makeLaunchURL()
-        try requireWebBinding(generation, vaultGeneration: selectedGeneration, vaultID: selectedID)
-        notify("statusChanged")
-        return url
-    }
-
-    private func webRequest(_ request: [String: Any], generation: UUID, vaultGeneration: UUID, vaultID: String) async -> [String: Any] {
-        do {
-            try requireWebBinding(generation, vaultGeneration: vaultGeneration, vaultID: vaultID)
-            guard request["version"] as? Int == 1, request["requestId"] as? String != nil,
-                  let operation = request["operation"] as? String, webOperations.contains(operation),
-                  let params = request["params"] as? [String: Any] else {
-                throw fault("INVALID_ARGUMENT", "本机 Web 不支持此操作")
-            }
-            let data: Any
-            if operation == "getEnvironment" {
-                data = ["platform": "web", "phase": "M1", "storage": "local-web", "mcpEnabled": false, "webEnabled": true, "capabilities": ["pickImage", "openExternal"]]
-            } else if operation == "getStatus" {
-                var value = try await invoke("getStatus", [:], expectedBinding: vaultGeneration) as? [String: Any] ?? [:]
-                value["capabilities"] = (value["capabilities"] as? [String] ?? []).filter { webOperations.contains($0) } + ["pickImage", "openExternal"]
-                data = value
-            } else {
-                data = try await invoke(operation, params, expectedBinding: vaultGeneration)
-            }
-            try requireWebBinding(generation, vaultGeneration: vaultGeneration, vaultID: vaultID)
-            if ["saveNote", "saveDraft", "importAttachment"].contains(operation) { notify("notesChanged") }
-            return ["ok": true, "data": data]
-        } catch { return failure(error) }
-    }
-
-    private func webAsset(_ path: String, generation: UUID, vaultGeneration: UUID, vaultID: String) async throws -> Data {
-        try requireWebBinding(generation, vaultGeneration: vaultGeneration, vaultID: vaultID)
-        let data = try await store.asset(relativePath: path, expectedBinding: vaultGeneration)
-        try requireWebBinding(generation, vaultGeneration: vaultGeneration, vaultID: vaultID)
-        return data
     }
     #endif
     private func authorize(_ url: URL) throws -> Data {

@@ -1,6 +1,6 @@
 # 本机 Web
 
-本机 Web 是 MemoCard Swift 文件核心的浏览器界面，由独立菜单栏服务或 Mac App 在随机 loopback 端口提供。菜单栏服务是 Safari、Codex、Chrome 和 Edge 的推荐入口；Mac App 宿主作为兼容入口保留。两者复用 React 界面和文件核心，不需要 Node 写入服务，也不扩大 MCP 的只读权限。
+本机 Web 是 MemoCard Swift 文件核心的浏览器界面，只由独立菜单栏服务在随机 loopback 端口提供，支持 Safari、Codex、Chrome 和 Edge。Mac App 设置中的浏览器入口和 `memocard://web` 仅把安全的 `memocard-service://open-web` 命令交给已安装服务，不再创建 listener。原生 App 与浏览器复用 React 界面和文件核心，不需要 Node 写入服务，也不扩大 MCP 的只读权限。
 
 ## 使用
 
@@ -22,7 +22,7 @@
 - 网页直接加载打包的 HTML/CSS/JavaScript/字体；HTTP 页面应用独立 CSP，只允许同源数据与图片，禁止原始 Markdown HTML 执行、嵌套页面和表单提交。
 - `POST /api/bridge` 复用版本 1 的结构化请求与响应，仅放行状态、笔记查询/读取、标签、草稿、保存和附件导入。图片通过浏览器文件选择器选择，再传给 Swift 导入。
 - `GET /api/assets/assets/...` 需要会话授权，只提供受支持的图片；Swift 再次核对路径、授权和文件可用性，不提供任意文件读取接口。
-- 菜单栏服务允许网页请求打开、创建和切换笔记库；服务在主线程显示原生目录选择器，网页不能传入任意文件路径。Mac App 宿主继续在原生界面中管理目录授权。MCP 配置只由 Mac App 管理。
+- 菜单栏服务允许网页请求打开、创建和切换笔记库；服务在主线程显示原生目录选择器，网页不能传入任意文件路径。Mac App 继续在原生界面中管理自己的目录授权和 MCP 配置，但不向浏览器提供笔记库或会话状态。
 - 切换笔记库、关闭 Web 或退出应用时，监听和会话被撤销。请求绑定启动时的笔记库和授权代次，旧页面不能向新选择的笔记库写入。
 
 ## 保存与断开

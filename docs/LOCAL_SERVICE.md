@@ -21,7 +21,7 @@ CLI 仅把 `memocard-service://open-web` 交给指定 App。它不读取 App 容
 - 目录选择由服务中的 `NSOpenPanel` 完成。授权通过 security-scoped bookmark 保存在服务自己的沙盒容器。
 - 取消或无效候选不会替换当前笔记库。
 - 成功切库时 HTTP 端口保持不变，旧 session 与未使用 token 全部失效；发起切换的标签页通过新的 `reconnectUrl` 换取会话。
-- 服务、Mac App 和 Chrome / Edge 直连模式各自保存草稿和授权。它们只通过 Markdown 与附件共享正式内容。
+- 菜单栏服务、Mac App 原生界面和 Chrome / Edge 直连模式各自保存草稿和目录授权。浏览器本机 Web 只使用菜单栏服务的状态；三种模式只通过 Markdown 与附件共享正式内容。
 
 ## 安全边界
 
