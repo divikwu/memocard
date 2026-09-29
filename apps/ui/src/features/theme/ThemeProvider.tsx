@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { FONT_FAMILIES, type FontChoice } from "@/lib/font-options";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE, parseAppearance, type Appearance, type NeutralPalette, type Palette, type RadiusChoice, type Theme } from "./preferences";
+import { loadFonts } from "./font-loader";
 
 type ThemeContextValue = Appearance & {
   setTheme: (value: Theme) => void;
@@ -36,6 +37,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    void loadFonts([appearance.headingFont, appearance.bodyFont]).catch(() => undefined);
+  }, [appearance.headingFont, appearance.bodyFont]);
 
   useLayoutEffect(() => {
     const transitionStyle = document.createElement("style");

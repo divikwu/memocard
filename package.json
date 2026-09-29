@@ -14,6 +14,8 @@
     "build:ios": "bash scripts/build-apple.sh ios",
     "build:service": "bash scripts/build-service.sh",
     "install:service": "bash scripts/install-service.sh",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build"
+    "check:bundle": "node scripts/check-ui-bundle.mjs",
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build && pnpm check:bundle",
+    "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app"
   }
 }

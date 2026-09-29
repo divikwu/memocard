@@ -2,6 +2,15 @@ import Foundation
 import Network
 import Security
 
+struct LocalReadConfiguration: Codable, Sendable {
+    let version: Int
+    let host: String
+    let port: Int
+    let token: String
+    let instanceId: String
+    let vaultId: String
+}
+
 // Mutable network state is confined to queue after start; credential fields are immutable.
 final class LocalReadServer: @unchecked Sendable {
     typealias Handler = (String, [String: Any]) async -> [String: Any]
@@ -23,7 +32,7 @@ final class LocalReadServer: @unchecked Sendable {
         precondition(SecRandomCopyBytes(kSecRandomDefault, random.count, &random) == errSecSuccess)
         token = random.map { String(format: "%02x", $0) }.joined()
     }
-    func start() async throws -> [String: Any] {
+    func start() async throws -> LocalReadConfiguration {
         let parameters = NWParameters.tcp
         parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
         let service = try NWListener(using: parameters)
@@ -34,7 +43,7 @@ final class LocalReadServer: @unchecked Sendable {
                 switch state {
                 case .ready:
                     guard !startResumed, let port = service.port else { return }; startResumed = true
-                    continuation.resume(returning: ["version": 1, "host": "127.0.0.1", "port": Int(port.rawValue), "token": token, "instanceId": instanceId, "vaultId": vaultId])
+                    continuation.resume(returning: LocalReadConfiguration(version: 1, host: "127.0.0.1", port: Int(port.rawValue), token: token, instanceId: instanceId, vaultId: vaultId))
                 case .failed(let error):
                     if !startResumed { startResumed = true; continuation.resume(throwing: error) }
                     service.cancel()

@@ -56,6 +56,31 @@ final class VaultStoreTests: XCTestCase {
         }
     }
 
+    func testRefreshBatchReusesOneSnapshotAndInvalidationReadsExternalChanges() async throws {
+        let core = try await store()
+        _ = try writeNote(id: UUID().uuidString.lowercased())
+        let status = try await call(core, "getStatus")
+        let indexedAt = try XCTUnwrap((status["coverage"] as? [String: Any])?["indexedAt"] as? String)
+        let firstParseMisses = await core.parseMissCount
+        XCTAssertEqual(firstParseMisses, 1)
+
+        let page = try await call(core, "queryNotes")
+        let tags = try await call(core, "listTags")
+        let folders = try await call(core, "listFolders")
+        XCTAssertEqual((page["coverage"] as? [String: Any])?["indexedAt"] as? String, indexedAt)
+        XCTAssertEqual((tags["coverage"] as? [String: Any])?["indexedAt"] as? String, indexedAt)
+        XCTAssertEqual((folders["coverage"] as? [String: Any])?["indexedAt"] as? String, indexedAt)
+        let batchParseMisses = await core.parseMissCount
+        XCTAssertEqual(batchParseMisses, 1)
+
+        _ = try writeNote(id: UUID().uuidString.lowercased())
+        await core.invalidateSnapshot()
+        let refreshed = try await call(core, "queryNotes")
+        XCTAssertEqual((refreshed["notes"] as? [[String: Any]])?.count, 2)
+        let refreshedParseMisses = await core.parseMissCount
+        XCTAssertEqual(refreshedParseMisses, 2)
+    }
+
     func expectCode(_ code: String, _ action: () async throws -> Void, file: StaticString = #filePath, line: UInt = #line) async {
         do {
             try await action()

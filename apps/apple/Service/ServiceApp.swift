@@ -1,4 +1,5 @@
 import AppKit
+import MemoCardLocalWeb
 import ServiceManagement
 
 @MainActor
@@ -109,17 +110,15 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleLogin() {
         do {
-            switch SMAppService.mainApp.status {
-            case .enabled:
+            switch loginItemDecision(for: SMAppService.mainApp.status) {
+            case .unregister:
                 try SMAppService.mainApp.unregister()
-            case .notRegistered:
+            case .register:
                 try SMAppService.mainApp.register()
-            case .requiresApproval:
+            case .openApprovalSettings:
                 SMAppService.openSystemSettingsLoginItems()
-            case .notFound:
+            case .missingApplication:
                 throw NSError(domain: "dev.memocard.service.login", code: 1, userInfo: [NSLocalizedDescriptionKey: "系统找不到已安装的 MemoCard 服务，请重新安装后再试。"])
-            @unknown default:
-                throw NSError(domain: "dev.memocard.service.login", code: 2, userInfo: [NSLocalizedDescriptionKey: "当前系统无法更新登录启动状态。"])
             }
         } catch { NSAlert(error: error).runModal() }
         rebuildMenu()

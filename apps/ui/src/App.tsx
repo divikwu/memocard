@@ -1,5 +1,5 @@
 import { renameTag, renamedTag } from "./rename-tag";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUpRight, Check, ChevronDown, CircleAlert, FilePenLine, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage } from "@/components/ui/breadcrumb";
@@ -14,11 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ThemeSettings } from "@/features/theme/ThemeSettings";
 import type { Note, NotePage, VaultStatus } from "@memocard/contracts";
 import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
-import { Editor } from "./Editor";
-import { NotePreview } from "./NotePreview";
 import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
 
@@ -27,6 +24,9 @@ type TagCount = { name: string; count: number };
 const getView = (): View => window.location.hash === "#/drafts" ? "drafts" : window.location.hash === "#/settings" ? "settings" : "notes";
 const bridgeErrorCode = (error: unknown): string | null => typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
 const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error === "object" && error !== null && "retryable" in error && typeof error.retryable === "boolean" ? error.retryable : null;
+const Editor = lazy(() => import("./Editor").then((module) => ({ default: module.Editor })));
+const NotePreview = lazy(() => import("./NotePreview").then((module) => ({ default: module.NotePreview })));
+const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
 
 export function App() {
   const [view, setView] = useState<View>(getView);
@@ -384,7 +384,7 @@ export function App() {
                 </Collapsible>}
               </CardContent></Card>
             </section>
-            <ThemeSettings />
+            <Suspense fallback={<Skeleton className="h-44 rounded-xl" />}><ThemeSettings /></Suspense>
             {capabilities.has("openWeb") && <section aria-labelledby="web-settings-heading" className="space-y-3"><h2 id="web-settings-heading" className="text-balance text-base font-medium">本机 Web</h2><Card className="shadow-none"><CardContent className="space-y-4">
               <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-6 text-muted-foreground">通过 MemoCard 菜单栏服务，在浏览器中打开统一的多笔记库界面。</p></div>
               <div className="flex flex-wrap gap-2"><Button onClick={() => void openLocalWeb()} disabled={working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button></div>
@@ -409,17 +409,17 @@ export function App() {
                 </div>}
                 <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" />{isBrowserVault || isNative ? "只访问你授权的文件夹" : "只访问你通过 MemoCard 本机宿主授权的文件夹"}</p>
               </CardContent>
-            </Card> : view === "drafts" ? drafts.length ? <div className="space-y-3">{drafts.map((draft) => <Card key={draft.draftKey ?? draft.id} className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className="space-y-4 p-5"><div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><FilePenLine className="size-3.5" />本机草稿</span><time dateTime={draft.updatedAt}>{draft.updatedAt ? formatDate(draft.updatedAt) : "尚未提交"}</time></div><NotePreview body={draft.body} notePath={draft.relativePath} onError={setError} /><div className="flex items-center justify-between gap-3"><div className="flex flex-wrap gap-1.5">{draft.tags.map((name) => <Badge variant="secondary" key={name}>#{name}</Badge>)}</div><Button variant="outline" size="sm" className="shrink-0" onClick={() => resumeDraft(draft)} disabled={!capabilities.has("saveNote")}>继续编辑</Button></div></CardContent></Card>)}</div> : <EmptyState icon="draft" title="没有未完成的草稿" description="编辑中的内容会自动保存在本机，下次可以接着写。" /> : notes.length ? <div className="space-y-3">
+            </Card> : view === "drafts" ? drafts.length ? <div className="space-y-3">{drafts.map((draft) => <Card key={draft.draftKey ?? draft.id} className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className="space-y-4 p-5"><div className="flex items-center justify-between gap-3 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><FilePenLine className="size-3.5" />本机草稿</span><time dateTime={draft.updatedAt}>{draft.updatedAt ? formatDate(draft.updatedAt) : "尚未提交"}</time></div><Suspense fallback={<Skeleton className="h-16" />}><NotePreview body={draft.body} notePath={draft.relativePath} onError={setError} /></Suspense><div className="flex items-center justify-between gap-3"><div className="flex flex-wrap gap-1.5">{draft.tags.map((name) => <Badge variant="secondary" key={name}>#{name}</Badge>)}</div><Button variant="outline" size="sm" className="shrink-0" onClick={() => resumeDraft(draft)} disabled={!capabilities.has("saveNote")}>继续编辑</Button></div></CardContent></Card>)}</div> : <EmptyState icon="draft" title="没有未完成的草稿" description="编辑中的内容会自动保存在本机，下次可以接着写。" /> : notes.length ? <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{debouncedQuery ? `“${debouncedQuery}” 的搜索结果` : "按创建时间排列"}</span><span className="tabular-nums">已加载 {notes.length} 条{loading ? " · 更新中" : ""}</span></div>
-              {notes.map((note) => <Card key={note.id} className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className="p-5"><div className="mb-3 text-xs text-muted-foreground"><time dateTime={note.createdAt}>{formatDate(note.createdAt)}</time></div><NotePreview body={note.body} notePath={note.relativePath} onError={setError} /><div className="mt-4 flex items-center justify-between gap-3"><div className="flex flex-wrap gap-1">{note.tags.map((name) => <Button key={name} variant="ghost" size="sm" className="h-7 px-2 text-xs font-normal text-muted-foreground" onClick={() => navigate("notes", name)}>#{name}</Button>)}</div><Button variant="ghost" size="sm" className="shrink-0 text-muted-foreground" aria-label={`打开 ${formatDate(note.createdAt)} 的笔记`} onClick={() => void openNote(note.id)} disabled={working || !capabilities.has("getNote")}><span>编辑</span></Button></div></CardContent></Card>)}
+              {notes.map((note) => <Card key={note.id} className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className="p-5"><div className="mb-3 text-xs text-muted-foreground"><time dateTime={note.createdAt}>{formatDate(note.createdAt)}</time></div><Suspense fallback={<Skeleton className="h-16" />}><NotePreview body={note.body} notePath={note.relativePath} onError={setError} /></Suspense><div className="mt-4 flex items-center justify-between gap-3"><div className="flex flex-wrap gap-1">{note.tags.map((name) => <Button key={name} variant="ghost" size="sm" className="h-7 px-2 text-xs font-normal text-muted-foreground" onClick={() => navigate("notes", name)}>#{name}</Button>)}</div><Button variant="ghost" size="sm" className="shrink-0 text-muted-foreground" aria-label={`打开 ${formatDate(note.createdAt)} 的笔记`} onClick={() => void openNote(note.id)} disabled={working || !capabilities.has("getNote")}><span>编辑</span></Button></div></CardContent></Card>)}
               {cursor && <div className="flex justify-center pt-3"><Button variant="outline" onClick={() => void loadMore()} disabled={paging || switchingVault}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
             </div> : <EmptyState icon={query || tag ? "search" : "note"} title={query || tag ? "没有找到相关笔记" : "记下第一条笔记"} description={query || tag ? "换一个关键词，或清除标签筛选。" : "一句想法、一段发现，不必想好标题。"}>{!query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}
           </>}
         </div>
       </div>
     </SidebarInset>
-    {notice && <div role="status" className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground shadow-lg"><Check className="size-4" />{notice}</div>}
-    {editing && <Editor key={editing.id} initial={editing} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={() => { setNotice("已保存"); finishEditing(); }} />}
+    {notice && <div role="status" className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
+    {editing && <Suspense fallback={<div role="status" className="fixed inset-0 z-50 grid place-items-center bg-background/80"><LoaderCircle className="size-5 animate-spin motion-reduce:animate-none" /><span className="sr-only">正在打开编辑器</span></div>}><Editor key={editing.id} initial={editing} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={() => { setNotice("已保存"); finishEditing(); }} /></Suspense>}
   </SidebarProvider>;
 }
 
