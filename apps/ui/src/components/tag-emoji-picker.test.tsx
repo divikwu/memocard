@@ -8,6 +8,11 @@ it("searches Chinese names across categories and returns the native emoji", asyn
   const onSelect = vi.fn();
   const user = userEvent.setup();
   render(<TagEmojiPicker selected="🎨" onSelect={onSelect} />);
+  const categories = screen.getAllByRole("button", { name: /Emoji 分类：/ });
+  expect(categories).toHaveLength(8);
+  expect(categories[0].getAttribute("aria-pressed")).toBe("true");
+  await user.click(screen.getByRole("button", { name: "Emoji 分类：动物与自然" }));
+  expect(screen.getByRole("button", { name: "Emoji 分类：动物与自然" }).getAttribute("aria-pressed")).toBe("true");
   await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "调色板");
   const palette = screen.getByRole("button", { name: /调色板/ });
   expect(palette.getAttribute("aria-pressed")).toBe("true");
