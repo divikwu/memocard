@@ -31,6 +31,10 @@ pnpm build:ios
 
 桌面 Chrome / Edge 可直接选择、创建、切换本机文件夹，无需 Mac App。Markdown 与图片写入所选目录；草稿和目录授权保存在当前浏览器的 IndexedDB。启动下方开发服务器即可使用，生产构建 `apps/ui/dist` 可部署到 HTTPS 静态托管。本次没有公开发布网站；其他电脑需要同步好自己的本地文件夹后单独授权。详见 [独立 Web](docs/BROWSER_VAULT.md)。
 
+### 本地跨浏览器服务
+
+Safari、Codex、Chrome 和 Edge 的推荐本机入口是独立菜单栏应用 `MemoCardService.app`。运行 `pnpm build:service && pnpm install:service` 安装后，用 `memocard serve` 请求服务打开经过鉴权的 loopback 页面。网页可通过系统目录选择器打开、创建或切换笔记库，正式 Markdown 和附件直接写回原文件夹；切库不更换端口，但会让旧标签页的会话失效。详细构建、安全边界与验收要求见 [本地跨浏览器服务](docs/LOCAL_SERVICE.md)。
+
 ### 本机 Web
 
 在 Mac 应用中选择笔记库，然后进入设置，点击“在浏览器中打开”。需要使用 Codex 内置浏览器等其他浏览器时，点击“复制访问链接”，在 2 分钟内粘贴打开。浏览器复用同一套界面和笔记文件，可以查看、新建、编辑、保存草稿和导入图片；应用关闭或停用 Web 后无法继续读写。切换笔记库后需从应用重新打开，旧网页不能继续写入其他库。
