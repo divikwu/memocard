@@ -1,4 +1,5 @@
 import { RotateCcw } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FONT_FAMILIES, FONT_GROUPS, type FontChoice } from "@/lib/font-options";
@@ -25,16 +26,16 @@ function FontSelect({ label, value, onChange }: { label: string; value: FontChoi
   return (
     <div className="flex items-center justify-between gap-4 py-3">
       <p className="min-w-0 text-sm">{label}</p>
-      <Select value={value} onValueChange={next => { if (next) onChange(next); }}>
+      <Select value={value} onValueChange={next => { if (next) onChange(next as FontChoice); }}>
         <SelectTrigger aria-label={label} className="w-40 shrink-0 sm:w-48">
           <SelectValue style={{ fontFamily: FONT_FAMILIES[value] }}>{fontLabels[value]}</SelectValue>
         </SelectTrigger>
-        <SelectContent align="end" alignItemWithTrigger={false} className="max-h-80">
+        <SelectContent align="end" position="popper" className="max-h-80">
           {FONT_GROUPS.map(group => (
             <SelectGroup key={group.label}>
               <SelectLabel>{group.label}</SelectLabel>
               {group.options.map(font => (
-                <SelectItem key={font.value} value={font.value} label={font.label} style={{ fontFamily: FONT_FAMILIES[font.value] }}>
+                <SelectItem key={font.value} value={font.value} style={{ fontFamily: FONT_FAMILIES[font.value] }}>
                   {font.label}
                 </SelectItem>
               ))}
@@ -50,7 +51,7 @@ export function ThemeSettings() {
   const theme = useTheme();
   const radius = radii.find(option => option.value === theme.radius)!;
   return (
-    <section aria-labelledby="appearance-heading" className="border-b border-border/60 pb-8">
+    <Card aria-labelledby="appearance-heading"><CardContent>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h2 id="appearance-heading" className="text-sm font-medium">外观</h2>
@@ -64,30 +65,30 @@ export function ThemeSettings() {
       <div className="mt-4 divide-y divide-border/60">
         <div className="flex items-center justify-between gap-4 py-3">
           <p className="min-w-0 text-sm">显示模式</p>
-          <Select value={theme.theme} onValueChange={next => { if (next) theme.setTheme(next); }}>
+          <Select value={theme.theme} onValueChange={next => { if (next) theme.setTheme(next as Parameters<typeof theme.setTheme>[0]); }}>
             <SelectTrigger aria-label="显示模式" className="w-40 shrink-0 sm:w-48">
               <SelectValue>{modes.find(mode => mode.value === theme.theme)?.label}</SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" alignItemWithTrigger={false}>
+            <SelectContent align="end" position="popper">
               <SelectGroup>
-                {modes.map(({ value, label }) => <SelectItem key={value} value={value} label={label}>{label}</SelectItem>)}
+                {modes.map(({ value, label }) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
         <div className="flex items-center justify-between gap-4 py-3">
           <p className="min-w-0 text-sm">强调色</p>
-          <Select value={theme.palette} onValueChange={next => { if (next) theme.setPalette(next); }}>
+          <Select value={theme.palette} onValueChange={next => { if (next) theme.setPalette(next as Parameters<typeof theme.setPalette>[0]); }}>
             <SelectTrigger aria-label="强调色" className="w-40 shrink-0 sm:w-48">
               <SelectValue className="capitalize">
                 <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full border border-foreground/10" style={{ backgroundColor: `var(--palette-${theme.palette}-swatch)` }} />
                 {theme.palette}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" alignItemWithTrigger={false}>
+            <SelectContent align="end" position="popper">
               <SelectGroup>
                 {PALETTE_VALUES.map(value => (
-                  <SelectItem key={value} value={value} label={value} className="capitalize">
+                  <SelectItem key={value} value={value} className="capitalize">
                     <span aria-hidden="true" className="size-2.5 shrink-0 self-center rounded-full border border-foreground/10" style={{ backgroundColor: `var(--palette-${value}-swatch)` }} />
                     {value}
                   </SelectItem>
@@ -98,13 +99,13 @@ export function ThemeSettings() {
         </div>
         <div className="flex items-center justify-between gap-4 py-3">
           <p className="min-w-0 text-sm">中性色</p>
-          <Select value={theme.neutralPalette} onValueChange={next => { if (next) theme.setNeutralPalette(next); }}>
+          <Select value={theme.neutralPalette} onValueChange={next => { if (next) theme.setNeutralPalette(next as Parameters<typeof theme.setNeutralPalette>[0]); }}>
             <SelectTrigger aria-label="中性色" className="w-40 shrink-0 sm:w-48">
               <SelectValue className="capitalize">{theme.neutralPalette}</SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" alignItemWithTrigger={false}>
+            <SelectContent align="end" position="popper">
               <SelectGroup>
-                {NEUTRAL_VALUES.map(value => <SelectItem key={value} value={value} label={value} className="capitalize">{value}</SelectItem>)}
+                {NEUTRAL_VALUES.map(value => <SelectItem key={value} value={value} className="capitalize">{value}</SelectItem>)}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -113,18 +114,18 @@ export function ThemeSettings() {
         <FontSelect label="正文字体" value={theme.bodyFont} onChange={theme.setBodyFont} />
         <div className="flex items-center justify-between gap-4 py-3">
           <p className="min-w-0 text-sm">圆角</p>
-          <Select value={theme.radius} onValueChange={next => { if (next) theme.setRadius(next); }}>
+          <Select value={theme.radius} onValueChange={next => { if (next) theme.setRadius(next as Parameters<typeof theme.setRadius>[0]); }}>
             <SelectTrigger aria-label="圆角" className="w-40 shrink-0 sm:w-48">
               <SelectValue>{radius.label} · {radius.pixels}px</SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" alignItemWithTrigger={false}>
+            <SelectContent align="end" position="popper">
               <SelectGroup>
-                {radii.map(({ value, label, pixels }) => <SelectItem key={value} value={value} label={`${label} · ${pixels}px`}>{label} · {pixels}px</SelectItem>)}
+                {radii.map(({ value, label, pixels }) => <SelectItem key={value} value={value}>{label} · {pixels}px</SelectItem>)}
               </SelectGroup>
             </SelectContent>
           </Select>
         </div>
       </div>
-    </section>
+    </CardContent></Card>
   );
 }

@@ -138,15 +138,14 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
     }
   }
 
-  return <Dialog open onOpenChange={(open, event) => {
+  return <Dialog open onOpenChange={(open) => {
     if (!open) {
-      event.cancel();
       void closeEditor();
     }
   }}>
     <DialogContent
       showCloseButton={false}
-      initialFocus={field}
+      onOpenAutoFocus={event => { event.preventDefault(); field.current?.focus(); }}
       className="flex h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none border-0 p-0 sm:h-[min(680px,calc(100dvh-48px))] sm:max-w-[720px] sm:rounded-xl sm:border"
     >
       <header className="flex shrink-0 items-center justify-between gap-4 border-b px-5 pb-4 pt-[max(20px,env(safe-area-inset-top))] sm:px-6">
@@ -154,7 +153,7 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
           <div>
             <DialogTitle className="text-base font-semibold">{initial.baseHash ? "编辑笔记" : "新建笔记"}</DialogTitle>
             <DialogDescription className="mt-0.5 text-xs">支持 Markdown，内容自动保存为草稿。</DialogDescription>
-            <p className="mt-1 truncate text-xs text-muted-foreground" title={notePath}>保存到：{notePath.split("/").slice(0, -1).map((part, index) => index === 0 ? "笔记目录" : part).join(" / ")}</p>
+            <p className="mt-1 truncate text-xs text-muted-foreground" title={notePath}>保存到：{notePath.split("/").slice(0, -1).map((part, index) => index === 0 && part === "notes" ? "笔记目录" : part).join(" / ") || "笔记库根目录"}</p>
           </div>
         </div>
         <Button variant="ghost" size="icon" onClick={() => void closeEditor()} disabled={working} aria-label="保存草稿并关闭"><X className="size-4" /></Button>
@@ -189,7 +188,7 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
                 setTags(draftTags); setTagInput("");
               }
             }}
-            className="h-9 border-0 bg-transparent px-0 text-sm shadow-none focus-visible:ring-0 dark:bg-transparent"
+            className="flex-1"
           />
           <Button variant="ghost" size="icon" className="size-8 shrink-0" aria-label="确认添加标签" disabled={working || !tagInput.trim()} onClick={() => { setTags(draftTags); setTagInput(""); }}><Plus className="size-4" /></Button>
         </div>

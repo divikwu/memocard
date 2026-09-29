@@ -10,6 +10,8 @@ public actor VaultStore {
     private var root: URL?
     private var metadata: VaultMetadata?
     private var binding = UUID()
+    private var compatible: Bool { metadata?.formatVersion == 2 }
+    private var identities: [FileIdentity] = []
 
     public init(localDataURL: URL) throws {
         guard localDataURL.isFileURL else {
@@ -30,9 +32,11 @@ public actor VaultStore {
         try requireBinding(expectedBinding)
         let (root, _) = try active()
         let components = relativePath.split(separator: "/", omittingEmptySubsequences: false)
-        guard components.count >= 2, components.first == "assets",
+        guard !components.isEmpty, (compatible || (components.count >= 2 && components.first == "assets")),
               components.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }),
-              !relativePath.contains("\\"), !relativePath.contains("\0") else {
+              !relativePath.contains("\\"), !relativePath.contains("\0"),
+              !components.contains(where: { $0.hasPrefix(".") }),
+              ["png", "jpg", "jpeg", "webp", "gif", "heic", "heif"].contains((relativePath as NSString).pathExtension.lowercased()) else {
             throw VaultError(code: "PATH_NOT_ALLOWED", message: "只允许读取 assets 目录中的附件。")
         }
         let target = root.appendingPathComponent(relativePath)
@@ -61,21 +65,21 @@ public actor VaultStore {
         let manifest = candidate.appendingPathComponent(".memocard/vault.json")
         try validate(manifest, inside: candidate)
         if !fm.fileExists(atPath: manifest.path) {
-            guard create else { throw VaultError(code: "VAULT_NOT_FOUND", message: "所选目录没有 MemoCard 笔记库。") }
+
             try coordinateWrite(candidate, inside: candidate) { coordinated in
                 let contents = try self.fm.contentsOfDirectory(atPath: coordinated.path).filter { $0 != ".DS_Store" }
-                guard contents.isEmpty else {
+                guard !create || contents.isEmpty else {
                     throw VaultError(code: "VAULT_NOT_EMPTY", message: "请在空目录中创建笔记库。")
                 }
-                for name in [".memocard", "notes", "assets"] {
-                    try self.fm.createDirectory(at: coordinated.appendingPathComponent(name), withIntermediateDirectories: false)
+                for name in [".memocard"] {
+                    try self.fm.createDirectory(at: coordinated.appendingPathComponent(name), withIntermediateDirectories: true)
                 }
-                let value = VaultMetadata(formatVersion: 1, vaultId: UUID().uuidString.lowercased())
+                let value = VaultMetadata(formatVersion: 2, vaultId: UUID().uuidString.lowercased())
                 try encode(value).write(to: coordinated.appendingPathComponent(".memocard/vault.json"), options: .atomic)
             }
         }
         let value = try readMetadata(at: candidate)
-        for directory in ["notes", "assets"] {
+        for directory in value.formatVersion == 1 ? ["notes", "assets"] : [] {
             let path = candidate.appendingPathComponent(directory)
             try validate(path, inside: candidate)
             guard try fileType(path) == .typeDirectory else {
@@ -88,6 +92,11 @@ public actor VaultStore {
         }
         root = candidate
         metadata = value
+        identities = []
+        if compatible, fm.fileExists(atPath: identityURL.path) {
+            do { identities = try JSONDecoder().decode([FileIdentity].self, from: Data(contentsOf: identityURL)) }
+            catch { root = nil; metadata = nil; throw VaultError(code: "INVALID_LOCAL_DATA", message: "本机笔记身份记录无法读取，请保留草稿后恢复本机记录。") }
+        }
     }
 
     public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) throws -> Data {
@@ -100,6 +109,10 @@ public actor VaultStore {
                 struct Request: Decodable { let id: String }
                 return try encode(getNote(id: try decode(Request.self, params).id))
             case "saveNote": return try encode(saveNote(try decode(SaveRequest.self, params)))
+            case "resolveLink":
+                struct LinkRequest: Decodable { let target: String; let sourcePath: String; let wiki: Bool? }
+                let link = try decode(LinkRequest.self, params)
+                return try resolveLink(link.target, sourcePath: link.sourcePath, wiki: link.wiki == true)
             case "listFolders":
                 let snapshot = try scan()
                 struct Folders: Encodable { let folders: [String]; let coverage: Coverage }
@@ -148,7 +161,7 @@ public actor VaultStore {
         let metadata: VaultMetadata
         do { metadata = try JSONDecoder().decode(VaultMetadata.self, from: data) }
         catch { throw VaultError(code: "INVALID_VAULT", message: "无法解析笔记库元文件。") }
-        guard metadata.formatVersion == 1 else {
+        guard metadata.formatVersion == 1 || metadata.formatVersion == 2 else {
             throw VaultError(code: "UNSUPPORTED_FORMAT", message: "当前应用不支持此笔记库格式。")
         }
         _ = try canonicalID(metadata.vaultId)
@@ -157,12 +170,14 @@ public actor VaultStore {
 
     private func scan() throws -> Snapshot {
         let (root, metadata) = try active()
-        let notesURL = root.appendingPathComponent("notes")
+        let notesURL = compatible ? root : root.appendingPathComponent("notes")
         try validate(notesURL, inside: root)
         guard try fileType(notesURL) == .typeDirectory else {
             throw VaultError(code: "VAULT_UNAVAILABLE", message: "笔记目录不可用。", retryable: true)
         }
         var result = Snapshot()
+        if compatible { result.folders = [""] }
+        var sources: [(path: String, data: Data, modified: Date, hash: String)] = []
         var enumerationFailed = false
         guard let enumerator = fm.enumerator(at: notesURL, includingPropertiesForKeys: nil,
                                              options: [.skipsHiddenFiles], errorHandler: { _, _ in
@@ -177,12 +192,17 @@ public actor VaultStore {
                 guard type == .typeRegular else { result.coverage.issues += 1; continue }
                 guard url.pathExtension.lowercased() == "md" else { continue }
                 guard try isAvailable(url) else { result.coverage.pending += 1; continue }
-                let parsed = try coordinateRead(url, inside: root) { coordinated in
+                let parsed: ParsedNote? = try coordinateRead(url, inside: root) { coordinated in
                     try self.requireNoConflict(coordinated)
                     let data = try self.readSource(coordinated)
+                    if self.compatible {
+                        let modified = try coordinated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? Date(timeIntervalSince1970: 0)
+                        sources.append((self.relative(coordinated, root: root), data, modified, sha256(data)))
+                        return nil
+                    }
                     return try parseNote(data, relativePath: self.relative(coordinated, root: root), vaultID: metadata.vaultId)
                 }
-                result.notes.append(parsed)
+                if let parsed { result.notes.append(parsed) }
             } catch let error as VaultError where error.code == "FILE_PENDING" {
                 result.coverage.pending += 1
             } catch {
@@ -190,6 +210,23 @@ public actor VaultStore {
             }
         }
         if enumerationFailed { result.coverage.issues += 1 }
+        if compatible {
+            var next: [FileIdentity] = []
+            let paths = Set(sources.map { $0.path })
+            for source in sources {
+                let hash = source.hash
+                let moved = identities.filter { !paths.contains($0.path) && $0.hash == hash }
+                let candidates = sources.filter { item in item.hash == hash && !identities.contains(where: { old in old.path == item.path }) }
+                let previous = identities.first { $0.path == source.path } ?? (moved.count == 1 && candidates.count == 1 ? moved.first : nil)
+                let identity = FileIdentity(id: previous?.id ?? UUID().uuidString.lowercased(), path: source.path, hash: hash, createdAt: previous?.createdAt ?? timestamp(source.modified))
+                next.append(identity)
+                do { result.notes.append(try parseObsidianNote(source.data, relativePath: source.path, vaultID: metadata.vaultId, identity: identity, modified: source.modified)) }
+                catch { result.coverage.issues += 1 }
+            }
+            if !enumerationFailed && result.coverage.issues == 0 && result.coverage.pending == 0 {
+                try persistIdentities(next)
+            }
+        }
         let groups = Dictionary(grouping: result.notes, by: { $0.note.id })
         for (id, notes) in groups where notes.count > 1 {
             result.duplicateIDs.insert(id)
@@ -227,7 +264,7 @@ public actor VaultStore {
                 try values.encode(capabilities, forKey: .capabilities)
             }
         }
-        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "saveDraft", "getDrafts", "importAttachment"]
+        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"]
         guard let root, let metadata else {
             return try encode(Status(connected: false, vaultId: nil, vaultName: nil,
                 coverage: Coverage(complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: nil),
@@ -241,9 +278,9 @@ public actor VaultStore {
 
     private func queryNotes(_ query: Query) throws -> Data {
         let snapshot = try scan()
-        if let folder = query.folder {
+        if let folder = query.folder, !folder.isEmpty {
             let parts = folder.split(separator: "/", omittingEmptySubsequences: false)
-            guard parts.first == "notes", !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }), !folder.contains("\\"), !folder.contains("\0") else {
+            guard (compatible || parts.first == "notes"), !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }), !folder.contains("\\"), !folder.contains("\0") else {
                 throw VaultError(code: "INVALID_PARAMS", message: "目录路径无效。")
             }
         }
@@ -279,10 +316,10 @@ public actor VaultStore {
         let cursorDate = try cursor.map { try parseDate($0.createdAt) }
         let matches = snapshot.notes.map(\.note).filter { note in
             let date = try! parseDate(note.createdAt)
-            if let folder = query.folder, !note.relativePath.hasPrefix(folder + "/") { return false }
+            if let folder = query.folder, !folder.isEmpty, !note.relativePath.hasPrefix(folder + "/") { return false }
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
             if let text = query.query, note.body.range(of: text, options: [.caseInsensitive, .literal]) == nil && !text.isEmpty { return false }
-            if let tags = query.tags, !tags.allSatisfy({ note.tags.contains($0) }) { return false }
+            if let tags = query.tags, !tags.allSatisfy({ tag in note.tags.contains { $0 == tag || $0.hasPrefix(tag + "/") } }) { return false }
             if let from, date < from { return false }
             if let to, date >= to { return false }
             if let cursor, let cursorDate, !(date < cursorDate || (date == cursorDate && note.id > cursor.id)) { return false }
@@ -329,10 +366,10 @@ public actor VaultStore {
     }
 
     private func newNotePath(_ value: String?, id: String, root: URL) throws -> String {
-        let path = value ?? "notes/\(id).md"
+        let path = value ?? "\(compatible ? "" : "notes/")\(id).md"
         let parts = path.split(separator: "/", omittingEmptySubsequences: false)
-        guard parts.count >= 2, parts.first == "notes", path.hasSuffix(".md"),
-              parts.allSatisfy({ !$0.isEmpty && $0 != "." && $0 != ".." }),
+        guard !parts.isEmpty, (compatible || (parts.count >= 2 && parts.first == "notes")), path.hasSuffix(".md"),
+              parts.allSatisfy({ !$0.isEmpty && !$0.hasPrefix(".") }),
               !path.contains("\\"), !path.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) else {
             throw VaultError(code: "PATH_NOT_ALLOWED", message: "请选择笔记目录中的 Markdown 文件。")
         }
@@ -354,16 +391,27 @@ public actor VaultStore {
             throw VaultError(code: "SCAN_INCOMPLETE", message: "笔记库包含待下载、冲突或格式异常文件，可以先保存本机草稿，处理后再提交。", retryable: true)
         }
         let existing = snapshot.notes.first { $0.note.id == id }
-        let target = try root.appendingPathComponent(existing?.note.relativePath ?? newNotePath(request.relativePath, id: id, root: root))
+        var requestedPath = request.relativePath
+        if compatible && existing == nil && request.baseHash == nil && (requestedPath == nil || requestedPath!.hasSuffix(id + ".md")) {
+            let line = request.body.components(separatedBy: .newlines).first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? "未命名"
+            let clean = line.replacingOccurrences(of: #"[\\/:*?"<>|#^\x00-\x1f]"#, with: " ", options: .regularExpression).trimmingCharacters(in: CharacterSet.whitespaces.union(CharacterSet(charactersIn: ".")))
+            let title = clean.isEmpty ? "未命名" : String(clean.prefix(60))
+            let directory = requestedPath?.split(separator: "/").dropLast().joined(separator: "/") ?? ""
+            requestedPath = (directory.isEmpty ? "" : directory + "/") + title + "-" + id.prefix(8) + ".md"
+        }
+        let target = try root.appendingPathComponent(existing?.note.relativePath ?? newNotePath(requestedPath, id: id, root: root))
         let saved = try coordinateWrite(target, inside: root) { coordinated in
             try self.requireNoConflict(coordinated)
             var frontmatter = Node([(Node, Node)]())
+            var original: ParsedNote?
             if self.fm.fileExists(atPath: coordinated.path) {
                 let data = try self.readSource(coordinated)
                 guard request.baseHash == sha256(data) else {
                     throw VaultError(code: "HASH_CONFLICT", message: "文件已在其他位置修改，原文未被覆盖。请保留草稿并重新读取。")
                 }
-                let parsed = try parseNote(data, relativePath: self.relative(coordinated, root: root), vaultID: metadata.vaultId)
+                let parsed = try self.compatible ? parseObsidianNote(data, relativePath: self.relative(coordinated, root: root), vaultID: metadata.vaultId,
+                    identity: FileIdentity(id: existing?.note.id ?? id, path: self.relative(coordinated, root: root), hash: sha256(data), createdAt: existing?.note.createdAt ?? timestamp()), modified: Date()) : parseNote(data, relativePath: self.relative(coordinated, root: root), vaultID: metadata.vaultId)
+                original = parsed
                 guard parsed.note.id == id else { throw VaultError(code: "HASH_CONFLICT", message: "目标文件身份已改变。") }
                 guard parsed.note.deletedAt == nil else { throw VaultError(code: "NOTE_DELETED", message: "此笔记已删除，M1 不提供恢复编辑。") }
                 frontmatter = parsed.frontmatter
@@ -376,11 +424,16 @@ public actor VaultStore {
             }
             frontmatter["updatedAt"] = Node(timestamp(), Tag(.str), .doubleQuoted)
             frontmatter["tags"] = Node(tags.map { Node($0, Tag(.str), .doubleQuoted) })
-            let data = try encodedNote(frontmatter: frontmatter, body: request.body)
+            let data = try self.compatible ? encodedObsidianNote(original, body: request.body, tags: tags) : encodedNote(frontmatter: frontmatter, body: request.body)
             guard data.count <= 8 * 1024 * 1024 else {
                 throw VaultError(code: "NOTE_TOO_LARGE", message: "M1 单条 Markdown 最大支持 8 MiB。")
             }
             try data.write(to: coordinated, options: .atomic)
+            if self.compatible {
+                let identity = FileIdentity(id: id, path: self.relative(coordinated, root: root), hash: sha256(data), createdAt: existing?.note.createdAt ?? timestamp())
+                try self.persistIdentities(self.identities.filter { $0.id != id } + [identity])
+                return try parseObsidianNote(data, relativePath: identity.path, vaultID: metadata.vaultId, identity: identity, modified: Date()).note
+            }
             return try parseNote(data, relativePath: self.relative(coordinated, root: root), vaultID: metadata.vaultId).note
         }
         // Committing the source succeeds independently of best-effort draft cleanup.
@@ -405,7 +458,11 @@ public actor VaultStore {
         let snapshot = try scan()
         var counts: [String: Int] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
-            for tag in parsed.note.tags { counts[tag, default: 0] += 1 }
+            let names = Set(parsed.note.tags.flatMap { tag -> [String] in
+                let parts = tag.components(separatedBy: "/")
+                return parts.indices.map { parts[...$0].joined(separator: "/") }
+            })
+            for tag in names { counts[tag, default: 0] += 1 }
         }
         struct TagCount: Encodable { let name: String; let count: Int }
         struct Result: Encodable { let tags: [TagCount]; let coverage: Coverage }
@@ -461,7 +518,7 @@ public actor VaultStore {
         guard supportedTypes.contains(uniformType.identifier) else {
             throw VaultError(code: "UNSUPPORTED_ATTACHMENT", message: "暂不支持此图片格式，请先转换为 PNG、JPEG、GIF、WebP、HEIC 或 HEIF。")
         }
-        var notePath = "notes/new.md"
+        var notePath = compatible ? "new.md" : "notes/new.md"
         if let noteID {
             let id = try canonicalID(noteID)
             let snapshot = try scan()
@@ -480,6 +537,8 @@ public actor VaultStore {
         }
         let path = "assets/\(UUID().uuidString.lowercased()).\(ext)"
         let target = root.appendingPathComponent(path)
+        try validate(target, inside: root)
+        try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
         try coordinateWrite(target, inside: root) { url in
             guard !self.fm.fileExists(atPath: url.path) else { throw VaultError(code: "FILE_EXISTS", message: "附件文件已存在。") }
             try data.write(to: url, options: .atomic)
@@ -488,6 +547,63 @@ public actor VaultStore {
         let directoryDepth = notePath.split(separator: "/").count - 1
         return try encode(Result(relativePath: path, markdownPath: String(repeating: "../", count: directoryDepth) + path,
                                  notePath: notePath))
+    }
+
+    private func resolveLink(_ target: String, sourcePath: String, wiki: Bool) throws -> Data {
+        let (root, _) = try active()
+        let snapshot = try scan()
+        guard snapshot.coverage.complete else { throw VaultError(code: "SCAN_INCOMPLETE", message: "笔记库尚未完整读取，无法安全解析链接。") }
+        let raw = String(target.split(separator: "#", omittingEmptySubsequences: false).first ?? "")
+        guard let decoded = wiki ? raw : raw.removingPercentEncoding, !decoded.isEmpty,
+              !decoded.contains("\\"), !decoded.contains(":"), !decoded.unicodeScalars.contains(where: { $0.value < 32 }) else {
+            throw VaultError(code: "LINK_NOT_FOUND", message: "链接路径无效。")
+        }
+        var paths = snapshot.notes.map { $0.note.relativePath }
+        if let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
+            for case let url as URL in enumerator {
+                try validate(url, inside: root)
+                if ["png", "jpg", "jpeg", "gif", "webp", "heic", "heif"].contains(url.pathExtension.lowercased()), try fileType(url) == .typeRegular {
+                    paths.append(relative(url, root: root))
+                }
+            }
+        }
+        func normalized(_ value: String) -> String? {
+            var parts: [String] = []
+            for part in value.split(separator: "/", omittingEmptySubsequences: false) {
+                if part == "." || part.isEmpty { continue }
+                if part == ".." { guard !parts.isEmpty else { return nil }; parts.removeLast() }
+                else { guard !part.hasPrefix(".") else { return nil }; parts.append(String(part)) }
+            }
+            return parts.joined(separator: "/")
+        }
+        let directory = sourcePath.split(separator: "/").dropLast().joined(separator: "/")
+        let relativeTarget = directory.isEmpty ? decoded : directory + "/" + decoded
+        var matches: [String] = []
+        for candidate in wiki ? [decoded, relativeTarget] : [relativeTarget, decoded] {
+            if let path = normalized(candidate) {
+                matches = paths.filter { $0 == path || $0 == path + ".md" }
+                if !matches.isEmpty { break }
+            }
+        }
+        if matches.isEmpty && wiki && !decoded.hasPrefix("/") && !decoded.split(separator: "/").contains(where: { $0.hasPrefix(".") }) {
+            matches = paths.filter { $0.hasSuffix("/" + decoded) || $0.hasSuffix("/" + decoded + ".md") }
+        }
+        guard matches.count == 1 else { throw VaultError(code: matches.isEmpty ? "LINK_NOT_FOUND" : "AMBIGUOUS_LINK", message: matches.isEmpty ? "找不到链接目标。" : "链接匹配多份文件，请使用完整路径。") }
+        struct Link: Encodable { let kind: String; let id: String?; let path: String }
+        let note = snapshot.notes.first { $0.note.relativePath == matches[0] }?.note
+        return try encode(Link(kind: note == nil ? "image" : "note", id: note?.id, path: matches[0]))
+    }
+
+    private var identityURL: URL {
+        let scope = sha256(Data((root!.path + ":" + metadata!.vaultId).utf8))
+        return localDataURL.appendingPathComponent("identities-\(scope).json")
+    }
+
+    private func persistIdentities(_ values: [FileIdentity]) throws {
+        if values.map({ "\($0.id):\($0.path):\($0.hash)" }) != identities.map({ "\($0.id):\($0.path):\($0.hash)" }) {
+            try encode(values).write(to: identityURL, options: .atomic)
+        }
+        identities = values
     }
 
     private func readSource(_ url: URL) throws -> Data {

@@ -11,7 +11,7 @@ describe("safe note rendering", () => {
     expect(externalUrl("https://example.com/note?q=hi")).toBe("https://example.com/note?q=hi");
     expect(externalUrl("mailto:hello@example.com")).toBe("mailto:hello@example.com");
   });
-  it.each(["../secret.png", "assets/%2e%2e/secret.png", "https://tracker.test/a.png", "file:///a.png", "memocard-asset://other/a.png", "assets/%252e%252e/a.png", "assets/a.svg", "/secret.png"])("refuses unowned or unsafe images: %s", (path) => {
+  it.each(["assets/%2e%2e/secret.png", "https://tracker.test/a.png", "file:///a.png", "memocard-asset://other/a.png", "assets/a.svg", "/secret.png"])("refuses unowned or unsafe images: %s", (path) => {
     expect(assetUrl(path)).toBeNull();
   });
   it("maps owned relative image paths to the native asset scheme", () => {
@@ -22,8 +22,8 @@ describe("safe note rendering", () => {
   });
   it("resolves images from the actual note directory after an external move", () => {
     expect(assetUrl("../../assets/photo.jpg", "notes/folder/moved.md")).toBe("memocard-asset://vault/assets/photo.jpg");
-    expect(assetUrl("../assets/photo.jpg", "notes/folder/moved.md")).toBeNull();
-    expect(assetUrl("assets/photo.jpg", "notes/note.md")).toBeNull();
+    expect(assetUrl("../assets/photo.jpg", "notes/folder/moved.md")).toBe("memocard-asset://vault/notes/assets/photo.jpg");
+    expect(assetUrl("assets/photo.jpg", "notes/note.md")).toBe("memocard-asset://vault/notes/assets/photo.jpg");
     const html = renderToStaticMarkup(<Markdown notePath="notes/folder/moved.md" body="![photo](../../assets/photo.jpg)" />);
     expect(html).toContain('src="memocard-asset://vault/assets/photo.jpg"');
   });

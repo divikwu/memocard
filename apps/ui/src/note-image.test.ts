@@ -4,7 +4,8 @@ import { bindNoteImage } from "./note-image";
 import { readBrowserAsset } from "./browser-vault";
 
 const state = vi.hoisted(() => ({ binding: "vault-a", browser: true }));
-vi.mock("./client-mode", () => ({ get isBrowserVault() { return state.browser; } }));
+vi.mock("./bridge", () => ({ request: vi.fn() }));
+vi.mock("./client-mode", () => ({ isLocalWeb: false, get isBrowserVault() { return state.browser; } }));
 vi.mock("./browser-vault", () => ({ readBrowserAsset: vi.fn(), getBrowserVaultBinding: () => state.binding }));
 
 beforeEach(() => {

@@ -1,7 +1,8 @@
 import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, VaultStatus } from "@memocard/contracts";
 import { Document } from "yaml";
+import { linkCandidates } from "./link-candidates";
 import { createId } from "./uuid";
-import { BrowserVaultError, canonicalId, encodeBrowserNote, fileAt, fileError, imageType, parseBrowserNote, parseDate, readBytes, safeParts, sha256, validatedTags } from "./browser-files";
+import { BrowserVaultError, canonicalId, encodeBrowserNote, encodeObsidianNote, parseObsidianNote, fileAt, fileError, imageType, parseBrowserNote, parseDate, readBytes, safeParts, sha256, validatedTags } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker, BrowserWritable, ParsedBrowserNote } from "./browser-files";
 import { IndexedDBVaultStorage } from "./browser-storage";
 import type { BrowserDraft, BrowserVaultStorage, StoredSelection } from "./browser-storage";
@@ -10,13 +11,13 @@ export { BrowserVaultError } from "./browser-files";
 export type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker } from "./browser-files";
 export type { BrowserVaultStorage, BrowserDraft, StoredSelection } from "./browser-storage";
 
-type Metadata = { formatVersion: 1; vaultId: string };
+type Metadata = { formatVersion: 1 | 2; vaultId: string };
 type Binding = StoredSelection & { binding: string };
 type Snapshot = { folders: string[]; parsed: ParsedBrowserNote[]; duplicateIds: Set<string>; coverage: Coverage };
 type Save = { id: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
 type BrowserLock = <T>(name: string, task: () => Promise<T>) => Promise<T>;
 type Options = { storage?: BrowserVaultStorage; picker?: BrowserPicker; lock?: BrowserLock; supported?: () => boolean; decodeImage?: (blob: Blob) => Promise<void> };
-const operations = ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "saveDraft", "getDrafts", "importAttachment"];
+const operations = ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"];
 const coverageEmpty = (): Coverage => ({ complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: null });
 const now = () => new Date().toISOString();
 const textBytes = (text: string) => new TextEncoder().encode(text);
@@ -43,6 +44,7 @@ function checkString(value: unknown, name: string): string {
 
 export class BrowserVault {
   private selection?: Binding;
+  private compatible = false;
   private initialized?: Promise<void>;
   private readonly storage: BrowserVaultStorage;
   private readonly picker: () => BrowserPicker | undefined;
@@ -131,14 +133,15 @@ export class BrowserVault {
     try { value = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)); }
     catch { throw new BrowserVaultError("INVALID_VAULT", "无法解析笔记库元文件。"); }
     if (!value || typeof value !== "object" || !("formatVersion" in value) || !("vaultId" in value)) throw new BrowserVaultError("INVALID_VAULT", "笔记库元文件缺少必要字段。");
-    if (value.formatVersion !== 1) throw new BrowserVaultError("UNSUPPORTED_FORMAT", "当前应用不支持此笔记库格式。");
-    return { formatVersion: 1, vaultId: canonicalId(value.vaultId) };
+    if (value.formatVersion !== 1 && value.formatVersion !== 2) throw new BrowserVaultError("UNSUPPORTED_FORMAT", "当前应用不支持此笔记库格式。");
+    return { formatVersion: value.formatVersion, vaultId: canonicalId(value.vaultId) };
   }
 
   private async active(selected: Binding): Promise<void> {
     this.requireBinding(selected);
     if (await selected.handle.queryPermission({ mode: "readwrite" }) !== "granted") throw new BrowserVaultError("UNAUTHORIZED", "文件夹授权已失效，请重新授权；本机草稿仍然保留。", true);
     const metadata = await this.metadata(selected.handle);
+    this.compatible = metadata.formatVersion === 2;
     if (metadata.vaultId !== selected.vaultId) throw new BrowserVaultError("VAULT_CHANGED", "文件夹中的笔记库已变化，请重新选择。");
     this.requireBinding(selected);
   }
@@ -163,16 +166,25 @@ export class BrowserVault {
               if (name !== ".DS_Store") throw new BrowserVaultError("VAULT_NOT_EMPTY", "请在空目录中创建笔记库。");
             }
             const metadata = await root.getDirectoryHandle(".memocard", { create: true });
-            await root.getDirectoryHandle("notes", { create: true });
-            await root.getDirectoryHandle("assets", { create: true });
             const file = await metadata.getFileHandle("vault.json", { create: true });
             const stream = await file.createWritable({ mode: "exclusive" });
-            try { await stream.write(JSON.stringify({ formatVersion: 1, vaultId: createId() }, null, 2) + "\n"); await stream.close(); }
+            try { await stream.write(JSON.stringify({ formatVersion: 2, vaultId: createId() }, null, 2) + "\n"); await stream.close(); }
             catch (error) { await stream.abort().catch(() => undefined); throw error; }
           }
         }
-        const metadata = await this.metadata(root);
-        try { await root.getDirectoryHandle("notes"); await root.getDirectoryHandle("assets"); }
+        let metadata: Metadata;
+        try { metadata = await this.metadata(root); }
+        catch (error) {
+          if (!(error instanceof BrowserVaultError) || error.code !== "VAULT_NOT_FOUND") throw error;
+          metadata = { formatVersion: 2, vaultId: createId() };
+          const directory = await root.getDirectoryHandle(".memocard", { create: true });
+          const file = await directory.getFileHandle("vault.json", { create: true });
+          const stream = await file.createWritable({ mode: "exclusive" });
+          try { await stream.write(JSON.stringify(metadata) + "\n"); await stream.close(); }
+          catch (error) { await stream.abort().catch(() => undefined); throw error; }
+        }
+        this.compatible = metadata.formatVersion === 2;
+        if (!this.compatible) try { await root.getDirectoryHandle("notes"); await root.getDirectoryHandle("assets"); }
         catch (error) { if (missing(error)) throw new BrowserVaultError("INVALID_VAULT", "笔记库缺少 notes 或 assets 目录。"); throw error; }
         stage = "保存文件夹授权到浏览器";
         const remembered = await this.storage.remember(root, metadata.vaultId);
@@ -189,18 +201,28 @@ export class BrowserVault {
     }
   }
 
-  private async scan(selected: Binding): Promise<Snapshot> {
+  private scan(selected: Binding): Promise<Snapshot> {
+    return this.lock(`memocard:browser:index:${this.scope(selected)}`, () => this.scanFiles(selected));
+  }
+
+  private async scanFiles(selected: Binding): Promise<Snapshot> {
     await this.active(selected);
-    const snapshot: Snapshot = { folders: ["notes"], parsed: [], duplicateIds: new Set(), coverage: { ...coverageEmpty(), complete: true } };
+    const snapshot: Snapshot = { folders: [this.compatible ? "" : "notes"], parsed: [], duplicateIds: new Set(), coverage: { ...coverageEmpty(), complete: true } };
+    const old = this.compatible ? await this.storage.identities(this.scope(selected)) : [];
+    const files: { path: string; bytes: Uint8Array; modified: number; hash: string }[] = [];
     const walk = async (directory: BrowserDirectoryHandle, path: string): Promise<void> => {
       try {
         for await (const [name, child] of directory.entries()) {
           if (name.startsWith(".")) continue;
-          const relativePath = `${path}/${name}`;
-          safeParts(relativePath, "notes");
+          const relativePath = path ? `${path}/${name}` : name;
+          safeParts(relativePath, this.compatible ? "vault" : "notes");
           if (child.kind === "directory") { snapshot.folders.push(relativePath); await walk(child, relativePath); continue; }
           if (!/\.md$/i.test(name)) continue;
-          try { snapshot.parsed.push(await parseBrowserNote(await readBytes(child), relativePath, selected.vaultId)); }
+          try {
+            const bytes = await readBytes(child);
+            if (this.compatible) files.push({ path: relativePath, bytes, modified: (await child.getFile()).lastModified, hash: await sha256(bytes) });
+            else snapshot.parsed.push(await parseBrowserNote(bytes, relativePath, selected.vaultId));
+          }
           catch (error) {
             const failure = fileError(error);
             if (failure.code === "UNAUTHORIZED") throw failure;
@@ -214,7 +236,21 @@ export class BrowserVault {
         snapshot.coverage.issues++;
       }
     };
-    await walk(await selected.handle.getDirectoryHandle("notes"), "notes");
+    await walk(this.compatible ? selected.handle : await selected.handle.getDirectoryHandle("notes"), this.compatible ? "" : "notes");
+    if (this.compatible) {
+      const identities = [];
+      const paths = new Set(files.map(file => file.path));
+      for (const file of files) {
+        const moved = old.filter(item => !paths.has(item.path) && item.hash === file.hash);
+        const identity = old.find(item => item.path === file.path)
+          ?? (moved.length === 1 && files.filter(item => item.hash === file.hash && !old.some(previous => previous.path === item.path)).length === 1 ? moved[0] : undefined);
+        const entry = { id: identity?.id ?? createId(), path: file.path, hash: file.hash, createdAt: identity?.createdAt ?? new Date(file.modified || 0).toISOString() };
+        identities.push(entry);
+        try { snapshot.parsed.push(await parseObsidianNote(file.bytes, file.path, selected.vaultId, entry, file.modified)); }
+        catch { snapshot.coverage.issues++; }
+      }
+      if (!snapshot.coverage.issues && !snapshot.coverage.pending) await this.storage.saveIdentities(this.scope(selected), identities);
+    }
     const counts = new Map<string, number>();
     for (const { note } of snapshot.parsed) counts.set(note.id, (counts.get(note.id) ?? 0) + 1);
     for (const [id, count] of counts) if (count > 1) { snapshot.duplicateIds.add(id); snapshot.coverage.issues += count; }
@@ -251,7 +287,7 @@ export class BrowserVault {
     const id = canonicalId(params.id);
     if (params.baseHash !== null && params.baseHash !== undefined && (typeof params.baseHash !== "string" || !/^[a-f0-9]{64}$/.test(params.baseHash))) throw new BrowserVaultError("INVALID_PARAMS", "baseHash 必须是有效的内容指纹。");
     const relativePath = params.relativePath === undefined ? undefined : checkString(params.relativePath, "relativePath");
-    if (relativePath) safeParts(relativePath, "notes");
+    if (relativePath) safeParts(relativePath, this.compatible ? "vault" : "notes");
     const draftKey = params.draftKey === undefined ? `${this.sessionId}:${id}` : checkString(params.draftKey, "draftKey");
     if (!/^[a-f\d-]{36}:[a-f\d-]{36}$/.test(draftKey) || draftKey.split(":")[1] !== id) throw new BrowserVaultError("INVALID_PARAMS", "草稿标识无效。");
     return { id, body: checkString(params.body, "body"), tags: validatedTags(params.tags), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
@@ -279,9 +315,9 @@ export class BrowserVault {
   }
 
   private newNotePath(value: unknown, id: string, snapshot: Snapshot): string {
-    const path = value === undefined ? `notes/${id}.md` : value;
+    const path = value === undefined ? `${this.compatible ? "" : "notes/"}${id}.md` : value;
     if (typeof path !== "string" || !path.endsWith(".md")) throw new BrowserVaultError("PATH_NOT_ALLOWED", "请选择笔记目录中的 Markdown 文件。");
-    const parts = safeParts(path, "notes");
+    const parts = safeParts(path, this.compatible ? "vault" : "notes");
     if (!snapshot.folders.includes(parts.slice(0, -1).join("/"))) throw new BrowserVaultError("FOLDER_NOT_FOUND", "保存目录已移除，请保留草稿并重新选择目录。");
     return path;
   }
@@ -297,32 +333,39 @@ export class BrowserVault {
       const existing = snapshot.parsed.find(({ note }) => note.id === save.id);
       if (!existing && save.baseHash) throw new BrowserVaultError("NOTE_NOT_FOUND", "原文件已移除，不能从旧草稿自动恢复。");
       if (existing?.note.deletedAt) throw new BrowserVaultError("NOTE_DELETED", "此笔记已删除，暂时无法编辑。");
-      const path = existing?.note.relativePath ?? this.newNotePath(save.relativePath, save.id, snapshot);
+      let requestedPath = save.relativePath;
+      if (this.compatible && !existing && !save.baseHash && (!requestedPath || requestedPath.endsWith(`${save.id}.md`))) {
+        const title = (save.body.split(/\r?\n/).find(line => line.trim()) ?? "未命名").replace(/^[#\s]+/, "").replace(/[\\/:*?"<>|#^]/g, " ").trim().replace(/^\.+/, "").slice(0, 60) || "未命名";
+        requestedPath = (requestedPath?.includes("/") ? requestedPath.slice(0, requestedPath.lastIndexOf("/") + 1) : "") + `${title}-${save.id.slice(0, 8)}.md`;
+      }
+      const path = existing?.note.relativePath ?? this.newNotePath(requestedPath, save.id, snapshot);
       let file: BrowserFileHandle | undefined;
-      try { file = await fileAt(selected.handle, path, "notes"); } catch (error) { if (!missing(error)) throw error; }
+      try { file = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes"); } catch (error) { if (!missing(error)) throw error; }
       if (file && !existing) throw new BrowserVaultError("HASH_CONFLICT", "目标文件已存在，原文未被覆盖。");
       if (!file && existing) throw new BrowserVaultError("NOTE_NOT_FOUND", "原文件已移除，不能从旧草稿自动恢复。");
       let frontmatter: Document;
+      let original: ParsedBrowserNote | undefined;
       if (file) {
         const bytes = await readBytes(file);
         if (await sha256(bytes) !== save.baseHash) throw new BrowserVaultError("HASH_CONFLICT", "文件已在其他位置修改，原文未被覆盖；草稿仍然保留。");
-        const parsed = await parseBrowserNote(bytes, path, selected.vaultId);
+        const parsed = this.compatible ? await parseObsidianNote(bytes, path, selected.vaultId, { id: save.id, path, hash: save.baseHash!, createdAt: existing!.note.createdAt }, (await file.getFile()).lastModified) : await parseBrowserNote(bytes, path, selected.vaultId);
+        original = parsed;
         if (parsed.note.id !== save.id || parsed.note.deletedAt) throw new BrowserVaultError("HASH_CONFLICT", "目标文件的身份或删除状态已改变。");
         frontmatter = parsed.frontmatter;
       } else {
         frontmatter = new Document({ id: save.id, createdAt: now() }, { schema: "yaml-1.1" });
       }
-      frontmatter.set("updatedAt", now()); frontmatter.set("tags", save.tags);
-      const bytes = encodeBrowserNote(frontmatter, save.body);
+      if (!this.compatible) { frontmatter.set("updatedAt", now()); frontmatter.set("tags", save.tags); }
+      const bytes = this.compatible ? encodeObsidianNote(original, save.body, save.tags) : encodeBrowserNote(frontmatter, save.body);
       const newlyCreated = !file;
       await this.active(selected);
-      file ??= await fileAt(selected.handle, path, "notes", true);
+      file ??= await fileAt(selected.handle, path, this.compatible ? "vault" : "notes", true);
       let stream: BrowserWritable | undefined;
       try {
         stream = await file.createWritable({ mode: "exclusive" });
         const verify = async () => {
           await this.active(selected);
-          const current = await fileAt(selected.handle, path, "notes");
+          const current = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes");
           if (!await current.isSameEntry(file!)) throw new BrowserVaultError("HASH_CONFLICT", "文件路径已被外部修改，草稿仍然保留。");
           const source = await readBytes(current);
           if (newlyCreated ? source.byteLength !== 0 : await sha256(source) !== save.baseHash) {
@@ -342,16 +385,22 @@ export class BrowserVault {
         if (newlyCreated) {
           // Remove only our still-empty placeholder, never a file another editor filled.
           try {
-            const current = await fileAt(selected.handle, path, "notes");
+            const current = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes");
             if (await current.isSameEntry(file) && (await current.getFile()).size === 0) {
-              const directory = await selected.handle.getDirectoryHandle("notes");
-              await directory.removeEntry(`${save.id}.md`);
+              let directory = selected.handle;
+              const parts = path.split("/");
+              for (const part of parts.slice(0, -1)) directory = await directory.getDirectoryHandle(part);
+              await directory.removeEntry(parts.at(-1)!);
             }
           } catch { /* Preserve recovery evidence when cleanup is uncertain. */ }
         }
         throw error;
       }
-      const saved = await parseBrowserNote(bytes, path, selected.vaultId);
+      const saved = this.compatible ? await parseObsidianNote(bytes, path, selected.vaultId, { id: save.id, path, hash: await sha256(bytes), createdAt: existing?.note.createdAt ?? now() }, Date.now()) : await parseBrowserNote(bytes, path, selected.vaultId);
+      if (this.compatible) {
+        const identities = await this.storage.identities(this.scope(selected));
+        await this.storage.saveIdentities(this.scope(selected), [...identities.filter(item => item.id !== save.id), { id: save.id, path, hash: saved.note.contentHash, createdAt: saved.note.createdAt }]);
+      }
       try {
         await this.storage.removeMatchingDraft(this.scope(selected), draft);
         const recovered = [...this.recoveredDrafts.values()].find((value) => value.key === draft.draftKey);
@@ -383,12 +432,12 @@ export class BrowserVault {
       after = { id, createdAt };
     }
     const folder = params.folder === undefined ? undefined : checkString(params.folder, "folder");
-    if (folder !== undefined) safeParts(folder, "notes");
+    if (folder) safeParts(folder, this.compatible ? "vault" : "notes");
     const normalized = query.normalize("NFC").toLowerCase();
     const matching = snapshot.parsed.map(({ note }) => note).filter((note) => {
       const date = parseDate(note.createdAt);
-      return (folder === undefined || note.relativePath.startsWith(`${folder}/`)) && !!note.deletedAt === (params.deleted ?? false)
-        && note.body.normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.includes(tag))
+      return (!folder || note.relativePath.startsWith(`${folder}/`)) && !!note.deletedAt === (params.deleted ?? false)
+        && note.body.normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || value.startsWith(tag + "/")))
         && (from === undefined || date >= from) && (to === undefined || date < to)
         && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
     });
@@ -429,6 +478,7 @@ export class BrowserVault {
       const notePath = note?.relativePath ?? this.newNotePath(params.notePath, id ?? "new", snapshot);
       const relativePath = `assets/${createId()}.${type.extension}`;
       await this.active(selected);
+      await selected.handle.getDirectoryHandle("assets", { create: true });
       const file = await fileAt(selected.handle, relativePath, "assets", true);
       const stream = await file.createWritable({ mode: "exclusive" });
       try { await stream.write(bytes); await this.active(selected); await stream.close(); }
@@ -442,10 +492,10 @@ export class BrowserVault {
     await this.initialize();
     const context = selected ?? this.selection;
     this.requireBinding(context, expectedBinding);
-    safeParts(path, "assets");
-    if (!/\.(png|jpe?g|webp|gif|heic|heif)$/i.test(path)) throw new BrowserVaultError("PATH_NOT_ALLOWED", "只允许读取笔记库中的图片附件。");
     await this.active(context);
-    const file = await (await fileAt(context.handle, path, "assets")).getFile();
+    safeParts(path, this.compatible ? "vault" : "assets");
+    if (!/\.(png|jpe?g|webp|gif|heic|heif)$/i.test(path)) throw new BrowserVaultError("PATH_NOT_ALLOWED", "只允许读取笔记库中的图片附件。");
+    const file = await (await fileAt(context.handle, path, this.compatible ? "vault" : "assets")).getFile();
     if (file.size > 20 * 1024 * 1024) throw new BrowserVaultError("INVALID_ATTACHMENT", "图片超过 20 MB。");
     const bytes = new Uint8Array(await file.arrayBuffer());
     const type = imageType(bytes);
@@ -474,13 +524,36 @@ export class BrowserVault {
       if (!note) throw new BrowserVaultError(snapshot.coverage.complete ? "NOTE_NOT_FOUND" : "NOTE_UNAVAILABLE", snapshot.coverage.complete ? "找不到此笔记。" : "部分文件尚不可读取，暂时无法确认此笔记。", !snapshot.coverage.complete);
       return { ...note, vaultBinding: selected.binding };
     }
+    if (operation === "resolveLink") {
+      const target = checkString(params.target, "target"), sourcePath = checkString(params.sourcePath, "sourcePath");
+      const snapshot = await this.scan(selected);
+      if (!snapshot.coverage.complete) throw new BrowserVaultError("SCAN_INCOMPLETE", "笔记库尚未完整读取，无法安全解析链接。");
+      const paths = snapshot.parsed.map(item => item.note.relativePath);
+      const walk = async (directory: BrowserDirectoryHandle, parent = ""): Promise<void> => {
+        for await (const [name, child] of directory.entries()) {
+          if (name.startsWith(".")) continue;
+          const path = parent + name;
+          if (child.kind === "directory") await walk(child, path + "/");
+          else if (/\.(png|jpe?g|webp|gif|heic|heif)$/i.test(path)) paths.push(path);
+        }
+      };
+      await walk(selected.handle);
+      this.requireBinding(selected);
+      const matches = linkCandidates(target, sourcePath, paths, params.wiki === true);
+      if (matches.length !== 1) throw new BrowserVaultError(matches.length ? "AMBIGUOUS_LINK" : "LINK_NOT_FOUND", matches.length ? "链接匹配多份文件，请使用完整路径。" : "找不到链接目标。");
+      const note = snapshot.parsed.find(item => item.note.relativePath === matches[0])?.note;
+      return note ? { kind: "note", id: note.id, path: matches[0] } : { kind: "image", path: matches[0] };
+    }
     if (operation === "listFolders") {
       const snapshot = await this.scan(selected);
       return { folders: snapshot.folders.sort(), coverage: snapshot.coverage };
     }
     if (operation === "listTags") {
       const snapshot = await this.scan(selected), counts = new Map<string, number>();
-      for (const { note } of snapshot.parsed) if (!note.deletedAt) for (const tag of note.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      for (const { note } of snapshot.parsed) if (!note.deletedAt) {
+        const names = new Set(note.tags.flatMap(tag => tag.split("/").map((_, index, parts) => parts.slice(0, index + 1).join("/"))));
+        for (const tag of names) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
       return { tags: [...counts].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([name, count]) => ({ name, count })), coverage: snapshot.coverage };
     }
     throw new BrowserVaultError("UNSUPPORTED_OPERATION", "浏览器笔记库暂不支持此操作。");

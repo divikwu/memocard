@@ -20,6 +20,10 @@ final class VaultStoreTests: XCTestCase {
     }
 
     func store(create: Bool = true) async throws -> VaultStore {
+        if create && !FileManager.default.fileExists(atPath: vault.appendingPathComponent(".memocard/vault.json").path) {
+            for name in [".memocard", "notes", "assets"] { try FileManager.default.createDirectory(at: vault.appendingPathComponent(name), withIntermediateDirectories: true) }
+            try encode(VaultMetadata(formatVersion: 1, vaultId: UUID().uuidString.lowercased())).write(to: vault.appendingPathComponent(".memocard/vault.json"))
+        }
         let store = try VaultStore(localDataURL: local)
         try await store.open(url: vault, create: create)
         return store
@@ -33,6 +37,23 @@ final class VaultStoreTests: XCTestCase {
 
     func save(_ store: VaultStore, id: String = UUID().uuidString.lowercased(), body: String = "Hello", tags: [String] = [], hash: String? = nil) async throws -> [String: Any] {
         try await call(store, "saveNote", ["id": id, "body": body, "tags": tags, "baseHash": hash as Any? ?? NSNull()])
+    }
+
+    func testNestedTagsIncludeDescendantsAndDeduplicateAncestors() async throws {
+        let core = try await store()
+        let saved = try await save(core, tags: ["工作", "工作/项目/设计", "工作/项目/开发"])
+        _ = try await save(core, tags: ["工作室"])
+        for tag in ["工作", "工作/项目", "工作/项目/设计"] {
+            let page = try await call(core, "queryNotes", ["tags": [tag]])
+            let notes = try XCTUnwrap(page["notes"] as? [[String: Any]])
+            XCTAssertEqual(notes.count, 1)
+            XCTAssertEqual(notes.first?["id"] as? String, saved["id"] as? String)
+        }
+        let result = try await call(core, "listTags")
+        let tags = try XCTUnwrap(result["tags"] as? [[String: Any]])
+        for name in ["工作", "工作/项目"] {
+            XCTAssertEqual(tags.first { $0["name"] as? String == name }?["count"] as? Int, 1)
+        }
     }
 
     func expectCode(_ code: String, _ action: () async throws -> Void, file: StaticString = #filePath, line: UInt = #line) async {
@@ -450,7 +471,9 @@ final class VaultStoreTests: XCTestCase {
         try await store.open(url: vault, create: false)
         let bad = temporary.appendingPathComponent("empty")
         try FileManager.default.createDirectory(at: bad, withIntermediateDirectories: false)
-        await expectCode("VAULT_NOT_FOUND") { try await store.open(url: bad, create: false) }
+        try FileManager.default.createDirectory(at: bad.appendingPathComponent(".memocard"), withIntermediateDirectories: false)
+        try Data("invalid".utf8).write(to: bad.appendingPathComponent(".memocard/vault.json"))
+        await expectCode("INVALID_VAULT") { try await store.open(url: bad, create: false) }
         let failedStatus = try await call(store, "getStatus")
         XCTAssertEqual(failedStatus["connected"] as? Bool, false)
     }
@@ -458,6 +481,7 @@ final class VaultStoreTests: XCTestCase {
     func testStaleWebBindingCannotWriteOrReadRestoredVaultWithSameIdentity() async throws {
         let store = try VaultStore(localDataURL: local)
         let oldBinding = UUID(), newBinding = UUID()
+        _ = try await self.store() // Explicit legacy fixture.
         try await store.open(url: vault, create: true, binding: oldBinding)
         let saved = try await save(store, body: "Original")
         let id = try XCTUnwrap(saved["id"] as? String)
@@ -490,6 +514,7 @@ final class VaultStoreTests: XCTestCase {
     func testCloseAndFailedOpenRevokeExpectedBindingBeforeDispatch() async throws {
         let store = try VaultStore(localDataURL: local)
         let oldBinding = UUID(), reopenedBinding = UUID()
+        _ = try await self.store() // Explicit legacy fixture.
         try await store.open(url: vault, create: true, binding: oldBinding)
         await store.close()
         await expectCode("UNAUTHORIZED") {
@@ -498,7 +523,9 @@ final class VaultStoreTests: XCTestCase {
         try await store.open(url: vault, create: false, binding: reopenedBinding)
         let invalid = temporary.appendingPathComponent("empty")
         try FileManager.default.createDirectory(at: invalid, withIntermediateDirectories: false)
-        await expectCode("VAULT_NOT_FOUND") { try await store.open(url: invalid, create: false) }
+        try FileManager.default.createDirectory(at: invalid.appendingPathComponent(".memocard"), withIntermediateDirectories: false)
+        try Data("invalid".utf8).write(to: invalid.appendingPathComponent(".memocard/vault.json"))
+        await expectCode("INVALID_VAULT") { try await store.open(url: invalid, create: false) }
         await expectCode("UNAUTHORIZED") {
             _ = try await store.perform(operation: "getStatus", params: Data("{}".utf8), expectedBinding: reopenedBinding)
         }
@@ -514,5 +541,67 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual((active["notes"] as? [Any])?.count, 0)
         XCTAssertEqual((deleted["notes"] as? [Any])?.count, 1)
         await expectCode("UNSUPPORTED_OPERATION") { _ = try await self.call(store, "restoreBackup") }
+    }
+}
+
+extension VaultStoreTests {
+    func testObsidianSharedFolderPreservesSourceAndTracksRename() async throws {
+        let header = "---\r\nid: my-own-id\r\ncreatedAt: yesterday\r\n# Keep this comment\r\naliases: [Example]\r\ntags: [work]\r\n---\r\n"
+        let original = vault.appendingPathComponent("Example.md")
+        try Data((header + "Original #inline/topic\r\n").utf8).write(to: original)
+        let plain = vault.appendingPathComponent("Plain.md")
+        try Data("No properties".utf8).write(to: plain)
+        let core = try await store(create: false)
+        let page = try await call(core, "queryNotes")
+        let notes = try XCTUnwrap(page["notes"] as? [[String: Any]])
+        XCTAssertEqual((page["coverage"] as? [String: Any])?["complete"] as? Bool, true)
+        let note = try XCTUnwrap(notes.first { $0["relativePath"] as? String == "Example.md" })
+        let id = try XCTUnwrap(note["id"] as? String)
+        XCTAssertEqual(note["tags"] as? [String], ["work", "inline/topic"])
+        let saved = try await save(core, id: id, body: "Updated #inline/topic\r\n", tags: ["work", "inline/topic"], hash: note["contentHash"] as? String)
+        XCTAssertEqual(try String(contentsOf: original, encoding: .utf8), header + "Updated #inline/topic\r\n")
+        let folder = vault.appendingPathComponent("Projects")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        let moved = folder.appendingPathComponent("Renamed.md")
+        try FileManager.default.moveItem(at: original, to: moved)
+        let reopened = try await store(create: false)
+        let fetched = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(fetched["relativePath"] as? String, "Projects/Renamed.md")
+        try Data((header + "External").utf8).write(to: moved)
+        await expectCode("HASH_CONFLICT") { _ = try await self.save(reopened, id: id, body: "Stale", hash: saved["contentHash"] as? String) }
+        XCTAssertEqual(try String(contentsOf: moved, encoding: .utf8), header + "External")
+        let plainNote = try XCTUnwrap(notes.first { $0["relativePath"] as? String == "Plain.md" })
+        _ = try await save(reopened, id: plainNote["id"] as! String, body: "Still plain", hash: plainNote["contentHash"] as? String)
+        XCTAssertEqual(try String(contentsOf: plain, encoding: .utf8), "Still plain")
+        let link = try await call(reopened, "resolveLink", ["target": "Renamed", "sourcePath": "Plain.md", "wiki": true])
+        XCTAssertEqual(link["id"] as? String, id)
+        await expectCode("PATH_NOT_ALLOWED") { _ = try await reopened.asset(relativePath: ".obsidian/secret.png") }
+    }
+}
+
+extension VaultStoreTests {
+    func testNewVaultUsesPlainReadableMarkdownAndPreservesEditedProperties() async throws {
+        let core = try VaultStore(localDataURL: local)
+        try await core.open(url: vault, create: true)
+        let id = "11111111-1111-4111-8111-111111111111"
+        let saved = try await save(core, id: id, body: "# 我的记录\n\n正文")
+        XCTAssertEqual(saved["relativePath"] as? String, "我的记录-11111111.md")
+        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("我的记录-11111111.md"), encoding: .utf8), "# 我的记录\n\n正文")
+        let url = vault.appendingPathComponent("Tags.md")
+        try Data("---\r\n# header\r\ntags: [old]\r\ncustom: \"keep spelling\"\r\n---\r\nBody #inline".utf8).write(to: url)
+        let page = try await call(core, "queryNotes")
+        let note = try XCTUnwrap((page["notes"] as? [[String: Any]])?.first { $0["relativePath"] as? String == "Tags.md" })
+        _ = try await save(core, id: note["id"] as! String, body: "Body #inline", tags: ["new", "inline"], hash: note["contentHash"] as? String)
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "---\r\n# header\r\ntags: [\"new\"]\r\ncustom: \"keep spelling\"\r\n---\r\nBody #inline")
+    }
+}
+
+extension VaultStoreTests {
+    func testEditingLastTagsPropertyKeepsClosingDelimiterAndBody() throws {
+        let source = "---\ntags:\n- old\n---\nBody"
+        let identity = FileIdentity(id: UUID().uuidString.lowercased(), path: "A.md", hash: "", createdAt: timestamp())
+        let parsed = try parseObsidianNote(Data(source.utf8), relativePath: "A.md", vaultID: UUID().uuidString, identity: identity, modified: Date())
+        let bytes = try encodedObsidianNote(parsed, body: "Body", tags: ["new"])
+        XCTAssertEqual(String(data: bytes, encoding: .utf8), "---\ntags: [\"new\"]\n---\nBody")
     }
 }

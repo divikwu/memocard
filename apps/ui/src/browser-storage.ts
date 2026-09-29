@@ -1,9 +1,11 @@
-import type { BrowserDirectoryHandle } from "./browser-files";
+import type { BrowserDirectoryHandle, FileIdentity } from "./browser-files";
 import { createId } from "./uuid";
 
 export type BrowserDraft = { id: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; updatedAt: string; draftKey: string; vaultBinding?: string };
 export type StoredSelection = { directoryId: string; vaultId: string; handle: BrowserDirectoryHandle };
 export type BrowserVaultStorage = {
+  identities(scope: string): Promise<FileIdentity[]>;
+  saveIdentities(scope: string, identities: FileIdentity[]): Promise<void>;
   loadSelection(): Promise<StoredSelection | undefined>;
   remember(handle: BrowserDirectoryHandle, vaultId: string): Promise<StoredSelection>;
   drafts(scope: string): Promise<BrowserDraft[]>;
@@ -52,6 +54,9 @@ export class IndexedDBVaultStorage implements BrowserVaultStorage {
       transaction.onabort = () => reject(transaction.error ?? new Error("本机草稿写入已取消。"));
     });
   }
+
+  async identities(scope: string): Promise<FileIdentity[]> { return await this.read(`identities:${scope}`) ?? []; }
+  saveIdentities(scope: string, identities: FileIdentity[]): Promise<void> { return this.write([[`identities:${scope}`, identities]]); }
 
   loadSelection(): Promise<StoredSelection | undefined> { return this.read("selection"); }
 

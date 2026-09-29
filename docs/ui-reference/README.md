@@ -1,16 +1,23 @@
 # UI 模板源码基线
 
-参考页面：https://ui.shadcn.com/view/new-york-v4/sidebar-10
+唯一基线：[官方 new-york-v4/sidebar-10](https://ui.shadcn.com/view/new-york-v4/sidebar-10)。
 
-本目录保存 2026-09-28 从 shadcn 官方 registry 获取的源码；manifest.json 记录文件摘要与来源，LICENSE.md 保存上游 MIT 许可。
+2026-09-28 的原始快照保持不变；2026-09-29 从同一个 new-york-v4 registry 补齐 Sheet、Popover、Tooltip、Breadcrumb、Collapsible、Separator、Skeleton、Textarea、Badge、Switch、Alert、Tabs。manifest.json 保存来源与 SHA-256，LICENSE.md 保存上游许可。
 
-- sidebar-10.json：页面布局、导航及页面操作的组合基线。
-- sidebar.json：Sidebar 各组件原始结构与 Tailwind 类。MemoCard 用 Base UI useRender/mergeProps 适配多态按钮，保留受控展开状态、移动抽屉焦点、输入框快捷键隔离与关闭后的 inert。
-- button/card/input.json：原始样式和组件结构；Button、Input 保留 Base UI 实现。
-- dialog/dropdown-menu/select.json：表面、间距和尺寸基线；交互仍由 Base UI 负责。
+## 实现
 
-AppSidebar 将团队切换器映射为真实笔记库操作，主要导航映射为搜索、新建、所有笔记、草稿，收藏区映射为标签。NavActions 仅包含已经实现的操作。模板占位块改为真实笔记；设置与编辑器为功能适配页，不声称是模板自带页面。
+`apps/ui/src/components/ui` 直接移植快照源码，只将上游导入路径改为本项目路径。全部使用官方 Radix API (`asChild`、`data-state`)，已移除 Base UI 组件层和依赖。Sidebar 的产品适配限于受控移动状态、跨断点关闭、输入时不拦截编辑快捷键、关闭侧栏 inert、中文无障碍文案及选中项 aria-current；不另设菜单尺寸。
 
-桌面保留 256px 侧栏、56px 顶栏、32px 菜单行和 768px 内容区；移动端保留 288px 抽屉与 44px 触控区。外观选项继续兼容原有设备偏好。
+AppSidebar 将官方团队菜单映射为笔记库、主要导航映射为笔记/搜索/草稿、收藏与工作区映射为置顶标签与多级标签。Header 使用 SidebarTrigger、Separator、Breadcrumb 和 NavActions。内容保留官方 768px 最大宽度、40px 上下留白及 muted/50 内容块。设置使用 Card/Select/Switch，编辑器使用 Dialog/Input/Button，Markdown 内核与草稿序列化不变。
 
-components.json 的 new-york 表示视觉基线。官方生成器可能生成 Radix 组件，后续导入时须审查并适配现有 Base UI API，不应直接覆盖运行中的组件。
+标签编辑使用 Popover；移动端向下排列、碰撞避让并按可用高度滚动。Emoji 面板使用 Input、Select 和 Button，中文数据来自 emoji-picker-react 4.22.3 的 MIT 数据快照（许可见 emoji-data-LICENSE）；不再加载该包的 UI 或覆盖其 CSS。
+
+默认外观为官方 neutral/mono、Geist、10px 基准圆角。保留用户已经保存的字体、强调色、圆角和深浅色偏好，点击“恢复默认”可回到基线。
+
+官方 sidebar-10 没有笔记编辑器、标签编辑器或设置业务页，这些页面以同一套基础组件组合实现，不声称是官方模板自带页面。
+
+## 验收入口
+
+- 正常应用：`http://127.0.0.1:5179/`
+- 开发验收：`http://127.0.0.1:5179/tests/ui-preview.html`（明确标识模拟数据，桥接只操作内存，不访问用户文件；不进入 Vite 生产构建）
+- 详细结果：`UI_REBUILD_ACCEPTANCE.md`

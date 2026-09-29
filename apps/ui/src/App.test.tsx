@@ -210,6 +210,10 @@ describe("note workspace", () => {
   });
 
   it("uses the mobile Sheet for navigation and dismisses it after navigation or Escape", async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("767px"), media: query, onchange: null,
+      addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+    }));
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
@@ -419,4 +423,15 @@ describe("note workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "关闭本机 Web" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("stopWeb"));
   });
+});
+
+it.each(["web", "browser"] as const)("opens an internal note event in %s mode without native readiness calls", async (mode) => {
+  bridge.native = false;
+  bridge[mode] = true;
+  render(<App />);
+  await screen.findByText(note.body);
+  act(() => window.dispatchEvent(new CustomEvent("memocard:open-note", { detail: { id: note.id } })));
+  await screen.findByRole("textbox", { name: "笔记内容" });
+  expect(readEditorText()).toBe(note.body);
+  expect(bridge.request).not.toHaveBeenCalledWith("uiReady");
 });

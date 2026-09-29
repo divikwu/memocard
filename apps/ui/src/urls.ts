@@ -14,7 +14,7 @@ export function assetUrl(raw: string, notePath = "notes/note.md"): string | null
   const source = absolute ? raw.slice(prefix.length) : raw;
   if (!source || source.startsWith("/") || /[\\?#:]/.test(source)) return null;
   const noteParts = notePath.split("/");
-  if (!absolute && (noteParts[0] !== "notes" || noteParts.length < 2 || noteParts.some((part) => !part || part === "." || part === ".." || part.includes("\\")))) return null;
+  if (!absolute && (noteParts.some((part) => !part || part === "." || part === ".." || part.includes("\\")))) return null;
   const parts = absolute ? [] : noteParts.slice(0, -1);
   for (const encoded of source.split("/")) {
     let part: string;
@@ -27,7 +27,11 @@ export function assetUrl(raw: string, notePath = "notes/note.md"): string | null
     } else parts.push(part);
   }
   const path = parts.join("/");
-  if (parts[0] !== "assets" || parts.length < 2) return null;
+  if (!parts.length || parts.some(part => part.startsWith("."))) return null;
   if (!/\.(png|jpe?g|webp|gif|heic|heif)$/i.test(path)) return null;
   return `${isLocalWeb ? "/api/assets/" : prefix}${parts.map(encodeURIComponent).join("/")}`;
+}
+
+export function internalTarget(raw: string): boolean {
+  return !!raw && !raw.startsWith("//") && !/[\\:]/.test(raw) && ![...raw].some(char => char.charCodeAt(0) < 32 || char.charCodeAt(0) === 127);
 }

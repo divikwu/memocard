@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Note, VaultStatus } from "@memocard/contracts";
@@ -131,10 +131,15 @@ describe("sidebar workspace actions", () => {
   });
 
   it("closes mobile navigation and transfers focus to search", async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("767px"), media: query, onchange: null,
+      addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+    }));
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
-    await user.click(screen.getByRole("button", { name: "设置" }));
+    await user.click(screen.getByRole("button", { name: "页面操作" }));
+    await user.click(await screen.findByRole("menuitem", { name: "设置" }));
     await user.click(screen.getByRole("button", { name: "打开导航" }));
     const sheet = await screen.findByRole("dialog", { name: "记忆卡导航" });
 
@@ -146,6 +151,10 @@ describe("sidebar workspace actions", () => {
   });
 
   it("closes mobile navigation and transfers focus to the new note editor", async () => {
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("767px"), media: query, onchange: null,
+      addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+    }));
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
@@ -160,18 +169,20 @@ describe("sidebar workspace actions", () => {
   });
 });
 
-it("creates in the selected folder and makes card tags use the global tag scope", async () => {
+it("creates in the default folder with the selected nested tag and keeps tag filtering global", async () => {
   const original = bridge.request.getMockImplementation()!;
   bridge.request.mockImplementation((operation: string, ...args: unknown[]) => {
     if (operation === "getStatus") return Promise.resolve({ ...status, capabilities: [...status.capabilities, "listFolders"] });
     if (operation === "listFolders") return Promise.resolve({ folders: ["notes", "notes/工作"], coverage: status.coverage });
+    if (operation === "listTags") return Promise.resolve({ tags: [{ name: "工作", count: 1 }, { name: "工作/项目", count: 1 }] });
     return original(operation, ...args);
   });
   const user = userEvent.setup();
   render(<App />);
-  await user.click(await screen.findByRole("button", { name: /^工作$/ }));
+  await user.click(await screen.findByRole("button", { name: "工作/项目" }));
   await user.click(screen.getByRole("button", { name: /^新建笔记$/ }));
-  expect(await screen.findByText("保存到：笔记目录 / 工作")).toBeTruthy();
+  expect(await screen.findByText("保存到：笔记目录")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "移除标签 工作/项目" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "保存草稿并关闭" }));
   await user.click(await screen.findByRole("button", { name: "#生活" }));
   await waitFor(() => {
@@ -179,4 +190,27 @@ it("creates in the selected folder and makes card tags use the global tag scope"
     expect(calls.at(-1)?.[1]).toMatchObject({ tags: ["生活"] });
     expect(calls.at(-1)?.[1].folder).toBeUndefined();
   });
+});
+
+
+it("dismisses the mobile sheet at the desktop breakpoint without reopening on return", async () => {
+  let mobile = true;
+  const listeners = new Set<() => void>();
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    get matches() { return query.includes("767px") && mobile; },
+    media: query,
+    addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+  }));
+  const user = userEvent.setup();
+  render(<App />);
+  await screen.findByText(note.body);
+  await user.click(screen.getByRole("button", { name: "打开导航" }));
+  expect(await screen.findByRole("dialog", { name: "记忆卡导航" })).toBeTruthy();
+  act(() => { mobile = false; listeners.forEach(listener => listener()); });
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+  expect(screen.getByRole("button", { name: "收起侧栏" })).toBeTruthy();
+  act(() => { mobile = true; listeners.forEach(listener => listener()); });
+  expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull();
+  expect(screen.getByRole("button", { name: "打开导航" }).getAttribute("aria-expanded")).toBe("false");
 });

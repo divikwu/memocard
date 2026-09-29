@@ -100,6 +100,7 @@ struct PageCursor: Codable {
 struct ParsedNote {
     let note: Note
     var frontmatter: Node
+    var originalHeader: String? = nil
 }
 
 func sha256(_ data: Data) -> String {
