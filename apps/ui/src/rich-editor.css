@@ -1,0 +1,80 @@
+/* The editable document uses the same semantic elements and Typeset rules as reading. */
+.rich-editor { position: relative; padding-left: var(--editor-gutter); padding-right: var(--editor-inset-right); }
+.rich-editor-content { outline: none; min-height: 240px; overflow-wrap: anywhere; padding-bottom: 4rem; }
+.rich-editor-content > :first-child { margin-top: 0; }
+.rich-editor-content > :last-child { margin-bottom: 0; }
+.rich-editor-content .ProseMirror-selectednode { outline: none; background: #e2edfb; border-radius: 4px; }
+.rich-editor-content ul[data-type="taskList"] { list-style: none; padding-left: 0; }
+.rich-editor-content li[data-type="taskItem"] { display: flex; gap: .6em; align-items: baseline; }
+.rich-editor-content li[data-type="taskItem"] > label { flex: 0 0 auto; user-select: none; }
+.rich-editor-content li[data-type="taskItem"] > div { flex: 1; min-width: 0; }
+.rich-editor-content li > div > p { margin: 0; }
+.rich-editor-content .tableWrapper { overflow-x: auto; }
+.rich-editor-content td, .rich-editor-content th { position: relative; min-width: 4em; }
+.rich-editor-content .selectedCell::after { content: ''; position: absolute; inset: 0; background: #8ab4f844; pointer-events: none; }
+.rich-editor-content .tiptap-mathematics-render { cursor: pointer; }
+.rich-editor-content .rich-image { margin-block: var(--typeset-flow); }
+.rich-image img { max-width: 100%; }
+.rich-preserved { position: relative; }
+.rich-preserved-label { display: block; color: var(--muted-foreground); font: 11px/1.5 var(--font-sans); }
+.rich-menu { max-height: min(420px, 65dvh, var(--radix-popover-content-available-height)); overflow-y: auto; padding: 6px; }
+.rich-menu input { padding: 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.rich-table-tools { position: sticky; bottom: 12px; display: flex; flex-wrap: wrap; gap: 4px; width: fit-content; padding: 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--popover); font: 13px/1.5 var(--font-sans); }
+.rich-table-tools button, .rich-formula button { padding: 6px 10px; border-radius: 4px; }
+.rich-table-tools button:hover, .rich-formula button:hover { background: var(--accent); }
+.rich-formula { position: fixed; z-index: 60; top: 20%; left: 50%; transform: translateX(-50%); width: min(440px, calc(100vw - 32px)); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--popover); box-shadow: 0 12px 32px #0002; }
+.rich-formula input { display: block; width: 100%; margin-block: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--note-mono-font); }
+.rich-formula .markdown { min-height: 48px; }
+.rich-inline-tools { position: absolute; left: var(--editor-gutter); z-index: 6; display: flex; padding: 3px; border: 1px solid var(--border); border-radius: 6px; background: var(--popover); box-shadow: 0 4px 12px #0001; font: 14px/1.5 var(--font-sans); }
+.rich-inline-tools button { min-width: 32px; min-height: 30px; border-radius: 3px; }
+.rich-inline-tools button:hover, .rich-inline-tools button[aria-pressed="true"] { background: var(--accent); }
+.rich-editor button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.rich-footnote { font-size: .875em; color: var(--muted-foreground); }
+.rich-footnote::before { content: attr(data-footnote-definition) '. '; user-select: none; }
+.rich-editor-content a[data-wiki-target] { cursor: text; text-decoration: underline; }
+/* ProseMirror stores the editable header row in tbody rather than a separate thead. */
+.rich-editor-content table tr:first-child > th { border-block-start: 0; padding-block: .65em; white-space: nowrap; }
+.rich-editor-content :is(td, th) > p:first-child { margin-block-start: 0; }
+.rich-editor-content .tableWrapper { margin-block-start: var(--typeset-flow); }
+.rich-editor-content .tableWrapper > table { margin-block-start: 0; }
+@media (hover: hover) {
+  .rich-editor:hover .block-controls, .rich-editor:focus-within .block-controls { opacity: 1; }
+}
+.dark .rich-editor-content .ProseMirror-selectednode { background: #233d57; }
+.rich-format-menu { z-index: 60; display: grid; width: 220px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); box-shadow: 0 8px 24px #0002; font: 14px/1.5 var(--font-sans); }
+.rich-format-menu button { display: block; width: 100%; text-align: left; padding: 6px 10px; border-radius: 4px; }
+.rich-format-menu button:hover { background: var(--accent); }
+.rich-format-menu button:disabled { opacity: .4; }
+.rich-properties textarea, .rich-properties input, .rich-properties select { width: 100%; padding: 8px; margin-block: 6px; border: 1px solid var(--border); border-radius: 4px; }
+.rich-properties textarea { min-height: 90px; }
+.rich-properties button { padding: 6px 10px; }
+.rich-link-results { max-height: 160px; overflow: auto; display: grid; }
+.rich-math { position: relative; }
+.rich-math-block { display: block; margin-block-start: var(--typeset-flow); text-align: center; }
+.rich-math > button { color: inherit; cursor: text; }
+.rich-math-input { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--background); font: 13px/1.5 var(--font-sans); max-width: 100%; }
+.rich-math-input input { min-width: 6em; max-width: 100%; width: 16em; padding: 4px; font-family: var(--note-mono-font); }
+.rich-math-input button { padding: 4px; }
+.rich-editor-content tr[data-footer] { font-weight: 600; }
+.rich-editor-content .rich-footnote > p:first-child { display: inline; }
+
+.rich-tag-suggestions { position: absolute; z-index: 30; width: 240px; max-width: 100%; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 4px 16px #00000014; font: 13px/1.5 var(--font-sans); }
+.rich-tag-suggestions button { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 6px 8px; text-align: left; border-radius: 4px; }
+.rich-tag-suggestions button:hover { background: var(--accent); }
+.rich-tag-suggestions button:focus-visible { outline: 2px solid var(--ring); }
+.rich-tag-suggestions span { padding: 6px; color: var(--muted-foreground); font-size: 12px; }
+.rich-editor-content > p:only-child:has(> br:only-child)::before { content: '输入内容，或输入 / 插入块'; float: left; height: 0; color: var(--muted-foreground); pointer-events: none; }
+
+.rich-inline-tag { background: var(--accent-100); color: var(--accent-800); border-radius: 4px; padding: 1px 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+
+.dark .rich-inline-tag { background: var(--accent-950); color: var(--accent-200); }
+
+.rich-menu.rich-insert-menu { padding: 0; overflow: hidden; max-height: min(460px, var(--radix-popover-content-available-height)); }
+.rich-insert-search { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; color: var(--muted-foreground); }
+.rich-insert-search input { min-width: 0; width: 100%; padding: 0; margin: 0; border: 0; outline: none; background: transparent; color: var(--popover-foreground); font: inherit; }
+.rich-insert-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 6px 6px; }
+.rich-insert-menu button[data-active="true"] { background: var(--accent-100); color: var(--accent-800); }
+.dark .rich-insert-menu button[data-active="true"] { background: var(--accent-950); color: var(--accent-200); }
+.rich-insert-menu .rich-insert-close { flex-shrink: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 10px 12px; }
+.rich-insert-empty { padding: 20px 10px; color: var(--muted-foreground); text-align: center; }
+.rich-insert-search input:focus-visible { outline: none; }

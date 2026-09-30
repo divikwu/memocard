@@ -211,7 +211,7 @@ function Sidebar({
         >
           <SheetHeader className="sr-only">
             <SheetTitle>记忆卡导航</SheetTitle>
-            <SheetDescription>浏览笔记、草稿、标签和笔记库设置。</SheetDescription>
+            <SheetDescription>浏览笔记、标签和笔记库设置。</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>

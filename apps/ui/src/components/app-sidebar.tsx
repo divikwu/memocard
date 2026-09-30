@@ -1,17 +1,16 @@
 // Sidebar-10 composition, adapted from the official registry snapshot in docs/ui-reference.
-import { Check, ChevronDown, FilePenLine, Files, FolderOpen, FolderPlus, Layers, Plus, Search, Settings2, ShieldCheck } from "lucide-react";
+import { CalendarDays, CircleHelp, Check, ChevronDown, Files, FolderOpen, FolderPlus, Layers, Plus, Search, Settings2, ShieldCheck } from "lucide-react";
 import type { RegisteredVault } from "../bridge";
 import { TagNavigation } from "./tag-navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sidebar, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarMenuBadge, SidebarRail } from "@/components/ui/sidebar";
+import { Sidebar, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail } from "@/components/ui/sidebar";
 
-type SidebarView = "notes" | "drafts" | "settings";
+type SidebarView = "notes" | "settings";
 
 export interface AppSidebarProps {
   view: SidebarView;
   tag: string | null;
   tags: { name: string; count: number }[];
-  draftCount: number;
   vaultName: string;
   vaultId?: string | null;
   registeredVaults?: RegisteredVault[];
@@ -33,7 +32,7 @@ export interface AppSidebarProps {
 }
 
 
-export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, vaultStatusText, hasVaultIssue,
+export function AppSidebar({ view, tag, tags, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, vaultStatusText, hasVaultIssue,
   canCreate, canChooseVault, canCreateVault, needsPermission, working,
   onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize,
 }: AppSidebarProps) {
@@ -68,13 +67,13 @@ export function AppSidebar({ view, tag, tags, draftCount, vaultName, vaultId, re
         <SidebarMenuItem><SidebarMenuButton disabled={!connected} onClick={onSearch}><Search /><span>搜索</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton disabled={!canCreate || working} onClick={onNewNote}><Plus /><span>新建笔记</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton isActive={view === "notes" && !tag} onClick={() => onNavigate("notes", null)}><Files /><span>所有笔记</span></SidebarMenuButton></SidebarMenuItem>
-        <SidebarMenuItem><SidebarMenuButton isActive={view === "drafts"} onClick={() => onNavigate("drafts")}><FilePenLine /><span>草稿</span>{draftCount > 0 && <span className="sr-only">{draftCount} 条草稿</span>}</SidebarMenuButton>{draftCount > 0 && <SidebarMenuBadge aria-hidden="true">{draftCount}</SidebarMenuBadge>}</SidebarMenuItem>
       </SidebarMenu></nav>
     </SidebarHeader>
     <SidebarContent>
       <TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={name => onNavigate("notes", name)} />
       <SidebarGroup className="mt-auto"><SidebarGroupContent><SidebarMenu>
-        <SidebarMenuItem><SidebarMenuButton isActive={view === "settings"} onClick={() => onNavigate("settings")}><Settings2 /><span>设置</span></SidebarMenuButton></SidebarMenuItem>
+        <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="日历功能暂未开放"><CalendarDays /><span>日历</span></SidebarMenuButton></SidebarMenuItem>
+        <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="帮助功能暂未开放"><CircleHelp /><span>Help</span></SidebarMenuButton></SidebarMenuItem>
       </SidebarMenu>{hasVaultIssue && <p className="px-2 py-1 text-xs text-destructive">{vaultStatusText}</p>}</SidebarGroupContent></SidebarGroup>
     </SidebarContent>
     <SidebarRail />

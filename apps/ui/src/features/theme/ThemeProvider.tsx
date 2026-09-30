@@ -1,4 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
+import { TypographyProvider } from "@/features/typography/TypographyProvider";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { FONT_FAMILIES, type FontChoice } from "@/lib/font-options";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE, parseAppearance, type Appearance, type NeutralPalette, type Palette, type RadiusChoice, type Theme } from "./preferences";
@@ -100,7 +101,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     resetAppearance: () => save({ ...DEFAULT_APPEARANCE }),
     persistenceError,
   };
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={value}><TypographyProvider>{children}</TypographyProvider></ThemeContext.Provider>;
 }
 
 export function useTheme() {

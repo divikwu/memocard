@@ -158,5 +158,5 @@ export function reconnectVault(url: string, location: Pick<Location, "replace" |
   // construct a fresh transport that can redeem the new one-time credential.
   location.reload();
 }
-export type Draft = { id: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; updatedAt?: string; vaultBinding?: string; draftKey?: string };
+export type Draft = { id: string; title?: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; updatedAt?: string; vaultBinding?: string; draftKey?: string };
 export type Attachment = { relativePath: string; markdownPath: string; notePath?: string };

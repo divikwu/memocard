@@ -15,7 +15,7 @@ type Metadata = { formatVersion: 1 | 2; vaultId: string };
 type Binding = StoredSelection & { binding: string };
 type Snapshot = { folders: string[]; parsed: ParsedBrowserNote[]; duplicateIds: Set<string>; coverage: Coverage };
 type ParsedCacheEntry = { hash: string; vaultId: string; identityId?: string; createdAt?: string; modified?: number; parsed: ParsedBrowserNote };
-type Save = { id: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
+type Save = { id: string; title?: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
 type BrowserLock = <T>(name: string, task: () => Promise<T>) => Promise<T>;
 type Options = {
   storage?: BrowserVaultStorage;
@@ -363,7 +363,7 @@ export class BrowserVault {
     if (relativePath) safeParts(relativePath, this.compatible ? "vault" : "notes");
     const draftKey = params.draftKey === undefined ? `${this.sessionId}:${id}` : checkString(params.draftKey, "draftKey");
     if (!/^[a-f\d-]{36}:[a-f\d-]{36}$/.test(draftKey) || draftKey.split(":")[1] !== id) throw new BrowserVaultError("INVALID_PARAMS", "草稿标识无效。");
-    return { id, body: checkString(params.body, "body"), tags: validatedTags(params.tags), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
+    return { id, ...(params.title === undefined ? {} : { title: checkString(params.title, "title") }), body: checkString(params.body, "body"), tags: validatedTags(params.tags), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
   }
 
   private async storeDraft(selected: Binding, save: Save): Promise<BrowserDraft> {
@@ -430,7 +430,8 @@ export class BrowserVault {
         frontmatter = new Document({ id: save.id, createdAt: now() }, { schema: "yaml-1.1" });
       }
       if (!this.compatible) { frontmatter.set("updatedAt", now()); frontmatter.set("tags", save.tags); }
-      const bytes = this.compatible ? encodeObsidianNote(original, save.body, save.tags) : encodeBrowserNote(frontmatter, save.body);
+      if (save.title !== undefined && !this.compatible) frontmatter.set("title", save.title);
+      const bytes = this.compatible ? encodeObsidianNote(original, save.body, save.tags, save.title) : encodeBrowserNote(frontmatter, save.body);
       const newlyCreated = !file;
       await this.active(selected);
       file ??= await fileAt(selected.handle, path, this.compatible ? "vault" : "notes", true);
@@ -511,7 +512,7 @@ export class BrowserVault {
     const matching = snapshot.parsed.map(({ note }) => note).filter((note) => {
       const date = parseDate(note.createdAt);
       return (!folder || note.relativePath.startsWith(`${folder}/`)) && !!note.deletedAt === (params.deleted ?? false)
-        && note.body.normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || value.startsWith(tag + "/")))
+        && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || value.startsWith(tag + "/")))
         && (from === undefined || date >= from) && (to === undefined || date < to)
         && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
     });

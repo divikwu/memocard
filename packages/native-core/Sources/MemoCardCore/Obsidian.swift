@@ -9,13 +9,15 @@ struct FileIdentity: Codable {
 }
 
 func inlineTags(_ body: String) -> [String] {
-    let text = body.replacingOccurrences(of: #"(?m)^([ \t]*)(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1\2[^\n]*$"#, with: "", options: .regularExpression)
-        .replacingOccurrences(of: #"`+[^`\n]*`+"#, with: "", options: .regularExpression)
-    let regex = try! NSRegularExpression(pattern: #"(?:^|[\s(])#([\p{L}\p{N}_/-]+)"#)
+    let text = body.replacingOccurrences(of: #"(?m)^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[^\n]*(?:\n|$)|(?![\s\S]))"#, with: "", options: .regularExpression)
+        .replacingOccurrences(of: #"(?m)^(?: {4}|\t).*$"#, with: "", options: .regularExpression)
+        .replacingOccurrences(of: #"(`+)[\s\S]*?\1"#, with: "", options: .regularExpression)
+        .replacingOccurrences(of: #"!?\[[^\]\n]*\]\([^\n)]*\)|\[\[[^\]\n]*\]\]|<[^>]*>|\$\$[\s\S]*?\$\$|\$[^\n$]+\$"#, with: "", options: .regularExpression)
+    let regex = try! NSRegularExpression(pattern: #"(?:^|[\s(])#([\p{L}\p{N}_-]+(?:/[\p{L}\p{N}_-]+)*)(?![\p{L}\p{N}_/-])"#)
     return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
         guard let range = Range(match.range(at: 1), in: text) else { return nil }
         let tag = String(text[range])
-        return tag.range(of: #"[\p{L}_/-]"#, options: .regularExpression) == nil ? nil : tag
+        return tag.range(of: #"[\p{L}_-]"#, options: .regularExpression) == nil ? nil : tag
     }
 }
 
@@ -43,15 +45,19 @@ func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, iden
     if let sequence = root["tags"]?.sequence { propertyTags = sequence.compactMap { $0.scalar?.string } }
     else { propertyTags = root["tags"]?.scalar?.string.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ","))).filter { !$0.isEmpty } ?? [] }
     let tags = try validatedTags(propertyTags + inlineTags(body))
-    return ParsedNote(note: Note(id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
+    return ParsedNote(note: Note(title: root["title"]?.scalar?.string, id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
         updatedAt: timestamp(modified), deletedAt: nil, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(identity.id)?vault=\(vaultID)"), frontmatter: root, originalHeader: header)
 }
 
-func encodedObsidianNote(_ parsed: ParsedNote?, body: String, tags: [String]) throws -> Data {
+func encodedObsidianNote(_ parsed: ParsedNote?, body: String, tags: [String], title: String? = nil) throws -> Data {
     var header = parsed?.originalHeader ?? ""
     if tags != (parsed?.note.tags ?? []) {
-        let properties = tags.filter { !inlineTags(body).contains($0) }
+        let oldInline = inlineTags(parsed?.note.body ?? "")
+        let oldProperties = parsed?.frontmatter["tags"]?.sequence?.compactMap { $0.scalar?.string }
+            ?? parsed?.frontmatter["tags"]?.scalar?.string.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ","))).filter { !$0.isEmpty } ?? []
+        var properties = tags.filter { !inlineTags(body).contains($0) }
+        for tag in oldProperties where oldInline.contains(tag) && !properties.contains(tag) { properties.append(tag) }
         let newline = header.contains("\r\n") ? "\r\n" : "\n"
         let json = String(data: try JSONEncoder().encode(properties), encoding: .utf8)!
         let replacement = "tags: \(json)\(newline)"
@@ -62,6 +68,17 @@ func encodedObsidianNote(_ parsed: ParsedNote?, body: String, tags: [String]) th
             guard let match = regex.firstMatch(in: header, range: NSRange(header.startIndex..., in: header)) else { throw VaultError(code: "INVALID_TAGS", message: "请在源文件中编辑此标签属性。") }
             header = (header as NSString).replacingCharacters(in: match.range, with: replacement)
         } else if let closing = header.range(of: "---", options: .backwards) { header.insert(contentsOf: replacement, at: closing.lowerBound) }
+    }
+    if let title, title != parsed?.note.title {
+        let newline = header.contains("\r\n") ? "\r\n" : "\n"
+        let json = String(data: try JSONEncoder().encode(title), encoding: .utf8)!
+        let replacement = "title: \(json)\(newline)"
+        if header.isEmpty || header == "\u{FEFF}" { header += "---\(newline)\(replacement)---\(newline)" }
+        else if parsed?.frontmatter["title"] != nil {
+            let regex = try NSRegularExpression(pattern: #"(?m)^title:[^\r\n]*(?:\r?\n[ \t]+[^\r\n]*)*\r?\n?"#)
+            guard let match = regex.firstMatch(in: header, range: NSRange(header.startIndex..., in: header)) else { throw VaultError(code: "INVALID_FRONTMATTER", message: "请在源文件中编辑此标题属性。") }
+            header = (header as NSString).replacingCharacters(in: match.range, with: replacement)
+        } else if let end = header.range(of: "---", options: .backwards) { header.insert(contentsOf: replacement, at: end.lowerBound) }
     }
     return Data((header + body).utf8)
 }

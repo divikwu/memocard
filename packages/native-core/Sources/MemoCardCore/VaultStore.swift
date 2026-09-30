@@ -387,7 +387,7 @@ public actor VaultStore {
             let date = try! parseDate(note.createdAt)
             if let folder = query.folder, !folder.isEmpty, !note.relativePath.hasPrefix(folder + "/") { return false }
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
-            if let text = query.query, note.body.range(of: text, options: [.caseInsensitive, .literal]) == nil && !text.isEmpty { return false }
+            if let text = query.query, ((note.title ?? "") + "\n" + note.body).range(of: text, options: [.caseInsensitive, .literal]) == nil && !text.isEmpty { return false }
             if let tags = query.tags, !tags.allSatisfy({ tag in note.tags.contains { $0 == tag || $0.hasPrefix(tag + "/") } }) { return false }
             if let from, date < from { return false }
             if let to, date >= to { return false }
@@ -493,7 +493,8 @@ public actor VaultStore {
             }
             frontmatter["updatedAt"] = Node(timestamp(), Tag(.str), .doubleQuoted)
             frontmatter["tags"] = Node(tags.map { Node($0, Tag(.str), .doubleQuoted) })
-            let data = try self.compatible ? encodedObsidianNote(original, body: request.body, tags: tags) : encodedNote(frontmatter: frontmatter, body: request.body)
+            if let title = request.title { frontmatter["title"] = Node(title, Tag(.str), .doubleQuoted) }
+            let data = try self.compatible ? encodedObsidianNote(original, body: request.body, tags: tags, title: request.title) : encodedNote(frontmatter: frontmatter, body: request.body)
             guard data.count <= 8 * 1024 * 1024 else {
                 throw VaultError(code: "NOTE_TOO_LARGE", message: "M1 单条 Markdown 最大支持 8 MiB。")
             }
@@ -518,7 +519,7 @@ public actor VaultStore {
         guard fm.fileExists(atPath: path.path) else { return }
         try coordinateWrite(path, inside: localDataURL, options: .forDeleting) { coordinated in
             let draft = try JSONDecoder().decode(Draft.self, from: Data(contentsOf: coordinated))
-            guard draft.id == id, draft.body == request.body, draft.tags == tags, draft.baseHash == request.baseHash else { return }
+            guard draft.id == id, draft.title == request.title, draft.body == request.body, draft.tags == tags, draft.baseHash == request.baseHash else { return }
             try self.fm.removeItem(at: coordinated)
         }
     }
@@ -552,7 +553,7 @@ public actor VaultStore {
         let tags = try validatedTags(request.tags)
         let directory = try draftDirectory()
         let target = directory.appendingPathComponent("\(id).json")
-        let draft = Draft(id: id, body: request.body, tags: tags, baseHash: request.baseHash,
+        let draft = Draft(title: request.title, id: id, body: request.body, tags: tags, baseHash: request.baseHash,
                           relativePath: request.relativePath, updatedAt: timestamp())
         try coordinateWrite(target, inside: localDataURL) { try encode(draft).write(to: $0, options: .atomic) }
         return try encode(draft)

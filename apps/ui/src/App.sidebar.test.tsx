@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Note, VaultStatus } from "@memocard/contracts";
 import { App } from "./App";
+import { readEditorText } from "./editor-test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("./bridge", () => ({
@@ -28,9 +29,12 @@ const status: VaultStatus = {
 };
 
 beforeEach(() => {
+  document.elementFromPoint = () => null;
+  Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
   window.history.replaceState(null, "", "#/notes");
   bridge.request.mockReset();
-  bridge.request.mockImplementation(async (operation: string) => {
+  bridge.request.mockImplementation(async (operation: string, params?: Record<string, unknown>) => {
     switch (operation) {
       case "getEnvironment": return { platform: "mac", phase: "M1", mcpEnabled: false, capabilities: ["selectVault"] };
       case "getStatus": return status;
@@ -38,6 +42,7 @@ beforeEach(() => {
       case "getDrafts": return { drafts: [] };
       case "listTags": return { tags: [{ name: "生活", count: 1 }] };
       case "selectVault": return { cancelled: true };
+      case "saveNote": return { ...note, ...params, contentHash: "saved" };
       case "saveDraft": case "uiReady": return {};
       default: throw new Error(`Unexpected test operation: ${operation}`);
     }
@@ -76,7 +81,8 @@ describe("sidebar workspace actions", () => {
     render(<App />);
     await screen.findByText(note.body);
 
-    await user.click(screen.getByRole("button", { name: "设置" }));
+    await user.click(screen.getByRole("button", { name: "笔记库：侧栏测试库" }));
+    await user.click(await screen.findByRole("menuitem", { name: "笔记库设置" }));
     expect(await screen.findByRole("heading", { name: "设置", level: 1 })).toBeTruthy();
     expect(window.location.hash).toBe("#/settings");
     await user.click(screen.getByRole("button", { name: "搜索" }));
@@ -90,7 +96,9 @@ describe("sidebar workspace actions", () => {
     render(<App />);
     await screen.findByText(note.body);
     await user.click(screen.getByRole("button", { name: /^生活/ }));
+    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     fireEvent.change(screen.getByRole("textbox", { name: "搜索笔记" }), { target: { value: "散步" } });
+    fireEvent.click(screen.getByRole("button", { name: "查看结果" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: ["生活"], limit: 30 }));
 
     await user.click(screen.getByRole("button", { name: "收起侧栏" }));
@@ -98,7 +106,7 @@ describe("sidebar workspace actions", () => {
     await user.click(screen.getByRole("button", { name: "展开侧栏" }));
 
     expect(screen.getByRole("navigation", { name: "主要导航" })).toBeTruthy();
-    expect((screen.getByRole("textbox", { name: "搜索笔记" }) as HTMLInputElement).value).toBe("散步");
+    expect(screen.getByText("搜索：散步")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
     expect(screen.getByRole("button", { name: /^生活/ }).getAttribute("aria-current")).toBe("page");
   });
@@ -111,7 +119,8 @@ describe("sidebar workspace actions", () => {
     expect(screen.queryByRole("navigation", { name: "主要导航" })).toBeNull();
     fireEvent.keyDown(window, { key: "b", ctrlKey: true });
     expect(screen.getByRole("navigation", { name: "主要导航" })).toBeTruthy();
-    const input = screen.getByRole("textbox", { name: "搜索笔记" });
+    await user.click(screen.getByRole("button", { name: "新建笔记" }));
+    const input = await screen.findByRole("textbox", { name: "笔记内容" });
     await user.click(input);
     fireEvent.keyDown(input, { key: "b", ctrlKey: true });
     expect(screen.getByRole("navigation", { name: "主要导航" })).toBeTruthy();
@@ -163,9 +172,10 @@ describe("sidebar workspace actions", () => {
 
     await user.click(within(sheet).getByRole("button", { name: "新建笔记" }));
 
-    const editor = await screen.findByRole("dialog", { name: "新建笔记" });
+    const editor = await screen.findByRole("region", { name: "新建笔记" });
+    expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
-    await waitFor(() => expect(document.activeElement).toBe(within(editor).getByRole("textbox", { name: "笔记内容" })));
+    await waitFor(() => expect(document.activeElement).toBe(within(editor).getByRole("textbox", { name: "页面标题" })));
   });
 });
 
@@ -181,9 +191,10 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   render(<App />);
   await user.click(await screen.findByRole("button", { name: "工作/项目" }));
   await user.click(screen.getByRole("button", { name: /^新建笔记$/ }));
-  expect(await screen.findByText("保存到：笔记目录")).toBeTruthy();
+  expect(readEditorText()).toBe("");
   expect(screen.getByRole("button", { name: "移除标签 工作/项目" })).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "保存草稿并关闭" }));
+  expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
   await user.click(await screen.findByRole("button", { name: "#生活" }));
   await waitFor(() => {
     const calls = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes");
@@ -199,7 +210,7 @@ it("dismisses the mobile sheet at the desktop breakpoint without reopening on re
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     get matches() { return query.includes("767px") && mobile; },
     media: query,
-    addEventListener: (_: string, listener: () => void) => listeners.add(listener),
+    addEventListener: (_: string, listener: () => void) => { if (query.includes("767px")) listeners.add(listener); },
     removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
   }));
   const user = userEvent.setup();

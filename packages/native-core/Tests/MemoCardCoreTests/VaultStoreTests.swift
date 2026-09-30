@@ -4,6 +4,27 @@ import UniformTypeIdentifiers
 @testable import MemoCardCore
 
 final class VaultStoreTests: XCTestCase {
+    func testInlineTagGrammarExcludesMarkdownSyntax() {
+        XCTAssertEqual(inlineTags("# 标题\n正文 #工作/项目 #设计 #123 #/bad #bad/ #a//b C#"), ["工作/项目", "设计"])
+        XCTAssertEqual(inlineTags("`#code`\n```md\n#fenced\n```\n    #indented\n[链接](#anchor) [#label](url) [[#wiki]] <span title=\"#html\">x</span> $x #math$\n#保留"), ["保留"])
+        XCTAssertEqual(inlineTags("```\n#unfinished"), [])
+    }
+
+    func testIndependentTitleAndEmptyPageLifecycle() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        var note = try await call(core, "saveNote", ["id": id, "title": "", "body": "", "tags": [], "baseHash": NSNull()])
+        let path = note["relativePath"] as? String
+        for (title, body) in [("只有标题", ""), ("", "只有正文"), ("", "")] {
+            note = try await call(core, "saveNote", ["id": id, "title": title, "body": body, "tags": [], "baseHash": note["contentHash"]!])
+            XCTAssertEqual(note["title"] as? String, title)
+            XCTAssertEqual(note["body"] as? String, body)
+            XCTAssertEqual(note["relativePath"] as? String, path)
+            let reopened = try await call(core, "getNote", ["id": id])
+            XCTAssertEqual(reopened["title"] as? String, title)
+        }
+    }
+
     var temporary: URL!
     var vault: URL!
     var local: URL!
