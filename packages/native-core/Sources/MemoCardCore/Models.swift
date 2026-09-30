@@ -17,6 +17,7 @@ public struct VaultError: Error, LocalizedError, Codable, Sendable {
 }
 
 struct Note: Encodable {
+    let title: String?
     let id: String
     let body: String
     let tags: [String]
@@ -52,6 +53,7 @@ struct VaultMetadata: Codable {
 }
 
 struct SaveRequest: Codable {
+    let title: String?
     let id: String
     let body: String
     let tags: [String]
@@ -60,6 +62,7 @@ struct SaveRequest: Codable {
 }
 
 struct Draft: Codable {
+    let title: String?
     let id: String
     let body: String
     let tags: [String]
@@ -67,9 +70,10 @@ struct Draft: Codable {
     let relativePath: String?
     let updatedAt: String
 
-    private enum CodingKeys: String, CodingKey { case id, body, tags, baseHash, relativePath, updatedAt }
+    private enum CodingKeys: String, CodingKey { case title, id, body, tags, baseHash, relativePath, updatedAt }
     func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encodeIfPresent(title, forKey: .title)
         try values.encode(id, forKey: .id)
         try values.encode(body, forKey: .body)
         try values.encode(tags, forKey: .tags)
@@ -209,7 +213,7 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
     }
     let body = String(text[end.upperBound...])
     return ParsedNote(note: Note(
-        id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
+        title: root["title"]?.scalar?.string, id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
         deletedAt: deleted, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(id)?vault=\(vaultID)"
     ), frontmatter: root)

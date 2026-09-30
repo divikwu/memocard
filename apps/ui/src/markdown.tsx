@@ -1,7 +1,13 @@
+import "./typeset.css";
+import remarkGfm from "remark-gfm";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { wikiMarkdown } from "./wiki-markdown";
 import { imageSource, openVaultLink } from "./vault-links";
 import ReactMarkdown, { type Components } from "react-markdown";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useId } from "react";
 import { request } from "./bridge";
 import { externalUrl, internalTarget } from "./urls";
 import { isBrowserVault } from "./client-mode";
@@ -19,10 +25,12 @@ function NoteImage({ src, alt }: { src: string; alt: string }) {
 const markdownImage: Components["img"] = ({ src, alt }) => typeof src === "string" && src ? <NoteImage src={src} alt={alt ?? "笔记图片"} /> : <span className="blocked-image">{alt || "图片"} · 仅显示笔记库中的图片</span>;
 
 export function Markdown({ body, notePath, onError }: { body: string; notePath?: string; onError?: (message: string) => void }) {
-  return <div className="markdown"><ReactMarkdown
-    skipHtml
-    remarkPlugins={[wikiMarkdown]}
+  const anchorPrefix = `note-${useId()}-`;
+  return <div className="markdown typeset"><ReactMarkdown
+    remarkPlugins={[remarkGfm, wikiMarkdown, remarkMath]}
+    rehypePlugins={[rehypeRaw, [rehypeSanitize, { ...defaultSchema, clobberPrefix: anchorPrefix, protocols: { ...defaultSchema.protocols, href: [...(defaultSchema.protocols?.href ?? []), 'memocard-wiki'], src: [...(defaultSchema.protocols?.src ?? []), 'memocard-wiki'] }, tagNames: [...(defaultSchema.tagNames ?? []), 'mark', 'abbr', 'kbd', 'sub', 'sup', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd'], attributes: { ...defaultSchema.attributes, code: [...(defaultSchema.attributes?.code ?? []), ['className', /^language-./, 'math-inline', 'math-display']], abbr: ['title'] } }], [rehypeKatex, { output: 'mathml', throwOnError: false, trust: false }]]}
     urlTransform={(url, key) => {
+      if (key === "href" && url.startsWith("#")) return `#${anchorPrefix}${url.slice(1)}`;
       const wiki = url.startsWith("memocard-wiki:");
       let target = url;
       try { if (wiki) target = decodeURIComponent(url.slice("memocard-wiki:".length)); } catch { return ""; }
@@ -30,7 +38,8 @@ export function Markdown({ body, notePath, onError }: { body: string; notePath?:
       return externalUrl(url) ?? (internalTarget(target) ? `memocard-internal:${encodeURIComponent(JSON.stringify({ target, wiki }))}` : "");
     }}
     components={{
-      a: ({ href, children }) => href ? <a href={href} onClick={(event) => {
+      a: ({ href, children, id, title, "aria-label": ariaLabel }) => href ? <a id={id} title={title} aria-label={ariaLabel} href={href} onClick={(event) => {
+        if (href.startsWith("#")) return;
         event.preventDefault();
         if (href.startsWith("memocard-internal:")) {
           const { target, wiki } = JSON.parse(decodeURIComponent(href.slice("memocard-internal:".length))) as { target: string; wiki: boolean };
@@ -38,6 +47,7 @@ export function Markdown({ body, notePath, onError }: { body: string; notePath?:
         } else void request("openExternal", { url: href }).catch(() => onError?.("无法打开链接，请在 App 中重试。"));
       }}>{children}</a> : <span>{children}</span>,
       img: markdownImage,
+      table: ({ children }) => <div className="typeset-scroll" role="region" aria-label="表格，可横向滚动" tabIndex={0}><table>{children}</table></div>,
     }}
   >{body}</ReactMarkdown></div>;
 }

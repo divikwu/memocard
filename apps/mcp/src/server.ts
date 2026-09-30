@@ -13,7 +13,7 @@ const coverageSchema = z.object({
   indexedAt: z.string().nullable().default(null),
 });
 const noteSchema = z.object({
-  id: z.string(), body: z.string(), tags: z.array(z.string()),
+  id: z.string(), title: z.string().optional(), body: z.string(), tags: z.array(z.string()),
   createdAt: z.string(), updatedAt: z.string(), deletedAt: z.string().optional(),
   contentHash: z.string(), relativePath: z.string(), sourceUrl: z.string(),
 });

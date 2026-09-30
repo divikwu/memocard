@@ -36,11 +36,37 @@ describe("safe note rendering", () => {
   it.each(["my%23photo.png", "my%3Fphoto.png", "100%25.png"])("preserves safely encoded filename characters: %s", (name) => {
     expect(assetUrl(`../assets/${name}`)).toBe(`memocard-asset://vault/assets/${name}`);
   });
-  it("does not render raw HTML or remote image sources", () => {
+  it("does not render unsafe HTML or remote image sources", () => {
     const html = renderToStaticMarkup(<Markdown body={'<script>alert(1)</script>\n\n![pixel](https://tracker.test/a.png)\n\n[bad](javascript:alert)'} />);
     expect(html).not.toContain("<script");
     expect(html).not.toContain("src=");
     expect(html).not.toContain("javascript:");
     expect(html).toContain("仅显示笔记库中的图片");
   });
+});
+
+it('renders complete safe content formats including tables, footnotes and MathML', () => {
+  const html = renderToStaticMarkup(<Markdown body={'#### 四级\n\n##### 五级\n\n###### 六级\n\n| A | B |\n| --- | ---: |\n| 1 | 2 |\n\n说明[^1]\n\n[^1]: 脚注\n\n$E=mc^2$\n\n<details><summary>详情</summary><p><mark>重点</mark> <kbd>Enter</kbd> <abbr title="测试">T</abbr></p></details>\n\n<dl><dt>术语</dt><dd>定义</dd></dl>\n\n<figure><figcaption>图片说明</figcaption></figure>'} />);
+  for (const tag of ['h4', 'h5', 'h6', 'table', 'math', 'details', 'summary', 'mark', 'kbd', 'abbr', 'dl', 'dt', 'dd', 'figure', 'figcaption']) expect(html).toContain(`<${tag}`);
+  expect(html).toContain('data-footnotes');
+  expect(html).toContain('typeset-scroll');
+});
+it('sanitizes active HTML, styles, remote images and embedded content', () => {
+  const html = renderToStaticMarkup(<Markdown body={'<details onclick="alert(1)" style="position:fixed"><summary>安全内容</summary></details><iframe src="https://remote.test"></iframe><img src="https://remote.test/pixel" onerror="alert(1)"><svg onload="alert(1)"></svg>'} />);
+  expect(html).toContain('<details>');
+  for (const unsafe of ['onclick', 'onerror', 'onload', '<iframe', '<svg', 'position:fixed', 'src="https://']) expect(html).not.toContain(unsafe);
+});
+
+it('keeps sanitized footnote anchors connected to their targets', () => {
+  const html = renderToStaticMarkup(<Markdown body={'注释[^1]\n\n[^1]: 内容'} />);
+  const targets = [...html.matchAll(/href="#([^" ]+)"/g)].map(match => match[1]);
+  expect(targets.length).toBeGreaterThan(0);
+  for (const target of targets) expect(html).toContain(`id="${target}"`);
+});
+
+it('isolates footnote targets between notes on the same page', () => {
+  const body = '注释[^1]\n\n[^1]: 内容';
+  const html = renderToStaticMarkup(<><Markdown body={body} /><Markdown body={body} /></>);
+  const ids = [...html.matchAll(/ id="([^" ]+)"/g)].map(match => match[1]);
+  expect(new Set(ids).size).toBe(ids.length);
 });

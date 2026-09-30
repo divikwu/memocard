@@ -7,7 +7,7 @@ import { SidebarProvider } from "./ui/sidebar";
 
 const createProps = (overrides: Partial<AppSidebarProps> = {}): AppSidebarProps => ({
   view: "notes", tag: null, tags: [{ name: "生活", count: 2 }, { name: "工作", count: 1 }],
-  draftCount: 3, vaultName: "我的笔记", connected: true, vaultStatusText: "已连接文件夹", hasVaultIssue: false,
+  vaultName: "我的笔记", connected: true, vaultStatusText: "已连接文件夹", hasVaultIssue: false,
   canCreate: true, canChooseVault: true, canCreateVault: true, needsPermission: false, working: false,
   onNavigate: vi.fn(), onNewNote: vi.fn(), onSearch: vi.fn(), onSelectVault: vi.fn(), onActivateVault: vi.fn(), onReauthorize: vi.fn(),
   ...overrides,
@@ -36,8 +36,7 @@ describe("AppSidebar", () => {
     expect(props.onNewNote).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     expect(props.onSearch).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("button", { name: /^草稿/ }));
-    expect(props.onNavigate).toHaveBeenLastCalledWith("drafts");
+    expect(screen.queryByRole("button", { name: /草稿/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "生活" }));
     expect(props.onNavigate).toHaveBeenLastCalledWith("notes", "生活");
     fireEvent.click(screen.getByRole("button", { name: "所有笔记" }));

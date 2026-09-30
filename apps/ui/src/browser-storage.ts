@@ -1,7 +1,7 @@
 import type { BrowserDirectoryHandle, FileIdentity } from "./browser-files";
 import { createId } from "./uuid";
 
-export type BrowserDraft = { id: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; updatedAt: string; draftKey: string; vaultBinding?: string };
+export type BrowserDraft = { id: string; title?: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; updatedAt: string; draftKey: string; vaultBinding?: string };
 export type StoredSelection = { directoryId: string; vaultId: string; handle: BrowserDirectoryHandle };
 export type BrowserVaultStorage = {
   identities(scope: string): Promise<FileIdentity[]>;
@@ -16,7 +16,7 @@ export type BrowserVaultStorage = {
 type DraftRecord = { scope: string; draft: BrowserDraft };
 
 function sameDraft(left: BrowserDraft, right: BrowserDraft): boolean {
-  return left.id === right.id && left.body === right.body && left.baseHash === right.baseHash
+  return left.title === right.title && left.id === right.id && left.body === right.body && left.baseHash === right.baseHash
     && JSON.stringify(left.tags) === JSON.stringify(right.tags);
 }
 

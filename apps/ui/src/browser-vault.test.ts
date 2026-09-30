@@ -102,7 +102,7 @@ class TestStorage implements BrowserVaultStorage {
   }
   async removeMatchingDraft(scope: string, draft: BrowserDraft) {
     const key = `${scope}:${draft.draftKey}`, existing = this.records.get(key);
-    if (existing?.body === draft.body && existing.baseHash === draft.baseHash && JSON.stringify(existing.tags) === JSON.stringify(draft.tags)) this.records.delete(key);
+    if (existing?.title === draft.title && existing?.body === draft.body && existing.baseHash === draft.baseHash && JSON.stringify(existing.tags) === JSON.stringify(draft.tags)) this.records.delete(key);
   }
 }
 
@@ -562,4 +562,17 @@ it("includes descendants in tag queries and counts each note once per ancestor",
   const result = await call<{ tags: { name: string; count: number }[] }>(h.core, "listTags");
   expect(result.tags).toContainEqual({ name: "工作/项目", count: 1 });
   expect(result.tags).toContainEqual({ name: "工作", count: 1 });
+});
+
+it("creates an empty titled page and independently saves title and body without changing identity", async () => {
+  const h = await open();
+  const id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
+  let page = await call<Note>(h.core, "saveNote", { id, title: "", body: "", tags: [], baseHash: null });
+  const path = page.relativePath;
+  expect(page.title).toBe(""); expect(page.body).toBe("");
+  for (const [title, body] of [["只有标题", ""], ["", "只有正文"], ["", ""]]) {
+    page = await call<Note>(h.core, "saveNote", { id, title, body, tags: [], baseHash: page.contentHash });
+    expect(page).toMatchObject({ id, title, body, relativePath: path });
+    expect(await call<Note>(h.core, "getNote", { id })).toMatchObject({ title, body });
+  }
 });

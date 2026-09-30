@@ -30,12 +30,93 @@ function setup(body = "", options: Partial<React.ComponentProps<typeof LiveMarkd
 }
 
 beforeEach(() => {
+  Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
+  Range.prototype.getBoundingClientRect = () => new DOMRect();
   vi.mocked(request).mockClear();
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("inline Markdown editor", () => {
+  it('previews list, quote and divider syntax without rewriting the Markdown', () => {
+    const source = 'Start\n\n- first\n  - nested\n\n- [ ] task\n\n> quote\n\n---\n\nEnd';
+    const { container, onChange } = setup(source);
+    expect([...container.querySelectorAll('.mc-live-list-marker')].map(node => node.textContent)).toEqual(['•', '◦']);
+    expect(container.querySelector('.mc-live-quote-line')?.textContent).toBe('quote');
+    expect(container.querySelector('.mc-live-rule-preview')?.textContent).toBe('');
+    expect(screen.getByRole('checkbox', { name: '待办：task' })).toBeTruthy();
+    expect(view().state.doc.toString()).toBe(source);
+    expect(onChange).not.toHaveBeenCalled();
+    act(() => { view().focus(); view().dispatch({ selection: { anchor: source.indexOf('> quote') + 2 } }); });
+    expect(container.querySelector('.mc-live-quote-line')?.textContent).toContain('>');
+    expect(view().state.doc.toString()).toBe(source);
+  });
+  it('does not merge paragraphs across an unsupported table', () => {
+    const source = 'Before\n\n| a | b |\n| - | - |\n| 1 | 2 |\n\nAfter';
+    setup(source);
+    act(() => view().dispatch({ selection: { anchor: source.indexOf('After') } }));
+    fireEvent.keyDown(screen.getByRole('textbox', { name: '笔记内容' }), { key: 'Backspace' });
+    expect(view().state.doc.toString()).toBe(source);
+    act(() => view().dispatch({ selection: { anchor: 'Before'.length } }));
+    fireEvent.keyDown(screen.getByRole('textbox', { name: '笔记内容' }), { key: 'Delete' });
+    expect(view().state.doc.toString()).toBe(source);
+  });
+  it('deletes one intentional empty line instead of merging across it', () => {
+    const source = 'Before\n\n\nAfter';
+    setup(source);
+    act(() => view().dispatch({ selection: { anchor: source.indexOf('After') } }));
+    fireEvent.keyDown(screen.getByRole('textbox', { name: '笔记内容' }), { key: 'Backspace' });
+    expect(view().state.doc.toString()).toBe('Before\n\nAfter');
+  });
+  it('removes separator lines from the editable layout without changing Markdown', () => {
+    const source = 'First\n\nLast\n';
+    const { container, onChange } = setup(source);
+    expect(container.querySelectorAll('.cm-line')).toHaveLength(3);
+    act(() => view().dispatch({ selection: { anchor: 6 } }));
+    expect(view().state.selection.main.head).toBe(7);
+    act(() => view().dispatch({ selection: { anchor: 6 } }));
+    expect(view().state.selection.main.head).toBe(5);
+    expect(view().state.doc.toString()).toBe(source);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+  it('keeps extra empty paragraphs and code blank lines editable', () => {
+    const source = 'First\n\n\nLast\n\n```txt\na\n\nb\n```\n';
+    setup(source);
+    act(() => view().dispatch({ selection: { anchor: 7 } }));
+    expect(view().state.selection.main.head).toBe(7);
+    const codeBlank = source.indexOf('a\n\n') + 2;
+    act(() => view().dispatch({ selection: { anchor: codeBlank } }));
+    expect(view().state.selection.main.head).toBe(codeBlank);
+    act(() => view().dispatch({ selection: { anchor: source.length } }));
+    expect(view().state.selection.main.head).toBe(source.length);
+  });
+  it('preserves cross-block selection and source through a structural edit and undo', () => {
+    const source = 'First\n\nLast';
+    const { container } = setup(source);
+    act(() => view().dispatch({ selection: { anchor: 0, head: source.length } }));
+    expect(view().state.sliceDoc(view().state.selection.main.from, view().state.selection.main.to)).toBe(source);
+    expect(container.querySelectorAll('.mc-block-selected')).toHaveLength(2);
+    act(() => view().dispatch({ selection: { anchor: 7 } }));
+    fireEvent.keyDown(screen.getByRole('textbox', { name: '笔记内容' }), { key: 'Backspace' });
+    expect(view().state.doc.toString()).toBe('FirstLast');
+    act(() => { undo(view()); });
+    expect(view().state.doc.toString()).toBe(source);
+  });
+  it('highlights complete selected list items across the content width without changing selection or source', () => {
+    const source = '- **first**\n- second\n- third\n- fourth';
+    const { container, onChange } = setup(source);
+    const end = source.indexOf('\n- fourth');
+    act(() => { view().focus(); view().dispatch({ selection: { anchor: 0, head: end } }); });
+    expect(container.querySelectorAll('.mc-block-selected')).toHaveLength(3);
+    expect(container.querySelector('.mc-live-strong')?.textContent).toBe('first');
+    expect(view().state.sliceDoc(view().state.selection.main.from, view().state.selection.main.to)).toBe(source.slice(0, end));
+    expect(view().state.doc.toString()).toBe(source);
+    expect(onChange).not.toHaveBeenCalled();
+    act(() => view().dispatch({ selection: { anchor: 3, head: 5 } }));
+    expect(container.querySelectorAll('.mc-block-selected')).toHaveLength(0);
+    act(() => view().dispatch({ selection: { anchor: 0 } }));
+    expect(container.querySelectorAll('.mc-block-selected')).toHaveLength(0);
+  });
   it("renders formatting in the same editable surface without changing the source on mount", () => {
     const source = "# Heading\n\n**bold** and *italic* and ~~deleted~~ and `code`\n\n- list\n> quote";
     const { onChange, container } = setup(source);
@@ -81,7 +162,7 @@ describe("inline Markdown editor", () => {
   it("does not render HTML, remote images or unsafe links", () => {
     const source = '<script>alert(1)</script>\n<img src="https://example.com/track.png" onerror="alert(1)">\n\n![remote](https://example.com/x.png)\n![data](data:image/png;base64,AAAA)\n![escape](../../outside.png)\n![encoded](../assets/%2e%2e/x.png)\n[bad](javascript:alert%281%29)';
     const { container } = setup(source);
-    expect(container.querySelector("script,img,a")).toBeNull();
+    expect(container.querySelector("script,img:not(.cm-widgetBuffer),a")).toBeNull();
     expect(view().state.sliceDoc()).toBe(source);
     expect(request).not.toHaveBeenCalled();
   });

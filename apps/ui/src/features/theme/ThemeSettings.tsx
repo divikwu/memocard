@@ -1,3 +1,4 @@
+import { TypographySettings } from "@/features/typography/TypographySettings";
 import { ChevronDown, RotateCcw } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export function ThemeSettings() {
   const theme = useTheme();
   const radius = radii.find(option => option.value === theme.radius)!;
   return (
-    <section aria-labelledby="appearance-heading" className="space-y-3">
+    <><section aria-labelledby="appearance-heading" className="space-y-3">
       <div className="flex min-h-8 items-center justify-between gap-4">
         <h2 id="appearance-heading" className="text-balance text-base font-medium">外观</h2>
         <Button variant="ghost" size="sm" onClick={theme.resetAppearance} className="shrink-0 text-muted-foreground">
@@ -133,6 +134,6 @@ export function ThemeSettings() {
         </Collapsible>
       </div>
     </CardContent></Card>
-    </section>
+    </section><TypographySettings /></>
   );
 }

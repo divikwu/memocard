@@ -1,3 +1,5 @@
+import { inlineTags } from './inline-tags';
+export { inlineTags } from './inline-tags';
 import type { Note } from "@memocard/contracts";
 import { Document, isMap, isScalar, isSeq, parseDocument } from "yaml";
 
@@ -109,7 +111,7 @@ export async function parseBrowserNote(bytes: Uint8Array, relativePath: string, 
   const deletedAt = deletedNode === undefined || (isScalar(deletedNode) && deletedNode.value === null) ? undefined : scalar("deletedAt");
   if (deletedAt !== undefined) parseDate(deletedAt);
   return { frontmatter: doc, note: {
-    id, createdAt, updatedAt, tags, ...(deletedAt !== undefined ? { deletedAt } : {}),
+    id, ...(typeof doc.get("title") === "string" ? { title: doc.get("title") as string } : {}), createdAt, updatedAt, tags, ...(deletedAt !== undefined ? { deletedAt } : {}),
     body: text.slice(end.index + end[0].length), contentHash: await sha256(bytes), relativePath,
     sourceUrl: `memocard://note/${id}?vault=${vaultId}`,
   } };
@@ -172,22 +174,18 @@ export async function parseObsidianNote(bytes: Uint8Array, path: string, vaultId
   const propertyTags = Array.isArray(rawTags) ? rawTags.filter((tag): tag is string => typeof tag === "string") : typeof rawTags === "string" ? rawTags.split(/[,\s]+/).filter(Boolean) : [];
   const body = source.slice(header.length);
   return { source, header, propertyTags, frontmatter: doc, note: {
-    id: identity.id, body, tags: [...new Set([...propertyTags, ...inlineTags(body)])],
+    id: identity.id, ...(typeof doc.get("title") === "string" ? { title: doc.get("title") as string } : {}), body, tags: [...new Set([...propertyTags, ...inlineTags(body)])],
     createdAt: identity.createdAt, updatedAt: new Date(modified || 0).toISOString(),
     contentHash: await sha256(bytes), relativePath: path, sourceUrl: `memocard://note/${identity.id}?vault=${vaultId}`,
   } };
 }
 
-export function inlineTags(body: string): string[] {
-  const text = body.replace(/^([ \t]*)(`{3,}|~{3,})[^\n]*\n[\s\S]*?^\1\2[^\n]*$/gm, "").replace(/`+[^`\n]*`+/g, "");
-  return [...new Set([...text.matchAll(/(?:^|[\s(])#([\p{L}\p{N}_/-]+)/gu)].map(match => match[1]).filter(tag => /[\p{L}_/-]/u.test(tag)))];
-}
 
-export function encodeObsidianNote(parsed: ParsedBrowserNote | undefined, body: string, tags: string[]): Uint8Array {
+export function encodeObsidianNote(parsed: ParsedBrowserNote | undefined, body: string, tags: string[], title?: string): Uint8Array {
   let header = parsed?.header ?? "";
   if (JSON.stringify(tags) !== JSON.stringify(parsed?.note.tags ?? [])) {
     // Inline tags remain in the body; the tag control only changes YAML properties.
-    const properties = tags.filter(tag => !inlineTags(body).includes(tag));
+    const properties = [...new Set([...tags.filter(tag => !inlineTags(body).includes(tag)), ...(parsed?.propertyTags ?? []).filter(tag => inlineTags(parsed?.note.body ?? '').includes(tag))])];
     const newline = header.includes("\r\n") ? "\r\n" : "\n";
     const replacement = `tags: ${JSON.stringify(properties)}${newline}`;
     if (!header || header === "\uFEFF") header += `---${newline}${replacement}---${newline}`;
@@ -205,6 +203,16 @@ export function encodeObsidianNote(parsed: ParsedBrowserNote | undefined, body: 
         header = header.slice(0, close) + replacement + header.slice(close);
       }
     }
+  }
+  if (title !== undefined && title !== parsed?.note.title) {
+    const newline = header.includes('\r\n') ? '\r\n' : '\n';
+    const replacement = `title: ${JSON.stringify(title)}${newline}`;
+    if (!header || header === '\uFEFF') header += `---${newline}${replacement}---${newline}`;
+    else if (parsed?.frontmatter.has('title')) {
+      const pattern = /^title:[^\r\n]*(?:\r?\n[ \t]+[^\r\n]*)*\r?\n?/m;
+      if (!pattern.test(header)) throw new BrowserVaultError('INVALID_FRONTMATTER', '请在源文件中编辑此标题属性。');
+      header = header.replace(pattern, () => replacement);
+    } else { const end = header.lastIndexOf('---'); header = header.slice(0, end) + replacement + header.slice(end); }
   }
   const bytes = new TextEncoder().encode(header + body);
   if (bytes.length > maxNoteBytes) throw new BrowserVaultError("NOTE_TOO_LARGE", "单条 Markdown 最大支持 8 MiB。");
