@@ -9,7 +9,7 @@ import { Mathematics } from '@tiptap/extension-mathematics';
 import Image from '@tiptap/extension-image';
 import { afterEach, it, expect } from 'vitest';
 import { semanticExtensions, WikiLink, FootnoteReference, FootnoteDefinition } from './rich-semantic';
-import { richBlockAt, moveRichBlock } from './rich-blocks';
+import { richBlockAt, moveRichBlock, moveRichBlocks, richBlockMoveSources, richBlockMoveTarget } from './rich-blocks';
 import { MarkdownSource, SourceMetadata, PreservedMarkdown } from './wysiwyg-markdown';
 const editors: Editor[] = [];
 afterEach(() => editors.splice(0).forEach(editor => editor.destroy()));
@@ -67,14 +67,34 @@ it('edits semantic HTML, Wiki labels and footnotes without exposing source marke
  expect(text()).toContain('<p>新内部正文</p>');expect(text()).toContain('[[笔记|名字]]');
  expect(text()).not.toContain('<details open');
 });
-it('moves a list item with its children in one reversible transaction and rejects cross-list moves',()=>{
+it('moves a list item with its children within and across compatible lists reversibly',()=>{
  const body='* parent\n  * child\n* second\n\nparagraph\n\n- other';
  const {editor,text}=setup(body);
  const items: number[]=[];editor.state.doc.descendants((node,pos)=>{if(node.type.name==='listItem')items.push(pos);});
  expect(moveRichBlock(editor,richBlockAt(editor,items[0])!,richBlockAt(editor,items[2])!,true)).toBe(true);
  expect(editor.state.doc.firstChild?.firstChild?.textContent).toBe('second');
  editor.commands.undo();expect(text()).toBe(body);
- expect(moveRichBlock(editor,richBlockAt(editor,items[0])!,richBlockAt(editor,items[3])!,true)).toBe(false);expect(text()).toBe(body);
+ expect(moveRichBlock(editor,richBlockAt(editor,items[0])!,richBlockAt(editor,items[3])!,true)).toBe(true);
+ expect(editor.state.doc.lastChild?.lastChild?.textContent).toBe('parentchild');
+ expect(editor.state.doc.child(1).textContent).toBe('paragraph');
+ editor.commands.undo();expect(text()).toBe(body);
+});
+it('round-trips moved sections while preserving untouched Markdown and raw blocks',()=>{
+ const body='## A\n\n* original\n\n### Child\n\n<!-- untouched -->\n\n## B\n\nBody B';
+ const moved='## B\n\nBody B\n\n## A\n\n* original\n\n### Child\n\n<!-- untouched -->';
+ const {editor,text}=setup(body),sources=richBlockMoveSources(editor,0);
+ expect(moveRichBlocks(editor,sources,richBlockMoveTarget(editor,sources,1,true)!,true)).toBe(true);
+ expect(text()).toBe(moved);
+ const reopened=setup(text());expect(reopened.text()).toBe(moved);expect(reopened.editor.state.doc.child(0).textContent).toBe('B');
+ editor.commands.undo();expect(text()).toBe(body);editor.commands.redo();expect(text()).toBe(moved);
+});
+it.each(['3. First\n4. Second', '- [x] Done\n  - [ ] Child\n- [ ] Todo'])('moves an entire list preserving numbering or checkbox state: %s',list=>{
+ const body=`intro\n\n${list}\n\nafter`,{editor,text}=setup(body);
+ let item=0;editor.state.doc.descendants((node,pos)=>{if(['listItem','taskItem'].includes(node.type.name))item=pos;});
+ const sources=richBlockMoveSources(editor,item,true);
+ const target=richBlockAt(editor,editor.state.doc.content.size-editor.state.doc.lastChild!.nodeSize)!;
+ expect(moveRichBlocks(editor,sources,target,true)).toBe(true);expect(text()).toBe(`intro\n\nafter\n\n${list}`);
+ editor.commands.undo();expect(text()).toBe(body);
 });
 it('keeps code editable even when its examples contain unknown HTML', () => {
  const {editor,text}=setup('```html\n<custom>code</custom>\n```\n\nUse `<custom>` here.');

@@ -44,6 +44,24 @@ it('stops automatic conflict retries but continues to preserve edits', async () 
   expect(transport.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(1);
   expect(transport).toHaveBeenLastCalledWith('saveDraft', expect.objectContaining({ body: 'second', baseHash: 'original' })); session.dispose();
 });
+it('retries the newest content after an in-flight save fails without advancing its hash', async () => {
+  vi.useFakeTimers();
+  const { session, transport } = setup({ ...initial, body: 'original', baseHash: 'original-hash' });
+  let fail!: (reason: Error) => void;
+  transport.mockImplementation(async op => op === 'saveNote' ? new Promise((_resolve, reject) => { fail = reject; }) : undefined);
+  session.update('first', []);
+  const saving = session.save();
+  const result = expect(saving).rejects.toThrow('暂时不可写');
+  await vi.advanceTimersByTimeAsync(0);
+  session.update('newest', ['tag']);
+  fail(new Error('暂时不可写')); await result; await session.recover();
+  expect(session.current.baseHash).toBe('original-hash');expect(session.state).toBe('error');
+  expect(transport).toHaveBeenLastCalledWith('saveDraft', expect.objectContaining({ body: 'newest', baseHash: 'original-hash' }));
+  transport.mockImplementation(async op => op === 'saveNote' ? note : undefined);
+  await session.flush();
+  expect(transport).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ body: 'newest', tags: ['tag'], baseHash: 'original-hash' }));
+  expect(session.dirty).toBe(false);expect(session.state).toBe('saved');session.dispose();
+});
 it('automatically persists an undo back to the old baseline while a newer write is in flight', async () => {
   vi.useFakeTimers();
   const { session, transport } = setup({ ...initial, body: 'original order', baseHash: 'original' });

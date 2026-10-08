@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ThemeProvider } from "../src/features/theme/ThemeProvider";
 import "../src/styles.css";
 const note = { id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", body: "# 给想法留一点空间\n\n这是 UI 验收的模拟笔记。支持 **Markdown**、[链接](https://example.com) 和多级标签。\n\n- 整理灵感\n- 继续写作", tags: ["工作/设计", "生活"], relativePath: "notes/设计/灵感.md", createdAt: "2026-09-29T08:00:00Z", updatedAt: "2026-09-29T08:00:00Z", contentHash: "fixture" };
+if (new URLSearchParams(location.search).get("fixture") === "block-range") note.body = "## 范围拖选验收\n\n- [ ] 第一条待办\n- [ ] 第二条待办\n- [ ] 第三条待办\n- [ ] 第四条待办\n\n末尾段落";
 const coverage = { complete: true, indexed: 1, pending: 0, issues: 0, indexedAt: note.updatedAt };
 const capabilities = ["queryNotes", "getNote", "getDrafts", "listTags", "saveNote", "saveDraft", "selectVault"];
 window.webkit = { messageHandlers: { memocard: { postMessage: async message => {

@@ -3,6 +3,8 @@ import type { Editor, JSONContent } from '@tiptap/react';
 import type { NotePage } from '@memocard/contracts';
 import { Dialog, DialogContent, DialogTitle } from './components/ui/dialog';
 import { Popover } from 'radix-ui';
+import * as Menu from '@radix-ui/react-menu';
+import { SlidersHorizontal } from 'lucide-react';
 import { request } from './bridge';
 import { externalUrl, internalTarget } from './urls';
 import { editRichStructure } from './rich-blocks';
@@ -78,8 +80,9 @@ export function RichFormatTools({ editor, onImage, onError, context }: { context
   }
   function insert(node: JSONContent) { editRichStructure(editor, () => { editor.chain().focus().insertContent(node).run(); }); setOpen(false); }
   const imagePos = Math.max(selected('image'), selected('wikiImage'));
+  const trigger = <Popover.Trigger disabled={!editor.isEditable}>{context === 'block' && <SlidersHorizontal aria-hidden="true" />}<span>{context === 'text' ? '更多格式' : '块属性与更多操作'}</span></Popover.Trigger>;
   return <>
-    <Popover.Root open={open} onOpenChange={setOpen}><Popover.Trigger role={context === 'block' ? 'menuitem' : undefined} disabled={!editor.isEditable}>{context === 'text' ? '更多格式' : '块属性与更多操作'}</Popover.Trigger>
+    <Popover.Root open={open} onOpenChange={setOpen}>{context === 'block' ? <Menu.Item asChild onSelect={event => event.preventDefault()}>{trigger}</Menu.Item> : trigger}
       <Popover.Portal><Popover.Content className="rich-menu rich-format-menu" align="end" sideOffset={6} collisionPadding={12} onCloseAutoFocus={event => event.preventDefault()}>
         <div aria-label="扩展文字格式">{[['mark', '高亮'], ['sup', '上标'], ['sub', '下标'], ['kbd', '键盘标记']].map(([mark, label]) => <button key={mark} aria-pressed={editor.isActive(mark)} onClick={() => { editor.chain().focus().toggleMark(mark).run(); setOpen(false); }}>{label}</button>)}
           <button onClick={() => show('abbr')}>缩写说明</button>
