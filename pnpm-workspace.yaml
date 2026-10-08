@@ -2,3 +2,5 @@ packages:
   - apps/ui
   - apps/mcp
   - packages/contracts
+overrides:
+  katex@<0.18.2: 0.18.9

@@ -12,7 +12,7 @@ pnpm --filter @memocard/mcp build
 pnpm --filter @memocard/mcp test
 ```
 
-Compilation writes `apps/mcp/dist/index.js`, `server.js`, `native-client.js`, and `smoke.js`. The package pins the published official `@modelcontextprotocol/sdk` to **1.30.1**. Its npm package README and shipped TypeScript declarations were checked for `McpServer.registerTool`, `StdioServerTransport`, `Client`, and `StdioClientTransport`; no unreleased v2 API is used. References: [published SDK package](https://www.npmjs.com/package/@modelcontextprotocol/sdk/v/1.30.1), [official v1 API](https://modelcontextprotocol.github.io/typescript-sdk/).
+Compilation writes `apps/mcp/dist/index.js`, `server.js`, `native-client.js`, and `smoke.js`. The package pins the published official `@modelcontextprotocol/sdk` to **1.31.0**. Its shipped TypeScript declarations support `McpServer.registerTool`, `StdioServerTransport`, `Client`, and `StdioClientTransport`; no unreleased v2 API is used. References: [published SDK package](https://www.npmjs.com/package/@modelcontextprotocol/sdk/v/1.31.0), [official v1 API](https://modelcontextprotocol.github.io/typescript-sdk/).
 
 Open the Mac app, select a vault, then enable MCP and export its connection configuration into a private local directory outside the vault, iCloud, and Git repositories. Keep the Mac app running. Use the exported absolute `connection.json` path; do not copy its token into MCP client settings.
 
