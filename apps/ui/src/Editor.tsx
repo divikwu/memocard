@@ -16,7 +16,8 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
 }) {
   const field = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLInputElement>(null);
-  const titleFirst = initial.title !== undefined && !initial.baseHash;
+  const initialDraft = useRef(initial).current;
+  const titleFirst = initialDraft.title !== undefined && !initialDraft.baseHash;
   const [, render] = useState(0);
   const [working, setWorking] = useState(false);
   const restoreImageFocus = useRef(false);
@@ -24,7 +25,7 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
   const lastNote = useRef<Note | null>(null);
   const callbacks = useRef({ onCommitted, onTitleChange });
   callbacks.current = { onCommitted, onTitleChange };
-  const [session] = useState(() => new EditorSession(initial, request, capabilities.has('saveDraft'), () => render(value => value + 1), note => { lastNote.current = note; callbacks.current.onCommitted?.(note); }));
+  const [session] = useState(() => new EditorSession(initialDraft, request, capabilities.has('saveDraft'), () => render(value => value + 1), note => { lastNote.current = note; callbacks.current.onCommitted?.(note); }));
   const { body, tags, relativePath, title } = session.current;
   useEffect(() => { callbacks.current.onTitleChange?.(title); }, [title]);
   const canSave = capabilities.has('saveNote');
@@ -52,13 +53,13 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
   useEffect(() => {
     session.activate();
     if (titleFirst) titleField.current?.focus(); else field.current?.focus();
-    if (!initial.baseHash && initial.title !== undefined && canSave) void session.save().catch(() => undefined);
-    if (initial.updatedAt && canSave) session.update(session.current.body, session.current.tags);
+    if (!initialDraft.baseHash && initialDraft.title !== undefined && canSave) void session.save().catch(() => undefined);
+    if (initialDraft.updatedAt && canSave) session.update(session.current.body, session.current.tags);
     const unload = (event: BeforeUnloadEvent) => { if (session.dirty) { event.preventDefault(); event.returnValue = ''; } };
     const hidden = () => { if (document.visibilityState === 'hidden') void session.recover().catch(() => undefined); };
     window.addEventListener('beforeunload', unload); document.addEventListener('visibilitychange', hidden);
     return () => { session.dispose(); window.removeEventListener('beforeunload', unload); document.removeEventListener('visibilitychange', hidden); };
-  }, [session, initial, canSave, titleFirst]);
+  }, [session, initialDraft, canSave, titleFirst]);
   async function finish() { if (await flush()) { if (lastNote.current) onSaved(lastNote.current); else onClose(); } }
   async function image(insert: (markdown: string) => void) {
     if (busy.current) return;

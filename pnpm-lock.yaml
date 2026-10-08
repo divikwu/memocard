@@ -125,6 +125,9 @@ importers:
       '@memocard/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@radix-ui/react-menu':
+        specifier: 2.1.24
+        version: 2.1.24(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@tiptap/extension-image':
         specifier: ^3.31.3
         version: 3.31.3(@tiptap/core@3.31.3(@tiptap/pm@3.31.3))
