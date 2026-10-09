@@ -2,6 +2,7 @@ import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, VaultStat
 import { Document } from "yaml";
 import { linkCandidates } from "./link-candidates";
 import { createId } from "./uuid";
+import { inlineTags } from "./inline-tags";
 import { BrowserVaultError, canonicalId, encodeBrowserNote, encodeObsidianNote, parseObsidianNote, fileAt, fileError, imageType, parseBrowserNote, parseDate, readBytes, safeParts, sha256, validatedTags } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker, BrowserWritable, ParsedBrowserNote } from "./browser-files";
 import { IndexedDBVaultStorage } from "./browser-storage";
@@ -363,7 +364,9 @@ export class BrowserVault {
     if (relativePath) safeParts(relativePath, this.compatible ? "vault" : "notes");
     const draftKey = params.draftKey === undefined ? `${this.sessionId}:${id}` : checkString(params.draftKey, "draftKey");
     if (!/^[a-f\d-]{36}:[a-f\d-]{36}$/.test(draftKey) || draftKey.split(":")[1] !== id) throw new BrowserVaultError("INVALID_PARAMS", "草稿标识无效。");
-    return { id, ...(params.title === undefined ? {} : { title: checkString(params.title, "title") }), body: checkString(params.body, "body"), tags: validatedTags(params.tags), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
+    const body = checkString(params.body, "body");
+    validatedTags(params.tags);
+    return { id, ...(params.title === undefined ? {} : { title: checkString(params.title, "title") }), body, tags: inlineTags(body), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
   }
 
   private async storeDraft(selected: Binding, save: Save): Promise<BrowserDraft> {
@@ -429,9 +432,9 @@ export class BrowserVault {
       } else {
         frontmatter = new Document({ id: save.id, createdAt: now() }, { schema: "yaml-1.1" });
       }
-      if (!this.compatible) { frontmatter.set("updatedAt", now()); frontmatter.set("tags", save.tags); }
+      if (!this.compatible) frontmatter.set("updatedAt", now());
       if (save.title !== undefined && !this.compatible) frontmatter.set("title", save.title);
-      const bytes = this.compatible ? encodeObsidianNote(original, save.body, save.tags, save.title) : encodeBrowserNote(frontmatter, save.body);
+      const bytes = this.compatible ? encodeObsidianNote(original, save.body, save.title) : encodeBrowserNote(frontmatter, save.body);
       const newlyCreated = !file;
       await this.active(selected);
       file ??= await fileAt(selected.handle, path, this.compatible ? "vault" : "notes", true);

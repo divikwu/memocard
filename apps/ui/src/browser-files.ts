@@ -1,7 +1,7 @@
 import { inlineTags } from './inline-tags';
 export { inlineTags } from './inline-tags';
 import type { Note } from "@memocard/contracts";
-import { Document, isMap, isScalar, isSeq, parseDocument } from "yaml";
+import { Document, isMap, isScalar, parseDocument } from "yaml";
 
 
 export class BrowserVaultError extends Error {
@@ -35,7 +35,7 @@ export type BrowserDirectoryHandle = {
   requestPermission(options: { mode: "readwrite" }): Promise<PermissionState>;
 };
 export type BrowserPicker = (options: { id: string; mode: "readwrite" }) => Promise<BrowserDirectoryHandle>;
-export type ParsedBrowserNote = { note: Note; frontmatter: Document; source?: string; header?: string; propertyTags?: string[] };
+export type ParsedBrowserNote = { note: Note; frontmatter: Document; source?: string; header?: string };
 
 const maxNoteBytes = 8 * 1024 * 1024;
 
@@ -102,17 +102,14 @@ export async function parseBrowserNote(bytes: Uint8Array, relativePath: string, 
   const id = canonicalId(scalar("id"));
   const createdAt = scalar("createdAt"), updatedAt = scalar("updatedAt");
   parseDate(createdAt); parseDate(updatedAt);
-  const tagNode = doc.get("tags", true);
-  if (tagNode !== undefined && (!isSeq(tagNode) || tagNode.items.some((tag) => !isScalar(tag) || typeof tag.value !== "string"))) {
-    throw new BrowserVaultError("INVALID_TAGS", "tags 必须是字符串数组。");
-  }
-  const tags = validatedTags(isSeq(tagNode) ? tagNode.items.map((tag) => isScalar(tag) ? tag.value : null) : []);
+  const body = text.slice(end.index + end[0].length);
+  const tags = inlineTags(body);
   const deletedNode = doc.get("deletedAt", true);
   const deletedAt = deletedNode === undefined || (isScalar(deletedNode) && deletedNode.value === null) ? undefined : scalar("deletedAt");
   if (deletedAt !== undefined) parseDate(deletedAt);
   return { frontmatter: doc, note: {
     id, ...(typeof doc.get("title") === "string" ? { title: doc.get("title") as string } : {}), createdAt, updatedAt, tags, ...(deletedAt !== undefined ? { deletedAt } : {}),
-    body: text.slice(end.index + end[0].length), contentHash: await sha256(bytes), relativePath,
+    body, contentHash: await sha256(bytes), relativePath,
     sourceUrl: `memocard://note/${id}?vault=${vaultId}`,
   } };
 }
@@ -170,40 +167,17 @@ export async function parseObsidianNote(bytes: Uint8Array, path: string, vaultId
   const header = match?.[0] ?? (source.startsWith("\uFEFF") ? "\uFEFF" : "");
   const doc = match ? parseDocument(match[1], { uniqueKeys: true }) : new Document({});
   if (doc.errors.length || (doc.contents !== null && !isMap(doc.contents))) throw new BrowserVaultError("INVALID_FRONTMATTER", "无法安全读取 YAML 属性。");
-  const rawTags: unknown = doc.toJS()?.tags;
-  const propertyTags = Array.isArray(rawTags) ? rawTags.filter((tag): tag is string => typeof tag === "string") : typeof rawTags === "string" ? rawTags.split(/[,\s]+/).filter(Boolean) : [];
   const body = source.slice(header.length);
-  return { source, header, propertyTags, frontmatter: doc, note: {
-    id: identity.id, ...(typeof doc.get("title") === "string" ? { title: doc.get("title") as string } : {}), body, tags: [...new Set([...propertyTags, ...inlineTags(body)])],
+  return { source, header, frontmatter: doc, note: {
+    id: identity.id, ...(typeof doc.get("title") === "string" ? { title: doc.get("title") as string } : {}), body, tags: inlineTags(body),
     createdAt: identity.createdAt, updatedAt: new Date(modified || 0).toISOString(),
     contentHash: await sha256(bytes), relativePath: path, sourceUrl: `memocard://note/${identity.id}?vault=${vaultId}`,
   } };
 }
 
 
-export function encodeObsidianNote(parsed: ParsedBrowserNote | undefined, body: string, tags: string[], title?: string): Uint8Array {
+export function encodeObsidianNote(parsed: ParsedBrowserNote | undefined, body: string, title?: string): Uint8Array {
   let header = parsed?.header ?? "";
-  if (JSON.stringify(tags) !== JSON.stringify(parsed?.note.tags ?? [])) {
-    // Inline tags remain in the body; the tag control only changes YAML properties.
-    const properties = [...new Set([...tags.filter(tag => !inlineTags(body).includes(tag)), ...(parsed?.propertyTags ?? []).filter(tag => inlineTags(parsed?.note.body ?? '').includes(tag))])];
-    const newline = header.includes("\r\n") ? "\r\n" : "\n";
-    const replacement = `tags: ${JSON.stringify(properties)}${newline}`;
-    if (!header || header === "\uFEFF") header += `---${newline}${replacement}---${newline}`;
-    else {
-      const doc = parsed!.frontmatter;
-      const pair = isMap(doc.contents) ? doc.contents.items.find(item => isScalar(item.key) && item.key.value === "tags") : undefined;
-      if (pair) {
-        // Only replace the tags property's source range; comments and unrelated properties survive.
-        const key = pair.key as { range?: readonly number[] }, value = pair.value as { range?: readonly number[] } | null;
-        if (!key.range || !value?.range) throw new BrowserVaultError("INVALID_TAGS", "请在源文件中编辑此标签属性。");
-        const offset = header.indexOf("\n") + 1;
-        header = header.slice(0, offset + key.range[0]) + replacement + header.slice(offset + value.range[2]);
-      } else {
-        const close = header.lastIndexOf("---");
-        header = header.slice(0, close) + replacement + header.slice(close);
-      }
-    }
-  }
   if (title !== undefined && title !== parsed?.note.title) {
     const newline = header.includes('\r\n') ? '\r\n' : '\n';
     const replacement = `title: ${JSON.stringify(title)}${newline}`;

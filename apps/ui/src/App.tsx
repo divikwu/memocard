@@ -1,6 +1,6 @@
 import { renameTag, renamedTag } from "./rename-tag";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { NavActions } from "@/components/nav-actions";
@@ -20,6 +20,7 @@ import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, 
 import type { EditorHandle } from "./Editor";
 import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
+import { cn } from "@/lib/utils";
 
 type View = "notes" | "settings";
 type TagCount = { name: string; count: number };
@@ -327,7 +328,7 @@ export function App() {
     if (openingLink.current) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
     const id = createId();
-    showEditor({ id, title: '', body: '', tags: tag ? [tag] : [], baseHash: null, relativePath: `${folders.includes('') ? '' : 'notes/'}${id}.md`, ...(isBrowserVault ? { vaultBinding: environment?.vaultBinding } : {}) });
+    showEditor({ id, title: '', body: tag ? `#${tag}\n\n` : '', tags: tag ? [tag] : [], baseHash: null, relativePath: `${folders.includes('') ? '' : 'notes/'}${id}.md`, ...(isBrowserVault ? { vaultBinding: environment?.vaultBinding } : {}) });
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
   };
 
@@ -395,7 +396,8 @@ export function App() {
     <SidebarInset className="min-w-0 min-h-0">
       <header className="flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm">
-          <SidebarTrigger className="shrink-0" />
+          {editing && <Button variant="ghost" size="icon" className="shrink-0 md:hidden" onClick={() => void editorHandle.current?.finish()} aria-label="返回笔记列表"><ArrowLeft className="size-4" /></Button>}
+          <SidebarTrigger className={`shrink-0 ${editing ? "hidden md:inline-flex" : ""}`} />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <Breadcrumb aria-label="当前位置" className="min-w-0"><BreadcrumbList><BreadcrumbItem className="min-w-0"><BreadcrumbPage className="line-clamp-1">{title}</BreadcrumbPage></BreadcrumbItem></BreadcrumbList></Breadcrumb>
         </div>
@@ -404,9 +406,10 @@ export function App() {
           <NavActions canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={() => void refresh()} onSettings={() => navigate("settings")} />
         </div>
       </header>
-      <div ref={scrollContainer} className="min-h-0 flex-1 overflow-y-auto px-4">
-        <div className={`mx-auto w-full space-y-4 py-10 ${editing ? "note-page-width" : "max-w-3xl"}`}>
-          <div className="sr-only"><div className="min-w-0"><h1 className="truncate text-2xl font-semibold tracking-tight">{title}</h1></div>
+      <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", editing ? "note-page-scroll" : view === "notes" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
+        <div className={cn("mx-auto w-full space-y-4", editing ? "note-page-width" : view === "notes" ? "max-w-none py-10" : "max-w-3xl py-10")}>
+          <div className={editing || view === "settings" ? "sr-only" : "min-w-0 pb-2"}>
+            <h1 className="truncate text-[32px] font-bold leading-[1.2] tracking-tight">{title}</h1>
           </div>
           {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请完成文件夹选择及浏览器访问授权，随后读取笔记库。首次读取可能需要一些时间。</AlertDescription></Alert>}
           {selectionNotice && !switchingVault && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription>{selectionNotice}</AlertDescription></Alert>}
@@ -459,7 +462,7 @@ export function App() {
           </div> : <>
             {view === "notes" && status?.connected && <div className="space-y-3">
               {query && <div className="flex items-center gap-2 text-sm"><span>搜索：{query}</span><Button variant="ghost" size="icon" className="size-6" onClick={() => setQuery("")} aria-label="清空搜索"><X className="size-3" /></Button></div>}
-              {tag && <div className="flex items-center gap-2 text-sm"><Badge variant="secondary" className="gap-1">#{tag}<Button variant="ghost" size="icon" className="-mr-1 size-5" onClick={() => setTag(null)} aria-label="清除标签筛选"><X className="size-3" /></Button></Badge><span className="text-xs text-muted-foreground">标签筛选</span></div>}
+              {tag && <div className="flex items-center gap-2 text-sm"><Badge variant="secondary" className="h-5 gap-1 bg-sky-50 py-0 text-sky-700">#{tag}<Button variant="ghost" size="icon" className="-mr-1 size-5" onClick={() => setTag(null)} aria-label="清除标签筛选"><X className="size-3" /></Button></Badge><span className="text-xs text-muted-foreground">标签筛选</span></div>}
             </div>}
             {status?.connected && unfiledRecovery.length > 0 && !recoveryDismissed && <Alert>
               <CircleAlert className="size-4" /><AlertTitle>发现 {unfiledRecovery.length} 条未保存内容</AlertTitle>
@@ -480,9 +483,17 @@ export function App() {
                 </div>}
                 <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" />{isBrowserVault || isNative ? "只访问你授权的文件夹" : "只访问你通过 MemoCard 本机宿主授权的文件夹"}</p>
               </CardContent>
-            </Card> : notes.length ? <div className="space-y-3">
+            </Card> : notes.length ? <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{debouncedQuery ? `“${debouncedQuery}” 的搜索结果` : "按创建时间排列"}</span><span className="tabular-nums">已加载 {notes.length} 条{loading ? " · 更新中" : ""}</span></div>
-              {notes.map((note) => <Card key={note.id} className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className="p-5"><div className="mb-3 text-xs text-muted-foreground"><time dateTime={note.createdAt}>{formatDate(note.createdAt)}</time></div><Suspense fallback={<Skeleton className="h-16" />}><NotePreview title={note.title} body={note.body} notePath={note.relativePath} onError={setError} /></Suspense><div className="mt-4 flex items-center justify-between gap-3"><div className="flex flex-wrap gap-1">{note.tags.map((name) => <Button key={name} variant="ghost" size="sm" className="h-7 px-2 text-xs font-normal text-muted-foreground" onClick={() => navigate("notes", name)}>#{name}</Button>)}</div><Button variant="ghost" size="sm" className="shrink-0 text-muted-foreground" aria-label={`打开 ${formatDate(note.createdAt)} 的笔记`} onClick={() => void openNote(note.id)} disabled={working || !capabilities.has("getNote")}><span>编辑</span></Button></div></CardContent></Card>)}
+              <ul aria-label="笔记列表" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4">
+                {notes.map((note) => <li key={note.id} className="min-w-0"><Card className="h-64 gap-0 overflow-hidden rounded-xl border border-border bg-card py-0 shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)] transition-colors hover:bg-accent focus-within:ring-2 focus-within:ring-ring/40"><CardContent className="flex h-full min-h-0 flex-col p-0">
+                  <button type="button" className="flex min-h-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={`打开 ${formatDate(note.createdAt)} 的笔记`} onClick={() => void openNote(note.id)} disabled={working || !capabilities.has("getNote")}>
+                    <div className="w-full px-4 pb-2 pt-4"><span className="block truncate text-base font-medium">{note.title?.trim() || "新页面"}</span><time className="mt-1 block text-xs text-muted-foreground/80" dateTime={note.createdAt}>{formatDate(note.createdAt)}</time></div>
+                    <div className="min-h-0 w-full flex-1 overflow-hidden px-4 pb-2"><Suspense fallback={<Skeleton className="h-full" />}><NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={setError} /></Suspense></div>
+                  </button>
+                  {note.tags.length > 0 && <div className="flex min-h-10 items-center gap-2 overflow-hidden px-4 pb-3">{note.tags.slice(0, 2).map((name) => <Badge key={name} asChild variant="secondary" className="h-5 bg-sky-50 px-1.5 py-0 font-normal text-sky-700 hover:text-sky-800"><button type="button" onClick={() => navigate("notes", name)}>#{name}</button></Badge>)}{note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}</div>}
+                </CardContent></Card></li>)}
+              </ul>
               {cursor && <div className="flex justify-center pt-3"><Button variant="outline" onClick={() => void loadMore()} disabled={paging || switchingVault}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
             </div> : <EmptyState icon={query || tag ? "search" : "note"} title={query || tag ? "没有找到相关笔记" : "记下第一条笔记"} description={query || tag ? "换一个关键词，或清除标签筛选。" : "一句想法、一段发现，不必想好标题。"}>{!query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}
           </>}

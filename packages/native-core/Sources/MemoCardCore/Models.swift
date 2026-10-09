@@ -190,19 +190,6 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
     let id = try canonicalID(rawID)
     _ = try parseDate(created)
     _ = try parseDate(updated)
-    var tags: [String] = []
-    if let tagNode = root["tags"] {
-        guard let sequence = tagNode.sequence else {
-            throw VaultError(code: "INVALID_TAGS", message: "tags 必须是字符串数组。")
-        }
-        for node in sequence {
-            guard node.tag == Tag(.str), let tag = node.scalar?.string else {
-                throw VaultError(code: "INVALID_TAGS", message: "tags 必须是字符串数组。")
-            }
-            tags.append(tag)
-        }
-    }
-    tags = try validatedTags(tags)
     var deleted: String?
     if let value = root["deletedAt"], value.null == nil {
         guard let date = value.scalar?.string else {
@@ -212,6 +199,7 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
         deleted = date
     }
     let body = String(text[end.upperBound...])
+    let tags = try validatedTags(inlineTags(body))
     return ParsedNote(note: Note(
         title: root["title"]?.scalar?.string, id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
         deletedAt: deleted, contentHash: sha256(data), relativePath: relativePath,

@@ -20,3 +20,10 @@ it("renders Markdown in drafts and exposes the full long note without entering e
   fireEvent.click(screen.getByRole("button", { name: "收起全文" }));
   expect(screen.getByRole("button", { name: "展开全文" })).toBeTruthy();
 });
+
+it("hides standalone duplicate tag lines only in compact card previews", () => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  render(<NotePreview compact hiddenTags={["写回验收"]} body={"正文里的 #写回验收 保留\n\n#写回验收"} onError={vi.fn()} />);
+  expect(screen.getByText("正文里的 #写回验收 保留")).toBeTruthy();
+  expect(screen.queryByText("#写回验收")).toBeNull();
+});

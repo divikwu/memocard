@@ -18,9 +18,10 @@ beforeEach(() => {
  Range.prototype.getBoundingClientRect=()=>new DOMRect();
 });
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
-async function setup(value: string, extra: Partial<RichEditorProps> = {}) {
+async function setup(value: string, extra: Partial<RichEditorProps> = {}, page = false) {
  const change=vi.fn(),save=vi.fn();
- render(<RichMarkdownEditor value={value} disabled={false} notePath="notes/a.md" onChange={change} onSave={save} onError={vi.fn()} {...extra}/>);
+ const content=<RichMarkdownEditor value={value} disabled={false} notePath="notes/a.md" onChange={change} onSave={save} onError={vi.fn()} {...extra}/>;
+ render(page ? <div className="note-page-scroll">{content}<button>其他操作</button></div> : content);
  const field=await screen.findByRole('textbox',{name:'笔记内容'});
  const editor=(field as HTMLDivElement & {editor: Editor}).editor;
  await waitFor(()=> value.startsWith('<!--') ? expect(editor.state.doc.firstChild?.type.name).toBe('preservedMarkdown') : expect(editor.getText()).toContain(value.startsWith('#') ? '标题' : value.split('\n')[0].replace(/\[\^[^\]]+\]/g, '')));
@@ -38,6 +39,43 @@ it('guards command-enter during composition',async()=>{
  fireEvent.keyDown(field,{key:'Enter',metaKey:true,isComposing:true});expect(save).not.toHaveBeenCalled();
  fireEvent.keyDown(field,{key:'Enter',metaKey:true});expect(save).toHaveBeenCalledOnce();
 });
+it('weakens block controls while typing and restores them on pointer movement or menu opening',async()=>{
+ const {editor,field}=await setup('正文');
+ vi.spyOn(editor.view,'posAtCoords').mockReturnValue(null);
+ const root=field.closest('.rich-editor')!;
+ fireEvent.input(field);expect(root.getAttribute('data-typing')).toBe('true');
+ fireEvent.mouseMove(field);expect(root.hasAttribute('data-typing')).toBe(false);
+ fireEvent.input(field);fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ expect(root.getAttribute('data-menu-open')).toBe('true');
+ vi.restoreAllMocks();
+});
+it('focuses the document end from blank page space without inserting content or stealing interactive clicks',async()=>{
+ const {editor,field,change}=await setup('first\n\nsecond',{},true);
+ const surface=field.closest('.note-page-scroll')!;
+ vi.spyOn(field,'getBoundingClientRect').mockReturnValue(new DOMRect(100,100,720,240));
+ act(()=>{editor.commands.setTextSelection(2);});
+ fireEvent.click(surface,{clientX:200,clientY:500});
+ await waitFor(()=>expect(document.activeElement).toBe(field));
+ expect(editor.state.selection.from).toBe(editor.state.doc.content.size-1);
+ expect(change).not.toHaveBeenCalled();
+ const button=screen.getByRole('button',{name:'其他操作'});
+ act(()=>{editor.commands.setTextSelection(2);});
+ fireEvent.click(button,{clientX:200,clientY:500});
+ fireEvent.click(surface,{clientX:50,clientY:500});
+ expect(editor.state.selection.from).toBe(2);
+ Object.defineProperty(editor.view,'composing',{configurable:true,value:true});
+ fireEvent.click(surface,{clientX:200,clientY:500});expect(editor.state.selection.from).toBe(2);
+ Object.defineProperty(editor.view,'composing',{configurable:true,value:false});
+ vi.restoreAllMocks();
+});
+it('does not focus blank page space in a read-only editor',async()=>{
+ const {editor,field}=await setup('正文',{disabled:true},true);
+ const surface=field.closest('.note-page-scroll')!;
+ vi.spyOn(field,'getBoundingClientRect').mockReturnValue(new DOMRect(100,100,720,240));
+ const focus=vi.spyOn(editor.commands,'focus');
+ fireEvent.click(surface,{clientX:200,clientY:500});expect(focus).not.toHaveBeenCalled();
+ vi.restoreAllMocks();
+});
 it('keeps task node views matched to the inline layout when toggled and edited',async()=>{
  const {editor,field,change}=await setup('正文\n\n- [ ] 第一条待办\n  - [ ] 嵌套待办');
  expect(field.querySelectorAll('li[data-type="taskItem"]')).toHaveLength(2);
@@ -49,11 +87,25 @@ it('keeps task node views matched to the inline layout when toggled and edited',
  expect(field.querySelectorAll('li[data-type="taskItem"]')).toHaveLength(2);
  expect(screen.getByRole('checkbox',{name:'待办：新嵌套待办'})).toBeTruthy();
 });
-it('does not open a block insertion menu or move the caret during composition',async()=>{
+it('uses a single block handle with keyboard access to insertion',async()=>{
+ const {editor,field}=await setup('正文');
+ expect(field.closest('.rich-editor')!.querySelectorAll('.block-controls button')).toHaveLength(1);
+ expect(screen.queryByRole('button',{name:'插入内容块'})).toBeNull();
+ const grip=screen.getByRole('button',{name:'内容块操作'});
+ expect(grip.querySelector('svg')?.getAttribute('width')).toBe('16');
+ expect(grip.querySelector('svg')?.getAttribute('height')).toBe('16');
+ expect(grip.getAttribute('draggable')).toBe('true');
+ fireEvent.keyDown(grip,{key:'ArrowDown'});
+ fireEvent.click(screen.getByRole('menuitem',{name:'在下方插入'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'待办事项'}));
+ expect(editor.state.doc.firstChild?.textContent).toBe('正文');
+ expect(editor.state.doc.lastChild?.type.name).toBe('taskList');
+});
+it('does not open a block menu or move the caret during composition',async()=>{
  const {editor,change}=await setup('first\n\nsecond');
  act(()=>{editor.commands.setTextSelection(3);});
  Object.defineProperty(editor.view,'composing',{configurable:true,value:true});
- fireEvent.click(screen.getByRole('button',{name:'插入内容块'}));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
  expect(screen.queryByRole('menu')).toBeNull();
  expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.empty).toBe(true);
  expect(change).not.toHaveBeenCalled();
@@ -91,7 +143,8 @@ it('does not restore a stale drag selection after the document changes',async()=
 });
 it('opens the insertion menu and creates a directly editable table',async()=>{
  const {editor,field}=await setup('正文');
- fireEvent.click(screen.getByRole('button',{name:'插入内容块'}));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'在下方插入'}));
  fireEvent.click(screen.getByRole('menuitem',{name:'表格'}));
  expect(field.querySelectorAll('td')).toHaveLength(6);
  let position=0;editor.state.doc.descendants((node,pos)=>{if(!position&&node.type.name==='tableCell')position=pos+2;});
@@ -108,10 +161,32 @@ it('edits formulas with a live rendered preview and saves Markdown',async()=>{
 });
 it('inserts a block after its source and undoes insertion in one step',async()=>{
  const {editor,change}=await setup('正文');
- fireEvent.click(screen.getByRole('button',{name:'插入内容块'}));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'在下方插入'}));
  fireEvent.click(screen.getByRole('menuitem',{name:'表格'}));
  act(()=>{editor.commands.undo();});
  expect(change).toHaveBeenLastCalledWith('正文');expect(editor.view.dom.querySelector('table')).toBeNull();
+});
+it('uses an unselected content copy for dragging and removes it on cancellation',async()=>{
+ const {editor,field,change}=await setup('first #工作\n\nsecond');
+ const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
+ const grip=screen.getByRole('button',{name:'内容块操作'});
+ fireEvent.dragStart(grip,{dataTransfer:transfer});
+ expect(field.closest('.rich-editor')!.getAttribute('data-dragging')).toBe('true');
+ const preview=transfer.setDragImage.mock.calls[0]?.[0] as HTMLElement;
+ expect(preview).not.toBe(editor.view.nodeDOM(0));
+ expect(preview.classList.contains('block-drag-preview')).toBe(true);
+ expect(preview.isConnected).toBe(true);
+ expect(preview.textContent).toBe('first #工作');
+ expect(preview.querySelector('.rich-inline-tag')?.textContent).toBe('#工作');
+ expect(preview.querySelector('.rich-selected-block, .ProseMirror-selectednode')).toBeNull();
+ expect(field.querySelector('.rich-selected-block, .ProseMirror-selectednode')).toBeTruthy();
+ fireEvent.keyDown(field.closest('.rich-editor')!,{key:'Escape'});
+ expect(field.closest('.rich-editor')!.hasAttribute('data-dragging')).toBe(false);
+ expect(preview.isConnected).toBe(false);
+ expect(change).not.toHaveBeenCalled();
+ fireEvent.dragEnd(grip);
+ expect(document.querySelector('.block-drag-preview')).toBeNull();
 });
 it('moves a block by handle and cancels a later drag without changing content',async()=>{
  const {editor,field,change}=await setup('first\n\nsecond');
@@ -126,6 +201,8 @@ it('moves a block by handle and cancels a later drag without changing content',a
  expect(root.querySelector('.block-drop-indicator')).toBeNull(); // Before the next sibling is a no-op.
  fireEvent.drop(root,{dataTransfer:transfer,clientX:100,clientY:65});
  expect(change).toHaveBeenLastCalledWith('second\n\nfirst');
+ expect(root.querySelector('.block-drag-preview')).toBeNull();
+ expect(root.hasAttribute('data-dragging')).toBe(false);
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('first\n\nsecond');
  fireEvent.dragStart(screen.getByRole('button',{name:'内容块操作'}),{dataTransfer:transfer});
  fireEvent.keyDown(root,{key:'Escape'});
@@ -343,10 +420,27 @@ it('styles editable inline tags without changing source and excludes code and li
  expect(field.querySelector('.rich-inline-tag')?.textContent).toBe('#新标签');
  expect(change).toHaveBeenLastCalledWith('正文 #新标签');
 });
+it('keeps tag paragraph styles stable and preserves their Markdown on edit and undo', async () => {
+ const source='正文 #工作\n\n#工作/设计 #生活\n\n`#代码`\n\n[#链接](https://example.com)\n\n#123';
+ const {editor,field,change}=await setup(source);
+ const paragraphClasses=[...field.querySelectorAll('p')].map(el=>el.className);
+ expect(field.querySelector('.rich-tag-line')).toBeNull();
+ expect([...field.querySelectorAll('.rich-inline-tag')].map(el=>el.textContent)).toEqual(['#工作','#工作/设计','#生活']);
+ expect(change).not.toHaveBeenCalled();
+ act(()=>{editor.commands.insertContentAt(editor.state.doc.firstChild!.nodeSize+1,'记录 ');});
+ expect(field.querySelector('.rich-tag-line')).toBeNull();
+ expect([...field.querySelectorAll('p')].map(el=>el.className)).toEqual(paragraphClasses);
+ expect(change).toHaveBeenLastCalledWith(source.replace('#工作/设计','记录 #工作/设计'));
+ act(()=>{editor.commands.undo();});
+ expect(field.querySelector('.rich-tag-line')).toBeNull();
+ expect([...field.querySelectorAll('p')].map(el=>el.className)).toEqual(paragraphClasses);
+ expect(change).toHaveBeenLastCalledWith(source);
+});
 
 it('groups the compact insert menu and finds low-frequency formats by aliases', async () => {
  const {editor}=await setup('正文');
- fireEvent.click(screen.getByRole('button',{name:'插入内容块'}));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'在下方插入'}));
  expect(screen.getByText('基本区块')).toBeTruthy();
  expect(screen.getByText('其他内容')).toBeTruthy();
  expect(screen.queryByRole('menuitem',{name:'四级标题'})).toBeNull();
@@ -361,7 +455,8 @@ it('groups the compact insert menu and finds low-frequency formats by aliases', 
  expect(editor.state.doc.lastChild?.attrs.level).toBe(4);
 });
 it('keeps filtering focus while navigating and handles empty results', async () => {
- await setup('正文');fireEvent.click(screen.getByRole('button',{name:'插入内容块'}));
+ await setup('正文');fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'在下方插入'}));
  const input=screen.getByRole('textbox',{name:'筛选内容块'}); input.focus();
  fireEvent.keyDown(input,{key:'ArrowDown'});
  expect(document.activeElement).toBe(input);
@@ -507,7 +602,8 @@ it('keeps slash no-result text on Enter and returns focus when the search menu i
  act(()=>{editor.commands.setContent('/not-a-block',{contentType:'markdown'});});
  fireEvent.keyDown(field,{key:'Enter'});expect(editor.getText()).toBe('/not-a-block');
  fireEvent.keyDown(field,{key:'Escape'});expect(screen.queryByRole('menu')).toBeNull();
- fireEvent.click(screen.getByRole('button',{name:'插入内容块'}));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'在下方插入'}));
  const search=screen.getByRole('textbox',{name:'筛选内容块'});fireEvent.change(search,{target:{value:'无结果'}});
  fireEvent.keyDown(search,{key:'Escape'});
  await waitFor(()=>expect(editor.view.hasFocus()).toBe(true));expect(editor.getText()).toBe('/not-a-block');

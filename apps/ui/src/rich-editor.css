@@ -3,9 +3,11 @@
 .rich-editor[data-selecting] { user-select: none; }
 .rich-selection-box { position: absolute; z-index: 7; pointer-events: none; background: color-mix(in srgb, var(--foreground) 8%, transparent); border: 1px solid color-mix(in srgb, var(--foreground) 18%, transparent); }
 .rich-editor-content { outline: none; min-height: 240px; overflow-wrap: anywhere; padding-bottom: 4rem; }
+.rich-editor-content.block-drag-preview { min-height: 0; padding: 0; margin: 0; }
 .rich-editor-content > :first-child { margin-top: 0; }
 .rich-editor-content > :last-child { margin-bottom: 0; }
 .rich-editor-content :is(.ProseMirror-selectednode, .rich-selected-block) { outline: none; background: #e2edfb; border-radius: 4px; }
+.rich-editor[data-dragging] .rich-editor-content :is(.ProseMirror-selectednode, .rich-selected-block) { background: transparent; opacity: .2; }
 .rich-editor-content ul[data-type="taskList"] { list-style: none; padding-left: 0; }
 .rich-editor-content li[data-type="taskItem"] { display: flex; gap: .6em; align-items: baseline; }
 .rich-editor-content li[data-type="taskItem"] > label { flex: 0 0 auto; user-select: none; }
@@ -40,7 +42,9 @@
 .rich-editor-content .tableWrapper { margin-block-start: var(--typeset-flow); }
 .rich-editor-content .tableWrapper > table { margin-block-start: 0; }
 @media (hover: hover) {
-  .rich-editor:hover .block-controls, .rich-editor:focus-within .block-controls { opacity: 1; }
+  .rich-editor:hover .block-controls { opacity: 1; }
+  .rich-editor:where([data-typing]):hover .block-controls { opacity: .25; }
+  .rich-editor .block-controls:hover, .rich-editor .block-controls:focus-within, .rich-editor[data-menu-open] .block-controls { opacity: 1; }
 }
 .dark .rich-editor-content :is(.ProseMirror-selectednode, .rich-selected-block) { background: #233d57; }
 .rich-format-menu { z-index: 60; display: grid; width: 220px; border: 1px solid var(--border); border-radius: 8px; background: var(--popover); box-shadow: 0 8px 24px #0002; font: 14px/1.5 var(--font-sans); }
@@ -67,9 +71,7 @@
 .rich-tag-suggestions span { padding: 6px; color: var(--muted-foreground); font-size: 12px; }
 .rich-editor-content > p:only-child:has(> br:only-child)::before { content: '输入内容，或输入 / 插入块'; float: left; height: 0; color: var(--muted-foreground); pointer-events: none; }
 
-.rich-inline-tag { background: var(--accent-100); color: var(--accent-800); border-radius: 4px; padding: 1px 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
-
-.dark .rich-inline-tag { background: var(--accent-950); color: var(--accent-200); }
+.rich-inline-tag { display: inline-block; width: max-content; max-width: 100%; min-height: 20px; background: var(--color-sky-50); color: var(--color-sky-700); font-size: 14px; line-height: 20px; font-weight: 400; vertical-align: baseline; overflow-wrap: anywhere; border-radius: 9999px; padding: 0 6px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
 
 .rich-menu.rich-insert-menu { padding: 0; overflow: hidden; max-height: min(460px, var(--radix-popover-content-available-height)); }
 .rich-insert-search { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; color: var(--muted-foreground); }

@@ -62,8 +62,8 @@ final class VaultStoreTests: XCTestCase {
 
     func testNestedTagsIncludeDescendantsAndDeduplicateAncestors() async throws {
         let core = try await store()
-        let saved = try await save(core, tags: ["工作", "工作/项目/设计", "工作/项目/开发"])
-        _ = try await save(core, tags: ["工作室"])
+        let saved = try await save(core, body: "#工作 #工作/项目/设计 #工作/项目/开发")
+        _ = try await save(core, body: "#工作室")
         for tag in ["工作", "工作/项目", "工作/项目/设计"] {
             let page = try await call(core, "queryNotes", ["tags": [tag]])
             let notes = try XCTUnwrap(page["notes"] as? [[String: Any]])
@@ -75,6 +75,29 @@ final class VaultStoreTests: XCTestCase {
         for name in ["工作", "工作/项目"] {
             XCTAssertEqual(tags.first { $0["name"] as? String == name }?["count"] as? Int, 1)
         }
+    }
+
+    func testLegacyPropertyTagsDoNotReturnAfterEditingRecoveryOrReopen() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let url = try writeNote(id: id, body: "#工作/项目\n\n句中 #工作/项目\n\n#生活")
+        let original = try Data(contentsOf: url)
+        let note = try await call(core, "getNote", ["id": id])
+        XCTAssertEqual(note["tags"] as? [String], ["工作/项目", "生活"])
+        XCTAssertEqual(try Data(contentsOf: url), original)
+        let old = try await call(core, "queryNotes", ["tags": ["work"]])
+        XCTAssertEqual((old["notes"] as? [Any])?.count, 0)
+        let draft = try await call(core, "saveDraft", ["id": id, "body": "正文 #生活", "tags": ["work"], "baseHash": note["contentHash"]!])
+        XCTAssertEqual(draft["tags"] as? [String], ["生活"])
+        let saved = try await save(core, id: id, body: "正文 #生活", tags: ["work"], hash: note["contentHash"] as? String)
+        XCTAssertEqual(saved["tags"] as? [String], ["生活"])
+        let cleared = try await save(core, id: id, body: "正文", tags: ["work"], hash: saved["contentHash"] as? String)
+        XCTAssertEqual(cleared["tags"] as? [String], [])
+        let listed = try await call(core, "listTags")
+        XCTAssertEqual((listed["tags"] as? [Any])?.count, 0)
+        let reopened = try await store(create: false)
+        let fetched = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(fetched["tags"] as? [String], [])
     }
 
     func testRefreshBatchReusesOneSnapshotAndInvalidationReadsExternalChanges() async throws {
@@ -240,8 +263,8 @@ final class VaultStoreTests: XCTestCase {
     func testQueryLiteralCaseInsensitiveTagsDateOrderingAndPagination() async throws {
         let store = try await store()
         let older = UUID().uuidString.lowercased(), newer = UUID().uuidString.lowercased()
-        _ = try writeNote(id: older, date: "2026-09-01T10:00:00Z", body: "Case (literal)")
-        _ = try writeNote(id: newer, date: "2026-09-02T10:00:00Z", body: "CASE (literal)")
+        _ = try writeNote(id: older, date: "2026-09-01T10:00:00Z", body: "Case (literal) #work #ideas")
+        _ = try writeNote(id: newer, date: "2026-09-02T10:00:00Z", body: "CASE (literal) #work #ideas")
         let page = try await call(store, "queryNotes", ["query": "case (", "tags": ["work", "ideas"], "limit": 1])
         XCTAssertEqual((page["notes"] as? [[String: Any]])?.first?["id"] as? String, newer)
         let next = try await call(store, "queryNotes", ["query": "case (", "tags": ["work", "ideas"], "limit": 1, "cursor": page["nextCursor"]!])
@@ -603,7 +626,7 @@ extension VaultStoreTests {
         XCTAssertEqual((page["coverage"] as? [String: Any])?["complete"] as? Bool, true)
         let note = try XCTUnwrap(notes.first { $0["relativePath"] as? String == "Example.md" })
         let id = try XCTUnwrap(note["id"] as? String)
-        XCTAssertEqual(note["tags"] as? [String], ["work", "inline/topic"])
+        XCTAssertEqual(note["tags"] as? [String], ["inline/topic"])
         let saved = try await save(core, id: id, body: "Updated #inline/topic\r\n", tags: ["work", "inline/topic"], hash: note["contentHash"] as? String)
         XCTAssertEqual(try String(contentsOf: original, encoding: .utf8), header + "Updated #inline/topic\r\n")
         let folder = vault.appendingPathComponent("Projects")
@@ -638,16 +661,17 @@ extension VaultStoreTests {
         let page = try await call(core, "queryNotes")
         let note = try XCTUnwrap((page["notes"] as? [[String: Any]])?.first { $0["relativePath"] as? String == "Tags.md" })
         _ = try await save(core, id: note["id"] as! String, body: "Body #inline", tags: ["new", "inline"], hash: note["contentHash"] as? String)
-        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "---\r\n# header\r\ntags: [\"new\"]\r\ncustom: \"keep spelling\"\r\n---\r\nBody #inline")
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), "---\r\n# header\r\ntags: [old]\r\ncustom: \"keep spelling\"\r\n---\r\nBody #inline")
     }
 }
 
 extension VaultStoreTests {
-    func testEditingLastTagsPropertyKeepsClosingDelimiterAndBody() throws {
+    func testObsoleteTagsPropertyIsIgnoredAndDoesNotChangeClosingDelimiterOrBody() throws {
         let source = "---\ntags:\n- old\n---\nBody"
         let identity = FileIdentity(id: UUID().uuidString.lowercased(), path: "A.md", hash: "", createdAt: timestamp())
         let parsed = try parseObsidianNote(Data(source.utf8), relativePath: "A.md", vaultID: UUID().uuidString, identity: identity, modified: Date())
-        let bytes = try encodedObsidianNote(parsed, body: "Body", tags: ["new"])
-        XCTAssertEqual(String(data: bytes, encoding: .utf8), "---\ntags: [\"new\"]\n---\nBody")
+        XCTAssertEqual(parsed.note.tags, [])
+        let bytes = try encodedObsidianNote(parsed, body: "Body")
+        XCTAssertEqual(String(data: bytes, encoding: .utf8), source)
     }
 }

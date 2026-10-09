@@ -452,7 +452,7 @@ public actor VaultStore {
 
     private func saveNote(_ request: SaveRequest) throws -> Note {
         let id = try canonicalID(request.id)
-        let tags = try validatedTags(request.tags)
+        let tags = try validatedTags(inlineTags(request.body))
         let (root, metadata) = try active()
         let snapshot = try scan()
         if snapshot.duplicateIDs.contains(id) { throw VaultError(code: "DUPLICATE_ID", message: "笔记 ID 重复，无法覆盖保存。") }
@@ -492,9 +492,8 @@ public actor VaultStore {
                 frontmatter["createdAt"] = Node(timestamp(), Tag(.str), .doubleQuoted)
             }
             frontmatter["updatedAt"] = Node(timestamp(), Tag(.str), .doubleQuoted)
-            frontmatter["tags"] = Node(tags.map { Node($0, Tag(.str), .doubleQuoted) })
             if let title = request.title { frontmatter["title"] = Node(title, Tag(.str), .doubleQuoted) }
-            let data = try self.compatible ? encodedObsidianNote(original, body: request.body, tags: tags, title: request.title) : encodedNote(frontmatter: frontmatter, body: request.body)
+            let data = try self.compatible ? encodedObsidianNote(original, body: request.body, title: request.title) : encodedNote(frontmatter: frontmatter, body: request.body)
             guard data.count <= 8 * 1024 * 1024 else {
                 throw VaultError(code: "NOTE_TOO_LARGE", message: "M1 单条 Markdown 最大支持 8 MiB。")
             }
@@ -550,7 +549,7 @@ public actor VaultStore {
 
     private func saveDraft(_ request: SaveRequest) throws -> Data {
         let id = try canonicalID(request.id)
-        let tags = try validatedTags(request.tags)
+        let tags = try validatedTags(inlineTags(request.body))
         let directory = try draftDirectory()
         let target = directory.appendingPathComponent("\(id).json")
         let draft = Draft(title: request.title, id: id, body: request.body, tags: tags, baseHash: request.baseHash,

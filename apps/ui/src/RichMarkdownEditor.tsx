@@ -27,6 +27,7 @@ import { request } from './bridge';
 import { semanticExtensions, WikiLink, FootnoteReference, FootnoteDefinition } from './rich-semantic';
 import { bindNoteImage } from './note-image';
 import './typeset.css';
+import './block-controls.css';
 import './rich-editor.css';
 
 export type RichEditorProps = {
@@ -98,8 +99,11 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   const [, setRevision] = useState(0);
   const [dropTop, setDropTop] = useState<number | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [typing, setTyping] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const rangeGesture = useRef<{ before: EditorState; idleSelection: EditorState['selection']; pointerId: number; x: number; y: number } | null>(null);
   const dragging = useRef<RichBlock[] | null>(null);
+  const dragPreview = useRef<HTMLDivElement | null>(null);
   const beforeDrag = useRef<EditorState | null>(null);
   const internalDrag = useRef(false);
   const frame = useRef(0);
@@ -241,6 +245,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     if (cancel && e && e.state.doc === gesture.before.doc) e.view.dispatch(e.state.tr.setSelection(gesture.before.selection));
   }, []);
   const stopDrag = useCallback((restoreSelection = false) => {
+    setIsDragging(false);
+    dragPreview.current?.remove(); dragPreview.current = null;
     cancelAnimationFrame(frame.current); frame.current = 0; dragging.current = null; setDropTop(null);
     const e = editorRef.current, previous = beforeDrag.current;
     beforeDrag.current = null;
@@ -334,6 +340,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     };
     const hover = (event: MouseEvent) => {
       const target = event.target, element = root.current;
+      if (element?.contains(target as Node)) setTyping(false);
       if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools')) return;
       const rect = editor.view.dom.getBoundingClientRect();
       if (!element.contains(target)) {
@@ -347,10 +354,19 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       const position = editor.view.posAtCoords({ left, top: event.clientY });
       if (position) positionToolbar(editor, position.pos);
     };
+    const continueWriting = (event: MouseEvent) => {
+      const target = event.target, element = root.current;
+      if (!(target instanceof HTMLElement) || !element || event.button !== 0 || event.defaultPrevented || menu || props.disabled || editor.view.composing || target.closest('button, a, input, textarea, select, [contenteditable]')) return;
+      const rect = editor.view.dom.getBoundingClientRect();
+      if (event.clientY < rect.bottom || event.clientX < rect.left || event.clientX > rect.right) return;
+      const surface = element.closest('.note-page-scroll');
+      if (surface?.contains(target)) editor.commands.focus('end');
+    };
     // Page margins belong to the scroll surface, so they do not bubble through the editor.
     document.addEventListener('pointerdown', start, true);
     document.addEventListener('mousemove', hover);
-    return () => { document.removeEventListener('pointerdown', start, true); document.removeEventListener('mousemove', hover); };
+    document.addEventListener('click', continueWriting);
+    return () => { document.removeEventListener('pointerdown', start, true); document.removeEventListener('mousemove', hover); document.removeEventListener('click', continueWriting); };
   });
   function handleInsertKey(event: { key: string; preventDefault: () => void; isComposing?: boolean; keyCode?: number }) {
     if (event.isComposing || event.keyCode === 229 || editorRef.current?.view.composing) return false;
@@ -463,7 +479,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     if (item.label === '图片') props.onImage?.(markdown => run({ label: '图片', run: chain => chain.insertContent(markdown, { contentType: 'markdown' }) }));
     else run(item);
   }
-  return <Menu.Root open={menu === 'block'} modal={false} onOpenChange={open => { if (open) openBlockMenu(); else setMenu(current => current === 'block' ? null : current); }}><Popover.Root open={menu === 'insert'} onOpenChange={open => { if (!open && menu === 'insert') { slash.current = null; setMenu(null); } }}><div className="note-editor rich-editor" ref={root} data-selecting={selectionBox != null || undefined}
+  return <Menu.Root open={menu === 'block'} modal={false} onOpenChange={open => { if (open) openBlockMenu(); else setMenu(current => current === 'block' ? null : current); }}><Popover.Root open={menu === 'insert'} onOpenChange={open => { if (!open && menu === 'insert') { slash.current = null; setMenu(null); } }}><div className="note-editor rich-editor" ref={root} data-selecting={selectionBox != null || undefined} data-dragging={isDragging || undefined} data-typing={typing || undefined} data-menu-open={menu != null || undefined}
+    onInputCapture={event => { if (editor.view.dom.contains(event.target as Node)) setTyping(true); }}
     onPointerMove={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); } }}
     onPointerUp={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); stopRangeSelection(); } }}
     onPointerCancel={() => stopRangeSelection(true)} onLostPointerCapture={() => stopRangeSelection()}
@@ -489,20 +506,33 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null)) { cancelAnimationFrame(frame.current); frame.current = 0; setDropTop(null); } }}
   >
     <Popover.Anchor asChild><div className="block-controls" style={{ top: toolbar.top }}>
-      <button type="button" aria-label="插入内容块" disabled={props.disabled} onClick={() => { const block = richBlockAt(editor, toolbar.pos);
-        if (editor.view.composing) return;
-        insertion.current = block && block.node.content.size ? toolbar.pos + block.node.nodeSize : null;
-        editor.commands.setTextSelection(Math.min(toolbar.pos + 1, editor.state.doc.content.size)); slash.current = null; setActiveIndex(0); setFilter(''); setMenu(menu === 'insert' ? null : 'insert'); }}><Plus size={18} /></button>
       <Menu.Anchor asChild><button type="button" aria-label="内容块操作" title={gripTitle} disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
         if (editor.view.composing) { event.preventDefault(); return; }
         dragging.current = event.altKey ? richBlockMoveSources(editor, toolbar.pos, true) : selectedRichBlocks(editor, toolbar.pos);
         if (!dragging.current.length) { dragging.current = null; event.preventDefault(); return; }
+        setIsDragging(true);
         beforeDrag.current = editor.state;
         internalDrag.current = true; selectRichBlocks(editor, dragging.current);
         const slice = editor.state.selection.content();
         event.dataTransfer.setData('text/plain', dragging.current.map(block => block.node.textContent).join('\n\n'));
-        const dom = editor.view.nodeDOM(toolbar.pos);
-        if (dom instanceof HTMLElement) event.dataTransfer.setDragImage(dom, 0, 0);
+        const dom = editor.view.nodeDOM(dragging.current[0].pos);
+        if (dom instanceof HTMLElement && root.current) {
+          dragPreview.current?.remove();
+          const preview = document.createElement('div');
+          preview.className = 'markdown typeset rich-editor-content block-drag-preview';
+          preview.style.width = `${dom.getBoundingClientRect().width}px`;
+          preview.setAttribute('aria-hidden', 'true'); preview.inert = true;
+          for (const block of dragging.current) {
+            const element = editor.view.nodeDOM(block.pos);
+            if (!(element instanceof HTMLElement)) continue;
+            const copy = element.cloneNode(true) as HTMLElement;
+            copy.classList.remove('rich-selected-block', 'ProseMirror-selectednode');
+            copy.querySelectorAll('.rich-selected-block, .ProseMirror-selectednode').forEach(node => node.classList.remove('rich-selected-block', 'ProseMirror-selectednode'));
+            preview.append(copy);
+          }
+          root.current.append(preview); dragPreview.current = preview;
+          event.dataTransfer.setDragImage(preview, 0, 0);
+        }
         event.dataTransfer.effectAllowed = 'move';
         editor.view.dragging = { slice, move: true };
       }} onDragEnd={() => { stopDrag(true); internalDrag.current = false; }} onClick={event => {
@@ -514,7 +544,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         }
         if (menu === 'block') { closeMenu(); return; }
         openBlockMenu();
-      }}><GripVertical size={18} /></button></Menu.Anchor>
+      }}><GripVertical size={16} /></button></Menu.Anchor>
     </div></Popover.Anchor>
     <EditorContent editor={editor} />
     {selectionBox && <div className="rich-selection-box" aria-hidden="true" style={selectionBox} />}
