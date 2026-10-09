@@ -70,6 +70,34 @@ afterEach(() => {
 });
 
 describe("note workspace", () => {
+  it("renders notes as an equal-height card grid", async () => {
+    render(<App />);
+    const pageTitle = await screen.findByRole("heading", { name: "所有笔记", level: 1 });
+    expect(pageTitle.className).toContain("text-[32px]");
+    expect(pageTitle.closest(".sr-only")).toBeNull();
+    const contentScroll = pageTitle.parentElement?.parentElement?.parentElement;
+    expect(contentScroll?.className).toContain("px-4");
+    expect(contentScroll?.className).toContain("md:px-[104px]");
+    expect(contentScroll?.className).not.toContain("xl:px-16");
+    const list = await screen.findByRole("list", { name: "笔记列表" });
+    expect(list.className).toContain("grid");
+    const card = list.querySelector('[data-slot="card"]');
+    expect(card?.className).toContain("h-64");
+    expect(card?.className).toContain("border-border");
+    expect(card?.className).not.toContain("border-border/60");
+    expect(card?.className).not.toContain("border-0");
+    expect(card?.className).toContain("bg-card");
+    expect(card?.className).not.toContain("bg-[#fbfbfb]");
+    expect(card?.className).not.toContain("bg-muted/50");
+    expect(card?.className).toContain("shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]");
+    expect(card?.className).not.toContain("shadow-none");
+    expect(screen.getByText("新页面").className).toContain("text-base");
+    expect(card?.querySelector("time")?.className).toContain("text-xs");
+    expect(screen.getByRole("button", { name: "#生活" }).className).toContain("text-xs");
+    expect(screen.queryByText("编辑")).toBeNull();
+    expect(screen.getByRole("button", { name: /^打开 .* 的笔记$/ }).className).toContain("flex-1");
+  });
+
   it("waits for the native vault before showing notes and searches with the typed query", async () => {
     let resolveStatus!: (value: VaultStatus) => void;
     const statusReady = new Promise<VaultStatus>((resolve) => { resolveStatus = resolve; });
@@ -100,7 +128,11 @@ describe("note workspace", () => {
     expect(bridge.request).toHaveBeenCalledWith("getNote", { id: note.id });
     const editor = await screen.findByRole("region", { name: "编辑笔记" });
     expect(readEditorText(within(editor).getByRole("textbox", { name: "笔记内容" }))).toBe("尚未提交的草稿文字");
-    await user.click(within(editor).getByRole("button", { name: "返回笔记列表" }));
+    const back = screen.getByRole("button", { name: "返回笔记列表" });
+    expect(back.closest("header")).not.toBeNull();
+    expect(back.className).toContain("md:hidden");
+    expect(within(editor).queryByRole("button", { name: "返回笔记列表" })).toBeNull();
+    await user.click(back);
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({ body: "尚未提交的草稿文字", baseHash: "draft-base-hash" })));
   });
 
@@ -209,7 +241,7 @@ describe("note workspace", () => {
     replaceEditorText("恢复后继续编辑", field);
     fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
 
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveDraft", { id: note.id, body: "恢复后继续编辑", tags: ["machine learning"], baseHash: "draft-hash", relativePath: offline ? oldPath : newPath }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveDraft", { id: note.id, body: "恢复后继续编辑", tags: [], baseHash: "draft-hash", relativePath: offline ? oldPath : newPath }));
   });
 
   it("uses the mobile Sheet for navigation and dismisses it after navigation or Escape", async () => {

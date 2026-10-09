@@ -191,11 +191,20 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   render(<App />);
   await user.click(await screen.findByRole("button", { name: "工作/项目" }));
   await user.click(screen.getByRole("button", { name: /^新建笔记$/ }));
-  expect(readEditorText()).toBe("");
-  expect(screen.getByRole("button", { name: "移除标签 工作/项目" })).toBeTruthy();
+  expect(readEditorText()).toBe("#工作/项目");
+  expect(screen.queryByRole("button", { name: "移除标签 工作/项目" })).toBeNull();
+  expect(screen.queryByLabelText("笔记标签")).toBeNull();
   expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
-  await user.click(await screen.findByRole("button", { name: "#生活" }));
+  const cardTag = await screen.findByRole("button", { name: "#生活" });
+  expect(cardTag.getAttribute("data-slot")).toBe("badge");
+  expect(cardTag.getAttribute("data-variant")).toBe("secondary");
+  expect(cardTag.className).toContain("text-xs");
+  expect(cardTag.className).toContain("bg-sky-50");
+  expect(cardTag.className).toContain("text-sky-700");
+  expect(cardTag.className).toContain("h-5");
+  expect(cardTag.className).toContain("py-0");
+  await user.click(cardTag);
   await waitFor(() => {
     const calls = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes");
     expect(calls.at(-1)?.[1]).toMatchObject({ tags: ["生活"] });

@@ -104,14 +104,14 @@
   --emphasis-foreground: #ffffff;
   --secondary: var(--neutral-100);
   --secondary-foreground: var(--neutral-950);
-  --muted: var(--neutral-100);
+  --muted: #f8f8f8;
   --muted-foreground: oklch(0.556 0 0);
-  --accent: var(--neutral-100);
+  --accent: #f8f8f8;
   --accent-foreground: var(--neutral-950);
   --accent-text: var(--accent-500);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: var(--neutral-200);
-  --input: var(--neutral-200);
+  --border: #eeeeee;
+  --input: #eeeeee;
   --ring: oklch(0.708 0 0);
   --chart-1: var(--accent-500);
   --chart-2: var(--accent-500);
@@ -404,45 +404,33 @@
 }
 .typeset-content { min-width: 0; }
 .typeset-summary { --note-size: var(--note-summary-size, 15px); --note-flow: .75em; }
+.note-card-preview { --note-size: 13px; --note-leading: 1.55; --note-flow: .4em; opacity: .82; }
+.note-card-preview .markdown { font-family: var(--note-body-font); }
+.note-card-preview .markdown :is(h1, h2, h3, h4, h5, h6) { color: inherit; font-family: inherit; font-size: 1em; font-weight: 500; line-height: inherit; }
+.note-card-preview .markdown :is(strong, b) { color: inherit; font-weight: 500; }
+.note-card-preview .markdown a { color: inherit; text-decoration-color: color-mix(in oklch, currentColor 35%, transparent); }
 .markdown .contains-task-list { list-style: none; padding-left: .25rem; }
 .markdown .task-list-item input { margin-right: .5em; accent-color: var(--foreground); }
 .note-editor { --editor-gutter: 64px; --editor-inset-right: 16px; }
-.note-editor-header, .note-editor-tags { padding-left: var(--editor-gutter); padding-right: var(--editor-inset-right); }
-.note-editor-header > button:first-child, .note-editor-tags > button:first-child { margin-left: -10px; }
-.note-editor-message { margin-left: var(--editor-gutter); margin-right: var(--editor-inset-right); }
-.block-controls { position: absolute; left: 4px; z-index: 5; display: flex; gap: 2px; color: var(--muted-foreground); transform: translateY(-50%); }
-.block-controls button { display: flex; align-items: center; justify-content: center; width: 24px; height: 28px; border-radius: 4px; cursor: pointer; }
-.block-controls button[draggable="true"] { cursor: grab; }
-.block-controls button[draggable="true"]:active { cursor: grabbing; }
-.block-drop-indicator { position: absolute; left: var(--editor-gutter, 64px); right: var(--editor-inset-right, 16px); top: 0; height: 3px; border-radius: 2px; background: #2383e2; pointer-events: none; z-index: 10; }
-.block-drag-preview { position: fixed; left: -10000px; top: 0; padding: 8px 12px; color: var(--foreground); background: var(--background); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 4px 12px #0002; pointer-events: none; font: inherit; }
-.block-controls button:hover, .block-controls button[aria-expanded="true"] { background: var(--muted); color: var(--foreground); }
-.block-controls button:focus-visible, .block-menu button:focus-visible, .block-menu input:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
-.block-menu { z-index: 50; width: min(320px, calc(100vw - 24px)); max-height: var(--radix-popover-content-available-height); display: flex; flex-direction: column; background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-sm); font-family: var(--font-sans); font-size: 14px; line-height: 1.4; }
-.block-menu-scroll { min-height: 0; max-height: min(380px, 60dvh); overflow-y: auto; padding: 6px; overscroll-behavior: contain; }
-.block-menu button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 36px; padding: 7px 10px; text-align: left; border-radius: 4px; cursor: pointer; }
-.block-menu svg { flex-shrink: 0; }
-.block-menu kbd { margin-left: auto; color: var(--muted-foreground); font: inherit; font-size: 12px; }
-.block-menu button:hover, .block-menu button:focus-visible { background: var(--accent); }
-.block-menu-label { padding: 10px 10px 6px; font-size: 12px; font-weight: 600; color: var(--muted-foreground); }
-.block-menu-divider { border-top: 1px solid var(--border); margin-top: 6px; }
-.block-menu-filter { width: calc(100% - 12px); margin: 4px 6px; padding: 8px; border: 1px solid var(--border); border-radius: 5px; font: inherit; background: transparent; }
-.block-menu .block-menu-close { flex-shrink: 0; border-top: 1px solid var(--border); border-radius: 0; padding: 10px 16px; }
-@media (hover: hover) {
-  .block-controls { opacity: 0; }
-  .block-editor:hover .block-controls, .block-editor:focus-within .block-controls { opacity: 1; }
-}
+.note-editor-header { padding-inline: 0; }
+.note-editor-header > button:first-child { margin-left: -10px; }
+.note-editor-message { margin-inline: 0; }
 @media (max-width: 639px) {
   .note-editor { --editor-inset-right: 8px; }
-  .block-controls button { min-height: 32px; }
 }
 
-.note-page-width { max-width: calc(var(--note-measure, 90ch) + 80px); }
+.note-page-scroll { padding-inline: 16px; }
+.note-page-width { max-width: var(--note-measure, 720px); width: calc(100% - 48px); margin-left: 48px; margin-right: 0; padding-block: 40px; }
+.note-page-width .rich-editor { --editor-gutter: 0px; --editor-inset-right: 0px; }
+.note-page-width .block-controls { left: -32px; gap: 0; }
+@media (min-width: 768px) {
+  .note-page-scroll { padding-inline: 96px; }
+  .note-page-width { width: 100%; margin-inline: auto; padding-top: 96px; }
+}
 
 .markdown .contains-task-list > li:not(.task-list-item) { list-style-type: disc; }
 
-.block-menu button:disabled { opacity: .4; cursor: default; background: transparent; }
 
-.note-page-title { display: block; margin-left: var(--editor-gutter); width: calc(100% - var(--editor-gutter) - var(--editor-inset-right)); min-width: 0; border: 0; background: transparent; color: var(--foreground); font-family: var(--note-heading-font, inherit); font-size: clamp(1.75rem, 3vw, 2.5rem); font-weight: 700; line-height: 1.25; padding: 4px 0; outline: none; }
+.note-page-title { display: block; width: 100%; min-width: 0; min-height: 1.2em; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--foreground); font-family: var(--note-heading-font, inherit); font-size: 32px; font-weight: 700; line-height: 1.2; padding: 0; outline: none; }
 .note-page-title::placeholder { color: var(--muted-foreground); opacity: .5; }
 .note-page-title:focus { caret-color: var(--foreground); }

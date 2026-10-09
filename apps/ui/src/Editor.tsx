@@ -1,21 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, X } from 'lucide-react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { inlineTags } from './inline-tags';
 import { request, errorMessage, type Attachment, type Draft } from './bridge';
 import type { Note } from '@memocard/contracts';
 import { RichMarkdownEditor } from './RichMarkdownEditor';
 import { EditorSession } from './editor-session';
 import { createId } from './uuid';
 
-export type EditorHandle = { flush: () => Promise<boolean> };
+export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void> };
 export function Editor({ initial, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, handle }: {
   initial: Draft; capabilities: Set<string>; pendingLink?: boolean;
   onClose: () => void; onSaved: (note: Note) => void;
   onCommitted?: (note: Note) => void; onTitleChange?: (title: string | undefined) => void; handle?: React.RefObject<EditorHandle | null>;
 }) {
   const field = useRef<HTMLDivElement>(null);
-  const titleField = useRef<HTMLInputElement>(null);
+  const titleField = useRef<HTMLTextAreaElement>(null);
   const initialDraft = useRef(initial).current;
   const titleFirst = initialDraft.title !== undefined && !initialDraft.baseHash;
   const [, render] = useState(0);
@@ -26,10 +24,18 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
   const callbacks = useRef({ onCommitted, onTitleChange });
   callbacks.current = { onCommitted, onTitleChange };
   const [session] = useState(() => new EditorSession(initialDraft, request, capabilities.has('saveDraft'), () => render(value => value + 1), note => { lastNote.current = note; callbacks.current.onCommitted?.(note); }));
-  const { body, tags, relativePath, title } = session.current;
+  const { body, relativePath, title } = session.current;
+  useLayoutEffect(() => {
+    const element = titleField.current;
+    if (!element) return;
+    const resize = () => { element.style.height = 'auto'; element.style.height = `${element.scrollHeight}px`; };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [title]);
   useEffect(() => { callbacks.current.onTitleChange?.(title); }, [title]);
   const canSave = capabilities.has('saveNote');
-  const propertyTags = tags.filter(name => !inlineTags(body).includes(name));
   const busy = useRef(false);
   useEffect(() => {
     if (!working && restoreImageFocus.current) {
@@ -37,7 +43,7 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
       field.current?.focus();
     }
   }, [working]);
-  const update = (nextBody: string, nextTags = [...new Set([...tags.filter(tag => !inlineTags(body).includes(tag)), ...inlineTags(nextBody)])], path = relativePath) => { if (canSave) session.update(nextBody, nextTags, path); };
+  const update = (nextBody: string, path = relativePath) => { if (canSave) session.update(nextBody, path); };
   async function flush() {
     if (busy.current) return false;
     if (!canSave) return !session.dirty;
@@ -47,14 +53,14 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
     finally { busy.current = false; setWorking(false); }
   }
   useEffect(() => {
-    if (handle) handle.current = { flush };
+    if (handle) handle.current = { flush, finish };
     return () => { if (handle) handle.current = null; };
   });
   useEffect(() => {
     session.activate();
     if (titleFirst) titleField.current?.focus(); else field.current?.focus();
     if (!initialDraft.baseHash && initialDraft.title !== undefined && canSave) void session.save().catch(() => undefined);
-    if (initialDraft.updatedAt && canSave) session.update(session.current.body, session.current.tags);
+    if (initialDraft.updatedAt && canSave) session.update(session.current.body);
     const unload = (event: BeforeUnloadEvent) => { if (session.dirty) { event.preventDefault(); event.returnValue = ''; } };
     const hidden = () => { if (document.visibilityState === 'hidden') void session.recover().catch(() => undefined); };
     window.addEventListener('beforeunload', unload); document.addEventListener('visibilitychange', hidden);
@@ -69,7 +75,7 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
       const attachment = await request<Attachment | null>('pickImage', { noteId: current.id, notePath: current.relativePath, ...(current.vaultBinding ? { vaultBinding: current.vaultBinding } : {}) });
       if (attachment) {
         insert(`![图片](${attachment.markdownPath})`);
-        update(session.current.body, session.current.tags, attachment.notePath ?? current.relativePath);
+        update(session.current.body, attachment.notePath ?? current.relativePath);
       }
     } catch (error) { setLocalError(errorMessage(error)); }
     finally { busy.current = false; restoreImageFocus.current = true; setWorking(false); }
@@ -103,20 +109,12 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
   }
   const error = localError || (session.error ? errorMessage(session.error) : '');
   return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor space-y-5">
-    <div className="note-editor-header flex flex-wrap items-center justify-between gap-2">
-      <Button variant="ghost" size="sm" onClick={() => void finish()} disabled={working} aria-label="返回笔记列表"><ArrowLeft className="size-4" />返回</Button>
-      <div className="flex items-center gap-2"><span role="status" className="text-xs text-muted-foreground">{session.state === 'saving' ? '保存中…' : session.state === 'saved' && !session.dirty ? '已保存到本地库' : session.state === 'conflict' ? '文件已在其他位置修改' : session.state === 'error' ? '未保存，请重试' : session.dirty ? '未保存' : ''}</span>
-      </div>
-    </div>
-    <input ref={titleField} aria-label="页面标题" placeholder="新页面" className="note-page-title" value={session.current.title ?? ''} readOnly={!canSave} onChange={event => session.update(body, tags, relativePath, event.target.value)} onKeyDown={event => {
+    <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新页面" className="note-page-title" value={session.current.title ?? ''} readOnly={!canSave} onChange={event => session.update(body, relativePath, event.target.value.replace(/[\r\n]+/g, ' '))} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
     }} />
-    {propertyTags.length > 0 && <div className="note-editor-tags flex flex-wrap items-center gap-1" aria-label="笔记标签">
-      {propertyTags.map(name => <Button key={name} variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" aria-label={`移除标签 ${name}`} disabled={working || !canSave} onClick={() => update(body, tags.filter(tag => tag !== name))}>#{name}<X className="size-3" /></Button>)}
-    </div>}
     {pendingLink && <p role="status" className="text-sm text-muted-foreground">完成当前记录后，将打开收到的笔记链接。</p>}
     {error && <div role="alert" className="note-editor-message space-y-2 rounded-lg border p-3 text-sm"><p>{error}</p>{session.state === 'error' && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => void finish()}>重试保存</Button>}{session.state === 'conflict' && <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button></div>}</div>}
-    <div className="typeset-content min-h-[55vh]"><RichMarkdownEditor autoFocus={!titleFirst} ref={field} value={body} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
+    <div className="typeset-content"><RichMarkdownEditor autoFocus={!titleFirst} ref={field} value={body} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
   </section>;
 }

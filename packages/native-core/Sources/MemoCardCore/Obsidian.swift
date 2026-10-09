@@ -41,34 +41,14 @@ func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, iden
         } catch { throw VaultError(code: "INVALID_FRONTMATTER", message: "无法安全读取 YAML 属性。") }
     }
     let body = String(source.dropFirst(header.count))
-    let propertyTags: [String]
-    if let sequence = root["tags"]?.sequence { propertyTags = sequence.compactMap { $0.scalar?.string } }
-    else { propertyTags = root["tags"]?.scalar?.string.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ","))).filter { !$0.isEmpty } ?? [] }
-    let tags = try validatedTags(propertyTags + inlineTags(body))
+    let tags = try validatedTags(inlineTags(body))
     return ParsedNote(note: Note(title: root["title"]?.scalar?.string, id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
         updatedAt: timestamp(modified), deletedAt: nil, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(identity.id)?vault=\(vaultID)"), frontmatter: root, originalHeader: header)
 }
 
-func encodedObsidianNote(_ parsed: ParsedNote?, body: String, tags: [String], title: String? = nil) throws -> Data {
+func encodedObsidianNote(_ parsed: ParsedNote?, body: String, title: String? = nil) throws -> Data {
     var header = parsed?.originalHeader ?? ""
-    if tags != (parsed?.note.tags ?? []) {
-        let oldInline = inlineTags(parsed?.note.body ?? "")
-        let oldProperties = parsed?.frontmatter["tags"]?.sequence?.compactMap { $0.scalar?.string }
-            ?? parsed?.frontmatter["tags"]?.scalar?.string.components(separatedBy: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ","))).filter { !$0.isEmpty } ?? []
-        var properties = tags.filter { !inlineTags(body).contains($0) }
-        for tag in oldProperties where oldInline.contains(tag) && !properties.contains(tag) { properties.append(tag) }
-        let newline = header.contains("\r\n") ? "\r\n" : "\n"
-        let json = String(data: try JSONEncoder().encode(properties), encoding: .utf8)!
-        let replacement = "tags: \(json)\(newline)"
-        if header.isEmpty || header == "\u{FEFF}" { header += "---\(newline)\(replacement)---\(newline)" }
-        else if parsed?.frontmatter["tags"] != nil {
-            let pattern = #"(?m)^tags:[^\r\n]*(?:\r?\n(?:[ \t]+[^\r\n]*|-[ \t]+[^\r\n]*))*\r?\n?"#
-            let regex = try NSRegularExpression(pattern: pattern)
-            guard let match = regex.firstMatch(in: header, range: NSRange(header.startIndex..., in: header)) else { throw VaultError(code: "INVALID_TAGS", message: "请在源文件中编辑此标签属性。") }
-            header = (header as NSString).replacingCharacters(in: match.range, with: replacement)
-        } else if let closing = header.range(of: "---", options: .backwards) { header.insert(contentsOf: replacement, at: closing.lowerBound) }
-    }
     if let title, title != parsed?.note.title {
         let newline = header.contains("\r\n") ? "\r\n" : "\n"
         let json = String(data: try JSONEncoder().encode(title), encoding: .utf8)!

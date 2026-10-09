@@ -16,7 +16,7 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
   }, []);
   useLayoutEffect(() => {
     const style = document.documentElement.style;
-    const vars = { '--note-body-font': FONT_FAMILIES[value.body], '--note-heading-font': FONT_FAMILIES[value.heading === 'inherit' ? value.body : value.heading], '--note-mono-font': FONT_FAMILIES[value.mono], '--note-size': `${value.size}px`, '--note-summary-size': `${Math.max(14, Number(value.size) - 1)}px`, '--note-leading': value.leading, '--note-flow': value.flow, '--note-measure': `${({ "60": 28, "70": 33, "80": 37, "90": 42 } as Record<string, number>)[value.measure] * Number(value.size)}px` };
+    const vars = { '--note-body-font': FONT_FAMILIES[value.body], '--note-heading-font': FONT_FAMILIES[value.heading === 'inherit' ? value.body : value.heading], '--note-mono-font': FONT_FAMILIES[value.mono], '--note-size': `${value.size}px`, '--note-summary-size': `${Math.max(14, Number(value.size) - 1)}px`, '--note-leading': value.leading, '--note-flow': value.flow, '--note-measure': `${({ "60": 28, "70": 33, "80": 37, "90": 45 } as Record<string, number>)[value.measure] * Number(value.size)}px` };
     for (const [key, val] of Object.entries(vars)) style.setProperty(key, val);
     return () => { for (const key of Object.keys(vars)) style.removeProperty(key); };
   }, [value]);

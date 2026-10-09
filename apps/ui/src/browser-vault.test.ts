@@ -246,18 +246,39 @@ describe("independent browser vault", () => {
     expect(parsed.contentHash).toBe(createHash("sha256").update(crlf).digest("hex"));
   });
 
+  it("ignores legacy metadata tags on reads, recovery, save and reopen", async () => {
+    const h = await open();
+    const file = await h.notes.getFileHandle(`${noteId}.md`);
+    const original = source(noteId, '#工作/项目\n\n句中 #工作/项目\n\n#生活');
+    file.bytes = bytes(original);
+    const note = await call<Note>(h.core, "getNote", { id: noteId });
+    expect(note.tags).toEqual(['工作/项目', '生活']);
+    expect(file.text).toBe(original);
+    expect((await call<NotePage>(h.core, "queryNotes", { tags: ['日常'] })).notes).toEqual([]);
+    const draft = await call<BrowserDraft>(h.core, 'saveDraft', { ...save(note, '正文 #生活'), tags: ['日常'] });
+    expect(draft.tags).toEqual(['生活']);
+    const saved = await call<Note>(h.core, 'saveNote', { ...save(note, '正文 #生活'), tags: ['日常'] });
+    expect(saved.tags).toEqual(['生活']);
+    const cleared = await call<Note>(h.core, 'saveNote', { ...save(saved, '正文'), tags: ['日常'] });
+    expect(cleared.tags).toEqual([]);
+    expect((await call<{ tags: unknown[] }>(h.core, 'listTags')).tags).toEqual([]);
+    const reopened = harness(h.root, h.storage);
+    expect((await call<Note>(reopened.core, 'getNote', { id: noteId })).tags).toEqual([]);
+    const raw = source(noteId, '#保留').replace('["日常", "machine learning", "C#,F#", "#literal"]', '[yes]');
+    expect((await parseBrowserNote(bytes(raw), 'notes/a.md', vaultId)).note.tags).toEqual(['保留']);
+  });
+
   it.each([
     source().replace("2026-09-28T04:00:00Z", "2026-02-30T04:00:00Z"),
     source().replace("2026-09-28T04:00:00Z", "2026-09-28T24:00:00Z"),
     source(noteId, "", "deletedAt: ''\n"),
     source(noteId, "", "id: different\n"),
-    source().replace('["日常", "machine learning", "C#,F#", "#literal"]', "[yes]"),
     "\ufeff" + source(),
   ])("keeps malformed metadata out of normal notes", async (raw) => {
     await expect(parseBrowserNote(bytes(raw), "notes/bad.md", vaultId)).rejects.toHaveProperty("code");
   });
 
-  it("preserves unknown YAML data, original createdAt, exact tag strings, and external nested rename", async () => {
+  it("preserves unknown YAML data and original createdAt across external nested rename", async () => {
     const h = await open();
     const original = await h.notes.getFileHandle(`${noteId}.md`);
     original.bytes = bytes(source(noteId, "before", "custom: &custom\n  enabled: yes\n  value: 3\nother: *custom\ndeletedAt: null\n"));
@@ -401,8 +422,9 @@ describe("independent browser vault", () => {
 
   it("matches Chinese/case-insensitive substrings, AND tags, date interval, and invalidates stale cursors", async () => {
     const h = await open();
+    (await h.notes.getFileHandle(`${noteId}.md`)).bytes = bytes(source(noteId, "中文 test #日常 #技术"));
     h.notes.children.set("second.md", new TestFile("second.md", source(secondId, "中文 TEST two").replaceAll("2026-09-28T04:00:00Z", "2026-09-29T04:00:00Z")));
-    expect((await call<NotePage>(h.core, "queryNotes", { query: "中文 TEST", tags: ["日常", "C#,F#"], from: "2026-09-28T04:00:00Z", to: "2026-09-29T04:00:00Z" })).notes.map((note) => note.id)).toEqual([noteId]);
+    expect((await call<NotePage>(h.core, "queryNotes", { query: "中文 TEST", tags: ["日常", "技术"], from: "2026-09-28T04:00:00Z", to: "2026-09-29T04:00:00Z" })).notes.map((note) => note.id)).toEqual([noteId]);
     const first = await call<NotePage>(h.core, "queryNotes", { limit: 1 });
     expect(first.notes[0]?.id).toBe(secondId);
     expect((await call<NotePage>(h.core, "queryNotes", { limit: 1, cursor: first.nextCursor })).notes[0]?.id).toBe(noteId);
@@ -495,7 +517,7 @@ describe("Obsidian shared folders", () => {
     const page = await call<NotePage>(h.core, "queryNotes");
     expect(page.coverage.complete).toBe(true);
     const note = page.notes.find(note => note.relativePath === "Example.md")!;
-    expect(note.tags).toEqual(["work", "inline/topic"]);
+    expect(note.tags).toEqual(["inline/topic"]);
     expect(file.text).toBe(header + "Original #inline/topic\r\n");
     const saved = await call<Note>(h.core, "saveNote", { id: note.id, body: "Updated #inline/topic\r\n", tags: note.tags, baseHash: note.contentHash });
     expect(file.text).toBe(header + "Updated #inline/topic\r\n");
@@ -540,21 +562,28 @@ it("creates readable plain Markdown and serializes simultaneous first scans", as
   expect((await root.getFileHandle(note.relativePath)).text).toBe("# 我的记录\n\n正文");
 });
 
-it("changes only the YAML tags property and leaves inline tags in the body", async () => {
+it("indexes only body tags and does not rewrite YAML properties or restore deleted tags", async () => {
   const root = new TestDirectory("shared"), h = harness(root);
   const file = new TestFile("A.md", '---\r\n# header\r\ntags: [old]\r\ncustom: "keep spelling"\r\n---\r\nBody #inline');
   root.children.set("A.md", file);
   await call(h.core, "selectVault");
   const note = (await call<NotePage>(h.core, "queryNotes")).notes[0];
+  expect(note.tags).toEqual(["inline"]);
+  expect((await call<NotePage>(h.core, "queryNotes", { tags: ["old"] })).notes).toEqual([]);
   const saved = await call<Note>(h.core, "saveNote", { id: note.id, body: note.body, tags: ["new", "inline"], baseHash: note.contentHash });
-  expect(file.text).toBe('---\r\n# header\r\ntags: ["new"]\r\ncustom: "keep spelling"\r\n---\r\nBody #inline');
-  expect(saved.tags).toEqual(["new", "inline"]);
+  expect(file.text).toBe('---\r\n# header\r\ntags: [old]\r\ncustom: "keep spelling"\r\n---\r\nBody #inline');
+  expect(saved.tags).toEqual(["inline"]);
+  const cleared = await call<Note>(h.core, "saveNote", { id: note.id, body: "Body", tags: ["old"], baseHash: saved.contentHash });
+  expect(cleared.tags).toEqual([]);
+  expect((await call<{ tags: unknown[] }>(h.core, "listTags")).tags).toEqual([]);
+  const reopened = harness(root, h.storage);
+  expect((await call<Note>(reopened.core, "getNote", { id: note.id })).tags).toEqual([]);
 });
 
 it("includes descendants in tag queries and counts each note once per ancestor", async () => {
   const h = await open();
-  await call(h.core, "saveNote", { id: secondId, body: "Nested", tags: ["工作", "工作/项目/设计", "工作/项目/开发"], baseHash: null });
-  await call(h.core, "saveNote", { id: createId(), body: "Boundary", tags: ["工作室"], baseHash: null });
+  await call(h.core, "saveNote", { id: secondId, body: "Nested #工作 #工作/项目/设计 #工作/项目/开发", tags: [], baseHash: null });
+  await call(h.core, "saveNote", { id: createId(), body: "Boundary #工作室", tags: [], baseHash: null });
   for (const tag of ["工作", "工作/项目", "工作/项目/设计"]) {
     const page = await call<NotePage>(h.core, "queryNotes", { tags: [tag] });
     expect(page.notes.map(note => note.id)).toEqual([secondId]);

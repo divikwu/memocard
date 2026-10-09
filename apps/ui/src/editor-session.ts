@@ -20,7 +20,7 @@ export class EditorSession {
   private disposed = false;
   private writing = false;
   constructor(initial: Draft, private transport: Transport, private canDraft: boolean, private notify: () => void, private committed: (note: Note) => void) {
-    this.current = { ...initial, relativePath: initial.relativePath ?? `notes/${initial.id}.md` };
+    this.current = { ...initial, tags: inlineTags(initial.body), relativePath: initial.relativePath ?? `notes/${initial.id}.md` };
     this.hadRecovery = Boolean(initial.updatedAt);
     this.persisted = initial.baseHash && !initial.updatedAt ? key(this.current) : '';
   }
@@ -31,8 +31,8 @@ export class EditorSession {
     this.tail = result;
     return result;
   }
-  update(body: string, tags: string[], relativePath = this.current.relativePath, title = this.current.title) {
-    this.current = { ...this.current, body, tags, relativePath, ...(title === undefined ? {} : { title }) };
+  update(body: string, relativePath = this.current.relativePath, title = this.current.title) {
+    this.current = { ...this.current, body, tags: inlineTags(body), relativePath, ...(title === undefined ? {} : { title }) };
     if (this.state !== 'conflict') this.state = this.dirty ? 'idle' : this.writing ? 'saving' : 'saved';
     this.emit();
     void this.recover().catch(error => { this.error = error; if (this.state !== 'conflict') this.state = 'error'; this.emit(); });
@@ -64,10 +64,8 @@ export class EditorSession {
         if (this.canDraft) await this.transport('saveDraft', this.params(snapshot));
         const note = await this.transport<Note>('saveNote', this.params(snapshot));
         const path = note.relativePath ?? snapshot.relativePath;
-        // The file layer can retain independent YAML tags that also occurred in the body.
-        const retained = (note.tags ?? []).filter(tag => !snapshot.tags.includes(tag) && !inlineTags(snapshot.body).includes(tag));
-        this.persisted = key({ ...snapshot, tags: [...new Set([...snapshot.tags, ...retained])], relativePath: path });
-        this.current = { ...this.current, tags: [...new Set([...this.current.tags, ...retained])], relativePath: this.current.relativePath === snapshot.relativePath ? path : this.current.relativePath, baseHash: note.contentHash };
+        this.persisted = key({ ...snapshot, relativePath: path });
+        this.current = { ...this.current, relativePath: this.current.relativePath === snapshot.relativePath ? path : this.current.relativePath, baseHash: note.contentHash };
         this.hadRecovery = this.dirty;
         this.state = this.dirty ? 'idle' : 'saved'; this.error = null;
         // The source bridge removes only the matching recovery. Restore the newest version immediately.
@@ -90,8 +88,8 @@ export class EditorSession {
   }
   replace(initial: Draft, clearRecovery = false) {
     clearTimeout(this.timer);
-    this.current = initial;
-    this.persisted = initial.baseHash && !clearRecovery ? key(initial) : '';
+    this.current = { ...initial, tags: inlineTags(initial.body) };
+    this.persisted = initial.baseHash && !clearRecovery ? key(this.current) : '';
     this.hadRecovery = clearRecovery;
     this.state = 'idle'; this.error = null; this.emit();
   }

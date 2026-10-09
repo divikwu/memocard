@@ -32,6 +32,7 @@ it('applies content styles, persists choices, remounts and restores defaults ind
   expect(document.documentElement.style.getPropertyValue('--note-size')).toBe('18px');
   fireEvent.click(screen.getByRole('button', { name: '恢复默认风格' }));
   expect(document.documentElement.style.getPropertyValue('--note-size')).toBe('16px');
+  expect(document.documentElement.style.getPropertyValue('--note-measure')).toBe('720px');
 });
 it('synchronizes other tabs and reports failed persistence', () => {
   render(<TypographyProvider><TypographySettings /></TypographyProvider>);

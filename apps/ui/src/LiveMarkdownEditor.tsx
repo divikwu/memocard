@@ -14,6 +14,7 @@ import { request } from "./bridge";
 import { externalUrl, internalTarget } from "./urls";
 import { bindNoteImage } from "./note-image";
 import { editorSeparators, separatorSelection } from './editor-separators';
+import './block-controls.css';
 
 type Props = {
   value: string;
