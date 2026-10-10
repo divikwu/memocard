@@ -30,7 +30,7 @@ const status: VaultStatus = {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("./NotePreview"), import("./Editor")]);
+  await Promise.all([import("./components/note-collection"), import("./Editor")]);
 });
 
 beforeEach(() => {
