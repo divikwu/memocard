@@ -33,7 +33,7 @@ let pendingDrafts: Draft[] = [];
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("./NotePreview"), import("./Editor")]);
+  await Promise.all([import("./components/note-collection"), import("./Editor")]);
 });
 
 beforeEach(() => {
@@ -209,7 +209,7 @@ describe("note workspace", () => {
     await screen.findByRole("textbox", { name: "笔记内容" }); replaceEditorText("正在输入");
     act(() => { window.dispatchEvent(new CustomEvent("memocard:open-note", { detail: { id: note.id } })); });
     await screen.findByRole("region", { name: "编辑笔记" });
-    expect(readEditorText()).toBe(note.body);
+    await waitFor(() => expect(readEditorText()).toBe(note.body));
     const calls = bridge.request.mock.calls.map(([op]) => op);
     expect(calls.indexOf("saveNote")).toBeLessThan(calls.lastIndexOf("getNote"));
   });
