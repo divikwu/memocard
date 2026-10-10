@@ -21,6 +21,7 @@ public actor VaultStore {
         let createdAt: String?
         let modified: Date?
         let parsed: ParsedNote
+        var quickFilters: Set<NoteQuickFilter>?
     }
     private var parsedCache: [String: ParsedCacheEntry] = [:]
     var parseMissCount = 0
@@ -383,10 +384,21 @@ public actor VaultStore {
             }
         }
         let cursorDate = try cursor.map { try parseDate($0.createdAt) }
+        let filters = Dictionary(uniqueKeysWithValues: snapshot.notes.map { parsed in
+            let note = parsed.note
+            let filters = parsedCache[note.relativePath]?.quickFilters ?? noteQuickFilters(note)
+            parsedCache[note.relativePath]?.quickFilters = filters
+            return (note.id, filters)
+        })
+        var filterCounts = ["untagged": 0, "images": 0, "links": 0]
+        for parsed in snapshot.notes where parsed.note.deletedAt == nil {
+            for filter in filters[parsed.note.id]! { filterCounts[filter.rawValue, default: 0] += 1 }
+        }
         let matches = snapshot.notes.map(\.note).filter { note in
             let date = try! parseDate(note.createdAt)
             if let folder = query.folder, !folder.isEmpty, !note.relativePath.hasPrefix(folder + "/") { return false }
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
+            if let filter = query.quickFilter, !filters[note.id]!.contains(filter) { return false }
             if let text = query.query, ((note.title ?? "") + "\n" + note.body).range(of: text, options: [.caseInsensitive, .literal]) == nil && !text.isEmpty { return false }
             if let tags = query.tags, !tags.allSatisfy({ tag in note.tags.contains { $0 == tag || $0.hasPrefix(tag + "/") } }) { return false }
             if let from, date < from { return false }
@@ -414,6 +426,8 @@ public actor VaultStore {
         // Reuse encoded notes instead of serializing potentially multi-megabyte bodies twice.
         var result = Data("{\"coverage\":".utf8)
         result.append(try encode(snapshot.coverage))
+        result.append(contentsOf: ",\"filterCounts\":".utf8)
+        result.append(try encode(filterCounts))
         result.append(contentsOf: ",\"nextCursor\":".utf8)
         result.append(try encode(next))
         result.append(contentsOf: ",\"notes\":".utf8)

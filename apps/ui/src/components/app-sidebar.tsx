@@ -1,15 +1,21 @@
 // Sidebar-10 composition, adapted from the official registry snapshot in docs/ui-reference.
-import { CalendarDays, CircleHelp, Check, ChevronDown, Files, FolderOpen, FolderPlus, Layers, Plus, Search, Settings2, ShieldCheck } from "lucide-react";
+import { lazy, Suspense } from "react";
+import { CalendarDays, CircleHelp, Check, ChevronDown, Notebook, FolderOpen, FolderPlus, Layers, Plus, Search, Settings2, ShieldCheck } from "lucide-react";
+import type { NoteFilterCounts, NoteQuickFilter } from "@memocard/contracts";
 import type { RegisteredVault } from "../bridge";
-import { TagNavigation } from "./tag-navigation";
+import { NoteFilterNavigation } from "./note-filter-navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail } from "@/components/ui/sidebar";
+import { SidebarTreeItem } from "./sidebar-tree-item";
 
 type SidebarView = "notes" | "settings";
+const TagNavigation = lazy(() => import("./tag-navigation").then(module => ({ default: module.TagNavigation })));
 
 export interface AppSidebarProps {
   view: SidebarView;
   tag: string | null;
+  quickFilter?: NoteQuickFilter | null;
+  filterCounts?: NoteFilterCounts;
   tags: { name: string; count: number }[];
   vaultName: string;
   vaultId?: string | null;
@@ -23,7 +29,7 @@ export interface AppSidebarProps {
   canCreateVault: boolean;
   needsPermission: boolean;
   working: boolean;
-  onNavigate: (view: SidebarView, tag?: string | null) => void;
+  onNavigate: (view: SidebarView, tag?: string | null, quickFilter?: NoteQuickFilter | null) => void;
   onNewNote: () => void;
   onSearch: () => void;
   onSelectVault: (create: boolean) => void;
@@ -32,24 +38,26 @@ export interface AppSidebarProps {
 }
 
 
-export function AppSidebar({ view, tag, tags, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, vaultStatusText, hasVaultIssue,
+export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, vaultStatusText, hasVaultIssue,
   canCreate, canChooseVault, canCreateVault, needsPermission, working,
   onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize,
 }: AppSidebarProps) {
   return <Sidebar id="desktop-sidebar" aria-label="笔记导航" className="border-r-0">
     <SidebarHeader>
       <button type="button" aria-label="MemoCard，返回所有笔记" className="flex h-10 items-center gap-2 rounded-md px-1.5 text-left outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("notes", null)}>
-        <img src="./favicon.png" alt="" draggable={false} className="size-7 shrink-0 object-contain" />
+        <img src="./favicon.png" alt="" draggable={false} className="size-8 shrink-0 object-contain" />
         <span className="truncate text-sm font-semibold">MemoCard</span>
       </button>
       <nav aria-label="主要导航"><SidebarMenu>
         <SidebarMenuItem><SidebarMenuButton disabled={!connected} onClick={onSearch}><Search /><span>搜索</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton disabled={!canCreate || working} onClick={onNewNote}><Plus /><span>新建笔记</span></SidebarMenuButton></SidebarMenuItem>
-        <SidebarMenuItem><SidebarMenuButton isActive={view === "notes" && !tag} onClick={() => onNavigate("notes", null)}><Files /><span>所有笔记</span></SidebarMenuButton></SidebarMenuItem>
+        <SidebarTreeItem label="所有笔记" icon={<Notebook className="size-3.5" />} buttonProps={{ onClick: () => onNavigate("notes", null) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
+          <NoteFilterNavigation view={view} quickFilter={quickFilter} filterCounts={filterCounts} connected={connected} onNavigate={onNavigate} />
+        </SidebarTreeItem>
       </SidebarMenu></nav>
     </SidebarHeader>
     <SidebarContent>
-      <TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={name => onNavigate("notes", name)} />
+      <Suspense fallback={<div className="h-12" />}><TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={name => onNavigate("notes", name)} /></Suspense>
       <SidebarGroup className="mt-auto"><SidebarGroupContent><SidebarMenu>
         <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="日历功能暂未开放"><CalendarDays /><span>日历</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="帮助功能暂未开放"><CircleHelp /><span>Help</span></SidebarMenuButton></SidebarMenuItem>

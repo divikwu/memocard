@@ -27,9 +27,38 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("AppSidebar", () => {
-  it("connects note, search, draft and exact tag navigation to the existing handlers", () => {
+  it("defaults to collapsed quick filters and preserves navigation and the active filter when toggling", async () => {
+    const props = createProps({ quickFilter: "images", filterCounts: { untagged: 12, images: 4, links: 0 } });
+    renderSidebar(props);
+    const toggle = screen.getByRole("button", { name: "展开或收起快捷筛选" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.queryByRole("button", { name: "有图片" })).toBeNull();
+    await userEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(props.onNavigate).not.toHaveBeenCalled();
+    await screen.findByRole("button", { name: "有图片" });
+    expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("button", { name: "所有笔记" }).getAttribute("aria-current")).toBeNull();
+    expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-description")).toBe("4 条笔记");
+    expect(screen.queryByRole("button", { name: "有语音" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "无标签" }));
+    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", null, "untagged");
+    fireEvent.click(screen.getByRole("button", { name: "有链接" }));
+    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", null, "links");
+    await userEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    await waitFor(() => expect(screen.queryByRole("button", { name: "有图片" })).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "所有笔记" }));
+    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", null);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    toggle.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
+  });
+  it("connects note, search, draft and exact tag navigation to the existing handlers", async () => {
     const props = createProps({ view: "notes", tag: "工作" });
     renderSidebar(props);
+    await screen.findByRole("button", { name: "工作" });
     expect(screen.getByRole("button", { name: "工作" }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("button", { name: "所有笔记" }).getAttribute("aria-current")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));

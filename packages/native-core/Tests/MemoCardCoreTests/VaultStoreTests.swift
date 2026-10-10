@@ -4,6 +4,47 @@ import UniformTypeIdentifiers
 @testable import MemoCardCore
 
 final class VaultStoreTests: XCTestCase {
+    func testQuickFilterMarkdownSyntax() {
+        let cases: [(String, Set<NoteQuickFilter>)] = [
+            ("![照片][photo]\n\n[photo]: https://example.com/photo.png", [.untagged, .images]),
+            ("[资料][]\n\n[资料]: https://example.com", [.untagged, .links]),
+            ("[unused]: https://example.com\n<!-- ![隐藏](photo.png) -->", [.untagged]),
+            ("<img src=\"https://example.com/photo.png\">", [.untagged, .images]),
+            ("www.example.com", [.untagged, .links]),
+            ("正文[^1]\n\n[^1]: 只有脚注内容。", [.untagged]),
+            ("```\n![代码](photo.png) https://example.com", [.untagged]),
+        ]
+        for (body, expected) in cases {
+            let note = Note(title: nil, id: "test", body: body, tags: [], createdAt: "", updatedAt: "", deletedAt: nil, contentHash: "", relativePath: "", sourceUrl: "")
+            XCTAssertEqual(noteQuickFilters(note), expected, body)
+        }
+    }
+
+    func testQuickFiltersBeforePaginationAndGlobalCounts() async throws {
+        let core = try await store()
+        let linked = try await save(core, body: "#工作 ![照片](photo.png) https://example.com")
+        let image = try await save(core, body: "![[photo.PNG|照片]]")
+        let code = try await save(core, body: "`https://example.com`\n```md\n![代码](photo.png) https://example.com\n```\n    [[代码]]")
+        let first = try await call(core, "queryNotes", ["quickFilter": "images", "limit": 1])
+        XCTAssertEqual(first["filterCounts"] as? [String: Int], ["untagged": 2, "images": 2, "links": 1])
+        let firstNotes = try XCTUnwrap(first["notes"] as? [[String: Any]])
+        XCTAssertEqual(firstNotes.count, 1)
+        let cursor = try XCTUnwrap(first["nextCursor"] as? String)
+        let second = try await call(core, "queryNotes", ["quickFilter": "images", "limit": 1, "cursor": cursor])
+        let secondNotes = try XCTUnwrap(second["notes"] as? [[String: Any]])
+        XCTAssertEqual(secondNotes.count, 1)
+        XCTAssertNotEqual(firstNotes.first?["id"] as? String, secondNotes.first?["id"] as? String)
+        XCTAssertTrue(second["nextCursor"] is NSNull)
+        let links = try await call(core, "queryNotes", ["quickFilter": "links", "query": "example", "tags": ["工作"]])
+        XCTAssertEqual((links["notes"] as? [[String: Any]])?.map { $0["id"] as? String }, [linked["id"] as? String])
+        let untagged = try await call(core, "queryNotes", ["quickFilter": "untagged"])
+        XCTAssertEqual(Set((untagged["notes"] as? [[String: Any]])!.compactMap { $0["id"] as? String }), Set([image["id"] as! String, code["id"] as! String]))
+        await expectCode("CURSOR_QUERY_MISMATCH") { _ = try await self.call(core, "queryNotes", ["quickFilter": "links", "limit": 1, "cursor": cursor]) }
+        _ = try await save(core, id: linked["id"] as! String, body: "#工作 移除图片和链接", hash: linked["contentHash"] as? String)
+        let updated = try await call(core, "queryNotes", ["quickFilter": "links"])
+        XCTAssertEqual(updated["filterCounts"] as? [String: Int], ["untagged": 2, "images": 1, "links": 0])
+    }
+
     func testInlineTagGrammarExcludesMarkdownSyntax() {
         XCTAssertEqual(inlineTags("# 标题\n正文 #工作/项目 #设计 #123 #/bad #bad/ #a//b C#"), ["工作/项目", "设计"])
         XCTAssertEqual(inlineTags("`#code`\n```md\n#fenced\n```\n    #indented\n[链接](#anchor) [#label](url) [[#wiki]] <span title=\"#html\">x</span> $x #math$\n#保留"), ["保留"])

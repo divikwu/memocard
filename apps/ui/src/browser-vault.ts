@@ -1,4 +1,4 @@
-import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, VaultStatus } from "@memocard/contracts";
+import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
 import { Document } from "yaml";
 import { linkCandidates } from "./link-candidates";
 import { createId } from "./uuid";
@@ -15,7 +15,7 @@ export type { BrowserVaultStorage, BrowserDraft, StoredSelection } from "./brows
 type Metadata = { formatVersion: 1 | 2; vaultId: string };
 type Binding = StoredSelection & { binding: string };
 type Snapshot = { folders: string[]; parsed: ParsedBrowserNote[]; duplicateIds: Set<string>; coverage: Coverage };
-type ParsedCacheEntry = { hash: string; vaultId: string; identityId?: string; createdAt?: string; modified?: number; parsed: ParsedBrowserNote };
+type ParsedCacheEntry = { hash: string; vaultId: string; identityId?: string; createdAt?: string; modified?: number; parsed: ParsedBrowserNote; quickFilters?: NoteQuickFilter[] };
 type Save = { id: string; title?: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
 type BrowserLock = <T>(name: string, task: () => Promise<T>) => Promise<T>;
 type Options = {
@@ -491,13 +491,15 @@ export class BrowserVault {
   private async query(selected: Binding, params: Record<string, unknown>): Promise<NotePage> {
     const query = params.query === undefined ? "" : checkString(params.query, "query");
     const tags = params.tags === undefined ? [] : validatedTags(params.tags);
+    const quickFilter = params.quickFilter as NoteQuickFilter | undefined;
+    if (quickFilter !== undefined && !["untagged", "images", "links"].includes(quickFilter)) throw new BrowserVaultError("INVALID_PARAMS", "快捷筛选条件无效。");
     const from = params.from === undefined ? undefined : parseDate(params.from);
     const to = params.to === undefined ? undefined : parseDate(params.to);
     if (from !== undefined && to !== undefined && from > to) throw new BrowserVaultError("INVALID_PARAMS", "开始时间不能晚于结束时间。");
     const limit = params.limit ?? 50;
     if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > 100 || (params.deleted !== undefined && typeof params.deleted !== "boolean")) throw new BrowserVaultError("INVALID_PARAMS", "分页大小必须为 1 至 100，deleted 必须为布尔值。");
     const snapshot = await this.snapshotFor("queryNotes", selected);
-    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, from, to, limit, folder: params.folder, deleted: params.deleted ?? false })));
+    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false })));
     const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues })));
     let after: { id: string; createdAt: string } | undefined;
     if (params.cursor !== undefined) {
@@ -512,9 +514,19 @@ export class BrowserVault {
     const folder = params.folder === undefined ? undefined : checkString(params.folder, "folder");
     if (folder) safeParts(folder, this.compatible ? "vault" : "notes");
     const normalized = query.normalize("NFC").toLowerCase();
+    const { noteQuickFilters } = await import("./note-filters");
+    const filters = new Map(snapshot.parsed.map(({ note }) => {
+      const cached = this.parsedCache.get(note.relativePath)!;
+      return [note.id, cached.quickFilters ??= noteQuickFilters(note)];
+    }));
+    const filterCounts = { untagged: 0, images: 0, links: 0 };
+    for (const { note } of snapshot.parsed) {
+      if (!note.deletedAt) for (const filter of filters.get(note.id)!) filterCounts[filter]++;
+    }
     const matching = snapshot.parsed.map(({ note }) => note).filter((note) => {
       const date = parseDate(note.createdAt);
       return (!folder || note.relativePath.startsWith(`${folder}/`)) && !!note.deletedAt === (params.deleted ?? false)
+        && (!quickFilter || filters.get(note.id)!.includes(quickFilter))
         && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || value.startsWith(tag + "/")))
         && (from === undefined || date >= from) && (to === undefined || date < to)
         && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
@@ -528,7 +540,7 @@ export class BrowserVault {
     }
     const last = notes.at(-1);
     const nextCursor = matching.length > notes.length && last ? btoa(JSON.stringify({ id: last.id, createdAt: last.createdAt, queryHash, snapshotHash })) : null;
-    return { notes, nextCursor, coverage: snapshot.coverage };
+    return { notes, nextCursor, coverage: snapshot.coverage, filterCounts };
   }
 
   private async attachment(selected: Binding, params: Record<string, unknown>): Promise<unknown> {
