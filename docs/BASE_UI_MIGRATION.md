@@ -6,6 +6,8 @@
 
 发布前复查（2026-10-10）：`pnpm audit --prod` 无已知漏洞，`pnpm verify:release` 全部通过，包含 383 项 UI 测试、本机服务测试、macOS/iOS/服务构建及签名校验。下文阴影阶段的非全绿记录是历史结果，不代表当前回归状态。最新入口精简与章节折叠见 [EDITOR_SECTION_FOLDING.md](EDITOR_SECTION_FOLDING.md)。
 
+合并后 CI 复查：PR #21 检查成功，但 main 首次运行的排版设置测试在打开字号 Select 后同步查找选项，偶发先于 Base UI 的下一动画帧。延后动画帧可稳定复现同一“找不到 18px 选项”失败；改为等待可访问选项出现后，同一延迟场景通过。保留正常与延迟帧两种回归，样式、持久化、重挂载和恢复默认断言不变；未修改产品代码、增加重试或放宽超时。
+
 ## 实现范围
 
 - 使用 `@base-ui/react@1.9.0`；删除 `radix-ui`、`@radix-ui/react-menu` 及其不再需要的传递依赖。锁文件包集合仅新增 Base UI React、Base UI Utils、reselect，未升级其他库。
