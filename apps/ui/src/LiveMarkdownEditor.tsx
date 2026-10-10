@@ -1,4 +1,4 @@
-import { Popover as PopoverPrimitive } from "radix-ui";
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { Plus, GripVertical, Type, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, List, ListOrdered, ListTodo, Quote, Code, Minus, ArrowUp, ArrowDown, Copy, Trash2, IndentIncrease, IndentDecrease, ImagePlus, type LucideIcon } from "lucide-react";
 import { imageSource, openVaultLink } from "./vault-links";
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -291,6 +291,7 @@ export const LiveMarkdownEditor = forwardRef<HTMLDivElement, Props>(function Liv
   const [canInsert, setCanInsert] = useState(true);
   const [menu, setMenu] = useState<'insert' | 'actions' | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
   const openMenu = useRef<'insert' | 'actions' | null>(null);
   openMenu.current = menu;
   const [filter, setFilter] = useState("");
@@ -561,8 +562,20 @@ export const LiveMarkdownEditor = forwardRef<HTMLDivElement, Props>(function Liv
   const matches = (kind: string, label: string) => `${label} ${kind}`.toLowerCase().includes(filter.trim().toLowerCase());
   const choices = [['paragraph', '正文'], ['heading1', '一级标题'], ['heading2', '二级标题'], ['heading3', '三级标题'], ['heading4', '四级标题'], ['heading5', '五级标题'], ['heading6', '六级标题'], ['bullet', '无序列表'], ['ordered', '有序列表'], ['task', '待办列表'], ['quote', '引用'], ['code', '代码块'], ['divider', '分割线']];
   return <div className="block-editor relative min-h-0" onKeyDown={event => { if (event.key === 'Escape' && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) { event.preventDefault(); drag.current = null; clearDragPreview(); setDropTop(null); setMenu(null); view.current?.focus(); } }}>
-    <PopoverPrimitive.Root open={Boolean(menu)} onOpenChange={open => { if (!open) setMenu(null); }}>
-    {!props.disabled && <PopoverPrimitive.Anchor asChild><div className="block-controls" style={{ top: top ?? 0, visibility: top === null ? 'hidden' : undefined }}>
+    <PopoverPrimitive.Root open={Boolean(menu)} onOpenChange={(open, details) => {
+      if (open) return;
+      if (details.reason === 'focus-out') { details.cancel(); return; }
+      if (details.reason === 'escape-key') {
+        const event = details.event as KeyboardEvent;
+        if (event.isComposing || event.keyCode === 229 || view.current?.composing) { details.cancel(); return; }
+        const editor = view.current;
+        if (editor) { const line = editor.state.doc.lineAt(editor.state.selection.main.head); dismissedSlash.current = `${line.from}:${line.text}`; }
+        slash.current = false;
+        editor?.focus();
+      }
+      setMenu(null);
+    }}>
+    {!props.disabled && <div ref={controlsRef} className="block-controls" style={{ top: top ?? 0, visibility: top === null ? 'hidden' : undefined }}>
       <button type="button" aria-label="插入内容块" disabled={!canInsert} aria-expanded={menu === 'insert'} onClick={() => { slash.current = false; setFilter(""); setMenu(menu === 'insert' ? null : 'insert'); }} title="添加内容块"><Plus size={18} strokeWidth={1.5} aria-hidden="true" /></button>
       <button type="button" aria-label="内容块操作" disabled={!active} aria-expanded={menu === 'actions'} draggable={Boolean(active)} onDragStart={event => { if (!active || !view.current) { event.preventDefault(); return; } ownsDrag.current = true; drag.current = { block: active, doc: view.current.state.doc.toString() }; event.dataTransfer.setData('application/x-memocard-block', '1'); event.dataTransfer.setData('text/plain', view.current.state.sliceDoc(active.from, active.to)); event.dataTransfer.effectAllowed = 'move';
         const editor = view.current;
@@ -579,12 +592,10 @@ export const LiveMarkdownEditor = forwardRef<HTMLDivElement, Props>(function Liv
         editor.dom.append(preview); dragPreview.current = preview;
         event.dataTransfer.setDragImage?.(preview, 16, 12);
         setMenu(null); }} onDragEnd={() => { drag.current = null; ownsDrag.current = false; clearDragPreview(); setDropTop(null); }} onClick={() => { setFilter(''); setMenu(menu === 'actions' ? null : 'actions'); }} title="拖动以移动，点击打开菜单"><GripVertical size={18} strokeWidth={1.5} aria-hidden="true" /></button>
-    </div></PopoverPrimitive.Anchor>}
-    {menu && <PopoverPrimitive.Portal><PopoverPrimitive.Content ref={menuRef} role="menu" aria-label={menu === 'insert' ? '插入内容块' : '内容块操作'} className="block-menu" align="start" side="bottom" sideOffset={6} collisionPadding={12} sticky="always" updatePositionStrategy="always"
-      onOpenAutoFocus={event => { event.preventDefault(); if (!slash.current) menuRef.current?.querySelector<HTMLElement>(menu === 'insert' ? 'input' : '[role="menuitem"]:not(:disabled)')?.focus(); }}
-      onCloseAutoFocus={event => event.preventDefault()}
-      onFocusOutside={event => event.preventDefault()}
-      onEscapeKeyDown={event => { event.preventDefault(); if (event.isComposing || event.keyCode === 229 || view.current?.composing) return; const editor = view.current; if (editor) { const line = editor.state.doc.lineAt(editor.state.selection.main.head); dismissedSlash.current = `${line.from}:${line.text}`; } slash.current = false; setMenu(null); editor?.focus(); }}
+    </div>}
+    {menu && <PopoverPrimitive.Portal><PopoverPrimitive.Positioner anchor={controlsRef} align="start" side="bottom" sideOffset={6} collisionPadding={12} className="z-50"><PopoverPrimitive.Popup ref={menuRef} role="menu" aria-label={menu === 'insert' ? '插入内容块' : '内容块操作'} className="block-menu"
+      initialFocus={() => slash.current ? false : menuRef.current?.querySelector<HTMLElement>(menu === 'insert' ? 'input' : '[role="menuitem"]:not(:disabled)')}
+      finalFocus={false}
       onKeyDown={event => {
       const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role=menuitem]:not(:disabled)'));
       const index = items.indexOf(document.activeElement as HTMLButtonElement);
@@ -601,7 +612,7 @@ export const LiveMarkdownEditor = forwardRef<HTMLDivElement, Props>(function Liv
       {menu === 'insert' && props.onImage && matches('image', '图片') && <><div className="block-menu-label block-menu-divider">媒体</div><button role="menuitem" onClick={() => { setMenu(null); props.onImage?.(markdown => insert('image', markdown)); }}><ImagePlus size={18} aria-hidden="true" /><span>图片</span></button></>}
       {menu === 'insert' && !choices.some(([kind, label]) => matches(kind, label)) && !(props.onImage && matches('image', '图片')) && <p role="status" className="px-3 py-6 text-sm text-muted-foreground">没有匹配的内容块</p>}
       </div><button className="block-menu-close" onClick={() => { setMenu(null); view.current?.focus(); }}><span>关闭菜单</span><kbd>esc</kbd></button>
-    </PopoverPrimitive.Content></PopoverPrimitive.Portal>}
+    </PopoverPrimitive.Popup></PopoverPrimitive.Positioner></PopoverPrimitive.Portal>}
     </PopoverPrimitive.Root>
     {dropTop !== null && <div className="block-drop-indicator" style={{ top: dropTop }} />}
     <div ref={container} className="min-h-0" />

@@ -40,10 +40,10 @@ export function AppSidebar({ view, tag, tags, vaultName, vaultId, registeredVaul
     <SidebarHeader>
       <SidebarMenu><SidebarMenuItem>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><SidebarMenuButton className="w-fit max-w-full px-1.5" aria-label={`笔记库：${vaultName}`}>
+          <DropdownMenuTrigger render={<SidebarMenuButton className="w-fit max-w-full px-1.5" aria-label={`笔记库：${vaultName}`}>
             <span className="flex aspect-square size-5 shrink-0 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"><Layers className="size-3" aria-hidden="true" /></span>
             <span className="truncate font-medium" title={vaultName}>{vaultName}</span><ChevronDown className="opacity-50" aria-hidden="true" />
-          </SidebarMenuButton></DropdownMenuTrigger>
+          </SidebarMenuButton>} />
           <DropdownMenuContent align="start" className="w-64 rounded-lg">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-xs text-muted-foreground">笔记库</DropdownMenuLabel>

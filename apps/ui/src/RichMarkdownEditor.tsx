@@ -8,15 +8,16 @@ import Image, { type ImageOptions } from '@tiptap/extension-image';
 import { InlineMath, BlockMath } from '@tiptap/extension-mathematics';
 import { AllSelection, EditorState, NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { richBlock, richBlockAt, selectedRichBlocks, richBlockMoveSources, richBlockMoveTarget, selectRichBlocks, selectRichBlockRange, extendRichBlocksTo, blockMoveTransaction, moveRichBlocks, duplicateRichBlocks, editRichStructure, type RichBlock } from './rich-blocks';
+import { richBlock, richBlockAt, richSectionEnd, selectedRichBlocks, richBlockMoveSources, richBlockMoveTarget, selectRichBlocks, selectRichBlockRange, extendRichBlocksTo, blockMoveTransaction, moveRichBlocks, duplicateRichBlocks, editRichStructure, type RichBlock } from './rich-blocks';
 import { BlockRangeSelection } from './rich-block-selection';
 import { RichInlineTags } from './rich-inline-tags';
+import { RichHeadingFolding } from './rich-heading-fold';
 import { RichTagSuggestions } from './RichTagSuggestions';
 import { RichMath } from './RichMath';
 import { RichFormatTools } from './RichFormatTools';
 import { richTable, RichTableRow, RichTableHeader, alignRichColumn } from './rich-table';
-import { Popover } from 'radix-ui';
-import * as Menu from '@radix-ui/react-menu';
+import { Popover } from "@base-ui/react/popover";
+import { Menu } from '@base-ui/react/menu';
 import { useIsMobile } from './hooks/use-mobile';
 import { Plus, GripVertical, Type, Heading, List, ListOrdered, ListTodo, Quote, Code, Minus, Table, Sigma, Image as ImageIcon, Search, ArrowUp, ArrowDown, Copy, Trash2, RefreshCw, Check, ChevronRight, type LucideIcon } from 'lucide-react';
 import { MarkdownSource, SourceMetadata, PreservedMarkdown } from './wysiwyg-markdown';
@@ -110,6 +111,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   const pointerY = useRef(0);
   const pointerX = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const gripRef = useRef<HTMLButtonElement>(null);
   const insertion = useRef<number | null>(null);
   const slash = useRef<{ from: number; to: number } | null>(null);
   const editorRef = useRef<TiptapEditor | null>(null);
@@ -118,7 +121,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     immediatelyRender: false,
     // Plain Markdown is parsed explicitly; rich/literal clipboard content must not run Markdown paste rules.
     enablePasteRules: false,
-    extensions: [RichInlineTags, StarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current),
+    extensions: [RichInlineTags, RichHeadingFolding, StarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current),
       richTable(() => editorRef.current), RichTableRow, RichTableHeader, TableCell, TaskList, TaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' }, a11y: { checkboxLabel: node => `待办：${node.textContent}` } }),
       SafeImageExtension.configure({ notePath: () => latest.current.notePath }), WikiImageExtension.configure({ notePath: () => latest.current.notePath }),
       PreservedExtension.configure({ notePath: () => latest.current.notePath }),
@@ -341,7 +344,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     const hover = (event: MouseEvent) => {
       const target = event.target, element = root.current;
       if (element?.contains(target as Node)) setTyping(false);
-      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools')) return;
+      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools, .rich-heading-fold-widget')) return;
       const rect = editor.view.dom.getBoundingClientRect();
       if (!element.contains(target)) {
         let surface = element.parentElement;
@@ -479,7 +482,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     if (item.label === '图片') props.onImage?.(markdown => run({ label: '图片', run: chain => chain.insertContent(markdown, { contentType: 'markdown' }) }));
     else run(item);
   }
-  return <Menu.Root open={menu === 'block'} modal={false} onOpenChange={open => { if (open) openBlockMenu(); else setMenu(current => current === 'block' ? null : current); }}><Popover.Root open={menu === 'insert'} onOpenChange={open => { if (!open && menu === 'insert') { slash.current = null; setMenu(null); } }}><div className="note-editor rich-editor" ref={root} data-selecting={selectionBox != null || undefined} data-dragging={isDragging || undefined} data-typing={typing || undefined} data-menu-open={menu != null || undefined}
+  return <Menu.Root open={menu === 'block'} modal={false} onOpenChange={(open, details) => { if (open) openBlockMenu(); else { setMenu(current => current === 'block' ? null : current); if (details.reason === 'escape-key') editor.commands.focus(); } }}><Popover.Root open={menu === 'insert'} onOpenChange={open => { if (!open && menu === 'insert') { slash.current = null; setMenu(null); } }}><div className="note-editor rich-editor" ref={root} data-selecting={selectionBox != null || undefined} data-dragging={isDragging || undefined} data-typing={typing || undefined} data-menu-open={menu != null || undefined}
     onInputCapture={event => { if (editor.view.dom.contains(event.target as Node)) setTyping(true); }}
     onPointerMove={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); } }}
     onPointerUp={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); stopRangeSelection(); } }}
@@ -505,8 +508,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     }}
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null)) { cancelAnimationFrame(frame.current); frame.current = 0; setDropTop(null); } }}
   >
-    <Popover.Anchor asChild><div className="block-controls" style={{ top: toolbar.top }}>
-      <Menu.Anchor asChild><button type="button" aria-label="内容块操作" title={gripTitle} disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
+    <div ref={controlsRef} className="block-controls" data-heading={richBlockAt(editor, toolbar.pos)?.node.type.name === 'heading' && richSectionEnd(editor.state.doc, toolbar.pos) > toolbar.pos + editor.state.doc.nodeAt(toolbar.pos)!.nodeSize || undefined} style={{ top: toolbar.top }}>
+      <button ref={gripRef} type="button" aria-label="内容块操作" title={gripTitle} disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
         if (editor.view.composing) { event.preventDefault(); return; }
         dragging.current = event.altKey ? richBlockMoveSources(editor, toolbar.pos, true) : selectedRichBlocks(editor, toolbar.pos);
         if (!dragging.current.length) { dragging.current = null; event.preventDefault(); return; }
@@ -544,8 +547,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         }
         if (menu === 'block') { closeMenu(); return; }
         openBlockMenu();
-      }}><GripVertical size={16} /></button></Menu.Anchor>
-    </div></Popover.Anchor>
+      }}><GripVertical size={16} /></button>
+    </div>
     <EditorContent editor={editor} />
     {selectionBox && <div className="rich-selection-box" aria-hidden="true" style={selectionBox} />}
     {!props.disabled && <RichTagSuggestions editor={editor} />}
@@ -555,9 +558,9 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       <button aria-label="斜体" aria-pressed={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}><em>I</em></button>
       <button aria-label="删除线" aria-pressed={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()}><s>S</s></button>
       <button aria-label="行内代码" aria-pressed={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}>&lt;/&gt;</button>
-      <RichFormatTools context="text" editor={editor} onImage={props.onImage} onError={props.onError} />
+      <RichFormatTools editor={editor} onError={props.onError} />
     </div>}
-    {menu === 'insert' && <Popover.Portal><Popover.Content ref={menuRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} onOpenAutoFocus={event => { if (slash.current) event.preventDefault(); }} onCloseAutoFocus={event => event.preventDefault()} onEscapeKeyDown={event => { event.preventDefault(); closeMenu(); }} className="rich-menu block-menu rich-insert-menu" role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
+    {menu === 'insert' && <Popover.Portal><Popover.Positioner anchor={controlsRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Popover.Popup ref={menuRef} initialFocus={() => slash.current ? false : true} finalFocus={false} className="rich-menu block-menu rich-insert-menu" role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Escape') { event.preventDefault(); closeMenu(); return; }
       if (event.target !== event.currentTarget.querySelector('.rich-insert-close')) handleInsertKey(event.nativeEvent);
@@ -574,27 +577,26 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         </div>
         <button className="rich-insert-close" onClick={closeMenu}>关闭菜单<kbd>esc</kbd></button>
       </>
-    </Popover.Content></Popover.Portal>}
-    {menu === 'block' && <Menu.Portal><Menu.Content ref={menuRef} className="rich-block-menu" side="bottom" align="start" sideOffset={6} collisionPadding={12} aria-label="内容块操作菜单" onCloseAutoFocus={event => event.preventDefault()} onEscapeKeyDown={() => editor.commands.focus()}>
-      <Menu.Sub open={conversionOpen} onOpenChange={setConversionOpen}>
-        <Menu.SubTrigger disabled={selectedBlocks.length !== 1 || !firstSelected?.node.isTextblock}><RefreshCw aria-hidden="true" /><span>转换为</span><ChevronRight className="rich-menu-check" aria-hidden="true" /></Menu.SubTrigger>
-        <Menu.Portal><Menu.SubContent className="rich-block-menu rich-convert-menu" collisionPadding={12} sideOffset={isMobile ? -260 : 6} aria-label="转换内容块类型">
+    </Popover.Popup></Popover.Positioner></Popover.Portal>}
+    {menu === 'block' && <Menu.Portal><Menu.Positioner anchor={gripRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Menu.Popup ref={menuRef} className="rich-block-menu" aria-label="内容块操作菜单" finalFocus={() => editor.view.dom}>
+      <Menu.SubmenuRoot open={conversionOpen} onOpenChange={setConversionOpen}>
+        <Menu.SubmenuTrigger disabled={selectedBlocks.length !== 1 || !firstSelected?.node.isTextblock}><RefreshCw aria-hidden="true" /><span>转换为</span><ChevronRight className="rich-menu-check" aria-hidden="true" /></Menu.SubmenuTrigger>
+        <Menu.Portal><Menu.Positioner collisionPadding={12} sideOffset={isMobile ? -260 : 6} alignOffset={-5} className="z-50"><Menu.Popup className="rich-block-menu rich-convert-menu" aria-label="转换为">
           {insertItems.filter(item => item.convertible).map((item, index) => { const Icon = item.icon ?? Type; const current = isCurrentType(item); const label = item.icon === Heading ? `标题 ${item.hint!.length}` : item.label; return <div key={item.label}>
             {(index === 7 || index === 10) && <Menu.Separator />}
-            <Menu.Item aria-label={label} onSelect={() => { if (current) { closeMenu(); return; } insertion.current = null; slash.current = null; editor.commands.setTextSelection(toolbar.pos + 1); choose(item); }}><Icon aria-hidden="true" /><span>{label}</span>{current && <Check className="rich-menu-check" aria-label="当前类型" />}</Menu.Item>
+            <Menu.Item aria-label={label} onClick={() => { if (current) { closeMenu(); return; } insertion.current = null; slash.current = null; editor.commands.setTextSelection(toolbar.pos + 1); choose(item); }}><Icon aria-hidden="true" /><span>{label}</span>{current && <Check className="rich-menu-check" aria-label="当前类型" />}</Menu.Item>
           </div>; })}
-        </Menu.SubContent></Menu.Portal>
-      </Menu.Sub>
-      <Menu.Item onSelect={() => { const block = richBlockAt(editor, toolbar.pos); insertion.current = block ? block.pos + block.node.nodeSize : null; slash.current = null; setFilter(''); setActiveIndex(0); setMenu('insert'); }}><Plus aria-hidden="true" /><span>在下方插入</span></Menu.Item>
-      <Menu.Item onSelect={() => { duplicateRichBlocks(editor, selectedBlocks); closeMenu(); }}><Copy aria-hidden="true" /><span>复制</span></Menu.Item>
+        </Menu.Popup></Menu.Positioner></Menu.Portal>
+      </Menu.SubmenuRoot>
+      <Menu.Item onClick={() => { const block = richBlockAt(editor, toolbar.pos); insertion.current = block ? block.pos + block.node.nodeSize : null; slash.current = null; setFilter(''); setActiveIndex(0); setMenu('insert'); }}><Plus aria-hidden="true" /><span>在下方插入</span></Menu.Item>
+      <Menu.Item onClick={() => { duplicateRichBlocks(editor, selectedBlocks); closeMenu(); }}><Copy aria-hidden="true" /><span>复制</span></Menu.Item>
       <Menu.Separator />
-      <Menu.Item asChild disabled={!upTarget} onSelect={() => move(-1)}><button disabled={!upTarget}><ArrowUp aria-hidden="true" /><span>{movingSection ? '上移章节' : '上移'}</span></button></Menu.Item>
-      <Menu.Item asChild disabled={!downTarget} onSelect={() => move(1)}><button disabled={!downTarget}><ArrowDown aria-hidden="true" /><span>{movingSection ? '下移章节' : '下移'}</span></button></Menu.Item>
-      {selectedBlocks.length === 1 && <RichFormatTools context="block" editor={editor} onImage={props.onImage} onError={props.onError} />}
+      <Menu.Item disabled={!upTarget} onClick={() => move(-1)}><ArrowUp aria-hidden="true" /><span>{movingSection ? '上移章节' : '上移'}</span></Menu.Item>
+      <Menu.Item disabled={!downTarget} onClick={() => move(1)}><ArrowDown aria-hidden="true" /><span>{movingSection ? '下移章节' : '下移'}</span></Menu.Item>
       <Menu.Separator />
-      <Menu.Item data-variant="destructive" onSelect={() => { if (firstSelected && lastSelected) editRichStructure(editor, () => { editor.commands.deleteRange({ from: firstSelected.pos, to: lastSelected.pos + lastSelected.node.nodeSize }); }); closeMenu(); }}><Trash2 aria-hidden="true" /><span>删除</span></Menu.Item>
+      <Menu.Item data-variant="destructive" onClick={() => { if (firstSelected && lastSelected) editRichStructure(editor, () => { editor.commands.deleteRange({ from: firstSelected.pos, to: lastSelected.pos + lastSelected.node.nodeSize }); }); closeMenu(); }}><Trash2 aria-hidden="true" /><span>删除</span></Menu.Item>
       {(selectedBlocks.length > 1 || movingSection) && <><Menu.Separator /><div className="rich-block-menu-note" role="status">{movingSection ? `章节移动包含 ${moveSources.length} 个块；其他操作仅作用于标题` : `已选择 ${selectedBlocks.length} 个块`}</div></>}
-    </Menu.Content></Menu.Portal>}
+    </Menu.Popup></Menu.Positioner></Menu.Portal>}
     {!props.disabled && editor.isActive('table') && <div className="rich-table-tools" aria-label="表格操作">
       <button onClick={() => editor.chain().focus().addRowAfter().run()}>添加行</button><button onClick={() => editor.chain().focus().addColumnAfter().run()}>添加列</button>
       <select aria-label="列对齐" defaultValue="" onChange={event => { alignRichColumn(editor, event.target.value); event.target.value = ''; }}><option value="" disabled>对齐</option><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option></select>

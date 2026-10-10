@@ -13,8 +13,8 @@ it("searches Chinese names across categories and returns the native emoji", asyn
   expect(screen.getByLabelText("Emoji 分类").className).toContain("-mx-3");
   expect(categories).toHaveLength(8);
   expect(categories[0].getAttribute("aria-pressed")).toBe("true");
-  screen.getByRole("button", { name: "Emoji 分类：动物与自然" }).focus();
-  expect((await screen.findByRole("tooltip")).textContent).toContain("动物与自然");
+  await user.hover(screen.getByRole("button", { name: "Emoji 分类：动物与自然" }));
+  expect((await screen.findByText("动物与自然")).getAttribute("data-slot")).toBe("tooltip-content");
   await user.click(screen.getByRole("button", { name: "Emoji 分类：动物与自然" }));
   expect(screen.getByRole("button", { name: "Emoji 分类：动物与自然" }).getAttribute("aria-pressed")).toBe("true");
   await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "调色板");

@@ -34,6 +34,87 @@ it('opens without a write, renders heading syntax invisibly and edits semantic t
  expect(change).toHaveBeenLastCalledWith('# 标新题\n\n正文');
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('# 标题\n\n正文');
 });
+it('folds a heading section up to its next peer without changing Markdown or undo history',async()=>{
+ const {editor,field,change,save}=await setup('## 标题 A\n\n正文 A\n\n### 子标题\n\n子正文\n\n## 标题 B\n\n正文 B');
+ const before=editor.getJSON();
+ const toggle=await screen.findByRole('button',{name:'收起“标题 A”章节'});
+ fireEvent.click(toggle);
+ expect(toggle.getAttribute('aria-expanded')).toBe('false');
+ expect(field.querySelector('h3')?.getAttribute('hidden')).toBe('');
+ expect([...field.querySelectorAll('p')].filter(p=>p.hasAttribute('hidden')).map(p=>p.textContent)).toEqual(['正文 A','子正文']);
+ expect(field.querySelectorAll('h2')[1].hasAttribute('hidden')).toBe(false);
+ expect(editor.getJSON()).toEqual(before);expect(change).not.toHaveBeenCalled();expect(save).not.toHaveBeenCalled();
+ expect(editor.can().undo()).toBe(false);
+ fireEvent.click(screen.getByRole('button',{name:'展开“标题 A”章节'}));
+ expect(field.querySelector('[hidden]')).toBeNull();expect(change).not.toHaveBeenCalled();
+});
+it('keeps child folds when reopening a parent and reveals a programmatic selection',async()=>{
+ const {editor,field,change}=await setup('## 标题 A\n\n父正文\n\n### 子标题\n\n子正文\n\n## 标题 B\n\n其他正文');
+ fireEvent.click(await screen.findByRole('button',{name:'收起“子标题”章节'}));
+ fireEvent.click(screen.getByRole('button',{name:'收起“标题 A”章节'}));
+ fireEvent.click(screen.getByRole('button',{name:'展开“标题 A”章节'}));
+ expect(screen.getByRole('button',{name:'展开“子标题”章节'}).getAttribute('aria-expanded')).toBe('false');
+ expect([...field.querySelectorAll('[hidden]')].map(p=>p.textContent)).toEqual(['子正文']);
+ fireEvent.click(screen.getByRole('button',{name:'收起“标题 A”章节'}));
+ let destination=0;editor.state.doc.descendants((node,pos)=>{if(node.type.name==='paragraph'&&node.textContent==='子正文')destination=pos+1;});
+ act(()=>{editor.commands.setTextSelection(destination);});
+ expect(field.querySelector('[hidden]')).toBeNull();
+ expect(screen.getByRole('button',{name:'收起“标题 A”章节'})).toBeTruthy();
+ expect(change).not.toHaveBeenCalled();
+});
+it.each(['Delete','Backspace'])('reveals folded content before %s across its boundary',async key=>{
+ const {editor,field,change}=await setup('## 标题 A\n\n不能误删\n\n## 标题 B\n\n其他正文');
+ let nextHeading=0;editor.state.doc.descendants((node,pos)=>{if(node.type.name==='heading'&&node.textContent==='标题 B')nextHeading=pos+1;});
+ act(()=>{editor.commands.setTextSelection(key==='Delete'?editor.state.doc.firstChild!.nodeSize-1:nextHeading);});
+ fireEvent.click(await screen.findByRole('button',{name:'收起“标题 A”章节'}));
+ const before=editor.getJSON();
+ fireEvent.keyDown(field,{key});
+ expect(screen.getByRole('button',{name:'收起“标题 A”章节'})).toBeTruthy();
+ expect(editor.getJSON()).toEqual(before);expect(change).not.toHaveBeenCalled();
+});
+it('keeps a folded heading closed while opening its block menu',async()=>{
+ const {editor,field,change}=await setup('## 标题\n\n正文');
+ fireEvent.click(await screen.findByRole('button',{name:'收起“标题”章节'}));
+ act(()=>{editor.commands.setNodeSelection(0);});
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ expect(screen.getByRole('button',{name:'展开“标题”章节'})).toBeTruthy();
+ expect(field.querySelector('p')?.hasAttribute('hidden')).toBe(true);
+ expect(change).not.toHaveBeenCalled();
+});
+it('maps folds after preceding edits and refreshes heading labels',async()=>{
+ const {editor,field}=await setup('开头\n\n## 标题\n\n正文');
+ fireEvent.click(await screen.findByRole('button',{name:'收起“标题”章节'}));
+ act(()=>{editor.commands.insertContentAt(1,'新');});
+ const toggle=await screen.findByRole('button',{name:'展开“标题”章节'});
+ expect(field.querySelector('p[hidden]')?.textContent).toBe('正文');
+ let heading=0;editor.state.doc.descendants((node,pos)=>{if(node.type.name==='heading')heading=pos;});
+ act(()=>{editor.commands.insertContentAt(heading+1,'新');});
+ expect(await screen.findByRole('button',{name:'展开“新标题”章节'})).toBeTruthy();
+ expect(toggle.getAttribute('aria-expanded')).toBe('false');
+});
+it('supports keyboard folding in a read-only document without writes and guards composition',async()=>{
+ const {editor,field,change}=await setup('## 标题\n\n正文',{disabled:true});
+ const toggle=await screen.findByRole('button',{name:'收起“标题”章节'}),user=userEvent.setup();
+ toggle.focus();await user.keyboard('{Enter}');
+ expect(toggle.getAttribute('aria-expanded')).toBe('false');expect(document.activeElement).toBe(toggle);
+ await user.keyboard(' ');
+ expect(toggle.getAttribute('aria-expanded')).toBe('true');expect(document.activeElement).toBe(toggle);
+ Object.defineProperty(editor.view,'composing',{configurable:true,value:true});
+ fireEvent.click(toggle);expect(toggle.getAttribute('aria-expanded')).toBe('true');
+ Object.defineProperty(editor.view,'composing',{configurable:true,value:false});
+ expect(field.querySelector('[hidden]')).toBeNull();expect(change).not.toHaveBeenCalled();
+});
+it('resets folds when replacing the note from outside the editor',async()=>{
+ const change=vi.fn();
+ const props={disabled:false,notePath:'notes/a.md',onChange:change,onSave:vi.fn(),onError:vi.fn()};
+ const {rerender}=render(<RichMarkdownEditor {...props} value={'## 标题\n\n正文'} />);
+ const field=await screen.findByRole('textbox',{name:'笔记内容'});
+ fireEvent.click(await screen.findByRole('button',{name:'收起“标题”章节'}));
+ rerender(<RichMarkdownEditor {...props} notePath="notes/b.md" value={'## 新标题\n\n新正文'} />);
+ expect(field.querySelector('[hidden]')).toBeNull();
+ expect(await screen.findByRole('button',{name:'收起“新标题”章节'})).toBeTruthy();
+ expect(change).not.toHaveBeenCalled();
+});
 it('guards command-enter during composition',async()=>{
  const {field,save}=await setup('正文');
  fireEvent.keyDown(field,{key:'Enter',metaKey:true,isComposing:true});expect(save).not.toHaveBeenCalled();
@@ -217,7 +298,7 @@ it('moves peer sections from the heading menu with one-step undo and redo',async
  expect(screen.getByRole('button',{name:'内容块操作'}).title).toContain('Option/Alt');
  fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
  expect(screen.getByRole('status').textContent).toContain('章节移动包含 4 个块');
- expect((screen.getByRole('menuitem',{name:'上移章节'}) as HTMLButtonElement).disabled).toBe(true);
+ expect(screen.getByRole('menuitem',{name:'上移章节'}).getAttribute('aria-disabled')).toBe('true');
  fireEvent.click(screen.getByRole('menuitem',{name:'下移章节'}));
  expect(change).toHaveBeenLastCalledWith(moved);
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith(original);
@@ -250,6 +331,32 @@ it('inserts below from the block menu without replacing the selected content',as
  fireEvent.click(screen.getByRole('menuitem',{name:'一级标题'}));
  expect(editor.state.doc.child(0).textContent).toBe('first');expect(editor.state.doc.child(1).type.name).toBe('heading');expect(editor.state.doc.child(2).textContent).toBe('second');
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('first\n\nsecond');
+});
+it('keeps the block menu focused on block operations without an advanced format entry',async()=>{
+ await setup('正文',{autoFocus:false});
+ const user=userEvent.setup();
+ await user.click(screen.getByRole('button',{name:'内容块操作'}));
+ expect(screen.queryByRole('menuitem',{name:'块属性与更多操作'})).toBeNull();
+ expect(screen.queryByRole('button',{name:'更多格式'})).toBeNull();
+ expect(screen.getAllByRole('menuitem').map(item=>item.textContent)).toEqual(['转换为','在下方插入','复制','上移','下移','删除']);
+});
+it.each(['mouse','keyboard'])('keeps focus inside a property dialog opened by %s and cancels without writing',async activation=>{
+ const {editor,field,change}=await setup('正文',{autoFocus:false});
+ const user=userEvent.setup();
+ act(()=>{editor.commands.setTextSelection({from:1,to:3});});
+ await user.click(screen.getByRole('button',{name:'更多格式'}));
+ const editLink=await screen.findByRole('button',{name:'编辑链接'});
+ if(activation==='mouse')await user.click(editLink);else{editLink.focus();await user.keyboard('{Enter}');}
+ const dialog=await screen.findByRole('dialog',{name:'编辑链接'});
+ await waitFor(()=>expect(document.querySelector('.rich-format-menu')).toBeNull());
+ await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
+ expect(dialog.contains(document.activeElement)).toBe(true);
+ await user.keyboard('{Tab}{Shift>}{Tab}{/Shift}');
+ expect(dialog.contains(document.activeElement)).toBe(true);
+ await user.keyboard('{Escape}');
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑链接'})).toBeNull());
+ await waitFor(()=>expect(document.activeElement).toBe(field));
+ expect(change).not.toHaveBeenCalled();
 });
 it('converts a code block back to text and deletes a block with undo',async()=>{
  const {editor,field,change}=await setup('正文',{autoFocus:false});const user=userEvent.setup();
@@ -341,50 +448,28 @@ it('keeps cancelled slash commands as text and supports keyboard insertion',asyn
 it('creates and removes a link through properties without losing selected text',async()=>{
  const {editor,field,change}=await setup('正文');
  act(()=>{editor.commands.setTextSelection({from:1,to:3});});
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'编辑链接'}));
+ fireEvent.click(screen.getByRole('button',{name:'更多格式'}));fireEvent.click(screen.getByRole('button',{name:'编辑链接'}));
  fireEvent.change(screen.getByRole('textbox',{name:'属性内容'}),{target:{value:'https://example.com'}});
  fireEvent.click(screen.getByRole('button',{name:'应用属性'}));
  expect(field.querySelector('a')?.getAttribute('href')).toContain('https://example.com');
  expect(change).toHaveBeenLastCalledWith('[正文](https://example.com)');
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'移除链接'}));
+ act(()=>{editor.commands.setTextSelection({from:1,to:3});});
+ fireEvent.click(screen.getByRole('button',{name:'更多格式'}));fireEvent.click(screen.getByRole('button',{name:'移除链接'}));
  expect(change).toHaveBeenLastCalledWith('正文');
 });
-it('inserts a unique footnote with editable paragraphs and undoes both pieces together',async()=>{
- const {editor,change}=await setup('正文');
- act(()=>{editor.commands.setTextSelection(3);});
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'插入脚注'}));
- expect(editor.state.doc.lastChild?.type.name).toBe('footnoteDefinition');
- expect(editor.state.selection.$from.parent.type.name).toBe('paragraph');
- act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('正文');
-});
-it('changes a protected source block through an explicit editor and supports undo',async()=>{
- const {editor,change}=await setup('<!-- original -->');
- act(()=>{editor.commands.setNodeSelection(0);});
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'编辑原格式内容'}));
- fireEvent.change(screen.getByRole('textbox',{name:'属性内容'}),{target:{value:'<!-- revised -->'}});fireEvent.click(screen.getByRole('button',{name:'应用属性'}));
- expect(change).toHaveBeenLastCalledWith('<!-- revised -->');act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('<!-- original -->');
-});
-it('renames a footnote and every reference in one undoable change',async()=>{
- const {editor,change}=await setup('正文[^a]\n\n[^a]: first\n\n    second');
- let position=0;editor.state.doc.descendants((node,pos)=>{if(node.type.name==='footnoteReference')position=pos;});
- act(()=>{editor.commands.setNodeSelection(position);});
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'脚注编号'}));
- fireEvent.change(screen.getByRole('textbox',{name:'属性内容'}),{target:{value:'2'}});fireEvent.click(screen.getByRole('button',{name:'应用属性'}));
- expect(change.mock.lastCall?.[0]).toContain('正文[^2]');expect(change.mock.lastCall?.[0]).toContain('[^2]: first');
- act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('正文[^a]\n\n[^a]: first\n\n    second');
-});
-it('edits image alt text, replaces its file and adds an editable caption',async()=>{
- const {editor,change}=await setup('正文',{onImage:insert=>insert('![new](../assets/new.png)')});
- act(()=>{editor.commands.setContent('![old](../assets/old.png)',{contentType:'markdown'});editor.commands.setNodeSelection(0);});
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'图片替代文字'}));
- fireEvent.change(screen.getByRole('textbox',{name:'属性内容'}),{target:{value:'描述'}});fireEvent.click(screen.getByRole('button',{name:'应用属性'}));
- expect(change).toHaveBeenLastCalledWith('![描述](../assets/old.png)');
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'替换图片'}));
- expect(change).toHaveBeenLastCalledWith('![描述](../assets/new.png)');
- act(()=>{editor.commands.setNodeSelection(0);});
- fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'Escape'});fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'块属性与更多操作'}));fireEvent.click(screen.getByRole('button',{name:'添加图片说明'}));
- expect(editor.state.doc.firstChild?.type.name).toBe('figure');expect(change.mock.lastCall?.[0]).toContain('<figcaption>图片说明</figcaption>');
- act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('![描述](../assets/new.png)');
+it.each([
+ '<!-- original -->',
+ '正文[^a]\n\n[^a]: first\n\n    second',
+ '![描述](../assets/old.png)',
+ '<details><summary>展开内容</summary><p>保留正文</p></details>',
+ '<dl><dt>术语</dt><dd><p>释义</p></dd></dl>',
+])('preserves existing advanced Markdown after removing its block-menu controls: %s',async content=>{
+ const source=`# 标题\n\n${content}\n\n末尾`;
+ const {editor,change}=await setup(source);
+ expect(change).not.toHaveBeenCalled();
+ act(()=>{editor.commands.insertContentAt(editor.state.doc.content.size-1,'新');});
+ expect(change).toHaveBeenLastCalledWith(`${source}新`);
+ act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith(source);
 });
 it('suggests existing tags and confirms them without inserting a paragraph', async () => {
  const { request } = await import('./bridge');
@@ -402,12 +487,13 @@ it('keeps a leading hashtag as tag syntax rather than a Markdown heading', async
  act(() => { editor.commands.insertContent({ type: 'text', text: '#工作/项目 ' }); });
  expect(change).toHaveBeenLastCalledWith('#工作/项目 ');
 });
-it('only exposes advanced formatting through a text selection or block menu', async () => {
+it('only exposes advanced formatting through a text selection', async () => {
  const { editor, field } = await setup('正文');
  expect(screen.queryByRole('button', { name: '格式与属性' })).toBeNull();
  expect(screen.queryByRole('button', { name: '更多格式' })).toBeNull();
  act(() => { editor.commands.setTextSelection({ from: 1, to: 3 }); });
  fireEvent.click(screen.getByRole('button', { name: '更多格式' }));
+ expect(screen.getByRole('dialog',{name:'更多格式'})).toBeTruthy();
  fireEvent.click(screen.getByRole('button', { name: '高亮' }));
  expect(field.querySelector('mark')?.textContent).toBe('正文');
 });

@@ -6,7 +6,7 @@
 
 ## 实现
 
-`apps/ui/src/components/ui` 直接移植快照源码，只将上游导入路径改为本项目路径。全部使用官方 Radix API (`asChild`、`data-state`)，已移除 Base UI 组件层和依赖。Sidebar 的产品适配限于受控移动状态、跨断点关闭、输入时不拦截编辑快捷键、关闭侧栏 inert、中文无障碍文案及选中项 aria-current；不另设菜单尺寸。
+此目录保留上游原始快照及许可，供视觉溯源，不参与构建，也不能直接覆盖当前组件。2026-10-09 已将 `apps/ui/src/components/ui` 和编辑器浮层统一迁移到 Base UI；使用原生 `render`、`Positioner/Popup`、`initialFocus/finalFocus` API，源码、依赖和产物均不再使用 Radix。生成配置为 `base-nova`。Sidebar 保留受控移动状态、跨断点关闭、输入时不拦截编辑快捷键、关闭侧栏 inert、中文无障碍文案及选中项 aria-current。当前迁移与验收见 [BASE_UI_MIGRATION.md](../BASE_UI_MIGRATION.md)。
 
 AppSidebar 将官方团队菜单映射为笔记库、主要导航映射为笔记/搜索/草稿、收藏与工作区映射为置顶标签与多级标签。Header 使用 SidebarTrigger、Separator、Breadcrumb 和 NavActions。内容保留官方 768px 最大宽度、40px 上下留白及 muted/50 内容块。设置使用 Card/Select/Switch，编辑器使用 Dialog/Input/Button，Markdown 内核与草稿序列化不变。
 

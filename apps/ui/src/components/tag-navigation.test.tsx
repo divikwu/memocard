@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render as renderUI, screen, within } from "@testing-library/react";
+import { cleanup, render as renderUI, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
@@ -33,7 +33,7 @@ it("searches full paths and saves icons without changing navigation", async () =
   expect(props.onSelect).toHaveBeenLastCalledWith("工作/设计");
   await user.click(screen.getByRole("button", { name: "标签操作 工作/设计" }));
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
-  expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "标签名称" }));
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "标签名称" })));
   expect(screen.getByRole("button", { name: "选择 Emoji" }).textContent).toBe("");
   expect(screen.queryByRole("button", { name: "使用图标 🎨" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "选择 Emoji" }));

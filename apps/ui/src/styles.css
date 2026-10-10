@@ -13,6 +13,7 @@
 @theme inline {
   --font-heading: var(--app-font-heading);
   --font-sans: var(--app-font-body);
+  --shadow-overlay: var(--overlay-shadow);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -98,6 +99,7 @@
   --card-foreground: var(--neutral-950);
   --popover: #ffffff;
   --popover-foreground: var(--neutral-950);
+  --overlay-shadow: 0 20px 24px 0 rgb(25 25 25 / 5%), 0 5px 8px 0 rgb(25 25 25 / 2.7%), 0 0 0 1px rgb(42 28 0 / 7%);
   --primary: var(--accent-500);
   --primary-foreground: #ffffff;
   --emphasis: var(--accent-800);
@@ -311,6 +313,7 @@
 }
 
 .dark {
+  --overlay-shadow: 0 20px 24px 0 rgb(0 0 0 / 24%), 0 5px 8px 0 rgb(0 0 0 / 16%), 0 0 0 1px rgb(255 255 255 / 10%);
   --palette-mono-swatch: var(--color-neutral-50);
   --background: var(--neutral-950);
   --foreground: var(--neutral-50);

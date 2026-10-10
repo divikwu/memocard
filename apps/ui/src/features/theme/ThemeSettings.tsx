@@ -34,7 +34,7 @@ function FontSelect({ label, value, onChange }: { label: string; value: FontChoi
         <SelectTrigger aria-label={label} className="w-full shrink-0 shadow-none sm:w-40">
           <SelectValue style={{ fontFamily: FONT_FAMILIES[value] }}>{fontLabels[value]}</SelectValue>
         </SelectTrigger>
-        <SelectContent align="end" position="popper" className="max-h-80">
+        <SelectContent align="end" className="max-h-80">
           {FONT_GROUPS.map(group => (
             <SelectGroup key={group.label}>
               <SelectLabel>{group.label}</SelectLabel>
@@ -71,7 +71,7 @@ export function ThemeSettings() {
             <SelectTrigger aria-label="显示模式" className="w-full shrink-0 shadow-none sm:w-40">
               <SelectValue>{modes.find(mode => mode.value === theme.theme)?.label}</SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" position="popper">
+            <SelectContent align="end">
               <SelectGroup>
                 {modes.map(({ value, label }) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
               </SelectGroup>
@@ -87,7 +87,7 @@ export function ThemeSettings() {
                 {paletteLabels[theme.palette]}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" position="popper">
+            <SelectContent align="end">
               <SelectGroup>
                 {PALETTE_VALUES.map(value => (
                   <SelectItem key={value} value={value} className="capitalize">
@@ -100,7 +100,7 @@ export function ThemeSettings() {
           </Select>
         </div>
         <Collapsible>
-          <CollapsibleTrigger asChild><Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0 hover:bg-transparent"><span>高级外观</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[state=open]:rotate-180" /></Button></CollapsibleTrigger>
+          <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0 hover:bg-transparent"><span>高级外观</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
           <CollapsibleContent className="divide-y divide-border/60">
         <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
           <p className="min-w-0 text-sm">中性色</p>
@@ -108,7 +108,7 @@ export function ThemeSettings() {
             <SelectTrigger aria-label="中性色" className="w-full shrink-0 shadow-none sm:w-40">
               <SelectValue className="capitalize">{neutralLabels[theme.neutralPalette]}</SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" position="popper">
+            <SelectContent align="end">
               <SelectGroup>
                 {NEUTRAL_VALUES.map(value => <SelectItem key={value} value={value} className="capitalize">{neutralLabels[value]}</SelectItem>)}
               </SelectGroup>
@@ -123,7 +123,7 @@ export function ThemeSettings() {
             <SelectTrigger aria-label="圆角" className="w-full shrink-0 shadow-none sm:w-40">
               <SelectValue>{radius.label}</SelectValue>
             </SelectTrigger>
-            <SelectContent align="end" position="popper">
+            <SelectContent align="end">
               <SelectGroup>
                 {radii.map(({ value, label }) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
               </SelectGroup>
