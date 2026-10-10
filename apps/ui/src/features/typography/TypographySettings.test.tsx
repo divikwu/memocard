@@ -19,12 +19,17 @@ it('validates persisted choices and rejects malformed values', () => {
   expect(parseTypography('null')).toEqual(defaults);
   expect(parseTypography('{"size":"500","body":"url(remote)","leading":"1.9"}')).toEqual({ ...defaults, leading: '1.9' });
 });
-it('applies content styles, persists choices, remounts and restores defaults independently of interface styles', async () => {
+it.each([false, true])('applies, persists and restores content styles independently of interface styles (delayed frame: %s)', async delayedFrame => {
   const user = userEvent.setup();
+  if (delayedFrame) {
+    // Base UI opens pointer-triggered selects on the next animation frame.
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => window.setTimeout(() => callback(performance.now()), 100));
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => window.clearTimeout(id));
+  }
   const mount = () => render(<TypographyProvider><TypographySettings /></TypographyProvider>);
   const first = mount();
   await user.click(screen.getByRole('combobox', { name: '字号' }));
-  await user.click(screen.getByRole('option', { name: '18px' }));
+  await user.click(await screen.findByRole('option', { name: '18px' }));
   expect(document.documentElement.style.getPropertyValue('--note-size')).toBe('18px');
   expect(document.documentElement.style.getPropertyValue('--font-sans')).toBe('');
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).size).toBe('18');
