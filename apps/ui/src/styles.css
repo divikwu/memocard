@@ -402,13 +402,16 @@
 
 :root {
   --note-body-font: "Noto Sans Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --note-heading-font: "Roboto Slab Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --note-heading-font: var(--note-body-font);
   --note-mono-font: "Geist Mono Variable", ui-monospace, monospace;
 }
 .typeset-content { min-width: 0; }
 .typeset-summary { --note-size: var(--note-summary-size, 15px); --note-flow: .75em; }
 .note-card-preview { --note-size: 13px; --note-leading: 1.55; --note-flow: .4em; opacity: .82; }
+.note-card-preview:has(img) { border-radius: 0 0 8px 8px; }
 .note-card-preview .markdown { font-family: var(--note-body-font); }
+.note-card-preview .markdown:not(:has(img)) { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.note-card-preview .markdown img { border-radius: 8px; }
 .note-card-preview .markdown :is(h1, h2, h3, h4, h5, h6) { color: inherit; font-family: inherit; font-size: 1em; font-weight: 500; line-height: inherit; }
 .note-card-preview .markdown :is(strong, b) { color: inherit; font-weight: 500; }
 .note-card-preview .markdown a { color: inherit; text-decoration-color: color-mix(in oklch, currentColor 35%, transparent); }

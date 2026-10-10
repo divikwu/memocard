@@ -67,6 +67,12 @@
 			"path" = "Resources/Web";
 			"sourceTree" = "<group>";
 		};
+		"BD12731D7BC9B843D8523E65" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.assetcatalog";
+			"path" = "Resources/Assets.xcassets";
+			"sourceTree" = "<group>";
+		};
 		"085827B649F7606E862BCEEB" = {
 			"isa" = "XCLocalSwiftPackageReference";
 			"relativePath" = "../../packages/native-core";
@@ -129,11 +135,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "2975104784A401E3880E2215";
 		};
+		"90B97AEAE2E8BDAF21BA4C3F" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "BD12731D7BC9B843D8523E65";
+		};
 		"B5C102CF301C99FDB826C94A" = {
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"D2FC074D6A18E03A891DEC43",
+				"90B97AEAE2E8BDAF21BA4C3F",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -164,6 +175,7 @@
 					"@executable_path/../Frameworks",
 				);
 				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIconMac";
 				"CODE_SIGN_ENTITLEMENTS" = "Config/Mac.entitlements";
 				"COMBINE_HIDPI_IMAGES" = "YES";
 			};
@@ -194,6 +206,7 @@
 					"@executable_path/../Frameworks",
 				);
 				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIconMac";
 				"CODE_SIGN_ENTITLEMENTS" = "Config/Mac.entitlements";
 				"COMBINE_HIDPI_IMAGES" = "YES";
 			};
@@ -281,11 +294,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "2975104784A401E3880E2215";
 		};
+		"243DE09FDD89A225B9B87F52" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "BD12731D7BC9B843D8523E65";
+		};
 		"7825C6DB9F37C51029EF6E26" = {
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"AE07E347987BCCD99115AD12",
+				"243DE09FDD89A225B9B87F52",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -316,6 +334,7 @@
 					"@executable_path/Frameworks",
 				);
 				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"TARGETED_DEVICE_FAMILY" = "1,2";
 				"SUPPORTS_MACCATALYST" = "NO";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
@@ -348,6 +367,7 @@
 					"@executable_path/Frameworks",
 				);
 				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIcon";
 				"TARGETED_DEVICE_FAMILY" = "1,2";
 				"SUPPORTS_MACCATALYST" = "NO";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation" = "YES";
@@ -437,11 +457,16 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "2975104784A401E3880E2215";
 		};
+		"79B80D08207E119F4FBBF6FF" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "BD12731D7BC9B843D8523E65";
+		};
 		"54C1932B5844DCF651B357A4" = {
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"71839B26FDD8A4F7760C27FD",
+				"79B80D08207E119F4FBBF6FF",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -472,6 +497,7 @@
 					"@executable_path/../Frameworks",
 				);
 				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIconMac";
 				"CODE_SIGN_ENTITLEMENTS" = "Config/Service.entitlements";
 				"COMBINE_HIDPI_IMAGES" = "YES";
 			};
@@ -502,6 +528,7 @@
 					"@executable_path/../Frameworks",
 				);
 				"SWIFT_EMIT_LOC_STRINGS" = "YES";
+				"ASSETCATALOG_COMPILER_APPICON_NAME" = "AppIconMac";
 				"CODE_SIGN_ENTITLEMENTS" = "Config/Service.entitlements";
 				"COMBINE_HIDPI_IMAGES" = "YES";
 			};
@@ -553,6 +580,7 @@
 				"CAF85B0888D78F1F83771A07",
 				"A2AA66E733A2082315B9FF64",
 				"2975104784A401E3880E2215",
+				"BD12731D7BC9B843D8523E65",
 				"4EDC8BFAFC6BD936B849F38C",
 			);
 		};
