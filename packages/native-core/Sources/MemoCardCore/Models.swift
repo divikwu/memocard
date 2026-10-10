@@ -87,6 +87,7 @@ struct Query: Codable {
     var folder: String?
     var query: String?
     var tags: [String]?
+    var quickFilter: NoteQuickFilter?
     var from: String?
     var to: String?
     var limit: Int?

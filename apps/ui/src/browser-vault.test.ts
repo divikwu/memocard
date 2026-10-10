@@ -432,6 +432,29 @@ describe("independent browser vault", () => {
     await expect(call(h.core, "queryNotes", { limit: 1, cursor: first.nextCursor })).rejects.toMatchObject({ code: "STALE_CURSOR" });
   });
 
+  it("filters the whole vault before paging, keeps global counts and binds cursors to the quick filter", async () => {
+    const h = await open();
+    (await h.notes.getFileHandle(`${noteId}.md`)).bytes = bytes(source(noteId, "#工作 ![照片](photo.png) https://example.com"));
+    h.notes.children.set("second.md", new TestFile("second.md", source(secondId, "![照片](https://example.com/photo.png)")));
+    const codeId = createId();
+    h.notes.children.set("code.md", new TestFile("code.md", source(codeId, "```md\n![代码](photo.png) https://example.com\n```")));
+    const first = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", limit: 1 });
+    expect(first.notes).toHaveLength(1);
+    expect(first.filterCounts).toEqual({ untagged: 2, images: 2, links: 1 });
+    expect(first.nextCursor).toBeTruthy();
+    const next = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", limit: 1, cursor: first.nextCursor });
+    expect(next.notes).toHaveLength(1);
+    expect(next.notes[0].id).not.toBe(first.notes[0].id);
+    expect(next.nextCursor).toBeNull();
+    expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "links", query: "example", tags: ["工作"] })).notes.map(note => note.id)).toEqual([noteId]);
+    expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "untagged" })).notes.map(note => note.id).sort()).toEqual([secondId, codeId].sort());
+    await expect(call(h.core, "queryNotes", { quickFilter: "links", limit: 1, cursor: first.nextCursor })).rejects.toMatchObject({ code: "CURSOR_QUERY_MISMATCH" });
+    await expect(call(h.core, "queryNotes", { quickFilter: "voice" })).rejects.toMatchObject({ code: "INVALID_PARAMS" });
+    const current = await call<Note>(h.core, "getNote", { id: noteId });
+    await call(h.core, "saveNote", save(current, "#工作 移除图片和链接"));
+    expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "links" })).filterCounts).toEqual({ untagged: 2, images: 1, links: 0 });
+  });
+
   it("invalidates pagination when switching to an identical restored folder with the same vaultId", async () => {
     const h = await open();
     h.notes.children.set("second.md", new TestFile("second.md", source(secondId)));

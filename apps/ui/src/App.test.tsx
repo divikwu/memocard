@@ -358,7 +358,7 @@ describe("note workspace", () => {
       expect(screen.queryByRole("button", { name: /生活 1/ })).toBeNull();
     }
     fireEvent.click(screen.getByRole("button", { name: "所有笔记" }));
-    expect(screen.queryByText("搜索：旧库关键词") !== null).toBe(cancelled);
+    await waitFor(() => expect((screen.getByRole("textbox", { name: "搜索当前视图笔记" }) as HTMLInputElement).value).toBe(cancelled ? "旧库关键词" : ""));
     expect(await screen.findByText(cancelled ? note.body : otherNote.body)).toBeTruthy();
   });
 

@@ -1,12 +1,12 @@
 import { renameTag, renamedTag } from "./rename-tag";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown, ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { NavActions } from "@/components/nav-actions";
 import { AppSidebar } from "@/components/app-sidebar";
+import { noteFilterEmptyTitles, noteFilterLabels } from "./note-filter-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { Note, NotePage, VaultStatus } from "@memocard/contracts";
+import type { Note, NoteFilterCounts, NotePage, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
 import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
 import type { EditorHandle } from "./Editor";
 import { createId } from "./uuid";
@@ -27,7 +27,7 @@ const getView = (): View => window.location.hash === "#/settings" ? "settings" :
 const bridgeErrorCode = (error: unknown): string | null => typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
 const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error === "object" && error !== null && "retryable" in error && typeof error.retryable === "boolean" ? error.retryable : null;
 const Editor = lazy(() => import("./Editor").then((module) => ({ default: module.Editor })));
-const NotePreview = lazy(() => import("./NotePreview").then((module) => ({ default: module.NotePreview })));
+const NoteCollection = lazy(() => import("./components/note-collection").then((module) => ({ default: module.NoteCollection })));
 const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
 const Switch = lazy(() => import("@/components/ui/switch").then(module => ({ default: module.Switch })));
 
@@ -58,6 +58,8 @@ export function App() {
   const [folders, setFolders] = useState<string[]>([]);
   const [registeredVaults, setRegisteredVaults] = useState<RegisteredVault[]>([]);
   const [tag, setTag] = useState<string | null>(null);
+  const [quickFilter, setQuickFilter] = useState<NoteQuickFilter | null>(null);
+  const [filterCounts, setFilterCounts] = useState<NoteFilterCounts>();
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(isConnectedClient);
   const [webConnected, setWebConnected] = useState(false);
@@ -114,22 +116,23 @@ export function App() {
       const vaultResult = allowed.has("listVaults") ? await request<{ vaults: RegisteredVault[] }>("listVaults") : { vaults: [] };
       if (current !== generation.current) return;
       setRegisteredVaults(vaultResult.vaults);
-      if (!nextStatus.connected) { setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null); return; }
+      if (!nextStatus.connected) { setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null); setFilterCounts(undefined); return; }
       // Poll connection health without collapsing the pages the reader has loaded.
       if (background && hasLoadedMore.current) return;
       const recovered = allowed.has("getDrafts") ? await request<{ drafts: Draft[] }>("getDrafts") : { drafts: [] };
       const [page, tagResult, folderResult] = await Promise.all([
-        allowed.has("queryNotes") ? request<NotePage>("queryNotes", { query: resetFilters ? "" : debouncedQuery, tags: !resetFilters && tag ? [tag] : [], limit: 30 }) : Promise.resolve(null),
+        allowed.has("queryNotes") ? request<NotePage>("queryNotes", { query: resetFilters ? "" : debouncedQuery, tags: !resetFilters && tag ? [tag] : [], ...(quickFilter && !resetFilters ? { quickFilter } : {}), limit: 30 }) : Promise.resolve(null),
         allowed.has("listTags") ? request<{ tags: TagCount[] }>("listTags") : Promise.resolve({ tags: [] }),
         allowed.has("listFolders") ? request<{ folders: string[] }>("listFolders") : Promise.resolve({ folders: [] }),
       ]);
       if (current !== generation.current) return;
       setNotes(page?.notes ?? []); setCursor(page?.nextCursor ?? null);
+      setFilterCounts(page?.filterCounts);
       setDrafts(recovered.drafts.filter(draft => draft.baseHash || draft.title !== undefined || draft.body.trim())); setTags(tagResult.tags); setFolders(folderResult.folders);
       hasLoadedMore.current = false;
     } catch (cause) { if (current === generation.current) { setError(cause); setWebConnected(false); connectionLost.current = true; } }
     finally { refreshCount.current--; if (current === generation.current) setLoading(false); }
-  }, [debouncedQuery, tag]);
+  }, [debouncedQuery, tag, quickFilter]);
 
   const invalidateRequests = useCallback(() => { generation.current++; }, []);
   useEffect(() => { void refresh(); return invalidateRequests; }, [refresh, invalidateRequests]);
@@ -168,7 +171,7 @@ export function App() {
         reconnectVault(result.reconnectUrl);
         return;
       }
-      setQuery(""); setDebouncedQuery(""); setTag(null);
+      setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
       setRecoveryDismissed(false); setRecoveryOpen(false);
       setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null);
       setPendingOpenNote(null); openingLink.current = null;
@@ -187,6 +190,8 @@ export function App() {
     try {
       const result = await request<SelectVaultResult>("activateVault", { vaultId });
       if ("reconnectUrl" in result) { reconnectVault(result.reconnectUrl); return; }
+      setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
+      hasLoadedMore.current = false;
       await refresh(false, true);
     } catch (cause) { setError(cause); }
     finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
@@ -274,6 +279,7 @@ export function App() {
     window.history.replaceState(null, '', '#/notes');
     setView('notes');
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = returnScroll.current; if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true }); });
+    if (quickFilter) hasLoadedMore.current = false;
     void refresh(true);
     if (pendingOpenNote) {
       const id = pendingOpenNote;
@@ -288,7 +294,7 @@ export function App() {
     setPaging(true);
     const current = generation.current;
     try {
-      const page = await request<NotePage>("queryNotes", { query: debouncedQuery, tags: tag ? [tag] : [], limit: 30, cursor });
+      const page = await request<NotePage>("queryNotes", { query: debouncedQuery, tags: tag ? [tag] : [], ...(quickFilter ? { quickFilter } : {}), limit: 30, cursor });
       if (generation.current !== current) return;
       setNotes((previous) => [...previous, ...page.notes.filter((note) => !previous.some((item) => item.id === note.id))]); setCursor(page.nextCursor);
       hasLoadedMore.current = true;
@@ -321,7 +327,7 @@ export function App() {
     : status.coverage.issues > 0 ? `${status.coverage.issues} 个文件需处理`
     : status.coverage.pending > 0 ? `${status.coverage.pending} 个文件待读取`
     : !status.coverage.complete ? "部分文件尚未就绪" : "已连接文件夹";
-  const title = editing ? (editing.title?.trim() || "新页面") : view === "settings" ? "设置" : tag ? `# ${tag}` : "所有笔记";
+  const title = editing ? (editing.title?.trim() || "新页面") : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
   const newNote = async () => {
     if (selectingVault.current || (editingRef.current && !(await leaveEditor()))) return;
     editorGeneration.current++;
@@ -339,17 +345,23 @@ export function App() {
     else showEditor({ ...draft, ...(isBrowserVault ? { vaultBinding: draft.vaultBinding ?? environment?.vaultBinding } : {}) });
   };
 
-  const navigate = async (nextView: View, nextTag: string | null = null) => {
+  const navigate = async (nextView: View, nextTag: string | null = null, nextFilter: NoteQuickFilter | null = null) => {
     if (editingRef.current && !(await leaveEditor())) return;
     setView(nextView);
-    if (nextView === "notes") { setTag(nextTag); }
+    if (nextView === "notes") {
+      if (nextTag !== tag || nextFilter !== quickFilter) {
+        generation.current++; hasLoadedMore.current = false;
+        setNotes([]); setCursor(null); setLoading(true);
+      }
+      setTag(nextTag); setQuickFilter(nextFilter);
+    }
     window.location.hash = `#/${nextView}`;
     setMenuOpen(false);
   };
 
   const searchNotes = async () => {
     if (editingRef.current && !(await leaveEditor())) return;
-    void navigate("notes", tag);
+    void navigate("notes", tag, quickFilter);
     setSearchOpen(true);
   };
 
@@ -373,7 +385,7 @@ export function App() {
   });
 
   const navigation = <AppSidebar
-    view={view} tag={tag} tags={tags} onRenameTag={async (from, to) => {
+    view={view} tag={tag} quickFilter={quickFilter} filterCounts={filterCounts} tags={tags} onRenameTag={async (from, to) => {
       if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
       try {
         await renameTag(from, to, status.vaultId);
@@ -408,7 +420,7 @@ export function App() {
       </header>
       <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", editing ? "note-page-scroll" : view === "notes" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
         <div className={cn("mx-auto w-full space-y-4", editing ? "note-page-width" : view === "notes" ? "max-w-none py-10" : "max-w-3xl py-10")}>
-          <div className={editing || view === "settings" ? "sr-only" : "min-w-0 pb-2"}>
+          <div className={editing || view === "settings" ? "sr-only" : "min-w-0 px-2 pb-2"}>
             <h1 className="truncate text-[32px] font-bold leading-[1.2] tracking-tight">{title}</h1>
           </div>
           {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请完成文件夹选择及浏览器访问授权，随后读取笔记库。首次读取可能需要一些时间。</AlertDescription></Alert>}
@@ -460,10 +472,6 @@ export function App() {
               <p className="text-pretty text-sm leading-6 text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}
           </div> : <>
-            {view === "notes" && status?.connected && <div className="space-y-3">
-              {query && <div className="flex items-center gap-2 text-sm"><span>搜索：{query}</span><Button variant="ghost" size="icon" className="size-6" onClick={() => setQuery("")} aria-label="清空搜索"><X className="size-3" /></Button></div>}
-              {tag && <div className="flex items-center gap-2 text-sm"><Badge variant="secondary" className="h-5 gap-1 bg-sky-50 py-0 text-sky-700">#{tag}<Button variant="ghost" size="icon" className="-mr-1 size-5" onClick={() => setTag(null)} aria-label="清除标签筛选"><X className="size-3" /></Button></Badge><span className="text-xs text-muted-foreground">标签筛选</span></div>}
-            </div>}
             {status?.connected && unfiledRecovery.length > 0 && !recoveryDismissed && <Alert>
               <CircleAlert className="size-4" /><AlertTitle>发现 {unfiledRecovery.length} 条未保存内容</AlertTitle>
               <AlertDescription>这些内容尚未保存为笔记，可以继续编辑并保存。稍后处理不会删除内容。
@@ -472,7 +480,7 @@ export function App() {
             </Alert>}
             <Dialog open={recoveryOpen} onOpenChange={setRecoveryOpen}><DialogContent><DialogTitle>恢复未保存内容</DialogTitle><DialogDescription>选择要恢复的内容，继续编辑并保存。</DialogDescription><div className="max-h-80 space-y-2 overflow-auto">{unfiledRecovery.map(draft => <Button className="h-auto w-full justify-start whitespace-normal text-left" variant="ghost" key={draft.draftKey ?? draft.id} onClick={() => void resumeDraft(draft)}>{draft.title || draft.body.slice(0, 100) || "新页面"}</Button>)}</div></DialogContent></Dialog>
 
-            {loading && notes.length === 0 && !drafts.length ? <LoadingNotes /> : !status?.connected ? <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
+            {loading && !status?.connected ? <LoadingNotes /> : !status?.connected ? <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
                 <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><FolderOpen className="size-6" strokeWidth={1.5} /></span>
                 <h2 className="text-lg font-semibold">{unsupportedBrowser ? "连接 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
@@ -483,19 +491,7 @@ export function App() {
                 </div>}
                 <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" />{isBrowserVault || isNative ? "只访问你授权的文件夹" : "只访问你通过 MemoCard 本机宿主授权的文件夹"}</p>
               </CardContent>
-            </Card> : notes.length ? <div className="space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground"><span>{debouncedQuery ? `“${debouncedQuery}” 的搜索结果` : "按创建时间排列"}</span><span className="tabular-nums">已加载 {notes.length} 条{loading ? " · 更新中" : ""}</span></div>
-              <ul aria-label="笔记列表" className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4">
-                {notes.map((note) => <li key={note.id} className="min-w-0"><Card className="h-64 gap-0 overflow-hidden rounded-[16px] border border-border bg-card py-0 shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)] transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40"><CardContent className="flex h-full min-h-0 flex-col p-0">
-                  <button type="button" className="flex min-h-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={`打开 ${formatDate(note.createdAt)} 的笔记`} onClick={() => void openNote(note.id)} disabled={working || !capabilities.has("getNote")}>
-                    <div className="w-full px-4 pb-2 pt-4"><span className="block truncate text-base font-medium">{note.title?.trim() || "新页面"}</span><time className="mt-1 block text-xs text-muted-foreground/80" dateTime={note.createdAt}>{formatDate(note.createdAt)}</time></div>
-                    <div className="min-h-0 w-full flex-1 overflow-hidden px-4 pb-4"><Suspense fallback={<Skeleton className="h-full" />}><NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={setError} /></Suspense></div>
-                  </button>
-                  {note.tags.length > 0 && <div className="flex min-h-10 items-center gap-2 overflow-hidden px-4 pb-3">{note.tags.slice(0, 2).map((name) => <Badge key={name} render={<button type="button" onClick={() => navigate("notes", name)}>#{name}</button>} variant="secondary" className="h-5 bg-sky-50 px-1.5 py-0 font-normal text-sky-700 hover:text-sky-800" />)}{note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}</div>}
-                </CardContent></Card></li>)}
-              </ul>
-              {cursor && <div className="flex justify-center pt-3"><Button variant="outline" onClick={() => void loadMore()} disabled={paging || switchingVault}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
-            </div> : <EmptyState icon={query || tag ? "search" : "note"} title={query || tag ? "没有找到相关笔记" : "记下第一条笔记"} description={query || tag ? "换一个关键词，或清除标签筛选。" : "一句想法、一段发现，不必想好标题。"}>{!query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}
+            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault} canOpen={!working && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
           </>}
           </>}
         </div>

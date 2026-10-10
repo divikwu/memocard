@@ -1,0 +1,104 @@
+// @vitest-environment jsdom
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, expect, it, vi } from "vitest";
+import type { Note } from "@memocard/contracts";
+import { NoteCollection } from "./note-collection";
+
+vi.mock("../NotePreview", () => ({ NotePreview: ({ body }: { body: string }) => <p>{body}</p> }));
+const note: Note = { id: "note-1", title: "散步的想法", body: "周末散步时想到的记录", tags: ["生活"], createdAt: "2026-10-10T08:00:00Z", updatedAt: "2026-10-10T08:00:00Z", contentHash: "hash", relativePath: "notes/note-1.md", sourceUrl: "memocard://note/note-1" };
+const props = { notes: [note], query: "", onQueryChange: vi.fn(), searchPlaceholder: "搜索当前标签内容", searchDisabled: false, hasMore: true, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "10月10日 16:00" };
+
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); localStorage.removeItem("memocard:note-layout"); });
+
+it("shows titles, clickable tags and trailing time in the list and restores content in cards", async () => {
+  const user = userEvent.setup();
+  render(<NoteCollection {...props} />);
+  expect(screen.getByRole("tab", { name: "卡片布局" }).getAttribute("aria-selected")).toBe("true");
+  screen.getByRole("tab", { name: "列表布局" }).focus();
+  await user.keyboard("{Enter}");
+  expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("list");
+  expect(screen.getByRole("tab", { name: "列表布局" }).getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByText(note.title!)).toBeTruthy();
+  expect(screen.queryByText(note.body)).toBeNull();
+  const time = screen.getByText("10月10日 16:00");
+  expect(time.tagName).toBe("TIME");
+  expect(time.getAttribute("datetime")).toBe(note.createdAt);
+  expect(time.parentElement?.lastElementChild).toBe(time);
+  await user.click(screen.getByRole("button", { name: "#生活" }));
+  expect(props.onSelectTag).toHaveBeenCalledWith("生活");
+  expect(props.onOpen).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "打开 散步的想法" }));
+  expect(props.onOpen).toHaveBeenCalledWith(note.id);
+  await user.click(screen.getByRole("button", { name: "加载更多" }));
+  expect(props.onLoadMore).toHaveBeenCalledOnce();
+  await user.click(screen.getByRole("tab", { name: "卡片布局" }));
+  expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
+  expect(screen.getByText(note.body)).toBeTruthy();
+  expect(screen.getByText("10月10日 16:00")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "#生活" }));
+  expect(props.onSelectTag).toHaveBeenCalledWith("生活");
+});
+
+it("opens the existing new-note flow only when creation is available", async () => {
+  const user = userEvent.setup();
+  const view = render(<NoteCollection {...props} canCreate={false} />);
+  await user.click(screen.getByRole("button", { name: "新建" }));
+  expect(props.onNewNote).not.toHaveBeenCalled();
+  view.rerender(<NoteCollection {...props} />);
+  await user.click(screen.getByRole("button", { name: "新建" }));
+  expect(props.onNewNote).toHaveBeenCalledOnce();
+  expect(props.onOpen).not.toHaveBeenCalled();
+});
+
+it("switches layouts with arrow keys and labels the visible tab panel", async () => {
+  const user = userEvent.setup();
+  render(<NoteCollection {...props} />);
+  const cardsTab = screen.getByRole("tab", { name: "卡片布局" });
+  const listTab = screen.getByRole("tab", { name: "列表布局" });
+  cardsTab.focus();
+  await user.keyboard("{ArrowRight}");
+  expect(document.activeElement).toBe(listTab);
+  expect(listTab.getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByRole("tabpanel", { name: "列表布局" }).id).toBe(listTab.getAttribute("aria-controls"));
+  expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("list");
+  await user.keyboard("{ArrowLeft}");
+  expect(document.activeElement).toBe(cardsTab);
+  expect(screen.getByRole("tabpanel", { name: "卡片布局" }).id).toBe(cardsTab.getAttribute("aria-controls"));
+  expect(screen.getByText(note.body)).toBeTruthy();
+});
+
+it.each(["cards", "list"])("shows at most two tags and the remaining count in %s layout", layout => {
+  localStorage.setItem("memocard:note-layout", layout);
+  render(<NoteCollection {...props} notes={[{ ...note, tags: ["生活", "思考", "写作", "灵感"] }]} />);
+  expect(screen.getByRole("button", { name: "#生活" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "#思考" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "#写作" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "#灵感" })).toBeNull();
+  expect(screen.getByText("+2")).toBeTruthy();
+});
+
+it("restores the saved layout after remounting and preserves it when notes change", async () => {
+  const user = userEvent.setup();
+  const view = render(<NoteCollection {...props} />);
+  await user.click(screen.getByRole("tab", { name: "列表布局" }));
+  expect(localStorage.getItem("memocard:note-layout")).toBe("list");
+  view.rerender(<NoteCollection {...props} notes={[note, { ...note, id: "note-2", title: "第二条笔记" }]} />);
+  expect(screen.getByRole("list", { name: "笔记列表" }).children).toHaveLength(2);
+  expect(screen.getByRole("tab", { name: "列表布局" }).getAttribute("aria-selected")).toBe("true");
+  view.unmount();
+  render(<NoteCollection {...props} />);
+  expect(screen.getByRole("tab", { name: "列表布局" }).getAttribute("aria-selected")).toBe("true");
+});
+
+it("defaults to cards for invalid preferences and keeps switching available without storage", async () => {
+  localStorage.setItem("memocard:note-layout", "unknown");
+  const view = render(<NoteCollection {...props} />);
+  expect(screen.getByRole("tab", { name: "卡片布局" }).getAttribute("aria-selected")).toBe("true");
+  view.unmount();
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("Storage unavailable"); });
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage unavailable"); });
+  render(<NoteCollection {...props} />);
+  await userEvent.setup().click(screen.getByRole("tab", { name: "列表布局" }));
+  expect(screen.getByRole("tab", { name: "列表布局" }).getAttribute("aria-selected")).toBe("true");
+});
