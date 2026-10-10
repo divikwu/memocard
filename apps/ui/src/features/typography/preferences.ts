@@ -12,7 +12,7 @@ export const options = {
   flow: ['1em', '1.25em', '2em'],
 };
 export type Typography = { measure: string; heading: FontChoice | 'inherit'; body: FontChoice; mono: FontChoice; size: string; leading: string; flow: string };
-export const defaults: Typography = { measure: '90', heading: 'roboto-slab', body: 'noto-sans', mono: 'geist-mono', size: '16', leading: '1.6', flow: '1em' };
+export const defaults: Typography = { measure: '90', heading: 'inherit', body: 'noto-sans', mono: 'geist-mono', size: '16', leading: '1.6', flow: '1em' };
 export function parseTypography(raw: string | null): Typography {
   const result = { ...defaults };
   try {

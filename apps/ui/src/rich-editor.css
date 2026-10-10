@@ -8,7 +8,9 @@
 .rich-editor-content > :last-child { margin-bottom: 0; }
 .rich-foldable-heading { position: relative; }
 .rich-heading-fold-widget { position: absolute; left: -28px; top: 0; display: inline-flex; align-items: center; height: 1lh; user-select: none; }
-.rich-heading-fold { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 4px; color: var(--muted-foreground); cursor: pointer; }
+.rich-heading-fold { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 4px; color: var(--muted-foreground); cursor: pointer; opacity: 0; }
+.rich-foldable-heading:hover .rich-heading-fold, .rich-heading-fold:focus-visible, .rich-heading-fold[aria-expanded="false"] { opacity: 1; }
+@media (hover: none) { .rich-heading-fold { opacity: 1; } }
 .rich-heading-fold:hover { background: var(--muted); color: var(--foreground); }
 .rich-heading-fold[aria-expanded="true"] svg { transform: rotate(90deg); }
 .rich-editor-content .rich-folded-content { display: none !important; }

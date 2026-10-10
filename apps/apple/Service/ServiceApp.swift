@@ -26,7 +26,7 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         host.stateChanged = { [weak self] in self?.rebuildMenu() }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "square.stack.3d.up", accessibilityDescription: "MemoCard")
+        statusItem.button?.image = Self.menuBarIcon()
         statusItem.button?.toolTip = "MemoCard 本机服务"
         let menu = NSMenu()
         menu.delegate = self
@@ -35,6 +35,39 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) { host?.shutdown() }
+
+    private static func menuBarIcon() -> NSImage {
+        let image = NSImage(size: NSSize(width: 20, height: 18), flipped: true) { _ in
+            NSColor.black.setStroke()
+            let note = NSBezierPath()
+            note.move(to: NSPoint(x: 2, y: 7.2))
+            note.line(to: NSPoint(x: 2, y: 4))
+            note.curve(to: NSPoint(x: 4.5, y: 1.5), controlPoint1: NSPoint(x: 2, y: 2.6), controlPoint2: NSPoint(x: 3.1, y: 1.5))
+            note.line(to: NSPoint(x: 13.2, y: 1.5))
+            note.line(to: NSPoint(x: 18, y: 6.3))
+            note.line(to: NSPoint(x: 18, y: 7.2))
+            note.move(to: NSPoint(x: 13.2, y: 1.5))
+            note.line(to: NSPoint(x: 13.2, y: 5.2))
+            note.curve(to: NSPoint(x: 14.3, y: 6.3), controlPoint1: NSPoint(x: 13.2, y: 5.8), controlPoint2: NSPoint(x: 13.7, y: 6.3))
+            note.line(to: NSPoint(x: 18, y: 6.3))
+
+            let glasses = NSBezierPath()
+            glasses.appendOval(in: NSRect(x: 1.45, y: 9.1, width: 7.3, height: 7.3))
+            glasses.appendOval(in: NSRect(x: 11.25, y: 9.1, width: 7.3, height: 7.3))
+            glasses.move(to: NSPoint(x: 8.75, y: 12.75))
+            glasses.curve(to: NSPoint(x: 11.25, y: 12.75), controlPoint1: NSPoint(x: 9.4, y: 12.1), controlPoint2: NSPoint(x: 10.6, y: 12.1))
+            for path in [note, glasses] {
+                path.lineWidth = 1.5
+                path.lineCapStyle = .round
+                path.lineJoinStyle = .round
+                path.stroke()
+            }
+            return true
+        }
+        image.isTemplate = true
+        image.accessibilityDescription = "MemoCard"
+        return image
+    }
 
     func application(_ application: NSApplication, open urls: [URL]) {
         guard urls.contains(where: { $0.scheme == "memocard-service" && $0.host == "open-web" }) else { return }
