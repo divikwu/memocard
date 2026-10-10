@@ -29,12 +29,21 @@ export function selectedRichBlocks(editor: Editor, fallback: number): RichBlock[
   const block = richBlockAt(editor, fallback);
   return block && doc.nodeAt(fallback)?.isBlock ? [block] : [];
 }
+export function richSectionEnd(doc: Node, pos: number): number {
+  const resolved = doc.resolve(pos), heading = resolved.nodeAfter!;
+  let end = pos + heading.nodeSize;
+  for (let index = resolved.index() + 1; index < resolved.parent.childCount; index++) {
+    const node = resolved.parent.child(index);
+    if (node.type.name === 'heading' && node.attrs.level <= heading.attrs.level) break;
+    end += node.nodeSize;
+  }
+  return end;
+}
 function sectionBlocks(editor: Editor, heading: RichBlock): RichBlock[] {
   const blocks = [heading], parent = editor.state.doc.resolve(heading.pos).parent;
-  let pos = heading.pos + heading.node.nodeSize;
-  for (let index = heading.index + 1; index < parent.childCount; index++) {
+  const end = richSectionEnd(editor.state.doc, heading.pos);
+  for (let pos = heading.pos + heading.node.nodeSize, index = heading.index + 1; pos < end; index++) {
     const node = parent.child(index);
-    if (node.type.name === 'heading' && node.attrs.level <= heading.node.attrs.level) break;
     blocks.push({ pos, parent: heading.parent, node, index }); pos += node.nodeSize;
   }
   return blocks;

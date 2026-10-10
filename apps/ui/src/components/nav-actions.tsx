@@ -9,9 +9,9 @@ export function NavActions({ canCreate, canRefresh, refreshing, onNewNote, onRef
 }) {
   return <div className="flex items-center gap-2 text-sm">
     <DropdownMenu>
-      <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="size-7 data-[state=open]:bg-accent" aria-label="页面操作">
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-7 data-[popup-open]:bg-accent" aria-label="页面操作">
         <MoreHorizontal /><span className="sr-only">页面操作</span>
-      </Button></DropdownMenuTrigger>
+      </Button>} />
       <DropdownMenuContent align="end" className="w-56 rounded-lg p-1">
         <DropdownMenuGroup>
           <DropdownMenuItem disabled={!canCreate} onClick={onNewNote}><Plus />新建笔记</DropdownMenuItem>

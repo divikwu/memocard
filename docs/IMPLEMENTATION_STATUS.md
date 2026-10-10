@@ -279,3 +279,9 @@ Mac Apple Development 签名构建及 iOS Simulator 构建通过。最新模拟�
 日志：`/tmp/memocard-obsidian-final-verify2.log`、`/tmp/memocard-obsidian-final-mac.log`、`/tmp/memocard-obsidian-final-ios.log`。合成库：`build/verification/obsidian-vault`。
 
 独立 Chrome 的目录选择器此次未完成选择，已取消；没有把本机 HTTP 验证替代独立浏览器目录授权验证。未接触用户真实笔记，未在 Obsidian 应用中完成双向操作，未完成 iPhone/iCloud 同步。基础兼容不等于完整 Obsidian 功能兼容，也不代表 M2–M5 完成。详见 [兼容说明](OBSIDIAN_COMPATIBILITY.md)。
+
+## 2026-10-09：统一 Base UI primitives
+
+本轮以实际源码、锁文件及生产资源重新审计，发现此前运行组件仍使用 Radix；上文历史记录中的“保留 Base UI / 无 Radix”不能作为当前库选型证据。现已系统性替换为 `@base-ui/react@1.9.0`，移除 Radix 直接与传递依赖及旧 API 兼容路径，生成配置统一为 `base-nova`，并将源码/依赖/生产资源防回退检查接入验证流程。内容块菜单统一 4px 内边距，按最终确认恢复为 36px 单行；子菜单在桌面和窄屏均实测顶部对齐，弹层共用阴影 token。完整迁移范围、验证与未覆盖边界见 [BASE_UI_MIGRATION.md](BASE_UI_MIGRATION.md)。
+
+移除块菜单的“块属性与更多操作”聚合入口，保留文字选区格式及底层 Markdown 支持。新增标题章节折叠，视图状态不修改 Markdown、不进入撤销历史；默认展开，支持嵌套与键盘操作。451 项回归通过，真实授权服务完成桌面与窄屏验收，详情见 [EDITOR_SECTION_FOLDING.md](EDITOR_SECTION_FOLDING.md)。

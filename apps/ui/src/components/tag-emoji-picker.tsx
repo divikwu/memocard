@@ -23,7 +23,7 @@ export default function TagEmojiPicker({ selected = "", onSelect }: { selected?:
     {!items.length && <p role="status" className="pb-2 text-sm text-muted-foreground">没有匹配的 Emoji</p>}
     <TooltipProvider>
       <div aria-label="Emoji 分类" className="-mx-3 flex items-center justify-between border-t px-3 pt-2">
-        {categories.map(([key, label]) => { const Icon = categoryIcons[key]; return <Tooltip key={key}><TooltipTrigger asChild><Button type="button" variant="ghost" size="icon-sm" className={cn("text-muted-foreground", category === key && !needle && "bg-accent text-accent-foreground")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} onClick={() => { setCategory(key); setQuery(""); }}><Icon /></Button></TooltipTrigger><TooltipContent side="top" sideOffset={6}>{label}</TooltipContent></Tooltip>; })}
+        {categories.map(([key, label]) => { const Icon = categoryIcons[key]; return <Tooltip key={key}><TooltipTrigger render={<Button type="button" variant="ghost" size="icon-sm" className={cn("text-muted-foreground", category === key && !needle && "bg-accent text-accent-foreground")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} onClick={() => { setCategory(key); setQuery(""); }}><Icon /></Button>} /><TooltipContent side="top" sideOffset={6}>{label}</TooltipContent></Tooltip>; })}
       </div>
     </TooltipProvider>
   </div>;

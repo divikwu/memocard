@@ -23,4 +23,9 @@ const fontFiles = (await readdir(resolve(root, "assets"), { withFileTypes: true 
 let fonts = 0;
 for (const entry of fontFiles) fonts += (await readFile(resolve(root, "assets", entry.name))).length;
 if (fonts > limits.fonts) throw new Error(`Packaged fonts are ${fonts} bytes; the font budget is ${limits.fonts} bytes.`);
+for (const entry of await readdir(resolve(root, "assets"))) {
+  if (/\.(?:js|css)$/.test(entry) && /radix/i.test(await readFile(resolve(root, "assets", entry), "utf8"))) {
+    throw new Error(`Radix reference in shipped UI asset: ${entry}`);
+  }
+}
 console.log(`UI bundle budget passed: ${assets.join(", ")} (${compressed} initial gzip bytes, ${fonts} font bytes).`);

@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Note, NotePage, VaultStatus } from "@memocard/contracts";
 import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
@@ -30,6 +29,7 @@ const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error ==
 const Editor = lazy(() => import("./Editor").then((module) => ({ default: module.Editor })));
 const NotePreview = lazy(() => import("./NotePreview").then((module) => ({ default: module.NotePreview })));
 const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
+const Switch = lazy(() => import("@/components/ui/switch").then(module => ({ default: module.Switch })));
 
 export function App() {
   const [view, setView] = useState<View>(getView);
@@ -415,7 +415,7 @@ export function App() {
           {selectionNotice && !switchingVault && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription>{selectionNotice}</AlertDescription></Alert>}
           {unsupportedBrowser && <Alert><Info className="size-4" /><AlertTitle>需要启动 MemoCard 本机服务</AlertTitle><AlertDescription>Safari 和 Codex 通过本机服务读写笔记库；Chrome 和 Edge 也可以直接授权本地文件夹。请先运行 <code>memocard serve</code>，再从服务打开此页面。</AlertDescription></Alert>}
           {needsPermission && <Alert><FolderOpen className="size-4" /><AlertTitle>重新授权笔记文件夹</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>浏览器需要你确认文件夹访问权限，才能继续读取和保存笔记。</p><Button size="sm" onClick={() => void reauthorizeVault()} disabled={working}>重新授权</Button></AlertDescription></Alert>}
-          {Boolean(error) && <Alert variant="destructive"><CircleAlert className="size-4" /><AlertTitle>{localWebReconnectRequired ? "本机 Web 已断开" : "操作未完成"}</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>{errorMessage(error)}</p><div className="flex flex-wrap gap-2">{localWebReconnectRequired ? <Button asChild variant="outline" size="sm"><a href="memocard-service://open-web">重新打开本机 Web</a></Button> : retryableError && <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}</div></AlertDescription></Alert>}
+          {Boolean(error) && <Alert variant="destructive"><CircleAlert className="size-4" /><AlertTitle>{localWebReconnectRequired ? "本机 Web 已断开" : "操作未完成"}</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>{errorMessage(error)}</p><div className="flex flex-wrap gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开本机 Web</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}</div></AlertDescription></Alert>}
           {status?.connected && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件尚未就绪</AlertTitle><AlertDescription>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件待读取。` : "部分文件尚未进入索引。"}当前结果可能不完整。</AlertDescription></Alert>}
 
           {editing ? <Suspense fallback={<Skeleton className="h-80" />}><Editor key={editing.id} initial={editing} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
@@ -442,7 +442,7 @@ export function App() {
                   <Button variant="outline" className="shrink-0 self-start shadow-none sm:self-center" onClick={() => void selectVault(true)} disabled={working || Boolean(editing)}>创建新笔记库</Button>
                 </div>}
                 {status?.connected && <Collapsible>
-                  <CollapsibleTrigger asChild><Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0 hover:bg-transparent"><span>文件状态</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[state=open]:rotate-180" /></Button></CollapsibleTrigger>
+                  <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0 hover:bg-transparent"><span>文件状态</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
                   <CollapsibleContent className="space-y-4 pb-4">
                     <p className="text-pretty text-sm text-muted-foreground">仅反映此设备的文件读取情况，不代表其他设备已完成同步。</p>
                     <dl className="divide-y divide-border/60 text-sm"><StatusRow label="已索引笔记" value={status.coverage.indexed} /><StatusRow label="待读取文件" value={status.coverage.pending} /><StatusRow label="需要处理的文件" value={status.coverage.issues} /><StatusRow label="最近索引时间" value={status.coverage.indexedAt ? formatDate(status.coverage.indexedAt) : "—"} /></dl>
@@ -456,7 +456,7 @@ export function App() {
               <div className="flex flex-wrap gap-2"><Button onClick={() => void openLocalWeb()} disabled={working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button></div>
             </CardContent></Card></section>}
             {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="text-balance text-base font-medium">MCP 本机读取</h2><Card className="shadow-none"><CardContent className="space-y-4">
-              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-6 text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></div>
+              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-6 text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Suspense fallback={<Skeleton className="h-5 w-8" />}><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></Suspense></div>
               <p className="text-pretty text-sm leading-6 text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}
           </div> : <>
@@ -491,7 +491,7 @@ export function App() {
                     <div className="w-full px-4 pb-2 pt-4"><span className="block truncate text-base font-medium">{note.title?.trim() || "新页面"}</span><time className="mt-1 block text-xs text-muted-foreground/80" dateTime={note.createdAt}>{formatDate(note.createdAt)}</time></div>
                     <div className="min-h-0 w-full flex-1 overflow-hidden px-4 pb-2"><Suspense fallback={<Skeleton className="h-full" />}><NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={setError} /></Suspense></div>
                   </button>
-                  {note.tags.length > 0 && <div className="flex min-h-10 items-center gap-2 overflow-hidden px-4 pb-3">{note.tags.slice(0, 2).map((name) => <Badge key={name} asChild variant="secondary" className="h-5 bg-sky-50 px-1.5 py-0 font-normal text-sky-700 hover:text-sky-800"><button type="button" onClick={() => navigate("notes", name)}>#{name}</button></Badge>)}{note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}</div>}
+                  {note.tags.length > 0 && <div className="flex min-h-10 items-center gap-2 overflow-hidden px-4 pb-3">{note.tags.slice(0, 2).map((name) => <Badge key={name} render={<button type="button" onClick={() => navigate("notes", name)}>#{name}</button>} variant="secondary" className="h-5 bg-sky-50 px-1.5 py-0 font-normal text-sky-700 hover:text-sky-800" />)}{note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}</div>}
                 </CardContent></Card></li>)}
               </ul>
               {cursor && <div className="flex justify-center pt-3"><Button variant="outline" onClick={() => void loadMore()} disabled={paging || switchingVault}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
@@ -502,7 +502,7 @@ export function App() {
       </div>
     </SidebarInset>
     {notice && <div role="status" className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
-    <Dialog open={searchOpen} onOpenChange={setSearchOpen}><DialogContent onOpenAutoFocus={(event) => { event.preventDefault(); searchField.current?.focus(); }}><DialogTitle>搜索笔记</DialogTitle><DialogDescription>输入关键词筛选笔记，关闭后查看结果。</DialogDescription>
+    <Dialog open={searchOpen} onOpenChange={setSearchOpen}><DialogContent initialFocus={searchField}><DialogTitle>搜索笔记</DialogTitle><DialogDescription>输入关键词筛选笔记，关闭后查看结果。</DialogDescription>
       <div className="relative"><Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" /><Input ref={searchField} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索笔记内容" aria-label="搜索笔记" disabled={!status?.connected || switchingVault} className="h-9 bg-background pl-9 pr-10 shadow-none" />{query && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-8 -translate-y-1/2" onClick={() => setQuery("")} aria-label="清空搜索"><X className="size-3.5" /></Button>}</div>
       <Button onClick={() => setSearchOpen(false)}>查看结果</Button>
     </DialogContent></Dialog>
