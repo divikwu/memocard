@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Note, VaultStatus } from "@memocard/contracts";
 import type { Draft } from "./bridge";
 import { App } from "./App";
@@ -30,6 +30,11 @@ const status: VaultStatus = {
   capabilities: ["queryNotes", "getNote", "getDrafts", "listTags", "saveNote", "saveDraft"],
 };
 let pendingDrafts: Draft[] = [];
+
+beforeAll(async () => {
+  // Keep cold module transformation outside the UI assertion timeout.
+  await Promise.all([import("./NotePreview"), import("./Editor")]);
+});
 
 beforeEach(() => {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;

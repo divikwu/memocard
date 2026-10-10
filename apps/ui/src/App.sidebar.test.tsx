@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Note, VaultStatus } from "@memocard/contracts";
 import { App } from "./App";
 import { readEditorText } from "./editor-test-utils";
@@ -27,6 +27,11 @@ const status: VaultStatus = {
   coverage: { complete: true, indexed: 1, pending: 0, issues: 0, indexedAt: "2026-09-28T08:00:00Z" },
   capabilities: ["queryNotes", "getNote", "getDrafts", "listTags", "saveNote", "saveDraft"],
 };
+
+beforeAll(async () => {
+  // Keep cold module transformation outside the UI assertion timeout.
+  await Promise.all([import("./NotePreview"), import("./Editor")]);
+});
 
 beforeEach(() => {
   document.elementFromPoint = () => null;
