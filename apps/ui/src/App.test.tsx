@@ -34,7 +34,7 @@ let pendingDrafts: Draft[] = [];
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
   await Promise.all([import("./components/note-collection"), import("./Editor")]);
-});
+}, 30_000);
 
 beforeEach(() => {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
