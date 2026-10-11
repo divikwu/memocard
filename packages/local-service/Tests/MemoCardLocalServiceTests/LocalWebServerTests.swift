@@ -143,6 +143,21 @@ final class LocalWebServerTests: XCTestCase {
         XCTAssertEqual(dispatches.value, 0)
     }
 
+    func testCachesOnlyHashedBundledAssetsAndKeepsTheEntryFresh() async throws {
+        let resources = try resources(with: "<html><head></head></html>")
+        defer { try? FileManager.default.removeItem(at: resources) }
+        let assets = resources.appendingPathComponent("assets")
+        try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+        for name in ["entry-Ab12_cdE.js", "entry.js"] { try Data("export {};".utf8).write(to: assets.appendingPathComponent(name)) }
+        let server = LocalWebServer(resourceRoot: resources, authorizationEpoch: 1, handler: { _ in [:] }, assetHandler: { _ in throw CocoaError(.fileNoSuchFile) })
+        let origin = try await server.start()
+        defer { server.stop() }
+        for (path, expected) in [("assets/entry-Ab12_cdE.js", "private, max-age=31536000, immutable"), ("assets/entry.js", "no-store, private"), ("index.html", "no-store, private")] {
+            let (_, response) = try await URLSession.shared.data(from: origin.appendingPathComponent(path))
+            XCTAssertEqual((response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Cache-Control"), expected)
+        }
+    }
+
     private func resources(with html: String) throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("memocard-local-web-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)

@@ -537,6 +537,67 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual(fetched["tags"] as? [String], ["work", "ideas"])
     }
 
+    func testWarmLocalScanDetectsSameSizeEditsWithRestoredMtimeAndFileReplacement() async throws {
+        for shared in [false, true] {
+            let core = try await store(create: !shared)
+            let id = UUID().uuidString.lowercased()
+            let file: URL
+            if shared {
+                file = vault.appendingPathComponent("Warm.md")
+                try Data("Body One".utf8).write(to: file)
+            } else { file = try writeNote(id: id, body: "Body One") }
+            let page = try await call(core, "queryNotes")
+            let note = (page["notes"] as! [[String: Any]]).first { ($0["relativePath"] as! String).hasSuffix(shared ? "Warm.md" : "\(id).md") }!
+            let noteID = note["id"] as! String
+            let before = await core.sourceReadCount
+            _ = try await call(core, "getNote", ["id": noteID])
+            _ = try await call(core, "getStatus")
+            let warm = await core.sourceReadCount
+            XCTAssertEqual(warm, before)
+            let modified = try FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]!
+            let original = try String(contentsOf: file, encoding: .utf8)
+            let changed = original.replacingOccurrences(of: "Body One", with: "Body Two")
+            try Data(changed.utf8).write(to: file)
+            try FileManager.default.setAttributes([.modificationDate: modified], ofItemAtPath: file.path)
+            let edited = try await call(core, "getNote", ["id": noteID])
+            XCTAssertEqual(edited["body"] as? String, "Body Two")
+            XCTAssertNotEqual(edited["contentHash"] as? String, note["contentHash"] as? String)
+            let replaced = changed.replacingOccurrences(of: "Body Two", with: "Body New")
+            try Data(replaced.utf8).write(to: file, options: .atomic)
+            try FileManager.default.setAttributes([.modificationDate: modified], ofItemAtPath: file.path)
+            let replacement = try await call(core, "getNote", ["id": noteID])
+            XCTAssertEqual(replacement["body"] as? String, "Body New")
+            await core.close()
+            // The second iteration needs a fresh compatible vault.
+            try FileManager.default.removeItem(at: vault)
+            try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+        }
+    }
+
+    func testPropertyReadsUseOneScanAndReuseUnchangedPropertyParsing() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let url = try writeNote(id: id, body: "Body", extra: "field: One\n")
+        let before = await core.scanCount
+        let initial = try await call(core, "getNoteProperties", ["id": id])
+        let scans = await core.scanCount
+        XCTAssertEqual(scans - before, 1)
+        _ = try await call(core, "getNoteProperties")
+        let misses = await core.propertyParseMissCount
+        _ = try await call(core, "getNoteProperties", ["id": id])
+        _ = try await call(core, "getNoteProperties")
+        let warmMisses = await core.propertyParseMissCount
+        XCTAssertEqual(warmMisses, misses)
+        let source = try String(contentsOf: url, encoding: .utf8)
+        try Data(source.replacingOccurrences(of: "field: One", with: "field: Two").utf8).write(to: url)
+        let changed = try await call(core, "getNoteProperties", ["id": id])
+        XCTAssertNotEqual(initial["contentHash"] as? String, changed["contentHash"] as? String)
+        XCTAssertEqual((changed["properties"] as! [[String: Any]]).first { $0["name"] as? String == "field" }?["value"] as? String, "Two")
+        _ = try await call(core, "getNoteProperties")
+        let changedMisses = await core.propertyParseMissCount
+        XCTAssertGreaterThan(changedMisses, warmMisses)
+    }
+
     func testRefreshBatchReusesOneSnapshotAndInvalidationReadsExternalChanges() async throws {
         let core = try await store()
         _ = try writeNote(id: UUID().uuidString.lowercased())

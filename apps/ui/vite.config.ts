@@ -19,6 +19,7 @@ export default defineConfig({
     }],
   }],
   build: {
+    manifest: true,
     target: "safari16.4", assetsInlineLimit: 0,
     rolldownOptions: { output: { codeSplitting: { groups: [
       // Share already-eager dependencies; keep the tag picker and editor lazy.

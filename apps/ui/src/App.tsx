@@ -27,7 +27,8 @@ type TagCount = { name: string; count: number };
 const getView = (): View => window.location.hash === "#/settings" ? "settings" : "notes";
 const bridgeErrorCode = (error: unknown): string | null => typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
 const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error === "object" && error !== null && "retryable" in error && typeof error.retryable === "boolean" ? error.retryable : null;
-const Editor = lazy(() => import("./Editor").then((module) => ({ default: module.Editor })));
+const loadEditor = () => import("./Editor").then((module) => ({ default: module.Editor }));
+const Editor = lazy(loadEditor);
 const NoteCollection = lazy(() => import("./components/note-collection").then((module) => ({ default: module.NoteCollection })));
 const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
 const Switch = lazy(() => import("@/components/ui/switch").then(module => ({ default: module.Switch })));
@@ -45,9 +46,11 @@ export function App() {
   const routeHandler = useRef<() => void>(() => {});
   const routeLoading = useRef('');
   const attemptedRoute = useRef('');
+  const [pendingRoute, setPendingRoute] = useState<string | null>(() => /^#\/notes\/[^/]+$/.test(window.location.hash) ? window.location.hash : null);
   const returnFocus = useRef<HTMLElement | null>(null);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
+  const [routeReady, setRouteReady] = useState(false);
   const [status, setStatus] = useState<VaultStatus | null>(null);
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
@@ -78,6 +81,7 @@ export function App() {
   const hasLoadedMore = useRef(false);
   const connectionLost = useRef(false);
   const editorGeneration = useRef(0);
+  const routeNoteRequest = useRef<{ id: string; generation: number; promise: Promise<Note & { vaultBinding?: string }> } | null>(null);
   const editingRef = useRef<Draft | null>(null);
   const openingLink = useRef<string | null>(null);
   const readySent = useRef(false);
@@ -103,7 +107,7 @@ export function App() {
     if (!isConnectedClient || (background && (refreshCount.current > 0 || loadingMore.current || selectingVault.current))) return;
     refreshCount.current++;
     const current = ++generation.current;
-    if (!background) { setLoading(true); setError(""); }
+    if (!background) { setLoading(true); setRouteReady(false); setError(""); }
     try {
       const environmentResult = request<Environment>("getEnvironment").then((value) => {
         if (current === generation.current) setEnvironment(value);
@@ -114,22 +118,34 @@ export function App() {
       setStatus(nextStatus); setEnvironment(nextEnvironment); setWebConnected(true);
       if (connectionLost.current) { connectionLost.current = false; setError(""); }
       const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
-      const vaultResult = allowed.has("listVaults") ? await request<{ vaults: RegisteredVault[] }>("listVaults") : { vaults: [] };
-      if (current !== generation.current) return;
-      setRegisteredVaults(vaultResult.vaults);
-      if (!nextStatus.connected) { setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null); setFilterCounts(undefined); return; }
+      const deepLink = /^#\/notes\/([^/]+)$/.exec(window.location.hash);
+      if (nextStatus.connected && !editingRef.current && deepLink && deepLink[1] !== "new" && allowed.has("getNote")) {
+        const id = decodeURIComponent(deepLink[1]);
+        const promise = request<Note & { vaultBinding?: string }>("getNote", { id });
+        void promise.catch(() => undefined);
+        routeNoteRequest.current = { id, generation: current, promise };
+      }
+      const vaultResult = allowed.has("listVaults") ? request<{ vaults: RegisteredVault[] }>("listVaults") : Promise.resolve({ vaults: [] });
+      // Attach rejection handling now; the registry does not gate note recovery.
+      const registry = vaultResult.then(value => { if (current === generation.current) setRegisteredVaults(value.vaults); });
+      void registry.catch(() => undefined);
+      if (!nextStatus.connected) { await registry; if (current !== generation.current) return; setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null); setFilterCounts(undefined); return; }
       // Poll connection health without collapsing the pages the reader has loaded.
-      if (background && hasLoadedMore.current) return;
+      if (background && hasLoadedMore.current) { await registry; return; }
       const recovered = allowed.has("getDrafts") ? await request<{ drafts: Draft[] }>("getDrafts") : { drafts: [] };
+      if (current !== generation.current) return;
+      setDrafts(recovered.drafts.filter(draft => draft.baseHash || draft.title?.trim() || draft.body.trim()));
+      setRouteReady(true);
       const [page, tagResult, folderResult] = await Promise.all([
         allowed.has("queryNotes") ? request<NotePage>("queryNotes", { query: resetFilters ? "" : debouncedQuery, tags: !resetFilters && tag ? [tag] : [], ...(quickFilter && !resetFilters ? { quickFilter } : {}), limit: 30 }) : Promise.resolve(null),
         allowed.has("listTags") ? request<{ tags: TagCount[] }>("listTags") : Promise.resolve({ tags: [] }),
         allowed.has("listFolders") ? request<{ folders: string[] }>("listFolders") : Promise.resolve({ folders: [] }),
+        registry,
       ]);
       if (current !== generation.current) return;
       setNotes(page?.notes ?? []); setCursor(page?.nextCursor ?? null);
       setFilterCounts(page?.filterCounts);
-      setDrafts(recovered.drafts.filter(draft => draft.baseHash || draft.title?.trim() || draft.body.trim())); setTags(tagResult.tags); setFolders(folderResult.folders);
+      setTags(tagResult.tags); setFolders(folderResult.folders);
       hasLoadedMore.current = false;
     } catch (cause) { if (current === generation.current) { setError(cause); setWebConnected(false); connectionLost.current = true; } }
     finally { refreshCount.current--; if (current === generation.current) setLoading(false); }
@@ -137,6 +153,7 @@ export function App() {
 
   const invalidateRequests = useCallback(() => { generation.current++; }, []);
   useEffect(() => { void refresh(); return invalidateRequests; }, [refresh, invalidateRequests]);
+  useEffect(() => { if (/^#\/notes\/[^/]+$/.test(window.location.hash)) void loadEditor().catch(() => undefined); }, []);
   useEffect(() => {
     const onHash = () => routeHandler.current();
     const onNativeEvent = (event: Event) => {
@@ -246,9 +263,12 @@ export function App() {
     openingLink.current = fromLink ? id : null;
     const currentRequest = ++editorGeneration.current;
     const pending = draft ?? drafts.find((item) => item.id === id);
+    void loadEditor().catch(() => undefined);
     setWorking(true); setError("");
     try {
-      const current = await request<Note & { vaultBinding?: string }>("getNote", { id });
+      const prefetched = routeNoteRequest.current;
+      routeNoteRequest.current = null;
+      const current = await (prefetched?.id === id && prefetched.generation === generation.current ? prefetched.promise : request<Note & { vaultBinding?: string }>("getNote", { id }));
       if (currentRequest !== editorGeneration.current) return;
       showEditor({ ...(pending ? { ...pending, updatedAt: pending.updatedAt ?? new Date().toISOString() } : { id: current.id, ...(current.title === undefined ? {} : { title: current.title }), body: current.body, tags: current.tags, baseHash: current.contentHash }), relativePath: current.relativePath, ...(isBrowserVault ? { vaultBinding: pending?.vaultBinding ?? current.vaultBinding ?? environment?.vaultBinding } : {}) }, current);
     } catch (cause) {
@@ -328,7 +348,9 @@ export function App() {
     : status.coverage.issues > 0 ? `${status.coverage.issues} 个文件需处理`
     : status.coverage.pending > 0 ? `${status.coverage.pending} 个文件待读取`
     : !status.coverage.complete ? "部分文件尚未就绪" : "已连接文件夹";
-  const title = editing ? (editing.title?.trim() || "新页面") : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
+  const openingNote = !editing && pendingRoute !== null && !error && (loading || Boolean(status?.connected));
+  const detailView = Boolean(editing) || openingNote;
+  const title = editing ? (editing.title?.trim() || "新页面") : openingNote ? "正在打开笔记" : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
   const newNote = async () => {
     if (selectingVault.current || (editingRef.current && !(await leaveEditor()))) return;
     editorGeneration.current++;
@@ -372,6 +394,7 @@ export function App() {
       if (requested === editorHash.current || routeLoading.current === requested) return;
       routeLoading.current = requested;
       attemptedRoute.current = requested;
+      setPendingRoute(/^#\/notes\/[^/]+$/.test(requested) ? requested : null);
       void (async () => {
         if (!(await leaveEditor())) { window.history.replaceState(null, '', editorHash.current); return; }
         window.history.replaceState(null, '', requested);
@@ -380,9 +403,9 @@ export function App() {
           if (match[1] === 'new') await newNote();
           else await openNote(decodeURIComponent(match[1]));
         } else { setView(getView()); setMenuOpen(false); }
-      })().finally(() => { routeLoading.current = ''; });
+      })().finally(() => { routeLoading.current = ''; setPendingRoute(current => current === requested ? null : current); });
     };
-    if (!editingRef.current && !loading && status?.connected && attemptedRoute.current !== window.location.hash && /^#\/notes\//.test(window.location.hash)) routeHandler.current();
+    if (!editingRef.current && routeReady && status?.connected && attemptedRoute.current !== window.location.hash && /^#\/notes\//.test(window.location.hash)) routeHandler.current();
   });
 
   const navigation = <AppSidebar
@@ -419,9 +442,9 @@ export function App() {
           <NavActions canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={() => void refresh()} onSettings={() => navigate("settings")} />
         </div>
       </header>
-      <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", editing ? "note-page-scroll" : view === "notes" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
-        <div className={cn("mx-auto w-full space-y-4", editing ? "note-page-width" : view === "notes" ? "max-w-none py-10" : "max-w-3xl py-10")}>
-          <div className={editing || view === "settings" ? "sr-only" : "min-w-0 px-2 pb-2"}>
+      <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view === "notes" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
+        <div className={cn("mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-10" : "max-w-3xl py-10")}>
+          <div className={detailView || view === "settings" ? "sr-only" : "min-w-0 px-2 pb-2"}>
             <h1 className="truncate text-[32px] font-bold leading-[1.2] tracking-tight">{title}</h1>
           </div>
           {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请完成文件夹选择及浏览器访问授权，随后读取笔记库。首次读取可能需要一些时间。</AlertDescription></Alert>}
@@ -431,7 +454,7 @@ export function App() {
           {Boolean(error) && <Alert variant="destructive"><CircleAlert className="size-4" /><AlertTitle>{localWebReconnectRequired ? "本机 Web 已断开" : "操作未完成"}</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>{errorMessage(error)}</p><div className="flex flex-wrap gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开本机 Web</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}</div></AlertDescription></Alert>}
           {status?.connected && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件尚未就绪</AlertTitle><AlertDescription>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件待读取。` : "部分文件尚未进入索引。"}当前结果可能不完整。</AlertDescription></Alert>}
 
-          {editing ? <Suspense fallback={<Skeleton className="h-80" />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
+          {openingNote ? <LoadingNote /> : editing ? <Suspense fallback={<LoadingNote />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
             setNotes(current => current.map(item => item.id === note.id ? note : item));
             editorHash.current = `#/notes/${note.id}`;
             window.history.replaceState(null, '', editorHash.current);
@@ -513,6 +536,10 @@ function StatusRow({ label, value }: { label: string; value: string | number }) 
 
 function LoadingNotes() {
   return <div role="status" aria-label="正在读取笔记库" className="space-y-3"><span className="sr-only">正在读取笔记库…</span>{[0, 1, 2].map((item) => <Card key={item} className="rounded-xl border-0 bg-muted/50 shadow-none"><CardContent className="space-y-4"><Skeleton className="h-3 w-28" /><div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div><Skeleton className="h-5 w-16" /></CardContent></Card>)}</div>;
+}
+
+function LoadingNote() {
+  return <div role="status" aria-label="正在打开笔记" className="space-y-6"><span className="sr-only">正在打开笔记…</span><Skeleton className="h-9 w-3/4" /><Skeleton className="h-5 w-20" /><Separator /><div className="space-y-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div></div>;
 }
 
 function EmptyState({ icon, title, description, children }: { icon: "note" | "search"; title: string; description: string; children?: React.ReactNode }) {

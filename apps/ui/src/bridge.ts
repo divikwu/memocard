@@ -1,7 +1,7 @@
 import type { BridgeRequest, BridgeResponse } from "@memocard/contracts";
 import { createId } from "./uuid";
 import { isBrowserVault, isLocalWeb } from "./client-mode";
-import { browserTransport } from "./browser-vault";
+import { browserTransport } from "./browser-runtime";
 import { externalUrl } from "./urls";
 
 export { isBrowserVault, isLocalWeb } from "./client-mode";
@@ -62,7 +62,7 @@ export const isConnectedClient = isNative || isLocalWeb || isBrowserVault;
 // A browser file write must report its actual close result, not time out while it can still commit.
 export const request = createBridge(handler ? (message) => handler.postMessage(message) : isLocalWeb ? createWebTransport() : isBrowserVault ? createBrowserFileTransport() : undefined, isBrowserVault ? 0 : 15_000);
 
-export function createBrowserFileTransport(transport: Transport = browserTransport): Transport {
+export function createBrowserFileTransport(transport: Transport = browserTransport!): Transport {
   return async (message) => {
     if (message.operation === "openExternal") {
       const url = typeof message.params.url === "string" ? externalUrl(message.params.url) : null;
