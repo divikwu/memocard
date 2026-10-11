@@ -8,17 +8,33 @@ struct FileIdentity: Codable {
     var createdAt: String
 }
 
+func tagKey(_ value: String) -> String { value.lowercased().precomposedStringWithCanonicalMapping }
+
+func normalizedPropertyTag(_ value: String) -> String? {
+    var tag = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    if tag.hasPrefix("#") { tag.removeFirst() }
+    tag = tagKey(tag)
+    return tag.range(of: #"^[\p{L}\p{N}_-]+(?:/[\p{L}\p{N}_-]+)*$"#, options: .regularExpression) != nil && tag.range(of: #"[\p{L}_-]"#, options: .regularExpression) != nil ? tag : nil
+}
+func propertyTags(_ node: Node?) -> [String] {
+    guard let node else { return [] }
+    let values = node.sequence.map(Array.init) ?? [node]
+    var seen = Set<String>()
+    return values.compactMap { $0.tag == Tag(.str) ? $0.scalar.flatMap { normalizedPropertyTag($0.string) } : nil }.filter { seen.insert($0).inserted }
+}
+
 func inlineTags(_ body: String) -> [String] {
     let text = body.replacingOccurrences(of: #"(?m)^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[^\n]*(?:\n|$)|(?![\s\S]))"#, with: "", options: .regularExpression)
         .replacingOccurrences(of: #"(?m)^(?: {4}|\t).*$"#, with: "", options: .regularExpression)
         .replacingOccurrences(of: #"(`+)[\s\S]*?\1"#, with: "", options: .regularExpression)
         .replacingOccurrences(of: #"!?\[[^\]\n]*\]\([^\n)]*\)|\[\[[^\]\n]*\]\]|<[^>]*>|\$\$[\s\S]*?\$\$|\$[^\n$]+\$"#, with: "", options: .regularExpression)
     let regex = try! NSRegularExpression(pattern: #"(?:^|[\s(])#([\p{L}\p{N}_-]+(?:/[\p{L}\p{N}_-]+)*)(?![\p{L}\p{N}_/-])"#)
+    var seen = Set<String>()
     return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
         guard let range = Range(match.range(at: 1), in: text) else { return nil }
-        let tag = String(text[range])
+        let tag = tagKey(String(text[range]))
         return tag.range(of: #"[\p{L}_-]"#, options: .regularExpression) == nil ? nil : tag
-    }
+    }.filter { seen.insert($0).inserted }
 }
 
 func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, identity: FileIdentity, modified: Date) throws -> ParsedNote {
@@ -41,24 +57,12 @@ func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, iden
         } catch { throw VaultError(code: "INVALID_FRONTMATTER", message: "无法安全读取 YAML 属性。") }
     }
     let body = String(source.dropFirst(header.count))
-    let tags = try validatedTags(inlineTags(body))
-    return ParsedNote(note: Note(title: root["title"]?.scalar?.string, id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
+    let tags = try validatedTags(propertyTags(root["tags"]) + inlineTags(body))
+    return ParsedNote(note: Note(title: fileTitle(relativePath), id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
         updatedAt: timestamp(modified), deletedAt: nil, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(identity.id)?vault=\(vaultID)"), frontmatter: root, originalHeader: header)
 }
 
 func encodedObsidianNote(_ parsed: ParsedNote?, body: String, title: String? = nil) throws -> Data {
-    var header = parsed?.originalHeader ?? ""
-    if let title, title != parsed?.note.title {
-        let newline = header.contains("\r\n") ? "\r\n" : "\n"
-        let json = String(data: try JSONEncoder().encode(title), encoding: .utf8)!
-        let replacement = "title: \(json)\(newline)"
-        if header.isEmpty || header == "\u{FEFF}" { header += "---\(newline)\(replacement)---\(newline)" }
-        else if parsed?.frontmatter["title"] != nil {
-            let regex = try NSRegularExpression(pattern: #"(?m)^title:[^\r\n]*(?:\r?\n[ \t]+[^\r\n]*)*\r?\n?"#)
-            guard let match = regex.firstMatch(in: header, range: NSRange(header.startIndex..., in: header)) else { throw VaultError(code: "INVALID_FRONTMATTER", message: "请在源文件中编辑此标题属性。") }
-            header = (header as NSString).replacingCharacters(in: match.range, with: replacement)
-        } else if let end = header.range(of: "---", options: .backwards) { header.insert(contentsOf: replacement, at: end.lowerBound) }
-    }
-    return Data((header + body).utf8)
+    return Data(((parsed?.originalHeader ?? "") + body).utf8)
 }

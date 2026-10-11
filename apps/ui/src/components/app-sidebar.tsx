@@ -44,7 +44,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
 }: AppSidebarProps) {
   return <Sidebar id="desktop-sidebar" aria-label="笔记导航" className="border-r-0">
     <SidebarHeader>
-      <button type="button" aria-label="MemoCard，返回所有笔记" className="flex h-10 items-center gap-2 rounded-md px-1.5 text-left outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("notes", null)}>
+      <button type="button" aria-label="MemoCard，返回所有笔记" className="flex h-10 items-center gap-2 rounded-md px-1.5 text-left outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("notes", null)}>
         <img src="./favicon.png" alt="" draggable={false} className="size-8 shrink-0 object-contain" />
         <span className="truncate text-sm font-semibold">MemoCard</span>
       </button>

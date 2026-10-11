@@ -145,7 +145,7 @@ describe("sidebar workspace actions", () => {
     await screen.findByText(note.body);
     expect(screen.getByRole("button", { name: "所有笔记" }).getAttribute("aria-current")).toBe("page");
     await user.click(screen.getByRole("button", { name: "有图片" }));
-    await user.click(await screen.findByRole("button", { name: "#生活" }));
+    await user.click(await screen.findByRole("button", { name: "筛选标签 生活" }));
     await waitFor(() => {
       const params = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1];
       expect(params).toMatchObject({ tags: ["生活"] });
@@ -291,12 +291,12 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   expect(screen.queryByLabelText("笔记标签")).toBeNull();
   expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
-  const cardTag = await screen.findByRole("button", { name: "#生活" });
+  const cardTag = await screen.findByRole("button", { name: "筛选标签 生活" });
   expect(cardTag.getAttribute("data-slot")).toBe("badge");
   expect(cardTag.getAttribute("data-variant")).toBe("secondary");
   expect(cardTag.className).toContain("text-xs");
-  expect(cardTag.className).toContain("bg-sky-50");
-  expect(cardTag.className).toContain("text-sky-700");
+  expect(cardTag.className).toContain("note-tag-pill");
+  expect(cardTag.getAttribute("data-tag")).toBe(encodeURIComponent("生活"));
   expect(cardTag.className).toContain("h-5");
   expect(cardTag.className).toContain("py-0");
   await user.click(cardTag);

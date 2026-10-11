@@ -1,0 +1,162 @@
+/* The divider defines the outer rail; title, property icons and body share an 8px inset. */
+section.note-editor { --note-content-inset: 8px; }
+section.note-editor > * + * { margin-top: 20px; }
+section.note-editor > .note-properties { margin-top: 8px; }
+section.note-editor > .typeset-content { margin-top: 32px; }
+section.note-editor .note-page-title { padding-inline: var(--note-content-inset); }
+.note-page-width section.note-editor .rich-editor {
+  --editor-gutter: var(--note-content-inset);
+  --editor-inset-right: var(--note-content-inset);
+}
+.note-properties {
+  --property-label-width: min(160px, 40%);
+  padding: 0 2px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 20px;
+}
+.note-property-row {
+  display: grid;
+  grid-template-columns: var(--property-label-width) minmax(0, 1fr);
+  column-gap: 8px;
+  align-items: start;
+  margin-bottom: 4px;
+}
+.note-property-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 32px;
+  padding: 6px;
+  white-space: nowrap;
+}
+.note-property-label > svg { width: 16px; height: 16px; flex-shrink: 0; }
+.note-property-label > svg, .note-property-action svg { opacity: 0.8; }
+.note-property-value {
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px;
+  overflow-wrap: anywhere;
+}
+.note-property-tags { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 8px; }
+.note-property-popup.note-tag-popup { padding: 0; max-height: var(--available-height); overflow-y: auto; }
+.note-tag-options-wrap { position: relative; margin: 6px 6px 0; }
+.note-tag-options-wrap[data-overflow="true"]::after { content: ""; position: absolute; inset: auto 0 0; height: 24px; background: linear-gradient(to bottom, transparent, var(--popover)); pointer-events: none; }
+.note-tag-options { padding-bottom: 6px; max-height: 240px; overflow-y: auto; }
+.note-tag-option { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px; border-radius: 4px; font-size: 14px; overflow-wrap: anywhere; }
+.note-tag-option-row { display: flex; align-items: center; border-radius: var(--hover-row-radius); }
+.note-tag-option-row:hover, .note-tag-option-row:has([data-highlighted]), .note-tag-option-row:focus-within, .note-tag-option-row:has(> .note-tag-color-trigger[data-popup-open]) { background: var(--hover-bg); }
+.note-tag-option-row > .note-tag-option { flex: 1; min-width: 0; }
+.note-tag-color-trigger { margin-right: 4px; opacity: 0; }
+.note-tag-option-row:hover .note-tag-color-trigger, .note-tag-option-row:focus-within .note-tag-color-trigger, .note-tag-color-trigger[data-popup-open] { opacity: 1; }
+@media (hover: none) { .note-tag-color-trigger { opacity: 1; } }
+.note-tag-option[data-disabled] { opacity: 0.5; }
+.note-tag-input { display: flex; flex-direction: column; }
+.note-tag-header { padding: 8px 12px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--muted) 50%, var(--background)); }
+.note-tag-editor > p:not(.note-tag-hint) { margin: 8px 12px 12px; }
+.note-tag-selected { display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: 8px; }
+.note-tag-chip { display: inline-flex; align-items: center; gap: 2px; }
+.note-tag-selected-item { display: inline-flex; align-items: center; max-width: 100%; }
+.note-tag-chip:has(.note-tag-remove) { padding-right: 2px; }
+.note-tag-chip:focus-visible, .note-tag-remove:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.note-tag-search { flex: 1 1 80px; width: 0; min-width: 80px; height: 20px; outline: none; background: transparent; font-size: 14px; }
+.note-tag-hint { margin: 12px 12px 8px; }
+.note-tag-remove { display: inline-flex; align-items: center; justify-content: center; border-radius: 9999px; }
+.note-tag-remove { width: 20px; height: 20px; padding: 2px; }
+
+.note-properties .note-property-action {
+  height: 32px;
+  gap: 4px;
+  padding: 0 8px 0 6px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.note-properties .note-property-edit {
+  height: auto;
+  min-height: 32px;
+  padding: 6px;
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.note-property-checkbox {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--input);
+  border-radius: 4px;
+}
+.note-property-checkbox[data-checked] { background: var(--primary); color: var(--primary-foreground); }
+.note-property-checkbox:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.note-property-confirm {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: 50;
+  width: min(24rem, calc(100% - 2rem));
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.note-property-backdrop { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / 40%); }
+.note-property-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+.note-properties .note-property-name { width: 100%; justify-content: flex-start; font-size: inherit; font-weight: 400; }
+.note-property-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.note-property-chips [data-slot="badge"] { white-space: normal; overflow-wrap: anywhere; }
+.note-property-popup { width: min(360px, calc(100vw - 24px)); padding: 12px; animation: none; }
+.note-property-popup textarea { max-height: 240px; }
+.note-property-create-popup { width: min(280px, calc(100vw - 24px)); padding: 8px; }
+.note-property-create { display: grid; gap: 8px; font-size: 14px; line-height: 20px; }
+.note-property-create > input { height: 32px; }
+.note-property-type-list { display: grid; border-top: 1px solid var(--border); padding-top: 4px; }
+.note-property-type-label { padding: 4px 8px; font-size: 12px; color: var(--muted-foreground); }
+.note-property-create .note-property-type-option { width: 100%; height: 32px; justify-content: flex-start; gap: 8px; padding-inline: 8px; font-weight: 400; }
+.note-property-type-option > svg { opacity: .8; }
+
+.note-property-inline { border-radius: 4px; outline: 1px solid var(--border); background: var(--background); }
+.note-property-inline textarea {
+  min-height: 32px;
+  max-height: none;
+  padding: 6px;
+  border: 0;
+  border-radius: 4px;
+  font: inherit;
+  line-height: inherit;
+  resize: none;
+  box-shadow: none;
+}
+.note-property-inline [role="alert"] { padding: 6px; }
+
+.note-date-popup { width: min(280px, calc(100vw - 24px)); }
+.note-date-picker { min-width: 0; }
+.note-date-picker .rdp-root { position: relative; margin-top: 8px; font-size: 14px; line-height: 20px; }
+.note-date-picker .rdp-month_caption { display: flex; align-items: center; height: 32px; padding-inline: 4px; font-weight: 500; }
+.note-date-picker .rdp-nav { position: absolute; top: 0; right: 0; display: flex; }
+.note-date-picker .rdp-button_previous, .note-date-picker .rdp-button_next { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; }
+.note-date-picker .rdp-chevron { width: 16px; height: 16px; fill: currentColor; }
+.note-date-picker .rdp-month_grid { width: 100%; table-layout: fixed; border-collapse: collapse; }
+.note-date-picker .rdp-weekday { height: 32px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; }
+.note-date-picker .rdp-day { padding: 0; text-align: center; }
+.note-date-picker .rdp-day_button { display: block; width: 32px; height: 32px; margin-inline: auto; border-radius: 50%; }
+.note-date-picker .rdp-outside { color: var(--muted-foreground); }
+.note-date-picker button:hover { background: var(--hover-bg); color: var(--accent-foreground); }
+.note-date-picker button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.note-date-picker .rdp-selected .rdp-day_button { background: var(--primary); color: var(--primary-foreground); }
+.note-date-picker .rdp-today:not(.rdp-selected) .rdp-day_button { background: var(--secondary); color: var(--secondary-foreground); font-weight: 600; }
+.note-date-picker .rdp-disabled { opacity: .5; }
+.note-date-picker .note-date-today { width: 100%; margin-top: 8px; font-weight: 400; }
+
+.note-property-name[data-popup-open] { background: var(--hover-bg); }
+.note-property-menu { width: min(220px, calc(100vw - 24px)); }
+.note-property-menu :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) { min-height: 32px; border-radius: var(--hover-action-radius); }

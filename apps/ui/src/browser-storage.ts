@@ -3,7 +3,10 @@ import { createId } from "./uuid";
 
 export type BrowserDraft = { id: string; title?: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; updatedAt: string; draftKey: string; vaultBinding?: string };
 export type StoredSelection = { directoryId: string; vaultId: string; handle: BrowserDirectoryHandle };
+export type RenameJournal = { changes: { path: string; before: string | null; after: string | null }[]; identities: FileIdentity[] };
 export type BrowserVaultStorage = {
+  renameJournal(scope: string): Promise<RenameJournal | undefined>;
+  saveRenameJournal(scope: string, journal: RenameJournal | undefined): Promise<void>;
   identities(scope: string): Promise<FileIdentity[]>;
   saveIdentities(scope: string, identities: FileIdentity[]): Promise<void>;
   loadSelection(): Promise<StoredSelection | undefined>;
@@ -53,6 +56,11 @@ export class IndexedDBVaultStorage implements BrowserVaultStorage {
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error ?? new Error("本机草稿写入已取消。"));
     });
+  }
+
+  renameJournal(scope: string): Promise<RenameJournal | undefined> { return this.read(`rename:${scope}`); }
+  saveRenameJournal(scope: string, journal: RenameJournal | undefined): Promise<void> {
+    return this.write(journal ? [[`rename-backup:${scope}:${createId()}`, journal], [`rename:${scope}`, journal]] : [[`rename:${scope}`, undefined]]);
   }
 
   async identities(scope: string): Promise<FileIdentity[]> { return await this.read(`identities:${scope}`) ?? []; }

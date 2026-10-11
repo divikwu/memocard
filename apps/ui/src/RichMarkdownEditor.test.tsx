@@ -130,7 +130,7 @@ it('weakens block controls while typing and restores them on pointer movement or
  expect(root.getAttribute('data-menu-open')).toBe('true');
  vi.restoreAllMocks();
 });
-it('focuses the document end from blank page space without inserting content or stealing interactive clicks',async()=>{
+it('enters one trailing empty paragraph from blank page space without stealing interactive clicks',async()=>{
  const {editor,field,change}=await setup('first\n\nsecond',{},true);
  const surface=field.closest('.note-page-scroll')!;
  vi.spyOn(field,'getBoundingClientRect').mockReturnValue(new DOMRect(100,100,720,240));
@@ -138,7 +138,13 @@ it('focuses the document end from blank page space without inserting content or 
  fireEvent.click(surface,{clientX:200,clientY:500});
  await waitFor(()=>expect(document.activeElement).toBe(field));
  expect(editor.state.selection.from).toBe(editor.state.doc.content.size-1);
- expect(change).not.toHaveBeenCalled();
+ expect(editor.state.doc.childCount).toBe(3);
+ expect(editor.state.doc.lastChild?.type.name).toBe('paragraph');
+ expect(editor.state.doc.lastChild?.content.size).toBe(0);
+ expect(change).toHaveBeenCalledTimes(1);
+ const after=editor.getJSON();
+ for(let i=0;i<3;i++) fireEvent.click(surface,{clientX:200,clientY:500});
+ expect(editor.getJSON()).toEqual(after);expect(change).toHaveBeenCalledTimes(1);
  const button=screen.getByRole('button',{name:'其他操作'});
  act(()=>{editor.commands.setTextSelection(2);});
  fireEvent.click(button,{clientX:200,clientY:500});
@@ -147,6 +153,34 @@ it('focuses the document end from blank page space without inserting content or 
  Object.defineProperty(editor.view,'composing',{configurable:true,value:true});
  fireEvent.click(surface,{clientX:200,clientY:500});expect(editor.state.selection.from).toBe(2);
  Object.defineProperty(editor.view,'composing',{configurable:true,value:false});
+ act(()=>{editor.commands.undo();});
+ expect(editor.getText()).toBe('first\n\nsecond');expect(editor.state.doc.childCount).toBe(2);
+ vi.restoreAllMocks();
+});
+it.each(['','first'])('reuses an existing empty last paragraph after %j without writing',async value=>{
+ const {editor,field,change}=await setup(value,{},true);
+ if(value) act(()=>{editor.commands.insertContentAt(editor.state.doc.content.size,{type:'paragraph'});});
+ change.mockClear();
+ const before=editor.getJSON(),surface=field.closest('.note-page-scroll')!;
+ vi.spyOn(field,'getBoundingClientRect').mockReturnValue(new DOMRect(100,100,720,26));
+ for(let i=0;i<3;i++) fireEvent.click(surface,{clientX:200,clientY:150});
+ await waitFor(()=>expect(document.activeElement).toBe(field));
+ expect(editor.state.selection.$from.parent.type.name).toBe('paragraph');
+ expect(editor.state.selection.from).toBe(editor.state.doc.content.size-1);
+ expect(editor.getJSON()).toEqual(before);expect(change).not.toHaveBeenCalled();
+ vi.restoreAllMocks();
+});
+it.each(['first\n\n- item','first\n\n```\ncode\n```','first\n\n---'])('continues outside the final block in %j',async value=>{
+ const {editor,field,change}=await setup(value,{},true);
+ const before=editor.getJSON(),surface=field.closest('.note-page-scroll')!;
+ vi.spyOn(field,'getBoundingClientRect').mockReturnValue(new DOMRect(100,100,720,100));
+ fireEvent.click(surface,{clientX:200,clientY:250});
+ expect(editor.state.selection.$from.depth).toBe(1);
+ expect(editor.state.selection.$from.parent.type.name).toBe('paragraph');
+ expect(editor.state.selection.$from.parent.content.size).toBe(0);
+ expect(editor.getJSON().content?.slice(0,-1)).toEqual(before.content);
+ const after=editor.getJSON();fireEvent.click(surface,{clientX:200,clientY:250});
+ expect(editor.getJSON()).toEqual(after);expect(change).toHaveBeenCalledTimes(1);
  vi.restoreAllMocks();
 });
 it('does not focus blank page space in a read-only editor',async()=>{
@@ -487,6 +521,25 @@ it('keeps a leading hashtag as tag syntax rather than a Markdown heading', async
  act(() => { editor.commands.insertContent({ type: 'text', text: '#工作/项目 ' }); });
  expect(change).toHaveBeenLastCalledWith('#工作/项目 ');
 });
+it.each(['#/事实上', '#//', '#work//design'])('keeps malformed tag %s as plain text without suggestions', async text => {
+ const {editor,field}=await setup('正文');
+ act(()=>{editor.chain().setTextSelection(3).insertContent(` ${text}`).run();});
+ expect(editor.getText()).toBe(`正文 ${text}`);
+ expect(screen.queryByRole('group',{name:'标签建议'})).toBeNull();
+ expect(field.querySelector('.rich-inline-tag')).toBeNull();
+});
+it('keeps suggestions while entering a nested tag after its slash', async () => {
+ const {request}=await import('./bridge');
+ vi.mocked(request).mockResolvedValue({tags:[{name:'work/design'}]});
+ const {editor,field}=await setup('正文');
+ act(()=>{editor.chain().setTextSelection(3).insertContent(' #work/').run();});
+ await screen.findByRole('button',{name:'#work/design'});
+ act(()=>{editor.commands.insertContent('/');});
+ expect(screen.queryByRole('group',{name:'标签建议'})).toBeNull();
+ expect(editor.getText()).toBe('正文 #work//');
+ fireEvent.keyDown(field,{key:'Enter'});
+ expect(editor.getText()).not.toContain('#work/design');
+});
 it('only exposes advanced formatting through a text selection', async () => {
  const { editor, field } = await setup('正文');
  expect(screen.queryByRole('button', { name: '格式与属性' })).toBeNull();
@@ -505,6 +558,52 @@ it('styles editable inline tags without changing source and excludes code and li
  act(()=>{editor.commands.setContent('正文 #新标签', {contentType:'markdown'});});
  expect(field.querySelector('.rich-inline-tag')?.textContent).toBe('#新标签');
  expect(change).toHaveBeenLastCalledWith('正文 #新标签');
+});
+it('uses lowercase tag identities while retaining mixed-case body text', async () => {
+ const {field,change}=await setup('正文 #Work #work #WORK/Design');
+ expect([...field.querySelectorAll('.rich-inline-tag')].map(el=>[el.textContent,el.getAttribute('data-tag')])).toEqual([['#Work','work'],['#work','work'],['#WORK/Design','work%2Fdesign']]);
+ expect(change).not.toHaveBeenCalled();
+});
+it('lowercases newly typed tags without rewriting untouched tags and keeps undo atomic', async () => {
+ const {editor,field,change}=await setup('正文 #Legacy');
+ act(()=>{editor.commands.insertContentAt(editor.state.doc.content.size-1,{type:'text',text:' #Work/Design '});});
+ expect(editor.getText()).toBe('正文 #Legacy #work/design ');
+ expect(change).toHaveBeenLastCalledWith('正文 #Legacy #work/design ');
+ expect(field.querySelectorAll('.rich-inline-tag')[1].textContent).toBe('#work/design');
+ act(()=>{editor.commands.undo();});
+ expect(editor.getText()).toBe('正文 #Legacy');
+ act(()=>{editor.commands.redo();});
+ expect(editor.getText()).toBe('正文 #Legacy #work/design ');
+});
+it('lowercases an edited existing tag while preserving the cursor and surrounding text', async () => {
+ const {editor}=await setup('正文 #Work 尾部');
+ act(()=>{editor.chain().setTextSelection(7).insertContent('X').run();});
+ expect(editor.getText()).toBe('正文 #woxrk 尾部');
+ expect(editor.state.selection.from).toBe(8);
+});
+it('lowercases pasted tags but preserves code, links and Markdown headings', async () => {
+ const {editor,change}=await setup('正文');
+ act(()=>{editor.commands.setContent('正文 #Work #WORK/Design\n\n`#CODE` [#LINK](https://example.com)\n\n```\n#FENCED\n```\n\n# Heading',{contentType:'markdown'});});
+ expect(change).toHaveBeenLastCalledWith('正文 #work #work/design\n\n`#CODE` [#LINK](https://example.com)\n\n```\n#FENCED\n```\n\n# Heading');
+});
+it('defers tag casing until composition ends', async () => {
+ const {editor,field,change}=await setup('正文');
+ fireEvent.compositionStart(field);
+ act(()=>{editor.commands.insertContentAt(3,{type:'text',text:' #WORK中文'});});
+ expect(editor.getText()).toBe('正文 #WORK中文');
+ await act(async()=>{fireEvent.compositionEnd(field); await Promise.resolve();});
+ expect(editor.getText()).toBe('正文 #work中文');
+ expect(change).toHaveBeenLastCalledWith('正文 #work中文');
+});
+it('matches and chooses lowercase suggestions from an existing uppercase tag', async () => {
+ const {request}=await import('./bridge');
+ vi.mocked(request).mockResolvedValue({tags:[{name:'Work/Design'},{name:'WORK/DESIGN'}]});
+ const {editor}=await setup('正文 #Wo');
+ act(()=>{editor.commands.setTextSelection(editor.state.doc.content.size-1);});
+ const suggestion=await screen.findByRole('button',{name:'#work/design'});
+ expect(screen.getAllByRole('button',{name:'#work/design'})).toHaveLength(1);
+ fireEvent.click(suggestion);
+ expect(editor.getText()).toBe('正文 #work/design ');
 });
 it('keeps tag paragraph styles stable and preserves their Markdown on edit and undo', async () => {
  const source='正文 #工作\n\n#工作/设计 #生活\n\n`#代码`\n\n[#链接](https://example.com)\n\n#123';

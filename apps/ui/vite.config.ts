@@ -18,5 +18,11 @@ export default defineConfig({
       injectTo: "head-prepend",
     }],
   }],
-  build: { target: "safari16.4", assetsInlineLimit: 0 },
+  build: {
+    target: "safari16.4", assetsInlineLimit: 0,
+    rolldownOptions: { output: { codeSplitting: { groups: [
+      // Share already-eager dependencies; keep the tag picker and editor lazy.
+      { name: "vendor", test: /node_modules[\\/]/, tags: ["$initial"] },
+    ] } } },
+  },
 });

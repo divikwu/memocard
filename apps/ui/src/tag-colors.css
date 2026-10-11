@@ -1,0 +1,59 @@
+:root {
+  --tag-bg-opacity: 8%;
+  --tag-default-fg: var(--tag-gray-fg);
+  --tag-gray-fg: var(--color-zinc-800);
+  --tag-brown-fg: #64473a;
+  --tag-orange-fg: var(--color-orange-800);
+  --tag-yellow-fg: color-mix(in oklab, var(--color-yellow-700) 92%, var(--color-black));
+  --tag-green-fg: var(--color-emerald-800);
+  --tag-blue-fg: var(--color-blue-800);
+  --tag-purple-fg: var(--color-violet-800);
+  --tag-pink-fg: var(--color-pink-800);
+  --tag-red-fg: var(--color-red-800);
+}
+.dark {
+  --tag-bg-opacity: 16%;
+  --tag-default-fg: var(--tag-gray-fg);
+  --tag-gray-fg: var(--color-zinc-200);
+  --tag-brown-fg: #d7b5a0;
+  --tag-orange-fg: var(--color-orange-200);
+  --tag-yellow-fg: var(--color-yellow-200);
+  --tag-green-fg: var(--color-emerald-200);
+  --tag-blue-fg: var(--color-blue-200);
+  --tag-purple-fg: var(--color-violet-200);
+  --tag-pink-fg: var(--color-pink-200);
+  --tag-red-fg: var(--color-red-200);
+}
+:root, .dark {
+  --tag-default-bg: var(--tag-gray-bg);
+  --tag-gray-bg: color-mix(in oklab, var(--tag-gray-fg) var(--tag-bg-opacity), transparent);
+  --tag-brown-bg: color-mix(in oklab, var(--tag-brown-fg) var(--tag-bg-opacity), transparent);
+  --tag-orange-bg: color-mix(in oklab, var(--tag-orange-fg) var(--tag-bg-opacity), transparent);
+  --tag-yellow-bg: color-mix(in oklab, var(--tag-yellow-fg) var(--tag-bg-opacity), transparent);
+  --tag-green-bg: color-mix(in oklab, var(--tag-green-fg) var(--tag-bg-opacity), transparent);
+  --tag-blue-bg: color-mix(in oklab, var(--tag-blue-fg) var(--tag-bg-opacity), transparent);
+  --tag-purple-bg: color-mix(in oklab, var(--tag-purple-fg) var(--tag-bg-opacity), transparent);
+  --tag-pink-bg: color-mix(in oklab, var(--tag-pink-fg) var(--tag-bg-opacity), transparent);
+  --tag-red-bg: color-mix(in oklab, var(--tag-red-fg) var(--tag-bg-opacity), transparent);
+}
+.note-tag-color-swatch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 4px; background: var(--tag-bg); color: var(--tag-fg); border: 1px solid color-mix(in oklab, var(--tag-fg) 20%, transparent); }
+.note-tag-color-option { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 8px; border-radius: 4px; font-size: 14px; outline: none; }
+.note-tag-color-option[data-checked] { background: color-mix(in oklab, var(--muted) 60%, transparent); }
+.note-tag-color-option[data-highlighted] { background: var(--hover-bg); }
+.note-tag-color-option[data-disabled] { pointer-events: none; opacity: 0.5; }
+.note-tag-color-check { color: var(--tag-fg); }
+
+/* Tag content and its actions share a foreground, including hover and focus. */
+.note-tag-remove, .note-tag-chip > button { color: inherit; }
+button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hover, :focus-visible) { background: linear-gradient(var(--hover-bg), var(--hover-bg)), var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); }
+.note-tag-color-trigger { border-radius: var(--hover-action-radius); color: var(--muted-foreground); }
+.note-tag-color-trigger:is(:hover, :focus-visible, [data-popup-open]) { background: var(--hover-bg); color: var(--foreground); }
+.note-tag-color-default { --tag-bg: var(--tag-default-bg); --tag-fg: var(--tag-default-fg); }
+.note-tag-color-brown { --tag-bg: var(--tag-brown-bg); --tag-fg: var(--tag-brown-fg); }
+.note-tag-color-orange { --tag-bg: var(--tag-orange-bg); --tag-fg: var(--tag-orange-fg); }
+.note-tag-color-yellow { --tag-bg: var(--tag-yellow-bg); --tag-fg: var(--tag-yellow-fg); }
+.note-tag-color-green { --tag-bg: var(--tag-green-bg); --tag-fg: var(--tag-green-fg); }
+.note-tag-color-blue { --tag-bg: var(--tag-blue-bg); --tag-fg: var(--tag-blue-fg); }
+.note-tag-color-purple { --tag-bg: var(--tag-purple-bg); --tag-fg: var(--tag-purple-fg); }
+.note-tag-color-pink { --tag-bg: var(--tag-pink-bg); --tag-fg: var(--tag-pink-fg); }
+.note-tag-color-red { --tag-bg: var(--tag-red-bg); --tag-fg: var(--tag-red-fg); }

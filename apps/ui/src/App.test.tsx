@@ -75,6 +75,37 @@ afterEach(() => {
 });
 
 describe("note workspace", () => {
+  it("expands inline properties with the keyboard and clears metadata for a new page", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(await screen.findByRole('button', { name: /^打开 .* 的笔记$/ }));
+    await screen.findByRole('textbox', { name: '笔记内容' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText(`${note.id}.md`)).toBeNull();
+    const expand = screen.getByRole('button', {name:'属性'});
+    expect(expand.getAttribute('aria-expanded')).toBe('false');
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('textbox', {name:'笔记内容'})));
+    act(() => expand.focus());
+    expect(document.activeElement).toBe(expand);
+    await user.keyboard('{Enter}');
+    expect(document.activeElement).toBe(expand);
+    const properties = screen.getByLabelText('笔记属性');
+    expect(properties.textContent).toContain(`${note.id}.md`);
+    expect(properties.textContent).toContain('2026/09/28');
+    expect(expand.getAttribute('aria-expanded')).toBe('true');
+    expect(document.activeElement).toBe(expand);
+    await user.keyboard(' ');
+    await waitFor(() => expect(screen.queryByText(`${note.id}.md`)).toBeNull());
+    expect(bridge.request.mock.calls.some(([op]) => op === 'saveNote' || op === 'saveDraft')).toBe(false);
+    await user.click(screen.getByRole('button', {name:'新建笔记'}));
+    await screen.findByRole('region', {name:'新建笔记'});
+    await user.click(screen.getByRole('button', {name:'属性'}));
+    const unsaved = screen.getByLabelText('笔记属性');
+    expect(unsaved.textContent).toContain('尚未保存');
+    expect(unsaved.textContent).not.toContain(note.id);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(bridge.request.mock.calls.some(([op]) => op === 'saveNote' || op === 'saveDraft')).toBe(false);
+  });
   it("renders notes as an equal-height card grid", async () => {
     render(<App />);
     const pageTitle = await screen.findByRole("heading", { name: "所有笔记", level: 1 });
@@ -98,7 +129,7 @@ describe("note workspace", () => {
     expect(card?.className).not.toContain("shadow-none");
     expect(screen.getByText("新页面").className).toContain("text-base");
     expect(card?.querySelector("time")?.className).toContain("text-xs");
-    expect(screen.getByRole("button", { name: "#生活" }).className).toContain("text-xs");
+    expect(screen.getByRole("button", { name: "筛选标签 生活" }).className).toContain("text-xs");
     expect(screen.queryByText("编辑")).toBeNull();
     expect(screen.getByRole("button", { name: /^打开 .* 的笔记$/ }).className).toContain("flex-1");
   });
@@ -156,7 +187,7 @@ describe("note workspace", () => {
     await act(async () => { resolveNote(note); });
 
     expect(readEditorText()).toBe("不能被旧响应覆盖的新想法");
-    expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({ body: "", title: "" }));
+    expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.objectContaining({ body: "", title: "" }));
     fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveDraft", expect.objectContaining({ body: "不能被旧响应覆盖的新想法" })));
   });
@@ -345,7 +376,7 @@ describe("note workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     fireEvent.change(screen.getByRole("textbox", { name: "搜索笔记" }), { target: { value: "旧库关键词" } });
     fireEvent.click(screen.getByRole("button", { name: "查看结果" }));
-    fireEvent.click(screen.getByRole("button", { name: "#生活" }));
+    fireEvent.click(screen.getByRole("button", { name: "筛选标签 生活" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "旧库关键词", tags: ["生活"], limit: 30 }));
     window.location.hash = "#/settings";
     fireEvent(window, new Event("hashchange"));
@@ -553,13 +584,23 @@ it("creates independent pages with different identities and returns to the list"
   for (const text of ["第一条随手记", "第二条随手记"]) {
     fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
     await screen.findByRole("textbox", { name: "笔记内容" });
-    expect(window.location.hash).toMatch(/^#\/notes\/[a-f0-9-]+$/);
+    expect(window.location.hash).toBe('#/notes/new');
     replaceEditorText(text); fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
     await waitFor(() => expect(screen.queryByRole("textbox", { name: "笔记内容" })).toBeNull());
   }
   const writes = bridge.request.mock.calls.filter(([op, params]) => op === "saveNote" && params.body);
   expect(writes.map(([, params]) => params.body)).toEqual(["第一条随手记", "第二条随手记"]);
   expect(writes[0][1].id).not.toBe(writes[1][1].id); expect(window.location.hash).toBe("#/notes");
+});
+it('returns from a blank new page to the list without saving a file or recovery', async () => {
+  render(<App />); await screen.findByText(note.body);
+  fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
+  await screen.findByRole('textbox', { name: '页面标题' });
+  fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
+  await screen.findByRole('list', { name: '笔记列表' });
+  expect(window.location.hash).toBe('#/notes');
+  expect(bridge.request).not.toHaveBeenCalledWith('saveNote', expect.anything());
+  expect(bridge.request).not.toHaveBeenCalledWith('saveDraft', expect.anything());
 });
 
 it('opens a direct note route only after recovery has loaded', async () => {
@@ -600,6 +641,24 @@ it("dismisses unfiled recovery for this visit without deleting it", async () => 
   expect(screen.queryByRole("button", { name: "恢复内容" })).toBeNull();
   expect(bridge.request).not.toHaveBeenCalledWith("saveDraft", expect.anything());
   expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
+});
+it('ignores blank new-page recovery while retaining title-only and cleared existing notes', async () => {
+  pendingDrafts = [
+    { id: 'blank', title: '', body: '', tags: [], baseHash: null },
+    { id: 'whitespace', title: '  ', body: '\n\t', tags: [], baseHash: null },
+    { id: 'title-only', title: '保留标题', body: '', tags: [], baseHash: null },
+    { id: note.id, title: '', body: '', tags: [], baseHash: 'old-hash' },
+  ];
+  render(<App />);
+  await screen.findByText('发现 1 条未保存内容');
+  fireEvent.click(screen.getByRole('button', { name: '恢复内容' }));
+  const title = await screen.findByRole('textbox', { name: '页面标题' });
+  expect((title as HTMLTextAreaElement).value).toBe('保留标题');
+  fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
+  await screen.findByRole('list', { name: '笔记列表' });
+  fireEvent.click(screen.getByRole('button', { name: /^打开 .* 的笔记$/ }));
+  await screen.findByRole('region', { name: '编辑笔记' });
+  expect(readEditorText()).toBe('');
 });
 
 it('keeps the breadcrumb in sync with unsaved page titles and empty-title fallback', async () => {

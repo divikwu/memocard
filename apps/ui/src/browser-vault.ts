@@ -1,9 +1,8 @@
 import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
 import { Document } from "yaml";
-import { linkCandidates } from "./link-candidates";
 import { createId } from "./uuid";
 import { inlineTags } from "./inline-tags";
-import { BrowserVaultError, canonicalId, encodeBrowserNote, encodeObsidianNote, parseObsidianNote, fileAt, fileError, imageType, parseBrowserNote, parseDate, readBytes, safeParts, sha256, validatedTags } from "./browser-files";
+import { BrowserVaultError, canonicalId, encodeBrowserNote, encodeObsidianNote, parseObsidianNote, fileAt, fileError, parseBrowserNote, parseDate, readBytes, safeParts, sha256, validatedTags } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker, BrowserWritable, ParsedBrowserNote } from "./browser-files";
 import { IndexedDBVaultStorage } from "./browser-storage";
 import type { BrowserDraft, BrowserVaultStorage, StoredSelection } from "./browser-storage";
@@ -27,7 +26,8 @@ type Options = {
   parseLegacy?: typeof parseBrowserNote;
   parseCompatible?: typeof parseObsidianNote;
 };
-const operations = ["getStatus", "queryNotes", "getNote", "saveNote", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"];
+const propertyOperations = ["getNoteProperties", "updateNoteProperty"];
+const operations = ["getStatus", "queryNotes", "getNote", "saveNote", ...propertyOperations, "getPropertyLabels", "renamePropertyLabel", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"];
 const coverageEmpty = (): Coverage => ({ complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: null });
 const now = () => new Date().toISOString();
 const textBytes = (text: string) => new TextEncoder().encode(text);
@@ -244,6 +244,11 @@ export class BrowserVault {
 
   private async scanFiles(selected: Binding): Promise<Snapshot> {
     await this.active(selected);
+    if (await this.storage.renameJournal(this.scope(selected))) {
+      const { recoverRename } = await import('./browser-rename');
+      await recoverRename(selected.handle, this.compatible, this.storage, this.scope(selected), () => this.active(selected));
+      this.parsedCache.clear(); this.invalidateSnapshot();
+    }
     const snapshot: Snapshot = { folders: [this.compatible ? "" : "notes"], parsed: [], duplicateIds: new Set(), coverage: { ...coverageEmpty(), complete: true } };
     const old = this.compatible ? await this.storage.identities(this.scope(selected)) : [];
     const files: { path: string; bytes: Uint8Array; modified: number; hash: string }[] = [];
@@ -410,10 +415,17 @@ export class BrowserVault {
       const existing = snapshot.parsed.find(({ note }) => note.id === save.id);
       if (!existing && save.baseHash) throw new BrowserVaultError("NOTE_NOT_FOUND", "原文件已移除，不能从旧草稿自动恢复。");
       if (existing?.note.deletedAt) throw new BrowserVaultError("NOTE_DELETED", "此笔记已删除，暂时无法编辑。");
-      let requestedPath = save.relativePath;
-      if (this.compatible && !existing && !save.baseHash && (!requestedPath || requestedPath.endsWith(`${save.id}.md`))) {
-        const title = (save.body.split(/\r?\n/).find(line => line.trim()) ?? "未命名").replace(/^[#\s]+/, "").replace(/[\\/:*?"<>|#^]/g, " ").trim().replace(/^\.+/, "").slice(0, 60) || "未命名";
-        requestedPath = (requestedPath?.includes("/") ? requestedPath.slice(0, requestedPath.lastIndexOf("/") + 1) : "") + `${title}-${save.id.slice(0, 8)}.md`;
+      const { noteSavePath } = await import('./note-files');
+      const requestedPath = noteSavePath(save, existing?.note.relativePath, snapshot.parsed.map(item => item.note.relativePath), this.compatible);
+      if (existing && requestedPath !== existing.note.relativePath) {
+        const path = requestedPath;
+        return this.lock(`memocard:browser:index:${this.scope(selected)}`, async () => {
+          const { renameNote } = await import('./browser-rename');
+          const saved = await renameNote(selected.handle, this.compatible, this.storage, this.scope(selected), selected.vaultId, save, existing, snapshot.parsed, path, () => this.active(selected));
+          this.parsedCache.clear(); this.invalidateSnapshot();
+          await this.storage.removeMatchingDraft(this.scope(selected), draft).catch(() => undefined);
+          return { ...saved, vaultBinding: selected.binding };
+        });
       }
       const path = existing?.note.relativePath ?? this.newNotePath(requestedPath, save.id, snapshot);
       let file: BrowserFileHandle | undefined;
@@ -433,8 +445,22 @@ export class BrowserVault {
         frontmatter = new Document({ id: save.id, createdAt: now() }, { schema: "yaml-1.1" });
       }
       if (!this.compatible) frontmatter.set("updatedAt", now());
-      if (save.title !== undefined && !this.compatible) frontmatter.set("title", save.title);
-      const bytes = this.compatible ? encodeObsidianNote(original, save.body, save.title) : encodeBrowserNote(frontmatter, save.body);
+      let bytes = this.compatible ? encodeObsidianNote(original, save.body) : encodeBrowserNote(frontmatter, save.body);
+      let definitionSource:string | null = null;
+      if (!existing) {
+        const { inheritedProperties, parsePropertyDefinitions, propertyDefinitionPath } = await import('./property-definitions');
+        const { readProperties, patchProperty } = await import('./note-properties');
+        const { renameSource } = await import('./browser-rename');
+        definitionSource = await renameSource(selected.handle,propertyDefinitionPath,this.compatible);
+        let definitions;
+        try { definitions = parsePropertyDefinitions(definitionSource ?? ''); }
+        catch { throw new BrowserVaultError('INVALID_PROPERTY','属性定义配置无法读取，请检查 .memocard/property-definitions.json。'); }
+        const all = snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).flatMap(item => readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties);
+        let source = new TextDecoder().decode(bytes);
+        for (const property of inheritedProperties(all,definitions)) source = patchProperty(source,{name:property.name,type:property.type as import('@memocard/contracts').PropertyType,value:property.value,options:property.options,create:true});
+        bytes = textBytes(source);
+      }
+      if (bytes.length > 8 * 1024 * 1024) throw new BrowserVaultError('NOTE_TOO_LARGE','单条 Markdown 最大支持 8 MiB。');
       const newlyCreated = !file;
       await this.active(selected);
       file ??= await fileAt(selected.handle, path, this.compatible ? "vault" : "notes", true);
@@ -448,6 +474,11 @@ export class BrowserVault {
           const source = await readBytes(current);
           if (newlyCreated ? source.byteLength !== 0 : await sha256(source) !== save.baseHash) {
             throw new BrowserVaultError("HASH_CONFLICT", "文件已在其他位置修改，原文未被覆盖；草稿仍然保留。");
+          }
+          if (newlyCreated) {
+            const { renameSource } = await import('./browser-rename');
+            const { propertyDefinitionPath } = await import('./property-definitions');
+            if (await renameSource(selected.handle,propertyDefinitionPath,this.compatible) !== definitionSource) throw new BrowserVaultError('HASH_CONFLICT','属性定义已修改，请重新保存。');
           }
           this.requireBinding(selected);
         };
@@ -554,6 +585,7 @@ export class BrowserVault {
       bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
     } catch { throw new BrowserVaultError("INVALID_ATTACHMENT", "图片内容无效或超过 20 MB。"); }
     if (!bytes.length || bytes.byteLength > 20 * 1024 * 1024) throw new BrowserVaultError("INVALID_ATTACHMENT", "图片不能为空或超过 20 MB。");
+    const { imageType } = await import('./browser-image-type');
     const type = imageType(bytes);
     if (!type) throw new BrowserVaultError("INVALID_ATTACHMENT", "请选择有效的 PNG、JPEG、GIF、WebP、HEIC 或 HEIF 图片。");
     if (type.extension === "heic") throw new BrowserVaultError("UNSUPPORTED_ATTACHMENT", "此浏览器无法可靠读取 HEIC 或 HEIF 图片，请先转换为 PNG 或 JPEG。");
@@ -589,6 +621,7 @@ export class BrowserVault {
     const file = await (await fileAt(context.handle, path, this.compatible ? "vault" : "assets")).getFile();
     if (file.size > 20 * 1024 * 1024) throw new BrowserVaultError("INVALID_ATTACHMENT", "图片超过 20 MB。");
     const bytes = new Uint8Array(await file.arrayBuffer());
+    const { imageType } = await import('./browser-image-type');
     const type = imageType(bytes);
     if (!type) throw new BrowserVaultError("INVALID_ATTACHMENT", "附件不是支持的图片。");
     this.requireBinding(context, expectedBinding);
@@ -606,6 +639,17 @@ export class BrowserVault {
       return { drafts: drafts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((draft) => ({ ...draft, vaultBinding: selected.binding })) };
     }
     if (operation === "saveNote") return this.save(selected, this.saveParams(params));
+    if (operation === "getPropertyLabels" || operation === "renamePropertyLabel") {
+      const { propertyLabelOperation } = await import('./browser-property-labels');
+      return this.lock(`memocard:browser:vault:${selected.vaultId}`, () => propertyLabelOperation(operation, params, selected.handle, () => this.active(selected), () => this.scan(selected)));
+    }
+    if (propertyOperations.includes(operation)) {
+      const { propertyOperation } = await import('./browser-rename');
+      return this.lock(`memocard:browser:vault:${selected.vaultId}`, async () => {
+        const snapshot = await this.scan(selected);
+        return this.lock(`memocard:browser:index:${this.scope(selected)}`, () => propertyOperation(operation, params, selected, this.compatible, this.storage, () => this.active(selected), () => Promise.resolve(snapshot)));
+      }).finally(() => this.invalidateSnapshot());
+    }
     if (operation === "queryNotes") return this.query(selected, params);
     if (operation === "importAttachment") return this.attachment(selected, params);
     if (operation === "getNote") {
@@ -630,6 +674,7 @@ export class BrowserVault {
       };
       await walk(selected.handle);
       this.requireBinding(selected);
+      const { linkCandidates } = await import('./link-candidates');
       const matches = linkCandidates(target, sourcePath, paths, params.wiki === true);
       if (matches.length !== 1) throw new BrowserVaultError(matches.length ? "AMBIGUOUS_LINK" : "LINK_NOT_FOUND", matches.length ? "链接匹配多份文件，请使用完整路径。" : "找不到链接目标。");
       const note = snapshot.parsed.find(item => item.note.relativePath === matches[0])?.note;

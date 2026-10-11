@@ -24,7 +24,7 @@ export class EditorSession {
     this.hadRecovery = Boolean(initial.updatedAt);
     this.persisted = initial.baseHash && !initial.updatedAt ? key(this.current) : '';
   }
-  get dirty() { return key(this.current) !== this.persisted && Boolean(this.current.baseHash || this.current.title !== undefined || this.current.body.trim()); }
+  get dirty() { return key(this.current) !== this.persisted && Boolean(this.current.baseHash || this.current.title?.trim() || this.current.body.trim()); }
   private emit() { if (!this.disposed) this.notify(); }
   private enqueue<T>(work: () => Promise<T>): Promise<T> {
     const result = this.tail.catch(() => undefined).then(work);
@@ -64,8 +64,9 @@ export class EditorSession {
         if (this.canDraft) await this.transport('saveDraft', this.params(snapshot));
         const note = await this.transport<Note>('saveNote', this.params(snapshot));
         const path = note.relativePath ?? snapshot.relativePath;
-        this.persisted = key({ ...snapshot, relativePath: path });
-        this.current = { ...this.current, relativePath: this.current.relativePath === snapshot.relativePath ? path : this.current.relativePath, baseHash: note.contentHash };
+        const title = note.title ?? snapshot.title, body = note.body ?? snapshot.body;
+        this.persisted = key({ ...snapshot, title, body, relativePath: path });
+        this.current = { ...this.current, title: this.current.title === snapshot.title ? title : this.current.title, body: this.current.body === snapshot.body ? body : this.current.body, relativePath: this.current.relativePath === snapshot.relativePath ? path : this.current.relativePath, baseHash: note.contentHash };
         this.hadRecovery = this.dirty;
         this.state = this.dirty ? 'idle' : 'saved'; this.error = null;
         // The source bridge removes only the matching recovery. Restore the newest version immediately.

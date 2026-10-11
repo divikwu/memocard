@@ -33,6 +33,7 @@
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+  --color-hover: var(--hover-bg);
   --color-accent-text: var(--accent-text);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
@@ -109,6 +110,9 @@
   --muted: #f8f8f8;
   --muted-foreground: oklch(0.556 0 0);
   --accent: #f8f8f8;
+  --hover-bg: color-mix(in oklab, var(--neutral-800) 6%, transparent);
+  --hover-row-radius: 8px;
+  --hover-action-radius: 4px;
   --accent-foreground: var(--neutral-950);
   --accent-text: var(--accent-500);
   --destructive: oklch(0.577 0.245 27.325);
@@ -330,6 +334,7 @@
   --muted: var(--neutral-800);
   --muted-foreground: oklch(0.708 0 0);
   --accent: var(--neutral-800);
+  --hover-bg: color-mix(in oklab, var(--neutral-200) 16%, transparent);
   --accent-foreground: var(--neutral-50);
   --accent-text: var(--accent-500);
   --destructive: oklch(0.704 0.191 22.216);
@@ -349,6 +354,10 @@
   --sidebar-accent-foreground: var(--neutral-50);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.708 0 0);
+}
+
+@utility bg-hover-overlay {
+  background-image: linear-gradient(var(--hover-bg), var(--hover-bg));
 }
 
 @layer base {
@@ -379,6 +388,16 @@
     background: color-mix(in oklch, var(--primary) 22%, transparent);
   }
 }
+
+/* Sidebar tags and property options share hover colors and corner radii. */
+.sidebar-tag-row { border-radius: var(--hover-row-radius); }
+.sidebar-tag-row > :is([data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]) { border-radius: inherit; }
+.sidebar-tag-row:is(:hover, :focus-within, .sidebar-tag-row-open) { background: var(--hover-bg); }
+.sidebar-tag-row:is(:hover, :focus-within, .sidebar-tag-row-open) > :is([data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]) { background: transparent; }
+.sidebar-tag-row > [data-sidebar="menu-action"] { top: 50%; width: 24px; height: 24px; transform: translateY(-50%); border-radius: var(--hover-action-radius); background: transparent; color: var(--muted-foreground); }
+.sidebar-tag-row > .sidebar-tree-toggle { left: 4px; right: auto; }
+.sidebar-tag-more { right: 4px; }
+.sidebar-tag-row > [data-sidebar="menu-action"]:is(:hover, :focus-visible, [data-popup-open]) { background: var(--hover-bg); color: var(--foreground); }
 
 /* MemoCard content uses the same theme tokens as the application controls. */
 .dark .block-editor { --note-block-selection: rgba(82, 156, 235, 0.24); }
@@ -440,3 +459,13 @@
 .note-page-title { display: block; width: 100%; min-width: 0; min-height: 1.2em; resize: none; overflow: hidden; border: 0; background: transparent; color: var(--foreground); font-family: var(--note-heading-font, inherit); font-size: 32px; font-weight: 700; line-height: 1.2; padding: 0; outline: none; }
 .note-page-title::placeholder { color: var(--muted-foreground); opacity: .5; }
 .note-page-title:focus { caret-color: var(--foreground); }
+
+/* Text fields share the layout switcher's gray focus background. */
+:is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]), textarea):focus {
+  background-color: var(--muted);
+  outline: none;
+  box-shadow: none;
+}
+
+/* Body tags, property tags and tag-picker chips share one appearance. */
+.rich-inline-tag, .note-tag-pill { max-width: 100%; min-height: 20px; border: 0; border-radius: 9999px; padding: 0 6px; background: var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); font-size: 14px; line-height: 20px; font-weight: 400; white-space: normal; overflow-wrap: anywhere; }

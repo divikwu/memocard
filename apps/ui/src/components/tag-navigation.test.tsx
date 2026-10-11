@@ -5,11 +5,31 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
 import { SidebarProvider } from "./ui/sidebar";
 import { TagNavigation } from "./tag-navigation";
+import { TagColorProvider } from "@/TagColorProvider";
+import { setTagColor } from "@/tag-colors";
 vi.mock("./tag-emoji-picker", () => ({ default: ({ onSelect }: { onSelect: (emoji: string) => void }) => <button onClick={() => onSelect("🎨")}>选择画板</button> }));
 const render = (ui: ReactElement) => renderUI(<SidebarProvider>{ui}</SidebarProvider>);
 const props = { vaultId: "vault-a", tags: [{ name: "工作", count: 2 }, { name: "工作/设计", count: 1 }, { name: "生活", count: 1 }], selected: null, onSelect: vi.fn() };
 beforeEach(() => { localStorage.clear(); vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} })); vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} }); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+it("keeps palettes available per vault without coloring sidebar tags", async () => {
+  setTagColor("vault-a", "工作/设计", "green");
+  setTagColor("vault-b", "工作/设计", "red");
+  const ui = (vaultId: string) => <TagColorProvider vaultId={vaultId}><TagNavigation {...props} vaultId={vaultId} /></TagColorProvider>;
+  const view = render(ui("vault-a"));
+  await waitFor(() => expect(document.querySelector("style[data-tag-colors]")?.textContent).toContain("--tag-green-bg"));
+  expect(screen.getByRole("button", { name: "工作/设计" }).hasAttribute("data-tag")).toBe(false);
+  view.rerender(<SidebarProvider>{ui("vault-b")}</SidebarProvider>);
+  await waitFor(() => expect(document.querySelector("style[data-tag-colors]")?.textContent).toContain("--tag-red-bg"));
+  expect(document.querySelector("style[data-tag-colors]")?.textContent).not.toContain("--tag-green-bg");
+});
+it('reuses uppercase legacy pins and icons for lowercase tag paths', () => {
+  localStorage.setItem('memocard:tags:vault-a',JSON.stringify({pinned:['Work','WORK'],icons:{Work:'🎨'}}));
+  render(<TagNavigation {...props} tags={[{name:'work',count:2}]} />);
+  const pinned = within(screen.getByRole('navigation',{name:'置顶标签'}));
+  expect(pinned.getAllByRole('button',{name:'work'})).toHaveLength(1);
+  expect(pinned.getByRole('button',{name:'work'}).textContent).toContain('🎨');
+});
 it("persists pins per vault and allows expanding and selecting descendants of a pinned nested tag", async () => {
   const user = userEvent.setup();
   const hierarchy = { ...props, tags: [...props.tags, { name: "工作/设计/界面", count: 1 }], selected: "工作/设计/界面" };

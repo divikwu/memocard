@@ -4,6 +4,380 @@ import UniformTypeIdentifiers
 @testable import MemoCardCore
 
 final class VaultStoreTests: XCTestCase {
+    func testNewLegacyNotesInheritLibraryProperties() async throws { try await newNotesInheritLibraryProperties(shared: false) }
+    func testNewObsidianNotesInheritLibraryProperties() async throws { try await newNotesInheritLibraryProperties(shared: true) }
+    private func newNotesInheritLibraryProperties(shared: Bool) async throws {
+        let core = try await store(create: !shared)
+        let fields = "summary: Existing\naliases: [One]\nwhen: 2026-10-11\nchecked: true\nchoice: One # memocard:choice={\"type\":\"select\",\"options\":[{\"name\":\"One\",\"color\":\"purple\"}]}\nadvanced: {nested: keep}\n"
+        let source: URL
+        if shared {
+            source = vault.appendingPathComponent("A.md")
+            try Data(("---\n" + fields + "---\nBody A").utf8).write(to: source)
+        } else { source = try writeNote(id: UUID().uuidString.lowercased(), filename: "A", body: "Body A", extra: fields) }
+        let before = try Data(contentsOf: source)
+        let config = vault.appendingPathComponent(propertyDefinitionPath)
+        try Data(#"{"choice":{"type":"multiSelect","options":[{"name":"Shared","color":"green"}]},"registered":{"type":"text"}}"#.utf8).write(to: config)
+        let preview = try await call(core, "getNoteProperties")
+        let properties = preview["properties"] as! [[String: Any]]
+        XCTAssertEqual(properties.map { $0["name"] as! String }, ["aliases", "checked", "choice", "registered", "summary", "when"])
+        XCTAssertEqual(properties.first { $0["name"] as? String == "checked" }?["value"] as? Bool, false)
+        XCTAssertEqual(properties.first { $0["name"] as? String == "when" }?["value"] as? String, "")
+        XCTAssertEqual(properties.first { $0["name"] as? String == "choice" }?["type"] as? String, "multiSelect")
+        XCTAssertEqual(properties.first { $0["name"] as? String == "choice" }?["value"] as? [String], [])
+        XCTAssertEqual(properties.first { $0["name"] as? String == "choice" }?["options"] as? [[String: String]], [["name": "Shared", "color": "green"]])
+        XCTAssertEqual(try Data(contentsOf: source), before)
+        let initialPage = try await call(core, "queryNotes")
+        XCTAssertEqual((initialPage["notes"] as! [[String: Any]]).count, 1)
+        let note = try await save(core, body: "New content"), id = note["id"] as! String
+        let saved = try await call(core, "getNoteProperties", ["id": id])
+        XCTAssertEqual(saved["properties"] as! NSArray, properties as NSArray)
+        XCTAssertEqual(note["body"] as? String, "New content")
+        XCTAssertEqual(try Data(contentsOf: source), before)
+        let reopened = try await store(create: !shared)
+        let reloaded = try await call(reopened, "getNoteProperties", ["id": id])
+        XCTAssertEqual(reloaded["properties"] as! NSArray, properties as NSArray)
+        let edited = try await save(reopened, id: id, body: "Edited", hash: note["contentHash"] as? String)
+        let afterEdit = try await call(reopened, "getNoteProperties", ["id": id])
+        XCTAssertEqual(afterEdit["properties"] as! NSArray, properties as NSArray)
+        try Data("{broken".utf8).write(to: config)
+        await expectCode("INVALID_PROPERTY") { _ = try await self.save(reopened, body: "Must not create") }
+        let finalPage = try await call(reopened, "queryNotes")
+        XCTAssertEqual((finalPage["notes"] as! [[String: Any]]).count, 2)
+        XCTAssertEqual(edited["body"] as? String, "Edited")
+    }
+
+    func testVaultPropertyDefinitionsSynchronizeTypesOptionsAndKeepValuesIndependent() async throws {
+        try await verifySharedPropertyDefinitions(shared: false)
+    }
+
+    func testObsidianPropertyDefinitionsSynchronizeAndPersistAfterReopen() async throws {
+        try await verifySharedPropertyDefinitions(shared: true)
+    }
+
+    private func verifySharedPropertyDefinitions(shared: Bool) async throws {
+        let core = try await store(create: !shared)
+        let aid = UUID().uuidString.lowercased(), bid = UUID().uuidString.lowercased()
+        func choice(_ name: String, _ color: String) -> String {
+            "field: \"\(name)\" # memocard:choice={\"type\":\"select\",\"options\":[{\"name\":\"\(name)\",\"color\":\"\(color)\"}]}\nother: keep\n"
+        }
+        if shared {
+            try Data(("---\r\n" + choice("设计", "blue").replacingOccurrences(of: "\n", with: "\r\n") + "---\r\nBody A").utf8).write(to: vault.appendingPathComponent("A.md"))
+            try Data(("---\n" + choice("开发", "green") + "---\nBody B").utf8).write(to: vault.appendingPathComponent("B.md"))
+        } else {
+            _ = try writeNote(id: aid, filename: "A", body: "Body A", extra: choice("设计", "blue"))
+            _ = try writeNote(id: bid, filename: "B", body: "Body B", extra: choice("开发", "green"))
+        }
+        let unrelated = vault.appendingPathComponent(shared ? "Unrelated.md" : "notes/Unrelated.md")
+        if shared { try Data("---\nunrelated: keep\n---\nUnrelated".utf8).write(to: unrelated) }
+        else { _ = try writeNote(id: UUID().uuidString.lowercased(), filename: "Unrelated", body: "Unrelated", extra: "unrelated: keep\n") }
+        let untouched = try Data(contentsOf: unrelated)
+        let page = try await call(core, "queryNotes")["notes"] as! [[String: Any]]
+        let firstID = page.first { ($0["relativePath"] as! String).hasSuffix("A.md") }!["id"] as! String
+        let secondID = page.first { ($0["relativePath"] as! String).hasSuffix("B.md") }!["id"] as! String
+        func fields(_ id: String) async throws -> [String: Any] { try await call(core, "getNoteProperties", ["id": id]) }
+        func field(_ id: String) async throws -> [String: Any] { try await (fields(id)["properties"] as! [[String: Any]]).first { $0["name"] as? String == "field" }! }
+        func change(_ options: [[String: String]], _ value: [String], _ extra: [String: Any] = [:]) async throws {
+            let note = try await call(core, "getNote", ["id": firstID])
+            let data = try await fields(firstID)
+            var params: [String: Any] = ["id": firstID.uppercased(), "baseHash": note["contentHash"]!, "definitionHash": data["definitionHash"]!, "name": "field", "type": "multiSelect", "options": options, "value": value, "definition": true]
+            params.merge(extra) { _, next in next }
+            _ = try await call(core, "updateNoteProperty", params)
+        }
+        var options = [["name": "设计", "color": "blue"], ["name": "开发", "color": "green"]]
+        let initial = try await fields(firstID), initialField = try await field(firstID)
+        XCTAssertEqual(initialField["options"] as? [[String: String]], options)
+        try await change(options, ["设计"])
+        var a = try await field(firstID), b = try await field(secondID)
+        XCTAssertEqual(a["type"] as? String, "multiSelect"); XCTAssertEqual(b["type"] as? String, "multiSelect")
+        XCTAssertEqual(a["value"] as? [String], ["设计"]); XCTAssertEqual(b["value"] as? [String], ["开发"])
+        let fresh = try await call(core, "getNote", ["id": secondID])
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNoteProperty", ["id": secondID, "baseHash": fresh["contentHash"]!, "definitionHash": initial["definitionHash"]!, "name": "field", "type": "multiSelect", "value": [String]()]) }
+        options[0]["color"] = "purple"
+        try await change(options, ["设计"])
+        b = try await field(secondID); XCTAssertEqual(b["options"] as? [[String: String]], options)
+        options[1]["name"] = "工程"
+        try await change(options, ["设计"], ["optionRename": ["from": "开发", "to": "工程"]])
+        b = try await field(secondID); XCTAssertEqual(b["value"] as? [String], ["工程"])
+        options.removeFirst()
+        try await change(options, [])
+        a = try await field(firstID); b = try await field(secondID)
+        XCTAssertEqual(a["value"] as? [String], []); XCTAssertEqual(b["value"] as? [String], ["工程"])
+        options.append(["name": "写作", "color": "blue"])
+        try await change(options, ["写作"])
+        let note = try await call(core, "getNote", ["id": secondID]), schema = try await fields(secondID)
+        _ = try await call(core, "updateNoteProperty", ["id": secondID, "baseHash": note["contentHash"]!, "definitionHash": schema["definitionHash"]!, "name": "field", "type": "multiSelect", "value": [String](), "options": options])
+        a = try await field(firstID); b = try await field(secondID)
+        XCTAssertEqual(a["value"] as? [String], ["写作"]); XCTAssertEqual(b["value"] as? [String], [])
+        XCTAssertEqual(try Data(contentsOf: unrelated), untouched)
+        for (id, body) in [(firstID, "Body A"), (secondID, "Body B")] {
+            let current = try await call(core, "getNote", ["id": id])
+            XCTAssertEqual(current["body"] as? String, body)
+            let properties = try await fields(id)["properties"] as! [[String: Any]]
+            XCTAssertEqual(properties.first { $0["name"] as? String == "other" }?["value"] as? String, "keep")
+        }
+        let reopened = try await store(create: false)
+        let persisted = try await call(reopened, "getNoteProperties", ["id": secondID])["properties"] as! [[String: Any]]
+        let persistedField = persisted.first { $0["name"] as? String == "field" }!
+        XCTAssertEqual(persistedField["type"] as? String, "multiSelect")
+        XCTAssertEqual(persistedField["options"] as? [[String: String]], options)
+        XCTAssertEqual(persistedField["value"] as? [String], [])
+        try Data("{broken".utf8).write(to: vault.appendingPathComponent(propertyDefinitionPath))
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(reopened, "getNoteProperties", ["id": firstID]) }
+    }
+
+    func testSharedDefinitionRejectsReadonlyNotesWithoutPartialChanges() async throws {
+        let core = try await store(), id = UUID().uuidString.lowercased()
+        let a = try writeNote(id: id, body: "A", extra: "field: One\n")
+        let b = try writeNote(id: UUID().uuidString.lowercased(), body: "B", extra: "field: {nested: Two}\n")
+        let originals = try [Data(contentsOf: a), Data(contentsOf: b)]
+        let note = try await call(core, "getNote", ["id": id])
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "field", "type": "list", "definition": true]) }
+        XCTAssertEqual(try [Data(contentsOf: a), Data(contentsOf: b)], originals)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: vault.appendingPathComponent(propertyDefinitionPath).path))
+    }
+
+    func testInterruptedPropertyDefinitionBatchRestoresNotesAndRegistry() async throws {
+        let core = try await store(), id = UUID().uuidString.lowercased()
+        let file = try writeNote(id: id, body: "Body", extra: "field: One\n")
+        _ = try await call(core, "queryNotes")
+        let original = try Data(contentsOf: file), after = Data("partial note update".utf8)
+        let config = vault.appendingPathComponent(propertyDefinitionPath), definition = Data("{\"field\":{\"type\":\"list\"}}".utf8)
+        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
+        let scope = sha256(Data((vault.path + ":" + metadata.vaultId).utf8))
+        let journal = local.appendingPathComponent("identities-\(scope).json.rename.json")
+        let changes: [[String: Any]] = [["path": "notes/\(id).md", "before": original.base64EncodedString(), "after": after.base64EncodedString()], ["path": propertyDefinitionPath, "after": definition.base64EncodedString()]]
+        let encoded = try JSONSerialization.data(withJSONObject: ["root": vault.path, "changes": changes, "identities": []])
+        try after.write(to: file); try definition.write(to: config); try encoded.write(to: journal)
+        _ = try await call(core, "queryNotes")
+        XCTAssertEqual(try Data(contentsOf: file), original)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: config.path))
+        try after.write(to: file); try Data("external config".utf8).write(to: config); try encoded.write(to: journal)
+        await expectCode("RENAME_RECOVERY_REQUIRED") { _ = try await self.call(core, "queryNotes") }
+        XCTAssertEqual(try String(contentsOf: config, encoding: .utf8), "external config")
+        XCTAssertEqual(try Data(contentsOf: file), after)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
+    }
+
+    func testVaultPropertyLabelsPersistWithoutRewritingNotesAndRejectConflicts() async throws {
+        let core = try await store()
+        let first = try writeNote(id: UUID().uuidString.lowercased(), body: "First", extra: "summary: One\n")
+        let second = try writeNote(id: UUID().uuidString.lowercased(), body: "Second", extra: "summary: Two\n")
+        let originals = try [Data(contentsOf: first), Data(contentsOf: second)]
+        let initial = try await call(core, "getPropertyLabels")
+        var labels = try await call(core, "renamePropertyLabel", ["key": "system:tags", "label": "分类", "baseHash": initial["contentHash"]!])
+        labels = try await call(core, "renamePropertyLabel", ["key": "property:summary", "label": "摘要", "baseHash": labels["contentHash"]!])
+        XCTAssertEqual(labels["labels"] as? [String: String], ["system:tags": "分类", "property:summary": "摘要"])
+        XCTAssertEqual(try [Data(contentsOf: first), Data(contentsOf: second)], originals)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "renamePropertyLabel", ["key": "system:createdAt", "label": "时间", "baseHash": initial["contentHash"]!]) }
+        for (key, label) in [("system:createdAt", "摘要"), ("system:createdAt", "文件名"), ("system:createdAt", " "), ("property:missing", "缺失")] {
+            await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "renamePropertyLabel", ["key": key, "label": label, "baseHash": labels["contentHash"]!]) }
+        }
+        let reopened = try await store(create: false)
+        let persisted = try await call(reopened, "getPropertyLabels")
+        XCTAssertEqual(persisted["labels"] as? [String: String], labels["labels"] as? [String: String])
+        let config = vault.appendingPathComponent(".memocard/property-labels.json")
+        try Data("{broken".utf8).write(to: config)
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "getPropertyLabels") }
+        XCTAssertEqual(try String(contentsOf: config, encoding: .utf8), "{broken")
+    }
+
+    func testPropertyLabelsForObsidianNotesPreserveIndividualValuesAndSource() async throws {
+        let a = vault.appendingPathComponent("A.md"), b = vault.appendingPathComponent("B.md")
+        let first = Data("---\r\nsummary: One # keep\r\n---\r\nFirst".utf8), second = Data("---\nsummary: Two\n---\nSecond".utf8)
+        try first.write(to: a); try second.write(to: b)
+        let core = try await store(create: false)
+        let initial = try await call(core, "getPropertyLabels")
+        let saved = try await call(core, "renamePropertyLabel", ["key": "property:summary", "label": "摘要", "baseHash": initial["contentHash"]!])
+        XCTAssertEqual(saved["labels"] as? [String: String], ["property:summary": "摘要"])
+        XCTAssertEqual(try Data(contentsOf: a), first); XCTAssertEqual(try Data(contentsOf: b), second)
+        let reopened = try await store(create: false)
+        let persisted = try await call(reopened, "getPropertyLabels")
+        XCTAssertEqual(persisted["labels"] as? [String: String], saved["labels"] as? [String: String])
+    }
+    func testPropertyTypeSwitchPersistsTextDateAndChoiceTypesAfterBodySave() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let url = try writeNote(id: id, body: "Body #keep\n", extra: "field: 2028-02-29\nunknown: {nested: value}\n")
+        var note = try await call(core, "getNote", ["id": id])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "field", "type": "text", "value": "2028-02-29"])
+        XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).contains("\"field\": \"2028-02-29\" # memocard:type=text"))
+        note = try await save(core, id: id, body: "Saved body #keep\n", hash: note["contentHash"] as? String)
+        var fields = try await call(core, "getNoteProperties", ["id": id])
+        XCTAssertEqual((fields["properties"] as? [[String: Any]])?.first?["type"] as? String, "text")
+        for (type, value) in [("list", ["2028-02-29"] as Any), ("multiSelect", ["2028-02-29"] as Any), ("select", "2028-02-29" as Any), ("date", "2028-02-29" as Any), ("checkbox", false as Any)] {
+            var params: [String: Any] = ["id": id, "baseHash": note["contentHash"]!, "name": "field", "type": type, "value": value]
+            if type == "select" || type == "multiSelect" { params["options"] = [["name": "2028-02-29", "color": "purple"]] }
+            note = try await call(core, "updateNoteProperty", params)
+            fields = try await call(core, "getNoteProperties", ["id": id])
+            XCTAssertEqual((fields["properties"] as? [[String: Any]])?.first?["type"] as? String, type)
+            XCTAssertEqual(note["body"] as? String, "Saved body #keep\n")
+        }
+        let reopened = try await store(create: false)
+        fields = try await call(reopened, "getNoteProperties", ["id": id])
+        XCTAssertEqual((fields["properties"] as? [[String: Any]])?.first?["type"] as? String, "checkbox")
+        let raw = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(raw.contains("nested")); XCTAssertFalse(raw.contains("memocard:"))
+        for suffix in ["# memocard:type=text extra", "# user # memocard:type=text"] {
+            XCTAssertEqual(try readNoteProperties(Data("---\nfield: \"2028-02-29\" \(suffix)\n---\nBody".utf8)).properties[0].type, "date")
+        }
+    }
+    func testPropertyRenamePreservesSourceMetadataAndRejectsUnsafeChanges() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let extra = "\"old: name\"  : \"设计\" # memocard:choice={\"type\":\"select\",\"options\":[{\"name\":\"设计\",\"color\":\"purple\"}]}\n# keep\naliases:\n  - One # item\n  - Two\nempty: null # memocard:type=date\n"
+        let url = try writeNote(id: id, body: "Body #keep\n", extra: extra)
+        let initial = try await call(core, "getNote", ["id": id])
+        var note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": initial["contentHash"]!, "name": "old: name", "renameTo": "新名称: 引用"])
+        let raw = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(raw.contains(extra.replacingOccurrences(of: "\"old: name\"", with: "\"新名称: 引用\"")))
+        XCTAssertTrue(raw.hasSuffix("Body #keep\n"))
+        for (name, target) in [("新名称: 引用", "aliases"), ("新名称: 引用", "id"), ("新名称: 引用", "tags"), ("新名称: 引用", " "), ("missing", "new")] {
+            await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": name, "renameTo": target]) }
+        }
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": initial["contentHash"]!, "name": "新名称: 引用", "renameTo": "new"]) }
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), raw)
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "aliases", "renameTo": "别名"])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "empty", "renameTo": "日期"])
+        let reopened = try await store(create: false)
+        let fields = try await call(reopened, "getNoteProperties", ["id": id])
+        let properties = try XCTUnwrap(fields["properties"] as? [[String: Any]])
+        XCTAssertEqual(properties.map { $0["name"] as! String }, ["新名称: 引用", "别名", "日期"])
+        XCTAssertEqual(properties.map { $0["type"] as! String }, ["select", "list", "date"])
+        XCTAssertEqual((properties[0]["options"] as? [[String: String]])?.first?["color"], "purple")
+        XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).contains("\"别名\":\n  - One # item\n  - Two"))
+    }
+    func testPropertyRenamePreservesBOMCRLFAndQuotedKeys() throws {
+        let source = "\u{FEFF}---\r\n'old: ''name' : [One, Two] # keep\r\n---\r\nBody\r\n"
+        let change = try JSONDecoder().decode(PropertyChange.self, from: JSONSerialization.data(withJSONObject: ["id": "id", "baseHash": "hash", "name": "old: 'name", "renameTo": "新名称"]))
+        let saved = try patchNoteProperty(Data(source.utf8), change: change)
+        XCTAssertEqual(String(decoding: saved, as: UTF8.self), source.replacingOccurrences(of: "'old: ''name'", with: "\"新名称\""))
+    }
+    func testPropertyTagEditingPreservesBodyAndMergesIndexWithoutDuplicateCounts() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let body = "正文 #共享 #正文/分类\n\n`#忽略`\n"
+        let url = try writeNote(id: id, body: body, extra: "# keep\ncustom: value\n")
+        let initial = try await call(core, "getNote", ["id": id])
+        let saved = try await call(core, "updateNoteProperty", ["id": id, "baseHash": initial["contentHash"]!, "name": "tags", "type": "list", "value": ["#共享", " 属性/分类 ", "共享"]])
+        XCTAssertEqual(saved["tags"] as? [String], ["共享", "属性/分类", "正文/分类"])
+        XCTAssertEqual(saved["body"] as? String, body)
+        let fields = try await call(core, "getNoteProperties", ["id": id])
+        XCTAssertEqual((fields["tagProperty"] as? [String: Any])?["value"] as? [String], ["共享", "属性/分类"])
+        let page = try await call(core, "queryNotes", ["tags": ["属性"]])
+        XCTAssertEqual((page["notes"] as? [[String: Any]])?.count, 1)
+        let listed = try await call(core, "listTags")
+        XCTAssertEqual((listed["tags"] as? [[String: Any]])?.first { $0["name"] as? String == "共享" }?["count"] as? Int, 1)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": initial["contentHash"]!, "name": "tags", "type": "list", "value": []]) }
+        let cleared = try await call(core, "updateNoteProperty", ["id": id, "baseHash": saved["contentHash"]!, "name": "tags", "type": "list", "value": []])
+        XCTAssertEqual(cleared["tags"] as? [String], ["共享", "正文/分类"])
+        let raw = try Data(contentsOf: url)
+        XCTAssertTrue(String(decoding: raw, as: UTF8.self).hasSuffix("# keep\ncustom: value\n---\n" + body))
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": cleared["contentHash"]!, "name": "tags", "type": "list", "value": ["bad tag"]]) }
+        XCTAssertEqual(try Data(contentsOf: url), raw)
+        let reopened = try await store(create: false)
+        let loaded = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(loaded["tags"] as? [String], ["共享", "正文/分类"])
+    }
+    func testCompatibleTagPropertyUpsertPreservesBOMCRLFAndMalformedTagsStayReadOnly() throws {
+        let source = "\u{FEFF}---\r\n# keep\r\ncustom: value\r\n---\r\n正文 #共享\r\n"
+        let change = try JSONDecoder().decode(PropertyChange.self, from: JSONSerialization.data(withJSONObject: ["id": "id", "baseHash": "hash", "name": "tags", "type": "list", "value": ["#共享", "属性/分类"]]))
+        let saved = try patchNoteProperty(Data(source.utf8), change: change)
+        XCTAssertTrue(String(decoding: saved, as: UTF8.self).hasPrefix("\u{FEFF}---\r\n# keep\r\ncustom: value\r\n"))
+        XCTAssertTrue(String(decoding: saved, as: UTF8.self).hasSuffix("---\r\n正文 #共享\r\n"))
+        let identity = FileIdentity(id: "id", path: "Note.md", hash: "", createdAt: timestamp())
+        let parsed = try parseObsidianNote(saved, relativePath: "Note.md", vaultID: "vault", identity: identity, modified: Date())
+        XCTAssertEqual(parsed.note.tags, ["共享", "属性/分类"])
+        for yaml in ["tags: [valid, 123]", "tags: {nested: value}", "tags: |\n  value", "tags: &ref [valid]"] {
+            let bytes = Data("---\n\(yaml)\n---\nBody #keep".utf8)
+            XCTAssertFalse(try readNoteProperties(bytes).tagProperty.editable)
+            XCTAssertThrowsError(try patchNoteProperty(bytes, change: change))
+        }
+    }
+    func testPropertyCRUDPreservesUnknownYAMLAndChecksSourceHash() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let url = try writeNote(id: id, body: "# Body\n\n<!-- raw -->\n")
+        var source = try String(contentsOf: url, encoding: .utf8)
+        source = source.replacingOccurrences(of: "---\n# Body", with: "# keep\nsummary: old\nunknown: {nested: [1, two]}\n---\n# Body")
+        try Data(source.utf8).write(to: url)
+        var note = try await call(core, "getNote", ["id": id])
+        let oldHash = note["contentHash"]!
+        for (name, type, value) in [("summary", "text", "new: #literal" as Any), ("aliases", "list", ["One", "Two"] as Any), ("due", "date", "2026-10-12" as Any), ("done", "checkbox", false as Any)] {
+            note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": name, "type": type, "value": value, "create": name != "summary"])
+        }
+        let raw = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(raw.contains("# keep\n\"summary\": \"new: #literal\"\nunknown: {nested: [1, two]}"))
+        XCTAssertTrue(raw.hasSuffix("# Body\n\n<!-- raw -->\n"))
+        let fields = try await call(core, "getNoteProperties", ["id": id])
+        let values = try XCTUnwrap(fields["properties"] as? [[String: Any]])
+        XCTAssertEqual(values.map { $0["type"] as! String }, ["text", "unsupported", "list", "date", "checkbox"])
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": oldHash, "name": "summary", "remove": true]) }
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "id", "type": "text", "value": "bad"]) }
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "summary", "remove": true])
+        let reopened = try await store()
+        let loaded = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(note["contentHash"] as? String, loaded["contentHash"] as? String)
+        XCTAssertEqual(loaded["body"] as? String, "# Body\n\n<!-- raw -->\n")
+    }
+    func testCompatiblePropertiesPreserveBOMCRLFAndRejectAdvancedSyntax() async throws {
+        try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+        let url = vault.appendingPathComponent("属性.md")
+        let source = "\u{FEFF}---\r\n# keep\r\naliases: [One, Two]\r\nunknown: {nested: value}\r\n---\r\n# Body\r\n"
+        try Data(source.utf8).write(to: url)
+        let core = try await store(create: false)
+        let page = try await call(core, "queryNotes")
+        let note = (page["notes"] as! [[String: Any]])[0]
+        _ = try await call(core, "updateNoteProperty", ["id": note["id"]!, "baseHash": note["contentHash"]!, "name": "aliases", "type": "list", "value": ["New", "Two"]])
+        let updated = String(decoding: try Data(contentsOf: url), as: UTF8.self)
+        XCTAssertTrue(updated.hasPrefix("\u{FEFF}---\r\n# keep\r\n"))
+        XCTAssertTrue(updated.hasSuffix("unknown: {nested: value}\r\n---\r\n# Body\r\n"))
+        let advanced = Data("---\nfirst: &ref value\nsecond: *ref\n---\nBody".utf8)
+        XCTAssertFalse(try readNoteProperties(advanced).writable)
+        let change = try JSONDecoder().decode(PropertyChange.self, from: JSONSerialization.data(withJSONObject: ["id": note["id"]!, "baseHash": "hash", "name": "first", "type": "text", "value": "new"]))
+        XCTAssertThrowsError(try patchNoteProperty(advanced, change: change))
+    }
+
+    func testEmptyPropertiesPreserveTypesAfterReopenAndDateClear() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        _ = try writeNote(id: id, body: "Body #keep\n")
+        var note = try await call(core, "getNote", ["id": id])
+        for (name, type, value) in [("empty text", "text", "" as Any), ("empty list", "list", [String]() as Any), ("empty date", "date", "" as Any), ("unchecked", "checkbox", false as Any)] {
+            note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": name, "type": type, "value": value, "create": true])
+        }
+        let reopened = try await store(create: false)
+        note = try await save(reopened, id: id, body: "Body #keep\n", hash: note["contentHash"] as? String)
+        note = try await call(reopened, "saveNote", ["id": id, "baseHash": note["contentHash"]!, "body": "Body #keep\n", "tags": [], "title": "Empty property renamed"])
+        let renamedURL = vault.appendingPathComponent(note["relativePath"] as! String)
+        let fields = try await call(reopened, "getNoteProperties", ["id": id])
+        let values = try XCTUnwrap(fields["properties"] as? [[String: Any]])
+        XCTAssertEqual(values.map { $0["type"] as! String }, ["text", "list", "date", "checkbox"])
+        XCTAssertEqual(values[2]["value"] as? String, "")
+        XCTAssertEqual(values[3]["value"] as? Bool, false)
+        note = try await call(reopened, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "empty date", "type": "date", "value": "2028-02-29"])
+        note = try await call(reopened, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "empty date", "type": "date", "value": ""])
+        let raw = try String(contentsOf: renamedURL, encoding: .utf8)
+        XCTAssertTrue(raw.contains("\"empty date\": null # memocard:type=date\n"))
+        XCTAssertTrue(raw.hasSuffix("Body #keep\n"))
+        let loaded = try readNoteProperties(Data(raw.utf8))
+        XCTAssertEqual(loaded.properties[2].type, "date")
+        if case .text(let value) = loaded.properties[2].value { XCTAssertEqual(value, "") } else { XCTFail("Expected empty date") }
+        _ = try await call(reopened, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "empty date", "remove": true])
+        XCTAssertFalse(try String(contentsOf: renamedURL, encoding: .utf8).contains("memocard:type=date"))
+    }
+    func testEmptyDateMarkerPreservesBOMCRLFAndDoesNotRetypeOrdinaryNulls() throws {
+        let source = "\u{FEFF}---\r\n# keep\r\nunknown: null # user comment\r\n---\r\nBody\r\n"
+        let change = try JSONDecoder().decode(PropertyChange.self, from: JSONSerialization.data(withJSONObject: ["id": "id", "baseHash": "hash", "name": "due", "type": "date", "value": "", "create": true]))
+        let saved = try patchNoteProperty(Data(source.utf8), change: change)
+        let raw = String(decoding: saved, as: UTF8.self)
+        XCTAssertTrue(raw.hasPrefix("\u{FEFF}---\r\n# keep\r\nunknown: null # user comment\r\n"))
+        XCTAssertTrue(raw.hasSuffix("---\r\nBody\r\n"))
+        XCTAssertEqual(try readNoteProperties(saved).properties.map(\.type), ["unsupported", "date"])
+        for field in ["due: null", "due: null # memocard:type=text", "due: null # memocard:type=date extra", "due: 123 # memocard:type=date", "due: \"\" # memocard:type=date"] {
+            XCTAssertNotEqual(try readNoteProperties(Data("---\n\(field)\n---\nBody".utf8)).properties[0].type, "date")
+        }
+    }
+
     func testQuickFilterMarkdownSyntax() {
         let cases: [(String, Set<NoteQuickFilter>)] = [
             ("![照片][photo]\n\n[photo]: https://example.com/photo.png", [.untagged, .images]),
@@ -46,23 +420,45 @@ final class VaultStoreTests: XCTestCase {
     }
 
     func testInlineTagGrammarExcludesMarkdownSyntax() {
+        XCTAssertEqual(inlineTags("#Work #work #WORK/Design #work/design"), ["work", "work/design"])
         XCTAssertEqual(inlineTags("# 标题\n正文 #工作/项目 #设计 #123 #/bad #bad/ #a//b C#"), ["工作/项目", "设计"])
         XCTAssertEqual(inlineTags("`#code`\n```md\n#fenced\n```\n    #indented\n[链接](#anchor) [#label](url) [[#wiki]] <span title=\"#html\">x</span> $x #math$\n#保留"), ["保留"])
         XCTAssertEqual(inlineTags("```\n#unfinished"), [])
     }
 
-    func testIndependentTitleAndEmptyPageLifecycle() async throws {
+    func testTagCaseMergesSourcesCountsAndFiltersWithoutRewritingBody() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let body = "#Work #work #WORK/Design"
+        let url = try writeNote(id: id, body: body)
+        let source = try String(contentsOf: url, encoding: .utf8).replacingOccurrences(of: "tags: [\"work\", \"ideas\"]", with: "tags: [WORK, work]")
+        try Data(source.utf8).write(to: url)
+        let before = try Data(contentsOf: url)
+        let note = try await call(core, "getNote", ["id": id])
+        XCTAssertEqual(note["tags"] as? [String], ["work", "work/design"])
+        for tag in ["Work", "WORK", "work"] {
+            let page = try await call(core, "queryNotes", ["tags": [tag]])
+            XCTAssertEqual((page["notes"] as? [[String: Any]])?.count, 1)
+        }
+        let listed = try await call(core, "listTags")
+        XCTAssertEqual((listed["tags"] as? [[String: Any]])?.first { $0["name"] as? String == "work" }?["count"] as? Int, 1)
+        XCTAssertEqual(try Data(contentsOf: url), before)
+        let saved = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "tags", "type": "list", "value": ["#AI", "ai", "Ai"]])
+        XCTAssertEqual(saved["tags"] as? [String], ["ai", "work", "work/design"])
+        XCTAssertEqual(saved["body"] as? String, body)
+    }
+
+    func testFilenameTitleAndEmptyPageLifecycle() async throws {
         let core = try await store()
         let id = UUID().uuidString.lowercased()
         var note = try await call(core, "saveNote", ["id": id, "title": "", "body": "", "tags": [], "baseHash": NSNull()])
-        let path = note["relativePath"] as? String
         for (title, body) in [("只有标题", ""), ("", "只有正文"), ("", "")] {
             note = try await call(core, "saveNote", ["id": id, "title": title, "body": body, "tags": [], "baseHash": note["contentHash"]!])
-            XCTAssertEqual(note["title"] as? String, title)
+            XCTAssertEqual(note["title"] as? String, title.isEmpty ? "未命名" : title)
             XCTAssertEqual(note["body"] as? String, body)
-            XCTAssertEqual(note["relativePath"] as? String, path)
+            XCTAssertEqual(note["relativePath"] as? String, "notes/\(title.isEmpty ? "未命名" : title).md")
             let reopened = try await call(core, "getNote", ["id": id])
-            XCTAssertEqual(reopened["title"] as? String, title)
+            XCTAssertEqual(reopened["title"] as? String, title.isEmpty ? "未命名" : title)
         }
     }
 
@@ -118,27 +514,27 @@ final class VaultStoreTests: XCTestCase {
         }
     }
 
-    func testLegacyPropertyTagsDoNotReturnAfterEditingRecoveryOrReopen() async throws {
+    func testPropertyTagsSurviveIndependentBodyEditingAndRecovery() async throws {
         let core = try await store()
         let id = UUID().uuidString.lowercased()
         let url = try writeNote(id: id, body: "#工作/项目\n\n句中 #工作/项目\n\n#生活")
         let original = try Data(contentsOf: url)
         let note = try await call(core, "getNote", ["id": id])
-        XCTAssertEqual(note["tags"] as? [String], ["工作/项目", "生活"])
+        XCTAssertEqual(note["tags"] as? [String], ["work", "ideas", "工作/项目", "生活"])
         XCTAssertEqual(try Data(contentsOf: url), original)
         let old = try await call(core, "queryNotes", ["tags": ["work"]])
-        XCTAssertEqual((old["notes"] as? [Any])?.count, 0)
+        XCTAssertEqual((old["notes"] as? [Any])?.count, 1)
         let draft = try await call(core, "saveDraft", ["id": id, "body": "正文 #生活", "tags": ["work"], "baseHash": note["contentHash"]!])
         XCTAssertEqual(draft["tags"] as? [String], ["生活"])
         let saved = try await save(core, id: id, body: "正文 #生活", tags: ["work"], hash: note["contentHash"] as? String)
-        XCTAssertEqual(saved["tags"] as? [String], ["生活"])
+        XCTAssertEqual(saved["tags"] as? [String], ["work", "ideas", "生活"])
         let cleared = try await save(core, id: id, body: "正文", tags: ["work"], hash: saved["contentHash"] as? String)
-        XCTAssertEqual(cleared["tags"] as? [String], [])
+        XCTAssertEqual(cleared["tags"] as? [String], ["work", "ideas"])
         let listed = try await call(core, "listTags")
-        XCTAssertEqual((listed["tags"] as? [Any])?.count, 0)
+        XCTAssertEqual((listed["tags"] as? [Any])?.count, 2)
         let reopened = try await store(create: false)
         let fetched = try await call(reopened, "getNote", ["id": id])
-        XCTAssertEqual(fetched["tags"] as? [String], [])
+        XCTAssertEqual(fetched["tags"] as? [String], ["work", "ideas"])
     }
 
     func testRefreshBatchReusesOneSnapshotAndInvalidationReadsExternalChanges() async throws {
@@ -433,7 +829,7 @@ final class VaultStoreTests: XCTestCase {
         let core = try await store()
         let id = UUID().uuidString.lowercased()
         try FileManager.default.createDirectory(at: vault.appendingPathComponent("notes/work/project"), withIntermediateDirectories: true)
-        let path = "notes/work/project/\(id).md"
+        let path = "notes/work/project/图片记录.md"
         let image = try await call(core, "importAttachment", ["name": "pixel.png", "noteId": id, "notePath": path,
             "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aM3sAAAAASUVORK5CYII="])
         XCTAssertEqual(image["notePath"] as? String, path)
@@ -602,7 +998,7 @@ final class VaultStoreTests: XCTestCase {
         let originalManifest = try Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json"))
         XCTAssertEqual(try Data(contentsOf: restored.appendingPathComponent(".memocard/vault.json")), originalManifest)
         try await store.open(url: restored, create: false, binding: newBinding)
-        let noteURL = restored.appendingPathComponent("notes/\(id).md")
+        let noteURL = restored.appendingPathComponent(saved["relativePath"] as! String)
         let before = try Data(contentsOf: noteURL)
         let input = try JSONSerialization.data(withJSONObject: ["id": id, "body": "Must not write", "tags": [], "baseHash": saved["contentHash"]!])
         for operation in ["saveNote", "saveDraft", "importAttachment", "getStatus"] {
@@ -667,7 +1063,7 @@ extension VaultStoreTests {
         XCTAssertEqual((page["coverage"] as? [String: Any])?["complete"] as? Bool, true)
         let note = try XCTUnwrap(notes.first { $0["relativePath"] as? String == "Example.md" })
         let id = try XCTUnwrap(note["id"] as? String)
-        XCTAssertEqual(note["tags"] as? [String], ["inline/topic"])
+        XCTAssertEqual(note["tags"] as? [String], ["work", "inline/topic"])
         let saved = try await save(core, id: id, body: "Updated #inline/topic\r\n", tags: ["work", "inline/topic"], hash: note["contentHash"] as? String)
         XCTAssertEqual(try String(contentsOf: original, encoding: .utf8), header + "Updated #inline/topic\r\n")
         let folder = vault.appendingPathComponent("Projects")
@@ -695,8 +1091,8 @@ extension VaultStoreTests {
         try await core.open(url: vault, create: true)
         let id = "11111111-1111-4111-8111-111111111111"
         let saved = try await save(core, id: id, body: "# 我的记录\n\n正文")
-        XCTAssertEqual(saved["relativePath"] as? String, "我的记录-11111111.md")
-        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("我的记录-11111111.md"), encoding: .utf8), "# 我的记录\n\n正文")
+        XCTAssertEqual(saved["relativePath"] as? String, "我的记录.md")
+        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("我的记录.md"), encoding: .utf8), "# 我的记录\n\n正文")
         let url = vault.appendingPathComponent("Tags.md")
         try Data("---\r\n# header\r\ntags: [old]\r\ncustom: \"keep spelling\"\r\n---\r\nBody #inline".utf8).write(to: url)
         let page = try await call(core, "queryNotes")
@@ -707,12 +1103,110 @@ extension VaultStoreTests {
 }
 
 extension VaultStoreTests {
-    func testObsoleteTagsPropertyIsIgnoredAndDoesNotChangeClosingDelimiterOrBody() throws {
+    func testTagsPropertyIsIndexedWithoutChangingClosingDelimiterOrBody() throws {
         let source = "---\ntags:\n- old\n---\nBody"
         let identity = FileIdentity(id: UUID().uuidString.lowercased(), path: "A.md", hash: "", createdAt: timestamp())
         let parsed = try parseObsidianNote(Data(source.utf8), relativePath: "A.md", vaultID: UUID().uuidString, identity: identity, modified: Date())
-        XCTAssertEqual(parsed.note.tags, [])
+        XCTAssertEqual(parsed.note.tags, ["old"])
         let bytes = try encodedObsidianNote(parsed, body: "Body")
         XCTAssertEqual(String(data: bytes, encoding: .utf8), source)
+    }
+}
+
+extension VaultStoreTests {
+    func testRenameUpdatesReferencesPreservesPropertiesAndStableIdentity() async throws {
+        let core = try await store(create: false)
+        let original = "---\r\ntitle: independent\r\ncustom: keep\r\n---\r\n# Heading\n[[Old]]"
+        try Data(original.utf8).write(to: vault.appendingPathComponent("Old.md"))
+        try Data("occupied".utf8).write(to: vault.appendingPathComponent("New.md"))
+        try Data("[[Old#Heading|alias]] [text](Old.md) `[[Old]]`".utf8).write(to: vault.appendingPathComponent("Ref.md"))
+        let page = try await call(core, "queryNotes")
+        let note = try XCTUnwrap((page["notes"] as? [[String: Any]])?.first { $0["title"] as? String == "Old" })
+        let saved = try await call(core, "saveNote", ["id": note["id"]!, "title": "New", "body": note["body"]!, "tags": [], "baseHash": note["contentHash"]!])
+        XCTAssertEqual(saved["relativePath"] as? String, "New (2).md")
+        XCTAssertEqual(saved["title"] as? String, "New (2)")
+        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("New (2).md"), encoding: .utf8), original.replacingOccurrences(of: "[[Old]]", with: "[[New (2)]]"))
+        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("Ref.md"), encoding: .utf8), "[[New (2)#Heading|alias]] [text](New%20%282%29.md) `[[Old]]`")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: vault.appendingPathComponent("Old.md").path))
+        let reopened = try await store(create: false)
+        let reread = try await call(reopened, "getNote", ["id": note["id"]!])
+        XCTAssertEqual(reread["relativePath"] as? String, "New (2).md")
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "saveNote", ["id": note["id"]!, "title": "Stale", "body": "stale", "tags": [], "baseHash": note["contentHash"]!]) }
+    }
+
+    func testInterruptedRenameRecoveryAndExternalEditProtection() async throws {
+        let core = try await store()
+        let note = try await save(core, body: "Original")
+        let path = note["relativePath"] as! String, before = try Data(contentsOf: vault.appendingPathComponent(path))
+        let identity = try FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: nil).first { $0.lastPathComponent.hasPrefix("identities-") }
+        // Legacy vaults do not persist identities, but journal scope uses the same root and vault id.
+        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
+        let scope = sha256(Data((vault.path + ":" + metadata.vaultId).utf8))
+        let journal = identity?.appendingPathExtension("rename.json") ?? local.appendingPathComponent("identities-\(scope).json.rename.json")
+        let changes: [[String: Any]] = [["path": "notes/New.md", "after": before.base64EncodedString()], ["path": path, "before": before.base64EncodedString()]]
+        let encoded = try JSONSerialization.data(withJSONObject: ["root": vault.path, "changes": changes, "identities": []])
+        try before.write(to: vault.appendingPathComponent("notes/New.md")); try encoded.write(to: journal)
+        _ = try await call(core, "queryNotes")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: vault.appendingPathComponent("notes/New.md").path))
+        XCTAssertEqual(try Data(contentsOf: vault.appendingPathComponent(path)), before)
+        try Data("external".utf8).write(to: vault.appendingPathComponent("notes/New.md")); try encoded.write(to: journal)
+        await expectCode("RENAME_RECOVERY_REQUIRED") { _ = try await self.call(core, "queryNotes") }
+        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("notes/New.md"), encoding: .utf8), "external")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
+    }
+}
+
+extension VaultStoreTests {
+    func testChoicePropertiesPersistOptionsColorsAndEmptyTypesAcrossBodySaveAndRename() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        _ = try writeNote(id: id, body: "Body #keep\n")
+        var note = try await call(core, "getNote", ["id": id])
+        let options = [["name": "设计", "color": "blue"], ["name": "AI Design", "color": "purple"]]
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "阶段", "type": "select", "value": "", "options": options, "create": true])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "领域", "type": "multiSelect", "value": [String](), "options": options, "create": true])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "阶段", "type": "select", "value": "设计"])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "领域", "type": "multiSelect", "value": ["设计", "AI Design"]])
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": "stale", "name": "阶段", "type": "select", "value": "设计"]) }
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "阶段", "type": "select", "value": "未知"]) }
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "领域", "type": "multiSelect", "value": ["设计", "设计"]]) }
+        note = try await save(core, id: id, body: "Updated #keep\n", hash: note["contentHash"] as? String)
+        note = try await call(core, "saveNote", ["id": id, "baseHash": note["contentHash"]!, "title": "Choice renamed", "body": "Updated #keep\n", "tags": []])
+        var properties = try await call(core, "getNoteProperties", ["id": id])["properties"] as! [[String: Any]]
+        XCTAssertEqual(properties.map { $0["type"] as! String }, ["select", "multiSelect"])
+        XCTAssertEqual(properties[1]["value"] as? [String], ["设计", "AI Design"])
+        XCTAssertEqual(properties[1]["options"] as? [[String: String]], options)
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "阶段", "type": "select", "value": ""])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "领域", "type": "multiSelect", "value": [String]()])
+        let reopened = try await store(create: false)
+        note = try await save(reopened, id: id, body: "Empty choices #keep\n", hash: note["contentHash"] as? String)
+        properties = try await call(reopened, "getNoteProperties", ["id": id])["properties"] as! [[String: Any]]
+        XCTAssertEqual(properties.map { $0["type"] as! String }, ["select", "multiSelect"])
+        XCTAssertEqual(properties[0]["value"] as? String, "")
+        XCTAssertEqual(properties[1]["value"] as? [String], [])
+        XCTAssertEqual(properties[0]["options"] as? [[String: String]], options)
+        let raw = try String(contentsOf: vault.appendingPathComponent(note["relativePath"] as! String), encoding: .utf8)
+        XCTAssertTrue(raw.contains("memocard:choice="))
+        XCTAssertTrue(raw.hasSuffix("Empty choices #keep\n"))
+    }
+    func testQuotedChoiceNamesDoNotBecomeYAMLSyntaxOrMetadata() throws {
+        let name = "AI !important # memocard:choice=literal"
+        let options = [["name": name, "color": "blue"]]
+        let change = try JSONDecoder().decode(PropertyChange.self, from: JSONSerialization.data(withJSONObject: ["id": "id", "baseHash": "hash", "name": "choice", "type": "select", "value": name, "options": options, "create": true]))
+        let data = try patchNoteProperty(Data("Body".utf8), change: change)
+        let property = try readNoteProperties(data).properties[0]
+        XCTAssertEqual(property.type, "select")
+        XCTAssertTrue(property.editable)
+        XCTAssertEqual(property.options?.first?.name, name)
+    }
+    func testChoiceMetadataRejectsCorruptionAndInvalidDefinitions() throws {
+        let source = "---\nchoice: \"a\" # memocard:choice={bad}\n---\nBody"
+        let properties = try readNoteProperties(Data(source.utf8))
+        XCTAssertEqual(properties.properties[0].type, "unsupported")
+        XCTAssertFalse(properties.properties[0].editable)
+        for options in [[["name": "a", "color": "invalid"]], [["name": "a", "color": "blue"], ["name": "a", "color": "red"]]] {
+            let change = try JSONDecoder().decode(PropertyChange.self, from: JSONSerialization.data(withJSONObject: ["id": "id", "baseHash": "hash", "name": "choice", "type": "select", "value": "", "options": options, "create": true]))
+            XCTAssertThrowsError(try patchNoteProperty(Data("Body".utf8), change: change))
+        }
     }
 }

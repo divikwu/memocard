@@ -100,7 +100,7 @@ export function ThemeSettings() {
           </Select>
         </div>
         <Collapsible>
-          <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0 hover:bg-transparent"><span>高级外观</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
+          <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0"><span>高级外观</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
           <CollapsibleContent className="divide-y divide-border/60">
         <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
           <p className="min-w-0 text-sm">中性色</p>
