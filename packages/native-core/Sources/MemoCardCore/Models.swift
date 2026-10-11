@@ -155,7 +155,7 @@ func validatedTags(_ tags: [String]) throws -> [String] {
         throw VaultError(code: "INVALID_TAGS", message: "标签不能为空或包含换行。")
     }
     var seen = Set<String>()
-    return tags.filter { seen.insert($0).inserted }
+    return tags.map(tagKey).filter { seen.insert($0).inserted }
 }
 
 func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> ParsedNote {
@@ -200,16 +200,16 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
         deleted = date
     }
     let body = String(text[end.upperBound...])
-    let tags = try validatedTags(inlineTags(body))
+    let tags = try validatedTags(propertyTags(root["tags"]) + inlineTags(body))
     return ParsedNote(note: Note(
-        title: root["title"]?.scalar?.string, id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
+        title: fileTitle(relativePath), id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
         deletedAt: deleted, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(id)?vault=\(vaultID)"
-    ), frontmatter: root)
+    ), frontmatter: root, originalHeader: String(text[..<end.upperBound]))
 }
 
-func encodedNote(frontmatter: Node, body: String) throws -> Data {
-    let yaml = try Yams.serialize(node: frontmatter, allowUnicode: true)
+func encodedNote(frontmatter: Node, body: String, originalHeader: String? = nil) throws -> Data {
+    let yaml = try preservingPropertyTypes(Yams.serialize(node: frontmatter, allowUnicode: true), originalHeader: originalHeader)
     return Data(("---\n" + yaml + "---\n" + body).utf8)
 }
 

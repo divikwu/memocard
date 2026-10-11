@@ -167,7 +167,7 @@ final class NativeHost: ObservableObject {
                 data = ["opened": true]
             default:
                 data = try await invoke(operation, params)
-                if ["saveNote", "importAttachment"].contains(operation) { notify("notesChanged") }
+                if ["saveNote", "updateNoteProperty", "importAttachment"].contains(operation) { notify("notesChanged") }
             }
             return ["ok": true, "data": data]
         } catch { return failure(error) }

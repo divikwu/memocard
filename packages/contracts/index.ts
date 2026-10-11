@@ -9,3 +9,10 @@ export type BridgeRequest = {version:1; requestId:string; operation:string; para
 export type BridgeError = {code:string;message:string;retryable:boolean};
 export type BridgeResponse<T = unknown> = {ok:true;data:T}|{ok:false;error:BridgeError};
 export type ConnectionConfig = {version:1;host:'127.0.0.1';port:number;token:string;instanceId:string;vaultId:string};
+export type PropertyType = 'text' | 'list' | 'date' | 'checkbox' | 'select' | 'multiSelect';
+export type PropertyOption = {name:string; color:'default' | 'brown' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'red'};
+export type PropertyLabels = {labels:Record<string,string>; contentHash:string};
+export type PropertyDefinition = {type:PropertyType; options?:PropertyOption[]};
+export type NoteProperty = {name:string; type:PropertyType | 'unsupported'; value:string | string[] | boolean; editable:boolean; options?:PropertyOption[]};
+export type NoteProperties = {properties:NoteProperty[]; tagProperty?:NoteProperty; contentHash:string; writable:boolean; definitionHash?:string};
+export type PropertyChange = {definition?:boolean; definitionHash?:string; optionRename?:{from:string;to:string}; name:string; renameTo?:string; type?:PropertyType; value?:string | string[] | boolean; remove?:boolean; create?:boolean; options?:PropertyOption[]};

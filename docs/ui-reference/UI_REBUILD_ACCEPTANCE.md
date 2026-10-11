@@ -1,5 +1,7 @@
 # MemoCard UI 重建验收（2026-09-29）
 
+历史记录说明（2026-10-10 更新）：本文记录 2026-09-29 按上游模板重建 UI 时的实现及验收，当时采用 Radix 组件和 `asChild` 组合。2026-10-09 已统一迁移回 Base UI，使用 `render/useRender` 等原生 API；下文“移除 @base-ui/react”及与快照逐字一致的结论不代表当前代码。当前实现与验收见 [Base UI 系统迁移验收](../BASE_UI_MIGRATION.md)。本目录的上游原始源码快照、哈希和许可保持不变，仅用于视觉溯源。
+
 ## 范围与工作区保护
 
 开始前审计了所有未提交及未跟踪内容；未执行 reset/clean、暂存、提交或发布。开始时的 UI 源码、package.json 与锁文件另存 `/tmp/memocard-ui-before`。对照该备份，本次只更改组件层、App 的展示 JSX、Editor 的 Dialog/API/标签输入展示、主题设置展示与默认值、样式和相应测试；浏览器文件访问、存储、Markdown、CodeMirror 编辑内核、图片/链接、标签重命名业务及原生 Swift 未被本次修改。

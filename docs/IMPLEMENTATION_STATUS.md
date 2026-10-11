@@ -2,6 +2,8 @@
 
 日期：2026-09-28。构建：0.1.0 (1)，Debug，源码位于 `/Users/divikwu/diw/workspace/memocard`。
 
+UI 依赖说明（2026-10-10 更新）：本文按日期保留实施历史。2026-10-09 审计发现旧组件仍使用 Radix，随后已全部迁移到 `@base-ui/react@1.9.0`，生成配置为 `base-nova`；活动源码、依赖和生产资源均无 Radix。下文早期的 Base UI 版本、生成配置及“无 Radix”描述不能作为当前依赖状态的依据。当前实现与验证见 [Base UI 系统迁移验收](BASE_UI_MIGRATION.md)；`docs/ui-reference` 的上游原始快照及许可保留，不参与构建。
+
 **当前交付为 M0/M1 平台验证版，完整 M0–M5 计划未完成。** 用户计划要求“前置关卡失败时暂停依赖它的阶段”。物理 iPhone 关卡尚未通过，因此没有宣称真机安装、免费签名或双端 iCloud 同步成功。随后用户明确授权先重设计现有 UI 并沿用 Becoming 主题；该部分已经落地，其他依赖真机关卡的数据功能仍未启动。
 
 ## 阶段状态
@@ -87,7 +89,7 @@ Becoming 工作区本次保持 clean，未修改图片配文链路、依赖或�
 
 按用户后续要求改用 shadcn/ui + Base UI + Tailwind CSS，取消固定绿色。主题 tokens、字体列表、圆角与配色取自 Becoming/dashboard；实际入口默认 light/blue/neutral/Geist/lg（10px）。Becoming Git 工作区复查仍 clean。
 
-- 实际生成并使用13个 shadcn base-maia 源码组件：Button、Input、Textarea、Dialog、Tabs、Card、Badge、Separator、Sheet、Alert、Skeleton、Select、Switch；使用 @base-ui/react 1.7.0，无 Radix。Tailwind CSS 4.3.3、shadcn CLI 4.17.0，锁文件已更新。
+- 当时记录生成并使用13个 shadcn base-maia 源码组件：Button、Input、Textarea、Dialog、Tabs、Card、Badge、Separator、Sheet、Alert、Skeleton、Select、Switch；依赖记录为 @base-ui/react 1.7.0，无 Radix。该记录仅描述此阶段；后续模板重建曾使用 Radix，现已统一迁移到 Base UI，见文首 UI 依赖说明。Tailwind CSS 4.3.3、shadcn CLI 4.17.0，锁文件已更新。
 - 紧凑桌面侧栏、单列笔记流、手机 Sheet 导航和全屏编辑；长库名截断，保留无原生桥时的真实预览边界。未加入模拟笔记或未完成功能入口。
 - 外观支持3种显示模式、8种强调色、2种中性色、27种标题/正文字体选项、7档圆角；25种字体随应用打包，设备偏好独立保存。恢复默认回到浅色/Blue/Neutral/Geist/10px。
 - 新增编辑器草稿串行写入、异步关闭保护、中文输入法快捷键保护。真实 WKWebView 验证发现进入动画可能使弹层保持透明；去除 Dialog/Sheet/Select 装饰动画，保留原语的键盘/焦点交互，并沿用 Becoming 的主题切换过渡抑制。重建后弹窗与主题切换可见。
@@ -210,7 +212,7 @@ Mac Apple Development 签名构建及 iOS Simulator 构建通过。最新模拟�
 
 ## Sidebar-10 UI 改版（2026-09-28 15:56）
 
-按用户授权，采用 [sidebar-10](https://ui.shadcn.com/view/new-york-v4/sidebar-10) 的导航布局，并适配为现有 Base UI 组件。新增 AppSidebar、DropdownMenu 和 Collapsible；下拉与折叠组件参考 shadcn 官方 Base UI registry。后续组件生成配置从 base-maia 调整为 base-nova / neutral，没有新增 Radix 或其他运行依赖。
+按用户授权，采用 [sidebar-10](https://ui.shadcn.com/view/new-york-v4/sidebar-10) 的导航布局。新增 AppSidebar、DropdownMenu 和 Collapsible；当时按 Base UI 适配方向记录，下拉与折叠组件参考 shadcn 官方 Base UI registry，组件生成配置从 base-maia 调整为 base-nova / neutral。该阶段的“没有新增 Radix”记录不代表后续运行组件无 Radix；最终统一迁移见 [Base UI 系统迁移验收](BASE_UI_MIGRATION.md)。
 
 - 左上角笔记库菜单提供能力允许的打开、创建、重新授权及设置入口；独立 Web 直接调用目录选择器，Mac 本机 Web 仍遵守其原生授权边界。回调保持同步执行以保留浏览器用户激活。
 - 侧栏接入新建、搜索、所有笔记、草稿和可折叠标签；底部为设置及连接状态。桌面可以收起/展开侧栏，搜索条件和当前页保持不变。手机抽屉选择后关闭；搜索与新建分别交接到输入框和编辑器。移动导航按钮为 44px，顶部关闭按钮避开安全区域。
@@ -246,7 +248,7 @@ Mac Apple Development 签名构建及 iOS Simulator 构建通过。最新模拟�
 
 ## 2026-09-28：从原模板源码重建 UI
 
-本节替代前两轮 base-nova / 局部样式对齐作为当前 UI 实现说明。官方源快照与许可保存在 `docs/ui-reference`，没有新增 Radix 运行依赖。重建 Sidebar 组合、AppSidebar、NavActions，统一 Button/Card/Input/Dialog/Menu/Select 的 new-york-v4 视觉；保留 Base UI 交互、目录授权、保存、草稿、图片及桥接逻辑。
+本节记录当时替代前两轮 base-nova / 局部样式对齐的 UI 重建。官方源快照与许可保存在 `docs/ui-reference`；该阶段按上游模板使用 Radix 交互组件，原“没有新增 Radix / 保留 Base UI”描述不准确。重建 Sidebar 组合、AppSidebar、NavActions，统一 Button/Card/Input/Dialog/Menu/Select 的 new-york-v4 视觉，保留目录授权、保存、草稿、图片及桥接逻辑。2026-10-09 已统一迁移到 Base UI，当前实现与验收见 [Base UI 系统迁移验收](BASE_UI_MIGRATION.md)。
 
 验证结果：
 

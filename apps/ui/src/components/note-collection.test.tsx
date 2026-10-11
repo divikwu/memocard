@@ -25,7 +25,7 @@ it("shows titles, clickable tags and trailing time in the list and restores cont
   expect(time.tagName).toBe("TIME");
   expect(time.getAttribute("datetime")).toBe(note.createdAt);
   expect(time.parentElement?.lastElementChild).toBe(time);
-  await user.click(screen.getByRole("button", { name: "#生活" }));
+  await user.click(screen.getByRole("button", { name: "筛选标签 生活" }));
   expect(props.onSelectTag).toHaveBeenCalledWith("生活");
   expect(props.onOpen).not.toHaveBeenCalled();
   await user.click(screen.getByRole("button", { name: "打开 散步的想法" }));
@@ -36,7 +36,7 @@ it("shows titles, clickable tags and trailing time in the list and restores cont
   expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
   expect(screen.getByText(note.body)).toBeTruthy();
   expect(screen.getByText("10月10日 16:00")).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "#生活" }));
+  await user.click(screen.getByRole("button", { name: "筛选标签 生活" }));
   expect(props.onSelectTag).toHaveBeenCalledWith("生活");
 });
 
@@ -71,10 +71,10 @@ it("switches layouts with arrow keys and labels the visible tab panel", async ()
 it.each(["cards", "list"])("shows at most two tags and the remaining count in %s layout", layout => {
   localStorage.setItem("memocard:note-layout", layout);
   render(<NoteCollection {...props} notes={[{ ...note, tags: ["生活", "思考", "写作", "灵感"] }]} />);
-  expect(screen.getByRole("button", { name: "#生活" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "#思考" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "#写作" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "#灵感" })).toBeNull();
+  expect(screen.getByRole("button", { name: "筛选标签 生活" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "筛选标签 思考" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "筛选标签 写作" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "筛选标签 灵感" })).toBeNull();
   expect(screen.getByText("+2")).toBeTruthy();
 });
 

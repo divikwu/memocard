@@ -363,7 +363,12 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       const rect = editor.view.dom.getBoundingClientRect();
       if (event.clientY < rect.bottom || event.clientX < rect.left || event.clientX > rect.right) return;
       const surface = element.closest('.note-page-scroll');
-      if (surface?.contains(target)) editor.commands.focus('end');
+      if (!surface?.contains(target)) return;
+      const last = editor.state.doc.lastChild;
+      if (last?.type.name === 'paragraph' && last.content.size === 0) editor.commands.focus('end');
+      else editRichStructure(editor, () => {
+        editor.chain().insertContentAt(editor.state.doc.content.size, { type: 'paragraph' }).focus('end').run();
+      });
     };
     // Page margins belong to the scroll surface, so they do not bubble through the editor.
     document.addEventListener('pointerdown', start, true);

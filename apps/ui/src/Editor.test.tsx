@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { useState } from 'react';
-import { Editor } from './Editor';
+import { createRef, useState } from 'react';
+import { Editor, type EditorHandle } from './Editor';
 import { noteEditor, readEditorText, replaceEditorText } from './editor-test-utils';
 import { request, type Draft } from './bridge';
+import { TagColorProvider } from './TagColorProvider';
+import * as tagOperations from './rename-tag-operation';
 vi.mock('./bridge', () => ({ request: vi.fn(), errorMessage: (error: unknown) => error instanceof Error ? error.message : '文件冲突' }));
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
 const initial: Draft = { id: 'test-note', body: '', tags: [], baseHash: null };
@@ -14,6 +16,7 @@ async function editor(draft = initial, capabilities = new Set(['saveNote', 'save
   const onClose = vi.fn(), onSaved = vi.fn(), onCommitted = vi.fn();
   render(<Editor initial={draft} capabilities={capabilities} onClose={onClose} onSaved={onSaved} onCommitted={onCommitted} />);
   await screen.findByRole('textbox', { name: '笔记内容' });
+  await screen.findByRole('button', { name: '属性' });
   return { onClose, onSaved, onCommitted };
 }
 function finishEditor() {
@@ -162,14 +165,22 @@ it('does not save or migrate an untouched note with only property tags', async (
   await waitFor(() => expect(native).not.toHaveBeenCalled());
   expect(readEditorText()).toBe('正文');
 });
-it('creates an empty page, focuses its independent title and saves title-only changes', async () => {
+it('focuses a new page title without saving and autosaves title-only changes', async () => {
   await editor({ ...initial, title: '' });
-  await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: '', body: '' })));
+  vi.useFakeTimers();
+  await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
+  expect(native).not.toHaveBeenCalled();
+  const unload = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload); expect(unload.defaultPrevented).toBe(false);
   const title = screen.getByRole('textbox', { name: '页面标题' });
   expect(document.activeElement).toBe(title);
   fireEvent.change(title, { target: { value: '只有标题' } });
-  finishEditor();
-  await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: '只有标题', body: '', baseHash: 'saved-hash' })));
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: '只有标题', body: '', baseHash: null }));
+});
+it('closes an untouched new page without creating a note', async () => {
+  const { onClose, onSaved } = await editor({ ...initial, title: '' });
+  finishEditor(); await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  expect(onSaved).not.toHaveBeenCalled(); expect(native).not.toHaveBeenCalled();
 });
 it('keeps title focus and autosaves when the parent mirrors the edited title', async () => {
   function Page() {
@@ -207,10 +218,54 @@ it('keeps composition Enter in the title and moves ordinary Enter to the body', 
   expect(native).not.toHaveBeenCalled();
 });
 
-it('does not duplicate body tags above the editor', async () => {
+it('summarizes body tags above the editor without restoring property tags', async () => {
  await editor({...initial, body:'#测试/笔记', tags:['测试/笔记'], baseHash:'old'});
  expect(screen.queryByLabelText('笔记标签')).toBeNull();
+ expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#测试/笔记');
+ fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ expect(screen.getByLabelText('笔记属性').textContent).toContain('测试/笔记');
+ expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#测试/笔记');
  expect(screen.getByRole('textbox',{name:'笔记内容'}).querySelector('.rich-inline-tag')?.textContent).toBe('#测试/笔记');
+});
+it('shows source metadata read-only and updates it only after a successful save', async () => {
+ const source = { ...initial, title:'标题', body:'正文 #工作', baseHash:'old', relativePath:'项目/笔记.md', updatedAt:'2030-01-01T00:00:00Z' };
+ const note = { id:source.id, title:source.title, body:source.body, tags:['旧属性标签'], relativePath:source.relativePath, contentHash:'old', sourceUrl:'', createdAt:'2026-10-01T08:00:00Z', updatedAt:'2026-10-02T09:00:00Z' };
+ const handle = createRef<EditorHandle>();
+ render(<Editor initial={source} initialNote={note} handle={handle} capabilities={new Set(['saveNote'])} onClose={vi.fn()} onSaved={vi.fn()} />);
+ expect(screen.queryByRole('dialog')).toBeNull();
+ expect((await screen.findByLabelText('笔记属性')).querySelectorAll('dt')).toHaveLength(0);
+ expect(screen.getByLabelText('笔记属性').textContent).not.toContain('2030');
+ expect(screen.queryByText('笔记.md')).toBeNull();
+ expect(screen.queryByText('更新时间')).toBeNull();
+ fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ const panel = screen.getByLabelText('笔记属性');
+ expect(panel.textContent).toContain('笔记.md');expect(panel.textContent).not.toContain('所在目录');expect(panel.textContent).not.toContain('项目');
+ expect(panel.textContent).toContain('2026/10/01');expect(panel.textContent).toContain('2026/10/02');
+ expect(Array.from(panel.querySelectorAll('dt'), node => node.textContent)).toEqual(['标签','更新时间','创建时间','文件名']);
+ expect(native).not.toHaveBeenCalled();
+ fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ await waitFor(() => expect(screen.queryByText('笔记.md')).toBeNull());
+ native.mockResolvedValue({ ...note, relativePath:'根笔记.md', updatedAt:'2026-10-10T10:00:00Z', contentHash:'new' });
+ replaceEditorText('更新正文 #生活');
+ await act(async () => { await handle.current!.flush(); });
+ fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ expect(screen.getByLabelText('笔记属性').textContent).toContain('2026/10/10');
+ expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
+ expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#生活');
+ expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#工作');
+ expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({body:'更新正文 #生活',tags:['生活']}));
+ const savedPanel = screen.getByLabelText('笔记属性');
+ expect(savedPanel.textContent).toContain('根笔记.md');expect(savedPanel.textContent).not.toContain('笔记库根目录');
+});
+it('does not invent file dates or create a file when inspecting an empty new note', async () => {
+ const handle = createRef<EditorHandle>();
+ render(<Editor initial={{...initial,title:''}} handle={handle} capabilities={new Set(['saveNote','saveDraft'])} onClose={vi.fn()} onSaved={vi.fn()} />);
+ fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ const panel = screen.getByLabelText('笔记属性');
+ expect(panel.textContent).toContain('尚未保存');expect(panel.textContent).toContain('未提供');
+ expect(panel.textContent).not.toContain('test-note.md');expect(screen.queryByRole('dialog')).toBeNull();
+ await act(async () => { await handle.current!.flush(); });
+ expect(native).not.toHaveBeenCalled();
 });
 it('persists a block redo while the preceding undo is still saving', async () => {
   const { duplicateRichBlocks, richBlockAt } = await import('./rich-blocks');
@@ -232,4 +287,57 @@ it('persists a block redo while the preceding undo is still saving', async () =>
   await act(async () => { complete(saved); await vi.advanceTimersByTimeAsync(650); });
   expect(native).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ body: duplicated }));
   expect(screen.queryByText('已保存到本地库')).toBeNull();
+});
+it('flushes pending body edits before creating an empty property and retains the form after a conflict', async () => {
+ const note = {...saved,title:'标题',body:'正文',tags:[],createdAt:'2026-10-01T00:00:00Z',updatedAt:'2026-10-01T00:00:00Z',sourceUrl:''};
+ const properties = {properties:[],writable:true,contentHash:note.contentHash};
+ native.mockImplementation(async op => op === 'getNoteProperties' ? properties : op === 'saveNote' ? {...note,body:'更新正文',contentHash:'body-hash'} : op === 'updateNoteProperty' ? {...note,body:'更新正文',contentHash:'property-hash'} : undefined);
+ render(<Editor initial={{...initial,body:note.body,baseHash:note.contentHash}} initialNote={note} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} />);
+ fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+ const add = await screen.findByRole('button',{name:'添加属性'});
+ await waitFor(() => expect(add.hasAttribute('disabled')).toBe(false));
+ fireEvent.click(add);
+ fireEvent.change(screen.getByRole('textbox',{name:'属性名'}),{target:{value:'摘要'}});
+ replaceEditorText('更新正文');
+ fireEvent.click(screen.getByRole('button',{name:'文本'}));
+ await waitFor(() => expect(native).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining({name:'摘要',value:'',baseHash:'body-hash',create:true})));
+ await waitFor(() => expect(screen.queryByRole('textbox',{name:'属性名'})).toBeNull());
+ expect(readEditorText()).toBe('更新正文');
+ await waitFor(() => expect(screen.getByRole('button',{name:'添加属性'}).hasAttribute('disabled')).toBe(false));
+ fireEvent.click(screen.getByRole('button',{name:'添加属性'}));
+ fireEvent.change(screen.getByRole('textbox',{name:'属性名'}),{target:{value:'状态'}});
+ native.mockImplementation(async op => { if(op === 'updateNoteProperty') throw new Error('文件已在其他位置修改'); return properties; });
+ fireEvent.click(screen.getByRole('button',{name:'文本'}));
+ expect((await screen.findByRole('alert')).textContent).toContain('文件已在其他位置修改');
+ expect((screen.getByRole('textbox',{name:'属性名'}) as HTMLInputElement).value).toBe('状态');
+ expect(readEditorText()).toBe('更新正文');
+});
+
+it('flushes the current note before a global tag rename and continues with the refreshed body and hash', async () => {
+  let current = {...saved,title:'标题',body:'#work/child',tags:['work/child'],createdAt:'',updatedAt:'',sourceUrl:''};
+  const properties = {properties:[],writable:true,contentHash:current.contentHash,tagProperty:{value:[],editable:true,type:'list'}};
+  native.mockImplementation(async (op, params) => {
+    if (op === 'getNoteProperties') return {...properties,contentHash:current.contentHash};
+    if (op === 'listTags') return {tags:[{name:'work'},{name:'work/child'}]};
+    if (op === 'saveNote') { current = {...current,body:String(params?.body),contentHash:'body-hash'}; return current; }
+    if (op === 'getNote') return current;
+  });
+  const rename = vi.spyOn(tagOperations,'renameTag').mockImplementation(async () => {
+    expect(current.body).toBe('#work/child 待保存');
+    current = {...current,body:'#project/child 待保存',contentHash:'renamed-hash'};
+  });
+  render(<TagColorProvider vaultId="v"><Editor initial={{...initial,body:current.body,baseHash:current.contentHash}} initialNote={current} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} /></TagColorProvider>);
+  fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+  await waitFor(() => expect(screen.getByRole('button',{name:'编辑标签'}).hasAttribute('disabled')).toBe(false));
+  replaceEditorText('#work/child 待保存');
+  fireEvent.click(screen.getByRole('button',{name:'编辑标签'}));
+  fireEvent.click(await screen.findByRole('button',{name:'管理标签 work'}));
+  const input = await screen.findByRole('textbox',{name:'标签名称'});
+  fireEvent.change(input,{target:{value:'Project'}});
+  fireEvent.submit(input.closest('form')!);
+  await waitFor(() => expect(rename).toHaveBeenCalledWith('work','project','v',request));
+  await waitFor(() => expect(readEditorText()).toBe('#project/child 待保存'));
+  replaceEditorText('#project/child 后续编辑');
+  finishEditor();
+  await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'#project/child 后续编辑',baseHash:'renamed-hash'})));
 });

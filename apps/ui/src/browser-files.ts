@@ -1,7 +1,7 @@
-import { inlineTags } from './inline-tags';
+import { inlineTags, propertyTags, tagKey } from './inline-tags';
 export { inlineTags } from './inline-tags';
 import type { Note } from "@memocard/contracts";
-import { Document, isMap, isScalar, parseDocument } from "yaml";
+import { Document, isMap, isScalar, isSeq, parseDocument } from "yaml";
 
 
 export class BrowserVaultError extends Error {
@@ -37,7 +37,12 @@ export type BrowserDirectoryHandle = {
 export type BrowserPicker = (options: { id: string; mode: "readwrite" }) => Promise<BrowserDirectoryHandle>;
 export type ParsedBrowserNote = { note: Note; frontmatter: Document; source?: string; header?: string };
 
+const fileTitle = (path: string) => path.split('/').at(-1)!.replace(/\.md$/i, '');
 const maxNoteBytes = 8 * 1024 * 1024;
+function documentTags(doc: Document): string[] {
+  const value = doc.get('tags');
+  return propertyTags(isSeq(value) ? value.items.map(item => isScalar(item) ? item.value : null) : value);
+}
 
 export function canonicalId(value: unknown): string {
   if (typeof value !== "string" || !/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(value)) {
@@ -64,7 +69,7 @@ export function validatedTags(value: unknown): string[] {
   if (!Array.isArray(value) || !value.every((tag) => typeof tag === "string" && tag.trim() && !tag.includes("\n"))) {
     throw new BrowserVaultError("INVALID_TAGS", "标签必须是字符串数组，不能为空或包含换行。");
   }
-  return [...new Set(value)] as string[];
+  return [...new Set(value.map(tagKey))];
 }
 
 export async function sha256(bytes: Uint8Array): Promise<string> {
@@ -103,12 +108,12 @@ export async function parseBrowserNote(bytes: Uint8Array, relativePath: string, 
   const createdAt = scalar("createdAt"), updatedAt = scalar("updatedAt");
   parseDate(createdAt); parseDate(updatedAt);
   const body = text.slice(end.index + end[0].length);
-  const tags = inlineTags(body);
+  const tags = [...new Set([...documentTags(doc), ...inlineTags(body)])];
   const deletedNode = doc.get("deletedAt", true);
   const deletedAt = deletedNode === undefined || (isScalar(deletedNode) && deletedNode.value === null) ? undefined : scalar("deletedAt");
   if (deletedAt !== undefined) parseDate(deletedAt);
   return { frontmatter: doc, note: {
-    id, ...(typeof doc.get("title") === "string" ? { title: doc.get("title") as string } : {}), createdAt, updatedAt, tags, ...(deletedAt !== undefined ? { deletedAt } : {}),
+    id, title: fileTitle(relativePath), createdAt, updatedAt, tags, ...(deletedAt !== undefined ? { deletedAt } : {}),
     body, contentHash: await sha256(bytes), relativePath,
     sourceUrl: `memocard://note/${id}?vault=${vaultId}`,
   } };
@@ -146,16 +151,6 @@ export function fileError(error: unknown): BrowserVaultError {
   return new BrowserVaultError("IO_ERROR", "文件操作未完成，请检查文件夹权限和文件可用性。", true);
 }
 
-export function imageType(bytes: Uint8Array): { extension: string; mime: string } | null {
-  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.slice(start, end));
-  if (bytes.length > 24 && bytes.slice(0, 8).every((b, i) => b === [137, 80, 78, 71, 13, 10, 26, 10][i]) && ascii(12, 16) === "IHDR") return { extension: "png", mime: "image/png" };
-  if (bytes.length > 4 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return { extension: "jpg", mime: "image/jpeg" };
-  if (bytes.length > 10 && ["GIF87a", "GIF89a"].includes(ascii(0, 6))) return { extension: "gif", mime: "image/gif" };
-  if (bytes.length > 16 && ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return { extension: "webp", mime: "image/webp" };
-  if (bytes.length > 16 && ascii(4, 8) === "ftyp" && ["heic", "heix", "hevc", "hevx", "mif1", "msf1"].includes(ascii(8, 12))) return { extension: "heic", mime: "image/heic" };
-  return null;
-}
-
 export type FileIdentity = { id: string; path: string; hash: string; createdAt: string };
 
 /** Obsidian properties are user data; never interpret id/deletedAt as our lifecycle fields. */
@@ -169,26 +164,15 @@ export async function parseObsidianNote(bytes: Uint8Array, path: string, vaultId
   if (doc.errors.length || (doc.contents !== null && !isMap(doc.contents))) throw new BrowserVaultError("INVALID_FRONTMATTER", "无法安全读取 YAML 属性。");
   const body = source.slice(header.length);
   return { source, header, frontmatter: doc, note: {
-    id: identity.id, ...(typeof doc.get("title") === "string" ? { title: doc.get("title") as string } : {}), body, tags: inlineTags(body),
+    id: identity.id, title: fileTitle(path), body, tags: [...new Set([...documentTags(doc), ...inlineTags(body)])],
     createdAt: identity.createdAt, updatedAt: new Date(modified || 0).toISOString(),
     contentHash: await sha256(bytes), relativePath: path, sourceUrl: `memocard://note/${identity.id}?vault=${vaultId}`,
   } };
 }
 
 
-export function encodeObsidianNote(parsed: ParsedBrowserNote | undefined, body: string, title?: string): Uint8Array {
-  let header = parsed?.header ?? "";
-  if (title !== undefined && title !== parsed?.note.title) {
-    const newline = header.includes('\r\n') ? '\r\n' : '\n';
-    const replacement = `title: ${JSON.stringify(title)}${newline}`;
-    if (!header || header === '\uFEFF') header += `---${newline}${replacement}---${newline}`;
-    else if (parsed?.frontmatter.has('title')) {
-      const pattern = /^title:[^\r\n]*(?:\r?\n[ \t]+[^\r\n]*)*\r?\n?/m;
-      if (!pattern.test(header)) throw new BrowserVaultError('INVALID_FRONTMATTER', '请在源文件中编辑此标题属性。');
-      header = header.replace(pattern, () => replacement);
-    } else { const end = header.lastIndexOf('---'); header = header.slice(0, end) + replacement + header.slice(end); }
-  }
-  const bytes = new TextEncoder().encode(header + body);
+export function encodeObsidianNote(parsed: ParsedBrowserNote | undefined, body: string): Uint8Array {
+  const bytes = new TextEncoder().encode((parsed?.header ?? "") + body);
   if (bytes.length > maxNoteBytes) throw new BrowserVaultError("NOTE_TOO_LARGE", "单条 Markdown 最大支持 8 MiB。");
   return bytes;
 }

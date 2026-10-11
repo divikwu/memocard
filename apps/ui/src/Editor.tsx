@@ -1,17 +1,23 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { request, errorMessage, type Attachment, type Draft } from './bridge';
-import type { Note } from '@memocard/contracts';
+import type { Note, PropertyChange } from '@memocard/contracts';
 import { RichMarkdownEditor } from './RichMarkdownEditor';
 import { EditorSession } from './editor-session';
 import { createId } from './uuid';
+import NoteProperties from './NoteProperties';
+import './Editor.css';
+import { useTagColorVault } from './TagColorProvider';
+import { changeTagSettings } from './tag-settings';
 
 export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void> };
-export function Editor({ initial, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, handle }: {
-  initial: Draft; capabilities: Set<string>; pendingLink?: boolean;
+export function Editor({ initial, initialNote, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, onTagsChanged, handle }: {
+  initial: Draft; initialNote?: Note; capabilities: Set<string>; pendingLink?: boolean;
   onClose: () => void; onSaved: (note: Note) => void;
+  onTagsChanged?: (from:string, to:string | null) => void;
   onCommitted?: (note: Note) => void; onTitleChange?: (title: string | undefined) => void; handle?: React.RefObject<EditorHandle | null>;
 }) {
+  const vaultId = useTagColorVault();
   const field = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLTextAreaElement>(null);
   const initialDraft = useRef(initial).current;
@@ -24,7 +30,9 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
   const callbacks = useRef({ onCommitted, onTitleChange });
   callbacks.current = { onCommitted, onTitleChange };
   const [session] = useState(() => new EditorSession(initialDraft, request, capabilities.has('saveDraft'), () => render(value => value + 1), note => { lastNote.current = note; callbacks.current.onCommitted?.(note); }));
-  const { body, relativePath, title } = session.current;
+  const { body, relativePath, title, tags } = session.current;
+  const note = lastNote.current ?? initialNote;
+  const metadata = note?.id === session.current.id ? note : undefined;
   useLayoutEffect(() => {
     const element = titleField.current;
     if (!element) return;
@@ -66,6 +74,43 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
     window.addEventListener('beforeunload', unload); document.addEventListener('visibilitychange', hidden);
     return () => { session.dispose(); window.removeEventListener('beforeunload', unload); document.removeEventListener('visibilitychange', hidden); };
   }, [session, initialDraft, canSave, titleFirst]);
+  async function applyProperty(change: PropertyChange) {
+    if (busy.current || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑属性。');
+    busy.current = true; setWorking(true);
+    try {
+      await session.flush();
+      const current = session.current;
+      if (!current.baseHash) throw new Error('请先填写标题或正文并保存。');
+      const saved = await request<Note>('updateNoteProperty', { ...change, id:current.id, baseHash:current.baseHash, ...(current.vaultBinding ? {vaultBinding:current.vaultBinding} : {}) });
+      lastNote.current = saved;
+      session.replace({ ...current, baseHash:saved.contentHash });
+      callbacks.current.onCommitted?.(saved);
+    } finally { busy.current = false; setWorking(false); }
+  }
+  async function changeTag(from:string, to:string | null) {
+    if (busy.current || !vaultId || !canSave || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑标签。');
+    busy.current = true; setWorking(true);
+    let flushed = false;
+    try {
+      await session.flush(); flushed = true;
+      const operations = await import('./rename-tag-operation');
+      if (to === null) await operations.deleteTag(from, vaultId, request);
+      else await operations.renameTag(from, to, vaultId, request);
+      try { changeTagSettings(vaultId, from, to); }
+      catch { throw new Error('标签内容已更新，但外观设置未能保存，请检查浏览器存储权限。'); }
+    } finally {
+      try {
+        // Refresh even after a partial operation, so a later edit uses the current hash.
+        if (flushed) {
+          const saved = await request<Note>('getNote', {id:session.current.id});
+          lastNote.current = saved;
+          session.replace({...session.current, body:saved.body, title:saved.title, tags:saved.tags, relativePath:saved.relativePath, baseHash:saved.contentHash});
+          callbacks.current.onCommitted?.(saved);
+          onTagsChanged?.(from, to);
+        }
+      } finally { busy.current = false; setWorking(false); }
+    }
+  }
   async function finish() { if (await flush()) { if (lastNote.current) onSaved(lastNote.current); else onClose(); } }
   async function image(insert: (markdown: string) => void) {
     if (busy.current) return;
@@ -108,10 +153,18 @@ export function Editor({ initial, capabilities, pendingLink = false, onClose, on
     finally { setWorking(false); }
   }
   const error = localError || (session.error ? errorMessage(session.error) : '');
-  return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor space-y-5">
-    <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新页面" className="note-page-title" value={session.current.title ?? ''} readOnly={!canSave} onChange={event => session.update(body, relativePath, event.target.value.replace(/[\r\n]+/g, ' '))} onKeyDown={event => {
+  return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor">
+    <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新页面" className="note-page-title" value={session.current.title ?? ''} readOnly={working || !canSave} onChange={event => session.update(body, relativePath, event.target.value.replace(/[\r\n]+/g, ' '))} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
+    }} />
+    <NoteProperties onChangeTag={changeTag} note={metadata} tags={tags} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onLocateTag={tag => {
+      const target = Array.from(field.current?.querySelectorAll('.rich-inline-tag') ?? []).find(element => element.getAttribute('data-tag') === encodeURIComponent(tag));
+      if (!target) return;
+      field.current?.focus();
+      const range = document.createRange(); range.selectNodeContents(target);
+      const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range);
+      target.scrollIntoView({block:'center'});
     }} />
     {pendingLink && <p role="status" className="text-sm text-muted-foreground">完成当前记录后，将打开收到的笔记链接。</p>}
     {error && <div role="alert" className="note-editor-message space-y-2 rounded-lg border p-3 text-sm"><p>{error}</p>{session.state === 'error' && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => void finish()}>重试保存</Button>}{session.state === 'conflict' && <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button></div>}</div>}

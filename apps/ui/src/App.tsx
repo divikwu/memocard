@@ -1,4 +1,5 @@
-import { renameTag, renamedTag } from "./rename-tag";
+import { TagColorProvider } from './TagColorProvider';
+import { renamedTag } from "./rename-tag";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
@@ -51,7 +52,7 @@ export function App() {
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const unfiledRecovery = drafts.filter(draft => !draft.baseHash && (draft.title !== undefined || draft.body.trim()));
+  const unfiledRecovery = drafts.filter(draft => !draft.baseHash && (draft.title?.trim() || draft.body.trim()));
   const [tags, setTags] = useState<TagCount[]>([]);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -69,7 +70,7 @@ export function App() {
   const [error, setError] = useState<unknown>("");
   const [notice, setNotice] = useState("");
   const [selectionNotice, setSelectionNotice] = useState("");
-  const [editing, setEditing] = useState<Draft | null>(null);
+  const [editing, setEditing] = useState<(Draft & { note?: Note }) | null>(null);
   const [pendingOpenNote, setPendingOpenNote] = useState<string | null>(null);
   const generation = useRef(0);
   const refreshCount = useRef(0);
@@ -128,7 +129,7 @@ export function App() {
       if (current !== generation.current) return;
       setNotes(page?.notes ?? []); setCursor(page?.nextCursor ?? null);
       setFilterCounts(page?.filterCounts);
-      setDrafts(recovered.drafts.filter(draft => draft.baseHash || draft.title !== undefined || draft.body.trim())); setTags(tagResult.tags); setFolders(folderResult.folders);
+      setDrafts(recovered.drafts.filter(draft => draft.baseHash || draft.title?.trim() || draft.body.trim())); setTags(tagResult.tags); setFolders(folderResult.folders);
       hasLoadedMore.current = false;
     } catch (cause) { if (current === generation.current) { setError(cause); setWebConnected(false); connectionLost.current = true; } }
     finally { refreshCount.current--; if (current === generation.current) setLoading(false); }
@@ -220,7 +221,7 @@ export function App() {
     finally { setWorking(false); }
   }
 
-  const showEditor = useCallback((draft: Draft) => {
+  const showEditor = useCallback((draft: Draft, note?: Note) => {
     editorGeneration.current++;
     if (openingLink.current && openingLink.current !== draft.id) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
@@ -231,7 +232,7 @@ export function App() {
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
     setView('notes');
     editingRef.current = draft;
-    setEditing(draft);
+    setEditing({ ...draft, note });
     setWorking(false);
   }, []);
 
@@ -249,7 +250,7 @@ export function App() {
     try {
       const current = await request<Note & { vaultBinding?: string }>("getNote", { id });
       if (currentRequest !== editorGeneration.current) return;
-      showEditor({ ...(pending ? { ...pending, updatedAt: pending.updatedAt ?? new Date().toISOString() } : { id: current.id, ...(current.title === undefined ? {} : { title: current.title }), body: current.body, tags: current.tags, baseHash: current.contentHash }), relativePath: current.relativePath, ...(isBrowserVault ? { vaultBinding: pending?.vaultBinding ?? current.vaultBinding ?? environment?.vaultBinding } : {}) });
+      showEditor({ ...(pending ? { ...pending, updatedAt: pending.updatedAt ?? new Date().toISOString() } : { id: current.id, ...(current.title === undefined ? {} : { title: current.title }), body: current.body, tags: current.tags, baseHash: current.contentHash }), relativePath: current.relativePath, ...(isBrowserVault ? { vaultBinding: pending?.vaultBinding ?? current.vaultBinding ?? environment?.vaultBinding } : {}) }, current);
     } catch (cause) {
       if (currentRequest !== editorGeneration.current) return;
       if (pending) showEditor({ ...pending, updatedAt: pending.updatedAt ?? new Date().toISOString() });
@@ -388,7 +389,7 @@ export function App() {
     view={view} tag={tag} quickFilter={quickFilter} filterCounts={filterCounts} tags={tags} onRenameTag={async (from, to) => {
       if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
       try {
-        await renameTag(from, to, status.vaultId);
+        await (await import("./rename-tag-operation")).renameTag(from, to, status.vaultId, request);
         if (tag) setTag(renamedTag(tag, from, to));
       } finally { await refresh(); }
     }}
@@ -403,7 +404,7 @@ export function App() {
     onReauthorize={() => void reauthorizeVault()}
   />;
 
-  return <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
+  return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
     {navigation}
     <SidebarInset className="min-w-0 min-h-0">
       <header className="flex h-14 shrink-0 items-center gap-2 bg-background">
@@ -430,7 +431,7 @@ export function App() {
           {Boolean(error) && <Alert variant="destructive"><CircleAlert className="size-4" /><AlertTitle>{localWebReconnectRequired ? "本机 Web 已断开" : "操作未完成"}</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>{errorMessage(error)}</p><div className="flex flex-wrap gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开本机 Web</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}</div></AlertDescription></Alert>}
           {status?.connected && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件尚未就绪</AlertTitle><AlertDescription>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件待读取。` : "部分文件尚未进入索引。"}当前结果可能不完整。</AlertDescription></Alert>}
 
-          {editing ? <Suspense fallback={<Skeleton className="h-80" />}><Editor key={editing.id} initial={editing} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
+          {editing ? <Suspense fallback={<Skeleton className="h-80" />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
             setNotes(current => current.map(item => item.id === note.id ? note : item));
             editorHash.current = `#/notes/${note.id}`;
             window.history.replaceState(null, '', editorHash.current);
@@ -454,7 +455,7 @@ export function App() {
                   <Button variant="outline" className="shrink-0 self-start shadow-none sm:self-center" onClick={() => void selectVault(true)} disabled={working || Boolean(editing)}>创建新笔记库</Button>
                 </div>}
                 {status?.connected && <Collapsible>
-                  <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0 hover:bg-transparent"><span>文件状态</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
+                  <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0"><span>文件状态</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
                   <CollapsibleContent className="space-y-4 pb-4">
                     <p className="text-pretty text-sm text-muted-foreground">仅反映此设备的文件读取情况，不代表其他设备已完成同步。</p>
                     <dl className="divide-y divide-border/60 text-sm"><StatusRow label="已索引笔记" value={status.coverage.indexed} /><StatusRow label="待读取文件" value={status.coverage.pending} /><StatusRow label="需要处理的文件" value={status.coverage.issues} /><StatusRow label="最近索引时间" value={status.coverage.indexedAt ? formatDate(status.coverage.indexedAt) : "—"} /></dl>
@@ -503,7 +504,7 @@ export function App() {
       <Button onClick={() => setSearchOpen(false)}>查看结果</Button>
     </DialogContent></Dialog>
 
-  </SidebarProvider>;
+  </SidebarProvider></TagColorProvider>;
 }
 
 function StatusRow({ label, value }: { label: string; value: string | number }) {

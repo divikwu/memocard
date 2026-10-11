@@ -20,6 +20,20 @@ it('does not rewrite an untouched existing note, but saves an explicitly cleared
 it('does not create a tag-only new note', async () => {
   const { session, transport } = setup({ ...initial, tags: ['标签'] }); session.update(''); await session.flush(); expect(transport).not.toHaveBeenCalled(); session.dispose();
 });
+it.each(['', ' \t\n'])('does not save a new page with only blank title and body (%j)', async blank => {
+  vi.useFakeTimers();
+  const { session, transport } = setup({ ...initial, title: blank, body: blank });
+  await session.save(); session.update(blank, undefined, blank);
+  await vi.advanceTimersByTimeAsync(1000); await session.flush();
+  expect(session.dirty).toBe(false); expect(transport).not.toHaveBeenCalled(); session.dispose();
+});
+it.each([{ title: '只有标题', body: '' }, { title: '', body: '只有正文' }, { title: '', body: '![图片](assets/a.png)' }])('autosaves non-empty new pages (%j)', async content => {
+  vi.useFakeTimers();
+  const { session, transport } = setup({ ...initial, title: '' });
+  session.update(content.body, undefined, content.title); await vi.advanceTimersByTimeAsync(650);
+  expect(transport).toHaveBeenCalledWith('saveNote', expect.objectContaining({ ...content, baseHash: null }));
+  expect(session.dirty).toBe(false); session.dispose();
+});
 it('preserves newer recovery during an older commit and flushes with the returned hash', async () => {
   vi.useFakeTimers();
   const { session, transport, committed } = setup();
@@ -89,8 +103,8 @@ it('keeps unknown source intact and derives tags only from edited body text', as
 it('does not notify a replaced UI session after a late commit', async () => {
   const { session, committed } = setup(); session.update('pending'); session.dispose(); await session.flush(); expect(committed).not.toHaveBeenCalled();
 });
-it('retires new-note recovery when the user clears the content before creating a file', async () => {
-  const { session, transport } = setup(); session.update('temporary'); await session.recover();
+it.each([undefined, ''])('retires new-note recovery when the user clears the content before creating a file (title=%j)', async title => {
+  const { session, transport } = setup({ ...initial, title }); session.update('temporary'); await session.recover();
   session.update(''); await session.recover(); await session.flush();
   expect(transport).toHaveBeenLastCalledWith('saveDraft', expect.objectContaining({ body: '', baseHash: null }));
   expect(transport.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(0); session.dispose();
@@ -109,10 +123,10 @@ it('does not restore obsolete property tags returned by an older file layer', as
   expect(transport).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ tags: [] }));
   session.dispose();
 });
-it('keeps title edits made during initial empty-page creation and saves clearing both fields', async () => {
+it('keeps title edits made during the first save and saves clearing both fields', async () => {
   let complete!: (value: unknown) => void;
   const transport = vi.fn(async (op: string) => op === 'saveNote' ? new Promise(resolve => { complete = resolve; }) : undefined);
-  const session = new EditorSession({ ...initial, title: '' }, transport as never, true, vi.fn(), vi.fn());
+  const session = new EditorSession({ ...initial, title: '初始标题' }, transport as never, true, vi.fn(), vi.fn());
   const saving = session.save();
   await vi.waitFor(() => expect(complete).toBeTypeOf('function'));
   session.update('正文', undefined, '标题'); complete(note); await saving;
@@ -121,4 +135,13 @@ it('keeps title edits made during initial empty-page creation and saves clearing
   await session.flush(); session.update('', undefined, ''); await session.flush();
   expect(transport).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ title: '', body: '', baseHash: 'new-hash' }));
   session.dispose();
+});
+
+it('adopts committed filename normalization and self-link edits without a dirty save loop', async () => {
+  const transport = vi.fn(async (op: string) => op === 'saveNote' ? { ...note, title: 'Name (2)', body: '[[Name (2)]]', relativePath: 'notes/Name (2).md' } : undefined);
+  const session = new EditorSession({ ...initial, title: 'Name', body: '[[Old]]' }, transport as never, true, vi.fn(), vi.fn());
+  await session.save();
+  expect(session.current).toMatchObject({ title: 'Name (2)', body: '[[Name (2)]]', relativePath: 'notes/Name (2).md' });
+  expect(session.dirty).toBe(false); await session.flush();
+  expect(transport.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(1); session.dispose();
 });

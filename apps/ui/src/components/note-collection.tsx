@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { ArrowDown, LayoutGrid, List, LoaderCircle, Plus, Search, X } from "lucide-react";
 import type { Note } from "@memocard/contracts";
 import { NotePreview } from "../NotePreview";
-import { Badge } from "./ui/badge";
+import TagPill from "../TagPill";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Input } from "./ui/input";
@@ -61,7 +61,7 @@ export function NoteCollection({ notes, query, onQueryChange, searchPlaceholder,
     <TabsContent value={layout} className="space-y-4">
     {notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={cn(cards ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4" : "flex flex-col")}>
       {notes.map(note => <li key={note.id} className="min-w-0">
-        <Card className={cn("gap-0 overflow-hidden bg-card py-0 transition-colors hover:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40", cards ? "h-64 rounded-[16px] border border-border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]" : "rounded-lg border-0 shadow-none")}>
+        <Card className={cn("gap-0 overflow-hidden bg-card py-0 transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40", cards ? "h-64 rounded-[16px] border border-border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]" : "rounded-lg border-0 shadow-none")}>
           <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row items-center")}>
             <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={cards ? `打开 ${formatDate(note.createdAt)} 的笔记` : `打开 ${note.title?.trim() || "新页面"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
               <div className={cn("w-full", cards ? "px-4 pb-2 pt-4" : "px-2 py-2")}>
@@ -73,7 +73,7 @@ export function NoteCollection({ notes, query, onQueryChange, searchPlaceholder,
               </div>}
             </button>
             {note.tags.length > 0 && <div className={cn("flex items-center gap-2 overflow-hidden", cards ? "min-h-10 px-4 pb-3" : "min-w-0 max-w-1/3 shrink-0 pr-2")}>
-              {note.tags.slice(0, 2).map(name => <Badge key={name} render={<button type="button" onClick={() => onSelectTag(name)}><span className="truncate">#{name}</span></button>} variant="secondary" className={cn("h-5 bg-sky-50 px-1.5 py-0 font-normal text-sky-700 hover:text-sky-800", !cards && "min-w-0 shrink")} />)}
+              {note.tags.slice(0, 2).map(name => <TagPill key={name} name={name} render={<button type="button" aria-label={`筛选标签 ${name}`} onClick={() => onSelectTag(name)} />} className={cn("h-5 px-1.5 py-0 font-normal", !cards && "min-w-0 shrink")}><span className="truncate">{name}</span></TagPill>)}
               {note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}
             </div>}
             {!cards && <time className="w-28 shrink-0 whitespace-nowrap pr-2 text-right text-xs tabular-nums text-muted-foreground/80" dateTime={note.createdAt}>{formatDate(note.createdAt)}</time>}

@@ -1,30 +1,65 @@
 import { Extension } from '@tiptap/react';
-import { Plugin } from '@tiptap/pm/state';
+import { Plugin, TextSelection } from '@tiptap/pm/state';
+import { isHistoryTransaction } from '@tiptap/pm/history';
+import { Mapping } from '@tiptap/pm/transform';
+import type { Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { inlineTags } from './inline-tags';
+import { inlineTags, tagKey } from './inline-tags';
 
-// Decorations keep hashtags as editable text and never change Markdown storage.
+function bodyTags(doc: Node) {
+  const tags: { from: number; to: number; text: string; key: string }[] = [];
+  doc.descendants((node, pos) => {
+    if (node.type.spec.code || node.type.name === 'preservedMarkdown') return false;
+    if (!node.isText || node.marks.some(mark => ['code', 'link'].includes(mark.type.name))) return;
+    const valid = new Set(inlineTags(node.text!));
+    for (const match of node.text!.matchAll(/(?:^|[\s(])#([\p{L}\p{N}_-]+(?:\/[\p{L}\p{N}_-]+)*)(?![\p{L}\p{N}_/-])/gu)) {
+      const key = tagKey(match[1]);
+      if (!valid.has(key)) continue;
+      const from = pos + match.index + match[0].indexOf('#');
+      const previous = from > 0 ? doc.textBetween(from - 1, from, '\n', ' ') : '';
+      if (previous && !/[\s(]/u.test(previous)) continue;
+      tags.push({ from, to: from + match[1].length + 1, text: `#${match[1]}`, key });
+    }
+  });
+  return tags;
+}
+
+// Tags remain editable text; normalize user edits in the same undo step.
 export const RichInlineTags = Extension.create({
   name: 'inlineTagStyle',
   addProseMirrorPlugins() {
+    const editor = this.editor;
+    let composition: { doc: Node; mapping: Mapping } | null = null;
     return [new Plugin({
+      appendTransaction(transactions, oldState, state) {
+        if (transactions.some(tr => tr.getMeta('normalizedBodyTags') || tr.getMeta('preventUpdate') || tr.getMeta('addToHistory') === false || isHistoryTransaction(tr))) { composition = null; return; }
+        if (!transactions.some(tr => tr.docChanged || tr.getMeta('commitBodyTags'))) return;
+        const baseline = composition ?? { doc: oldState.doc, mapping: new Mapping() };
+        for (const tr of transactions) baseline.mapping.appendMapping(tr.mapping);
+        if (editor.view.composing) { composition = baseline; return; }
+        composition = null;
+        const previous = new Map(bodyTags(baseline.doc).map(tag => [`${tag.from}:${tag.to}`, tag.text]));
+        const inverse = baseline.mapping.invert();
+        const tr = state.tr;
+        let { anchor, head } = state.selection;
+        for (const tag of bodyTags(state.doc).reverse()) {
+          if (tag.text === `#${tag.key}` || previous.get(`${inverse.map(tag.from, 1)}:${inverse.map(tag.to, -1)}`) === tag.text) continue;
+          const position = (pos: number) => pos < tag.from ? pos : pos <= tag.to ? tag.from + tagKey(state.doc.textBetween(tag.from, pos)).length : pos + tag.key.length + 1 - tag.text.length;
+          anchor = position(anchor); head = position(head);
+          tr.insertText(`#${tag.key}`, tag.from, tag.to);
+        }
+        if (tr.docChanged && state.selection instanceof TextSelection) tr.setSelection(TextSelection.create(tr.doc, anchor, head));
+        return tr.docChanged ? tr.setMeta('normalizedBodyTags', true) : null;
+      },
       props: {
+        handleDOMEvents: {
+          compositionend(view) {
+            if (composition) queueMicrotask(() => { if (!view.isDestroyed) view.dispatch(view.state.tr.setMeta('commitBodyTags', true)); });
+            return false;
+          },
+        },
         decorations(state) {
-          const decorations: Decoration[] = [];
-          state.doc.descendants((node, pos) => {
-            if (node.type.spec.code || node.type.name === 'preservedMarkdown') return false;
-            if (!node.isText || node.marks.some(mark => ['code', 'link'].includes(mark.type.name))) return;
-            const text = node.text!;
-            const valid = new Set(inlineTags(text));
-            for (const match of text.matchAll(/(?:^|[\s(])#([\p{L}\p{N}_-]+(?:\/[\p{L}\p{N}_-]+)*)(?![\p{L}\p{N}_/-])/gu)) {
-              if (!valid.has(match[1])) continue;
-              const from = pos + match.index + match[0].indexOf('#');
-              const previous = from > 0 ? state.doc.textBetween(from - 1, from, '\n', ' ') : '';
-              if (previous && !/[\s(]/u.test(previous)) continue;
-              decorations.push(Decoration.inline(from, from + match[1].length + 1, { class: 'rich-inline-tag' }));
-            }
-          });
-          return DecorationSet.create(state.doc, decorations);
+          return DecorationSet.create(state.doc, bodyTags(state.doc).map(tag => Decoration.inline(tag.from, tag.to, { class: 'rich-inline-tag', 'data-tag': encodeURIComponent(tag.key) })));
         },
       },
     })];

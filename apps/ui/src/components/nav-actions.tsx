@@ -9,7 +9,7 @@ export function NavActions({ canCreate, canRefresh, refreshing, onNewNote, onRef
 }) {
   return <div className="flex items-center gap-2 text-sm">
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-7 data-[popup-open]:bg-accent" aria-label="页面操作">
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="size-7 data-[popup-open]:bg-hover" aria-label="页面操作">
         <MoreHorizontal /><span className="sr-only">页面操作</span>
       </Button>} />
       <DropdownMenuContent align="end" className="w-56 rounded-lg p-1">
