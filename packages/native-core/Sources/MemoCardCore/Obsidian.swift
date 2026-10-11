@@ -60,7 +60,7 @@ func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, iden
     let tags = try validatedTags(propertyTags(root["tags"]) + inlineTags(body))
     return ParsedNote(note: Note(title: fileTitle(relativePath), id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
         updatedAt: timestamp(modified), deletedAt: nil, contentHash: sha256(data), relativePath: relativePath,
-        sourceUrl: "memocard://note/\(identity.id)?vault=\(vaultID)"), frontmatter: root, originalHeader: header)
+        sourceUrl: "memocard://note/\(identity.id)?vault=\(vaultID)"), frontmatter: root, createdDate: try parseDate(identity.createdAt), originalHeader: header)
 }
 
 func encodedObsidianNote(_ parsed: ParsedNote?, body: String, title: String? = nil) throws -> Data {

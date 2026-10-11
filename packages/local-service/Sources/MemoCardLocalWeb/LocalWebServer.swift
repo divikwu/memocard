@@ -277,7 +277,8 @@ public final class LocalWebServer: @unchecked Sendable {
             let payload = bytes
             queue.async { [self] in
                 guard let payload, payload.count <= maximumResponseBytes else { reply(id, status: 404); return }
-                reply(id, status: 200, body: payload, mime: mime)
+                let hashedAsset = relative.hasPrefix("assets/") && relative.range(of: #"-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|svg|png|jpe?g)$"#, options: .regularExpression) != nil
+                reply(id, status: 200, body: payload, mime: mime, headers: hashedAsset ? ["Cache-Control": "private, max-age=31536000, immutable"] : [:])
             }
         }
     }

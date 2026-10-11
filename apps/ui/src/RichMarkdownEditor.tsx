@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from 'react';
+import { lazy, Suspense, forwardRef, useCallback, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from 'react';
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type NodeViewProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown as MarkdownExtension } from '@tiptap/markdown';
@@ -21,7 +21,7 @@ import { Menu } from '@base-ui/react/menu';
 import { useIsMobile } from './hooks/use-mobile';
 import { Plus, GripVertical, Type, Heading, List, ListOrdered, ListTodo, Quote, Code, Minus, Table, Sigma, Image as ImageIcon, Search, ArrowUp, ArrowDown, Copy, Trash2, RefreshCw, Check, ChevronRight, type LucideIcon } from 'lucide-react';
 import { MarkdownSource, SourceMetadata, PreservedMarkdown } from './wysiwyg-markdown';
-import { Markdown } from './markdown';
+const Markdown = lazy(() => import('./markdown').then(module => ({ default: module.Markdown })));
 import { imageSource, openVaultLink } from './vault-links';
 import { externalUrl } from './urls';
 import { request } from './bridge';
@@ -47,7 +47,7 @@ function SafeImage({ node, extension }: NodeViewProps) {
 }
 function PreservedContent({ node, extension }: NodeViewProps) {
   return <NodeViewWrapper className="rich-preserved" contentEditable={false}>
-    <Markdown body={String(node.attrs.source)} notePath={extension.options.notePath()} />
+    <Suspense fallback={<span>{String(node.attrs.source)}</span>}><Markdown body={String(node.attrs.source)} notePath={extension.options.notePath()} /></Suspense>
     <span className="rich-preserved-label">原格式内容 · 保留原文</span>
   </NodeViewWrapper>;
 }

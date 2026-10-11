@@ -12,7 +12,7 @@ import { request } from "./bridge";
 import { externalUrl, internalTarget } from "./urls";
 import { isBrowserVault } from "./client-mode";
 import { bindNoteImage } from "./note-image";
-import { getBrowserVaultBinding } from "./browser-vault";
+import { getBrowserVaultBinding } from "./browser-runtime";
 
 function NoteImage({ src, alt }: { src: string; alt: string }) {
   const ref = useRef<HTMLImageElement>(null);

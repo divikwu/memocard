@@ -75,6 +75,23 @@ afterEach(() => {
 });
 
 describe("note workspace", () => {
+  it("opens a deep link with its recovery draft while the sidebar list is still loading", async () => {
+    window.history.replaceState(null, "", `#/notes/${note.id}`);
+    let resolvePage!: (value: unknown) => void;
+    const page = new Promise(resolve => { resolvePage = resolve; });
+    pendingDrafts = [{id:note.id, body:"Recovered before sidebar", tags:[], baseHash:note.contentHash}];
+    const implementation = bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation, params) => operation === "queryNotes" ? page : implementation(operation, params));
+    render(<App />);
+    await screen.findByRole("textbox", {name:"笔记内容"});
+    expect(readEditorText()).toBe("Recovered before sidebar");
+    const operations = bridge.request.mock.calls.map(([operation]) => operation);
+    expect(operations.indexOf("getNote")).toBeLessThan(operations.indexOf("queryNotes"));
+    expect(screen.queryByRole("heading", {name:"所有笔记"})).toBeNull();
+    await act(async () => { resolvePage({notes:[note], nextCursor:null, coverage:status.coverage}); });
+    expect(readEditorText()).toBe("Recovered before sidebar");
+  });
+
   it("expands inline properties with the keyboard and clears metadata for a new page", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -609,6 +626,43 @@ it('opens a direct note route only after recovery has loaded', async () => {
   render(<App />);
   await screen.findByRole('region', { name: '编辑笔记' });
   expect(readEditorText()).toBe('恢复版本');
+});
+it('keeps a refreshed note route in the detail loading view until recovery and the note are ready', async () => {
+  bridge.native = false; bridge.web = true;
+  const recovery: Draft = { id: note.id, body: '恢复版本', tags: [], baseHash: 'old-hash' };
+  let resolveRecovery!: (value: { drafts: Draft[] }) => void;
+  let resolveNote!: (value: Note) => void;
+  const recoveryResult = new Promise<{ drafts: Draft[] }>(resolve => { resolveRecovery = resolve; });
+  const noteResult = new Promise<Note>(resolve => { resolveNote = resolve; });
+  const implementation = bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation((operation, params) => operation === 'getDrafts' ? recoveryResult : operation === 'getNote' ? noteResult : implementation(operation, params));
+  const address = `#/notes/${note.id}`;
+  window.history.replaceState(null, '', address);
+  render(<App />);
+  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.queryByRole('heading', { name: '所有笔记' })).toBeNull();
+  await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('getDrafts'));
+  expect(bridge.request).toHaveBeenCalledWith('getNote', { id: note.id });
+  expect(screen.queryByRole('textbox', { name: '笔记内容' })).toBeNull();
+  await act(async () => { resolveRecovery({ drafts: [recovery] }); });
+  await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('getNote', { id: note.id }));
+  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.queryByRole('list', { name: '笔记列表' })).toBeNull();
+  expect(screen.queryByRole('heading', { name: '所有笔记' })).toBeNull();
+  expect(window.location.hash).toBe(address);
+  await act(async () => { resolveNote(note); });
+  await screen.findByRole('region', { name: '编辑笔记' });
+  expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
+  expect(readEditorText()).toBe(recovery.body);
+  expect(window.location.hash).toBe(address);
+});
+it('exits detail loading and shows the error when a direct note cannot be read', async () => {
+  const implementation = bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation((operation, params) => operation === 'getNote' ? Promise.reject(new Error('笔记不存在')) : implementation(operation, params));
+  window.history.replaceState(null, '', `#/notes/${note.id}`);
+  render(<App />);
+  await screen.findByText('笔记不存在');
+  expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
 });
 it('flushes a hash navigation and keeps the requested route after first-save URL replacement', async () => {
   render(<App />); await screen.findByText(note.body);

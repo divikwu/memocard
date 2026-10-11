@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
+import * as markdown from "./markdown";
 import { NotePreview } from "./NotePreview";
 
 vi.mock("./bridge", () => ({ request: vi.fn() }));
@@ -26,4 +27,17 @@ it("hides standalone duplicate tag lines only in compact card previews", () => {
   render(<NotePreview compact hiddenTags={["写回验收"]} body={"正文里的 #写回验收 保留\n\n#写回验收"} onError={vi.fn()} />);
   expect(screen.getByText("正文里的 #写回验收 保留")).toBeTruthy();
   expect(screen.queryByText("#写回验收")).toBeNull();
+});
+
+it("reuses Markdown rendering across identical refreshed card data", () => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  const parse = vi.spyOn(markdown, "Markdown");
+  const onError = vi.fn();
+  const view = render(<NotePreview compact hiddenTags={["tag"]} body="**Same body**" onError={onError} />);
+  const initial = parse.mock.calls.length;
+  view.rerender(<NotePreview compact hiddenTags={["tag"]} body="**Same body**" onError={onError} />);
+  expect(parse.mock.calls.length).toBe(initial);
+  view.rerender(<NotePreview compact hiddenTags={["tag"]} body="**Changed body**" onError={onError} />);
+  expect(parse.mock.calls.length).toBeGreaterThan(initial);
+  expect(screen.getByText("Changed body")).toBeTruthy();
 });

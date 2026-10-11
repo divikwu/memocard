@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import ImageIO
 import UniformTypeIdentifiers
 import Yams
@@ -14,6 +15,29 @@ public actor VaultStore {
     private var identities: [FileIdentity] = []
     private var refreshSnapshot: Snapshot?
     private var refreshSnapshotConsumers = Set<String>()
+    private struct SourceStamp: Equatable {
+        let device: dev_t
+        let inode: ino_t
+        let size: off_t
+        let mode: mode_t
+        let modifiedSeconds: Int
+        let modifiedNanos: Int
+        let changedSeconds: Int
+        let changedNanos: Int
+
+        init?(_ url: URL) throws {
+            var volume = statfs()
+            guard statfs(url.path, &volume) == 0 else { return nil }
+            let filesystem = withUnsafeBytes(of: volume.f_fstypename) { String(cString: $0.bindMemory(to: CChar.self).baseAddress!) }
+            // Other filesystems may have coarse clocks or cache remote attributes.
+            guard filesystem == "apfs", volume.f_flags & UInt32(MNT_LOCAL) != 0 else { return nil }
+            var value = stat()
+            guard lstat(url.path, &value) == 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+            device = value.st_dev; inode = value.st_ino; size = value.st_size; mode = value.st_mode
+            modifiedSeconds = value.st_mtimespec.tv_sec; modifiedNanos = value.st_mtimespec.tv_nsec
+            changedSeconds = value.st_ctimespec.tv_sec; changedNanos = value.st_ctimespec.tv_nsec
+        }
+    }
     private struct ParsedCacheEntry {
         let hash: String
         let vaultID: String
@@ -21,10 +45,15 @@ public actor VaultStore {
         let createdAt: String?
         let modified: Date?
         let parsed: ParsedNote
+        var sourceStamp: SourceStamp?
+        var properties: [NoteProperty]?
         var quickFilters: Set<NoteQuickFilter>?
     }
     private var parsedCache: [String: ParsedCacheEntry] = [:]
     var parseMissCount = 0
+    var sourceReadCount = 0
+    var scanCount = 0
+    var propertyParseMissCount = 0
 
     public init(localDataURL: URL) throws {
         guard localDataURL.isFileURL else {
@@ -38,6 +67,7 @@ public actor VaultStore {
         invalidateSnapshot()
         parsedCache.removeAll()
         parseMissCount = 0
+        sourceReadCount = 0; scanCount = 0; propertyParseMissCount = 0
         binding = UUID()
         root = nil
         metadata = nil
@@ -76,6 +106,7 @@ public actor VaultStore {
         invalidateSnapshot()
         parsedCache.removeAll()
         parseMissCount = 0
+        sourceReadCount = 0; scanCount = 0; propertyParseMissCount = 0
         self.binding = binding
         // A failed selection must not silently continue serving a previously selected vault.
         root = nil
@@ -142,12 +173,13 @@ public actor VaultStore {
                 let (root, _) = try active()
                 guard let id = try decode(Request.self, params).id else {
                     let config = try readPropertyDefinitions(root)
-                    let properties = try inheritedProperties(libraryProperties(scan(), root: root), stored: config.values)
+                    let properties = try inheritedProperties(libraryProperties(scan()), stored: config.values)
                     return try encode(NoteProperties(properties: properties, tagProperty: NoteProperty(name: "tags", type: "list", value: .list([]), editable: false), contentHash: "", writable: false, definitionHash: config.hash))
                 }
-                let note = try getNote(id: id)
+                let snapshot = try scan()
+                let note = try getNote(id: id, snapshot: snapshot)
                 let data = try coordinateRead(root.appendingPathComponent(note.relativePath), inside: root) { try self.readSource($0) }
-                return try encode(effectiveNoteProperties(data, snapshot: scan(), root: root))
+                return try encode(effectiveNoteProperties(data, snapshot: snapshot, root: root))
             case "getPropertyLabels": return try encode(readPropertyLabels())
             case "renamePropertyLabel":
                 struct Request: Decodable { let key: String; let label: String; let baseHash: String }
@@ -231,6 +263,7 @@ public actor VaultStore {
     }
 
     private func scan() throws -> Snapshot {
+        scanCount += 1
         let (root, metadata) = try active()
         let notesURL = compatible ? root : root.appendingPathComponent("notes")
         try validate(notesURL, inside: root)
@@ -239,7 +272,7 @@ public actor VaultStore {
         }
         var result = Snapshot()
         if compatible { result.folders = [""] }
-        var sources: [(path: String, data: Data, modified: Date, hash: String)] = []
+        var sources: [(path: String, data: Data?, modified: Date, hash: String, stamp: SourceStamp?)] = []
         var scannedPaths = Set<String>()
         var enumerationFailed = false
         guard let enumerator = fm.enumerator(at: notesURL, includingPropertiesForKeys: nil,
@@ -255,25 +288,39 @@ public actor VaultStore {
                 guard type == .typeRegular else { result.coverage.issues += 1; continue }
                 guard url.pathExtension.lowercased() == "md" else { continue }
                 guard try isAvailable(url) else { result.coverage.pending += 1; continue }
+                let path = relative(url, root: root)
+                // Cloud versions still use coordination; local files must match identity and both clocks.
+                let isCloud = try url.resourceValues(forKeys: [.isUbiquitousItemKey]).isUbiquitousItem == true
+                let stamp = isCloud ? nil : try SourceStamp(url)
+                if let stamp, let cached = parsedCache[path], cached.vaultID == metadata.vaultId, cached.sourceStamp == stamp {
+                    try requireNoConflict(url)
+                    scannedPaths.insert(path)
+                    if compatible, let modified = cached.modified {
+                        sources.append((path, nil, modified, cached.hash, stamp))
+                    } else { result.notes.append(cached.parsed) }
+                    continue
+                }
                 let parsed: ParsedNote? = try coordinateRead(url, inside: root) { coordinated in
                     try self.requireNoConflict(coordinated)
                     let data = try self.readSource(coordinated)
                     let path = self.relative(coordinated, root: root)
                     let hash = sha256(data)
+                    let verifiedStamp = stamp != nil && stamp == (try? SourceStamp(coordinated)) ? stamp : nil
                     scannedPaths.insert(path)
                     if self.compatible {
                         let modified = try coordinated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? Date(timeIntervalSince1970: 0)
-                        sources.append((path, data, modified, hash))
+                        sources.append((path, data, modified, hash, verifiedStamp))
                         return nil
                     }
                     if let cached = self.parsedCache[path], cached.hash == hash, cached.vaultID == metadata.vaultId,
                        cached.identityID == nil, cached.createdAt == nil, cached.modified == nil {
+                        self.parsedCache[path]?.sourceStamp = verifiedStamp
                         return cached.parsed
                     }
                     let value = try parseNote(data, relativePath: path, vaultID: metadata.vaultId)
                     self.parseMissCount += 1
                     self.parsedCache[path] = ParsedCacheEntry(hash: hash, vaultID: metadata.vaultId,
-                        identityID: nil, createdAt: nil, modified: nil, parsed: value)
+                        identityID: nil, createdAt: nil, modified: nil, parsed: value, sourceStamp: verifiedStamp)
                     return value
                 }
                 if let parsed { result.notes.append(parsed) }
@@ -300,12 +347,14 @@ public actor VaultStore {
                 do {
                     if let cached = parsedCache[source.path], cached.hash == hash, cached.vaultID == metadata.vaultId,
                        cached.identityID == identity.id, cached.createdAt == identity.createdAt, cached.modified == source.modified {
+                        parsedCache[source.path]?.sourceStamp = source.stamp
                         result.notes.append(cached.parsed)
                     } else {
-                        let value = try parseObsidianNote(source.data, relativePath: source.path, vaultID: metadata.vaultId, identity: identity, modified: source.modified)
+                        let data = try source.data ?? coordinateRead(root.appendingPathComponent(source.path), inside: root) { try self.readSource($0) }
+                        let value = try parseObsidianNote(data, relativePath: source.path, vaultID: metadata.vaultId, identity: identity, modified: source.modified)
                         parseMissCount += 1
                         parsedCache[source.path] = ParsedCacheEntry(hash: hash, vaultID: metadata.vaultId,
-                            identityID: identity.id, createdAt: identity.createdAt, modified: source.modified, parsed: value)
+                            identityID: identity.id, createdAt: identity.createdAt, modified: source.modified, parsed: value, sourceStamp: source.stamp)
                         result.notes.append(value)
                     }
                 }
@@ -323,7 +372,7 @@ public actor VaultStore {
         }
         result.notes.removeAll { result.duplicateIDs.contains($0.note.id) }
         result.notes.sort {
-            let left = try! parseDate($0.note.createdAt), right = try! parseDate($1.note.createdAt)
+            let left = $0.createdDate, right = $1.createdDate
             return left == right ? $0.note.id < $1.note.id : left > right
         }
         result.coverage.indexed = result.notes.count
@@ -415,8 +464,8 @@ public actor VaultStore {
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
             for filter in filters[parsed.note.id]! { filterCounts[filter.rawValue, default: 0] += 1 }
         }
-        let matches = snapshot.notes.map(\.note).filter { note in
-            let date = try! parseDate(note.createdAt)
+        let matches = snapshot.notes.filter { parsed in
+            let note = parsed.note, date = parsed.createdDate
             if let folder = query.folder, !folder.isEmpty, !note.relativePath.hasPrefix(folder + "/") { return false }
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
             if let filter = query.quickFilter, !filters[note.id]!.contains(filter) { return false }
@@ -426,7 +475,7 @@ public actor VaultStore {
             if let to, date >= to { return false }
             if let cursor, let cursorDate, !(date < cursorDate || (date == cursorDate && note.id > cursor.id)) { return false }
             return true
-        }
+        }.map(\.note)
         // Limit actual JSON bytes as well as count. A single large legal note must still advance the cursor.
         let byteBudget = 2 * 1024 * 1024
         var notesData = Data("[".utf8)
@@ -458,8 +507,11 @@ public actor VaultStore {
     }
 
     private func getNote(id: String) throws -> Note {
+        try getNote(id: id, snapshot: scan())
+    }
+
+    private func getNote(id: String, snapshot: Snapshot) throws -> Note {
         let id = try canonicalID(id)
-        let snapshot = try scan()
         if snapshot.duplicateIDs.contains(id) { throw VaultError(code: "DUPLICATE_ID", message: "多份文件使用同一个 ID，请先处理重复文件。") }
         guard let note = snapshot.notes.first(where: { $0.note.id == id })?.note else {
             throw VaultError(code: snapshot.coverage.complete ? "NOTE_NOT_FOUND" : "NOTE_UNAVAILABLE",
@@ -508,7 +560,7 @@ public actor VaultStore {
         }
         let target = try root.appendingPathComponent(existing?.note.relativePath ?? newNotePath(requestedPath, id: id, root: root))
         let config = existing == nil ? try readPropertyDefinitions(root) : nil
-        let inherited = try config.map { try inheritedProperties(libraryProperties(snapshot, root: root), stored: $0.values) } ?? []
+        let inherited = try config.map { try inheritedProperties(libraryProperties(snapshot), stored: $0.values) } ?? []
         let saved = try coordinateWrite(target, inside: root) { coordinated in
             try self.requireNoConflict(coordinated)
             var frontmatter = Node([(Node, Node)]())
@@ -618,15 +670,21 @@ public actor VaultStore {
         }
         return (data, values, sha256(data ?? Data()))
     }
-    private func libraryProperties(_ snapshot: Snapshot, root: URL) throws -> [NoteProperty] {
+    private func libraryProperties(_ snapshot: Snapshot) throws -> [NoteProperty] {
         try snapshot.notes.filter { $0.note.deletedAt == nil }.sorted { $0.note.relativePath < $1.note.relativePath }.flatMap { item in
-            try coordinateRead(root.appendingPathComponent(item.note.relativePath), inside: root) { try readNoteProperties(self.readSource($0)).properties }
+            if let properties = parsedCache[item.note.relativePath]?.properties { return properties }
+            // The snapshot already verified the source hash. Only YAML is needed for library options.
+            let properties = try readNoteProperties(Data((item.originalHeader ?? "").utf8)).properties
+            propertyParseMissCount += 1
+            parsedCache[item.note.relativePath]?.properties = properties
+            return properties
         }
     }
     private func effectiveNoteProperties(_ data: Data, snapshot: Snapshot, root: URL) throws -> NoteProperties {
         let config = try readPropertyDefinitions(root)
-        let all = try libraryProperties(snapshot, root: root)
         let raw = try readNoteProperties(data)
+        let needsOptions = raw.properties.contains { $0.type != "unsupported" && $0.options != nil && config.values[$0.name] == nil }
+        let all = needsOptions ? try libraryProperties(snapshot) : []
         let properties = raw.properties.map { property -> NoteProperty in
             guard property.type != "unsupported" else { return property }
             if let definition = config.values[property.name] { return convertedProperty(property, definition: definition) }
@@ -641,7 +699,7 @@ public actor VaultStore {
         let original = try readSource(root.appendingPathComponent(existing.note.relativePath))
         guard sha256(original) == change.baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
         guard let current = try readNoteProperties(original).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
-        let properties = try libraryProperties(snapshot, root: root).filter { $0.name == change.name }
+        let properties = try libraryProperties(snapshot).filter { $0.name == change.name }
         let typeChanged = (config.values[change.name]?.type ?? current.type) != type
         let definition = newPropertyDefinition(properties, type: type, options: change.options, includeValues: typeChanged)
         guard validPropertyDefinition(definition) else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型或选项定义无效，最多支持 200 个选项。") }
@@ -971,6 +1029,7 @@ public actor VaultStore {
         guard try isAvailable(url) else { throw VaultError(code: "FILE_PENDING", message: "文件尚未下载。", retryable: true) }
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
         guard size <= 8 * 1024 * 1024 else { throw VaultError(code: "NOTE_TOO_LARGE", message: "M1 单条 Markdown 最大支持 8 MiB。") }
+        sourceReadCount += 1
         return try Data(contentsOf: url)
     }
 

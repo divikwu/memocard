@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "./markdown";
 
@@ -22,7 +22,7 @@ function compactPreviewBody(body: string, hiddenTags: string[]) {
   }).join("\n").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-export function NotePreview({ title, body, notePath, onError, compact = false, showTitle = true, hiddenTags = [] }: { title?: string; body: string; notePath?: string; onError: (message: string) => void; compact?: boolean; showTitle?: boolean; hiddenTags?: string[] }) {
+export const NotePreview = memo(function NotePreview({ title, body, notePath, onError, compact = false, showTitle = true, hiddenTags = [] }: { title?: string; body: string; notePath?: string; onError: (message: string) => void; compact?: boolean; showTitle?: boolean; hiddenTags?: string[] }) {
   const content = useRef<HTMLDivElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -91,4 +91,7 @@ export function NotePreview({ title, body, notePath, onError, compact = false, s
     {compact && compactClip !== null && <span aria-hidden="true" className="absolute bottom-0 left-0 text-sm leading-5">…</span>}
     {!compact && overflows && <Button variant="ghost" size="sm" className="mt-2" aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "收起全文" : "展开全文"}</Button>}
   </div>;
-}
+}, (before, after) => before.body === after.body && before.title === after.title && before.notePath === after.notePath
+  && before.onError === after.onError && before.compact === after.compact && before.showTitle === after.showTitle
+  && (before.hiddenTags ?? []).length === (after.hiddenTags ?? []).length
+  && (before.hiddenTags ?? []).every((tag, index) => tag === after.hiddenTags?.[index]));

@@ -105,6 +105,7 @@ struct PageCursor: Codable {
 struct ParsedNote {
     let note: Note
     var frontmatter: Node
+    let createdDate: Date
     var originalHeader: String? = nil
 }
 
@@ -189,7 +190,7 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
         throw VaultError(code: "INVALID_FRONTMATTER", message: "笔记缺少 id、createdAt 或 updatedAt。")
     }
     let id = try canonicalID(rawID)
-    _ = try parseDate(created)
+    let createdDate = try parseDate(created)
     _ = try parseDate(updated)
     var deleted: String?
     if let value = root["deletedAt"], value.null == nil {
@@ -205,7 +206,7 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
         title: fileTitle(relativePath), id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
         deletedAt: deleted, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(id)?vault=\(vaultID)"
-    ), frontmatter: root, originalHeader: String(text[..<end.upperBound]))
+    ), frontmatter: root, createdDate: createdDate, originalHeader: String(text[..<end.upperBound]))
 }
 
 func encodedNote(frontmatter: Node, body: String, originalHeader: String? = nil) throws -> Data {

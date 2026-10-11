@@ -1,7 +1,7 @@
 import { request } from "./bridge";
 import { resolvedImageURL, type ResolvedLink } from "./vault-links";
 import { isBrowserVault } from "./client-mode";
-import { getBrowserVaultBinding, readBrowserAsset } from "./browser-vault";
+import { getBrowserVaultBinding, readBrowserAsset } from "./browser-runtime";
 
 // Only URLs already validated by assetUrl reach this renderer. Blob URLs are never
 // accepted from Markdown itself, and every renderer owns and revokes its own URL.
