@@ -23,18 +23,20 @@ func propertyTags(_ node: Node?) -> [String] {
     return values.compactMap { $0.tag == Tag(.str) ? $0.scalar.flatMap { normalizedPropertyTag($0.string) } : nil }.filter { seen.insert($0).inserted }
 }
 
+private let inlineTagExpression = try! NSRegularExpression(pattern: #"(?:^|[\s(])#([\p{L}\p{N}_-]+(?:/[\p{L}\p{N}_-]+)*)(?![\p{L}\p{N}_/-])"#)
+
 func inlineTags(_ body: String) -> [String] {
     let text = body.replacingOccurrences(of: #"(?m)^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[^\n]*(?:\n|$)|(?![\s\S]))"#, with: "", options: .regularExpression)
         .replacingOccurrences(of: #"(?m)^(?: {4}|\t).*$"#, with: "", options: .regularExpression)
         .replacingOccurrences(of: #"(`+)[\s\S]*?\1"#, with: "", options: .regularExpression)
         .replacingOccurrences(of: #"!?\[[^\]\n]*\]\([^\n)]*\)|\[\[[^\]\n]*\]\]|<[^>]*>|\$\$[\s\S]*?\$\$|\$[^\n$]+\$"#, with: "", options: .regularExpression)
-    let regex = try! NSRegularExpression(pattern: #"(?:^|[\s(])#([\p{L}\p{N}_-]+(?:/[\p{L}\p{N}_-]+)*)(?![\p{L}\p{N}_/-])"#)
     var seen = Set<String>()
-    return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
+    return inlineTagExpression.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match in
         guard let range = Range(match.range(at: 1), in: text) else { return nil }
         let tag = tagKey(String(text[range]))
+        guard seen.insert(tag).inserted else { return nil }
         return tag.range(of: #"[\p{L}_-]"#, options: .regularExpression) == nil ? nil : tag
-    }.filter { seen.insert($0).inserted }
+    }
 }
 
 func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, identity: FileIdentity, modified: Date) throws -> ParsedNote {

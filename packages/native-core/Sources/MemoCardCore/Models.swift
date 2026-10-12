@@ -29,6 +29,19 @@ struct Note: Encodable {
     let sourceUrl: String
 }
 
+struct IndexingProgress: Encodable {
+    var phase: String
+    var processed: Int
+    var total: Int?
+    private enum CodingKeys: String, CodingKey { case phase, processed, total }
+    func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(phase, forKey: .phase)
+        try values.encode(processed, forKey: .processed)
+        try values.encode(total, forKey: .total)
+    }
+}
+
 struct Coverage: Encodable {
     var complete: Bool
     var indexed: Int
@@ -60,6 +73,16 @@ struct SaveRequest: Codable {
     let inheritedTags: [String]?
     let baseHash: String?
     let relativePath: String?
+    var pendingProperties: [PropertyChange]? = nil
+    var draftKey: String? = nil
+    var recoveredFrom: RecoverySource? = nil
+}
+
+struct RecoverySource: Codable {
+    let draftKey: String
+    let revision: String
+    var unscoped: Bool? = nil
+    var scope: String? = nil
 }
 
 struct Draft: Codable {
@@ -71,8 +94,14 @@ struct Draft: Codable {
     let baseHash: String?
     let relativePath: String?
     let updatedAt: String
+    var pendingProperties: [PropertyChange]? = nil
+    var draftKey: String? = nil
+    var revision: String? = nil
+    var unscoped: Bool? = nil
+    var recoveryScope: String? = nil
+    var reminderDismissed: Bool? = nil
 
-    private enum CodingKeys: String, CodingKey { case title, id, body, tags, inheritedTags, baseHash, relativePath, updatedAt }
+    private enum CodingKeys: String, CodingKey { case title, id, body, tags, inheritedTags, pendingProperties, baseHash, relativePath, updatedAt, draftKey, revision, unscoped, recoveryScope, reminderDismissed }
     func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
         try values.encodeIfPresent(title, forKey: .title)
@@ -80,9 +109,15 @@ struct Draft: Codable {
         try values.encode(body, forKey: .body)
         try values.encode(tags, forKey: .tags)
         try values.encodeIfPresent(inheritedTags, forKey: .inheritedTags)
+        try values.encodeIfPresent(pendingProperties, forKey: .pendingProperties)
         try values.encode(baseHash, forKey: .baseHash)
         try values.encodeIfPresent(relativePath, forKey: .relativePath)
         try values.encode(updatedAt, forKey: .updatedAt)
+        try values.encodeIfPresent(draftKey, forKey: .draftKey)
+        try values.encodeIfPresent(revision, forKey: .revision)
+        try values.encodeIfPresent(unscoped, forKey: .unscoped)
+        try values.encodeIfPresent(recoveryScope, forKey: .recoveryScope)
+        try values.encodeIfPresent(reminderDismissed, forKey: .reminderDismissed)
     }
 }
 
@@ -123,10 +158,29 @@ func canonicalID(_ value: String) throws -> String {
     return id.uuidString.lowercased()
 }
 
+// ISO formatter construction is expensive during an initial library scan. Keep the
+// two immutable formats shared, and serialize access across independent vault actors.
+private final class VaultDateFormats: @unchecked Sendable {
+    static let shared = VaultDateFormats()
+    private let lock = NSLock()
+    private let fractional = ISO8601DateFormatter()
+    private let whole = ISO8601DateFormatter()
+    private init() {
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        whole.formatOptions = [.withInternetDateTime]
+    }
+    func string(_ date: Date) -> String {
+        lock.lock(); defer { lock.unlock() }
+        return fractional.string(from: date)
+    }
+    func date(_ value: String) -> Date? {
+        lock.lock(); defer { lock.unlock() }
+        return fractional.date(from: value) ?? whole.date(from: value)
+    }
+}
+
 func timestamp(_ date: Date = Date()) -> String {
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return formatter.string(from: date)
+    VaultDateFormats.shared.string(date)
 }
 
 func parseDate(_ value: String) throws -> Date {
@@ -144,11 +198,7 @@ func parseDate(_ value: String) throws -> Date {
           let days = calendar.range(of: .day, in: .month, for: first), days.contains(parts[2]) else {
         throw VaultError(code: "INVALID_DATE", message: "日期无效。")
     }
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    if let date = formatter.date(from: value) { return date }
-    formatter.formatOptions = [.withInternetDateTime]
-    guard let date = formatter.date(from: value) else {
+    guard let date = VaultDateFormats.shared.date(value) else {
         throw VaultError(code: "INVALID_DATE", message: "日期无效。")
     }
     return date

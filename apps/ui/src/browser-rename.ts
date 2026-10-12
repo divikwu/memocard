@@ -4,6 +4,7 @@ import { rewriteNoteLinks } from './note-files';
 import { propertyDefinitionPath } from './property-definitions';
 import { BrowserVaultError, fileAt, readBytes, sha256, type BrowserDirectoryHandle } from './browser-files';
 import type { BrowserVaultStorage, RenameJournal } from './browser-storage';
+import type { FileIdentity } from './browser-files';
 
 const decode = (bytes: Uint8Array) => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
 async function transactionFile(root:BrowserDirectoryHandle, path:string, compatible:boolean, create = false) {
@@ -66,6 +67,19 @@ export async function commitRename(root: BrowserDirectoryHandle, compatible: boo
     }
     await storage.saveRenameJournal(scope, undefined);
   } catch (error) { await recoverRename(root, compatible, storage, scope, active); throw error; }
+}
+
+// The caller holds the index lock across the source write and local identity commit.
+export async function commitSource(root: BrowserDirectoryHandle, compatible: boolean, storage: BrowserVaultStorage, scope: string, change: RenameJournal['changes'][number], identity: FileIdentity, active: () => Promise<unknown>, writeSource: () => Promise<void>) {
+  if (!compatible) return writeSource();
+  const identities = await storage.identities(scope);
+  // Autosave needs one recoverable transaction, without accumulating permanent full-note backups.
+  await storage.saveRenameJournal(scope,{changes:[change],identities},false);
+  try {
+    await writeSource();
+    await storage.saveIdentities(scope,[...identities.filter(item=>item.id!==identity.id),identity]);
+    await storage.saveRenameJournal(scope,undefined);
+  } catch (error) { await recoverRename(root,compatible,storage,scope,active); throw error; }
 }
 
 export async function renameNote(root: BrowserDirectoryHandle, compatible: boolean, storage: BrowserVaultStorage, scope: string, vaultId: string, save: { id: string; body: string; baseHash: string | null }, existing: ParsedBrowserNote, notes: ParsedBrowserNote[], path: string, active: () => Promise<unknown>): Promise<Note> {

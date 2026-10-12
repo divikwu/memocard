@@ -1,4 +1,4 @@
-import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
+import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, NoteQuickFilter, PropertyChange, VaultStatus } from "@memocard/contracts";
 import { Document } from "yaml";
 import { createId } from "./uuid";
 import { inlineTags } from "./inline-tags";
@@ -15,7 +15,7 @@ type Metadata = { formatVersion: 1 | 2; vaultId: string };
 type Binding = StoredSelection & { binding: string };
 type Snapshot = { folders: string[]; parsed: ParsedBrowserNote[]; duplicateIds: Set<string>; coverage: Coverage };
 type ParsedCacheEntry = { hash: string; vaultId: string; identityId?: string; createdAt?: string; modified?: number; parsed: ParsedBrowserNote; quickFilters?: NoteQuickFilter[] };
-type Save = { id: string; title?: string; body: string; tags: string[]; inheritedTags?: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
+type Save = { id: string; title?: string; body: string; tags: string[]; inheritedTags?: string[]; pendingProperties?: PropertyChange[]; baseHash: string | null; relativePath?: string; draftKey: string };
 type BrowserLock = <T>(name: string, task: () => Promise<T>) => Promise<T>;
 type Options = {
   storage?: BrowserVaultStorage;
@@ -369,10 +369,11 @@ export class BrowserVault {
     if (relativePath) safeParts(relativePath, this.compatible ? "vault" : "notes");
     const draftKey = params.draftKey === undefined ? `${this.sessionId}:${id}` : checkString(params.draftKey, "draftKey");
     if (!/^[a-f\d-]{36}:[a-f\d-]{36}$/.test(draftKey) || draftKey.split(":")[1] !== id) throw new BrowserVaultError("INVALID_PARAMS", "草稿标识无效。");
+    if (params.pendingProperties !== undefined && (!Array.isArray(params.pendingProperties) || params.pendingProperties.some(change => !change || typeof change !== "object" || typeof change.name !== "string"))) throw new BrowserVaultError("INVALID_PARAMS", "待保存的属性修改无效。");
     const body = checkString(params.body, "body");
     validatedTags(params.tags);
     const inheritedTags = !params.baseHash && params.inheritedTags !== undefined ? validatedTags(params.inheritedTags) : [];
-    return { id, ...(params.title === undefined ? {} : { title: checkString(params.title, "title") }), body, tags: inlineTags(body), ...(inheritedTags.length ? { inheritedTags } : {}), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
+    return { id, ...(params.title === undefined ? {} : { title: checkString(params.title, "title") }), body, tags: inlineTags(body), ...(inheritedTags.length ? { inheritedTags } : {}), ...(params.pendingProperties === undefined ? {} : { pendingProperties: params.pendingProperties as PropertyChange[] }), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
   }
 
   private async storeDraft(selected: Binding, save: Save): Promise<BrowserDraft> {
@@ -392,6 +393,10 @@ export class BrowserVault {
     }
     const draft = { ...save, draftKey, updatedAt: now(), vaultBinding: selected.binding };
     await this.storage.putDraft(scope, draft);
+    if (!save.baseHash && !save.title?.trim() && !save.body.trim() && !save.pendingProperties?.length) {
+      const recovered = [...this.recoveredDrafts.values()].find(value => value.key === draftKey);
+      if (recovered?.original) await this.storage.removeMatchingDraft(scope, recovered.original);
+    }
     this.requireBinding(selected);
     return draft;
   }
@@ -428,96 +433,102 @@ export class BrowserVault {
           return { ...saved, vaultBinding: selected.binding };
         });
       }
-      const path = existing?.note.relativePath ?? this.newNotePath(requestedPath, save.id, snapshot);
-      let file: BrowserFileHandle | undefined;
-      try { file = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes"); } catch (error) { if (!missing(error)) throw error; }
-      if (file && !existing) throw new BrowserVaultError("HASH_CONFLICT", "目标文件已存在，原文未被覆盖。");
-      if (!file && existing) throw new BrowserVaultError("NOTE_NOT_FOUND", "原文件已移除，不能从旧草稿自动恢复。");
-      let frontmatter: Document;
-      let original: ParsedBrowserNote | undefined;
-      if (file) {
-        const bytes = await readBytes(file);
-        if (await sha256(bytes) !== save.baseHash) throw new BrowserVaultError("HASH_CONFLICT", "文件已在其他位置修改，原文未被覆盖；草稿仍然保留。");
-        const parsed = this.compatible ? await parseObsidianNote(bytes, path, selected.vaultId, { id: save.id, path, hash: save.baseHash!, createdAt: existing!.note.createdAt }, (await file.getFile()).lastModified) : await parseBrowserNote(bytes, path, selected.vaultId);
-        original = parsed;
-        if (parsed.note.id !== save.id || parsed.note.deletedAt) throw new BrowserVaultError("HASH_CONFLICT", "目标文件的身份或删除状态已改变。");
-        frontmatter = parsed.frontmatter;
-      } else {
-        frontmatter = new Document({ id: save.id, createdAt: now() }, { schema: "yaml-1.1" });
-      }
-      if (!this.compatible) frontmatter.set("updatedAt", now());
-      let bytes = this.compatible ? encodeObsidianNote(original, save.body) : encodeBrowserNote(frontmatter, save.body);
-      let definitionSource:string | null = null;
-      if (!existing) {
-        const { inheritedProperties, parsePropertyDefinitions, propertyDefinitionPath } = await import('./property-definitions');
-        const { readProperties, patchProperty } = await import('./note-properties');
-        const { renameSource } = await import('./browser-rename');
-        definitionSource = await renameSource(selected.handle,propertyDefinitionPath,this.compatible);
-        let definitions;
-        try { definitions = parsePropertyDefinitions(definitionSource ?? ''); }
-        catch { throw new BrowserVaultError('INVALID_PROPERTY','属性定义配置无法读取，请检查 .memocard/property-definitions.json。'); }
-        const all = snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).flatMap(item => readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties);
-        let source = new TextDecoder().decode(bytes);
-        for (const property of inheritedProperties(all,definitions)) source = patchProperty(source,{name:property.name,type:property.type as import('@memocard/contracts').PropertyType,value:property.value,options:property.options,create:true});
-        if (save.inheritedTags?.length) source = patchProperty(source,{name:'tags',type:'list',value:save.inheritedTags});
-        bytes = textBytes(source);
-      }
-      if (bytes.length > 8 * 1024 * 1024) throw new BrowserVaultError('NOTE_TOO_LARGE','单条 Markdown 最大支持 8 MiB。');
-      const newlyCreated = !file;
-      await this.active(selected);
-      file ??= await fileAt(selected.handle, path, this.compatible ? "vault" : "notes", true);
-      let stream: BrowserWritable | undefined;
-      try {
-        stream = await file.createWritable({ mode: "exclusive" });
-        const verify = async () => {
-          await this.active(selected);
-          const current = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes");
-          if (!await current.isSameEntry(file!)) throw new BrowserVaultError("HASH_CONFLICT", "文件路径已被外部修改，草稿仍然保留。");
-          const source = await readBytes(current);
-          if (newlyCreated ? source.byteLength !== 0 : await sha256(source) !== save.baseHash) {
-            throw new BrowserVaultError("HASH_CONFLICT", "文件已在其他位置修改，原文未被覆盖；草稿仍然保留。");
-          }
-          if (newlyCreated) {
-            const { renameSource } = await import('./browser-rename');
-            const { propertyDefinitionPath } = await import('./property-definitions');
-            if (await renameSource(selected.handle,propertyDefinitionPath,this.compatible) !== definitionSource) throw new BrowserVaultError('HASH_CONFLICT','属性定义已修改，请重新保存。');
-          }
-          this.requireBinding(selected);
-        };
-        await verify();
-        await stream.write(bytes);
-        // The browser stages writes until close. It offers no OS-wide compare-and-swap;
-        // external editors can still change the file in the final check/close interval.
-        await verify();
-        await stream.close();
-        stream = undefined;
-      } catch (error) {
-        await stream?.abort().catch(() => undefined);
-        if (newlyCreated) {
-          // Remove only our still-empty placeholder, never a file another editor filled.
-          try {
-            const current = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes");
-            if (await current.isSameEntry(file) && (await current.getFile()).size === 0) {
-              let directory = selected.handle;
-              const parts = path.split("/");
-              for (const part of parts.slice(0, -1)) directory = await directory.getDirectoryHandle(part);
-              await directory.removeEntry(parts.at(-1)!);
-            }
-          } catch { /* Preserve recovery evidence when cleanup is uncertain. */ }
+      return this.lock(`memocard:browser:index:${this.scope(selected)}`, async () => {
+        const path = existing?.note.relativePath ?? this.newNotePath(requestedPath, save.id, snapshot);
+        let file: BrowserFileHandle | undefined;
+        try { file = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes"); } catch (error) { if (!missing(error)) throw error; }
+        if (file && !existing) throw new BrowserVaultError("HASH_CONFLICT", "目标文件已存在，原文未被覆盖。");
+        if (!file && existing) throw new BrowserVaultError("NOTE_NOT_FOUND", "原文件已移除，不能从旧草稿自动恢复。");
+        let frontmatter: Document;
+        let original: ParsedBrowserNote | undefined;
+        let before: string | null = null;
+        if (file) {
+          const bytes = await readBytes(file);
+          before = new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);
+          if (await sha256(bytes) !== save.baseHash) throw new BrowserVaultError("HASH_CONFLICT", "文件已在其他位置修改，原文未被覆盖；草稿仍然保留。");
+          const parsed = this.compatible ? await parseObsidianNote(bytes, path, selected.vaultId, { id: save.id, path, hash: save.baseHash!, createdAt: existing!.note.createdAt }, (await file.getFile()).lastModified) : await parseBrowserNote(bytes, path, selected.vaultId);
+          original = parsed;
+          if (parsed.note.id !== save.id || parsed.note.deletedAt) throw new BrowserVaultError("HASH_CONFLICT", "目标文件的身份或删除状态已改变。");
+          frontmatter = parsed.frontmatter;
+        } else {
+          frontmatter = new Document({ id: save.id, createdAt: now() }, { schema: "yaml-1.1" });
         }
-        throw error;
-      }
-      const saved = this.compatible ? await parseObsidianNote(bytes, path, selected.vaultId, { id: save.id, path, hash: await sha256(bytes), createdAt: existing?.note.createdAt ?? now() }, Date.now()) : await parseBrowserNote(bytes, path, selected.vaultId);
-      if (this.compatible) {
-        const identities = await this.storage.identities(this.scope(selected));
-        await this.storage.saveIdentities(this.scope(selected), [...identities.filter(item => item.id !== save.id), { id: save.id, path, hash: saved.note.contentHash, createdAt: saved.note.createdAt }]);
-      }
-      try {
-        await this.storage.removeMatchingDraft(this.scope(selected), draft);
-        const recovered = [...this.recoveredDrafts.values()].find((value) => value.key === draft.draftKey);
-        if (recovered?.original) await this.storage.removeMatchingDraft(this.scope(selected), recovered.original);
-      } catch { /* The source commit has succeeded; leave the draft for recovery. */ }
-      return { ...saved.note, vaultBinding: selected.binding };
+        if (!this.compatible) frontmatter.set("updatedAt", now());
+        let bytes = this.compatible ? encodeObsidianNote(original, save.body) : encodeBrowserNote(frontmatter, save.body);
+        let definitionSource:string | null = null;
+        if (!existing) {
+          const { inheritedProperties, parsePropertyDefinitions, propertyDefinitionPath } = await import('./property-definitions');
+          const { readProperties, patchProperty } = await import('./note-properties');
+          const { renameSource } = await import('./browser-rename');
+          definitionSource = await renameSource(selected.handle,propertyDefinitionPath,this.compatible);
+          let definitions;
+          try { definitions = parsePropertyDefinitions(definitionSource ?? ''); }
+          catch { throw new BrowserVaultError('INVALID_PROPERTY','属性定义配置无法读取，请检查 .memocard/property-definitions.json。'); }
+          const all = snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).flatMap(item => readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties);
+          let source = new TextDecoder().decode(bytes);
+          for (const property of inheritedProperties(all,definitions)) source = patchProperty(source,{name:property.name,type:property.type as import('@memocard/contracts').PropertyType,value:property.value,options:property.options,create:true});
+          if (save.inheritedTags?.length) source = patchProperty(source,{name:'tags',type:'list',value:save.inheritedTags});
+          bytes = textBytes(source);
+        }
+        if (bytes.length > 8 * 1024 * 1024) throw new BrowserVaultError('NOTE_TOO_LARGE','单条 Markdown 最大支持 8 MiB。');
+        const identity = {id:save.id,path,hash:await sha256(bytes),createdAt:existing?.note.createdAt ?? now()};
+        const saved = this.compatible ? await parseObsidianNote(bytes, path, selected.vaultId, identity, Date.now()) : await parseBrowserNote(bytes, path, selected.vaultId);
+        const newlyCreated = !file;
+        await this.active(selected);
+        file ??= await fileAt(selected.handle, path, this.compatible ? "vault" : "notes", true);
+        let stream: BrowserWritable | undefined;
+        try {
+          const {commitSource} = await import('./browser-rename');
+          await commitSource(selected.handle,this.compatible,this.storage,this.scope(selected),{path,before,after:new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes)},identity,()=>this.active(selected),async()=>{
+            try {
+              stream = await file.createWritable({ mode: "exclusive" });
+              const verify = async () => {
+                await this.active(selected);
+                const current = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes");
+                if (!await current.isSameEntry(file!)) throw new BrowserVaultError("HASH_CONFLICT", "文件路径已被外部修改，草稿仍然保留。");
+                const source = await readBytes(current);
+                if (newlyCreated ? source.byteLength !== 0 : await sha256(source) !== save.baseHash) {
+                  throw new BrowserVaultError("HASH_CONFLICT", "文件已在其他位置修改，原文未被覆盖；草稿仍然保留。");
+                }
+                if (newlyCreated) {
+                  const { renameSource } = await import('./browser-rename');
+                  const { propertyDefinitionPath } = await import('./property-definitions');
+                  if (await renameSource(selected.handle,propertyDefinitionPath,this.compatible) !== definitionSource) throw new BrowserVaultError('HASH_CONFLICT','属性定义已修改，请重新保存。');
+                }
+                this.requireBinding(selected);
+              };
+              await verify();
+              await stream.write(bytes);
+              // The browser stages writes until close. It offers no OS-wide compare-and-swap;
+              // external editors can still change the file in the final check/close interval.
+              await verify();
+              await stream.close();
+              stream = undefined;
+            } catch (error) { await stream?.abort().catch(() => undefined); stream = undefined; throw error; }
+          });
+        } catch (error) {
+          await stream?.abort().catch(() => undefined);
+          if (newlyCreated) {
+            // Remove only our still-empty placeholder, never a file another editor filled.
+            try {
+              const current = await fileAt(selected.handle, path, this.compatible ? "vault" : "notes");
+              if (await current.isSameEntry(file) && (await current.getFile()).size === 0) {
+                let directory = selected.handle;
+                const parts = path.split("/");
+                for (const part of parts.slice(0, -1)) directory = await directory.getDirectoryHandle(part);
+                await directory.removeEntry(parts.at(-1)!);
+              }
+            } catch { /* Preserve recovery evidence when cleanup is uncertain. */ }
+          }
+          throw error;
+        }
+        try {
+          await this.storage.removeMatchingDraft(this.scope(selected), { ...draft, pendingProperties: [] });
+          const recovered = [...this.recoveredDrafts.values()].find((value) => value.key === draft.draftKey);
+          if (recovered?.original && !recovered.original.pendingProperties?.length) await this.storage.removeMatchingDraft(this.scope(selected), recovered.original);
+        } catch { /* The source commit has succeeded; leave the draft for recovery. */ }
+        return { ...saved.note, vaultBinding: selected.binding };
+      });
     });
   }
 

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "tailwindcss" source("./");
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @font-face {
@@ -439,18 +439,17 @@
 .note-editor { --editor-gutter: 64px; --editor-inset-right: 16px; }
 .note-editor-header { padding-inline: 0; }
 .note-editor-header > button:first-child { margin-left: -10px; }
-.note-editor-message { margin-inline: 0; }
 @media (max-width: 639px) {
   .note-editor { --editor-inset-right: 8px; }
 }
 
 .note-page-scroll { padding-inline: 16px; }
-.note-page-width { max-width: var(--note-measure, 720px); width: calc(100% - 48px); margin-left: 48px; margin-right: 0; padding-block: 40px; }
+.note-page-width { max-width: var(--note-measure, 720px); width: calc(100% - 48px); margin-left: 48px; margin-right: 0; padding-block: 24px; }
 .note-page-width .rich-editor { --editor-gutter: 0px; --editor-inset-right: 0px; }
 .note-page-width .block-controls { left: -32px; gap: 0; }
 @media (min-width: 768px) {
   .note-page-scroll { padding-inline: 96px; }
-  .note-page-width { width: 100%; margin-inline: auto; padding-top: 96px; }
+  .note-page-width { width: 100%; margin-inline: auto; padding-top: 32px; }
 }
 
 .markdown .contains-task-list > li:not(.task-list-item) { list-style-type: disc; }

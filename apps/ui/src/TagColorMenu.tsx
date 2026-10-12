@@ -15,5 +15,5 @@ export default function TagColorMenu({tag, disabled, onChangeTag}: {tag:string; 
       try { setTagColor(vaultId, tag, color); }
       catch { throw new Error('无法保存标签颜色，请检查浏览器存储权限。'); }
     }}
-    deleteDescription={`将从整个笔记库的属性中移除此标签，正文中的 #${tag} 保留为普通文字。笔记和子标签保留；有子标签时，父级仍会显示在侧栏。`} />;
+    deleteDescription={`将从库内所有笔记属性中移除此标签。正文中的 #${tag}、笔记和子标签保留；有子标签时，父级仍会显示。`} />;
 }

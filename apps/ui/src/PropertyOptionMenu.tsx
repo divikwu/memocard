@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { tagColors, type TagColor } from './tag-colors';
 import TagPill from './TagPill';
+import { errorMessage } from './error-messages';
 
 type PropertyOptionMenuProps = {
   name:string;
@@ -31,7 +32,7 @@ export default function PropertyOptionMenu({name:tag, kind, color, disabled, nor
     if (pending.current || disabled || !onChangeName) return;
     pending.current = true; setWorking(true); setError('');
     try { await onChangeName(tag, to); setOpen(false); setRemoving(false); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : `无法更新${kind}，请重试。`); }
+    catch (cause) { setError(cause instanceof Error ? errorMessage(cause) : `无法更新${kind}，请重试。`); }
     finally { pending.current = false; setWorking(false); }
   }
   return <>
@@ -51,7 +52,7 @@ export default function PropertyOptionMenu({name:tag, kind, color, disabled, nor
           if (pending.current || disabled) return;
           pending.current = true; setWorking(true); setError('');
           try { await onChangeColor(value as TagColor); setOpen(false); }
-          catch (cause) { setError(cause instanceof Error ? cause.message : `无法保存${kind}颜色，请重试。`); }
+          catch (cause) { setError(cause instanceof Error ? errorMessage(cause) : `无法保存${kind}颜色，请重试。`); }
           finally { pending.current = false; setWorking(false); }
         }}>
           {tagColors.map(([id, label]) => <Menu.RadioItem key={id} value={id} disabled={disabled || working} closeOnClick={false} className={`note-tag-color-option note-tag-color-${id}`}><span aria-hidden="true" className="note-tag-color-swatch"><Tag className="size-3" /></span><span className="flex-1">{label}</span><Menu.RadioItemIndicator className="note-tag-color-check ml-auto flex size-4 shrink-0 items-center justify-center"><Check aria-hidden="true" className="size-4" /></Menu.RadioItemIndicator></Menu.RadioItem>)}
@@ -61,7 +62,7 @@ export default function PropertyOptionMenu({name:tag, kind, color, disabled, nor
       </DropdownMenuContent>
     </DropdownMenu>
     <AlertDialog.Root open={removing} onOpenChange={value => { if (!working) setRemoving(value); }}>
-      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop" /><AlertDialog.Popup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除{kind}「{tag}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 text-sm text-muted-foreground">{deleteDescription}</AlertDialog.Description><div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" disabled={disabled || working} />}>取消</AlertDialog.Close><Button disabled={disabled || working} onClick={() => void change(null)}>{working ? '正在删除…' : '确认删除'}</Button></div>{error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}</AlertDialog.Popup></AlertDialog.Portal>
+      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop" /><AlertDialog.Popup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除{kind}「{tag}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 text-sm text-muted-foreground">{deleteDescription}</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-destructive">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={disabled || working} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-destructive" disabled={disabled || working} onClick={() => void change(null)}>{working ? '正在删除…' : '确认删除'}</Button></div></AlertDialog.Popup></AlertDialog.Portal>
     </AlertDialog.Root>
   </>;
 }

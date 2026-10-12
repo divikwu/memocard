@@ -49,6 +49,12 @@ export function newPropertyDefinition(properties:NoteProperty[], type:PropertyTy
   }
   return {type,options:next};
 }
+export function losslessPropertyConversion(original:NoteProperty, converted:NoteProperty):boolean {
+  const values = (value:NoteProperty['value']) => Array.isArray(value) ? value : value === '' ? [] : [String(value)];
+  const before = values(original.value);
+  if (converted.type === 'text') return converted.value === before.join('\n');
+  return before.length === 0 || JSON.stringify(before) === JSON.stringify(values(converted.value));
+}
 
 // Preview and first save share the same library schema, never another note's values.
 export function inheritedProperties(properties:NoteProperty[], stored:Record<string,PropertyDefinition>):NoteProperty[] {

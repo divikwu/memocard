@@ -2,8 +2,16 @@ import Foundation
 
 enum NoteQuickFilter: String, Codable { case untagged, images, links }
 
+private let quickFilterURLMarker = try! NSRegularExpression(pattern: "https?://|www\\.", options: .caseInsensitive)
+
 // Keep the same grammar in apps/ui/src/note-filters.ts.
 func noteQuickFilters(_ note: Note) -> Set<NoteQuickFilter> {
+    // None of the supported image/link forms can occur without these markers.
+    // Avoid the Markdown regex pipeline for ordinary plain-text notes.
+    if !note.body.utf8.contains(UInt8(ascii: "[")), !note.body.utf8.contains(UInt8(ascii: "<")),
+       quickFilterURLMarker.firstMatch(in: note.body, range: NSRange(note.body.startIndex..., in: note.body)) == nil {
+        return note.tags.isEmpty ? [.untagged] : []
+    }
     var text = note.body
         .replacingOccurrences(of: #"<!--[\s\S]*?-->"#, with: "", options: .regularExpression)
         .replacingOccurrences(of: #"(?m)^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[^\n]*(?:\n|$)|(?![\s\S]))"#, with: "", options: .regularExpression)

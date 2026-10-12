@@ -23,7 +23,7 @@ public final class LocalWebServer: @unchecked Sendable {
     private let maximumResponseBytes = 64 * 1024 * 1024
     private let maximumHeaderBytes = 16 * 1024
     private final class StartState: @unchecked Sendable { var resumed = false }
-    private static let operations: Set<String> = ["getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "saveNote", "importAttachment"]
+    private static let operations: Set<String> = ["getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "saveNote", "importAttachment"]
 
     public init(resourceRoot: URL, authorizationEpoch: Int = 0, handler: @escaping Handler, assetHandler: @escaping AssetHandler) {
         self.resourceRoot = resourceRoot.standardizedFileURL.resolvingSymlinksInPath()

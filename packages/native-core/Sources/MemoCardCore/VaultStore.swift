@@ -10,6 +10,7 @@ public actor VaultStore {
     private let fm = FileManager.default
     private var root: URL?
     private var metadata: VaultMetadata?
+    private var localScope: String?
     private var binding = UUID()
     private var compatible: Bool { metadata?.formatVersion == 2 }
     private var identities: [FileIdentity] = []
@@ -25,12 +26,16 @@ public actor VaultStore {
         let changedSeconds: Int
         let changedNanos: Int
 
-        init?(_ url: URL) throws {
+        static func supports(_ url: URL) -> Bool {
             var volume = statfs()
-            guard statfs(url.path, &volume) == 0 else { return nil }
+            guard statfs(url.path, &volume) == 0 else { return false }
             let filesystem = withUnsafeBytes(of: volume.f_fstypename) { String(cString: $0.bindMemory(to: CChar.self).baseAddress!) }
             // Other filesystems may have coarse clocks or cache remote attributes.
-            guard filesystem == "apfs", volume.f_flags & UInt32(MNT_LOCAL) != 0 else { return nil }
+            return filesystem == "apfs" && volume.f_flags & UInt32(MNT_LOCAL) != 0
+        }
+
+        init?(_ url: URL, localAPFS: Bool) throws {
+            guard localAPFS else { return nil }
             var value = stat()
             guard lstat(url.path, &value) == 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
             device = value.st_dev; inode = value.st_ino; size = value.st_size; mode = value.st_mode
@@ -49,6 +54,30 @@ public actor VaultStore {
         var properties: [NoteProperty]?
         var quickFilters: Set<NoteQuickFilter>?
     }
+    private struct DirectoryIndex {
+        var stamp: SourceStamp
+        var names: Set<String>
+    }
+    private var localIndex: (snapshot: Snapshot, directories: [String: DirectoryIndex])?
+    private var initialScan: ScanState?
+    private var sourceIndexTask: Task<Void, Never>?
+    private var filterIndexTask: Task<Void, Never>?
+    private var backgroundIndexStarted = false
+    private var indexing: IndexingProgress?
+    private var indexFailure: VaultError?
+    // Tests can hold a phase boundary without depending on machine speed.
+    var indexingCheckpoint: (@Sendable (String) async -> Void)?
+
+    func setIndexingCheckpoint(_ checkpoint: (@Sendable (String) async -> Void)?) {
+        indexingCheckpoint = checkpoint
+    }
+
+    private func cancelIndexing() {
+        sourceIndexTask?.cancel(); filterIndexTask?.cancel()
+        sourceIndexTask = nil; filterIndexTask = nil; initialScan = nil
+        indexing = nil; indexFailure = nil; backgroundIndexStarted = false
+    }
+
     private var parsedCache: [String: ParsedCacheEntry] = [:]
     var parseMissCount = 0
     var sourceReadCount = 0
@@ -64,6 +93,8 @@ public actor VaultStore {
     }
 
     public func close() {
+        cancelIndexing()
+        localIndex = nil
         invalidateSnapshot()
         parsedCache.removeAll()
         parseMissCount = 0
@@ -71,9 +102,16 @@ public actor VaultStore {
         binding = UUID()
         root = nil
         metadata = nil
+        localScope = nil
     }
 
     public func invalidateSnapshot() {
+        // File-presenter notifications invalidate the batch, not the verified local index.
+        // The next operation reconciles clocks and topology before reusing any entry.
+        clearRefreshSnapshot()
+    }
+
+    private func clearRefreshSnapshot() {
         refreshSnapshot = nil
         refreshSnapshotConsumers.removeAll()
     }
@@ -103,6 +141,8 @@ public actor VaultStore {
     }
 
     public func open(url: URL, create: Bool, binding: UUID = UUID()) throws {
+        cancelIndexing()
+        localIndex = nil
         invalidateSnapshot()
         parsedCache.removeAll()
         parseMissCount = 0
@@ -111,6 +151,7 @@ public actor VaultStore {
         // A failed selection must not silently continue serving a previously selected vault.
         root = nil
         metadata = nil
+        localScope = nil
         guard url.isFileURL else { throw VaultError(code: "INVALID_PATH", message: "请选择本机文件目录。") }
         let selected = url.standardizedFileURL
         guard try fileType(selected) == .typeDirectory else {
@@ -148,6 +189,28 @@ public actor VaultStore {
         root = candidate
         metadata = value
         identities = []
+        // Directory identity survives a same-volume move, but is not copied with vault.json.
+        var info = stat()
+        guard lstat(candidate.path, &info) == 0,
+              let volume = try candidate.resourceValues(forKeys: [.volumeUUIDStringKey]).volumeUUIDString else {
+            root = nil; metadata = nil
+            throw VaultError(code: "INVALID_LOCAL_DATA", message: "无法确认笔记库目录身份，本机恢复记录未绑定。")
+        }
+        localScope = sha256(Data("\(value.vaultId):\(volume):\(info.st_ino):\(info.st_birthtimespec.tv_sec):\(info.st_birthtimespec.tv_nsec)".utf8))
+        let oldScope = sha256(Data((candidate.path + ":" + value.vaultId).utf8))
+        let oldIdentity = localDataURL.appendingPathComponent("identities-\(oldScope).json")
+        do {
+            for (old, next) in [(oldIdentity, identityURL), (oldIdentity.appendingPathExtension("rename.json"), renameJournalURL)] where fm.fileExists(atPath: old.path) && !fm.fileExists(atPath: next.path) {
+                if old == oldIdentity {
+                    try coordinateRead(old, inside: localDataURL) { bytes in
+                        guard try self.fileType(bytes) == .typeRegular else { throw VaultError(code: "INVALID_LOCAL_DATA", message: "本机身份记录不是普通文件。") }
+                        try Data(contentsOf: bytes).write(to: next, options: .withoutOverwriting)
+                    }
+                } else {
+                    try coordinateWrite(old, inside: localDataURL, options: .forMoving) { try self.fm.moveItem(at: $0, to: next) }
+                }
+            }
+        } catch { root = nil; metadata = nil; localScope = nil; throw error }
         try recoverRename()
         if compatible, fm.fileExists(atPath: identityURL.path) {
             do { identities = try JSONDecoder().decode([FileIdentity].self, from: Data(contentsOf: identityURL)) }
@@ -155,18 +218,44 @@ public actor VaultStore {
         }
     }
 
-    public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) throws -> Data {
+    public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) async throws -> Data {
         do {
             try requireBinding(expectedBinding)
-            try recoverRename()
+            let operationBinding = binding
+            if let task = sourceIndexTask {
+                var wait = ["saveNote", "updateNoteProperty", "getNoteProperties", "resolveLink", "importAttachment"].contains(operation)
+                if operation == "getNote", let id = (try? JSONSerialization.jsonObject(with: params)) as? [String: Any] {
+                    let requestedID = id["id"] as? String
+                    wait = initialScan?.result.notes.contains(where: { $0.note.id == requestedID }) != true
+                        || (compatible && !identities.contains(where: { $0.id == requestedID }))
+                }
+                if wait {
+                    if ["saveNote", "updateNoteProperty", "getNoteProperties"].contains(operation),
+                       let input = (try? JSONSerialization.jsonObject(with: params)) as? [String: Any], input["deferWhileIndexing"] as? Bool == true {
+                        throw VaultError(code: "INDEXING", message: "正在完成首次校验，内容已保留在本机草稿，校验后会自动保存。", retryable: true)
+                    }
+                    await indexingCheckpoint?("waiting")
+                    await task.value
+                    guard operationBinding == binding else { throw VaultError(code: "UNAUTHORIZED", message: "笔记库授权已变化，请重新连接。") }
+                    if let indexFailure { throw indexFailure }
+                }
+            }
+            // Source recovery must not block the independent device-only recovery store.
+            if !["saveDraft", "getDrafts", "dismissDraftReminder"].contains(operation) { try recoverRename() }
             switch operation {
-            case "getStatus": return try getStatus()
+            case "getStatus":
+                struct Request: Decodable { var background: Bool? }
+                let request = try decode(Request.self, params)
+                if request.background == true, root != nil, !backgroundIndexStarted {
+                    try startBackgroundIndex()
+                }
+                return try getStatus()
             case "queryNotes": return try queryNotes(try decode(Query.self, params))
             case "getNote":
                 struct Request: Decodable { let id: String }
                 return try encode(getNote(id: try decode(Request.self, params).id))
             case "saveNote":
-                invalidateSnapshot()
+                clearRefreshSnapshot()
                 return try encode(saveNote(try decode(SaveRequest.self, params)))
             case "getNoteProperties":
                 struct Request: Decodable { let id: String? }
@@ -179,14 +268,14 @@ public actor VaultStore {
                 let snapshot = try scan()
                 let note = try getNote(id: id, snapshot: snapshot)
                 let data = try coordinateRead(root.appendingPathComponent(note.relativePath), inside: root) { try self.readSource($0) }
-                return try encode(effectiveNoteProperties(data, snapshot: snapshot, root: root))
+                return try encode(effectiveNoteProperties(data, snapshot: snapshot, config: readPropertyDefinitions(root)))
             case "getPropertyLabels": return try encode(readPropertyLabels())
             case "renamePropertyLabel":
                 struct Request: Decodable { let key: String; let label: String; let baseHash: String }
                 let request = try decode(Request.self, params)
                 return try encode(renamePropertyLabel(key: request.key, label: request.label, baseHash: request.baseHash))
             case "updateNoteProperty":
-                invalidateSnapshot()
+                clearRefreshSnapshot()
                 return try encode(updateNoteProperty(try decode(PropertyChange.self, params)))
             case "resolveLink":
                 struct LinkRequest: Decodable { let target: String; let sourcePath: String; let wiki: Bool? }
@@ -199,6 +288,10 @@ public actor VaultStore {
             case "listTags": return try listTags()
             case "saveDraft": return try saveDraft(try decode(SaveRequest.self, params))
             case "getDrafts": return try getDrafts()
+            case "dismissDraftReminder":
+                struct Request: Decodable { let id: String; let draftKey: String; let revision: String; let unscoped: Bool?; let scope: String? }
+                let input = try decode(Request.self, params)
+                return try dismissDraftReminder(id: input.id, source: RecoverySource(draftKey: input.draftKey, revision: input.revision, unscoped: input.unscoped, scope: input.scope))
             case "importAttachment":
                 invalidateSnapshot()
                 struct Request: Decodable { let name: String; let base64: String; let noteId: String?; let notePath: String? }
@@ -235,7 +328,7 @@ public actor VaultStore {
             return try scan()
         }
         _ = try active()
-        if refreshSnapshotConsumers.isEmpty { invalidateSnapshot() }
+        if refreshSnapshotConsumers.isEmpty { clearRefreshSnapshot() }
         return snapshot
     }
 
@@ -262,42 +355,256 @@ public actor VaultStore {
         return metadata
     }
 
+    // Local APFS clocks and directory entries let us reconcile an existing index without
+    // re-enumerating the vault. Every known source is still checked, including unrelated
+    // notes, so corruption or duplicate IDs cannot silently bypass the write barrier.
+    private func reconcileLocalIndex(root: URL, metadata: VaultMetadata) throws -> Snapshot? {
+        guard var index = localIndex else { return nil }
+        for (path, directory) in index.directories {
+            let url = root.appendingPathComponent(path)
+            guard let stamp = try SourceStamp(url, localAPFS: true), stamp.device == directory.stamp.device,
+                  stamp.inode == directory.stamp.inode, stamp.mode == directory.stamp.mode else { return nil }
+            if stamp != directory.stamp {
+                let names = Set(try fm.contentsOfDirectory(atPath: url.path).filter { !$0.hasPrefix(".") })
+                guard names == directory.names else { return nil }
+                index.directories[path]?.stamp = stamp
+            }
+        }
+        var changed = false
+        for position in index.snapshot.notes.indices {
+            let existing = index.snapshot.notes[position], path = existing.note.relativePath
+            let url = root.appendingPathComponent(path)
+            guard let cached = parsedCache[path], let old = cached.sourceStamp,
+                  let stamp = try SourceStamp(url, localAPFS: true) else { return nil }
+            if stamp == old { continue }
+            let value: ParsedNote? = try coordinateRead(url, inside: root) { coordinated in
+                try self.requireNoConflict(coordinated)
+                let data = try self.readSource(coordinated)
+                guard stamp == (try? SourceStamp(coordinated, localAPFS: true)) else { return nil }
+                let identity = FileIdentity(id: existing.note.id, path: path, hash: sha256(data), createdAt: existing.note.createdAt)
+                let modified = try coordinated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? Date(timeIntervalSince1970: 0)
+                let parsed = try self.compatible ? parseObsidianNote(data, relativePath: path, vaultID: metadata.vaultId, identity: identity, modified: modified) : parseNote(data, relativePath: path, vaultID: metadata.vaultId)
+                self.parseMissCount += 1
+                self.parsedCache[path] = ParsedCacheEntry(hash: sha256(data), vaultID: metadata.vaultId,
+                    identityID: self.compatible ? identity.id : nil, createdAt: self.compatible ? identity.createdAt : nil,
+                    modified: self.compatible ? modified : nil, parsed: parsed, sourceStamp: stamp)
+                return parsed
+            }
+            guard let value else { return nil }
+            index.snapshot.notes[position] = value
+            changed = true
+        }
+        guard Set(index.snapshot.notes.map { $0.note.id }).count == index.snapshot.notes.count else { return nil }
+        // A directory changed during reconciliation: restart with a coordinated full scan.
+        for (path, directory) in index.directories {
+            guard directory.stamp == (try? SourceStamp(root.appendingPathComponent(path), localAPFS: true)) else { return nil }
+        }
+        if changed {
+            index.snapshot.notes.sort { $0.createdDate == $1.createdDate ? $0.note.id < $1.note.id : $0.createdDate > $1.createdDate }
+            if compatible {
+                let byPath = Dictionary(uniqueKeysWithValues: index.snapshot.notes.map { ($0.note.relativePath, $0.note) })
+                try persistIdentities(identities.map { previous in
+                    guard let note = byPath[previous.path] else { return previous }
+                    return FileIdentity(id: note.id, path: note.relativePath, hash: note.contentHash, createdAt: note.createdAt)
+                })
+            }
+        }
+        index.snapshot.coverage.indexedAt = timestamp()
+        localIndex = index
+        return index.snapshot
+    }
+
+    private func partialSnapshot(_ state: ScanState) -> Snapshot {
+        var snapshot = state.result
+        if compatible {
+            let durableIDs = Set(identities.map(\.id))
+            snapshot.notes.removeAll { !durableIDs.contains($0.note.id) }
+        }
+        let groups = Dictionary(grouping: snapshot.notes, by: { $0.note.id })
+        snapshot.duplicateIDs = Set(groups.filter { $0.value.count > 1 }.map(\.key))
+        snapshot.notes.removeAll { snapshot.duplicateIDs.contains($0.note.id) }
+        snapshot.notes.sort { $0.createdDate == $1.createdDate ? $0.note.id < $1.note.id : $0.createdDate > $1.createdDate }
+        snapshot.coverage.complete = false
+        snapshot.coverage.indexed = snapshot.notes.count
+        snapshot.coverage.issues += groups.filter { $0.value.count > 1 }.reduce(0) { $0 + $1.value.count }
+        return snapshot
+    }
+
+    private func startBackgroundIndex() throws {
+        let state = try beginScan(), expectedBinding = binding
+        backgroundIndexStarted = true
+        indexFailure = nil
+        initialScan = state
+        indexing = IndexingProgress(phase: "reading", processed: 0, total: nil)
+        sourceIndexTask = Task { await self.readBackgroundIndex(state, expectedBinding: expectedBinding) }
+    }
+
+    private func readBackgroundIndex(_ state: ScanState, expectedBinding: UUID) async {
+        do {
+            while true {
+                await indexingCheckpoint?("reading")
+                guard !Task.isCancelled, expectedBinding == binding else { return }
+                let done = try advanceScan(state, limit: 32)
+                // Publish the first usable preview once. Rewriting all identities for
+                // every read batch would turn startup into quadratic disk work.
+                if !state.previewPublished && !state.unpublishedIdentities.isEmpty {
+                    try persistIdentities(identities + state.unpublishedIdentities)
+                    state.unpublishedIdentities.removeAll()
+                    state.previewPublished = true
+                }
+                indexing?.processed = state.scannedPaths.count
+                if done { break }
+                try await Task.sleep(nanoseconds: 1_000_000)
+            }
+            while try !advanceIdentities(state, limit: 32) {
+                try await Task.sleep(nanoseconds: 1_000_000)
+                guard !Task.isCancelled, expectedBinding == binding else { return }
+            }
+            let snapshot = try finishScan(state)
+            initialScan = nil
+            clearRefreshSnapshot()
+            sourceIndexTask = nil
+            indexing = IndexingProgress(phase: "indexing", processed: 0, total: snapshot.notes.count)
+            filterIndexTask = Task { await self.buildBackgroundFilters(expectedBinding: expectedBinding) }
+        } catch {
+            guard expectedBinding == binding, !Task.isCancelled else { return }
+            initialScan = nil; sourceIndexTask = nil; indexing = nil
+            backgroundIndexStarted = false
+            indexFailure = error as? VaultError ?? VaultError(code: "SCAN_FAILED", message: "读取笔记库未完成，草稿仍保存在本机，请重试。", retryable: true)
+            clearRefreshSnapshot()
+        }
+    }
+
+    private func buildBackgroundFilters(expectedBinding: UUID) async {
+        while true {
+            var paths = parsedCache.compactMap { $0.value.quickFilters == nil ? $0.key : nil }
+            if paths.isEmpty { break }
+            while !paths.isEmpty {
+                await indexingCheckpoint?("indexing")
+                guard !Task.isCancelled, expectedBinding == binding else { return }
+                let started = DispatchTime.now().uptimeNanoseconds
+                var processed = 0
+                while let path = paths.popLast() {
+                    if let entry = parsedCache[path], entry.quickFilters == nil {
+                        parsedCache[path]?.quickFilters = noteQuickFilters(entry.parsed.note)
+                    }
+                    processed += 1
+                    if processed >= 32 || DispatchTime.now().uptimeNanoseconds - started >= 12_000_000 { break }
+                }
+                let nextProcessed = min(indexing?.total ?? 0, (indexing?.processed ?? 0) + processed)
+                indexing?.processed = nextProcessed
+                do { try await Task.sleep(nanoseconds: 1_000_000) } catch { return }
+            }
+        }
+        guard !Task.isCancelled, expectedBinding == binding else { return }
+        indexing = nil; filterIndexTask = nil
+        clearRefreshSnapshot()
+    }
+
+    private final class ScanState {
+        let root: URL
+        let metadata: VaultMetadata
+        let localAPFS: Bool
+        let existingByPath: [String: FileIdentity]
+        let allowEarlyNewIdentities: Bool
+        var unpublishedIdentities: [FileIdentity] = []
+        var previewPublished = false
+        typealias Source = (path: String, data: Data?, modified: Date, hash: String, stamp: SourceStamp?)
+        var identitiesPrepared = false
+        var identityPosition = 0
+        var missingByHash: [String: [FileIdentity]] = [:]
+        var newByHash: [String: [Source]] = [:]
+        var nextIdentities: [FileIdentity] = []
+        var resolvedNotes: [ParsedNote] = []
+        var earlyIdentities: [String: FileIdentity] = [:]
+        var result = Snapshot()
+        var sources: [(path: String, data: Data?, modified: Date, hash: String, stamp: SourceStamp?)] = []
+        var scannedPaths = Set<String>()
+        var enumerationFailed = false
+        var directories: [String: DirectoryIndex] = [:]
+        var enumerator: FileManager.DirectoryEnumerator?
+        var deferredURL: URL?
+        init(root: URL, metadata: VaultMetadata, localAPFS: Bool, identities: [FileIdentity]) {
+            self.root = root; self.metadata = metadata; self.localAPFS = localAPFS
+            allowEarlyNewIdentities = identities.isEmpty
+            existingByPath = identities.reduce(into: [:]) { $0[$1.path] = $1 }
+        }
+        func nextURL() -> URL? {
+            if let url = deferredURL { deferredURL = nil; return url }
+            return enumerator?.nextObject() as? URL
+        }
+    }
+
     private func scan() throws -> Snapshot {
-        scanCount += 1
+        if let state = initialScan { _ = try active(); return partialSnapshot(state) }
         let (root, metadata) = try active()
+        let localAPFS = try SourceStamp.supports(root) && (root.resourceValues(forKeys: [.isUbiquitousItemKey]).isUbiquitousItem != true)
+        if localAPFS, let snapshot = try? reconcileLocalIndex(root: root, metadata: metadata) { return snapshot }
+        let state = try beginScan()
+        while try !advanceScan(state, limit: Int.max) {}
+        return try finishScan(state)
+    }
+
+    private func beginScan() throws -> ScanState {
+        let (root, metadata) = try active()
+        let localAPFS = try SourceStamp.supports(root) && (root.resourceValues(forKeys: [.isUbiquitousItemKey]).isUbiquitousItem != true)
+        localIndex = nil
+        scanCount += 1
         let notesURL = compatible ? root : root.appendingPathComponent("notes")
         try validate(notesURL, inside: root)
         guard try fileType(notesURL) == .typeDirectory else {
             throw VaultError(code: "VAULT_UNAVAILABLE", message: "笔记目录不可用。", retryable: true)
         }
-        var result = Snapshot()
-        if compatible { result.folders = [""] }
-        var sources: [(path: String, data: Data?, modified: Date, hash: String, stamp: SourceStamp?)] = []
-        var scannedPaths = Set<String>()
-        var enumerationFailed = false
-        guard let enumerator = fm.enumerator(at: notesURL, includingPropertiesForKeys: nil,
-                                             options: [.skipsHiddenFiles], errorHandler: { _, _ in
-            enumerationFailed = true
-            return true
-        }) else { throw VaultError(code: "SCAN_FAILED", message: "无法读取笔记目录。", retryable: true) }
-        for case let url as URL in enumerator {
+        let state = ScanState(root: root, metadata: metadata, localAPFS: localAPFS, identities: identities)
+        if compatible { state.result.folders = [""] }
+        if let stamp = try SourceStamp(notesURL, localAPFS: localAPFS) {
+            state.directories[relative(notesURL, root: root)] = DirectoryIndex(stamp: stamp, names: [])
+        }
+        state.enumerator = fm.enumerator(at: notesURL, includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles], errorHandler: { [weak state] _, _ in
+                state?.enumerationFailed = true
+                return true
+            })
+        guard state.enumerator != nil else { throw VaultError(code: "SCAN_FAILED", message: "无法读取笔记目录。", retryable: true) }
+        return state
+    }
+
+    private func advanceScan(_ state: ScanState, limit: Int) throws -> Bool {
+        let root = state.root, metadata = state.metadata, localAPFS = state.localAPFS
+        let localDevice = try SourceStamp(root, localAPFS: localAPFS)?.device
+        let started = DispatchTime.now().uptimeNanoseconds
+        var entries = 0
+        while let url = state.nextURL() {
+            defer { entries += 1 }
+            if entries > 0 && (entries >= limit || DispatchTime.now().uptimeNanoseconds - started >= 12_000_000) {
+                state.deferredURL = url
+                return false
+            }
             do {
+                state.directories[relative(url.deletingLastPathComponent(), root: root)]?.names.insert(url.lastPathComponent)
                 try validate(url, inside: root)
                 let type = try fileType(url)
-                if type == .typeDirectory { result.folders.append(self.relative(url, root: root)); continue }
-                guard type == .typeRegular else { result.coverage.issues += 1; continue }
+                if type == .typeDirectory {
+                    let path = self.relative(url, root: root)
+                    state.result.folders.append(path)
+                    if let stamp = try SourceStamp(url, localAPFS: localAPFS), stamp.device == localDevice { state.directories[path] = DirectoryIndex(stamp: stamp, names: []) }
+                    continue
+                }
+                guard type == .typeRegular else { state.result.coverage.issues += 1; continue }
                 guard url.pathExtension.lowercased() == "md" else { continue }
-                guard try isAvailable(url) else { result.coverage.pending += 1; continue }
+                guard try isAvailable(url) else { state.result.coverage.pending += 1; continue }
                 let path = relative(url, root: root)
                 // Cloud versions still use coordination; local files must match identity and both clocks.
                 let isCloud = try url.resourceValues(forKeys: [.isUbiquitousItemKey]).isUbiquitousItem == true
-                let stamp = isCloud ? nil : try SourceStamp(url)
+                let candidateStamp = isCloud ? nil : try SourceStamp(url, localAPFS: localAPFS)
+                let stamp = candidateStamp?.device == localDevice ? candidateStamp : nil
                 if let stamp, let cached = parsedCache[path], cached.vaultID == metadata.vaultId, cached.sourceStamp == stamp {
                     try requireNoConflict(url)
-                    scannedPaths.insert(path)
+                    state.scannedPaths.insert(path)
                     if compatible, let modified = cached.modified {
-                        sources.append((path, nil, modified, cached.hash, stamp))
-                    } else { result.notes.append(cached.parsed) }
+                        state.sources.append((path, nil, modified, cached.hash, stamp))
+                        state.result.notes.append(cached.parsed)
+                    } else { state.result.notes.append(cached.parsed) }
                     continue
                 }
                 let parsed: ParsedNote? = try coordinateRead(url, inside: root) { coordinated in
@@ -305,11 +612,19 @@ public actor VaultStore {
                     let data = try self.readSource(coordinated)
                     let path = self.relative(coordinated, root: root)
                     let hash = sha256(data)
-                    let verifiedStamp = stamp != nil && stamp == (try? SourceStamp(coordinated)) ? stamp : nil
-                    scannedPaths.insert(path)
+                    let verifiedStamp = stamp != nil && stamp == (try? SourceStamp(coordinated, localAPFS: localAPFS)) ? stamp : nil
+                    state.scannedPaths.insert(path)
                     if self.compatible {
                         let modified = try coordinated.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate ?? Date(timeIntervalSince1970: 0)
-                        sources.append((path, data, modified, hash, verifiedStamp))
+                        state.sources.append((path, data, modified, hash, verifiedStamp))
+                        if let previous = state.existingByPath[path] ?? (state.allowEarlyNewIdentities ? FileIdentity(id: UUID().uuidString.lowercased(), path: path, hash: hash, createdAt: timestamp(modified)) : nil) {
+                            state.earlyIdentities[path] = previous
+                            let value = try parseObsidianNote(data, relativePath: path, vaultID: metadata.vaultId, identity: previous, modified: modified)
+                            self.parseMissCount += 1
+                            self.parsedCache[path] = ParsedCacheEntry(hash: hash, vaultID: metadata.vaultId, identityID: previous.id, createdAt: previous.createdAt, modified: modified, parsed: value, sourceStamp: verifiedStamp)
+                            state.result.notes.append(value)
+                            if !state.previewPublished && state.existingByPath[path] == nil { state.unpublishedIdentities.append(previous) }
+                        }
                         return nil
                     }
                     if let cached = self.parsedCache[path], cached.hash == hash, cached.vaultID == metadata.vaultId,
@@ -323,48 +638,68 @@ public actor VaultStore {
                         identityID: nil, createdAt: nil, modified: nil, parsed: value, sourceStamp: verifiedStamp)
                     return value
                 }
-                if let parsed { result.notes.append(parsed) }
+                if let parsed { state.result.notes.append(parsed) }
             } catch let error as VaultError where error.code == "FILE_PENDING" {
-                result.coverage.pending += 1
+                state.result.coverage.pending += 1
             } catch {
-                result.coverage.issues += 1
+                state.result.coverage.issues += 1
             }
         }
-        if enumerationFailed { result.coverage.issues += 1 }
-        if compatible {
-            var next: [FileIdentity] = []
-            let paths = Set(sources.map { $0.path })
-            let existingByPath = identities.reduce(into: [String: FileIdentity]()) { $0[$1.path] = $1 }
-            let missingByHash = Dictionary(grouping: identities.filter { !paths.contains($0.path) }, by: \.hash)
-            let newByHash = Dictionary(grouping: sources.filter { existingByPath[$0.path] == nil }, by: \.hash)
-            for source in sources {
-                let hash = source.hash
-                let moved = missingByHash[hash] ?? []
-                let candidates = newByHash[hash] ?? []
-                let previous = existingByPath[source.path] ?? (moved.count == 1 && candidates.count == 1 ? moved.first : nil)
-                let identity = FileIdentity(id: previous?.id ?? UUID().uuidString.lowercased(), path: source.path, hash: hash, createdAt: previous?.createdAt ?? timestamp(source.modified))
-                next.append(identity)
-                do {
-                    if let cached = parsedCache[source.path], cached.hash == hash, cached.vaultID == metadata.vaultId,
-                       cached.identityID == identity.id, cached.createdAt == identity.createdAt, cached.modified == source.modified {
-                        parsedCache[source.path]?.sourceStamp = source.stamp
-                        result.notes.append(cached.parsed)
-                    } else {
-                        let data = try source.data ?? coordinateRead(root.appendingPathComponent(source.path), inside: root) { try self.readSource($0) }
-                        let value = try parseObsidianNote(data, relativePath: source.path, vaultID: metadata.vaultId, identity: identity, modified: source.modified)
-                        parseMissCount += 1
-                        parsedCache[source.path] = ParsedCacheEntry(hash: hash, vaultID: metadata.vaultId,
-                            identityID: identity.id, createdAt: identity.createdAt, modified: source.modified, parsed: value, sourceStamp: source.stamp)
-                        result.notes.append(value)
-                    }
+        state.enumerator = nil
+        return true
+    }
+
+    private func advanceIdentities(_ state: ScanState, limit: Int) throws -> Bool {
+        guard compatible else { return true }
+        let root = state.root, metadata = state.metadata
+        if !state.identitiesPrepared {
+            state.identitiesPrepared = true
+            let paths = Set(state.sources.map { $0.path })
+            state.missingByHash = Dictionary(grouping: identities.filter { !paths.contains($0.path) }, by: \.hash)
+            state.newByHash = Dictionary(grouping: state.sources.filter { state.existingByPath[$0.path] == nil }, by: \.hash)
+        }
+        let started = DispatchTime.now().uptimeNanoseconds
+        var processed = 0
+        while state.identityPosition < state.sources.count {
+            let source = state.sources[state.identityPosition]
+            state.identityPosition += 1
+            defer { processed += 1 }
+            let hash = source.hash
+            let moved = state.missingByHash[hash] ?? []
+            let candidates = state.newByHash[hash] ?? []
+            let previous = state.existingByPath[source.path] ?? (moved.count == 1 && candidates.count == 1 ? moved.first : nil) ?? state.earlyIdentities[source.path]
+            let identity = FileIdentity(id: previous?.id ?? UUID().uuidString.lowercased(), path: source.path, hash: hash, createdAt: previous?.createdAt ?? timestamp(source.modified))
+            state.nextIdentities.append(identity)
+            do {
+                if let cached = parsedCache[source.path], cached.hash == hash, cached.vaultID == metadata.vaultId,
+                   cached.identityID == identity.id, cached.createdAt == identity.createdAt, cached.modified == source.modified {
+                    parsedCache[source.path]?.sourceStamp = source.stamp
+                    state.resolvedNotes.append(cached.parsed)
+                } else {
+                    let data = try source.data ?? coordinateRead(root.appendingPathComponent(source.path), inside: root) { try self.readSource($0) }
+                    let value = try parseObsidianNote(data, relativePath: source.path, vaultID: metadata.vaultId, identity: identity, modified: source.modified)
+                    parseMissCount += 1
+                    parsedCache[source.path] = ParsedCacheEntry(hash: hash, vaultID: metadata.vaultId,
+                        identityID: identity.id, createdAt: identity.createdAt, modified: source.modified, parsed: value, sourceStamp: source.stamp)
+                    state.resolvedNotes.append(value)
                 }
-                catch { result.coverage.issues += 1 }
             }
-            if !enumerationFailed && result.coverage.issues == 0 && result.coverage.pending == 0 {
-                try persistIdentities(next)
-            }
+            catch { state.result.coverage.issues += 1 }
+            if processed + 1 >= limit || DispatchTime.now().uptimeNanoseconds - started >= 12_000_000 { return false }
         }
-        parsedCache = parsedCache.filter { scannedPaths.contains($0.key) }
+        state.result.notes = state.resolvedNotes
+        return true
+    }
+
+    private func finishScan(_ state: ScanState) throws -> Snapshot {
+        let root = state.root, localAPFS = state.localAPFS
+        if state.enumerationFailed { state.result.coverage.issues += 1 }
+        while try !advanceIdentities(state, limit: Int.max) {}
+        if compatible, !state.enumerationFailed, state.result.coverage.issues == 0, state.result.coverage.pending == 0 {
+            try persistIdentities(state.nextIdentities)
+        }
+        parsedCache = parsedCache.filter { state.scannedPaths.contains($0.key) }
+        var result = state.result
         let groups = Dictionary(grouping: result.notes, by: { $0.note.id })
         for (id, notes) in groups where notes.count > 1 {
             result.duplicateIDs.insert(id)
@@ -378,6 +713,11 @@ public actor VaultStore {
         result.coverage.indexed = result.notes.count
         result.coverage.complete = result.coverage.pending == 0 && result.coverage.issues == 0
         result.coverage.indexedAt = timestamp()
+        if localAPFS, result.coverage.complete, state.directories.count == Set(result.folders).count,
+           result.notes.allSatisfy({ parsedCache[$0.note.relativePath]?.sourceStamp != nil }),
+           state.directories.allSatisfy({ path, directory in directory.stamp == (try? SourceStamp(root.appendingPathComponent(path), localAPFS: true)) }) {
+            localIndex = (result, state.directories)
+        }
         return result
     }
 
@@ -387,32 +727,35 @@ public actor VaultStore {
             let vaultId: String?
             let vaultName: String?
             let coverage: Coverage
+            var indexing: IndexingProgress? = nil
             let phase: String
             let syncState: String
             let capabilities: [String]
-            private enum CodingKeys: String, CodingKey { case connected, vaultId, vaultName, coverage, phase, syncState, capabilities }
+            private enum CodingKeys: String, CodingKey { case connected, vaultId, vaultName, coverage, indexing, phase, syncState, capabilities }
             func encode(to encoder: Encoder) throws {
                 var values = encoder.container(keyedBy: CodingKeys.self)
                 try values.encode(connected, forKey: .connected)
                 try values.encode(vaultId, forKey: .vaultId)
                 try values.encode(vaultName, forKey: .vaultName)
                 try values.encode(coverage, forKey: .coverage)
+                try values.encodeIfPresent(indexing, forKey: .indexing)
                 try values.encode(phase, forKey: .phase)
                 try values.encode(syncState, forKey: .syncState)
                 try values.encode(capabilities, forKey: .capabilities)
             }
         }
-        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"]
+        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "importAttachment"]
         guard let root, let metadata else {
             return try encode(Status(connected: false, vaultId: nil, vaultName: nil,
                 coverage: Coverage(complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: nil),
                 phase: "M1", syncState: "notConnected", capabilities: capabilities))
         }
+        if let indexFailure { throw indexFailure }
         let snapshot = try scan()
         seedRefreshSnapshot(snapshot)
         let coverage = snapshot.coverage
         return try encode(Status(connected: true, vaultId: metadata.vaultId, vaultName: root.lastPathComponent,
-            coverage: coverage, phase: "M1", syncState: coverage.complete ? "localReadComplete" : "incomplete",
+            coverage: coverage, indexing: indexing, phase: "M1", syncState: coverage.complete ? "localReadComplete" : "incomplete",
             capabilities: capabilities))
     }
 
@@ -456,8 +799,8 @@ public actor VaultStore {
         let cursorDate = try cursor.map { try parseDate($0.createdAt) }
         let filters = Dictionary(uniqueKeysWithValues: snapshot.notes.map { parsed in
             let note = parsed.note
-            let filters = parsedCache[note.relativePath]?.quickFilters ?? noteQuickFilters(note)
-            parsedCache[note.relativePath]?.quickFilters = filters
+            let filters = parsedCache[note.relativePath]?.quickFilters ?? (indexing != nil ? (note.tags.isEmpty ? [.untagged] : []) : noteQuickFilters(note))
+            if indexing == nil { parsedCache[note.relativePath]?.quickFilters = filters }
             return (note.id, filters)
         })
         var filterCounts = ["untagged": 0, "images": 0, "links": 0]
@@ -469,7 +812,7 @@ public actor VaultStore {
             if let folder = query.folder, !folder.isEmpty, !note.relativePath.hasPrefix(folder + "/") { return false }
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
             if let filter = query.quickFilter, !filters[note.id]!.contains(filter) { return false }
-            if let text = query.query, ((note.title ?? "") + "\n" + note.body).range(of: text, options: [.caseInsensitive, .literal]) == nil && !text.isEmpty { return false }
+            if let text = query.query, !text.isEmpty, ((note.title ?? "") + "\n" + note.body).range(of: text, options: [.caseInsensitive, .literal]) == nil { return false }
             if let tags = query.tags, !tags.allSatisfy({ value in let tag = tagKey(value); return note.tags.contains { $0 == tag || $0.hasPrefix(tag + "/") } }) { return false }
             if let from, date < from { return false }
             if let to, date >= to { return false }
@@ -539,6 +882,7 @@ public actor VaultStore {
 
     private func saveNote(_ request: SaveRequest) throws -> Note {
         let id = try canonicalID(request.id)
+        try validateDraftRequest(request, id: id)
         let tags = try validatedTags(inlineTags(request.body))
         let inheritedTags = try validatedTags(request.inheritedTags ?? [])
         let (root, metadata) = try active()
@@ -560,12 +904,15 @@ public actor VaultStore {
         let target = try root.appendingPathComponent(existing?.note.relativePath ?? newNotePath(requestedPath, id: id, root: root))
         let config = existing == nil ? try readPropertyDefinitions(root) : nil
         let inherited = try config.map { try inheritedProperties(libraryProperties(snapshot), stored: $0.values) } ?? []
-        let saved = try coordinateWrite(target, inside: root) { coordinated in
+        let saved: Note
+        do { saved = try coordinateWrite(target, inside: root) { coordinated in
             try self.requireNoConflict(coordinated)
             var frontmatter = Node([(Node, Node)]())
             var original: ParsedNote?
+            var before: Data?
             if self.fm.fileExists(atPath: coordinated.path) {
                 let data = try self.readSource(coordinated)
+                before = data
                 guard request.baseHash == sha256(data) else {
                     throw VaultError(code: "HASH_CONFLICT", message: "文件已在其他位置修改，原文未被覆盖。请保留草稿并重新读取。")
                 }
@@ -594,14 +941,11 @@ public actor VaultStore {
             guard data.count <= 8 * 1024 * 1024 else {
                 throw VaultError(code: "NOTE_TOO_LARGE", message: "M1 单条 Markdown 最大支持 8 MiB。")
             }
-            try data.write(to: coordinated, options: .atomic)
-            if self.compatible {
-                let identity = FileIdentity(id: id, path: self.relative(coordinated, root: root), hash: sha256(data), createdAt: existing?.note.createdAt ?? timestamp())
-                try self.persistIdentities(self.identities.filter { $0.id != id } + [identity])
-                return try parseObsidianNote(data, relativePath: identity.path, vaultID: metadata.vaultId, identity: identity, modified: Date()).note
-            }
-            return try parseNote(data, relativePath: self.relative(coordinated, root: root), vaultID: metadata.vaultId).note
-        }
+            let identity = FileIdentity(id: id, path: self.relative(coordinated, root: root), hash: sha256(data), createdAt: existing?.note.createdAt ?? timestamp())
+            let note = try self.compatible ? parseObsidianNote(data, relativePath: identity.path, vaultID: metadata.vaultId, identity: identity, modified: Date()).note : parseNote(data, relativePath: identity.path, vaultID: metadata.vaultId).note
+            try self.writeSource(data, before: before, at: coordinated, identity: identity, root: root)
+            return note
+        } } catch { try recoverRename(); throw error }
         // Committing the source succeeds independently of best-effort draft cleanup.
         // A changed or unreadable draft must survive, never be discarded as "already saved".
         try? removeCommittedDraft(request, id: id, tags: tags)
@@ -674,16 +1018,15 @@ public actor VaultStore {
     }
     private func libraryProperties(_ snapshot: Snapshot) throws -> [NoteProperty] {
         try snapshot.notes.filter { $0.note.deletedAt == nil }.sorted { $0.note.relativePath < $1.note.relativePath }.flatMap { item in
-            if let properties = parsedCache[item.note.relativePath]?.properties { return properties }
+            if let cached = parsedCache[item.note.relativePath], cached.hash == item.note.contentHash, let properties = cached.properties { return properties }
             // The snapshot already verified the source hash. Only YAML is needed for library options.
             let properties = try readNoteProperties(Data((item.originalHeader ?? "").utf8)).properties
             propertyParseMissCount += 1
-            parsedCache[item.note.relativePath]?.properties = properties
+            if parsedCache[item.note.relativePath]?.hash == item.note.contentHash { parsedCache[item.note.relativePath]?.properties = properties }
             return properties
         }
     }
-    private func effectiveNoteProperties(_ data: Data, snapshot: Snapshot, root: URL) throws -> NoteProperties {
-        let config = try readPropertyDefinitions(root)
+    private func effectiveNoteProperties(_ data: Data, snapshot: Snapshot, config: (before: Data?, values: [String: PropertyDefinition], hash: String)) throws -> NoteProperties {
         let raw = try readNoteProperties(data)
         let needsOptions = raw.properties.contains { $0.type == "list" || config.values[$0.name]?.type == "list" || ($0.type != "unsupported" && $0.options != nil && config.values[$0.name] == nil) }
         let all = needsOptions ? try libraryProperties(snapshot).map(listAsMultiSelect) : []
@@ -696,13 +1039,14 @@ public actor VaultStore {
         }
         return NoteProperties(properties: properties, tagProperty: raw.tagProperty, contentHash: raw.contentHash, writable: raw.writable, definitionHash: config.hash)
     }
-    private func updatePropertyDefinition(_ change: PropertyChange, snapshot: Snapshot, existing: ParsedNote, root: URL, metadata: VaultMetadata) throws -> Note {
+    private func updatePropertyDefinition(_ change: PropertyChange, snapshot: Snapshot, existing: ParsedNote, root: URL, metadata: VaultMetadata) throws -> PropertyUpdateResult {
         let config = try readPropertyDefinitions(root)
         guard change.definitionHash == nil || change.definitionHash == config.hash else { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已在其他位置修改，请重新打开后重试。") }
         let original = try readSource(root.appendingPathComponent(existing.note.relativePath))
         guard sha256(original) == change.baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
-        guard let current = try effectiveNoteProperties(original, snapshot: snapshot, root: root).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, change.copyFrom == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
+        guard let current = try effectiveNoteProperties(original, snapshot: snapshot, config: config).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, change.copyFrom == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
         let properties = try libraryProperties(snapshot).filter { $0.name == change.name }.map(listAsMultiSelect)
+        guard properties.allSatisfy({ $0.editable }) else { throw VaultError(code: "INVALID_PROPERTY", message: "此属性包含只读值，库级修改未保存。") }
         let typeChanged = (config.values[change.name].map { resolvedPropertyDefinition($0, properties: properties).type } ?? current.type) != type
         let definition = newPropertyDefinition(properties, type: type, options: change.options, includeValues: typeChanged)
         let previousDefinition = config.values[change.name].map { resolvedPropertyDefinition($0, properties: properties) }
@@ -714,7 +1058,9 @@ public actor VaultStore {
         }
         var changes: [RenameChange] = []
         var saved: Note?
-        for item in snapshot.notes where item.note.deletedAt == nil {
+        var updatedSnapshot = snapshot
+        var savedData = original
+        for (index, item) in snapshot.notes.enumerated() where item.note.deletedAt == nil {
             let before = try coordinateRead(root.appendingPathComponent(item.note.relativePath), inside: root) { try self.readSource($0) }
             guard sha256(before) == item.note.contentHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
             guard let property = try readNoteProperties(before).properties.first(where: { $0.name == change.name }) else { continue }
@@ -722,6 +1068,9 @@ public actor VaultStore {
             let normalized = listAsMultiSelect(property)
             let effective = previousDefinition.map { convertedProperty(normalized, definition: $0) } ?? NoteProperty(name: normalized.name, type: normalized.type, value: normalized.value, editable: normalized.editable, options: normalized.options == nil ? nil : previousOptions)
             let converted = convertedProperty(effective, definition: definition, rename: change.optionRename, pruneOptions: !typeChanged)
+            if (typeChanged || normalized.type != definition.type) && !losslessPropertyConversion(normalized, converted) {
+                throw VaultError(code: "LOSSY_PROPERTY_CONVERSION", message: "「\(item.note.relativePath)」的「\(change.name)」无法无损转换。笔记库未修改，请先保留或调整原值。")
+            }
             let value = item.note.id == existing.note.id && !typeChanged ? change.value ?? converted.value : converted.value
             let update = PropertyChange(id: item.note.id, baseHash: item.note.contentHash, name: change.name, type: definition.type, value: value, remove: nil, create: nil, options: definition.options)
             var retainedValues: [String]?
@@ -731,12 +1080,15 @@ public actor VaultStore {
             let identity = FileIdentity(id: item.note.id, path: item.note.relativePath, hash: sha256(after), createdAt: item.note.createdAt)
             let parsed = try compatible ? parseObsidianNote(after, relativePath: identity.path, vaultID: metadata.vaultId, identity: identity, modified: Date()) : parseNote(after, relativePath: identity.path, vaultID: metadata.vaultId)
             changes.append(RenameChange(path: identity.path, before: before, after: after))
-            if item.note.id == existing.note.id { saved = parsed.note }
+            updatedSnapshot.notes[index] = parsed
+            if item.note.id == existing.note.id { saved = parsed.note; savedData = after }
         }
         var definitions = config.values
         definitions[change.name] = definition
-        changes.append(RenameChange(path: propertyDefinitionPath, before: config.before, after: try encode(definitions)))
-        let journal = RenameJournal(root: root.path, changes: changes, identities: identities)
+        let definitionData = try encode(definitions)
+        changes.append(RenameChange(path: propertyDefinitionPath, before: config.before, after: definitionData))
+        let propertyData = try effectiveNoteProperties(savedData, snapshot: updatedSnapshot, config: (definitionData, definitions, sha256(definitionData)))
+        let journal = RenameJournal(root: root.path, scope: localScope, changes: changes, identities: identities)
         do {
             try coordinateWrite(root, inside: root, options: .forMerging) { _ in
                 try encode(journal).write(to: self.renameJournalURL, options: .atomic)
@@ -755,9 +1107,9 @@ public actor VaultStore {
             }
         } catch { try recoverRename(); throw error }
         parsedCache.removeAll(); invalidateSnapshot()
-        return saved!
+        return PropertyUpdateResult(note: saved!, propertyData: propertyData)
     }
-    private func updateNoteProperty(_ change: PropertyChange) throws -> Note {
+    private func updateNoteProperty(_ change: PropertyChange) throws -> PropertyUpdateResult {
         let id = try canonicalID(change.id)
         let snapshot = try scan()
         guard snapshot.coverage.complete else { throw VaultError(code: "SCAN_INCOMPLETE", message: "笔记库尚未完整读取，无法安全修改属性。") }
@@ -775,21 +1127,35 @@ public actor VaultStore {
             }
             adjusted.options = definition.options
         }
-        return try coordinateWrite(root.appendingPathComponent(existing.note.relativePath), inside: root) { url in
+        do { return try coordinateWrite(root.appendingPathComponent(existing.note.relativePath), inside: root) { url in
             try self.requireNoConflict(url)
             let before = try self.readSource(url)
             guard sha256(before) == change.baseHash, try self.readPropertyDefinitions(root).before == config.before else { throw VaultError(code: "HASH_CONFLICT", message: "文件或属性定义已修改，请重新加载。") }
             let data = try patchNoteProperty(before, change: adjusted, updatedAt: self.compatible ? nil : timestamp())
             let identity = FileIdentity(id: id, path: existing.note.relativePath, hash: sha256(data), createdAt: existing.note.createdAt)
             let parsed = try self.compatible ? parseObsidianNote(data, relativePath: identity.path, vaultID: metadata.vaultId, identity: identity, modified: Date()) : parseNote(data, relativePath: identity.path, vaultID: metadata.vaultId)
-            try data.write(to: url, options: .atomic)
-            if self.compatible { try self.persistIdentities(self.identities.filter { $0.id != id } + [identity]) }
-            return parsed.note
+            var updatedSnapshot = snapshot
+            if let index = updatedSnapshot.notes.firstIndex(where: { $0.note.id == id }) { updatedSnapshot.notes[index] = parsed }
+            let propertyData = try self.effectiveNoteProperties(data, snapshot: updatedSnapshot, config: config)
+            try self.writeSource(data, before: before, at: url, identity: identity, root: root)
+            return PropertyUpdateResult(note: parsed.note, propertyData: propertyData)
+        } } catch { try recoverRename(); throw error }
+    }
+
+    private func writeSource(_ data: Data, before: Data?, at url: URL, identity: FileIdentity, root: URL) throws {
+        if compatible {
+            let journal = RenameJournal(root: root.path, scope: localScope, changes: [RenameChange(path: identity.path, before: before, after: data)], identities: identities)
+            try encode(journal).write(to: renameJournalURL, options: .atomic)
+        }
+        try data.write(to: url, options: before == nil ? .withoutOverwriting : .atomic)
+        if compatible {
+            try persistIdentities(identities.filter { $0.id != identity.id } + [identity])
+            try fm.removeItem(at: renameJournalURL)
         }
     }
 
     private struct RenameChange: Codable { let path: String; let before: Data?; let after: Data? }
-    private struct RenameJournal: Codable { let root: String; let changes: [RenameChange]; let identities: [FileIdentity] }
+    private struct RenameJournal: Codable { let root: String; let scope: String?; let changes: [RenameChange]; let identities: [FileIdentity] }
     private var renameJournalURL: URL { identityURL.appendingPathExtension("rename.json") }
 
     private func renameBytes(_ path: String, root: URL) throws -> Data? {
@@ -802,12 +1168,12 @@ public actor VaultStore {
     private func recoverRename() throws {
         guard let root, metadata != nil, fm.fileExists(atPath: renameJournalURL.path) else { return }
         let journal = try JSONDecoder().decode(RenameJournal.self, from: Data(contentsOf: renameJournalURL))
-        guard journal.root == root.path else { throw VaultError(code: "RENAME_RECOVERY_REQUIRED", message: "重命名恢复记录不属于当前笔记库。") }
+        guard journal.scope.map({ $0 == localScope }) ?? (journal.root == root.path) else { throw VaultError(code: "RENAME_RECOVERY_REQUIRED", message: "保存事务恢复记录不属于当前笔记库。") }
         try coordinateWrite(root, inside: root, options: .forMerging) { _ in
             // Never roll back over an external edit. The durable journal remains available.
             for change in journal.changes {
                 let current = try self.renameBytes(change.path, root: root)
-                guard current == change.before || current == change.after else { throw VaultError(code: "RENAME_RECOVERY_REQUIRED", message: "重命名期间文件被外部修改，备份和草稿已保留，请先恢复重命名记录。") }
+                guard current == change.before || current == change.after else { throw VaultError(code: "RENAME_RECOVERY_REQUIRED", message: "保存事务期间文件被外部修改，事务记录和草稿已保留，请先处理恢复记录。") }
             }
             for change in journal.changes.reversed() {
                 let url = root.appendingPathComponent(change.path)
@@ -842,7 +1208,7 @@ public actor VaultStore {
             }
         }
         changes.append(RenameChange(path: old, before: original, after: nil))
-        let journal = RenameJournal(root: root.path, changes: changes, identities: identities)
+        let journal = RenameJournal(root: root.path, scope: localScope, changes: changes, identities: identities)
         let backup = localDataURL.appendingPathComponent("renames/\(UUID().uuidString.lowercased()).json")
         try fm.createDirectory(at: backup.deletingLastPathComponent(), withIntermediateDirectories: true)
         try encode(journal).write(to: backup, options: .atomic)
@@ -872,16 +1238,20 @@ public actor VaultStore {
     }
 
     private func removeCommittedDraft(_ request: SaveRequest, id: String, tags: [String]) throws {
-        guard let metadata else { return }
+        guard metadata != nil else { return }
         let inheritedTags = try validatedTags(request.inheritedTags ?? [])
-        let path = localDataURL.appendingPathComponent("drafts/\(metadata.vaultId)/\(id).json")
+        let key = try validatedDraftKey(request.draftKey, id: id)
+        let path = try draftDirectory().appendingPathComponent("\(key).json")
         try validate(path, inside: localDataURL)
         guard fm.fileExists(atPath: path.path) else { return }
-        try coordinateWrite(path, inside: localDataURL, options: .forDeleting) { coordinated in
+        let removed = try coordinateWrite(path, inside: localDataURL, options: .forDeleting) { coordinated in
             let draft = try JSONDecoder().decode(Draft.self, from: Data(contentsOf: coordinated))
-            guard draft.id == id, draft.title == request.title, draft.body == request.body, draft.tags == tags, (draft.inheritedTags ?? []) == inheritedTags, draft.baseHash == request.baseHash else { return }
+            guard (draft.pendingProperties ?? []).isEmpty else { return false }
+            guard draft.id == id, draft.title == request.title, draft.body == request.body, draft.tags == tags, (draft.inheritedTags ?? []) == inheritedTags, draft.baseHash == request.baseHash else { return false }
             try self.fm.removeItem(at: coordinated)
+            return true
         }
+        if removed { try removeRecoveredDraft(request, id: id) }
     }
 
     private func listTags() throws -> Data {
@@ -899,40 +1269,158 @@ public actor VaultStore {
         return try encode(Result(tags: counts.keys.sorted().map { TagCount(name: $0, count: counts[$0]!) }, coverage: snapshot.coverage))
     }
 
-    private func draftDirectory() throws -> URL {
+    private struct DraftNamespace: Codable { let vaultId: String; let root: String }
+    private let draftNamespaceFile = ".vault-scope.json"
+
+    func draftDirectory() throws -> URL {
         // Once a vault has been opened, local drafts remain writable even if its provider goes offline.
-        guard let metadata else { throw VaultError(code: "VAULT_NOT_OPEN", message: "请先选择笔记库。") }
-        let directory = localDataURL.appendingPathComponent("drafts/\(metadata.vaultId)")
+        guard metadata != nil, let localScope else { throw VaultError(code: "VAULT_NOT_OPEN", message: "请先选择笔记库。") }
+        let directory = localDataURL.appendingPathComponent("drafts/\(localScope)")
         try validate(directory, inside: localDataURL)
         try fm.createDirectory(at: directory, withIntermediateDirectories: true)
+        let info = directory.appendingPathComponent(draftNamespaceFile)
+        let bytes = try encode(DraftNamespace(vaultId: metadata!.vaultId, root: root!.path))
+        if (try? Data(contentsOf: info)) != bytes { try coordinateWrite(info, inside: localDataURL) { try bytes.write(to: $0, options: .atomic) } }
         return directory
+    }
+
+    private func recoveryDirectory(_ source: RecoverySource) throws -> URL {
+        guard metadata != nil else { throw VaultError(code: "VAULT_NOT_OPEN", message: "请先选择笔记库。") }
+        guard source.unscoped == true else { return try draftDirectory() }
+        guard let scope = source.scope else { return localDataURL.appendingPathComponent("drafts/\(metadata!.vaultId)") }
+        guard scope.count == 64, scope.allSatisfy({ "0123456789abcdef".contains($0) }) else { throw VaultError(code: "INVALID_DRAFT", message: "草稿目录标识无效。") }
+        let directory = localDataURL.appendingPathComponent("drafts/\(scope)")
+        let owner = try coordinateRead(directory.appendingPathComponent(draftNamespaceFile), inside: localDataURL) { try JSONDecoder().decode(DraftNamespace.self, from: Data(contentsOf: $0)) }
+        guard owner.vaultId == metadata!.vaultId else { throw VaultError(code: "INVALID_DRAFT", message: "草稿不属于当前笔记库。") }
+        return directory
+    }
+
+    private func validatedDraftKey(_ value: String?, id: String) throws -> String {
+        guard let value else { return id } // Existing unkeyed recovery remains readable and writable.
+        if value.lowercased() == id { return id }
+        let parts = value.split(separator: ":", omittingEmptySubsequences: false)
+        guard parts.count == 2, let client = UUID(uuidString: String(parts[0])),
+              client.uuidString.lowercased() == parts[0].lowercased(), parts[1].lowercased() == id else {
+            throw VaultError(code: "INVALID_DRAFT", message: "草稿标识无效。")
+        }
+        return "\(client.uuidString.lowercased()):\(id)"
+    }
+
+    private func validateDraftRequest(_ request: SaveRequest, id: String) throws {
+        _ = try validatedDraftKey(request.draftKey, id: id)
+        if let source = request.recoveredFrom {
+            _ = try validatedDraftKey(source.draftKey, id: id)
+            if source.scope != nil { _ = try recoveryDirectory(source) }
+        }
+    }
+
+    private func removeRecoveredDraft(_ request: SaveRequest, id: String) throws {
+        guard let source = request.recoveredFrom else { return }
+        let key = try validatedDraftKey(source.draftKey, id: id)
+        guard key != (try validatedDraftKey(request.draftKey, id: id)) else { return }
+        let directory = try recoveryDirectory(source)
+        let path = directory.appendingPathComponent("\(key).json")
+        guard fm.fileExists(atPath: path.path) else { return }
+        try coordinateWrite(path, inside: localDataURL, options: .forDeleting) { coordinated in
+            let bytes = try Data(contentsOf: coordinated)
+            let draft = try JSONDecoder().decode(Draft.self, from: bytes)
+            guard draft.id == id, (draft.revision ?? sha256(bytes)) == source.revision else { return }
+            try self.fm.removeItem(at: coordinated)
+        }
     }
 
     private func saveDraft(_ request: SaveRequest) throws -> Data {
         let id = try canonicalID(request.id)
+        try validateDraftRequest(request, id: id)
         let tags = try validatedTags(inlineTags(request.body))
         let inheritedTags = request.baseHash == nil ? try validatedTags(request.inheritedTags ?? []) : []
         let directory = try draftDirectory()
-        let target = directory.appendingPathComponent("\(id).json")
+        let key = try validatedDraftKey(request.draftKey, id: id)
+        let target = directory.appendingPathComponent("\(key).json")
         let draft = Draft(title: request.title, id: id, body: request.body, tags: tags, inheritedTags: inheritedTags.isEmpty ? nil : inheritedTags, baseHash: request.baseHash,
-                          relativePath: request.relativePath, updatedAt: timestamp())
+                          relativePath: request.relativePath, updatedAt: timestamp(), pendingProperties: request.pendingProperties, draftKey: key, revision: UUID().uuidString.lowercased())
         try coordinateWrite(target, inside: localDataURL) { try encode(draft).write(to: $0, options: .atomic) }
+        if request.baseHash == nil && request.title?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty != false && request.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (request.pendingProperties ?? []).isEmpty {
+            try? removeRecoveredDraft(request, id: id)
+        }
         return try encode(draft)
     }
 
-    private func getDrafts() throws -> Data {
-        let directory = try draftDirectory()
-        let paths = try fm.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-        var drafts: [Draft] = []
-        for path in paths where path.pathExtension == "json" {
-            let draft = try coordinateRead(path, inside: localDataURL) { try JSONDecoder().decode(Draft.self, from: Data(contentsOf: $0)) }
-            _ = try canonicalID(draft.id)
-            _ = try parseDate(draft.updatedAt)
-            drafts.append(draft)
+    private var draftReminderURL: URL { localDataURL.appendingPathComponent("draft-reminders/\(localScope!).json") }
+
+    private func reminderKey(_ key: String, unscoped: Bool, scope: String?) -> String {
+        "\(unscoped ? scope ?? "legacy" : "current")/\(key)"
+    }
+
+    private func readDraftReminders() -> [String: String] {
+        (try? coordinateRead(draftReminderURL, inside: localDataURL) { try JSONDecoder().decode([String: String].self, from: Data(contentsOf: $0)) }) ?? [:]
+    }
+
+    private func dismissDraftReminder(id: String, source: RecoverySource) throws -> Data {
+        let id = try canonicalID(id), key = try validatedDraftKey(source.draftKey, id: id)
+        let directory = try recoveryDirectory(source)
+        let fingerprint = try coordinateRead(directory.appendingPathComponent("\(key).json"), inside: localDataURL) { url in
+            guard try self.fileType(url) == .typeRegular else { throw VaultError(code: "INVALID_DRAFT", message: "草稿必须是普通文件，原记录已保留。") }
+            let bytes = try Data(contentsOf: url), draft = try JSONDecoder().decode(Draft.self, from: bytes)
+            guard draft.id == id, (draft.revision ?? sha256(bytes)) == source.revision else {
+                throw VaultError(code: "DRAFT_CHANGED", message: "草稿已变化，请重新查看后再选择是否提醒。", retryable: true)
+            }
+            return sha256(bytes)
         }
-        drafts.sort { $0.updatedAt > $1.updatedAt }
-        struct Result: Encodable { let drafts: [Draft] }
-        return try encode(Result(drafts: drafts))
+        var reviews = readDraftReminders()
+        reviews[reminderKey(key, unscoped: source.unscoped == true, scope: source.scope)] = fingerprint
+        let path = draftReminderURL
+        try validate(path, inside: localDataURL)
+        try fm.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try coordinateWrite(path, inside: localDataURL) { try encode(reviews).write(to: $0, options: .atomic) }
+        return try encode(["reminderDismissed": true])
+    }
+
+    private func getDrafts() throws -> Data {
+        struct Issue: Encodable { let path: String; let code: String; let message: String }
+        struct Result: Encodable { let drafts: [Draft]; let unscopedDrafts: [Draft]; let issues: [Issue] }
+        var drafts: [Draft] = [], unscopedDrafts: [Draft] = [], issues: [Issue] = []
+        let directory = try draftDirectory()
+        let reviews = readDraftReminders()
+        let legacy = localDataURL.appendingPathComponent("drafts/\(metadata!.vaultId)")
+        var folders: [(URL, Bool, String?)] = [(directory, false, nil), (legacy, true, nil)]
+        // A cross-volume move is indistinguishable from copying then removing the original.
+        // Keep abandoned instances discoverable, but require explicit selection instead of auto-binding.
+        let siblings = try fm.contentsOfDirectory(at: directory.deletingLastPathComponent(), includingPropertiesForKeys: nil)
+        for sibling in siblings where sibling != directory && sibling != legacy {
+            if let owner = try? coordinateRead(sibling.appendingPathComponent(draftNamespaceFile), inside: localDataURL, { try JSONDecoder().decode(DraftNamespace.self, from: Data(contentsOf: $0)) }), owner.vaultId == metadata!.vaultId, !fm.fileExists(atPath: owner.root) {
+                folders.append((sibling, true, sibling.lastPathComponent))
+            }
+        }
+        for (folder, unscoped, scope) in folders where fm.fileExists(atPath: folder.path) {
+            do {
+                let paths = try coordinateRead(folder, inside: localDataURL) { try self.fm.contentsOfDirectory(at: $0, includingPropertiesForKeys: nil) }
+                for path in paths where path.pathExtension == "json" && path.lastPathComponent != draftNamespaceFile {
+                    do {
+                        let draft = try coordinateRead(path, inside: localDataURL) { url -> Draft in
+                            guard try self.fileType(url) == .typeRegular else { throw VaultError(code: "INVALID_DRAFT", message: "草稿必须是普通文件，原记录已保留。") }
+                            let bytes = try Data(contentsOf: url)
+                            var value = try JSONDecoder().decode(Draft.self, from: bytes)
+                            guard try canonicalID(value.id) == value.id else { throw VaultError(code: "INVALID_DRAFT", message: "草稿标识无效。") }
+                            value.draftKey = try self.validatedDraftKey(value.draftKey, id: value.id)
+                            guard url.deletingPathExtension().lastPathComponent == value.draftKey else { throw VaultError(code: "INVALID_DRAFT", message: "草稿文件名与标识不一致，原记录已保留。") }
+                            _ = try parseDate(value.updatedAt)
+                            value.revision = value.revision ?? sha256(bytes)
+                            value.unscoped = unscoped ? true : nil
+                            value.recoveryScope = scope
+                            value.reminderDismissed = reviews[self.reminderKey(value.draftKey!, unscoped: unscoped, scope: scope)] == sha256(bytes) ? true : nil
+                            return value
+                        }
+                        if unscoped { unscopedDrafts.append(draft) } else { drafts.append(draft) }
+                    } catch {
+                        issues.append(Issue(path: path.path, code: (error as? VaultError)?.code ?? "CORRUPT_DRAFT", message: "此草稿无法读取或格式无效，原文件已保留，可从此路径检查或备份。"))
+                    }
+                }
+            } catch {
+                issues.append(Issue(path: folder.path, code: "DRAFT_DIRECTORY_UNAVAILABLE", message: "此恢复目录暂时无法读取，原记录已保留。"))
+            }
+        }
+        return try encode(Result(drafts: drafts.sorted { $0.updatedAt > $1.updatedAt }, unscopedDrafts: unscopedDrafts.sorted { $0.updatedAt > $1.updatedAt }, issues: issues))
     }
 
     private func importAttachment(name: String, base64: String, noteID: String?, requestedPath: String?) throws -> Data {
@@ -1025,10 +1513,7 @@ public actor VaultStore {
         return try encode(Link(kind: note == nil ? "image" : "note", id: note?.id, path: matches[0]))
     }
 
-    private var identityURL: URL {
-        let scope = sha256(Data((root!.path + ":" + metadata!.vaultId).utf8))
-        return localDataURL.appendingPathComponent("identities-\(scope).json")
-    }
+    var identityURL: URL { localDataURL.appendingPathComponent("identities-\(localScope!).json") }
 
     private func persistIdentities(_ values: [FileIdentity]) throws {
         if values.map({ "\($0.id):\($0.path):\($0.hash)" }) != identities.map({ "\($0.id):\($0.path):\($0.hash)" }) {
@@ -1060,7 +1545,17 @@ public actor VaultStore {
     }
 
     private func fileType(_ url: URL) throws -> FileAttributeType? {
-        try fm.attributesOfItem(atPath: url.path)[.type] as? FileAttributeType
+        var value = stat()
+        guard lstat(url.path, &value) == 0 else {
+            if errno == ENOENT { throw CocoaError(.fileReadNoSuchFile) }
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
+        switch value.st_mode & S_IFMT {
+        case S_IFREG: return .typeRegular
+        case S_IFDIR: return .typeDirectory
+        case S_IFLNK: return .typeSymbolicLink
+        default: return .typeUnknown
+        }
     }
 
     private func isInside(_ candidate: URL, _ root: URL) -> Bool {
@@ -1074,8 +1569,10 @@ public actor VaultStore {
 
     private func validate(_ url: URL, inside root: URL) throws {
         let candidate = url.standardizedFileURL
+        let resolved = realpath(root.path, nil)
+        defer { free(resolved) }
         guard isInside(candidate, root), try fileType(root) == .typeDirectory,
-              root.resolvingSymlinksInPath().path == root.path else {
+              let resolved, URL(fileURLWithPath: String(cString: resolved)).standardizedFileURL.path == root.path else {
             throw VaultError(code: "PATH_NOT_ALLOWED", message: "文件路径超出授权目录或授权目录已改变。")
         }
         var current = root

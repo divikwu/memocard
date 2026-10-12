@@ -63,8 +63,8 @@ it('retains tag input on a conflict and does not write invalid names or on Escap
  await user.clear(input); await user.type(input,'组合输入');
  fireEvent.keyDown(input,{key:'Enter',isComposing:true}); expect(onApply).not.toHaveBeenCalled();
  await user.clear(input); await user.type(input,'保留输入{Enter}');
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','文件冲突');
- expect(input).toHaveProperty('value','保留输入');
+ expect((await screen.findByRole('alert')).textContent).toContain('文件冲突');
+ expect(screen.getByRole('button',{name:'移除属性标签 保留输入'})).toBeTruthy();
  await user.keyboard('{Escape}');
  expect(onApply).toHaveBeenCalledTimes(1);
 });
@@ -178,8 +178,12 @@ it('saves on outside click, keeps failed input and does not submit during IME co
  fireEvent.keyDown(input,{key:'Enter',isComposing:true});
  expect(onApply).not.toHaveBeenCalled();
  await user.click(screen.getByText('创建时间'));
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','文件冲突');
+ expect((await screen.findByRole('alert')).textContent).toContain('文件冲突');
+ expect(screen.getByRole('button',{name:'编辑属性 摘要'}).textContent).toBe('保留输入');
+ await user.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
  expect((screen.getByRole('textbox',{name:'属性值'}) as HTMLTextAreaElement).value).toBe('保留输入');
+ await user.keyboard('{Escape}');
+ expect(onApply).toHaveBeenCalledTimes(1);
 });
 it('toggles checkbox directly and presents a date input and list chips',async () => {
  const {user,onApply} = await setup();
@@ -216,7 +220,7 @@ it('responds immediately to a checkbox click and retains the value during the sa
  vi.mocked(request).mockImplementation(async () => new Promise(resolve => { finishRefresh = resolve; }));
  rerender(<NoteProperties {...props} note={{...note,contentHash:'new-hash'}} />);
  expect(checkbox.getAttribute('aria-checked')).toBe('false');
- expect(checkbox).toHaveProperty('disabled',true);
+ expect(checkbox).toHaveProperty('disabled',false);
  expect(screen.getByRole('button',{name:'编辑属性 摘要'})).toBe(summary);
  await act(async () => { finishRefresh({properties:properties.map(property => property.name === '已验证' ? {...property,value:false} : property),writable:true,contentHash:'new-hash'}); });
  expect(checkbox).toHaveProperty('disabled',false);
@@ -224,7 +228,28 @@ it('responds immediately to a checkbox click and retains the value during the sa
  expect(screen.getByLabelText('笔记属性').hasAttribute('data-updating')).toBe(false);
 });
 
-it('restores the checkbox value and reports a failed save',async () => {
+it('uses the matching save snapshot, ignores an older read and reloads on a later body revision',async () => {
+ let complete!: (value:unknown) => void;
+ vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels'} : new Promise(resolve => { complete = resolve; }));
+ const props = {note,tags:[],canEdit:true,busy:false,onApply:vi.fn()};
+ const view = render(<NoteProperties {...props} />);
+ fireEvent.click(screen.getByRole('button',{name:/^属性$/}));
+ const savedProperties = {properties:[{name:'摘要',type:'text' as const,value:'已保存',editable:true}],writable:true,contentHash:'saved-property'};
+ view.rerender(<NoteProperties {...props} note={{...note,contentHash:savedProperties.contentHash}} savedProperties={savedProperties} />);
+ const value = await screen.findByRole('button',{name:'编辑属性 摘要'});
+ expect(value.textContent).toBe('已保存');
+ expect(value).toHaveProperty('disabled',false);
+ await act(async () => { complete({properties,writable:true,contentHash:note.contentHash}); });
+ expect(value.textContent).toBe('已保存');
+ expect(vi.mocked(request).mock.calls.filter(([op]) => op === 'getNoteProperties')).toHaveLength(1);
+ view.rerender(<NoteProperties {...props} note={{...note,contentHash:'later-body'}} savedProperties={savedProperties} />);
+ expect(value).toHaveProperty('disabled',false);
+ expect(vi.mocked(request).mock.calls.filter(([op]) => op === 'getNoteProperties')).toHaveLength(2);
+ await act(async () => { complete({...savedProperties,contentHash:'later-body'}); });
+ expect(value).toHaveProperty('disabled',false);
+});
+
+it('retains the intended checkbox value and reports a failed save',async () => {
  let failSave!: (reason:Error) => void;
  const onApply = vi.fn(() => new Promise<void>((_,reject) => { failSave = reject; }));
  const {user} = await setup(onApply);
@@ -232,8 +257,8 @@ it('restores the checkbox value and reports a failed save',async () => {
  await user.click(checkbox);
  expect(checkbox.getAttribute('aria-checked')).toBe('false');
  await act(async () => { failSave(new Error('文件冲突')); });
- expect(checkbox.getAttribute('aria-checked')).toBe('true');
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','文件冲突');
+ expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ expect((await screen.findByRole('alert')).textContent).toContain('文件冲突');
 });
 
 it('commits on keyboard focus leaving the value editor',async () => {
@@ -259,7 +284,7 @@ it('rejects impossible dates, retains input, and cancels without a write',async 
  await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
  const input = await screen.findByRole('textbox',{name:'属性值'});
  await user.clear(input); await user.type(input,'2026-02-30{Enter}');
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效日期，格式为 YYYY-MM-DD');
+ expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效日期（YYYY-MM-DD）。');
  expect(onApply).not.toHaveBeenCalled();
  await user.keyboard('{Escape}');
  expect(onApply).not.toHaveBeenCalled();
@@ -272,7 +297,7 @@ it('saves a typed leap date and preserves it on a write conflict',async () => {
  const input = await screen.findByRole('textbox',{name:'属性值'});
  await user.clear(input); await user.type(input,'2028-02-29{Enter}');
  await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:'2028-02-29'}));
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','文件已被修改');
+ expect((await screen.findByRole('alert')).textContent).toContain('文件已被修改');
  expect((input as HTMLInputElement).value).toBe('2028-02-29');
 });
 it('supports calendar arrow keys and Space selection',async () => {
@@ -387,8 +412,12 @@ it('switches types from the property menu and retains compatible values',async (
  expect(within(types).getAllByRole('menuitemradio')).toHaveLength(5);
  expect(within(types).getByRole('menuitemradio',{name:'文本'}).getAttribute('aria-checked')).toBe('true');
  await user.click(within(types).getByRole('menuitemradio',{name:'多选'}));
+ const confirmation=await screen.findByRole('alertdialog');
+ expect(within(confirmation).getByText(/库内所有同名属性/)).toBeTruthy();
+ expect(onApply).not.toHaveBeenCalled();
+ await user.click(within(confirmation).getByRole('button',{name:'确认更改'}));
  await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'摘要',type:'multiSelect',value:['原值'],options:[{name:'原值',color:'default'}],definition:true}));
- expect(screen.queryByRole('alertdialog')).toBeNull();
+ await waitFor(()=>expect(screen.queryByRole('alertdialog')).toBeNull());
 });
 it('does not write when reselecting the current type or dismissing the type menu',async () => {
  const {user,onApply}=await setup();
@@ -398,29 +427,39 @@ it('does not write when reselecting the current type or dismissing the type menu
  await user.keyboard('{Escape}');
  expect(onApply).not.toHaveBeenCalled();
 });
-it('switches incompatible types immediately and retains the original property on a save conflict',async () => {
+it('does not enqueue a cancelled switch and retains the original property on a save conflict',async () => {
  const onApply=vi.fn().mockRejectedValueOnce(new Error('文件冲突')).mockResolvedValue(undefined);
  const {user}=await setup(onApply);
  let types=await openTypes(user,'摘要');
  await user.click(within(types).getByRole('menuitemradio',{name:'日期'}));
- expect(screen.queryByRole('alertdialog')).toBeNull();
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','文件冲突');
- expect(screen.getByRole('button',{name:'编辑属性 摘要'}).textContent).toBe('原值');
- await waitFor(()=>expect(screen.queryByRole('menu',{name:'属性类型 摘要'})).toBeNull());
+ let confirmation=await screen.findByRole('alertdialog');
+ await user.click(within(confirmation).getByRole('button',{name:'取消'}));
+ expect(onApply).not.toHaveBeenCalled();
  types=await openTypes(user,'摘要');
  await user.click(within(types).getByRole('menuitemradio',{name:'日期'}));
+ confirmation=await screen.findByRole('alertdialog');
+ await user.click(within(confirmation).getByRole('button',{name:'确认更改'}));
+ expect(await within(confirmation).findByRole('alert')).toHaveProperty('textContent','文件冲突');
+ expect(screen.getByRole('button',{name:'编辑属性 摘要',hidden:true}).textContent).toBe('原值');
+ await waitFor(()=>expect(screen.queryByRole('menu',{name:'属性类型 摘要'})).toBeNull());
+ await user.click(within(confirmation).getByRole('button',{name:'确认更改'}));
  await waitFor(()=>expect(onApply).toHaveBeenCalledTimes(2));
  expect(onApply).toHaveBeenLastCalledWith({name:'摘要',type:'date',value:'',definition:true});
- expect(screen.queryByRole('alertdialog')).toBeNull();
+ await waitFor(()=>expect(screen.queryByRole('alertdialog')).toBeNull());
 });
-it('switches multiple choice to one directly and retains all option colors',async () => {
+it('keeps all selected values when the backend rejects a lossy single-select conversion',async () => {
  const options=[{name:'设计',color:'purple'},{name:'开发',color:'blue'}];
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : ({properties:[...properties,{name:'领域',type:'multiSelect',value:['设计','开发'],options,editable:true}],writable:true,contentHash:'hash'}));
- const {user,onApply}=await setup();
+ const onApply=vi.fn().mockRejectedValue(new Error('无法无损转换。笔记库未修改。'));
+ const {user}=await setup(onApply);
  const types=await openTypes(user,'领域');
  await user.click(within(types).getByRole('menuitemradio',{name:'选择'}));
- expect(screen.queryByRole('alertdialog')).toBeNull();
+ const confirmation=await screen.findByRole('alertdialog');
+ expect(onApply).not.toHaveBeenCalled();
+ await user.click(within(confirmation).getByRole('button',{name:'确认更改'}));
  await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'领域',type:'select',value:'设计',options,definition:true}));
+ expect(await within(confirmation).findByRole('alert')).toHaveProperty('textContent','无法无损转换。笔记库未修改。');
+ expect(screen.getByRole('button',{name:'编辑属性 领域',hidden:true}).textContent).toBe('设计开发');
 });
 
 it.each([['标签','tags'],['更新时间','updatedAt'],['创建时间','createdAt'],['文件名','filename']])('renames the built-in %s display name without changing the note',async (name,key) => {
@@ -459,7 +498,7 @@ it('previews inherited library fields on an unsaved page without editing or writ
  const view = render(<NoteProperties tags={[]} canEdit busy={false} onApply={onApply} />);
  await user.click(screen.getByRole('button',{name:/^属性$/}));
  expect(await screen.findByText('库摘要')).toBeTruthy();
- expect(request).toHaveBeenCalledWith('getNoteProperties',{});
+ expect(request).toHaveBeenCalledWith('getNoteProperties',{deferWhileIndexing:true});
  const checkbox = screen.getByRole('checkbox',{name:'切换属性 已验证'});
  expect(checkbox.getAttribute('aria-checked')).toBe('false');
  expect(checkbox).toHaveProperty('disabled',true);
@@ -469,6 +508,48 @@ it('previews inherited library fields on an unsaved page without editing or writ
  expect(screen.queryByRole('button',{name:'编辑属性 库摘要'})).toBeNull();
  expect(onApply).not.toHaveBeenCalled();
  view.rerender(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={onApply} />);
- await waitFor(()=>expect(request).toHaveBeenCalledWith('getNoteProperties',{id:note.id}));
+ await waitFor(()=>expect(request).toHaveBeenCalledWith('getNoteProperties',{id:note.id,deferWhileIndexing:true}));
  expect(await screen.findByRole('button',{name:'编辑属性 库摘要'})).toBeTruthy();
+});
+
+it('retries properties during initial indexing without showing a failure or leaving a timer after unmount', async () => {
+ vi.useFakeTimers();
+ let indexing = true;
+ vi.mocked(request).mockImplementation(async operation => {
+  if (operation === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
+  if (indexing) throw Object.assign(new Error('Initial validation pending'),{code:'INDEXING'});
+  return {properties,writable:true,contentHash:'hash'};
+ });
+ try {
+  const view = render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={vi.fn()} />);
+  await act(async()=>{await vi.advanceTimersByTimeAsync(0);});
+  expect(screen.queryByRole('alert')).toBeNull();
+  indexing = false;
+  await act(async()=>{await vi.advanceTimersByTimeAsync(1100);});
+  fireEvent.click(screen.getByRole('button',{name:'属性'}));
+  expect(screen.getByRole('button',{name:'编辑属性 摘要'}).hasAttribute('disabled')).toBe(false);
+  view.unmount();
+  const calls = vi.mocked(request).mock.calls.length;
+  await act(async()=>{await vi.advanceTimersByTimeAsync(2000);});
+  expect(vi.mocked(request).mock.calls.length).toBe(calls);
+ } finally {vi.useRealTimers();}
+});
+
+it.each(['getNoteProperties','getPropertyLabels'])('retries failed %s reads without writing note data',async operation => {
+ const implementation=vi.mocked(request).getMockImplementation()!;
+ let failed=true;
+ vi.mocked(request).mockImplementation(async (op,params) => {
+   if (op === operation && failed) throw new Error('配置文件暂时无法读取');
+   return implementation(op,params);
+ });
+ const onApply=vi.fn(), user=userEvent.setup();
+ render(<NoteProperties note={note} tags={[]} canRead canEdit={false} busy={false} onApply={onApply} />);
+ await user.click(screen.getByRole('button',{name:'属性'}));
+ expect((await screen.findByRole('alert')).textContent).toContain('配置文件暂时无法读取');
+ failed=false;
+ await user.click(screen.getByRole('button',{name:'重试读取'}));
+ await waitFor(()=>expect(screen.queryByRole('alert')).toBeNull());
+ expect(screen.getByText('原值')).toBeTruthy();
+ expect(vi.mocked(request).mock.calls.filter(([op])=>op === operation)).toHaveLength(2);
+ expect(onApply).not.toHaveBeenCalled();
 });

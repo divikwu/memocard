@@ -4,6 +4,734 @@ import UniformTypeIdentifiers
 @testable import MemoCardCore
 
 final class VaultStoreTests: XCTestCase {
+    func testBackgroundStatusReturnsBeforeReadingSourcesAndDraftsRemainAvailable() async throws {
+        let core = try await store()
+        for _ in 0..<200 { _ = try writeNote(id: UUID().uuidString.lowercased()) }
+        let status = try await call(core, "getStatus", ["background": true])
+        let progress = try XCTUnwrap(status["indexing"] as? [String: Any])
+        XCTAssertEqual(progress["phase"] as? String, "reading")
+        XCTAssertTrue(progress["total"] is NSNull)
+        XCTAssertEqual((status["coverage"] as? [String: Any])?["complete"] as? Bool, false)
+        let id = UUID().uuidString.lowercased()
+        _ = try await call(core, "saveDraft", ["id": id, "body": "Typed during indexing", "tags": []])
+        let drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.first?["body"] as? String, "Typed during indexing")
+        await core.close()
+    }
+
+    func waitForIndexPhase(_ core: VaultStore, _ phase: String) async throws -> [String: Any] {
+        for _ in 0..<5000 {
+            let status = try await call(core, "getStatus", ["background": true])
+            if (status["indexing"] as? [String: Any])?["phase"] as? String == phase { return status }
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }
+        XCTFail("Index phase was not reached: \(phase)")
+        return [:]
+    }
+
+    func testSourceEditsDuringBackgroundFiltersKeepHashesPropertiesAndReopenConsistent() async throws {
+        for shared in [false, true] {
+            vault = temporary.appendingPathComponent("background-\(shared)")
+            try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            let core = try await store(create: !shared)
+            for n in 0..<80 {
+                if shared { try Data("---\nsummary: original\n---\nBody \(n)".utf8).write(to: vault.appendingPathComponent("Note-\(n).md")) }
+                else { _ = try writeNote(id: UUID().uuidString.lowercased(), extra: "summary: original\n") }
+            }
+            let original = try Dictionary(uniqueKeysWithValues: FileManager.default.enumerator(at: vault, includingPropertiesForKeys: nil)!.compactMap { item -> (String, Data)? in
+                guard let url = item as? URL, url.pathExtension == "md" else { return nil }
+                return (url.path, try Data(contentsOf: url))
+            })
+            let gate = IndexingTestGate()
+            await core.setIndexingCheckpoint { phase in if phase == "indexing" { await gate.wait() } }
+            _ = try await call(core, "getStatus", ["background": true])
+            let status = try await waitForIndexPhase(core, "indexing")
+            XCTAssertEqual((status["coverage"] as? [String: Any])?["complete"] as? Bool, true)
+            let page = try await call(core, "queryNotes", ["limit": 100])
+            var note = (page["notes"] as! [[String: Any]])[0]
+            let id = note["id"] as! String, path = note["relativePath"] as! String
+            for n in 0..<4 {
+                note = try await call(core, "saveNote", ["id": id, "body": "Saved during indexing \(n) [link](https://example.com)", "tags": [], "baseHash": note["contentHash"]!])
+                note = try await call(core, "updateNoteProperty", ["id": id, "name": "summary", "type": "text", "value": "Indexed value \(n)", "baseHash": note["contentHash"]!])
+                XCTAssertEqual(sha256(try Data(contentsOf: vault.appendingPathComponent(path))), note["contentHash"] as? String)
+                let progress = try await call(core, "getStatus", ["background": true])
+                XCTAssertEqual((progress["indexing"] as? [String: Any])?["phase"] as? String, "indexing")
+            }
+            await gate.release()
+            await core.setIndexingCheckpoint(nil)
+            for _ in 0..<5000 {
+                if try await call(core, "getStatus", ["background": true])["indexing"] == nil { break }
+                try await Task.sleep(nanoseconds: 1_000_000)
+            }
+            let filtered = try await call(core, "queryNotes", ["quickFilter": "links"])
+            XCTAssertEqual((filtered["notes"] as! [[String: Any]]).map { $0["id"] as! String }, [id])
+            for (file, bytes) in original where URL(fileURLWithPath: file).resolvingSymlinksInPath().path != vault.appendingPathComponent(path).resolvingSymlinksInPath().path { XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: file)), bytes) }
+            await core.close()
+            let reopened = try VaultStore(localDataURL: local)
+            try await reopened.open(url: vault, create: false)
+            let actual = try await call(reopened, "getNote", ["id": id])
+            XCTAssertEqual(actual["body"] as? String, note["body"] as? String)
+            XCTAssertEqual(actual["contentHash"] as? String, note["contentHash"] as? String)
+            let properties = try await call(reopened, "getNoteProperties", ["id": id])["properties"] as! [[String: Any]]
+            XCTAssertEqual(properties.first { $0["name"] as? String == "summary" }?["value"] as? String, "Indexed value 3")
+            await reopened.close()
+        }
+    }
+
+    func testValidationQueuesSourceCommitWhileDraftsContinueAndCorruptionStillBlocksIt() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased(), file = try writeNote(id: id)
+        let before = try Data(contentsOf: file)
+        let bad = vault.appendingPathComponent("notes/bad.md")
+        try Data("invalid note".utf8).write(to: bad)
+        let gate = IndexingTestGate()
+        await core.setIndexingCheckpoint { phase in if phase == "reading" { await gate.wait() } }
+        _ = try await call(core, "getStatus", ["background": true])
+        let commit = Task { try await self.call(core, "saveNote", ["id": id, "body": "Do not commit", "tags": [], "baseHash": sha256(before)]) }
+        for body in ["First draft", "Latest draft"] { _ = try await call(core, "saveDraft", ["id": id, "body": body, "tags": [], "baseHash": sha256(before)]) }
+        let drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.first?["body"] as? String, "Latest draft")
+        await expectCode("INDEXING") {
+            _ = try await self.call(core, "saveNote", ["id": id, "body": "Latest draft", "tags": [], "baseHash": sha256(before), "deferWhileIndexing": true])
+        }
+        XCTAssertEqual(try Data(contentsOf: file), before)
+        await gate.release()
+        await expectCode("SCAN_INCOMPLETE") { _ = try await commit.value }
+        XCTAssertEqual(try Data(contentsOf: file), before)
+        await core.close()
+    }
+
+    func testClosingDuringIndexingRejectsQueuedSaveInReplacementVault() async throws {
+        let core = try await store(), id = UUID().uuidString.lowercased()
+        let file = try writeNote(id: id), before = try Data(contentsOf: file)
+        let gate = IndexingTestGate(), saveStarted = IndexingTestGate()
+        await core.setIndexingCheckpoint { phase in
+            if phase == "reading" { await gate.wait() }
+            if phase == "waiting" { await saveStarted.release() }
+        }
+        _ = try await call(core, "getStatus", ["background": true])
+        let commit = Task { try await self.call(core, "saveNote", ["id": id, "body": "Old request", "tags": [], "baseHash": sha256(before)]) }
+        await saveStarted.wait()
+        await core.close()
+        let next = temporary.appendingPathComponent("replacement")
+        try FileManager.default.createDirectory(at: next, withIntermediateDirectories: true)
+        try await core.open(url: next, create: true)
+        await gate.release()
+        await expectCode("UNAUTHORIZED") { _ = try await commit.value }
+        XCTAssertEqual(try Data(contentsOf: file), before)
+        XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: next.path).filter { !$0.hasPrefix(".") }, [])
+        await core.close()
+    }
+
+    func testClosingAfterPartialCompatibleIndexPreservesVisibleIdentityAndRecovery() async throws {
+        let core = try await store(create: false)
+        for n in 0..<100 { try Data("Body \(n)".utf8).write(to: vault.appendingPathComponent("Note-\(n).md")) }
+        let gate = IndexingTestGate(skip: 1)
+        await core.setIndexingCheckpoint { phase in if phase == "reading" { await gate.wait() } }
+        _ = try await call(core, "getStatus", ["background": true])
+        var note: [String: Any]?
+        for _ in 0..<5000 {
+            let page = try await call(core, "queryNotes")
+            if let first = (page["notes"] as! [[String: Any]]).first { note = first; break }
+            try await Task.sleep(nanoseconds: 1_000_000)
+        }
+        let visible = try XCTUnwrap(note), id = visible["id"] as! String
+        _ = try await call(core, "saveDraft", ["id": id, "body": "Recovery before full scan", "tags": [], "baseHash": visible["contentHash"]!])
+        await core.close()
+        await gate.release()
+        let reopened = try VaultStore(localDataURL: local)
+        try await reopened.open(url: vault, create: false)
+        let actual = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(actual["relativePath"] as? String, visible["relativePath"] as? String)
+        XCTAssertEqual(actual["contentHash"] as? String, visible["contentHash"] as? String)
+        let drafts = try await call(reopened, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.first?["id"] as? String, id)
+        XCTAssertEqual(drafts.first?["body"] as? String, "Recovery before full scan")
+        await reopened.close()
+    }
+
+    func testBackgroundIndexStillProtectsExternalChangesAndDuplicateIdentities() async throws {
+        let core = try await store(), id = UUID().uuidString.lowercased()
+        let first = try writeNote(id: id), other = try writeNote(id: UUID().uuidString.lowercased())
+        let before = try Data(contentsOf: first), otherBytes = try Data(contentsOf: other)
+        let gate = IndexingTestGate()
+        await core.setIndexingCheckpoint { phase in if phase == "indexing" { await gate.wait() } }
+        _ = try await call(core, "getStatus", ["background": true])
+        _ = try await waitForIndexPhase(core, "indexing")
+        try before.write(to: other, options: .atomic)
+        await expectCode("DUPLICATE_ID") { _ = try await self.save(core, id: id, body: "Must not overwrite", hash: sha256(before)) }
+        XCTAssertEqual(try Data(contentsOf: first), before)
+        try otherBytes.write(to: other, options: .atomic)
+        let external = before + Data("\nExternal during indexing".utf8)
+        try external.write(to: first, options: .atomic)
+        await expectCode("HASH_CONFLICT") { _ = try await self.save(core, id: id, body: "Old content", hash: sha256(before)) }
+        XCTAssertEqual(try Data(contentsOf: first), external)
+        let actual = try await call(core, "getNote", ["id": id])
+        XCTAssertEqual(actual["contentHash"] as? String, sha256(external))
+        await core.close()
+        await gate.release()
+    }
+
+    func testInterruptedCommitRecoversAfterSameVolumeVaultMove() async throws {
+        let core = try await store(create: false), note = try await save(core, body: "Before")
+        let identity = await core.identityURL, identityBytes = try Data(contentsOf: identity)
+        let path = note["relativePath"] as! String, before = try Data(contentsOf: vault.appendingPathComponent(path))
+        let input: [String: Any] = ["id": note["id"]!, "body": "Pending", "tags": [], "baseHash": note["contentHash"]!]
+        _ = try await call(core, "saveDraft", input)
+        let journal = identity.appendingPathExtension("rename.json")
+        let scope = String(identity.deletingPathExtension().lastPathComponent.dropFirst("identities-".count))
+        let after = Data("Interrupted".utf8)
+        try JSONSerialization.data(withJSONObject: ["root": vault.path, "scope": scope,
+            "identities": JSONSerialization.jsonObject(with: identityBytes),
+            "changes": [["path": path, "before": before.base64EncodedString(), "after": after.base64EncodedString()]]]).write(to: journal)
+        try after.write(to: vault.appendingPathComponent(path))
+        await core.close()
+        let moved = temporary.appendingPathComponent("moved-with-journal")
+        try FileManager.default.moveItem(at: vault, to: moved)
+        let reopened = try VaultStore(localDataURL: local)
+        try await reopened.open(url: moved, create: false)
+        XCTAssertEqual(try Data(contentsOf: moved.appendingPathComponent(path)), before)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: journal.path))
+        let recovered = try await call(reopened, "getDrafts")
+        XCTAssertEqual((recovered["drafts"] as! [[String: Any]]).first?["body"] as? String, "Pending")
+        let saved = try await call(reopened, "saveNote", input)
+        XCTAssertEqual(saved["id"] as? String, note["id"] as? String)
+        XCTAssertEqual(saved["body"] as? String, "Pending")
+    }
+
+    func testScopedJournalRejectsAnotherInstanceAtTheSamePath() async throws {
+        let core = try await store(create: false), note = try await save(core, body: "Before")
+        let path = note["relativePath"] as! String, file = vault.appendingPathComponent(path)
+        let before = try Data(contentsOf: file), after = Data("Interrupted".utf8)
+        let journal = await core.identityURL.appendingPathExtension("rename.json")
+        try JSONSerialization.data(withJSONObject: ["root": vault.path, "scope": String(repeating: "0", count: 64), "identities": [],
+            "changes": [["path": path, "before": before.base64EncodedString(), "after": after.base64EncodedString()]]]).write(to: journal)
+        try after.write(to: file)
+        await expectCode("RENAME_RECOVERY_REQUIRED") { _ = try await self.call(core, "getNote", ["id": note["id"]!]) }
+        XCTAssertEqual(try Data(contentsOf: file), after)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
+        _ = try await call(core, "saveDraft", ["id": note["id"]!, "body": "Protected recovery", "tags": [], "baseHash": note["contentHash"]!])
+        let drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.first?["body"] as? String, "Protected recovery")
+    }
+
+    func testStableLocalIndexAvoidsEnumerationAcrossContinuousEdits() async throws {
+        for shared in [false, true] {
+            vault = temporary.appendingPathComponent("index-\(shared)")
+            try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            let core = try await store(create: !shared)
+            if shared {
+                for n in 0..<40 { try Data("---\nsummary: original\n---\nBody \(n)".utf8).write(to: vault.appendingPathComponent("Note-\(n).md")) }
+            } else {
+                for _ in 0..<40 { _ = try writeNote(id: UUID().uuidString.lowercased(), extra: "summary: original\n") }
+            }
+            let page = try await call(core, "queryNotes")
+            var note = (page["notes"] as! [[String: Any]])[0]
+            let scans = await core.scanCount
+            for n in 0..<3 {
+                _ = try await call(core, "getNote", ["id": note["id"]!])
+                _ = try await call(core, "getNoteProperties", ["id": note["id"]!])
+                note = try await call(core, "saveNote", ["id": note["id"]!, "body": "Revision \(n)", "tags": [], "baseHash": note["contentHash"]!])
+                note = try await call(core, "updateNoteProperty", ["id": note["id"]!, "name": "summary", "type": "text", "value": "Value \(n)", "baseHash": note["contentHash"]!])
+                await core.invalidateSnapshot() // Same invalidation delivered by native file presenters.
+            }
+            let after = await core.scanCount
+            XCTAssertEqual(after, scans, "Stable topology must not be re-enumerated for single-note operations")
+            let reopened = try VaultStore(localDataURL: local); try await reopened.open(url: vault, create: false)
+            let saved = try await call(reopened, "getNote", ["id": note["id"]!])
+            XCTAssertEqual(saved["body"] as? String, "Revision 2")
+            XCTAssertEqual(saved["contentHash"] as? String, note["contentHash"] as? String)
+            let properties = try await call(reopened, "getNoteProperties", ["id": note["id"]!])
+            XCTAssertEqual((properties["properties"] as! [[String: Any]]).first { $0["name"] as? String == "summary" }?["value"] as? String, "Value 2")
+        }
+    }
+
+    func testWarmIndexStillBlocksWritesAfterUnrelatedCorruptionOrDuplicate() async throws {
+        let core = try await store()
+        let first = UUID().uuidString.lowercased(), second = UUID().uuidString.lowercased()
+        let a = try writeNote(id: first), b = try writeNote(id: second)
+        let note = try await call(core, "getNote", ["id": first])
+        let bytes = try Data(contentsOf: a), originalB = try Data(contentsOf: b)
+        try Data("invalid".utf8).write(to: b)
+        await expectCode("SCAN_INCOMPLETE") { _ = try await self.save(core, id: first, body: "Must not commit", hash: note["contentHash"] as? String) }
+        XCTAssertEqual(try Data(contentsOf: a), bytes)
+        try originalB.write(to: b)
+        _ = try await call(core, "getStatus")
+        try bytes.write(to: b)
+        await expectCode("DUPLICATE_ID") { _ = try await self.save(core, id: first, body: "Must not commit", hash: note["contentHash"] as? String) }
+        XCTAssertEqual(try Data(contentsOf: a), bytes)
+    }
+
+    func testWarmIndexReconcilesNestedAddRenameDeleteAndPreservesOtherSources() async throws {
+        let core = try await store(create: false)
+        let nested = vault.appendingPathComponent("Nested/Deep")
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        let first = nested.appendingPathComponent("First.md"), untouched = vault.appendingPathComponent("Untouched.md")
+        try Data("First #before".utf8).write(to: first)
+        let preserved = Data("---\nunknown: keep\n---\nUntouched".utf8)
+        try preserved.write(to: untouched)
+        let initial = try await call(core, "queryNotes")
+        let original = (initial["notes"] as! [[String: Any]]).first { $0["relativePath"] as? String == "Nested/Deep/First.md" }!
+        let added = nested.appendingPathComponent("Added.md")
+        try Data("Added #external".utf8).write(to: added)
+        let listed = try await call(core, "queryNotes")
+        XCTAssertEqual((listed["notes"] as? [Any])?.count, 3)
+        let moved = nested.appendingPathComponent("Moved.md")
+        try FileManager.default.moveItem(at: first, to: moved)
+        let renamed = try await call(core, "getNote", ["id": original["id"]!])
+        XCTAssertEqual(renamed["relativePath"] as? String, "Nested/Deep/Moved.md")
+        try FileManager.default.removeItem(at: added)
+        await core.invalidateSnapshot()
+        let refreshed = try await call(core, "getStatus")
+        XCTAssertEqual((refreshed["coverage"] as? [String: Any])?["indexed"] as? Int, 2)
+        XCTAssertEqual(try Data(contentsOf: untouched), preserved)
+        let tags = try await call(core, "listTags")
+        XCTAssertFalse((tags["tags"] as! [[String: Any]]).contains { $0["name"] as? String == "external" })
+    }
+
+    func testCopiedVaultDraftsAreIsolatedAndSameVolumeMovePreservesRecovery() async throws {
+        for shared in [false, true] {
+            vault = temporary.appendingPathComponent("instance-\(shared)")
+            try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            let core = try await store(create: !shared)
+            let source = try await save(core, body: "Source"), id = source["id"] as! String
+            let input: [String: Any] = ["id": id, "body": "Original recovery", "tags": [], "baseHash": source["contentHash"]!, "draftKey": UUID().uuidString.lowercased() + ":" + id]
+            _ = try await call(core, "saveDraft", input)
+            let copy = temporary.appendingPathComponent("copy-\(shared)")
+            try FileManager.default.copyItem(at: vault, to: copy)
+            let copyBytes = try Data(contentsOf: copy.appendingPathComponent(source["relativePath"] as! String))
+            let clone = try VaultStore(localDataURL: local)
+            try await clone.open(url: copy, create: false)
+            let checked1 = try await call(clone, "getDrafts")
+            XCTAssertEqual((checked1["drafts"] as? [Any])?.count, 0)
+            let cloneNote = (try await call(clone, "queryNotes")["notes"] as! [[String: Any]]).first!
+            _ = try await call(clone, "saveDraft", ["id": cloneNote["id"]!, "body": "Copy recovery", "tags": [], "baseHash": cloneNote["contentHash"]!])
+            let checked2 = try await call(core, "getDrafts")
+            XCTAssertEqual((checked2["drafts"] as! [[String: Any]]).first?["body"] as? String, "Original recovery")
+            let moved = temporary.appendingPathComponent("moved-\(shared)")
+            await core.close()
+            try FileManager.default.moveItem(at: vault, to: moved)
+            let reopened = try VaultStore(localDataURL: local)
+            try await reopened.open(url: moved, create: false)
+            let checked3 = try await call(reopened, "getDrafts")
+            XCTAssertEqual((checked3["drafts"] as! [[String: Any]]).first?["body"] as? String, "Original recovery")
+            let same = try await call(reopened, "getNote", ["id": id])
+            XCTAssertEqual(same["id"] as? String, id)
+            _ = try await call(reopened, "saveNote", input)
+            let checked4 = try await call(reopened, "getNote", ["id": id])
+            XCTAssertEqual((checked4)["body"] as? String, "Original recovery")
+            XCTAssertEqual(try Data(contentsOf: copy.appendingPathComponent(source["relativePath"] as! String)), copyBytes)
+            let checked5 = try await call(clone, "getDrafts")
+            XCTAssertEqual((checked5["drafts"] as! [[String: Any]]).first?["body"] as? String, "Copy recovery")
+        }
+    }
+
+    func testCorruptDraftsReturnIndividualIssuesWithoutBlockingGoodVersions() async throws {
+        let core = try await store(), source = try await save(core, body: "Source")
+        let ids = [UUID().uuidString.lowercased(), UUID().uuidString.lowercased()]
+        for (index,id) in ids.enumerated() { _ = try await call(core, "saveDraft", ["id": id, "body": "Good \(index)", "tags": [], "baseHash": NSNull()]) }
+        let files = FileManager.default.enumerator(at: local.appendingPathComponent("drafts"), includingPropertiesForKeys: nil)!.allObjects as! [URL]
+        let directory = files.first { $0.lastPathComponent == ids[0] + ".json" }!.deletingLastPathComponent()
+        let corrupt = directory.appendingPathComponent("broken.json"), invalid = directory.appendingPathComponent("invalid.json")
+        let bytes = Data("{truncated".utf8)
+        try bytes.write(to: corrupt)
+        try Data("{\"id\":\"invalid\",\"body\":\"Keep\",\"tags\":[],\"baseHash\":null,\"updatedAt\":\"invalid\"}".utf8).write(to: invalid)
+        let result = try await call(core, "getDrafts")
+        XCTAssertEqual(Set((result["drafts"] as! [[String: Any]]).map { $0["body"] as! String }), Set(["Good 0", "Good 1"]))
+        let issues = result["issues"] as! [[String: Any]]
+        XCTAssertEqual(issues.count, 2); XCTAssertTrue(issues.contains { ($0["path"] as? String)?.hasSuffix("broken.json") == true })
+        XCTAssertEqual(try Data(contentsOf: corrupt), bytes)
+        let checked6 = try await call(core, "getNote", ["id": source["id"]!])
+        XCTAssertEqual((checked6)["body"] as? String, "Source")
+        let reopened = try VaultStore(localDataURL: local); try await reopened.open(url: vault, create: false)
+        let checked7 = try await call(reopened, "getDrafts")
+        XCTAssertEqual((checked7["drafts"] as? [Any])?.count, 2)
+    }
+
+    func testIdentityWriteFailureRollsBackBodyAndPreservesRetryableRecovery() async throws {
+        let core = try await store(create: false), note = try await save(core, body: "Before"), id = note["id"] as! String
+        let source = vault.appendingPathComponent(note["relativePath"] as! String), before = try Data(contentsOf: source)
+        let identity = try FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: nil).first { $0.lastPathComponent.hasPrefix("identities-") && $0.pathExtension == "json" }!
+        let identityBytes = try Data(contentsOf: identity)
+        let input: [String: Any] = ["id": id, "body": "After", "tags": [], "baseHash": note["contentHash"]!]
+        _ = try await call(core, "saveDraft", input)
+        try FileManager.default.removeItem(at: identity); try FileManager.default.createDirectory(at: identity, withIntermediateDirectories: false)
+        await expectCode("IO_ERROR") { _ = try await self.call(core, "saveNote", input) }
+        XCTAssertEqual(try Data(contentsOf: source), before)
+        let checked8 = try await call(core, "getDrafts")
+        XCTAssertEqual((checked8["drafts"] as! [[String: Any]]).first?["body"] as? String, "After")
+        try FileManager.default.removeItem(at: identity); try identityBytes.write(to: identity)
+        let committed = try await call(core, "saveNote", input)
+        XCTAssertEqual(committed["id"] as? String, id); XCTAssertEqual(committed["body"] as? String, "After")
+        let reopened = try VaultStore(localDataURL: local); try await reopened.open(url: vault, create: false)
+        let checked9 = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual((checked9)["contentHash"] as? String, committed["contentHash"] as? String)
+        let checked10 = try await call(reopened, "getDrafts")
+        XCTAssertEqual((checked10["drafts"] as? [Any])?.count, 0)
+    }
+
+    func testIdentityWriteFailureRollsBackPropertyWithoutChangingBodyOrHash() async throws {
+        let core = try await store(create: false), note = try await save(core, body: "Body"), id = note["id"] as! String
+        let source = vault.appendingPathComponent(note["relativePath"] as! String), before = try Data(contentsOf: source)
+        let identity = try FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: nil).first { $0.lastPathComponent.hasPrefix("identities-") && $0.pathExtension == "json" }!
+        let identityBytes = try Data(contentsOf: identity)
+        let change: [String: Any] = ["id": id, "baseHash": note["contentHash"]!, "name": "summary", "type": "text", "create": true, "value": "After"]
+        _ = try await call(core, "saveDraft", ["id": id, "body": "Body", "tags": [], "baseHash": note["contentHash"]!, "pendingProperties": [change]])
+        try FileManager.default.removeItem(at: identity); try FileManager.default.createDirectory(at: identity, withIntermediateDirectories: false)
+        await expectCode("IO_ERROR") { _ = try await self.call(core, "updateNoteProperty", change) }
+        XCTAssertEqual(try Data(contentsOf: source), before)
+        let checked11 = try await call(core, "getDrafts")
+        XCTAssertEqual(((checked11["drafts"] as! [[String: Any]]).first?["pendingProperties"] as? [Any])?.count, 1)
+        try FileManager.default.removeItem(at: identity); try identityBytes.write(to: identity)
+        let committed = try await call(core, "updateNoteProperty", change)
+        XCTAssertEqual(committed["id"] as? String, id); XCTAssertEqual(committed["body"] as? String, "Body")
+        let reopened = try VaultStore(localDataURL: local); try await reopened.open(url: vault, create: false)
+        let checked12 = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual((checked12)["contentHash"] as? String, committed["contentHash"] as? String)
+    }
+
+    func testAbandonedInstanceRemainsExplicitlyRecoverableWithoutAdoptingActiveCopyDrafts() async throws {
+        let core = try await store(), note = try await save(core, body: "Source"), id = note["id"] as! String
+        let draft = try await call(core, "saveDraft", ["id": id, "body": "Moved recovery", "tags": [], "baseHash": note["contentHash"]!])
+        let copy = temporary.appendingPathComponent("relocated-instance"); try FileManager.default.copyItem(at: vault, to: copy)
+        let clone = try VaultStore(localDataURL: local); try await clone.open(url: copy, create: false)
+        let active = try await call(clone, "getDrafts")
+        XCTAssertEqual((active["drafts"] as? [Any])?.count, 0); XCTAssertEqual((active["unscopedDrafts"] as? [Any])?.count, 0)
+        await core.close(); try FileManager.default.removeItem(at: vault)
+        let available = try await call(clone, "getDrafts")
+        XCTAssertEqual((available["drafts"] as? [Any])?.count, 0)
+        let orphan = try XCTUnwrap((available["unscopedDrafts"] as? [[String: Any]])?.first)
+        XCTAssertEqual(orphan["body"] as? String, "Moved recovery")
+        let scope = try XCTUnwrap(orphan["recoveryScope"] as? String)
+        let sourceFile = copy.appendingPathComponent(note["relativePath"] as! String), originalBytes = try Data(contentsOf: sourceFile)
+        let input: [String: Any] = ["id": id, "body": "Recovered explicitly", "tags": [], "baseHash": note["contentHash"]!, "draftKey": UUID().uuidString.lowercased() + ":" + id, "recoveredFrom": ["draftKey": id, "revision": draft["revision"]!, "unscoped": true, "scope": scope]]
+        _ = try await call(clone, "saveDraft", input)
+        await expectCode("INVALID_DRAFT") { _ = try await self.call(clone, "saveNote", input.merging(["recoveredFrom": ["draftKey": id, "revision": "old", "unscoped": true, "scope": "../other"]]) { _,next in next }) }
+        XCTAssertEqual(try Data(contentsOf: sourceFile), originalBytes)
+        _ = try await call(clone, "saveNote", input)
+        let after = try await call(clone, "getDrafts")
+        XCTAssertEqual((after["unscopedDrafts"] as? [Any])?.count, 0)
+        let committed = try await call(clone, "getNote", ["id": id])
+        XCTAssertEqual(committed["body"] as? String, "Recovered explicitly")
+    }
+
+    func testLegacyUnscopedRecoveryRequiresSelectionAndOnlyRetiresAfterCommit() async throws {
+        let core = try await store(), note = try await save(core, body: "Source"), id = note["id"] as! String
+        let draft = try await call(core, "saveDraft", ["id": id, "body": "Old recovery", "tags": [], "baseHash": note["contentHash"]!])
+        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
+        let legacy = local.appendingPathComponent("drafts/\(metadata.vaultId)")
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        let original = legacy.appendingPathComponent("\(id).json")
+        try FileManager.default.moveItem(at: await core.draftDirectory().appendingPathComponent("\(id).json"), to: original)
+        let found = try await call(core, "getDrafts")
+        XCTAssertEqual((found["drafts"] as? [Any])?.count, 0)
+        XCTAssertEqual((found["unscopedDrafts"] as! [[String: Any]]).first?["unscoped"] as? Bool, true)
+        let copy = temporary.appendingPathComponent("legacy-copy"); try FileManager.default.copyItem(at: vault, to: copy)
+        let clone = try VaultStore(localDataURL: local); try await clone.open(url: copy, create: false)
+        let verified1 = try await call(clone, "getDrafts")
+        XCTAssertEqual((verified1["drafts"] as? [Any])?.count, 0)
+        let fork: [String: Any] = ["id": id, "body": "Recovered explicitly", "tags": [], "baseHash": note["contentHash"]!, "draftKey": UUID().uuidString.lowercased() + ":" + id, "recoveredFrom": ["draftKey": id, "revision": draft["revision"]!, "unscoped": true]]
+        _ = try await call(core, "saveDraft", fork)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "saveNote", fork.merging(["baseHash": "stale"]) { _,next in next }) }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: original.path))
+        _ = try await call(core, "saveNote", fork)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: original.path))
+        let verified2 = try await call(core, "getNote", ["id": id])
+        XCTAssertEqual((verified2)["body"] as? String, "Recovered explicitly")
+        let verified3 = try await call(clone, "getNote", ["id": id])
+        XCTAssertEqual((verified3)["body"] as? String, "Source")
+    }
+
+    func testHistoricalDraftReminderReviewPreservesOriginalAndIsRevisionAndVaultScoped() async throws {
+        let core = try await store(), note = try await save(core, body: "Saved source"), id = note["id"] as! String
+        _ = try await call(core, "saveDraft", ["id": id, "body": "Historical edit", "tags": [], "baseHash": note["contentHash"]!])
+        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
+        let legacy = local.appendingPathComponent("drafts/\(metadata.vaultId)")
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        let original = legacy.appendingPathComponent("\(id).json")
+        try FileManager.default.moveItem(at: await core.draftDirectory().appendingPathComponent("\(id).json"), to: original)
+        let bytes = try Data(contentsOf: original)
+        let found = try await call(core, "getDrafts")
+        let draft = (found["unscopedDrafts"] as! [[String: Any]])[0]
+        let input: [String: Any] = ["id": id, "draftKey": draft["draftKey"]!, "revision": draft["revision"]!, "unscoped": true]
+        _ = try await call(core, "dismissDraftReminder", input)
+        XCTAssertEqual(try Data(contentsOf: original), bytes)
+        await core.close()
+        let reopened = try await store()
+        let reviewed = try await call(reopened, "getDrafts")
+        XCTAssertEqual((reviewed["unscopedDrafts"] as! [[String: Any]])[0]["reminderDismissed"] as? Bool, true)
+        let copy = temporary.appendingPathComponent("review-copy")
+        try FileManager.default.copyItem(at: vault, to: copy)
+        let clone = try VaultStore(localDataURL: local); try await clone.open(url: copy, create: false)
+        let other = try await call(clone, "getDrafts")
+        XCTAssertNotEqual((other["unscopedDrafts"] as! [[String: Any]])[0]["reminderDismissed"] as? Bool, true)
+        var changed = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
+        changed["body"] = "Changed historical edit"; changed["revision"] = UUID().uuidString.lowercased()
+        let changedBytes = try JSONSerialization.data(withJSONObject: changed)
+        try changedBytes.write(to: original, options: .atomic)
+        await expectCode("DRAFT_CHANGED") { _ = try await self.call(reopened, "dismissDraftReminder", input) }
+        let updated = try await call(reopened, "getDrafts")
+        XCTAssertNotEqual((updated["unscopedDrafts"] as! [[String: Any]])[0]["reminderDismissed"] as? Bool, true)
+        XCTAssertEqual(try Data(contentsOf: original), changedBytes)
+        let saved = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(saved["body"] as? String, "Saved source")
+    }
+
+    func testDraftReminderWriteFailureAndCorruptReviewKeepDraftVisibleAndUnchanged() async throws {
+        let core = try await store(), id = UUID().uuidString.lowercased()
+        let draft = try await call(core, "saveDraft", ["id": id, "body": "Recoverable", "tags": []])
+        let file = try await core.draftDirectory().appendingPathComponent("\(id).json")
+        let bytes = try Data(contentsOf: file), directory = local.appendingPathComponent("draft-reminders")
+        try Data("blocked".utf8).write(to: directory)
+        let input: [String: Any] = ["id": id, "draftKey": id, "revision": draft["revision"]!]
+        await expectCode("IO_ERROR") { _ = try await self.call(core, "dismissDraftReminder", input) }
+        let failed = try await call(core, "getDrafts")
+        XCTAssertNotEqual((failed["drafts"] as! [[String: Any]])[0]["reminderDismissed"] as? Bool, true)
+        try FileManager.default.removeItem(at: directory)
+        _ = try await call(core, "dismissDraftReminder", input)
+        let review = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).first)
+        try Data("corrupt review".utf8).write(to: review)
+        let corrupt = try await call(core, "getDrafts")
+        XCTAssertNotEqual((corrupt["drafts"] as! [[String: Any]])[0]["reminderDismissed"] as? Bool, true)
+        XCTAssertEqual(try Data(contentsOf: file), bytes)
+    }
+
+    func testLegacyIdentityAndJournalMigrationPreserveIDsWithoutReplayingRollback() async throws {
+        let core = try await store(create: false), note = try await save(core, body: "Before"), id = note["id"] as! String
+        let identity = await core.identityURL, bytes = try Data(contentsOf: identity)
+        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
+        let old = local.appendingPathComponent("identities-\(sha256(Data((vault.path + ":" + metadata.vaultId).utf8))).json")
+        let source = vault.appendingPathComponent(note["relativePath"] as! String), before = try Data(contentsOf: source), after = Data("Interrupted".utf8)
+        await core.close(); try FileManager.default.moveItem(at: identity, to: old)
+        let journal = old.appendingPathExtension("rename.json")
+        try JSONSerialization.data(withJSONObject: ["root": vault.path, "identities": JSONSerialization.jsonObject(with: bytes), "changes": [["path": note["relativePath"]!, "before": before.base64EncodedString(), "after": after.base64EncodedString()]]]).write(to: journal)
+        try after.write(to: source)
+        let reopened = try VaultStore(localDataURL: local); try await reopened.open(url: vault, create: false)
+        XCTAssertEqual(try Data(contentsOf: source), before); XCTAssertEqual(try Data(contentsOf: old), bytes)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: journal.path))
+        let verified4 = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual((verified4)["contentHash"] as? String, note["contentHash"] as? String)
+        let committed = try await save(reopened, id: id, body: "Later edit", hash: note["contentHash"] as? String)
+        let again = try VaultStore(localDataURL: local); try await again.open(url: vault, create: false)
+        let verified5 = try await call(again, "getNote", ["id": id])
+        XCTAssertEqual((verified5)["contentHash"] as? String, committed["contentHash"] as? String)
+    }
+
+    func testInterruptedSourceAndIdentityCommitRestoresBeforeVersionAtEveryStage() async throws {
+        for stage in 0...2 {
+            vault = temporary.appendingPathComponent("interrupt-\(stage)"); try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            let core = try await store(create: false), note = try await save(core, body: "Before"), id = note["id"] as! String
+            let identity = await core.identityURL, bytes = try Data(contentsOf: identity)
+            let source = vault.appendingPathComponent(note["relativePath"] as! String), before = try Data(contentsOf: source), after = Data("Interrupted".utf8)
+            _ = try await call(core, "saveDraft", ["id": id, "body": "Pending newest", "tags": [], "baseHash": note["contentHash"]!])
+            let journal = identity.appendingPathExtension("rename.json")
+            try JSONSerialization.data(withJSONObject: ["root": vault.path, "identities": JSONSerialization.jsonObject(with: bytes), "changes": [["path": note["relativePath"]!, "before": before.base64EncodedString(), "after": after.base64EncodedString()]]]).write(to: journal)
+            if stage > 0 { try after.write(to: source) }
+            if stage > 1 { try encode([FileIdentity(id: id, path: note["relativePath"] as! String, hash: sha256(after), createdAt: note["createdAt"] as! String)]).write(to: identity) }
+            let reopened = try VaultStore(localDataURL: local); try await reopened.open(url: vault, create: false)
+            XCTAssertEqual(try Data(contentsOf: source), before); XCTAssertEqual(try Data(contentsOf: identity), bytes)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: journal.path))
+            let verified6 = try await call(reopened, "getNote", ["id": id])
+            XCTAssertEqual((verified6)["contentHash"] as? String, note["contentHash"] as? String)
+            let verified7 = try await call(reopened, "getDrafts")
+            XCTAssertEqual((verified7["drafts"] as! [[String: Any]]).first?["body"] as? String, "Pending newest")
+            let saved = try await save(reopened, id: id, body: "Pending newest", hash: note["contentHash"] as? String)
+            XCTAssertEqual(saved["id"] as? String, id)
+        }
+    }
+
+    func testNewNoteCommitFailureLeavesNoSourceAndRetainsDraft() async throws {
+        for stage in ["journal", "identity"] {
+            vault = temporary.appendingPathComponent("new-failure-\(stage)"); try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            let core = try await store(create: false), id = UUID().uuidString.lowercased()
+            let identity = await core.identityURL, blocked = stage == "journal" ? identity.appendingPathExtension("rename.json") : identity
+            try FileManager.default.createDirectory(at: blocked, withIntermediateDirectories: false)
+            let input: [String: Any] = ["id": id, "body": "Newest", "tags": [], "baseHash": NSNull()]
+            _ = try await call(core, "saveDraft", input)
+            await expectCode("IO_ERROR") { _ = try await self.call(core, "saveNote", input) }
+            XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: vault.path).contains { $0.hasSuffix(".md") })
+            let verified8 = try await call(core, "getDrafts")
+            XCTAssertEqual((verified8["drafts"] as! [[String: Any]]).first?["body"] as? String, "Newest")
+            try FileManager.default.removeItem(at: blocked)
+            let verified9 = try await call(core, "saveNote", input)
+            XCTAssertEqual((verified9)["id"] as? String, id)
+        }
+    }
+
+    func testLostReplyDoesNotPermitOldRevisionToWriteTwice() async throws {
+        let core = try await store(create: false), note = try await save(core, body: "Before"), id = note["id"] as! String
+        let input: [String: Any] = ["id": id, "body": "After", "tags": [], "baseHash": note["contentHash"]!]
+        _ = try await call(core, "saveDraft", input)
+        _ = try await call(core, "saveNote", input) // The caller loses this successful reply.
+        let source = vault.appendingPathComponent(note["relativePath"] as! String), committed = try Data(contentsOf: source)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "saveNote", input) }
+        XCTAssertEqual(try Data(contentsOf: source), committed)
+        let reopened = try VaultStore(localDataURL: local); try await reopened.open(url: vault, create: false)
+        let verified10 = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual((verified10)["body"] as? String, "After")
+        let verified11 = try await call(reopened, "getDrafts")
+        XCTAssertEqual((verified11["drafts"] as? [Any])?.count, 0)
+    }
+
+    func testClientDraftsSurviveReopenAndCommitOnlyRetiresItsOwnVersion() async throws {
+        let core = try await store()
+        let note = try await save(core, body: "Source"), id = note["id"] as! String
+        let keyA = UUID().uuidString.lowercased() + ":" + id, keyB = UUID().uuidString.lowercased() + ":" + id
+        let a: [String: Any] = ["id": id, "body": "Window A", "tags": [], "baseHash": note["contentHash"]!, "draftKey": keyA]
+        let b: [String: Any] = ["id": id, "body": "Window B", "tags": [], "baseHash": note["contentHash"]!, "draftKey": keyB, "pendingProperties": [["id": id, "baseHash": note["contentHash"]!, "name": "summary", "type": "text", "value": "B pending"]]]
+        _ = try await call(core, "saveDraft", a); _ = try await call(core, "saveDraft", b)
+        let reopened = try await store(create: false)
+        var drafts = try await call(reopened, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(Set(drafts.compactMap { $0["draftKey"] as? String }), Set([keyA, keyB]))
+        let committed = try await call(reopened, "saveNote", a)
+        XCTAssertEqual(committed["body"] as? String, "Window A")
+        drafts = try await call(reopened, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.count, 1); XCTAssertEqual(drafts.first?["body"] as? String, "Window B")
+        XCTAssertEqual((drafts.first?["pendingProperties"] as? [[String: Any]])?.first?["value"] as? String, "B pending")
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(reopened, "saveNote", b) }
+        let unchanged = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(unchanged["body"] as? String, "Window A")
+        await expectCode("INVALID_DRAFT") { _ = try await self.call(core, "saveDraft", a.merging(["draftKey": "../escape"]) { _, next in next }) }
+    }
+
+    func testRecoveredClientDraftForkKeepsOriginalUntilSuccessfulCommit() async throws {
+        let core = try await store()
+        let note = try await save(core, body: "Source"), id = note["id"] as! String
+        _ = try await call(core, "saveDraft", ["id": id, "body": "Legacy intent", "tags": [], "baseHash": note["contentHash"]!])
+        let oldFile = try await core.draftDirectory().appendingPathComponent("\(id).json")
+        var oldBytes = try JSONSerialization.jsonObject(with: Data(contentsOf: oldFile)) as! [String: Any]
+        oldBytes.removeValue(forKey: "draftKey"); oldBytes.removeValue(forKey: "revision")
+        try JSONSerialization.data(withJSONObject: oldBytes).write(to: oldFile)
+        let legacyDrafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        let legacy = try XCTUnwrap(legacyDrafts.first)
+        let key = UUID().uuidString.lowercased() + ":" + id
+        var fork: [String: Any] = ["id": id, "body": "Continued intent", "tags": [], "baseHash": note["contentHash"]!, "draftKey": key, "recoveredFrom": ["draftKey": id, "revision": legacy["revision"]!]]
+        _ = try await call(core, "saveDraft", fork)
+        var drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.count, 2)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "saveNote", fork.merging(["baseHash": "stale"]) { _, next in next }) }
+        drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.count, 2)
+        // A second recovery of the same record must retain its own independent intent.
+        fork["draftKey"] = UUID().uuidString.lowercased() + ":" + id; fork["body"] = "Other recovery"
+        _ = try await call(core, "saveDraft", fork)
+        let firstFork = try XCTUnwrap(drafts.first { $0["draftKey"] as? String == key })
+        _ = try await call(core, "saveNote", firstFork.merging(["recoveredFrom": ["draftKey": id, "revision": legacy["revision"]!]]) { _, next in next })
+        drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.count, 1); XCTAssertEqual(drafts.first?["body"] as? String, "Other recovery")
+    }
+
+    func testBlockedSourceTransactionStillAllowsLocalRecoveryReadAndWrite() async throws {
+        let core = try await store()
+        let note = try await save(core, body: "Before"), id = note["id"] as! String
+        let path = note["relativePath"] as! String, file = vault.appendingPathComponent(path)
+        let before = try Data(contentsOf: file), external = Data("External third version".utf8)
+        let journal = await core.identityURL.appendingPathExtension("rename.json")
+        let encoded = try JSONSerialization.data(withJSONObject: ["root": vault.path, "identities": [], "changes": [["path": path, "before": before.base64EncodedString(), "after": Data("Transaction after".utf8).base64EncodedString()]]])
+        try encoded.write(to: journal); try external.write(to: file)
+        await expectCode("RENAME_RECOVERY_REQUIRED") { _ = try await self.call(core, "queryNotes") }
+        let input: [String: Any] = ["id": id, "body": "Newest protected input", "tags": [], "baseHash": note["contentHash"]!, "draftKey": UUID().uuidString.lowercased() + ":" + id, "pendingProperties": [["id": id, "baseHash": note["contentHash"]!, "name": "summary", "type": "text", "value": "Protected property"]]]
+        _ = try await call(core, "saveDraft", input)
+        let drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.first?["body"] as? String, "Newest protected input")
+        XCTAssertEqual((drafts.first?["pendingProperties"] as? [[String: Any]])?.first?["value"] as? String, "Protected property")
+        await expectCode("RENAME_RECOVERY_REQUIRED") { _ = try await self.call(core, "saveNote", input) }
+        XCTAssertEqual(try Data(contentsOf: file), external); XCTAssertEqual(try Data(contentsOf: journal), encoded)
+        let reopened = try VaultStore(localDataURL: local)
+        await expectCode("RENAME_RECOVERY_REQUIRED") { try await reopened.open(url: self.vault, create: false) }
+        let restored = try await call(reopened, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(restored.first?["body"] as? String, "Newest protected input")
+        _ = try await call(reopened, "saveDraft", input.merging(["body": "After restart"]) { _, next in next })
+        XCTAssertEqual(try Data(contentsOf: file), external); XCTAssertEqual(try Data(contentsOf: journal), encoded)
+    }
+
+    func testRecoveryCleanupDoesNotRemoveANewerVersionOfTheOriginal() async throws {
+        let core = try await store()
+        let note = try await save(core, body: "Source"), id = note["id"] as! String
+        let old = try await call(core, "saveDraft", ["id": id, "body": "Old", "tags": [], "baseHash": note["contentHash"]!])
+        let fork: [String: Any] = ["id": id, "body": "Fork", "tags": [], "baseHash": note["contentHash"]!, "draftKey": UUID().uuidString.lowercased() + ":" + id, "recoveredFrom": ["draftKey": id, "revision": old["revision"]!]]
+        _ = try await call(core, "saveDraft", fork)
+        _ = try await call(core, "saveDraft", ["id": id, "body": "Newer independent input", "tags": [], "baseHash": note["contentHash"]!])
+        _ = try await call(core, "saveNote", fork)
+        let drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.count, 1); XCTAssertEqual(drafts.first?["body"] as? String, "Newer independent input")
+    }
+
+    func testRecoveryWithPendingPropertiesRetainsOriginalUntilIntentIsCommitted() async throws {
+        let core = try await store()
+        let note = try await save(core, body: "Source"), id = note["id"] as! String
+        let old = try await call(core, "saveDraft", ["id": id, "body": "Original intent", "tags": [], "baseHash": note["contentHash"]!])
+        var fork: [String: Any] = ["id": id, "body": "Fork", "tags": [], "baseHash": note["contentHash"]!, "draftKey": UUID().uuidString.lowercased() + ":" + id, "recoveredFrom": ["draftKey": id, "revision": old["revision"]!], "pendingProperties": [["id": id, "baseHash": note["contentHash"]!, "name": "summary", "type": "text", "value": "Pending"]]]
+        _ = try await call(core, "saveDraft", fork)
+        let bodyCommit = try await call(core, "saveNote", fork)
+        var drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertEqual(drafts.count, 2)
+        _ = try await call(core, "updateNoteProperty", ["id": id, "baseHash": bodyCommit["contentHash"]!, "name": "summary", "type": "text", "value": "Pending", "create": true])
+        fork["baseHash"] = NSNull(); fork["body"] = ""; fork["pendingProperties"] = []
+        _ = try await call(core, "saveDraft", fork)
+        drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertFalse(drafts.contains { $0["body"] as? String == "Original intent" })
+        let fields = try await call(core, "getNoteProperties", ["id": id])["properties"] as! [[String: Any]]
+        XCTAssertEqual(fields.first?["value"] as? String, "Pending")
+    }
+
+    func testLossyDefinitionSwitchRejectsWholeBatchWithoutChangingAnyBytes() async throws {
+        for shared in [false, true] {
+          for (type, first, second) in [("date", "field: 2026-10-12\n", "field: important-beta\n"), ("checkbox", "field: true\n", "field: important-beta\n"), ("select", "field: [One]\n", "field: [One, Two]\n")] {
+            vault = temporary.appendingPathComponent("lossless-\(shared)-\(type)")
+            if shared { try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true) }
+            let core = try await store(create: !shared)
+            let aid = UUID().uuidString.lowercased(), bid = UUID().uuidString.lowercased()
+            let a: URL, b: URL
+            if shared {
+                a = vault.appendingPathComponent("A.md"); b = vault.appendingPathComponent("B.md")
+                try Data(("---\n" + first + "---\nA").utf8).write(to: a)
+                try Data(("---\n" + second + "---\nB").utf8).write(to: b)
+            } else {
+                a = try writeNote(id: aid, filename: "A", body: "A", extra: first)
+                b = try writeNote(id: bid, filename: "B", body: "B", extra: second)
+            }
+            let originals = try [Data(contentsOf: a), Data(contentsOf: b)]
+            let page = try await call(core, "queryNotes")["notes"] as! [[String: Any]]
+            let note = page.first { ($0["relativePath"] as! String).hasSuffix("A.md") }!
+            await expectCode("LOSSY_PROPERTY_CONVERSION") { _ = try await self.call(core, "updateNoteProperty", ["id": note["id"]!, "baseHash": note["contentHash"]!, "name": "field", "type": type, "definition": true]) }
+            XCTAssertEqual(try [Data(contentsOf: a), Data(contentsOf: b)], originals)
+            XCTAssertFalse(FileManager.default.fileExists(atPath: vault.appendingPathComponent(propertyDefinitionPath).path))
+          }
+        }
+    }
+
+    func testPropertyWritesReturnFreshPropertiesWithoutAnotherScan() async throws {
+        for shared in [false, true] {
+            if shared {
+                vault = temporary.appendingPathComponent("shared-write-result")
+                try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            }
+            let core = try await store(create: !shared)
+            let id = UUID().uuidString.lowercased()
+            if shared { try Data("---\naliases: [One]\nsummary: before\n---\nBody #keep".utf8).write(to: vault.appendingPathComponent("A.md")) }
+            else { _ = try writeNote(id: id, body: "Body #keep", extra: "aliases: [One]\nsummary: before\n") }
+            var note = (try await call(core, "queryNotes")["notes"] as! [[String: Any]]).first!
+            let noteID = note["id"] as! String
+            for change: [String: Any] in [
+                ["name": "summary", "type": "text", "value": "after"],
+                ["name": "aliases", "type": "multiSelect", "value": ["Two"], "options": [["name": "Two", "color": "red"]]],
+                ["name": "aliases", "type": "multiSelect", "value": ["One", "Two"], "options": [["name": "One", "color": "blue"], ["name": "Two", "color": "red"]], "definition": true],
+                ["name": "aliases", "type": "text", "definition": true],
+                ["name": "summary", "remove": true]
+            ] {
+                let before = await core.scanCount
+                note = try await call(core, "updateNoteProperty", change.merging(["id": noteID, "baseHash": note["contentHash"]!]) { _, value in value })
+                let scans = await core.scanCount
+                XCTAssertLessThanOrEqual(scans - before, 1)
+                let returned = try XCTUnwrap(note["propertyData"] as? [String: Any])
+                XCTAssertEqual(returned["contentHash"] as? String, note["contentHash"] as? String)
+                let loaded = try await call(core, "getNoteProperties", ["id": noteID])
+                XCTAssertEqual(returned as NSDictionary, loaded as NSDictionary)
+            }
+        }
+    }
+
     func testLegacyListsUseMultiSelectWithoutLosingValues() async throws {
         for shared in [false, true] {
             if shared {
@@ -109,6 +837,28 @@ final class VaultStoreTests: XCTestCase {
                 XCTAssertEqual(after.first { $0["name"] as? String == "aliases" }?["value"] as? [String], ["Two", "Two", "", " spaced "])
             }
             await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": a["id"]!, "baseHash": changed["contentHash"]!, "name": "bad copy", "type": "multiSelect", "value": ["", "", ""], "options": [], "create": true, "copyFrom": "aliases"]) }
+        }
+    }
+    func testPendingPropertiesSurviveReopenAndBodyCommit() async throws {
+        for shared in [false, true] {
+            let core = try await store(create: !shared)
+            let id = UUID().uuidString.lowercased()
+            let note = try await call(core, "saveNote", ["id": id, "title": "恢复属性", "body": "原文", "tags": [], "baseHash": NSNull()])
+            let fieldName = "recovery-" + UUID().uuidString
+            let pending: [[String: Any]] = [["id": id, "baseHash": note["contentHash"]!, "name": fieldName, "type": "text", "value": "保留属性", "create": true]]
+            let input: [String: Any] = ["id": id, "title": note["title"]!, "body": "更新正文", "tags": [], "baseHash": note["contentHash"]!, "pendingProperties": pending]
+            _ = try await call(core, "saveDraft", input)
+            let reopened = try await store(create: !shared)
+            let recoveredDrafts = try await call(reopened, "getDrafts")["drafts"] as? [[String: Any]]
+            let recovered = try XCTUnwrap(recoveredDrafts?.first { $0["id"] as? String == id })
+            XCTAssertEqual((recovered["pendingProperties"] as? [[String: Any]])?.first?["value"] as? String, "保留属性")
+            let body = try await call(reopened, "saveNote", recovered)
+            let retained = try await call(reopened, "getDrafts")["drafts"] as! [[String: Any]]
+            XCTAssertTrue(retained.contains { $0["id"] as? String == id })
+            let saved = try await call(reopened, "updateNoteProperty", pending[0].merging(["baseHash": body["contentHash"]!]) { _, value in value })
+            XCTAssertEqual(saved["body"] as? String, "更新正文")
+            let fields = try await call(reopened, "getNoteProperties", ["id": id])["properties"] as! [[String: Any]]
+            XCTAssertEqual(fields.first { $0["name"] as? String == fieldName }?["value"] as? String, "保留属性")
         }
     }
     func testInheritedTagsStayInPropertiesForLegacyNotes() async throws { try await inheritedTagsStayInProperties(shared: false) }
@@ -274,9 +1024,7 @@ final class VaultStoreTests: XCTestCase {
         _ = try await call(core, "queryNotes")
         let original = try Data(contentsOf: file), after = Data("partial note update".utf8)
         let config = vault.appendingPathComponent(propertyDefinitionPath), definition = Data("{\"field\":{\"type\":\"list\"}}".utf8)
-        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
-        let scope = sha256(Data((vault.path + ":" + metadata.vaultId).utf8))
-        let journal = local.appendingPathComponent("identities-\(scope).json.rename.json")
+        let journal = await core.identityURL.appendingPathExtension("rename.json")
         let changes: [[String: Any]] = [["path": "notes/\(id).md", "before": original.base64EncodedString(), "after": after.base64EncodedString()], ["path": propertyDefinitionPath, "after": definition.base64EncodedString()]]
         let encoded = try JSONSerialization.data(withJSONObject: ["root": vault.path, "changes": changes, "identities": []])
         try after.write(to: file); try definition.write(to: config); try encoded.write(to: journal)
@@ -524,6 +1272,58 @@ final class VaultStoreTests: XCTestCase {
             let note = Note(title: nil, id: "test", body: body, tags: [], createdAt: "", updatedAt: "", deletedAt: nil, contentHash: "", relativePath: "", sourceUrl: "")
             XCTAssertEqual(noteQuickFilters(note), expected, body)
         }
+    }
+
+    func testQuickFilterGuardPreservesLongUnicodeAndCaseInsensitiveMarkdown() {
+        let prefix = String(repeating: "普通正文 café 👩🏽‍💻 #工作/设计\n", count: 80)
+        let cases: [(String, Set<NoteQuickFilter>)] = [
+            ("只是正文 www 和 https 字样", []),
+            ("HTTPS://EXAMPLE.COM/资料", [.links]),
+            ("HTTP://example.com", [.links]),
+            ("WWW.example.com", [.links]),
+            ("httpſ://example.com", []),
+            ("[资料](local.md)", [.links]),
+            ("[[资料]]", [.links]),
+            ("![照片](照片.png)", [.images]),
+            ("<IMG SRC=\"照片.png\">", [.images]),
+            ("<A HREF=\"local.md\">资料</A>", [.links]),
+            ("<!-- HTTPS://hidden.example -->", []),
+            ("`WWW.hidden.example`", []),
+            ("```\nHTTPS://hidden.example\n```", []),
+            ("    HTTPS://hidden.example", []),
+            ("[unused]: HTTPS://hidden.example", []),
+        ]
+        for (body, expected) in cases {
+            for tags in [[], ["工作/设计"]] {
+                let note = Note(title: nil, id: "test", body: prefix + body, tags: tags, createdAt: "", updatedAt: "", deletedAt: nil, contentHash: "", relativePath: "", sourceUrl: "")
+                XCTAssertEqual(noteQuickFilters(note), tags.isEmpty ? expected.union([.untagged]) : expected, body)
+            }
+        }
+    }
+
+    func testRepeatedInlineTagsKeepUnicodeNormalizationAndFirstOccurrenceOrder() {
+        let body = String(repeating: "#WORK #work #工作/设计 #123 #456 #__ #-- #工作/设计 ", count: 80)
+        XCTAssertEqual(inlineTags(body + "#Café #Cafe\u{301} #Å #Å #第二项"), ["work", "工作/设计", "__", "--", "café", "cafe", "å", "第二项"])
+        XCTAssertEqual(inlineTags("`#WORK`\n    #工作/设计\n````\n#Café\n````\n(#第二项) #WORK"), ["第二项", "work"])
+    }
+
+    func testSharedMarkdownExpressionsRemainConsistentAcrossConcurrentReaders() async {
+        let matched = await withTaskGroup(of: Bool.self) { group in
+            for worker in 0..<8 {
+                group.addTask {
+                    for n in 0..<50 {
+                        let body = "#工作/设计 #WORK #work 👩🏽‍💻 \(worker)-\(n)\n" + (n.isMultiple(of: 2) ? "HTTPS://example.com" : "ordinary text")
+                        let tags = inlineTags(body)
+                        let note = Note(title: nil, id: "test", body: body, tags: tags, createdAt: "", updatedAt: "", deletedAt: nil, contentHash: "", relativePath: "", sourceUrl: "")
+                        if tags != ["工作/设计", "work"] || noteQuickFilters(note) != (n.isMultiple(of: 2) ? [.links] : []) { return false }
+                    }
+                    return true
+                }
+            }
+            for await value in group { if !value { return false } }
+            return true
+        }
+        XCTAssertTrue(matched)
     }
 
     func testQuickFiltersBeforePaginationAndGlobalCounts() async throws {
@@ -1355,11 +2155,7 @@ extension VaultStoreTests {
         let core = try await store()
         let note = try await save(core, body: "Original")
         let path = note["relativePath"] as! String, before = try Data(contentsOf: vault.appendingPathComponent(path))
-        let identity = try FileManager.default.contentsOfDirectory(at: local, includingPropertiesForKeys: nil).first { $0.lastPathComponent.hasPrefix("identities-") }
-        // Legacy vaults do not persist identities, but journal scope uses the same root and vault id.
-        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
-        let scope = sha256(Data((vault.path + ":" + metadata.vaultId).utf8))
-        let journal = identity?.appendingPathExtension("rename.json") ?? local.appendingPathComponent("identities-\(scope).json.rename.json")
+        let journal = await core.identityURL.appendingPathExtension("rename.json")
         let changes: [[String: Any]] = [["path": "notes/New.md", "after": before.base64EncodedString()], ["path": path, "before": before.base64EncodedString()]]
         let encoded = try JSONSerialization.data(withJSONObject: ["root": vault.path, "changes": changes, "identities": []])
         try before.write(to: vault.appendingPathComponent("notes/New.md")); try encoded.write(to: journal)
@@ -1425,5 +2221,22 @@ extension VaultStoreTests {
             let change = try JSONDecoder().decode(PropertyChange.self, from: JSONSerialization.data(withJSONObject: ["id": "id", "baseHash": "hash", "name": "choice", "type": "select", "value": "", "options": options, "create": true]))
             XCTAssertThrowsError(try patchNoteProperty(Data("Body".utf8), change: change))
         }
+    }
+}
+
+private actor IndexingTestGate {
+    private var open = false
+    private var skip: Int
+    init(skip: Int = 0) { self.skip = skip }
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+    func wait() async {
+        if skip > 0 { skip -= 1; return }
+        if open { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+    func release() {
+        open = true
+        for waiter in waiters { waiter.resume() }
+        waiters.removeAll()
     }
 }

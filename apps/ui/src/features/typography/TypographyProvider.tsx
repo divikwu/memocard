@@ -29,7 +29,7 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
     const validated = parseTypography(JSON.stringify(next));
     setValue(validated);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(validated)); setError(''); }
-    catch { setError('风格已应用，但无法保存；重新打开后可能恢复默认。'); }
+    catch { setError('无法保存设置；当前已生效，重开后可能恢复默认。'); }
   }
   return <Context.Provider value={{ value, save, error: error || fontError }}>{children}</Context.Provider>;
 }

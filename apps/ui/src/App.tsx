@@ -1,6 +1,6 @@
 import { TagColorProvider } from './TagColorProvider';
 import { renamedTag } from "./rename-tag";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage } from "@/components/ui/breadcrumb";
@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { noteFilterEmptyTitles, noteFilterLabels } from "./note-filter-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { PageNotice } from "@/components/page-notice";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { Note, NoteFilterCounts, NotePage, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
-import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
+import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type DraftList, type DraftIssue, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
 import type { EditorHandle } from "./Editor";
 import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
@@ -41,6 +42,7 @@ export function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const scrollContainer = useRef<HTMLDivElement>(null);
   const returnScroll = useRef(0);
+  const refreshAnchor = useRef<{id: string; top: number} | null>(null);
   const editorHandle = useRef<EditorHandle | null>(null);
   const editorHash = useRef('');
   const routeHandler = useRef<() => void>(() => {});
@@ -50,12 +52,23 @@ export function App() {
   const returnFocus = useRef<HTMLElement | null>(null);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
+  const [reminderWorking, setReminderWorking] = useState(false);
+  const [recoveryError, setRecoveryError] = useState<unknown>(null);
   const [routeReady, setRouteReady] = useState(false);
   const [status, setStatus] = useState<VaultStatus | null>(null);
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
+  useLayoutEffect(() => {
+    const anchor = refreshAnchor.current, container = scrollContainer.current;
+    refreshAnchor.current = null;
+    if (!anchor || !container) return;
+    const row = Array.from(container.querySelectorAll<HTMLElement>("[data-note-id]")).find(item => item.dataset.noteId === anchor.id);
+    if (row) container.scrollTop += row.getBoundingClientRect().top - anchor.top;
+  }, [notes]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
-  const unfiledRecovery = drafts.filter(draft => !draft.baseHash && (draft.title?.trim() || draft.body.trim()));
+  const [draftIssues, setDraftIssues] = useState<DraftIssue[]>([]);
+  const recoveryRecords = drafts.filter(draft => (draft.unscoped || !draft.baseHash || drafts.some(other => other !== draft && other.id === draft.id)) && (draft.baseHash || draft.title?.trim() || draft.body.trim() || draft.pendingProperties?.length));
+  const recoveryChoices = recoveryRecords.filter(draft => !draft.reminderDismissed);
   const [tags, setTags] = useState<TagCount[]>([]);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -70,6 +83,7 @@ export function App() {
   const [working, setWorking] = useState(false);
   const [switchingVault, setSwitchingVault] = useState(false);
   const [paging, setPaging] = useState(false);
+  const [refreshingPages, setRefreshingPages] = useState(false);
   const [error, setError] = useState<unknown>("");
   const [notice, setNotice] = useState("");
   const [selectionNotice, setSelectionNotice] = useState("");
@@ -77,8 +91,9 @@ export function App() {
   const [pendingOpenNote, setPendingOpenNote] = useState<string | null>(null);
   const generation = useRef(0);
   const refreshCount = useRef(0);
+  const pendingRefresh = useRef(false);
   const loadingMore = useRef(false);
-  const hasLoadedMore = useRef(false);
+  const loadedPages = useRef(1);
   const connectionLost = useRef(false);
   const editorGeneration = useRef(0);
   const routeNoteRequest = useRef<{ id: string; generation: number; promise: Promise<Note & { vaultBinding?: string }> } | null>(null);
@@ -87,14 +102,24 @@ export function App() {
   const readySent = useRef(false);
   const selectingVault = useRef(false);
   const leaveEditor = useCallback(async () => {
-    if (!editingRef.current) return true;
-    if (!editorHandle.current || !(await editorHandle.current.flush())) return false;
+    if (editingRef.current && (!editorHandle.current || !(await editorHandle.current.flush()))) return false;
     editorGeneration.current++;
     editingRef.current = null; setEditing(null);
+    setPendingRoute(null); setWorking(false);
     editorHash.current = '';
     attemptedRoute.current = '';
     window.history.replaceState(null, '', '#/notes');
     return true;
+  }, []);
+  const restoreListPosition = useCallback(() => {
+    requestAnimationFrame(() => {
+      const container = scrollContainer.current;
+      if (container) container.scrollTop = returnScroll.current;
+      const previous = returnFocus.current;
+      const id = previous?.closest<HTMLElement>('[data-note-id]')?.dataset.noteId;
+      const row = id && container ? Array.from(container.querySelectorAll<HTMLElement>('[data-note-id]')).find(item => item.dataset.noteId === id) : undefined;
+      (previous?.isConnected ? previous : row?.querySelector<HTMLElement>('button'))?.focus({ preventScroll: true });
+    });
   }, []);
   const capabilities = useMemo(() => new Set([...(status?.capabilities ?? []), ...(environment?.capabilities ?? [])]), [status, environment]);
 
@@ -105,17 +130,21 @@ export function App() {
 
   const refresh = useCallback(async (background = false, resetFilters = false) => {
     if (!isConnectedClient || (background && (refreshCount.current > 0 || loadingMore.current || selectingVault.current))) return;
+    pendingRefresh.current = false;
     refreshCount.current++;
+    setRefreshingPages(true);
     const current = ++generation.current;
+    let serviceResponded = false;
     if (!background) { setLoading(true); setRouteReady(false); setError(""); }
     try {
       const environmentResult = request<Environment>("getEnvironment").then((value) => {
         if (current === generation.current) setEnvironment(value);
         return value;
       });
-      const [nextStatus, nextEnvironment] = await Promise.all([request<VaultStatus>("getStatus"), environmentResult]);
+      const [nextStatus, nextEnvironment] = await Promise.all([request<VaultStatus>("getStatus", {background: true}), environmentResult]);
       if (current !== generation.current) return;
       setStatus(nextStatus); setEnvironment(nextEnvironment); setWebConnected(true);
+      serviceResponded = true;
       if (connectionLost.current) { connectionLost.current = false; setError(""); }
       const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
       const deepLink = /^#\/notes\/([^/]+)$/.exec(window.location.hash);
@@ -129,26 +158,65 @@ export function App() {
       // Attach rejection handling now; the registry does not gate note recovery.
       const registry = vaultResult.then(value => { if (current === generation.current) setRegisteredVaults(value.vaults); });
       void registry.catch(() => undefined);
-      if (!nextStatus.connected) { await registry; if (current !== generation.current) return; setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null); setFilterCounts(undefined); return; }
-      // Poll connection health without collapsing the pages the reader has loaded.
-      if (background && hasLoadedMore.current) { await registry; return; }
-      const recovered = allowed.has("getDrafts") ? await request<{ drafts: Draft[] }>("getDrafts") : { drafts: [] };
+      if (!nextStatus.connected) { await registry; if (current !== generation.current) return; setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setCursor(null); setFilterCounts(undefined); return; }
+      let recovered: DraftList = {drafts: []};
+      try { if (allowed.has("getDrafts")) recovered = await request<DraftList>("getDrafts"); }
+      catch (cause) { recovered.issues = [{code:"RECOVERY_UNAVAILABLE",message:errorMessage(cause)}]; }
       if (current !== generation.current) return;
-      setDrafts(recovered.drafts.filter(draft => draft.baseHash || draft.title?.trim() || draft.body.trim()));
+      setDrafts([...recovered.drafts,...recovered.unscopedDrafts ?? []].filter(draft => draft.baseHash || draft.title?.trim() || draft.body.trim() || draft.pendingProperties?.length));
+      setDraftIssues(recovered.issues ?? []);
       setRouteReady(true);
+      // Replay the loaded extent using one fresh cursor chain; never merge two snapshots.
+      const pageCount = background && !resetFilters ? loadedPages.current : 1;
+      const readPages = async (): Promise<NotePage | null> => {
+        if (!allowed.has("queryNotes")) return null;
+        for (let attempt = 0; ; attempt++) {
+          try {
+            let page: NotePage | null = null;
+            let nextCursor: string | null = null;
+            const refreshed: Note[] = [];
+            for (let index = 0; index < pageCount; index++) {
+              if (current !== generation.current) return null;
+              page = await request<NotePage>("queryNotes", { query: resetFilters ? "" : debouncedQuery, tags: !resetFilters && tag ? [tag] : [], ...(quickFilter && !resetFilters ? { quickFilter } : {}), limit: 30, ...(nextCursor ? {cursor: nextCursor} : {}) });
+              refreshed.push(...page.notes);
+              nextCursor = page.nextCursor;
+              if (!nextCursor) break;
+            }
+            return page && {...page, notes: refreshed};
+          } catch (cause) {
+            if (bridgeErrorCode(cause) !== "STALE_CURSOR" || attempt >= 2 || current !== generation.current) throw cause;
+          }
+        }
+      };
       const [page, tagResult, folderResult] = await Promise.all([
-        allowed.has("queryNotes") ? request<NotePage>("queryNotes", { query: resetFilters ? "" : debouncedQuery, tags: !resetFilters && tag ? [tag] : [], ...(quickFilter && !resetFilters ? { quickFilter } : {}), limit: 30 }) : Promise.resolve(null),
+        readPages(),
         allowed.has("listTags") ? request<{ tags: TagCount[] }>("listTags") : Promise.resolve({ tags: [] }),
         allowed.has("listFolders") ? request<{ folders: string[] }>("listFolders") : Promise.resolve({ folders: [] }),
         registry,
       ]);
       if (current !== generation.current) return;
+      if (background && !editingRef.current && scrollContainer.current && scrollContainer.current.scrollTop > 0) {
+        const container = scrollContainer.current;
+        const row = Array.from(container.querySelectorAll<HTMLElement>("[data-note-id]")).find(item => item.getBoundingClientRect().bottom > container.getBoundingClientRect().top);
+        if (row?.dataset.noteId) refreshAnchor.current = {id: row.dataset.noteId, top: row.getBoundingClientRect().top};
+      }
       setNotes(page?.notes ?? []); setCursor(page?.nextCursor ?? null);
+      setError((previous: unknown) => bridgeErrorCode(previous) === "STALE_CURSOR" ? "" : previous);
       setFilterCounts(page?.filterCounts);
       setTags(tagResult.tags); setFolders(folderResult.folders);
-      hasLoadedMore.current = false;
-    } catch (cause) { if (current === generation.current) { setError(cause); setWebConnected(false); connectionLost.current = true; } }
-    finally { refreshCount.current--; if (current === generation.current) setLoading(false); }
+      if (!background || resetFilters) loadedPages.current = 1;
+    } catch (cause) { if (current === generation.current) {
+      setError(cause);
+      if (!serviceResponded || ["BRIDGE_UNAVAILABLE", "WEB_UNAUTHORIZED"].includes(bridgeErrorCode(cause) ?? "")) { setWebConnected(false); connectionLost.current = true; }
+    } }
+    finally {
+      refreshCount.current--;
+      if (refreshCount.current === 0) setRefreshingPages(false);
+      if (current === generation.current) {
+        setLoading(false);
+        if (pendingRefresh.current && !loadingMore.current && !selectingVault.current) void refresh(true);
+      }
+    }
   }, [debouncedQuery, tag, quickFilter]);
 
   const invalidateRequests = useCallback(() => { generation.current++; }, []);
@@ -158,9 +226,12 @@ export function App() {
     const onHash = () => routeHandler.current();
     const onNativeEvent = (event: Event) => {
       const detail: unknown = (event as CustomEvent).detail;
-      if (detail && typeof detail === "object" && "type" in detail && ["notesChanged", "statusChanged"].includes(String(detail.type))) void refresh();
+      if (detail && typeof detail === "object" && "type" in detail && ["notesChanged", "statusChanged"].includes(String(detail.type))) {
+        if (refreshCount.current > 0 || loadingMore.current || selectingVault.current) pendingRefresh.current = true;
+        else void refresh(true);
+      }
     };
-    const onVisible = () => { if (document.visibilityState === "visible" && !selectingVault.current) void refresh(); };
+    const onVisible = () => { if (document.visibilityState === "visible" && !selectingVault.current) void refresh(true); };
     const onFocus = () => { if (isLocalWeb || isBrowserVault) void refresh(true); };
     const poll = isLocalWeb || isBrowserVault ? setInterval(() => { if (document.visibilityState === "visible") void refresh(true); }, 5000) : undefined;
     window.addEventListener("hashchange", onHash);
@@ -169,10 +240,15 @@ export function App() {
     window.addEventListener("focus", onFocus);
     return () => { clearInterval(poll); window.removeEventListener("hashchange", onHash); window.removeEventListener("memocard:event", onNativeEvent); document.removeEventListener("visibilitychange", onVisible); window.removeEventListener("focus", onFocus); };
   }, [refresh]);
+  useEffect(() => {
+    if (!status?.indexing) return;
+    const timer = setInterval(() => { if (document.visibilityState === "visible") void refresh(true); }, 1000);
+    return () => clearInterval(timer);
+  }, [status?.indexing, refresh]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(""), 3500); return () => clearTimeout(timer); }, [notice]);
 
   async function selectVault(create: boolean) {
-    if (selectingVault.current || (editingRef.current && !(await leaveEditor()))) return;
+    if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setSelectionNotice("");
     selectingVault.current = true;
     setSwitchingVault(true);
@@ -182,7 +258,7 @@ export function App() {
     try {
       const result = await request<SelectVaultResult>("selectVault", { create });
       if ("cancelled" in result) {
-        if (isBrowserVault && result.diagnostic) setSelectionNotice("未完成文件夹授权，笔记库没有切换。请检查浏览器的文件夹访问授权后重试。" + `（${result.diagnostic}）`);
+        if (isBrowserVault && result.diagnostic) setSelectionNotice(result.diagnostic);
         return;
       }
       if ("reconnectUrl" in result) {
@@ -191,9 +267,9 @@ export function App() {
       }
       setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
       setRecoveryDismissed(false); setRecoveryOpen(false);
-      setNotes([]); setDrafts([]); setTags([]); setFolders([]); setCursor(null);
+      setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setCursor(null);
       setPendingOpenNote(null); openingLink.current = null;
-      hasLoadedMore.current = false;
+      loadedPages.current = 1;
       await refresh(false, true);
     }
     catch (cause) { setError(cause); }
@@ -201,7 +277,7 @@ export function App() {
   }
 
   const activateVault = useCallback(async (vaultId: string) => {
-    if (selectingVault.current || vaultId === status?.vaultId || (editingRef.current && !(await leaveEditor()))) return;
+    if (selectingVault.current || vaultId === status?.vaultId || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     selectingVault.current = true;
     setSwitchingVault(true); setWorking(true); setError("");
     generation.current++; editorGeneration.current++;
@@ -209,7 +285,7 @@ export function App() {
       const result = await request<SelectVaultResult>("activateVault", { vaultId });
       if ("reconnectUrl" in result) { reconnectVault(result.reconnectUrl); return; }
       setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
-      hasLoadedMore.current = false;
+      loadedPages.current = 1;
       await refresh(false, true);
     } catch (cause) { setError(cause); }
     finally { selectingVault.current = false; setSwitchingVault(false); setWorking(false); }
@@ -242,7 +318,7 @@ export function App() {
     editorGeneration.current++;
     if (openingLink.current && openingLink.current !== draft.id) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
-    if (!editingRef.current) { returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
+    if (!editingRef.current && !editorHash.current) { returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
     const hash = `#/notes/${draft.baseHash ? draft.id : 'new'}`;
     editorHash.current = hash;
@@ -250,11 +326,13 @@ export function App() {
     setView('notes');
     editingRef.current = draft;
     setEditing({ ...draft, note });
+    setPendingRoute(null);
     setWorking(false);
   }, []);
 
   const openNote = useCallback(async (id: string, fromLink = false, draft?: Draft) => {
     if (selectingVault.current) return;
+    const wasDetail = Boolean(editingRef.current || editorHash.current);
     if (editingRef.current) {
       if (editingRef.current.id === id) return;
       if (!(await leaveEditor())) { if (fromLink) setPendingOpenNote(id); return; }
@@ -262,7 +340,14 @@ export function App() {
     if (openingLink.current && openingLink.current !== id && !fromLink) setPendingOpenNote(openingLink.current);
     openingLink.current = fromLink ? id : null;
     const currentRequest = ++editorGeneration.current;
-    const pending = draft ?? drafts.find((item) => item.id === id);
+    if (!wasDetail) { returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
+    const hash = `#/notes/${id}`;
+    editorHash.current = hash; attemptedRoute.current = hash;
+    if (window.location.hash !== hash) window.history.pushState(null, '', hash);
+    setPendingRoute(hash); setView('notes'); setMenuOpen(false);
+    requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
+    const candidates = drafts.filter(item => item.id === id && !item.unscoped);
+    const pending = draft ?? (candidates.length === 1 ? candidates[0] : undefined);
     void loadEditor().catch(() => undefined);
     setWorking(true); setError("");
     try {
@@ -295,12 +380,13 @@ export function App() {
     editorGeneration.current++;
     editingRef.current = null;
     setEditing(null);
+    setPendingRoute(null);
     editorHash.current = '';
     attemptedRoute.current = '';
     window.history.replaceState(null, '', '#/notes');
     setView('notes');
-    requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = returnScroll.current; if (returnFocus.current?.isConnected) returnFocus.current.focus({ preventScroll: true }); });
-    if (quickFilter) hasLoadedMore.current = false;
+    restoreListPosition();
+    if (quickFilter) loadedPages.current = 1;
     void refresh(true);
     if (pendingOpenNote) {
       const id = pendingOpenNote;
@@ -310,7 +396,7 @@ export function App() {
   }
 
   async function loadMore() {
-    if (!cursor || paging) return;
+    if (!cursor || paging || refreshCount.current > 0) return;
     loadingMore.current = true;
     setPaging(true);
     const current = generation.current;
@@ -318,9 +404,19 @@ export function App() {
       const page = await request<NotePage>("queryNotes", { query: debouncedQuery, tags: tag ? [tag] : [], ...(quickFilter ? { quickFilter } : {}), limit: 30, cursor });
       if (generation.current !== current) return;
       setNotes((previous) => [...previous, ...page.notes.filter((note) => !previous.some((item) => item.id === note.id))]); setCursor(page.nextCursor);
-      hasLoadedMore.current = true;
-    } catch (cause) { if (generation.current === current) setError(cause); }
-    finally { loadingMore.current = false; setPaging(false); }
+      loadedPages.current++;
+    } catch (cause) {
+      if (generation.current === current) {
+        if (bridgeErrorCode(cause) === "STALE_CURSOR") {
+          loadingMore.current = false;
+          await refresh(true);
+        } else setError(cause);
+      }
+    }
+    finally {
+      loadingMore.current = false; setPaging(false);
+      if (pendingRefresh.current && generation.current === current) void refresh(true);
+    }
   }
 
   async function toggleMCP() {
@@ -345,14 +441,16 @@ export function App() {
   const needsPermission = isBrowserVault && capabilities.has("reauthorizeVault");
   const unsupportedBrowser = isBrowserVault && environment !== null && !chooseAllowed;
   const vaultStatusText = isLocalWeb && !webConnected ? "等待连接本机服务" : needsPermission ? "需要重新授权" : !status?.connected ? "尚未连接"
+    : status.indexing ? "正在整理笔记库"
     : status.coverage.issues > 0 ? `${status.coverage.issues} 个文件需处理`
     : status.coverage.pending > 0 ? `${status.coverage.pending} 个文件待读取`
-    : !status.coverage.complete ? "部分文件尚未就绪" : "已连接文件夹";
-  const openingNote = !editing && pendingRoute !== null && !error && (loading || Boolean(status?.connected));
+    : !status.coverage.complete ? "部分文件待读取" : "已连接文件夹";
+  const openingNote = !editing && pendingRoute !== null && (loading || Boolean(status?.connected));
   const detailView = Boolean(editing) || openingNote;
-  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? "正在打开笔记" : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
+  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? error ? "无法打开笔记" : "正在打开笔记" : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
   const newNote = async () => {
-    if (selectingVault.current || (editingRef.current && !(await leaveEditor()))) return;
+    if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
+    setError('');
     editorGeneration.current++;
     if (openingLink.current) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
@@ -362,24 +460,52 @@ export function App() {
   };
 
   const resumeDraft = async (draft: Draft) => {
-    if (selectingVault.current || (editingRef.current && !(await leaveEditor()))) return;
+    if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setRecoveryOpen(false);
     if (draft.baseHash) void openNote(draft.id, false, draft);
     else showEditor({ ...draft, ...(isBrowserVault ? { vaultBinding: draft.vaultBinding ?? environment?.vaultBinding } : {}) });
   };
 
+  const refreshDrafts = async () => {
+    if (reminderWorking || selectingVault.current) return;
+    const current = generation.current;
+    setReminderWorking(true);
+    try {
+      const recovered = await request<DraftList>("getDrafts");
+      if (current !== generation.current) return;
+      setDrafts([...recovered.drafts,...recovered.unscopedDrafts ?? []].filter(draft => draft.baseHash || draft.title?.trim() || draft.body.trim() || draft.pendingProperties?.length));
+      setDraftIssues(recovered.issues ?? []); setRecoveryError(null);
+    } catch (cause) { if (current === generation.current) setRecoveryError(cause); }
+    finally { setReminderWorking(false); }
+  };
+
+  const dismissDraftReminder = async (draft: Draft) => {
+    if (reminderWorking || !draft.draftKey || !draft.revision) return;
+    const current = generation.current;
+    setReminderWorking(true); setRecoveryError(null);
+    try {
+      await request("dismissDraftReminder", {id: draft.id, draftKey: draft.draftKey, revision: draft.revision, unscoped: draft.unscoped, ...(draft.recoveryScope ? {scope: draft.recoveryScope} : {})});
+      if (current === generation.current) setDrafts(items => items.map(item => item.draftKey === draft.draftKey && item.revision === draft.revision && item.unscoped === draft.unscoped && item.recoveryScope === draft.recoveryScope ? {...item, reminderDismissed: true} : item));
+    } catch (cause) { if (current === generation.current) setRecoveryError(cause); }
+    finally { setReminderWorking(false); }
+  };
+
   const navigate = async (nextView: View, nextTag: string | null = null, nextFilter: NoteQuickFilter | null = null) => {
-    if (editingRef.current && !(await leaveEditor())) return;
+    const returningFromDetail = Boolean(editorHash.current);
+    if (!(await leaveEditor())) return;
+    openingLink.current = null;
+    setError('');
     setView(nextView);
     if (nextView === "notes") {
       if (nextTag !== tag || nextFilter !== quickFilter) {
-        generation.current++; hasLoadedMore.current = false;
+        generation.current++; loadedPages.current = 1;
         setNotes([]); setCursor(null); setLoading(true);
       }
       setTag(nextTag); setQuickFilter(nextFilter);
     }
     window.location.hash = `#/${nextView}`;
     setMenuOpen(false);
+    if (returningFromDetail && nextView === 'notes') restoreListPosition();
   };
 
   const searchNotes = async () => {
@@ -396,14 +522,15 @@ export function App() {
       attemptedRoute.current = requested;
       setPendingRoute(/^#\/notes\/[^/]+$/.test(requested) ? requested : null);
       void (async () => {
-        if (!(await leaveEditor())) { window.history.replaceState(null, '', editorHash.current); return; }
+        if (!(await leaveEditor())) { setPendingRoute(null); window.history.replaceState(null, '', editorHash.current); return; }
+        openingLink.current = null;
         window.history.replaceState(null, '', requested);
         const match = /^#\/notes\/([^/]+)$/.exec(requested);
         if (match && status?.connected) {
           if (match[1] === 'new') await newNote();
           else await openNote(decodeURIComponent(match[1]));
-        } else { setView(getView()); setMenuOpen(false); }
-      })().finally(() => { routeLoading.current = ''; setPendingRoute(current => current === requested ? null : current); });
+        } else { setView(getView()); setMenuOpen(false); if (requested === '#/notes') restoreListPosition(); }
+      })().finally(() => { routeLoading.current = ''; });
     };
     if (!editingRef.current && routeReady && status?.connected && attemptedRoute.current !== window.location.hash && /^#\/notes\//.test(window.location.hash)) routeHandler.current();
   });
@@ -418,7 +545,7 @@ export function App() {
     }}
     connected={Boolean(status?.connected)}
     vaultId={status?.vaultId} vaultName={status?.vaultName || "记忆卡"} registeredVaults={registeredVaults} vaultStatusText={vaultStatusText}
-    hasVaultIssue={Boolean(error || needsPermission || (status?.connected && !status.coverage.complete))}
+    hasVaultIssue={Boolean(error || needsPermission || (status?.connected && !status.indexing && !status.coverage.complete))}
     canCreate={canCreate} canChooseVault={chooseAllowed} canCreateVault={createAllowed}
     needsPermission={needsPermission} working={switchingVault}
     onNavigate={navigate} onNewNote={() => { newNote(); setMenuOpen(false); }}
@@ -432,7 +559,7 @@ export function App() {
     <SidebarInset className="min-w-0 min-h-0">
       <header className="flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm">
-          {editing && <Button variant="ghost" size="icon" className="shrink-0 md:hidden" onClick={() => void editorHandle.current?.finish()} aria-label="返回笔记列表"><ArrowLeft className="size-4" /></Button>}
+          {detailView && <Button variant="ghost" size="icon" className={cn("shrink-0", editing && "md:hidden")} onClick={() => openingNote ? void navigate('notes', tag, quickFilter) : void editorHandle.current?.finish()} aria-label="返回笔记列表"><ArrowLeft className="size-4" /></Button>}
           <SidebarTrigger className={`shrink-0 ${editing ? "hidden md:inline-flex" : ""}`} />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <Breadcrumb aria-label="当前位置" className="min-w-0"><BreadcrumbList><BreadcrumbItem className="min-w-0"><BreadcrumbPage className="line-clamp-1">{title}</BreadcrumbPage></BreadcrumbItem></BreadcrumbList></Breadcrumb>
@@ -443,18 +570,27 @@ export function App() {
         </div>
       </header>
       <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view === "notes" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
-        <div className={cn("mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-10" : "max-w-3xl py-10")}>
+        <div className={cn("mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-6 md:py-8" : "max-w-3xl py-6 md:py-8")}>
+          {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请选择文件夹并允许访问，首次读取可能需要一些时间。</AlertDescription></Alert>}
+          {selectionNotice && !switchingVault && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription><p>笔记库未切换，请重新选择并允许访问文件夹。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words">{selectionNotice}</p></details><div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void selectVault(false)} disabled={working}>重新选择</Button></div></AlertDescription></Alert>}
+          {needsPermission && <Alert><FolderOpen className="size-4" /><AlertTitle>重新授权笔记文件夹</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>文件夹访问权限已失效，请重新授权以读取和保存。</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void reauthorizeVault()} disabled={working}>重新授权</Button></div></AlertDescription></Alert>}
+          {Boolean(error) && <PageNotice title={localWebReconnectRequired ? "连接已断开" : openingNote ? "无法打开笔记" : "操作未完成"} actions={<>{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => { if (openingNote && pendingRoute) void openNote(decodeURIComponent(pendingRoute.slice('#/notes/'.length))); else void refresh(); }} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}{openingNote && <Button variant={localWebReconnectRequired || retryableError ? "ghost" : "outline"} size="sm" onClick={() => void navigate("notes", tag, quickFilter)}>返回列表</Button>}</>}>{errorMessage(error)}</PageNotice>}
+          {status?.indexing && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>{status.indexing.phase === "reading" ? "正在读取笔记库" : "正在建立索引"}</AlertTitle><AlertDescription>{status.indexing.total === null ? `已读取 ${status.indexing.processed} 篇笔记。` : `已整理 ${status.indexing.processed} / ${status.indexing.total} 篇笔记。`}可继续编辑，草稿先保存在本机，校验后写入文件。搜索和筛选会逐步补齐。</AlertDescription></Alert>}
+          {status?.connected && !status.indexing && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件待读取</AlertTitle><AlertDescription>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件待读取。` : "部分文件尚未进入索引。"}当前结果可能不完整。</AlertDescription></Alert>}
+
+          {draftIssues.length > 0 && <Alert role="status"><Info className="size-4" /><AlertTitle>部分草稿无法读取</AlertTitle><AlertDescription><p>原记录已保留，其他草稿仍可恢复。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><div className="mt-2 space-y-2">{draftIssues.map((issue,index) => <div key={`${issue.path ?? issue.code}:${index}`}><p>{issue.message}</p>{issue.path && <p className="break-all select-text text-xs">{issue.path}</p>}</div>)}</div></details></AlertDescription></Alert>}
+
+            {!detailView && view === "notes" && status?.connected && recoveryChoices.length > 0 && !recoveryDismissed && <Alert>
+              <CircleAlert className="size-4" /><AlertTitle>发现 {recoveryChoices.length} 条{recoveryChoices.some(draft => draft.unscoped) ? "历史草稿" : "未保存内容"}</AlertTitle>
+              <AlertDescription>可继续编辑，稍后处理不会删除草稿。
+                <div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => { if (recoveryChoices.length === 1 && !recoveryChoices[0].unscoped) void resumeDraft(recoveryChoices[0]); else setRecoveryOpen(true); }}>{recoveryChoices.some(draft => draft.unscoped) ? "查看草稿" : "恢复内容"}</Button><Button variant="ghost" size="sm" onClick={() => setRecoveryDismissed(true)}>稍后处理</Button></div>
+              </AlertDescription>
+            </Alert>}
+
           <div className={detailView || view === "settings" ? "sr-only" : "min-w-0 px-2 pb-2"}>
             <h1 className="truncate text-[32px] font-bold leading-[1.2] tracking-tight">{title}</h1>
           </div>
-          {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请完成文件夹选择及浏览器访问授权，随后读取笔记库。首次读取可能需要一些时间。</AlertDescription></Alert>}
-          {selectionNotice && !switchingVault && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription>{selectionNotice}</AlertDescription></Alert>}
-          {unsupportedBrowser && <Alert><Info className="size-4" /><AlertTitle>需要启动 MemoCard 本机服务</AlertTitle><AlertDescription>Safari 和 Codex 通过本机服务读写笔记库；Chrome 和 Edge 也可以直接授权本地文件夹。请先运行 <code>memocard serve</code>，再从服务打开此页面。</AlertDescription></Alert>}
-          {needsPermission && <Alert><FolderOpen className="size-4" /><AlertTitle>重新授权笔记文件夹</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>浏览器需要你确认文件夹访问权限，才能继续读取和保存笔记。</p><Button size="sm" onClick={() => void reauthorizeVault()} disabled={working}>重新授权</Button></AlertDescription></Alert>}
-          {Boolean(error) && <Alert variant="destructive"><CircleAlert className="size-4" /><AlertTitle>{localWebReconnectRequired ? "本机 Web 已断开" : "操作未完成"}</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>{errorMessage(error)}</p><div className="flex flex-wrap gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开本机 Web</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}</div></AlertDescription></Alert>}
-          {status?.connected && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件尚未就绪</AlertTitle><AlertDescription>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件待读取。` : "部分文件尚未进入索引。"}当前结果可能不完整。</AlertDescription></Alert>}
-
-          {openingNote ? <LoadingNote /> : editing ? <Suspense fallback={<LoadingNote />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
+          {openingNote ? (error ? null : <LoadingNote />) : editing ? <Suspense fallback={<LoadingNote />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
             setNotes(current => current.map(item => item.id === note.id ? note : item));
             editorHash.current = `#/notes/${note.id}`;
             window.history.replaceState(null, '', editorHash.current);
@@ -496,26 +632,37 @@ export function App() {
               <p className="text-pretty text-sm leading-6 text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}
           </div> : <>
-            {status?.connected && unfiledRecovery.length > 0 && !recoveryDismissed && <Alert>
-              <CircleAlert className="size-4" /><AlertTitle>发现 {unfiledRecovery.length} 条未保存内容</AlertTitle>
-              <AlertDescription>这些内容尚未保存为笔记，可以继续编辑并保存。稍后处理不会删除内容。
-                <div className="mt-2 flex gap-2"><Button variant="outline" size="sm" onClick={() => { if (unfiledRecovery.length === 1) void resumeDraft(unfiledRecovery[0]); else setRecoveryOpen(true); }}>恢复内容</Button><Button variant="ghost" size="sm" onClick={() => setRecoveryDismissed(true)}>稍后处理</Button></div>
-              </AlertDescription>
-            </Alert>}
-            <Dialog open={recoveryOpen} onOpenChange={setRecoveryOpen}><DialogContent><DialogTitle>恢复未保存内容</DialogTitle><DialogDescription>选择要恢复的内容，继续编辑并保存。</DialogDescription><div className="max-h-80 space-y-2 overflow-auto">{unfiledRecovery.map(draft => <Button className="h-auto w-full justify-start whitespace-normal text-left" variant="ghost" key={draft.draftKey ?? draft.id} onClick={() => void resumeDraft(draft)}>{draft.title || draft.body.slice(0, 100) || "新内容"}</Button>)}</div></DialogContent></Dialog>
+            {status?.connected && recoveryRecords.length > 0 && (recoveryDismissed || recoveryChoices.length === 0) && <Button variant="ghost" size="sm" onClick={() => setRecoveryOpen(true)}>保留草稿（{recoveryRecords.length}）</Button>}
+            <Dialog open={recoveryOpen} onOpenChange={open => { setRecoveryOpen(open); setRecoveryError(null); }}><DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-md"><div className="pr-6"><DialogTitle className="text-balance">草稿</DialogTitle><DialogDescription className="sr-only">可继续编辑保留的草稿。不再提醒不会删除草稿。历史草稿请先确认所属笔记库。</DialogDescription></div>
+              {recoveryError != null && <div className="space-y-2"><p role="alert" className="text-sm text-destructive">{errorMessage(recoveryError)}</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void refreshDrafts()}>刷新草稿</Button></div></div>}
+              <div className="max-h-64 space-y-3 overflow-auto sm:max-h-80">{recoveryRecords.map(draft => <article className="space-y-3 rounded-lg border p-3" key={`${draft.recoveryScope ?? (draft.unscoped ? 'legacy' : 'current')}:${draft.draftKey ?? draft.id}`}>
+                <div className="space-y-1.5"><p className="line-clamp-2 text-pretty text-sm font-medium leading-6">{draft.title || draft.body.slice(0, 100) || "空正文"}</p>
+                  {draft.title && draft.body && <p className="line-clamp-2 text-pretty text-sm leading-6 text-muted-foreground">{draft.body.slice(0,100)}</p>}
+                  {(draft.updatedAt || draft.unscoped) && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {draft.updatedAt && <time className="tabular-nums" dateTime={draft.updatedAt}>{new Date(draft.updatedAt).toLocaleString('zh-CN', {year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'})}</time>}
+                    {draft.unscoped && <span>所属库待确认</span>}
+                  </div>}
+                  {draft.pendingProperties?.length ? <p className="text-pretty text-xs text-muted-foreground">{draft.pendingProperties.map(change => `${change.name}：${change.value === undefined ? '属性更改' : Array.isArray(change.value) ? change.value.join('、') : String(change.value)}`).join('；')}</p> : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="sm" aria-label={`继续编辑：${draft.title || draft.body.slice(0,100) || '空正文'}`} onClick={() => void resumeDraft(draft)}>继续编辑</Button>
+                  {draft.reminderDismissed ? <span className="flex items-center gap-1 text-xs text-muted-foreground"><Check className="size-3.5" aria-hidden="true" />已关闭提醒</span> : draft.unscoped && draft.draftKey && draft.revision && capabilities.has("dismissDraftReminder") && <Button variant="ghost" size="sm" className="text-muted-foreground" disabled={reminderWorking} onClick={() => void dismissDraftReminder(draft)}>不再提醒</Button>}
+                </div>
+              </article>)}</div>
+            </DialogContent></Dialog>
 
-            {loading && !status?.connected ? <LoadingNotes /> : !status?.connected ? <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
+            {loading && !status?.connected ? <LoadingNotes /> : !status?.connected ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
                 <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><FolderOpen className="size-6" strokeWidth={1.5} /></span>
-                <h2 className="text-lg font-semibold">{unsupportedBrowser ? "连接 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{unsupportedBrowser ? "运行 memocard serve，从菜单栏服务打开经过授权的本机页面。" : isBrowserVault ? "选择这台电脑上的 Obsidian / Markdown 笔记文件夹，或在空文件夹中创建一个。笔记与图片直接保存在文件夹里。" : isLocalWeb ? "使用本机文件夹选择器打开已有笔记库，或在空文件夹中创建一个。" : "选择 iCloud Drive 中的笔记库，在 Mac 和 iPhone 上继续记录。首次使用可在 Mac 上创建。"}</p>
+                <h2 className="text-lg font-semibold">{unsupportedBrowser ? "需要启动 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
+                <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或运行 memocard serve。" : isBrowserVault ? "选择这台电脑上的 Obsidian / Markdown 笔记文件夹，或在空文件夹中创建一个。笔记与图片直接保存在文件夹里。" : isLocalWeb ? "使用本机文件夹选择器打开已有笔记库，或在空文件夹中创建一个。" : "选择 iCloud Drive 中的笔记库，在 Mac 和 iPhone 上继续记录。首次使用可在 Mac 上创建。"}</p>
                 {!unsupportedBrowser && <div className="mt-6 flex flex-wrap justify-center gap-2">
                   {createAllowed && <Button onClick={() => void selectVault(true)} disabled={working || Boolean(editing)}>{working ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <Plus className="size-4" />}创建笔记库</Button>}
                   <Button variant={createAllowed ? "outline" : "default"} onClick={() => void selectVault(false)} disabled={!chooseAllowed || working || Boolean(editing)}><FolderOpen className="size-4" />{isBrowserVault ? "打开已有笔记库" : "选择已有文件夹"}</Button>
                 </div>}
                 <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" />{isBrowserVault || isNative ? "只访问你授权的文件夹" : "只访问你通过 MemoCard 本机宿主授权的文件夹"}</p>
               </CardContent>
-            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault} canOpen={!working && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
+            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault || refreshingPages} canOpen={!working && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : error ? null : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={status?.indexing ? "笔记正在陆续载入" : query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
           </>}
           </>}
         </div>

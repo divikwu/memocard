@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { BridgeRequest, Note, NotePage, VaultStatus, PropertyLabels } from "@memocard/contracts";
 import { BrowserVault } from "./browser-vault";
 import { parseBrowserNote } from "./browser-files";
@@ -15,6 +15,69 @@ const secondId = "11111111-1111-4111-8111-111111111112";
 const source = (id = noteId, body = "中文 test\n", extra = "") => `---\nid: "${id}"\ncreatedAt: "2026-09-28T04:00:00Z"\nupdatedAt: "2026-09-28T04:00:00Z"\ntags: ["日常", "machine learning", "C#,F#", "#literal"]\n${extra}---\n${body}`;
 const bytes = (text: string) => new TextEncoder().encode(text);
 const error = (name: string) => new DOMException(name, name);
+
+it.each(['body','property','new'])('rolls back a browser source commit when identity persistence fails (%s)',async operation => {
+  const root = new TestDirectory('shared');
+  const file = await root.getFileHandle('A.md',{create:true});
+  file.bytes = bytes('---\nsummary: before\n---\nOriginal');
+  const h = harness(root); await call(h.core,'selectVault');
+  const note = (await call<NotePage>(h.core,'queryNotes')).notes[0];
+  const before = file.text;
+  const input = {id:operation === 'new' ? secondId : note.id,body:'Pending newest',tags:[],baseHash:operation === 'new' ? null : note.contentHash};
+  await call(h.core,'saveDraft',input);
+  const change = {id:note.id,baseHash:note.contentHash,name:'summary',type:'text',value:'changed'};
+  const commit = () => call<Note>(h.core,operation === 'property' ? 'updateNoteProperty' : 'saveNote',operation === 'property' ? change : input);
+  const persist = h.storage.saveIdentities.bind(h.storage);
+  const failure = vi.spyOn(h.storage,'saveIdentities').mockImplementation(async (scope,items) => {
+    if (JSON.stringify(items) !== JSON.stringify(h.storage.identitiesByScope.get(scope))) throw error('QuotaExceededError');
+    await persist(scope,items);
+  });
+  await expect(commit()).rejects.toBeDefined();
+  expect(file.text).toBe(before);
+  if (operation === 'new') expect([...root.children].filter(([name])=>name.endsWith('.md')).map(([name])=>name)).toEqual(['A.md']);
+  expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts.some(d=>d.body===input.body)).toBe(true);
+  failure.mockRestore();
+  const committed = await commit();
+  const reopened = harness(root,h.storage); await call(reopened.core,'selectVault');
+  const loaded = await call<Note>(reopened.core,'getNote',{id:committed.id});
+  expect(loaded.contentHash).toBe(committed.contentHash);
+  expect(loaded.body).toBe(operation === 'property' ? 'Original' : input.body);
+});
+
+it('defers a browser index refresh until an active source transaction finishes',async () => {
+  const root = new TestDirectory('shared'), file = await root.getFileHandle('A.md',{create:true});
+  file.bytes = bytes('Original');
+  const h = harness(root); await call(h.core,'selectVault');
+  const note = (await call<NotePage>(h.core,'queryNotes')).notes[0];
+  let refresh!: Promise<NotePage>;
+  file.writeHook = () => {file.writeHook=undefined; refresh=call<NotePage>(h.core,'queryNotes');};
+  const committed = await call<Note>(h.core,'saveNote',{id:note.id,body:'Committed',tags:[],baseHash:note.contentHash});
+  const refreshed = await refresh;
+  expect(refreshed.notes[0]).toMatchObject({body:'Committed',contentHash:committed.contentHash});
+  expect(file.text).toBe('Committed'); expect(h.storage.journals.size).toBe(0);
+});
+
+it.each([false,true])('returns the committed property snapshot for value and definition changes (shared=%s)',async shared => {
+ const root = shared ? new TestDirectory('shared') : await fixture();
+ const notes = shared ? root : await root.getDirectoryHandle('notes');
+ const file = await notes.getFileHandle(shared ? 'A.md' : `${noteId}.md`,{create:true});
+ file.bytes = bytes(shared ? '---\naliases: [One]\nsummary: before\n---\nBody #keep' : source(noteId,'Body #keep','aliases: [One]\nsummary: before\n'));
+ const h = harness(root); await call(h.core,'selectVault');
+ let note = (await call<NotePage>(h.core,'queryNotes')).notes.find(note=>note.body==='Body #keep')!;
+ for (const change of [
+   {name:'summary',type:'text',value:'after'},
+   {name:'aliases',type:'multiSelect',value:['Two'],options:[{name:'Two',color:'red'}]},
+   {name:'aliases',type:'multiSelect',value:['One','Two'],options:[{name:'One',color:'blue'},{name:'Two',color:'red'}],definition:true},
+   {name:'aliases',type:'text',definition:true},
+   {name:'summary',remove:true},
+ ]) {
+   const result = await call<import('@memocard/contracts').PropertyUpdateResult>(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,...change});
+   const loaded = await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:note.id});
+   expect(result.propertyData).toEqual(loaded);
+   expect(result.propertyData?.contentHash).toBe(result.contentHash);
+   note = result;
+ }
+});
 
 it.each([false,true])('saves inherited tags as properties and recovers them without adding body text (shared=%s)', async shared => {
   const root = shared ? new TestDirectory('shared') : await fixture();
@@ -240,7 +303,7 @@ class TestStorage implements BrowserVaultStorage {
   }
   async removeMatchingDraft(scope: string, draft: BrowserDraft) {
     const key = `${scope}:${draft.draftKey}`, existing = this.records.get(key);
-    if (existing?.title === draft.title && existing?.body === draft.body && existing.baseHash === draft.baseHash && JSON.stringify(existing.tags) === JSON.stringify(draft.tags)) this.records.delete(key);
+    if (existing?.title === draft.title && existing?.body === draft.body && existing.baseHash === draft.baseHash && JSON.stringify(existing.tags) === JSON.stringify(draft.tags) && JSON.stringify(existing.pendingProperties ?? []) === JSON.stringify(draft.pendingProperties ?? [])) this.records.delete(key);
   }
 }
 
@@ -1020,6 +1083,18 @@ it('retains list values beyond the choice menu option limit',async()=>{
  expect(fields.properties.find(p=>p.name==='field')!.value).toEqual(Array.from({length:201},(_,i)=>`Option ${i}`));
  expect(a.text.split('---\n').at(-1)).toBe(original.split('---\n').at(-1));
 });
+it.each([
+ ['date','field: 2026-10-12\n','field: important-beta\n'],
+ ['checkbox','field: true\n','field: important-beta\n'],
+ ['select','field: [One]\n','field: [One, Two]\n'],
+])('rejects lossy %s conversion without touching any note or definition',async(type,first,second)=>{
+ const h=await open(), a=await h.notes.getFileHandle(`${noteId}.md`), b=await h.notes.getFileHandle(`${secondId}.md`,{create:true});
+ a.bytes=bytes(source(noteId,'A',first));b.bytes=bytes(source(secondId,'B',second));
+ const originals=[a.text,b.text],note=await call<Note>(h.core,'getNote',{id:noteId});
+ await expect(call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type,definition:true})).rejects.toMatchObject({code:'LOSSY_PROPERTY_CONVERSION'});
+ expect([a.text,b.text]).toEqual(originals);
+ expect((await h.root.getDirectoryHandle('.memocard')).children.has('property-definitions.json')).toBe(false);
+});
 it('rolls back every note and the definition when a batch write fails',async()=>{
  const h=await open(), a=await h.notes.getFileHandle(`${noteId}.md`), b=await h.notes.getFileHandle(`${secondId}.md`,{create:true});
  a.bytes=bytes(source(noteId,'A','field: One\n'));b.bytes=bytes(source(secondId,'B','field: Two\n'));
@@ -1072,4 +1147,41 @@ it('keeps a new-note draft and creates no file when the shared schema is corrupt
  await expect(call(h.core,'saveNote',{id:secondId,body:'Retain draft',tags:[],baseHash:null})).rejects.toMatchObject({code:'INVALID_PROPERTY'});
  expect(h.notes.children.size).toBe(count);
  expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts.some(d=>d.id===secondId)).toBe(true);
+});
+
+it.each([false,true])('recovers property intents and serializes twenty edits with real file parsing (shared=%s)',async shared => {
+  const {EditorSession} = await import('./editor-session');
+  const root = shared ? new TestDirectory('shared') : await fixture();
+  const folder = shared ? root : await root.getDirectoryHandle('notes');
+  const file = await folder.getFileHandle(shared ? 'Queue.md' : `${noteId}.md`,{create:true}) as TestFile;
+  file.bytes = bytes(shared ? '---\nsummary: before\nchecked: false\n---\nBody' : source(noteId,'Body','summary: before\nchecked: false\n'));
+  let h = harness(root); await call(h.core,'selectVault');
+  const note = (await call<NotePage>(h.core,'queryNotes')).notes.find(note=>note.body==='Body')!;
+  let fail = true;
+  const transport = async <T>(operation:string,params?:Record<string,unknown>):Promise<T> => {
+    if (fail && operation === 'updateNoteProperty') throw new Error('模拟服务不可写');
+    return call<T>(h.core,operation,params);
+  };
+  let session = new EditorSession({id:note.id,title:note.title,body:note.body,tags:note.tags,baseHash:note.contentHash},transport,true,()=>undefined,()=>undefined);
+  await expect(session.changeProperty({name:'summary',type:'text',value:'recovered'})).rejects.toThrow('模拟服务不可写');
+  const reopened = harness(root,h.storage); await call(reopened.core,'selectVault'); h = reopened;
+  const draft = (await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts.find(draft=>draft.id===note.id)!;
+  expect(draft.pendingProperties?.[0].value).toBe('recovered'); session.dispose();
+  fail = false;
+  session = new EditorSession(draft,transport,true,()=>undefined,()=>undefined);
+  await session.flush();
+  const mutations:Promise<void>[] = [];
+  for (let index=0; index<20; index++) {
+    mutations.push(session.changeProperty({name:'summary',type:'text',value:`edit-${index}`}));
+    session.update(`Body ${index}`,undefined,`Queue ${index}`);
+  }
+  mutations.push(session.changeProperty({name:'checked',type:'checkbox',value:true}));
+  await Promise.all(mutations); await session.flush();
+  const actual = await call<Note>(h.core,'getNote',{id:note.id});
+  const fields = await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:note.id});
+  expect(actual).toMatchObject({body:'Body 19',title:'Queue 19',contentHash:session.current.baseHash});
+  expect(fields.properties.find(property=>property.name==='summary')?.value).toBe('edit-19');
+  expect(fields.properties.find(property=>property.name==='checked')?.value).toBe(true);
+  expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts.filter(draft=>draft.baseHash || draft.body || draft.title)).toEqual([]);
+  expect(session.dirty).toBe(false); session.dispose();
 });

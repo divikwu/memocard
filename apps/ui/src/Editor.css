@@ -118,7 +118,7 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
 }
 
 .note-property-backdrop { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / 40%); }
-.note-property-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.note-property-confirm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
 
 .note-properties .note-property-name { width: 100%; justify-content: flex-start; font-size: inherit; font-weight: 400; }
 .note-property-popup { width: min(360px, calc(100vw - 24px)); padding: 12px; animation: none; }

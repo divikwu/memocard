@@ -158,6 +158,17 @@ test('authenticates one-use launch token and cookies before any bridge or asset 
   }
 });
 
+test('requires authentication for draft reminder review before dispatch', async t => {
+  const host = await webHost(t);
+  const body = envelope({ id: randomUUID(), draftKey: randomUUID(), revision: 'reviewed-version', unscoped: true }, { operation: 'dismissDraftReminder' });
+  assert.equal((await call(host.config, { body })).status, 401);
+  const cookie = await authenticate(host);
+  const reply = await call(host.config, { body, headers: { Cookie: cookie } });
+  assert.equal(reply.status, 200);
+  assert.equal(JSON.parse(reply.body).data.operation, 'dismissDraftReminder');
+  assert.equal(JSON.parse(reply.body).data.count, 1, 'Unauthorized review must not reach the handler.');
+});
+
 test('requires exact Host and Origin and refuses cross-site requests and duplicate cookies', async t => {
   const host = await webHost(t);
   const cookie = await authenticate(host);

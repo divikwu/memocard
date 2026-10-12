@@ -1,4 +1,4 @@
-import type { BridgeRequest, BridgeResponse } from "@memocard/contracts";
+import type { BridgeRequest, BridgeResponse, PropertyChange } from "@memocard/contracts";
 import { createId } from "./uuid";
 import { isBrowserVault, isLocalWeb } from "./client-mode";
 import { browserTransport } from "./browser-runtime";
@@ -144,9 +144,7 @@ export async function imageBase64(file: File): Promise<string> {
   });
 }
 
-export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "操作未完成，请稍后重试。";
-}
+export { errorMessage } from "./error-messages";
 
 export type StorageMode = "native" | "local-web" | "browser";
 export type SelectVaultResult = { cancelled: true; diagnostic?: string } | { reconnectUrl: string } | { vaultId: string; vaultBinding?: string };
@@ -158,5 +156,8 @@ export function reconnectVault(url: string, location: Pick<Location, "replace" |
   // construct a fresh transport that can redeem the new one-time credential.
   location.reload();
 }
-export type Draft = { id: string; title?: string; body: string; tags: string[]; inheritedTags?: string[]; baseHash: string | null; relativePath?: string; updatedAt?: string; vaultBinding?: string; draftKey?: string };
+export type Draft = { id: string; title?: string; body: string; tags: string[]; inheritedTags?: string[]; pendingProperties?: PropertyChange[]; baseHash: string | null; relativePath?: string; updatedAt?: string; vaultBinding?: string; draftKey?: string; revision?:string; unscoped?:boolean; recoveryScope?:string; reminderDismissed?:boolean; recoveredFrom?:{draftKey:string;revision:string;unscoped?:boolean;scope?:string} };
 export type Attachment = { relativePath: string; markdownPath: string; notePath?: string };
+
+export type DraftIssue = {path?:string;code:string;message:string};
+export type DraftList = {drafts:Draft[];unscopedDrafts?:Draft[];issues?:DraftIssue[]};

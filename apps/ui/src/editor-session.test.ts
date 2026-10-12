@@ -4,6 +4,85 @@ import type { Draft } from './bridge';
 const initial: Draft = { id: 'a', body: '', tags: [], baseHash: null, relativePath: 'notes/a.md' };
 const note = { id: 'a', contentHash: 'new-hash' };
 afterEach(() => vi.useRealTimers());
+it('forks native recovery per editor and retains the source identity through retries and property cleanup',async()=>{
+ const recovered:Draft={...initial,body:'Recovered',baseHash:'hash',updatedAt:'2026-10-12T00:00:00Z',draftKey:'original-key',revision:'original-revision'};
+ const transport=vi.fn(async(op:string)=>op==='saveNote' ? {id:'a',body:'Recovered',contentHash:'new'} : op==='updateNoteProperty' ? {id:'a',contentHash:'newer'} : undefined);
+ const a=new EditorSession(recovered,transport as never,true,vi.fn(),vi.fn(),true);
+ const b=new EditorSession(recovered,transport as never,true,vi.fn(),vi.fn(),true);
+ expect(a.current.draftKey).not.toBe(b.current.draftKey);
+ expect(a.current.draftKey).not.toBe(recovered.draftKey);
+ await a.recover();
+ expect(transport).toHaveBeenLastCalledWith('saveDraft',expect.objectContaining({draftKey:a.current.draftKey,recoveredFrom:{draftKey:'original-key',revision:recovered.revision}}));
+ await a.changeProperty({name:'summary',type:'text',value:'Preserved'});
+ expect(transport).toHaveBeenLastCalledWith('saveDraft',expect.objectContaining({body:'',pendingProperties:[],recoveredFrom:{draftKey:'original-key',revision:recovered.revision}}));
+ const ownKey=a.current.draftKey;
+ a.replace({...a.current,baseHash:'fresh'},true);
+ expect(a.current.draftKey).toBe(ownKey);
+ a.replace({...initial,id:'copy'},true);
+ expect(a.current.draftKey).not.toBe(ownKey); expect(a.current.recoveredFrom).toBeUndefined();
+ a.dispose();b.dispose();
+});
+it('retires a rejected lossy conversion without losing later input or replaying it',async()=>{
+ let hash='original';
+ const transport=vi.fn(async(op:string,params:Record<string,unknown>)=>{
+  if(op==='updateNoteProperty') throw Object.assign(new Error('No source changed'),{code:'LOSSY_PROPERTY_CONVERSION'});
+  if(op==='saveNote') return {id:'a',body:params.body,contentHash:hash+='-saved'};
+ });
+ const session=new EditorSession({...initial,body:'Original body',baseHash:hash},transport as never,true,vi.fn(),vi.fn());
+ await expect(session.changeProperty({name:'summary',type:'date',definition:true})).rejects.toMatchObject({code:'LOSSY_PROPERTY_CONVERSION'});
+ expect(session.current.pendingProperties).toEqual([]);
+ session.update('Latest body');await session.flush();
+ expect(session.current.body).toBe('Latest body');expect(session.dirty).toBe(false);
+ expect(transport.mock.calls.filter(([op])=>op==='updateNoteProperty')).toHaveLength(1);
+ expect(transport.mock.calls.filter(([op])=>op==='saveNote').at(-1)?.[1].body).toBe('Latest body');
+ session.dispose();
+});
+it.each([false,true])('continues property edits after a rejected conversion without replaying it (queued=%s)',async queued=>{
+ const transport=vi.fn(async(op:string,params:Record<string,unknown>)=>{
+  if(op==='updateNoteProperty') {
+   if(params.definition)throw Object.assign(new Error('No source changed'),{code:'LOSSY_PROPERTY_CONVERSION'});
+   return {id:'a',contentHash:'property-saved'};
+  }
+ });
+ const committed=vi.fn();
+ const session=new EditorSession({...initial,body:'Original body',baseHash:'original'},transport as never,true,vi.fn(),committed);
+ const rejected=expect(session.changeProperty({name:'summary',type:'date',definition:true})).rejects.toMatchObject({code:'LOSSY_PROPERTY_CONVERSION'});
+ if(!queued)await rejected;
+ const next=session.changeProperty({name:'stage',type:'select',value:'done'});
+ await rejected;await next;
+ expect(transport.mock.calls.filter(([op])=>op==='updateNoteProperty').map(([,params])=>[params.name,params.baseHash])).toEqual([['summary','original'],['stage','original']]);
+ expect(session.current.body).toBe('Original body');expect(session.current.baseHash).toBe('property-saved');
+ expect(session.current.pendingProperties).toEqual([]);expect(session.dirty).toBe(false);
+ expect(session.state).toBe('saved');expect(session.error).toBeNull();expect(committed).toHaveBeenCalledTimes(1);
+ expect(transport).toHaveBeenLastCalledWith('saveDraft',expect.objectContaining({body:'',pendingProperties:[],baseHash:null}));
+ expect(transport.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
+ session.dispose();
+});
+it('keeps a failed recovery write blocking after retiring a rejected conversion',async()=>{
+ let rejected=false;
+ const draftError=Object.assign(new Error('Draft unavailable'),{code:'DRAFT_IO_ERROR'});
+ const transport=vi.fn(async(op:string):Promise<unknown>=>{
+  if(op==='updateNoteProperty'){rejected=true;throw Object.assign(new Error('No source changed'),{code:'LOSSY_PROPERTY_CONVERSION'});}
+  if(op==='saveDraft'&&rejected)throw draftError;
+  return undefined;
+ });
+ const session=new EditorSession({...initial,body:'Original body',baseHash:'original'},transport as never,true,vi.fn(),vi.fn());
+ await expect(session.changeProperty({name:'summary',type:'date',definition:true})).rejects.toBe(draftError);
+ await expect(session.changeProperty({name:'stage',type:'select',value:'done'})).rejects.toBe(draftError);
+ expect(session.state).toBe('error');expect(session.current.baseHash).toBe('original');
+ expect(session.current.pendingProperties).toEqual([{name:'stage',type:'select',value:'done'}]);
+ expect(transport.mock.calls.filter(([op])=>op==='updateNoteProperty')).toHaveLength(1);
+ transport.mockImplementation(async op=>op==='updateNoteProperty'?{id:'a',contentHash:'saved'}:undefined);
+ await session.flush();expect(session.state).toBe('saved');expect(session.dirty).toBe(false);
+ session.dispose();
+});
+it('keeps an unscoped legacy recovery reference while writing an isolated fork',async()=>{
+ const transport=vi.fn(async()=>undefined);
+ const session=new EditorSession({...initial,body:'Old recovery',updatedAt:'2026-10-12T00:00:00Z',revision:'old-version',unscoped:true,recoveryScope:'a'.repeat(64)},transport as never,true,vi.fn(),vi.fn(),true);
+ await session.recover();
+ expect(transport).toHaveBeenLastCalledWith('saveDraft',expect.objectContaining({recoveredFrom:{draftKey:initial.id,revision:'old-version',unscoped:true,scope:'a'.repeat(64)}}));
+ session.dispose();
+});
 function setup(draft = initial) {
   const transport = vi.fn(async (op: string) => op === 'saveNote' ? note : undefined);
   const committed = vi.fn();
@@ -184,4 +263,126 @@ it('adopts committed filename normalization and self-link edits without a dirty 
   expect(session.current).toMatchObject({ title: 'Name (2)', body: '[[Name (2)]]', relativePath: 'notes/Name (2).md' });
   expect(session.dirty).toBe(false); await session.flush();
   expect(transport.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(1); session.dispose();
+});
+
+it('serializes rapid properties with body and title input using each committed revision', async () => {
+  let release!: () => void;
+  let revision = 0, active = 0, maxActive = 0;
+  let stored = { body: 'before', title: 'before', contentHash: 'h0', checked: false, summary: '' };
+  const transport = vi.fn(async (operation: string, params?: Record<string, unknown>) => {
+    if (operation === 'saveDraft') return;
+    active++; maxActive = Math.max(maxActive, active);
+    expect(params?.baseHash).toBe(stored.contentHash);
+    if (operation === 'updateNoteProperty' && revision === 0) await new Promise<void>(resolve => { release = resolve; });
+    revision++;
+    if (operation === 'saveNote') stored = {...stored, body: params!.body as string, title: params!.title as string};
+    else if (params?.name === 'checked') stored.checked = params.value as boolean;
+    else stored.summary = params?.value as string;
+    stored.contentHash = `h${revision}`;
+    active--;
+    return {id:'a',...stored,propertyData:{definitionHash:`d${revision}`}};
+  });
+  const session = new EditorSession({...initial,body:'before',title:'before',baseHash:'h0'}, transport as never, true, vi.fn(), vi.fn());
+  const first = session.changeProperty({name:'checked',type:'checkbox',value:true,definitionHash:'d0'});
+  await vi.waitFor(() => expect(release).toBeTypeOf('function'));
+  session.update('typed while saving', undefined, 'new title');
+  const second = session.changeProperty({name:'summary',type:'text',value:'one',definitionHash:'d0'});
+  const third = session.changeProperty({name:'checked',type:'checkbox',value:false,definitionHash:'d0'});
+  const fourth = session.changeProperty({name:'summary',type:'text',value:'latest',definitionHash:'d0'});
+  expect(session.current.pendingProperties).toHaveLength(4);
+  release(); await Promise.all([first,second,third,fourth]); await session.flush();
+  expect(maxActive).toBe(1);
+  expect(stored).toMatchObject({body:'typed while saving',title:'new title',checked:false,summary:'latest'});
+  expect(session.current.body).toBe(stored.body); expect(session.dirty).toBe(false);
+  expect(transport.mock.calls.filter(([operation]) => operation === 'updateNoteProperty').map(([,params]) => params?.value)).toEqual([true,'one',false,'latest']);
+  expect(transport.mock.calls.filter(([operation]) => operation === 'updateNoteProperty').map(([,params]) => params?.definitionHash)).toEqual(['d0','d1','d3','d4']);
+  session.dispose();
+});
+it('recovers failed property intents across a new session and resumes in order', async () => {
+  let recovery: Draft | undefined, hash = 'h0';
+  const values: unknown[] = [];
+  let fail = true;
+  const transport = vi.fn(async (operation: string, params?: Record<string, unknown>) => {
+    if (operation === 'saveDraft') { recovery = structuredClone(params) as Draft; return; }
+    expect(params?.baseHash).toBe(hash);
+    if (operation === 'updateNoteProperty') {
+      if (fail) throw new Error('暂时不可写');
+      values.push(params?.value);
+    }
+    hash += 'x'; return {id:'a',body:params?.body ?? 'body',contentHash:hash};
+  });
+  const session = new EditorSession({...initial,body:'body',baseHash:hash},transport as never,true,vi.fn(),vi.fn());
+  await expect(session.changeProperty({name:'summary',type:'text',value:'retained'})).rejects.toThrow('暂时不可写');
+  await expect(session.changeProperty({name:'checked',type:'checkbox',value:true})).rejects.toThrow('暂时不可写');
+  await session.recover();
+  expect(recovery?.pendingProperties?.map(change=>change.value)).toEqual(['retained',true]);
+  expect(session.state).toBe('error'); session.dispose();
+  fail = false;
+  const reopened = new EditorSession({...recovery!,updatedAt:'recovered'},transport as never,true,vi.fn(),vi.fn());
+  await reopened.flush();
+  expect(values).toEqual(['retained',true]); expect(reopened.dirty).toBe(false);
+  expect(recovery).toMatchObject({body:'',baseHash:null,pendingProperties:[]}); reopened.dispose();
+});
+it('does not attempt property writes when recovery fails and retains input after conflicts', async () => {
+  const transport = vi.fn(async (operation:string) => { if (operation === 'saveDraft') throw new Error('草稿不可写'); });
+  const session = new EditorSession({...initial,body:'body',baseHash:'h0'},transport as never,true,vi.fn(),vi.fn());
+  await expect(session.changeProperty({name:'checked',type:'checkbox',value:true})).rejects.toThrow('草稿不可写');
+  expect(transport.mock.calls.every(([operation]) => operation === 'saveDraft')).toBe(true);
+  transport.mockImplementation(async operation => { if (operation === 'updateNoteProperty') throw Object.assign(new Error('外部冲突'),{code:'HASH_CONFLICT'}); });
+  await expect(session.flush()).rejects.toThrow('外部冲突');
+  session.update('new input'); await session.recover();
+  expect(session.current.pendingProperties?.[0].value).toBe(true); expect(session.current.body).toBe('new input');
+  expect(session.state).toBe('conflict');
+  await expect(session.flush()).rejects.toThrow('外部冲突'); session.dispose();
+});
+
+it('persists advanced definition versions for the remaining queue before recovery', async () => {
+ let recovery: Draft | undefined, revision = 0;
+ let fail = true;
+ const transport = vi.fn(async (operation:string,params?:Record<string,unknown>) => {
+   if (operation === 'saveDraft') { recovery = structuredClone(params) as Draft; return; }
+   if (operation === 'saveNote') return {id:'a',contentHash:'h1'};
+   if (revision && fail) throw new Error('第二项失败');
+   expect(params?.definitionHash).toBe(revision ? 'd1' : 'd0');
+   revision++;
+   return {id:'a',contentHash:`h${revision}`,propertyData:{definitionHash:`d${revision}`}};
+ });
+ const session = new EditorSession({...initial,body:'body',baseHash:'h0'},transport as never,true,vi.fn(),vi.fn());
+ const first = session.changeProperty({name:'status',type:'select',value:'A',definition:true,definitionHash:'d0'});
+ const second = session.changeProperty({name:'summary',type:'text',value:'next',definitionHash:'d0'});
+ await first; await expect(second).rejects.toThrow('第二项失败');
+ expect(recovery?.pendingProperties?.[0]).toMatchObject({name:'summary',definitionHash:'d1'});
+ session.dispose(); fail = false;
+ const reopened = new EditorSession({...recovery!,updatedAt:'recovered'},transport as never,true,vi.fn(),vi.fn());
+ await reopened.flush(); expect(reopened.dirty).toBe(false); reopened.dispose();
+});
+
+it('keeps latest drafts durable and retries source automatically while initial validation is pending', async () => {
+  vi.useFakeTimers();
+  let indexing = true;
+  const drafts:Record<string,unknown>[] = [];
+  const transport = vi.fn(async (op:string, params:Record<string,unknown>) => {
+    if (op === 'saveDraft') { drafts.push(structuredClone(params)); return; }
+    if (op === 'saveNote') {
+      if (indexing) throw Object.assign(new Error('Initial validation pending'), {code:'INDEXING'});
+      return {id:'a',body:params.body,contentHash:'indexed-hash'};
+    }
+  });
+  const session = new EditorSession({...initial,body:'Before',baseHash:'old'},transport as never,true,vi.fn(),vi.fn());
+  session.update('First during validation');
+  await vi.advanceTimersByTimeAsync(700);
+  expect(session.state).toBe('indexing');
+  expect(session.error).toBeNull();
+  session.update('Latest during validation');
+  await vi.advanceTimersByTimeAsync(0);
+  expect(drafts.at(-1)?.body).toBe('Latest during validation');
+  await vi.advanceTimersByTimeAsync(700);
+  expect(session.dirty).toBe(true);
+  indexing = false;
+  await vi.advanceTimersByTimeAsync(1100);
+  expect(session.current.body).toBe('Latest during validation');
+  expect(session.current.baseHash).toBe('indexed-hash');
+  expect(session.dirty).toBe(false);
+  expect(session.state).toBe('saved');
+  session.dispose();
 });

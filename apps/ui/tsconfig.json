@@ -29,6 +29,8 @@
   },
   "include": [
     "src",
-    "vite.config.ts"
+    "vite.config.ts",
+    "preview",
+    "vite.preview.config.ts"
   ]
 }

@@ -1,6 +1,7 @@
 export type Note = {id:string; title?:string; body:string; tags:string[]; createdAt:string; updatedAt:string; deletedAt?:string; contentHash:string; relativePath:string; sourceUrl:string};
 export type Coverage = {complete:boolean; indexed:number; pending:number; issues:number; indexedAt:string|null};
-export type VaultStatus = {connected:boolean; vaultId:string|null; vaultName:string|null; coverage:Coverage; phase:string; syncState:string; capabilities:string[]};
+export type IndexingProgress = {phase:"reading" | "indexing"; processed:number; total:number|null};
+export type VaultStatus = {connected:boolean; vaultId:string|null; vaultName:string|null; coverage:Coverage; indexing?:IndexingProgress; phase:string; syncState:string; capabilities:string[]};
 export type NoteQuickFilter = "untagged" | "images" | "links";
 export type NoteFilterCounts = Record<NoteQuickFilter, number>;
 export type NoteQuery = {query?:string; tags?:string[]; quickFilter?:NoteQuickFilter; from?:string; to?:string; limit?:number; cursor?:string; deleted?:boolean};
@@ -17,4 +18,5 @@ export type PropertyLabels = {labels:Record<string,string>; contentHash:string};
 export type PropertyDefinition = {type:PropertyType; options?:PropertyOption[]};
 export type NoteProperty = {name:string; type:PropertyType | 'unsupported'; value:string | string[] | boolean; editable:boolean; options?:PropertyOption[]};
 export type NoteProperties = {properties:NoteProperty[]; tagProperty?:NoteProperty; contentHash:string; writable:boolean; definitionHash?:string};
+export type PropertyUpdateResult = Note & {propertyData?:NoteProperties};
 export type PropertyChange = {definition?:boolean; definitionHash?:string; optionRename?:{from:string;to:string}; name:string; renameTo?:string; copyFrom?:string; type?:PropertyType; value?:string | string[] | boolean; remove?:boolean; create?:boolean; options?:PropertyOption[]};

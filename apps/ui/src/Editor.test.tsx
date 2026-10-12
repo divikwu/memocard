@@ -47,19 +47,23 @@ it('autosaves without leaving and saves empty existing notes', async () => {
   expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ body: '', baseHash: 'original' }));
   expect(onClose).not.toHaveBeenCalled(); expect(onSaved).not.toHaveBeenCalled(); expect(screen.queryByText('已保存到本地库')).toBeNull();
 });
-it('preserves source and draft identity without restoring property tags', async () => {
+it('preserves source identity and forks native recovery without restoring property tags', async () => {
   const source = '# 原始\r\n\r\n<!-- raw -->\n\n[^one]: footnote\n';
-  await editor({ ...initial, body: source, tags: ['C#,F#', 'two words'], baseHash: 'old', relativePath: 'notes/工作/a.md', vaultBinding: 'bound', draftKey: 'recovered', updatedAt: '2026-10-09T00:00:00Z' });
+  await editor({ ...initial, body: source, tags: ['C#,F#', 'two words'], baseHash: 'old', relativePath: 'notes/工作/a.md', vaultBinding: 'bound', draftKey: 'recovered', revision:'recovery-version', updatedAt: '2026-10-09T00:00:00Z' });
   expect(screen.queryByRole('button', { name: '添加标签' })).toBeNull();
   expect(screen.queryByLabelText('笔记标签')).toBeNull();
   expect(screen.queryByRole('button', { name: '移除标签 two words' })).toBeNull();
   finishEditor();
-  await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote', { id: initial.id, body: source, tags: [], baseHash: 'old', relativePath: 'notes/工作/a.md', vaultBinding: 'bound', draftKey: 'recovered' }));
+  await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ id: initial.id, body: source, tags: [], baseHash: 'old', relativePath: 'notes/工作/a.md', vaultBinding: 'bound', draftKey:expect.stringMatching(/:test-note$/), recoveredFrom:{draftKey:'recovered',revision:'recovery-version'} })));
+  expect(native.mock.calls.find(([op])=>op==='saveNote')?.[1]?.draftKey).not.toBe('recovered');
 });
 it('does not close after a failed write and retries the same content', async () => {
   const { onSaved } = await editor(); native.mockImplementation(async op => { if (op === 'saveNote') throw new Error('不可写'); });
+  const title=screen.getByRole('textbox',{name:'页面标题'}), field=screen.getByRole('textbox',{name:'笔记内容'});
   replaceEditorText('不能丢'); finishEditor();
   expect((await screen.findByRole('alert')).textContent).toContain('不可写'); expect(onSaved).not.toHaveBeenCalled(); expect(readEditorText()).toBe('不能丢');
+  expect(screen.getByRole('textbox',{name:'页面标题'})).toBe(title);
+  expect(screen.getByRole('textbox',{name:'笔记内容'})).toBe(field);
   native.mockImplementation(async op => op === 'saveNote' ? saved : undefined);
   fireEvent.click(screen.getByRole('button', { name: '重试保存' })); await waitFor(() => expect(onSaved).toHaveBeenCalledOnce());
 });
@@ -117,6 +121,23 @@ it('commits a conflict copy before retiring recovery for the original note', asy
   await act(async () => { complete({ ...saved, id: copied.id, relativePath: copied.relativePath }); });
   expect(native).toHaveBeenLastCalledWith('saveDraft', expect.objectContaining({ id: initial.id, body: '', baseHash: null }));
   expect(readEditorText()).toBe('本地未保存内容');expect(screen.queryByText('已保存到本地库')).toBeNull();
+});
+it('retires pending property recovery only after a conflict copy commits both body and properties', async () => {
+  const pendingProperties = [{name:'summary',type:'text' as const,value:'保留属性',create:true}];
+  native.mockImplementation(async op => { if (op === 'saveNote' || op === 'updateNoteProperty') throw {code:'HASH_CONFLICT'}; });
+  await editor({...initial,body:'本地正文',baseHash:'old',pendingProperties},new Set(['saveNote','saveDraft','updateNoteProperty']));
+  finishEditor();
+  const copy = await screen.findByRole('button',{name:'另存副本'});
+  let complete!: (value: unknown) => void;
+  native.mockClear();
+  native.mockImplementation(async (op,params) => op === 'saveNote' ? {...saved,id:params!.id} : op === 'updateNoteProperty' ? new Promise(resolve => {complete=resolve;}) : undefined);
+  fireEvent.click(copy);
+  await waitFor(() => expect(complete).toBeTypeOf('function'));
+  expect(native.mock.calls.some(([op,params]) => op === 'saveDraft' && params?.id === initial.id && params?.baseHash === null)).toBe(false);
+  const copied = native.mock.calls.find(([op]) => op === 'updateNoteProperty')![1]!;
+  expect(copied).toMatchObject({name:'summary',value:'保留属性',baseHash:'saved-hash'});
+  await act(async () => {complete({...saved,id:copied.id,contentHash:'property-hash'});});
+  expect(native).toHaveBeenLastCalledWith('saveDraft',expect.objectContaining({id:initial.id,body:'',baseHash:null,pendingProperties:[]}));
 });
 it('checks tasks and saves their Markdown representation', async () => {
   await editor({ ...initial, body: '- [ ] 阅读', baseHash: 'old' });
@@ -371,6 +392,33 @@ it('persists a block redo while the preceding undo is still saving', async () =>
   expect(native).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ body: duplicated }));
   expect(screen.queryByText('已保存到本地库')).toBeNull();
 });
+it('uses committed property data without another read and keeps subsequent writes on the new hash', async () => {
+ const note = {...saved,title:'标题',body:'正文',tags:[],createdAt:'',updatedAt:'',sourceUrl:''};
+ const propertyData = {properties:[{name:'摘要',type:'text',value:'原值',editable:true}],writable:true,contentHash:note.contentHash,definitionHash:'definition'};
+ let revision = 0;
+ native.mockImplementation(async (op, params) => {
+   if (op === 'getNoteProperties') return propertyData;
+   if (op === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
+   if (op === 'updateNoteProperty') {
+     const contentHash = `property-${++revision}`;
+     return {...note,contentHash,propertyData:{...propertyData,contentHash,properties:[{...propertyData.properties[0],value:params?.value}]}};
+   }
+ });
+ render(<Editor initial={{...initial,body:note.body,baseHash:note.contentHash}} initialNote={note} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} />);
+ fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+ for (const value of ['新值','再次修改']) {
+   fireEvent.click(await screen.findByRole('button',{name:'编辑属性 摘要'}));
+   const input = screen.getByRole('textbox',{name:'属性值'});
+   fireEvent.change(input,{target:{value}});
+   fireEvent.submit(input.closest('form')!);
+   await waitFor(() => expect(screen.getByRole('button',{name:'编辑属性 摘要'}).textContent).toBe(value));
+   expect(screen.getByRole('button',{name:'编辑属性 摘要'})).toHaveProperty('disabled',false);
+ }
+ expect(native.mock.calls.filter(([op]) => op === 'getNoteProperties')).toHaveLength(1);
+ expect(native).toHaveBeenLastCalledWith('updateNoteProperty',expect.objectContaining({baseHash:'property-1',definitionHash:'definition',value:'再次修改'}));
+ expect(readEditorText()).toBe('正文');
+});
+
 it('flushes pending body edits before creating an empty property and retains the form after a conflict', async () => {
  const note = {...saved,title:'标题',body:'正文',tags:[],createdAt:'2026-10-01T00:00:00Z',updatedAt:'2026-10-01T00:00:00Z',sourceUrl:''};
  const properties = {properties:[],writable:true,contentHash:note.contentHash};
@@ -391,7 +439,7 @@ it('flushes pending body edits before creating an empty property and retains the
  fireEvent.change(screen.getByRole('textbox',{name:'属性名'}),{target:{value:'状态'}});
  native.mockImplementation(async op => { if(op === 'updateNoteProperty') throw new Error('文件已在其他位置修改'); return properties; });
  fireEvent.click(screen.getByRole('button',{name:'文本'}));
- expect((await screen.findByRole('alert')).textContent).toContain('文件已在其他位置修改');
+ await waitFor(() => expect(screen.getAllByRole('alert').some(alert=>alert.textContent?.includes('文件已在其他位置修改'))).toBe(true));
  expect((screen.getByRole('textbox',{name:'属性名'}) as HTMLInputElement).value).toBe('状态');
  expect(readEditorText()).toBe('更新正文');
 });
@@ -423,4 +471,57 @@ it('flushes the current note before a global tag rename and continues with the r
   replaceEditorText('#project/child 后续编辑');
   finishEditor();
   await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'#project/child 后续编辑',baseHash:'renamed-hash'})));
+});
+
+it('keeps the page editable during property saves, preserves newer input and retries without losing intent', async () => {
+ const note = {...saved,title:'标题',body:'正文',tags:[],createdAt:'',updatedAt:'',sourceUrl:''};
+ const properties = {properties:[{name:'已验证',type:'checkbox',value:false,editable:true},{name:'摘要',type:'text',value:'',editable:true}],writable:true,contentHash:note.contentHash};
+ let complete!: (value:unknown)=>void;
+ let stored = {...note}, checked = false, summary = '';
+ let first = true, fail = false;
+ const mutations: string[] = [];
+ native.mockImplementation(async (op, params) => {
+   if (op === 'getNoteProperties') return {...properties,contentHash:stored.contentHash};
+   if (op === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
+   if (op === 'saveDraft') return;
+   expect(params?.baseHash).toBe(stored.contentHash);
+   mutations.push(op);
+   if (op === 'updateNoteProperty' && first) { first = false; await new Promise(resolve=>{complete=resolve;}); }
+   if (fail && op === 'updateNoteProperty') throw new Error('磁盘暂不可写');
+   if (op === 'saveNote') stored = {...stored,body:params!.body as string,title:params!.title as string};
+   else if (params?.name === '已验证') checked = params.value as boolean;
+   else summary = params?.value as string;
+   stored = {...stored,contentHash:stored.contentHash+'x'};
+   return {...stored,propertyData:{...properties,contentHash:stored.contentHash,properties:[{...properties.properties[0],value:checked},{...properties.properties[1],value:summary}]}};
+ });
+ const handle = createRef<EditorHandle>();
+ render(<Editor initial={{...initial,title:note.title,body:note.body,baseHash:note.contentHash}} initialNote={note} capabilities={new Set(['saveNote','saveDraft','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} handle={handle} />);
+ fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+ const checkbox = await screen.findByRole('checkbox',{name:'切换属性 已验证'});
+ fireEvent.click(checkbox);
+ await waitFor(()=>expect(complete).toBeTypeOf('function'));
+ expect(checkbox.getAttribute('aria-checked')).toBe('true'); expect(checkbox).toHaveProperty('disabled',false);
+ expect(noteEditor().isEditable).toBe(true);
+ const title = screen.getByRole('textbox',{name:'页面标题'});
+ expect(title).toHaveProperty('readOnly',false);
+ replaceEditorText('保存期间继续输入'); fireEvent.change(title,{target:{value:'新标题'}});
+ fireEvent.click(checkbox);
+ fireEvent.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
+ let input = screen.getByRole('textbox',{name:'属性值'});
+ fireEvent.change(input,{target:{value:'第一版'}}); fireEvent.submit(input.closest('form')!);
+ fireEvent.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
+ input = screen.getByRole('textbox',{name:'属性值'});
+ fireEvent.change(input,{target:{value:'最终版'}}); fireEvent.submit(input.closest('form')!);
+ expect(screen.getByRole('button',{name:'编辑属性 摘要'}).textContent).toBe('最终版');
+ await act(async()=>{complete(undefined); await handle.current!.flush();});
+ expect(stored).toMatchObject({body:'保存期间继续输入',title:'新标题'}); expect(checked).toBe(false); expect(summary).toBe('最终版');
+ expect(readEditorText()).toBe(stored.body); expect(mutations).toEqual(['updateNoteProperty','saveNote','updateNoteProperty','updateNoteProperty','updateNoteProperty']);
+ fail = true; fireEvent.click(checkbox);
+ await screen.findByRole('button',{name:'重试保存'});
+ expect(checkbox.getAttribute('aria-checked')).toBe('true'); expect(noteEditor().isEditable).toBe(true);
+ expect(native.mock.calls.some(([op,params])=>op==='saveDraft' && (params?.pendingProperties as unknown[])?.length)).toBe(true);
+ fail = false; fireEvent.click(screen.getByRole('button',{name:'重试保存'}));
+ await waitFor(()=>expect(screen.queryByRole('button',{name:'重试保存'})).toBeNull());
+ expect(checked).toBe(true); expect(readEditorText()).toBe(stored.body);
+ await waitFor(()=>expect(screen.queryAllByRole('alert')).toHaveLength(0));
 });

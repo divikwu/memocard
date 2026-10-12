@@ -1,7 +1,7 @@
 import Foundation
 import Yams
 
-struct PropertyChange: Decodable {
+struct PropertyChange: Codable {
     let id: String
     let baseHash: String
     let name: String
@@ -54,6 +54,16 @@ struct NoteProperties: Encodable {
     let contentHash: String
     let writable: Bool
     var definitionHash: String? = nil
+}
+struct PropertyUpdateResult: Encodable {
+    let note: Note
+    let propertyData: NoteProperties
+    private enum CodingKeys: String, CodingKey { case propertyData }
+    func encode(to encoder: Encoder) throws {
+        try note.encode(to: encoder)
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(propertyData, forKey: .propertyData)
+    }
 }
 private let reservedProperties: Set<String> = ["id", "createdAt", "updatedAt", "deletedAt", "tags"]
 private func propertyError(_ message: String) -> VaultError { VaultError(code: "INVALID_PROPERTY", message: message) }
@@ -263,7 +273,7 @@ func preservingPropertyTypes(_ yaml: String, originalHeader: String?) throws -> 
 }
 
 
-struct OptionRename: Decodable { let from: String; let to: String }
+struct OptionRename: Codable { let from: String; let to: String }
 struct PropertyDefinition: Codable {
     let type: String
     var options: [PropertyOption]? = nil
@@ -292,6 +302,11 @@ private func propertyValues(_ property: NoteProperty, rename: OptionRename? = ni
 private func normalizedOptionValues(_ values: [String]) -> [String] {
     var seen = Set<String>()
     return values.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty && $0.count <= 100 && !$0.unicodeScalars.contains(where: { $0.value < 32 }) && seen.insert($0).inserted }
+}
+func losslessPropertyConversion(_ original: NoteProperty, _ converted: NoteProperty) -> Bool {
+    let values = propertyValues(original)
+    if converted.type == "text", case .text(let text) = converted.value { return text == values.joined(separator: "\n") }
+    return values.isEmpty || values == propertyValues(converted)
 }
 // Legacy YAML lists share the multi-select editor without normalizing their values.
 func listAsMultiSelect(_ property: NoteProperty) -> NoteProperty {

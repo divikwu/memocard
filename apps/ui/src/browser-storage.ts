@@ -1,12 +1,13 @@
 import type { BrowserDirectoryHandle, FileIdentity } from "./browser-files";
 import { createId } from "./uuid";
+import type { Draft } from "./bridge";
 
-export type BrowserDraft = { id: string; title?: string; body: string; tags: string[]; inheritedTags?: string[]; baseHash: string | null; relativePath?: string; updatedAt: string; draftKey: string; vaultBinding?: string };
+export type BrowserDraft = Draft & { updatedAt: string; draftKey: string };
 export type StoredSelection = { directoryId: string; vaultId: string; handle: BrowserDirectoryHandle };
 export type RenameJournal = { changes: { path: string; before: string | null; after: string | null }[]; identities: FileIdentity[] };
 export type BrowserVaultStorage = {
   renameJournal(scope: string): Promise<RenameJournal | undefined>;
-  saveRenameJournal(scope: string, journal: RenameJournal | undefined): Promise<void>;
+  saveRenameJournal(scope: string, journal: RenameJournal | undefined, retainBackup?: boolean): Promise<void>;
   identities(scope: string): Promise<FileIdentity[]>;
   saveIdentities(scope: string, identities: FileIdentity[]): Promise<void>;
   loadSelection(): Promise<StoredSelection | undefined>;
@@ -20,7 +21,8 @@ type DraftRecord = { scope: string; draft: BrowserDraft };
 
 function sameDraft(left: BrowserDraft, right: BrowserDraft): boolean {
   return left.title === right.title && left.id === right.id && left.body === right.body && left.baseHash === right.baseHash
-    && JSON.stringify(left.tags) === JSON.stringify(right.tags) && JSON.stringify(left.inheritedTags ?? []) === JSON.stringify(right.inheritedTags ?? []);
+    && JSON.stringify(left.tags) === JSON.stringify(right.tags) && JSON.stringify(left.inheritedTags ?? []) === JSON.stringify(right.inheritedTags ?? [])
+    && JSON.stringify(left.pendingProperties ?? []) === JSON.stringify(right.pendingProperties ?? []);
 }
 
 /** Handles and uncommitted drafts stay in this origin's IndexedDB, never in the vault. */
@@ -59,8 +61,8 @@ export class IndexedDBVaultStorage implements BrowserVaultStorage {
   }
 
   renameJournal(scope: string): Promise<RenameJournal | undefined> { return this.read(`rename:${scope}`); }
-  saveRenameJournal(scope: string, journal: RenameJournal | undefined): Promise<void> {
-    return this.write(journal ? [[`rename-backup:${scope}:${createId()}`, journal], [`rename:${scope}`, journal]] : [[`rename:${scope}`, undefined]]);
+  saveRenameJournal(scope: string, journal: RenameJournal | undefined, retainBackup = true): Promise<void> {
+    return this.write([...(journal && retainBackup ? [[`rename-backup:${scope}:${createId()}`, journal] as [string, unknown]] : []), [`rename:${scope}`, journal]]);
   }
 
   async identities(scope: string): Promise<FileIdentity[]> { return await this.read(`identities:${scope}`) ?? []; }

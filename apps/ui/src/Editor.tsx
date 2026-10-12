@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { PageNotice } from '@/components/page-notice';
 import { request, errorMessage, type Attachment, type Draft } from './bridge';
-import type { Note, PropertyChange } from '@memocard/contracts';
+import type { Note, NoteProperties as Properties, PropertyChange, PropertyUpdateResult } from '@memocard/contracts';
 import { RichMarkdownEditor } from './RichMarkdownEditor';
 import { EditorSession } from './editor-session';
+import { isBrowserVault } from './client-mode';
 import { createId } from './uuid';
 import NoteProperties from './NoteProperties';
 import './Editor.css';
@@ -25,12 +27,13 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   const titleFirst = initialDraft.title !== undefined && !initialDraft.baseHash;
   const [, render] = useState(0);
   const [working, setWorking] = useState(false);
+  const [propertyData, setPropertyData] = useState<Properties>();
   const restoreImageFocus = useRef(false);
   const [localError, setLocalError] = useState('');
   const lastNote = useRef<Note | null>(null);
   const callbacks = useRef({ onCommitted, onTitleChange });
   callbacks.current = { onCommitted, onTitleChange };
-  const [session] = useState(() => new EditorSession(initialDraft, request, capabilities.has('saveDraft'), () => render(value => value + 1), note => { lastNote.current = note; callbacks.current.onCommitted?.(note); }));
+  const [session] = useState(() => new EditorSession(initialDraft, request, capabilities.has('saveDraft'), () => render(value => value + 1), note => { lastNote.current = note; setPropertyData((note as PropertyUpdateResult).propertyData); callbacks.current.onCommitted?.(note); }, !isBrowserVault));
   const { body, relativePath, title, tags } = session.current;
   // Default filenames remain in the save session without filling the title input.
   const titleValue = !lastEnteredTitle.current?.trim() && /^(?:新内容|未命名)(?: \([1-9]\d*\))?$/.test(title ?? '') ? '' : title ?? '';
@@ -79,16 +82,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   }, [session, initialDraft, canSave, titleFirst]);
   async function applyProperty(change: PropertyChange) {
     if (busy.current || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑属性。');
-    busy.current = true; setWorking(true);
-    try {
-      await session.flush();
-      const current = session.current;
-      if (!current.baseHash) throw new Error('请先填写标题或正文并保存。');
-      const saved = await request<Note>('updateNoteProperty', { ...change, id:current.id, baseHash:current.baseHash, ...(current.vaultBinding ? {vaultBinding:current.vaultBinding} : {}) });
-      lastNote.current = saved;
-      session.replace({ ...current, baseHash:saved.contentHash });
-      callbacks.current.onCommitted?.(saved);
-    } finally { busy.current = false; setWorking(false); }
+    await session.changeProperty(change);
   }
   async function changeTag(from:string, to:string | null) {
     if (busy.current || !vaultId || !canSave || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑标签。');
@@ -135,7 +129,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       await session.recover();
       const note = await request<Note>('getNote', { id: session.current.id });
       // Commit the chosen source version with its hash so the bridge clears matching recovery.
-      session.replace({ ...session.current, body: note.body, title: note.title, tags: note.tags, relativePath: note.relativePath, baseHash: note.contentHash }, true);
+      session.replace({ ...session.current, body: note.body, title: note.title, tags: note.tags, relativePath: note.relativePath, baseHash: note.contentHash, pendingProperties: [] }, true);
       await session.flush();
       setLocalError('');
     } catch (error) { setLocalError(errorMessage(error)); }
@@ -148,24 +142,33 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       const id = createId();
       const current = session.current;
       const directory = current.relativePath?.slice(0, current.relativePath.lastIndexOf('/') + 1) ?? 'notes/';
-      session.replace({ id, title: current.title, body: current.body, tags: current.tags, baseHash: null, relativePath: `${directory}${id}.md`, ...(current.vaultBinding ? { vaultBinding: current.vaultBinding } : {}) });
+      session.replace({ id, title: current.title, body: current.body, tags: current.tags, pendingProperties: current.pendingProperties, baseHash: null, relativePath: `${directory}${id}.md`, ...(current.vaultBinding ? { vaultBinding: current.vaultBinding } : {}) });
       await session.flush();
       // Retire the original recovery only after the copy is durably committed.
-      if (capabilities.has('saveDraft')) await request('saveDraft', { ...current, title: undefined, body: '', tags: [], baseHash: null });
+      if (capabilities.has('saveDraft')) await request('saveDraft', { ...current, title: undefined, body: '', tags: [], baseHash: null, pendingProperties: [] });
     } catch (error) { setLocalError(errorMessage(error)); }
     finally { setWorking(false); }
   }
   const error = localError || (session.error ? errorMessage(session.error) : '');
-  return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor">
-    <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新内容" className="note-page-title" value={titleValue} readOnly={working || !canSave} onChange={event => {
+  const conversionRejected = Boolean(session.error && typeof session.error === 'object' && 'code' in session.error && session.error.code === 'LOSSY_PROPERTY_CONVERSION');
+  const heading = <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新内容" className="note-page-title" value={titleValue} readOnly={working || !canSave} onChange={event => {
       const value = event.target.value.replace(/[\r\n]+/g, ' ');
       lastEnteredTitle.current = value;
       session.update(body, relativePath, value);
     }} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
-    }} />
-    <NoteProperties onChangeTag={changeTag} note={metadata} tags={[...tags, ...session.current.inheritedTags ?? []]} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onLocateTag={tag => {
+    }} />;
+  return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor">
+    <NoteProperties saveError={error} renderHeader={(notice, ownsSaveError) => <>
+      {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : conversionRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !conversionRejected || session.state === 'conflict') ? <>
+        {session.state === 'error' && !conversionRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
+        {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="ghost" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="ghost" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
+      </> : undefined}>{error}</PageNotice>}
+      {notice}
+      {pendingLink && <PageNotice tone="info" title="有待打开的笔记">完成当前记录后，将打开收到的笔记链接。</PageNotice>}
+      {heading}
+    </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} onChangeTag={changeTag} note={metadata} tags={[...tags, ...session.current.inheritedTags ?? []]} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onLocateTag={tag => {
       const target = Array.from(field.current?.querySelectorAll('.rich-inline-tag') ?? []).find(element => element.getAttribute('data-tag') === encodeURIComponent(tag));
       if (!target) return;
       field.current?.focus();
@@ -173,8 +176,6 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range);
       target.scrollIntoView({block:'center'});
     }} />
-    {pendingLink && <p role="status" className="text-sm text-muted-foreground">完成当前记录后，将打开收到的笔记链接。</p>}
-    {error && <div role="alert" className="note-editor-message space-y-2 rounded-lg border p-3 text-sm"><p>{error}</p>{session.state === 'error' && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => void finish()}>重试保存</Button>}{session.state === 'conflict' && <div className="flex flex-wrap gap-2"><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button></div>}</div>}
     <div className="typeset-content"><RichMarkdownEditor autoFocus={!titleFirst} ref={field} value={body} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
   </section>;
 }

@@ -60,7 +60,7 @@ export function NoteCollection({ notes, query, onQueryChange, searchPlaceholder,
     </div>
     <TabsContent value={layout} className="space-y-4">
     {notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={cn(cards ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4" : "flex flex-col")}>
-      {notes.map(note => <li key={note.id} className="min-w-0">
+      {notes.map(note => <li key={note.id} data-note-id={note.id} className="min-w-0">
         <Card className={cn("gap-0 overflow-hidden bg-card py-0 transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40", cards ? "h-64 rounded-[16px] border border-border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]" : "rounded-lg border-0 shadow-none")}>
           <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row items-center")}>
             <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={cards ? `打开 ${formatDate(note.createdAt)} 的笔记` : `打开 ${note.title?.trim() || "新内容"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>

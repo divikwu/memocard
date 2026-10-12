@@ -72,7 +72,7 @@ export default function ChoicePropertyEditor({property, busy, error, onSave}: {p
             onChangeColor={async color => {
               if (!await save(selected,options.map(option => option.name === value ? {...option,color} : option),true)) throw new Error('无法保存选项颜色，请重试。');
             }}
-            deleteDescription={`将从整个笔记库的属性「${property.name}」中删除此选项，并移除所有笔记中的对应已选值。其他属性和笔记库标签不受影响。`} /> }
+            deleteDescription={`将从库内所有「${property.name}」属性中删除此选项及对应已选值，其他属性和标签保留。`} /> }
         </div>}
       </PropertyOptionList>
       {!candidates.length && <p className="note-tag-hint text-xs text-muted-foreground">{name ? '没有匹配的选项，名称最多 100 个字。' : '输入名称，创建第一个选项。'}</p>}

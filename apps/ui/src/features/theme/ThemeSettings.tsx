@@ -63,7 +63,7 @@ export function ThemeSettings() {
         </Button>
       </div>
       <Card className="gap-0 py-0 shadow-none"><CardContent className="px-4">
-      {theme.persistenceError && <p role="status" className="mt-4 text-sm text-destructive">外观已应用，但当前无法保存设置。重新打开应用后可能恢复默认。</p>}
+      {theme.persistenceError && <p role="status" className="mt-4 text-sm text-destructive">无法保存设置；当前已生效，重开后可能恢复默认。</p>}
       <div className="divide-y divide-border/60">
         <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
           <div className="min-w-0 space-y-1"><p className="text-sm font-medium">显示模式</p><p className="text-pretty text-sm text-muted-foreground">选择浅色、深色或跟随系统。</p></div>
