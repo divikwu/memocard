@@ -76,22 +76,33 @@ afterEach(() => {
 
 describe("note workspace", () => {
   it("shows indexing progress without disabling editing or replacing unsaved content", async () => {
+    vi.useFakeTimers();
     const implementation = bridge.request.getMockImplementation()!;
     let indexing = true;
     bridge.request.mockImplementation((operation, params) => operation === "getStatus"
       ? Promise.resolve({...status, coverage:{...status.coverage, complete:!indexing}, ...(indexing ? {indexing:{phase:"reading", processed:12, total:null}} : {})})
       : implementation(operation, params));
-    render(<App />);
-    expect(await screen.findByText("正在读取笔记库")).toBeTruthy();
-    expect(screen.queryByText("部分文件待读取")).toBeNull();
-    await userEvent.click(await screen.findByRole("button", {name:/打开.*的笔记/}));
-    await waitFor(() => expect(screen.getByRole("textbox", {name:"笔记内容"})).toBeTruthy());
-    replaceEditorText("Indexing edit stays", screen.getByRole("textbox", {name:"笔记内容"}));
-    indexing = false;
-    act(() => window.dispatchEvent(new CustomEvent("memocard:event", {detail:{type:"statusChanged"}})));
-    await waitFor(() => expect(screen.queryByText("正在读取笔记库")).toBeNull());
-    expect(readEditorText(screen.getByRole("textbox", {name:"笔记内容"}))).toBe("Indexing edit stays");
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({body:"Indexing edit stays"})));
+    try {
+      render(<App />);
+      // Flush the initial list and lazy view before asserting; do not race CI rendering against 1s.
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(screen.getByText("正在读取笔记库")).toBeTruthy();
+      expect(screen.queryByText("部分文件待读取")).toBeNull();
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", {name:/打开.*的笔记/}));
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      replaceEditorText("Indexing edit stays", screen.getByRole("textbox", {name:"笔记内容"}));
+      indexing = false;
+      await act(async () => {
+        window.dispatchEvent(new CustomEvent("memocard:event", {detail:{type:"statusChanged"}}));
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(screen.queryByText("正在读取笔记库")).toBeNull();
+      expect(readEditorText(screen.getByRole("textbox", {name:"笔记内容"}))).toBe("Indexing edit stays");
+      await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+      expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({body:"Indexing edit stays"}));
+    } finally { vi.useRealTimers(); }
   });
 
   it("polls native index progress and distinguishes a partial empty list from an empty vault", async () => {
