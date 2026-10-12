@@ -232,7 +232,7 @@ describe("note workspace", () => {
 
     expect(bridge.request).toHaveBeenCalledWith("getNote", { id: note.id });
     const editor = await screen.findByRole("region", { name: "编辑笔记" });
-    expect(readEditorText(within(editor).getByRole("textbox", { name: "笔记内容" }))).toBe("尚未提交的草稿文字");
+    expect(readEditorText(await within(editor).findByRole("textbox", { name: "笔记内容" }))).toBe("尚未提交的草稿文字");
     const back = screen.getByRole("button", { name: "返回笔记列表" });
     expect(back.closest("header")).not.toBeNull();
     expect(back.className).toContain("md:hidden");
@@ -297,8 +297,8 @@ describe("note workspace", () => {
     expect(readEditorText()).toBe("先完成当前想法");
     fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
 
-    await screen.findByRole("region", { name: "编辑笔记" });
-    expect(readEditorText()).toBe(note.body);
+    await screen.findByRole("textbox", { name: "笔记内容" });
+    await waitFor(() => expect(readEditorText()).toBe(note.body));
     const operations = bridge.request.mock.calls.map(([operation]) => operation);
     expect(operations.indexOf("saveDraft")).toBeLessThan(operations.lastIndexOf("getNote"));
     expect(bridge.request).toHaveBeenCalledWith("saveDraft", expect.objectContaining({ body: "先完成当前想法" }));
@@ -309,7 +309,7 @@ describe("note workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
     await screen.findByRole("textbox", { name: "笔记内容" }); replaceEditorText("正在输入");
     act(() => { window.dispatchEvent(new CustomEvent("memocard:open-note", { detail: { id: note.id } })); });
-    await screen.findByRole("region", { name: "编辑笔记" });
+    await screen.findByRole("textbox", { name: "笔记内容" });
     await waitFor(() => expect(readEditorText()).toBe(note.body));
     const calls = bridge.request.mock.calls.map(([op]) => op);
     expect(calls.indexOf("saveNote")).toBeLessThan(calls.lastIndexOf("getNote"));
@@ -327,7 +327,7 @@ describe("note workspace", () => {
       window.dispatchEvent(new CustomEvent("memocard:open-note", { detail: { id: note.id } }));
       window.dispatchEvent(new CustomEvent("memocard:open-note", { detail: { id: nextNote.id } }));
     });
-    await screen.findByRole("region", { name: "编辑笔记" });
+    await screen.findByRole("textbox", { name: "笔记内容" });
     await act(async () => { resolveOld(note); });
 
     expect(readEditorText()).toBe(nextNote.body);
@@ -343,7 +343,7 @@ describe("note workspace", () => {
     await screen.findByText(note.body);
     fireEvent.click(await screen.findByRole("button", { name: /^打开 .* 的笔记$/ }));
     const dialog = await screen.findByRole("region", { name: "编辑笔记" });
-    const field = within(dialog).getByRole("textbox", { name: "笔记内容" });
+    const field = await within(dialog).findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("恢复后继续编辑", field);
     fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
 
@@ -791,7 +791,9 @@ it("offers recovery without auto-committing it or exposing a drafts route", asyn
   expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
   expect(screen.queryByText(/发现 .* 条未保存内容/)).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: /^打开 .* 的笔记$/ }));
-  await screen.findByRole("region", { name: "编辑笔记" }); expect(readEditorText()).toBe("旧内容");
+  // The editor region mounts before Tiptap creates its deferred content textbox.
+  await screen.findByRole("textbox", { name: "笔记内容" }); expect(readEditorText()).toBe("旧内容");
+  expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
   expect(screen.queryByRole("button", { name: /草稿/ })).toBeNull();
 });
 it('opens source notes and exposes individual recovery issues while keeping good versions selectable',async()=>{
@@ -876,14 +878,14 @@ it('ignores empty cleanup records when opening the saved source',async()=>{
   render(<App />);await screen.findByText(note.body);
   expect(screen.queryByText(/发现 .* 条未保存内容/)).toBeNull();
   fireEvent.click(screen.getByRole('button',{name:/^打开 .* 的笔记$/}));
-  await screen.findByRole('region',{name:'编辑笔记'});expect(readEditorText()).toBe(note.body);
+  await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe(note.body);
   expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
 });
 it('keeps multiple client versions selectable instead of automatically choosing one',async()=>{
   pendingDrafts=['Window A unsaved','Window B unsaved'].map((body,index)=>({id:note.id,body,tags:[],baseHash:'old-hash',draftKey:`client-${index}`,revision:`revision-${index}`}));
   render(<App />);await screen.findByText('发现 2 条未保存内容');
   fireEvent.click(screen.getByRole('button',{name:/^打开 .* 的笔记$/}));
-  await screen.findByRole('region',{name:'编辑笔记'});expect(readEditorText()).toBe(note.body);
+  await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe(note.body);
   expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
   fireEvent.click(screen.getByRole('button',{name:'返回笔记列表'}));
   await screen.findByRole('list',{name:'笔记列表'});
@@ -891,7 +893,7 @@ it('keeps multiple client versions selectable instead of automatically choosing 
   const dialog=await screen.findByRole('dialog',{name:'草稿'});
   expect(within(dialog).getByRole('button',{name:'继续编辑：Window A unsaved'})).toBeTruthy();
   fireEvent.click(within(dialog).getByRole('button',{name:'继续编辑：Window B unsaved'}));
-  await screen.findByRole('region',{name:'编辑笔记'});expect(readEditorText()).toBe('Window B unsaved');
+  await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe('Window B unsaved');
 });
 it('distinguishes recovered versions with the same title and body by pending property values',async()=>{
   pendingDrafts=['Client A pending','Client B pending'].map((value,index)=>({id:note.id,title:'Same title',body:note.body,tags:[],baseHash:'old-hash',draftKey:`client-${index}`,revision:`revision-${index}`,updatedAt:`2026-10-12T06:07:4${index}.000Z`,pendingProperties:[{name:'summary',type:'text',value}]}));
@@ -930,7 +932,7 @@ it('opens a direct note route only after recovery has loaded', async () => {
   pendingDrafts = [{ id: note.id, body: '恢复版本', tags: [], baseHash: 'old-hash' }];
   window.history.replaceState(null, '', `#/notes/${note.id}`);
   render(<App />);
-  await screen.findByRole('region', { name: '编辑笔记' });
+  await screen.findByRole('textbox', { name: '笔记内容' });
   expect(readEditorText()).toBe('恢复版本');
 });
 it('keeps a refreshed note route in the detail loading view until recovery and the note are ready', async () => {
@@ -957,7 +959,7 @@ it('keeps a refreshed note route in the detail loading view until recovery and t
   expect(screen.queryByRole('heading', { name: '所有笔记' })).toBeNull();
   expect(window.location.hash).toBe(address);
   await act(async () => { resolveNote(note); });
-  await screen.findByRole('region', { name: '编辑笔记' });
+  await screen.findByRole('textbox', { name: '笔记内容' });
   expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
   expect(readEditorText()).toBe(recovery.body);
   expect(window.location.hash).toBe(address);
@@ -1020,7 +1022,7 @@ it('ignores blank new-page recovery while retaining title-only and cleared exist
   fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
   await screen.findByRole('list', { name: '笔记列表' });
   fireEvent.click(screen.getByRole('button', { name: /^打开 .* 的笔记$/ }));
-  await screen.findByRole('region', { name: '编辑笔记' });
+  await screen.findByRole('textbox', { name: '笔记内容' });
   expect(readEditorText()).toBe('');
 });
 
