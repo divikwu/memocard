@@ -58,6 +58,11 @@ export function App() {
   const [status, setStatus] = useState<VaultStatus | null>(null);
   const [environment, setEnvironment] = useState<Environment | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
+  const loadedVaultId = useRef<string | null>(null);
+  const loadedListKey = useRef<string | null>(null);
+  const [readDetailsOpen, setReadDetailsOpen] = useState(false);
+  const [rereading, setRereading] = useState(false);
+  const [listTimeout, setListTimeout] = useState<"initial" | "refresh" | null>(null);
   useLayoutEffect(() => {
     const anchor = refreshAnchor.current, container = scrollContainer.current;
     refreshAnchor.current = null;
@@ -135,7 +140,9 @@ export function App() {
     setRefreshingPages(true);
     const current = ++generation.current;
     let serviceResponded = false;
-    if (!background) { setLoading(true); setRouteReady(false); setError(""); }
+    let listReadTimedOut = false;
+    let listKey = "";
+    if (!background) { setLoading(true); setRouteReady(false); setError(""); setListTimeout(null); }
     try {
       const environmentResult = request<Environment>("getEnvironment").then((value) => {
         if (current === generation.current) setEnvironment(value);
@@ -145,6 +152,7 @@ export function App() {
       if (current !== generation.current) return;
       setStatus(nextStatus); setEnvironment(nextEnvironment); setWebConnected(true);
       serviceResponded = true;
+      listKey = JSON.stringify([nextStatus.vaultId, resetFilters ? "" : debouncedQuery, resetFilters ? null : tag, resetFilters ? null : quickFilter]);
       if (connectionLost.current) { connectionLost.current = false; setError(""); }
       const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
       const deepLink = /^#\/notes\/([^/]+)$/.exec(window.location.hash);
@@ -158,7 +166,16 @@ export function App() {
       // Attach rejection handling now; the registry does not gate note recovery.
       const registry = vaultResult.then(value => { if (current === generation.current) setRegisteredVaults(value.vaults); });
       void registry.catch(() => undefined);
-      if (!nextStatus.connected) { await registry; if (current !== generation.current) return; setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setCursor(null); setFilterCounts(undefined); return; }
+      if (!nextStatus.connected) {
+        await registry;
+        if (current !== generation.current) return;
+        // Keep the last list only when the same vault needs its permission renewed.
+        if (!allowed.has("reauthorizeVault") || !nextStatus.vaultId || nextStatus.vaultId !== loadedVaultId.current) {
+          loadedListKey.current = null;
+          setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setFilterCounts(undefined);
+        }
+        setCursor(null); return;
+      }
       let recovered: DraftList = {drafts: []};
       try { if (allowed.has("getDrafts")) recovered = await request<DraftList>("getDrafts"); }
       catch (cause) { recovered.issues = [{code:"RECOVERY_UNAVAILABLE",message:errorMessage(cause)}]; }
@@ -184,6 +201,7 @@ export function App() {
             }
             return page && {...page, notes: refreshed};
           } catch (cause) {
+            if (bridgeErrorCode(cause) === "TIMEOUT") listReadTimedOut = true;
             if (bridgeErrorCode(cause) !== "STALE_CURSOR" || attempt >= 2 || current !== generation.current) throw cause;
           }
         }
@@ -200,13 +218,17 @@ export function App() {
         const row = Array.from(container.querySelectorAll<HTMLElement>("[data-note-id]")).find(item => item.getBoundingClientRect().bottom > container.getBoundingClientRect().top);
         if (row?.dataset.noteId) refreshAnchor.current = {id: row.dataset.noteId, top: row.getBoundingClientRect().top};
       }
+      loadedVaultId.current = nextStatus.vaultId ?? null;
+      loadedListKey.current = page ? listKey : null;
+      setListTimeout(null);
       setNotes(page?.notes ?? []); setCursor(page?.nextCursor ?? null);
       setError((previous: unknown) => bridgeErrorCode(previous) === "STALE_CURSOR" ? "" : previous);
       setFilterCounts(page?.filterCounts);
       setTags(tagResult.tags); setFolders(folderResult.folders);
       if (!background || resetFilters) loadedPages.current = 1;
     } catch (cause) { if (current === generation.current) {
-      setError(cause);
+      if (listReadTimedOut) setListTimeout(loadedListKey.current === listKey ? "refresh" : "initial");
+      else setError(cause);
       if (!serviceResponded || ["BRIDGE_UNAVAILABLE", "WEB_UNAUTHORIZED"].includes(bridgeErrorCode(cause) ?? "")) { setWebConnected(false); connectionLost.current = true; }
     } }
     finally {
@@ -267,6 +289,7 @@ export function App() {
       }
       setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
       setRecoveryDismissed(false); setRecoveryOpen(false);
+      loadedListKey.current = null;
       setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setCursor(null);
       setPendingOpenNote(null); openingLink.current = null;
       loadedPages.current = 1;
@@ -285,6 +308,7 @@ export function App() {
       const result = await request<SelectVaultResult>("activateVault", { vaultId });
       if ("reconnectUrl" in result) { reconnectVault(result.reconnectUrl); return; }
       setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
+      loadedListKey.current = null;
       loadedPages.current = 1;
       await refresh(false, true);
     } catch (cause) { setError(cause); }
@@ -447,7 +471,12 @@ export function App() {
     : !status.coverage.complete ? "部分文件待读取" : "已连接文件夹";
   const openingNote = !editing && pendingRoute !== null && (loading || Boolean(status?.connected));
   const detailView = Boolean(editing) || openingNote;
-  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? error ? "无法打开笔记" : "正在打开笔记" : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
+  const detailReadFailed = openingNote && Boolean(error) && !localWebReconnectRequired;
+  const canRetryDetail = retryableError && bridgeErrorCode(error) !== "NOTE_NOT_FOUND";
+  const openingTitle = pendingRoute ? notes.find(note => note.id === decodeURIComponent(pendingRoute.slice("#/notes/".length)))?.title?.trim() : undefined;
+  const connectionState = !detailView && view === "notes" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
+  const listTimeoutVisible = !detailView && view === "notes" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
+  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
   const newNote = async () => {
     if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setError('');
@@ -499,6 +528,7 @@ export function App() {
     if (nextView === "notes") {
       if (nextTag !== tag || nextFilter !== quickFilter) {
         generation.current++; loadedPages.current = 1;
+        loadedListKey.current = null; setListTimeout(null);
         setNotes([]); setCursor(null); setLoading(true);
       }
       setTag(nextTag); setQuickFilter(nextFilter);
@@ -570,27 +600,51 @@ export function App() {
         </div>
       </header>
       <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view === "notes" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
-        <div className={cn("mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-6 md:py-8" : "max-w-3xl py-6 md:py-8")}>
+        <div className={cn("page-content mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-6 md:py-8" : "max-w-3xl py-6 md:py-8")}>
           {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请选择文件夹并允许访问，首次读取可能需要一些时间。</AlertDescription></Alert>}
-          {selectionNotice && !switchingVault && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription><p>笔记库未切换，请重新选择并允许访问文件夹。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words">{selectionNotice}</p></details><div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void selectVault(false)} disabled={working}>重新选择</Button></div></AlertDescription></Alert>}
-          {needsPermission && <Alert><FolderOpen className="size-4" /><AlertTitle>重新授权笔记文件夹</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>文件夹访问权限已失效，请重新授权以读取和保存。</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void reauthorizeVault()} disabled={working}>重新授权</Button></div></AlertDescription></Alert>}
-          {Boolean(error) && <PageNotice title={localWebReconnectRequired ? "连接已断开" : openingNote ? "无法打开笔记" : "操作未完成"} actions={<>{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => { if (openingNote && pendingRoute) void openNote(decodeURIComponent(pendingRoute.slice('#/notes/'.length))); else void refresh(); }} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}{openingNote && <Button variant={localWebReconnectRequired || retryableError ? "ghost" : "outline"} size="sm" onClick={() => void navigate("notes", tag, quickFilter)}>返回列表</Button>}</>}>{errorMessage(error)}</PageNotice>}
-          {status?.indexing && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>{status.indexing.phase === "reading" ? "正在读取笔记库" : "正在建立索引"}</AlertTitle><AlertDescription>{status.indexing.total === null ? `已读取 ${status.indexing.processed} 篇笔记。` : `已整理 ${status.indexing.processed} / ${status.indexing.total} 篇笔记。`}可继续编辑，草稿先保存在本机，校验后写入文件。搜索和筛选会逐步补齐。</AlertDescription></Alert>}
-          {status?.connected && !status.indexing && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件待读取</AlertTitle><AlertDescription>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件待读取。` : "部分文件尚未进入索引。"}当前结果可能不完整。</AlertDescription></Alert>}
+          {selectionNotice && !switchingVault && !connectionState && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription><p>笔记库未切换，请重新选择并允许访问文件夹。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words">{selectionNotice}</p></details><div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void selectVault(false)} disabled={working}>重新选择</Button></div></AlertDescription></Alert>}
+          {needsPermission && !connectionState && <Alert><FolderOpen className="size-4" /><AlertTitle>重新授权笔记文件夹</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>文件夹访问权限已失效，请重新授权以读取和保存。</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void reauthorizeVault()} disabled={working}>重新授权</Button></div></AlertDescription></Alert>}
+          {Boolean(error) && !detailReadFailed && !(connectionState && localWebReconnectRequired) && <PageNotice title={localWebReconnectRequired ? "连接已断开" : openingNote ? "无法打开笔记" : "操作未完成"} actions={<>{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => { if (openingNote && pendingRoute) void openNote(decodeURIComponent(pendingRoute.slice('#/notes/'.length))); else void refresh(); }} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}{openingNote && <Button variant="outline" size="sm" onClick={() => void navigate("notes", tag, quickFilter)}>返回列表</Button>}</>}>{errorMessage(error)}</PageNotice>}
+          {status?.indexing && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>{status.indexing.phase === "reading" ? "正在读取笔记库" : "正在建立索引"}</AlertTitle><AlertDescription>{status.indexing.total === null ? `已读取 ${status.indexing.processed} 篇笔记。` : `已整理 ${status.indexing.processed} / ${status.indexing.total} 篇笔记。`}{status.indexing.phase === "reading" ? "正在后台读取，可继续使用已加载的笔记。" : "正在后台整理，可继续使用已加载的笔记。"}草稿先保存在本机，校验后写入文件。搜索和筛选会逐步补齐。</AlertDescription></Alert>}
+          {status?.connected && !status.indexing && !status.coverage.complete && <Alert role="status"><Info className="size-4" /><AlertTitle>部分文件暂时无法读取</AlertTitle><AlertDescription className="gap-3">
+            <p>{status.coverage.pending > 0 ? `还有 ${status.coverage.pending} 个文件未读入。` : "部分文件尚未进入索引。"}列表和搜索结果可能不完整，已加载的笔记可以继续编辑。请确认文件可正常打开后重新读取。</p>
+            <div className="flex flex-wrap items-center gap-2 text-foreground">
+              <Button variant="outline" size="sm" disabled={refreshingPages || switchingVault || paging} onClick={async () => {
+                setRereading(true); setError("");
+                try { await refresh(true); } finally { setRereading(false); }
+              }}>{rereading && <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />}重新读取</Button>
+              <Button variant="outline" size="sm" aria-expanded={readDetailsOpen} aria-controls="read-coverage-details" onClick={() => setReadDetailsOpen(open => !open)}>查看详情</Button>
+            </div>
+            {readDetailsOpen && <div id="read-coverage-details" className="w-full space-y-2 border-t pt-3">
+              <dl><StatusRow label="已读入笔记" value={status.coverage.indexed} /><StatusRow label="待读取文件" value={status.coverage.pending} /><StatusRow label="需要处理的文件" value={status.coverage.issues} /></dl>
+              <p>当前未提供具体文件和失败原因。</p>
+              <p>请确认笔记文件夹可访问、文件能在系统中正常打开，再点击“重新读取”。若仍未恢复，请检查文件内容和访问权限。</p>
+            </div>}
+          </AlertDescription></Alert>}
 
           {draftIssues.length > 0 && <Alert role="status"><Info className="size-4" /><AlertTitle>部分草稿无法读取</AlertTitle><AlertDescription><p>原记录已保留，其他草稿仍可恢复。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><div className="mt-2 space-y-2">{draftIssues.map((issue,index) => <div key={`${issue.path ?? issue.code}:${index}`}><p>{issue.message}</p>{issue.path && <p className="break-all select-text text-xs">{issue.path}</p>}</div>)}</div></details></AlertDescription></Alert>}
 
             {!detailView && view === "notes" && status?.connected && recoveryChoices.length > 0 && !recoveryDismissed && <Alert>
               <CircleAlert className="size-4" /><AlertTitle>发现 {recoveryChoices.length} 条{recoveryChoices.some(draft => draft.unscoped) ? "历史草稿" : "未保存内容"}</AlertTitle>
               <AlertDescription>可继续编辑，稍后处理不会删除草稿。
-                <div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => { if (recoveryChoices.length === 1 && !recoveryChoices[0].unscoped) void resumeDraft(recoveryChoices[0]); else setRecoveryOpen(true); }}>{recoveryChoices.some(draft => draft.unscoped) ? "查看草稿" : "恢复内容"}</Button><Button variant="ghost" size="sm" onClick={() => setRecoveryDismissed(true)}>稍后处理</Button></div>
+                <div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => { if (recoveryChoices.length === 1 && !recoveryChoices[0].unscoped) void resumeDraft(recoveryChoices[0]); else setRecoveryOpen(true); }}>{recoveryChoices.some(draft => draft.unscoped) ? "查看草稿" : "恢复内容"}</Button><Button variant="outline" size="sm" onClick={() => setRecoveryDismissed(true)}>稍后处理</Button></div>
               </AlertDescription>
             </Alert>}
 
+          {listTimeoutVisible === "refresh" && <PageNotice title="刷新超时" actions={<Button variant="outline" size="sm" disabled={refreshingPages || switchingVault} onClick={() => void refresh(true)}>重试</Button>}>当前显示上次读取的内容。</PageNotice>}
           <div className={detailView || view === "settings" ? "sr-only" : "min-w-0 px-2 pb-2"}>
             <h1 className="truncate text-[32px] font-bold leading-[1.2] tracking-tight">{title}</h1>
           </div>
-          {openingNote ? (error ? null : <LoadingNote />) : editing ? <Suspense fallback={<LoadingNote />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
+          {openingNote ? (detailReadFailed ? <EmptyState compact role="alert" icon="connection" title={bridgeErrorCode(error) === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(error)}>
+            <div className="flex flex-wrap justify-center gap-2">
+              {canRetryDetail && <Button disabled={loading || working || switchingVault} onClick={() => {
+                // A retry must read the file again, including after a failed deep-link prefetch.
+                routeNoteRequest.current = null;
+                if (pendingRoute) void openNote(decodeURIComponent(pendingRoute.slice("#/notes/".length)));
+              }}>重试</Button>}
+              <Button variant={canRetryDetail ? "outline" : "default"} onClick={() => void navigate("notes", tag, quickFilter)}>返回列表</Button>
+            </div>
+          </EmptyState> : error ? null : <LoadingNote />) : editing ? <Suspense fallback={<LoadingNote />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
             setNotes(current => current.map(item => item.id === note.id ? note : item));
             editorHash.current = `#/notes/${note.id}`;
             window.history.replaceState(null, '', editorHash.current);
@@ -646,12 +700,17 @@ export function App() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" aria-label={`继续编辑：${draft.title || draft.body.slice(0,100) || '空正文'}`} onClick={() => void resumeDraft(draft)}>继续编辑</Button>
-                  {draft.reminderDismissed ? <span className="flex items-center gap-1 text-xs text-muted-foreground"><Check className="size-3.5" aria-hidden="true" />已关闭提醒</span> : draft.unscoped && draft.draftKey && draft.revision && capabilities.has("dismissDraftReminder") && <Button variant="ghost" size="sm" className="text-muted-foreground" disabled={reminderWorking} onClick={() => void dismissDraftReminder(draft)}>不再提醒</Button>}
+                  {draft.reminderDismissed ? <span className="flex items-center gap-1 text-xs text-muted-foreground"><Check className="size-3.5" aria-hidden="true" />已关闭提醒</span> : draft.unscoped && draft.draftKey && draft.revision && capabilities.has("dismissDraftReminder") && <Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void dismissDraftReminder(draft)}>不再提醒</Button>}
                 </div>
               </article>)}</div>
             </DialogContent></Dialog>
 
-            {loading && !status?.connected ? <LoadingNotes /> : !status?.connected ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
+            {connectionState ? <EmptyState compact icon={localWebReconnectRequired ? "connection" : "folder"}
+              title={localWebReconnectRequired ? bridgeErrorCode(error) === "WEB_UNAUTHORIZED" ? "访问授权已失效" : "本机服务未连接" : needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"}
+              description={localWebReconnectRequired ? bridgeErrorCode(error) === "WEB_UNAUTHORIZED" ? "从 MemoCard 重新打开此页面以恢复访问。" : "重新打开 MemoCard，继续读取和保存笔记。" : needsPermission ? "重新授权后，即可读取和保存笔记。" : "重新选择笔记文件夹，并允许访问。"}>
+              {selectionNotice && !localWebReconnectRequired && !needsPermission && <details className="mb-3 max-w-sm text-sm text-muted-foreground"><summary className="mx-auto w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words text-pretty">{selectionNotice}</p></details>}
+              <div className="flex flex-wrap justify-center gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} /> : <Button onClick={() => needsPermission ? void reauthorizeVault() : void selectVault(false)} disabled={working || switchingVault}>{needsPermission ? "重新授权" : "重新选择"}</Button>}</div>
+            </EmptyState> : listTimeoutVisible === "initial" ? <EmptyState compact role="alert" icon="connection" title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button disabled={refreshingPages || switchingVault} onClick={() => void refresh()}>重试</Button></EmptyState> : loading && notes.length === 0 ? <LoadingNotes /> : !status?.connected && notes.length === 0 ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
                 <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><FolderOpen className="size-6" strokeWidth={1.5} /></span>
                 <h2 className="text-lg font-semibold">{unsupportedBrowser ? "需要启动 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
@@ -662,7 +721,7 @@ export function App() {
                 </div>}
                 <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" />{isBrowserVault || isNative ? "只访问你授权的文件夹" : "只访问你通过 MemoCard 本机宿主授权的文件夹"}</p>
               </CardContent>
-            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault || refreshingPages} canOpen={!working && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : error ? null : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={status?.indexing ? "笔记正在陆续载入" : query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
+            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !status?.connected || (isLocalWeb && !webConnected) || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault || refreshingPages || localWebReconnectRequired || needsPermission} canOpen={!working && Boolean(status?.connected) && (!isLocalWeb || webConnected) && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : error ? null : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={status?.indexing ? "笔记正在陆续载入" : query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
           </>}
           </>}
         </div>
@@ -689,9 +748,9 @@ function LoadingNote() {
   return <div role="status" aria-label="正在打开笔记" className="space-y-6"><span className="sr-only">正在打开笔记…</span><Skeleton className="h-9 w-3/4" /><Skeleton className="h-5 w-20" /><Separator /><div className="space-y-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div></div>;
 }
 
-function EmptyState({ icon, title, description, children }: { icon: "note" | "search"; title: string; description: string; children?: React.ReactNode }) {
-  const Icon = icon === "search" ? Search : Layers2;
-  return <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className="flex flex-col items-center px-6 py-14 text-center"><span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><Icon className="size-6" strokeWidth={1.5} /></span><h2 className="text-lg font-semibold">{title}</h2><p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{description}</p>{children && <div className="mt-6">{children}</div>}</CardContent></Card>;
+function EmptyState({ icon, title, description, children, compact = false, role }: { icon: "note" | "search" | "folder" | "connection"; title: string; description: string; children?: React.ReactNode; compact?: boolean; role?: "alert" | "status" }) {
+  const Icon = icon === "search" ? Search : icon === "folder" ? FolderOpen : icon === "connection" ? CircleAlert : Layers2;
+  return <Card role={role ?? (compact ? "status" : undefined)} className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className={cn("flex flex-col items-center px-6 text-center", compact ? "py-10" : "py-14")}><span className={cn("flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground", compact ? "mb-4" : "mb-5")}><Icon className="size-6" strokeWidth={1.5} /></span><h2 className="text-balance text-lg font-semibold">{title}</h2><p className="mt-2 max-w-sm text-pretty text-sm leading-6 text-muted-foreground">{description}</p>{children && <div className={compact ? "mt-4" : "mt-6"}>{children}</div>}</CardContent></Card>;
 }
 
 function formatDate(value: string) {

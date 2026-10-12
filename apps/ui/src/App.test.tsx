@@ -423,7 +423,7 @@ describe("note workspace", () => {
     expect(await screen.findByText("正在打开笔记库")).toBeTruthy();
     await act(async () => { finish({ cancelled: true, diagnostic: "选择文件夹并授权 / AbortError" }); });
     expect(await screen.findByText("文件夹授权未完成")).toBeTruthy();
-    expect(screen.getByText(/笔记库未切换，请重新选择并允许访问文件夹/)).toBeTruthy();
+    expect(screen.getByText("重新选择笔记文件夹，并允许访问。")).toBeTruthy();
     expect(screen.getByText(/选择文件夹并授权 \/ AbortError/)).toBeTruthy();
     expect(screen.queryByText("正在打开笔记库")).toBeNull();
   });

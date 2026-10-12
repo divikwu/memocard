@@ -163,7 +163,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
     <NoteProperties saveError={error} renderHeader={(notice, ownsSaveError) => <>
       {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : conversionRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !conversionRejected || session.state === 'conflict') ? <>
         {session.state === 'error' && !conversionRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
-        {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="ghost" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="ghost" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
+        {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
       </> : undefined}>{error}</PageNotice>}
       {notice}
       {pendingLink && <PageNotice tone="info" title="有待打开的笔记">完成当前记录后，将打开收到的笔记链接。</PageNotice>}

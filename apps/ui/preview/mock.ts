@@ -14,9 +14,10 @@ export function createPreviewMock(scenario:string) {
   if (scenario === 'image-read-error') note.body += '\n\n![无法读取的模拟图片](../assets/missing.png)';
   if (scenario === 'link-error') note.body += '\n\n[[缺失笔记]]';
   let notes = [note];
-  const coverage = {complete:!['partial','combined','index-reading','index-writing'].includes(scenario),indexed:2,pending:['partial','combined'].includes(scenario)?3:0,issues:scenario === 'combined'?1:0,indexedAt:'2026-10-12T08:00:00Z'};
+  const coverage = {complete:!['partial','partial-reading','combined','index-reading','index-writing'].includes(scenario),indexed:2,pending:['partial','partial-reading','combined'].includes(scenario)?3:0,issues:scenario === 'combined'?1:0,indexedAt:'2026-10-12T08:00:00Z'};
   const status:VaultStatus = {connected:!['permission','folder-cancel','unsupported'].includes(scenario),vaultId:'preview-only-vault',vaultName:'模拟笔记库 · 不连接真实文件',phase:'M1',syncState:'local',coverage,capabilities};
   if (scenario.startsWith('index-')) status.indexing = {phase:scenario === 'index-reading'?'reading':'indexing',processed:1280,total:scenario === 'index-reading'?null:10000};
+  if (scenario === 'partial-reading') status.indexing = {phase:'reading',processed:2,total:null};
   const properties:NoteProperties = {contentHash:note.contentHash,definitionHash:'preview-definitions',writable:scenario !== 'readonly',tagProperty:{name:'tags',type:'list',value:['验收'],editable:true},properties:[
     {name:'摘要',type:scenario === 'readonly'?'unsupported':'text',value:scenario === 'readonly'?'嵌套 YAML 对象':'保留原始内容',editable:scenario !== 'readonly'},
     {name:'日期',type:'date',value:'2026-10-12',editable:true},
@@ -37,19 +38,22 @@ export function createPreviewMock(scenario:string) {
   if (editorFailures[scenario]) drafts.push({id:noteId,title:note.title,body:note.body+'\n\n模拟未保存修改。',tags:note.tags,baseHash:note.contentHash,relativePath:note.relativePath,updatedAt:'2026-10-12T08:01:00Z'});
   let failureActive = true;
   let saves = 0;
+  let queries = 0;
   const calls:string[] = [];
   async function request<T>(operation:string, params:Record<string,unknown>={}):Promise<T> {
     calls.push(operation);
     const fail = (code:string,message:string,retryable=false):never => { throw new PreviewFailure(code,message,retryable); };
+    const currentCoverage = scenario === 'partial' && !failureActive ? {...coverage,complete:true,pending:0} : coverage;
     let result:unknown;
     switch (operation) {
       case 'getEnvironment':result={platform:browser?'web':'mac',storage:browser?'browser':'local-web',phase:'M1',mcpEnabled:false,capabilities};break;
       case 'getStatus':
         if (['disconnected','unauthorized'].includes(scenario)) return fail(scenario === 'disconnected'?'BRIDGE_UNAVAILABLE':'WEB_UNAUTHORIZED',scenario === 'disconnected'?'此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。':'此页面的本机 Web 授权已失效。请重新打开本机 Web；编辑中的内容仍保留在此页面。');
-        result=status;break;
+        result={...status,coverage:currentCoverage};break;
       case 'queryNotes':
-        if (scenario === 'timeout' && failureActive) return fail('TIMEOUT','操作暂未完成。内容仍保留在编辑器中，请稍后重试。',true);
-        result={notes:['empty','filter-empty'].includes(scenario) || params.query?[]:notes,nextCursor:null,coverage};break;
+        queries++;
+        if ((scenario === 'timeout' || scenario === 'refresh-timeout' && queries > 1) && failureActive) return fail('TIMEOUT','操作暂未完成。内容仍保留在编辑器中，请稍后重试。',true);
+        result={notes:['empty','filter-empty'].includes(scenario) || params.query?[]:notes,nextCursor:null,coverage:currentCoverage};break;
       case 'getNote':
         if (scenario === 'detail-loading') return new Promise<T>(() => {});
         if (scenario === 'detail-missing') return fail('NOTE_NOT_FOUND','找不到此笔记。');
@@ -86,7 +90,9 @@ export function createPreviewMock(scenario:string) {
       }
       case 'listTags':result={tags:[{name:'验收',count:1},{name:'设计',count:1}]};break;
       case 'listFolders':result={folders:['notes']};break;
-      case 'selectVault':result={cancelled:true,diagnostic:'模拟：未授予文件夹访问权限'};break;
+      case 'selectVault':
+        if (scenario === 'folder-cancel' && !failureActive) { status.connected=true;result={vaultId:status.vaultId}; }
+        else result={cancelled:true,diagnostic:'模拟：未授予文件夹访问权限'};break;
       case 'reauthorizeVault':status.connected=true;capabilities.splice(capabilities.indexOf('reauthorizeVault'),1);result={vaultId:status.vaultId};break;
       case 'pickImage':return fail('INVALID_ARGUMENT','图片不能超过 20 MB。');
       case 'resolveLink':return fail('NOTE_NOT_FOUND',scenario === 'image-read-error'?'附件尚未下载。':'找不到此笔记。');

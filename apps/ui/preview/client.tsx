@@ -21,7 +21,7 @@ createRoot(document.getElementById('root')!).render(<ThemeProvider><App /></Them
 document.addEventListener('click',event=>{
   const target=event.target instanceof Element?event.target.closest('a,button'):null;
   if(target instanceof HTMLAnchorElement){event.preventDefault();}
-  if(target?.textContent?.includes('重试') || target?.textContent === '重新加载') mock.retry();
+  if(target?.textContent?.includes('重试') || target?.textContent?.includes('重新读取') || target?.textContent === '重新加载' || target?.textContent === '重新选择') mock.retry();
 },true);
 const auto=scenario.auto ?? (['属性','确认'].includes(scenario.group)?'属性':undefined);
 if(auto){
@@ -32,6 +32,10 @@ if(auto){
       observer.disconnect();
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')!.set!.call(input,'不存在的关键词');
       input.dispatchEvent(new Event('input',{bubbles:true}));
+    } else if(auto === 'refresh'){
+      if(!document.querySelector('[aria-label="笔记列表"]'))return;
+      observer.disconnect();
+      window.dispatchEvent(new CustomEvent('memocard:event',{detail:{type:'notesChanged'}}));
     } else {
       const button=[...document.querySelectorAll<HTMLButtonElement>('button')].find(item=>item.textContent === auto);
       if(!button)return;

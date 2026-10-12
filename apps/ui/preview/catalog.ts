@@ -1,16 +1,16 @@
 export const noteId = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 type Scenario = {id:string; group:string; label:string; instructions:string; detail?:boolean; drafts?:number; auto?:string; note?:string};
 export const scenarios:Scenario[] = [
-  {id:'disconnected',group:'连接',label:'本机服务停止',instructions:'检查顶部断连提示及重新打开按钮。所有按钮仅操作模拟数据。'},
-  {id:'unauthorized',group:'连接',label:'本机授权失效',instructions:'检查授权失效的原因与重新打开入口。'},
-  {id:'permission',group:'连接',label:'文件夹需重新授权',instructions:'检查重新授权提示；可点击按钮模拟恢复权限。'},
-  {id:'folder-cancel',group:'连接',label:'文件夹授权未完成',instructions:'点击“打开已有笔记库”，模拟选择后未完成授权。'},
+  {id:'disconnected',group:'连接',label:'本机服务停止',instructions:'检查居中连接状态、实心主按钮和页面标题。所有操作仅使用模拟数据。'},
+  {id:'unauthorized',group:'连接',label:'本机授权失效',instructions:'检查居中授权状态、恢复说明和重新打开入口。'},
+  {id:'permission',group:'连接',label:'文件夹需重新授权',instructions:'检查居中权限状态；点击“重新授权”可模拟恢复并显示笔记。'},
+  {id:'folder-cancel',group:'连接',label:'文件夹授权未完成',auto:'打开已有笔记库',instructions:'已模拟授权未完成；检查居中状态和详情，点击“重新选择”可模拟恢复。'},
   {id:'unsupported',group:'连接',label:'浏览器不支持直接读写',instructions:'检查启动本机服务的引导。'},
   {id:'detail-loading',group:'读取',label:'详情加载占位',detail:true,instructions:'持续显示详情骨架屏；可返回列表。此场景故意不结束读取。'},
-  {id:'detail-error',group:'读取',label:'详情读取失败',detail:true,instructions:'检查失败提示、重试和返回；点击重试可模拟成功。'},
-  {id:'detail-missing',group:'读取',label:'笔记不存在',detail:true,instructions:'检查不可重试错误和返回入口。'},
-  {id:'timeout',group:'读取',label:'操作超时',instructions:'检查超时文案和重试；点击重试可模拟成功。'},
-  {id:'partial',group:'读取',label:'部分文件待读取',instructions:'检查待读取数量和结果可能不完整的说明。'},
+  {id:'detail-error',group:'读取',label:'详情读取失败',detail:true,instructions:'检查实心“重试”和并排的白底描边“返回列表”，两个按钮同高；点击“重试”可模拟恢复。'},
+  {id:'detail-missing',group:'读取',label:'笔记不存在',detail:true,instructions:'检查居中不存在状态；仅显示实心“返回列表”按钮，不提供无效重试。'},
+  {id:'timeout',group:'读取',label:'首次加载超时',instructions:'检查居中超时状态；隐藏搜索和视图切换，点击“重试”可模拟加载成功。'},
+  {id:'partial',group:'读取',label:'部分文件暂时无法读取',instructions:'检查原因说明与操作指引；“重新读取”和“查看详情”为并排描边按钮，重新读取期间保留列表，点击可模拟恢复。'},
   {id:'index-reading',group:'读取',label:'首次读取进度',instructions:'固定模拟进度，打开笔记后仍可编辑；草稿只存在预览内存中。'},
   {id:'index-writing',group:'读取',label:'后台索引进度',instructions:'固定模拟进度；编辑后模拟保留草稿、等待提交。',note:'当前没有独立的“等待索引提交”编辑器提示，依赖顶部索引说明。'},
   {id:'draft-single',group:'草稿',label:'单条历史草稿',drafts:1,auto:'查看草稿',instructions:'检查描边卡片及两个按钮；可模拟继续编辑或关闭提醒。'},
@@ -31,7 +31,7 @@ export const scenarios:Scenario[] = [
   {id:'property-save-error',group:'属性',label:'属性保存失败',detail:true,instructions:'点击“摘要”的值，修改后按 Enter，检查标题上方的错误和重试。'},
   {id:'lossy-conversion',group:'属性',label:'类型转换会丢值',detail:true,instructions:'摘要属性菜单 → 类型 → 复选框 → 确认更改，检查拒绝转换提示。'},
   {id:'readonly',group:'属性',label:'只读属性',detail:true,instructions:'检查顶部只读说明、属性行只读标识和禁用编辑。'},
-  {id:'date-invalid',group:'属性',label:'日期格式错误',detail:true,instructions:'点击“日期”，输入 2026-99-99 后按 Enter，检查字段下方错误。'},
+  {id:'date-invalid',group:'属性',label:'日期格式错误',detail:true,instructions:'点击“日期”，输入 2026-99-99 后按 Enter 或移开焦点，检查字段下方错误；修正日期后可保存。'},
   {id:'tag-failure',group:'属性',label:'标签或选项更新失败',detail:true,instructions:'点击标签并移除“验收”，或修改阶段选项，检查弹层内错误。'},
   {id:'confirm-type',group:'确认',label:'属性类型更改确认',detail:true,instructions:'摘要属性菜单 → 类型 → 复选框，检查确认弹窗。'},
   {id:'confirm-delete',group:'确认',label:'属性删除确认',detail:true,instructions:'摘要属性菜单 → 删除属性，检查确认弹窗；确认仅改变内存。'},
@@ -44,5 +44,7 @@ export const scenarios:Scenario[] = [
   {id:'search-empty',group:'空状态',label:'搜索无结果',auto:'search',instructions:'检查无结果文案和清除搜索。'},
   {id:'filter-empty',group:'空状态',label:'筛选无结果',instructions:'展开“所有笔记”旁的快捷筛选，再选“有图片”，检查空状态。'},
   {id:'combined',group:'组合',label:'多个提示同时出现',drafts:3,instructions:'检查文件未就绪、异常草稿、恢复提示同时出现时的层级与页面滚动。'},
+  {id:'refresh-timeout',group:'读取',label:'刷新超时',auto:'refresh',instructions:'已模拟后台刷新超时；保留已加载列表和操作，点击“重试”可模拟恢复。'},
+  {id:'partial-reading',group:'读取',label:'后台读取 · 已有列表',instructions:'检查后台读取进度和继续使用指引；已加载笔记可以打开编辑，无需手动重新读取。'},
 ];
 export const getScenario = (id:string | null) => scenarios.find(item => item.id === id) ?? scenarios[0];

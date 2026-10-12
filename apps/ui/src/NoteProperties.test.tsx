@@ -290,6 +290,37 @@ it('rejects impossible dates, retains input, and cancels without a write',async 
  expect(onApply).not.toHaveBeenCalled();
  expect(screen.queryByRole('dialog')).toBeNull();
 });
+it.each(['2026-99-99','2026-02-30','12/10/2026'])('shows date feedback for %s without relying on the native invalid event',async value => {
+ const {user,onApply} = await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ const input = await screen.findByRole('textbox',{name:'属性值'});
+ const submit = vi.spyOn(HTMLFormElement.prototype,'requestSubmit').mockImplementation(() => {});
+ await user.clear(input); await user.type(input,`${value}{Enter}`);
+ const alert = await screen.findByRole('alert');
+ expect(alert.textContent).toBe('请输入有效日期（YYYY-MM-DD）。');
+ expect(input.getAttribute('aria-invalid')).toBe('true');
+ expect(input.getAttribute('aria-describedby')).toBe(alert.id);
+ expect((input as HTMLInputElement).value).toBe(value);
+ expect(onApply).not.toHaveBeenCalled();
+ expect(submit).not.toHaveBeenCalled();
+ await user.clear(input); await user.type(input,'2028-02-29{Enter}');
+ await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:'2028-02-29'}));
+ expect(screen.queryByRole('alert')).toBeNull();
+ expect(submit).not.toHaveBeenCalled();
+});
+it('shows an invalid typed date on blur and clears feedback when a calendar date is chosen',async () => {
+ const {user,onApply} = await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ const input = await screen.findByRole('textbox',{name:'属性值'});
+ vi.spyOn(HTMLFormElement.prototype,'requestSubmit').mockImplementation(() => {});
+ await user.clear(input); await user.type(input,'2026-99-99');
+ await user.click(screen.getByRole('button',{name:'下个月'}));
+ expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效日期（YYYY-MM-DD）。');
+ expect(onApply).not.toHaveBeenCalled();
+ await user.click(screen.getByRole('button',{name:'2026年11月5日'}));
+ await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:'2026-11-05'}));
+ expect(screen.queryByRole('alert')).toBeNull();
+});
 it('saves a typed leap date and preserves it on a write conflict',async () => {
  const onApply = vi.fn().mockRejectedValue(new Error('文件已被修改'));
  const {user} = await setup(onApply);

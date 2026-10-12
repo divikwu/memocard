@@ -16,17 +16,22 @@ export default function DatePropertyPicker({value, busy, autoFocus, onChange, on
   const [invalid,setInvalid] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const errorId = useId();
+  function validate(value:string) {
+    const valid = !value || Boolean(parsePropertyDate(value));
+    setInvalid(!valid);
+    return valid;
+  }
   function choose(date:Date) {
     input.current?.setCustomValidity(''); setInvalid(false);
     onSelect(propertyDateString(date));
   }
   return <fieldset disabled={busy} className="note-date-picker">
-    <Input ref={input} autoFocus={autoFocus} aria-label="属性值" aria-describedby={invalid ? errorId : undefined} aria-invalid={invalid || undefined} value={value} placeholder="YYYY-MM-DD" autoComplete="off" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" onInvalid={() => setInvalid(true)} onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} onChange={event => {
+    <Input ref={input} autoFocus={autoFocus} aria-label="属性值" aria-describedby={invalid ? errorId : undefined} aria-invalid={invalid || undefined} value={value} placeholder="YYYY-MM-DD" autoComplete="off" pattern="[0-9]{4}-[0-9]{2}-[0-9]{2}" onInvalid={() => setInvalid(true)} onBlur={event => { validate(event.currentTarget.value); }} onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); if (validate(event.currentTarget.value)) onSelect(event.currentTarget.value); } }} onChange={event => {
       const next = event.target.value, date = parsePropertyDate(next);
       event.currentTarget.setCustomValidity(!next || date ? '' : '请输入有效日期（YYYY-MM-DD）。');
       setInvalid(false); onChange(next); if (date) setMonth(date);
     }} />
-    {invalid && <p id={errorId} role="alert" className="text-sm text-destructive">请输入有效日期（YYYY-MM-DD）。</p>}
+    {invalid && <p id={errorId} role="alert" className="my-1 text-xs text-destructive">请输入有效日期（YYYY-MM-DD）。</p>}
     <DayPicker mode="single" required selected={selected} month={month} onMonthChange={setMonth} onSelect={choose} disabled={busy} locale={zhCN} weekStartsOn={0} showOutsideDays fixedWeeks labels={{labelPrevious:()=> '上个月',labelNext:()=> '下个月',labelDayButton:date=>`${date.getFullYear()}年${date.getMonth()+1}月${date.getDate()}日`}} formatters={{formatCaption:date=>`${date.getFullYear()}年${date.getMonth()+1}月`,formatWeekdayName:date=>['日','一','二','三','四','五','六'][date.getDay()]}} />
     <Button type="button" variant="secondary" size="sm" className="note-date-today" disabled={busy} onClick={() => choose(new Date())}>今天</Button>
   </fieldset>;
