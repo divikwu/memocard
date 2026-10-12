@@ -63,9 +63,9 @@ export function NoteCollection({ notes, query, onQueryChange, searchPlaceholder,
       {notes.map(note => <li key={note.id} className="min-w-0">
         <Card className={cn("gap-0 overflow-hidden bg-card py-0 transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40", cards ? "h-64 rounded-[16px] border border-border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]" : "rounded-lg border-0 shadow-none")}>
           <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row items-center")}>
-            <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={cards ? `打开 ${formatDate(note.createdAt)} 的笔记` : `打开 ${note.title?.trim() || "新页面"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
+            <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={cards ? `打开 ${formatDate(note.createdAt)} 的笔记` : `打开 ${note.title?.trim() || "新内容"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
               <div className={cn("w-full", cards ? "px-4 pb-2 pt-4" : "px-2 py-2")}>
-                <span className={cn("block min-w-0 truncate font-medium", cards ? "text-base" : "text-sm")}>{note.title?.trim() || "新页面"}</span>
+                <span className={cn("block min-w-0 truncate font-medium", cards ? "text-base" : "text-sm")}>{note.title?.trim() || "新内容"}</span>
                 {cards && <time className="mt-1 block text-xs text-muted-foreground/80" dateTime={note.createdAt}>{formatDate(note.createdAt)}</time>}
               </div>
               {cards && <div className="min-h-0 w-full flex-1 overflow-hidden px-4 pb-4">

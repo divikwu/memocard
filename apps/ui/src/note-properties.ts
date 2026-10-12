@@ -2,6 +2,7 @@ import { isMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { NoteProperties, NoteProperty, PropertyChange, PropertyType, PropertyOption } from '@memocard/contracts';
 import { BrowserVaultError } from './browser-files';
 import { normalizePropertyTag, propertyTags } from './inline-tags';
+import { listAsMultiSelect } from './property-type-change';
 
 const choiceColors = new Set(['default','brown','orange','yellow','green','blue','purple','pink','red']);
 function validOptions(value: unknown): value is PropertyOption[] {
@@ -44,7 +45,7 @@ export function propertySource(source: string) {
     if (metadata) {
       let choice;
       try { choice = JSON.parse(metadata[1]!); } catch { /* Invalid metadata stays read-only. */ }
-      if (choice && ['select','multiSelect'].includes(choice.type) && validOptions(choice.options) && (choice.type === 'select' ? type === 'text' || type === 'date' : type === 'list') && (Array.isArray(value) ? new Set(value).size === value.length && value.every(item => choice.options.some((option:PropertyOption) => option.name === item)) : value === '' || choice.options.some((option:PropertyOption) => option.name === value))) { type = choice.type; options = choice.options; }
+      if (choice && ['select','multiSelect'].includes(choice.type) && validOptions(choice.options) && (choice.type === 'select' ? (type === 'text' || type === 'date') && (value === '' || choice.options.some((option:PropertyOption) => option.name === value)) : type === 'list')) { type = choice.type; options = choice.options; }
       else type = 'unsupported';
     }
     let end = starts[index + 1]?.line ?? lines.length;
@@ -63,7 +64,7 @@ export function readProperties(source: string, contentHash: string): NotePropert
   const parsed = propertySource(source);
   return { properties: parsed.entries.filter(entry => !reserved.has(entry.property.name)).map(entry => entry.property), tagProperty:tagProperty(parsed), contentHash, writable: parsed.writable };
 }
-export function patchProperty(source: string, change: PropertyChange, updatedAt?: string): string {
+export function patchProperty(source: string, change: PropertyChange, updatedAt?: string, retainedValues?: string[]): string {
   const parsed = propertySource(source);
   const name = change.name?.trim();
   if (!name || name.length > 100 || [...name].some(character => character.charCodeAt(0) < 32) || (reserved.has(name) && name !== 'tags')) invalid('属性名为空、过长或属于系统保留字段。');
@@ -72,6 +73,9 @@ export function patchProperty(source: string, change: PropertyChange, updatedAt?
   if (change.create && existing) invalid('属性已存在。');
   if (!change.create && !existing && name !== 'tags') invalid('属性已被移除，请重新加载。');
   if (name === 'tags' ? !tagProperty(parsed).editable : existing && !existing.property.editable) invalid('此属性只能在源文件中编辑。');
+  const copied = parsed.entries.find(entry => entry.property.name === change.copyFrom);
+  if (change.copyFrom !== undefined && (!change.create || change.remove || change.renameTo !== undefined || change.definition || reserved.has(name) || reserved.has(change.copyFrom) || !copied?.property.editable)) invalid('只能复制当前笔记中可编辑的自定义属性。');
+  const original = copied?.property ?? existing?.property;
   let replacement: string[] = [];
   if (change.renameTo !== undefined) {
     const target = change.renameTo.trim();
@@ -89,11 +93,21 @@ export function patchProperty(source: string, change: PropertyChange, updatedAt?
       if (type !== 'list' || !Array.isArray(value) || !value.every(item => typeof item === 'string' && normalizePropertyTag(item))) invalid('标签需为有效名称列表，不能包含空格、空值或纯数字。');
       value = propertyTags(value);
     }
+    if (type === 'list' && name !== 'tags') invalid('文本列表已合并为多选。');
     if (type === 'checkbox' ? typeof value !== 'boolean' : ['list','multiSelect'].includes(type ?? '') ? !Array.isArray(value) || !value.every(item => typeof item === 'string') : !['text', 'date', 'select'].includes(type ?? '') || typeof value !== 'string') invalid('属性值与类型不匹配。');
-    const options = change.options ?? existing?.property.options ?? [];
+    const options = change.options ?? (original ? listAsMultiSelect(original).options : undefined) ?? (type === 'multiSelect' && Array.isArray(value) ? listAsMultiSelect({name,type:'list',value,editable:true}).options : undefined) ?? [];
     if (type === 'select' || type === 'multiSelect') {
       const values = Array.isArray(value) ? value : value === '' ? [] : [value];
-      if (!validOptions(options) || new Set(values).size !== values.length || !values.every(item => options.some(option => option.name === item))) invalid('选项无效、重复或尚未创建。');
+      // Renames supply values mapped from the verified source; copies read their source above.
+      const previous = [...retainedValues ?? (Array.isArray(original?.value) ? original.value : [])];
+      const retained = type === 'multiSelect' && (retainedValues !== undefined || ['list','multiSelect'].includes(original?.type ?? ''));
+      const seen = new Set<unknown>();
+      if (!validOptions(options) || !values.every(item => {
+        const index = previous.indexOf(item as string);
+        if (retained && index !== -1) { previous.splice(index,1); seen.add(item); return true; }
+        if (seen.has(item) || !options.some(option => option.name === item)) return false;
+        seen.add(item); return true;
+      })) invalid('选项无效、重复或尚未创建。');
     }
     if (type === 'date' && value !== '' && !date(value as string)) invalid('请输入有效日期。');
     if (JSON.stringify(value).length > 65536) invalid('属性值过长。');

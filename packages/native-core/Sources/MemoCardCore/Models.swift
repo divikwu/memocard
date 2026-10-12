@@ -57,6 +57,7 @@ struct SaveRequest: Codable {
     let id: String
     let body: String
     let tags: [String]
+    let inheritedTags: [String]?
     let baseHash: String?
     let relativePath: String?
 }
@@ -66,17 +67,19 @@ struct Draft: Codable {
     let id: String
     let body: String
     let tags: [String]
+    let inheritedTags: [String]?
     let baseHash: String?
     let relativePath: String?
     let updatedAt: String
 
-    private enum CodingKeys: String, CodingKey { case title, id, body, tags, baseHash, relativePath, updatedAt }
+    private enum CodingKeys: String, CodingKey { case title, id, body, tags, inheritedTags, baseHash, relativePath, updatedAt }
     func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
         try values.encodeIfPresent(title, forKey: .title)
         try values.encode(id, forKey: .id)
         try values.encode(body, forKey: .body)
         try values.encode(tags, forKey: .tags)
+        try values.encodeIfPresent(inheritedTags, forKey: .inheritedTags)
         try values.encode(baseHash, forKey: .baseHash)
         try values.encodeIfPresent(relativePath, forKey: .relativePath)
         try values.encode(updatedAt, forKey: .updatedAt)

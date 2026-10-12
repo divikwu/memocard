@@ -14,6 +14,7 @@ struct PropertyChange: Decodable {
     var definition: Bool? = nil
     var definitionHash: String? = nil
     var optionRename: OptionRename? = nil
+    var copyFrom: String? = nil
 }
 enum PropertyValue: Codable {
     case text(String), list([String]), checkbox(Bool)
@@ -129,7 +130,7 @@ private func propertySource(_ source: String) throws -> PropertySource {
             let metadata = try? JSONDecoder().decode(ChoiceMetadata.self, from: Data(comment.dropFirst("memocard:choice=".count).utf8))
             let values: [String]
             switch value { case .text(let text): values = text.isEmpty ? [] : [text]; case .list(let list): values = list; default: values = [] }
-            if let metadata, validOptions(metadata.options), (metadata.type == "select" ? ["text", "date"].contains(type) : metadata.type == "multiSelect" && type == "list"), Set(values).count == values.count, values.allSatisfy({ selected in metadata.options.contains { $0.name == selected } }) {
+            if let metadata, validOptions(metadata.options), (metadata.type == "select" ? ["text", "date"].contains(type) : metadata.type == "multiSelect" && type == "list"), (metadata.type == "multiSelect" || values.allSatisfy({ selected in metadata.options.contains { $0.name == selected } })) {
                 type = metadata.type; options = metadata.options
             } else { type = "unsupported" }
         }
@@ -157,7 +158,7 @@ func readNoteProperties(_ data: Data) throws -> NoteProperties {
     let parsed = try propertySource(source)
     return NoteProperties(properties: parsed.entries.filter { !reservedProperties.contains($0.property.name) }.map(\.property), tagProperty: tagProperty(parsed), contentHash: sha256(data), writable: parsed.writable)
 }
-func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? = nil) throws -> Data {
+func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? = nil, retainedValues: [String]? = nil) throws -> Data {
     guard String(data: data, encoding: .utf8) != nil else { throw propertyError("笔记必须为 UTF-8。") }
     let source = String(decoding: data, as: UTF8.self)
     var parsed = try propertySource(source)
@@ -168,6 +169,11 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
     if change.create == true && existing != nil { throw propertyError("属性已存在。") }
     if change.create != true && existing == nil && name != "tags" { throw propertyError("属性已被移除，请重新加载。") }
     if name == "tags" ? !tagProperty(parsed).editable : existing?.property.editable == false { throw propertyError("此属性只能在源文件中编辑。") }
+    let copied = parsed.entries.first { $0.property.name == change.copyFrom }
+    if let copyFrom = change.copyFrom {
+        guard change.create == true, change.remove != true, change.renameTo == nil, change.definition != true, !reservedProperties.contains(name), !reservedProperties.contains(copyFrom), copied?.property.editable == true else { throw propertyError("只能复制当前笔记中可编辑的自定义属性。") }
+    }
+    let original = copied?.property ?? existing?.property
     let encoder = JSONEncoder(); encoder.outputFormatting = [.withoutEscapingSlashes]
     var replacement: [String] = []
     if let renameTo = change.renameTo {
@@ -187,6 +193,7 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
             var seen = Set<String>()
             value = .list(tags.compactMap(normalizedPropertyTag).filter { seen.insert($0).inserted })
         }
+        if change.type == "list" && name != "tags" { throw propertyError("文本列表已合并为多选。") }
         switch (change.type, value) {
         case ("text", .text), ("list", .list), ("checkbox", .checkbox), ("select", .text), ("multiSelect", .list): break
         case ("date", .text(let date)): guard date.isEmpty || propertyDate(date) else { throw propertyError("请输入有效日期。") }
@@ -199,10 +206,18 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
         if change.type == "date", case .text(let date) = value { encodedValue = date.isEmpty ? "null # memocard:type=date" : date } else { encodedValue = String(data: encoded, encoding: .utf8)! }
         var suffix = ""
         if change.type == "select" || change.type == "multiSelect" {
-            let options = change.options ?? existing?.property.options ?? []
+            let options = change.options ?? original.map { listAsMultiSelect($0).options ?? [] } ?? listAsMultiSelect(NoteProperty(name: name, type: "list", value: value, editable: true)).options ?? []
             let values: [String]
             switch value { case .text(let text): values = text.isEmpty ? [] : [text]; case .list(let list): values = list; default: values = [] }
-            guard validOptions(options), Set(values).count == values.count, values.allSatisfy({ selected in options.contains { $0.name == selected } }) else { throw propertyError("选项无效、重复或尚未创建。") }
+            var previous: [String] = []
+            if let retainedValues { previous = retainedValues }
+            else if case .list(let items)? = original?.value { previous = items }
+            let retained = change.type == "multiSelect" && (retainedValues != nil || ["list", "multiSelect"].contains(original?.type ?? ""))
+            var seen = Set<String>()
+            guard validOptions(options), values.allSatisfy({ selected in
+                if retained, let index = previous.firstIndex(of: selected) { previous.remove(at: index); seen.insert(selected); return true }
+                return seen.insert(selected).inserted && options.contains { $0.name == selected }
+            }) else { throw propertyError("选项无效、重复或尚未创建。") }
             let metadata = try encoder.encode(ChoiceMetadata(type: change.type!, options: options))
             guard metadata.count <= 65536 else { throw propertyError("属性值过长。") }
             suffix = " # memocard:choice=" + String(data: metadata, encoding: .utf8)!
@@ -262,7 +277,8 @@ func validPropertyDefinition(_ value: PropertyDefinition) -> Bool {
 func mergedPropertyOptions(_ properties: [NoteProperty]) -> [PropertyOption] {
     var options: [PropertyOption] = []
     for property in properties { for option in property.options ?? [] where !options.contains(where: { $0.name == option.name }) { options.append(option) } }
-    return options
+    // Bound inferred menu choices, never the selected values stored in YAML.
+    return Array(options.prefix(200))
 }
 private func propertyValues(_ property: NoteProperty, rename: OptionRename? = nil) -> [String] {
     let values: [String]
@@ -277,8 +293,25 @@ private func normalizedOptionValues(_ values: [String]) -> [String] {
     var seen = Set<String>()
     return values.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty && $0.count <= 100 && !$0.unicodeScalars.contains(where: { $0.value < 32 }) && seen.insert($0).inserted }
 }
-func convertedProperty(_ property: NoteProperty, definition: PropertyDefinition, rename: OptionRename? = nil) -> NoteProperty {
+// Legacy YAML lists share the multi-select editor without normalizing their values.
+func listAsMultiSelect(_ property: NoteProperty) -> NoteProperty {
+    guard property.type == "list" else { return property }
+    let options = Array(propertyValues(property).filter { !$0.isEmpty && $0.count <= 100 && $0 == $0.trimmingCharacters(in: .whitespacesAndNewlines) && !$0.unicodeScalars.contains(where: { $0.value < 32 }) }.reduce(into: [PropertyOption]()) { result, name in
+        if !result.contains(where: { $0.name == name }) { result.append(PropertyOption(name: name, color: "default")) }
+    }.prefix(200))
+    return NoteProperty(name: property.name, type: "multiSelect", value: property.value, editable: property.editable, options: options)
+}
+func resolvedPropertyDefinition(_ definition: PropertyDefinition, properties: [NoteProperty]) -> PropertyDefinition {
+    definition.type == "list" ? newPropertyDefinition(properties.map(listAsMultiSelect), type: "multiSelect", options: nil, includeValues: false) : definition
+}
+func convertedProperty(_ property: NoteProperty, definition: PropertyDefinition, rename: OptionRename? = nil, pruneOptions: Bool = false) -> NoteProperty {
+    let property = listAsMultiSelect(property)
+    let definition = resolvedPropertyDefinition(definition, properties: [property])
     let values = propertyValues(property, rename: rename)
+    if property.type == "multiSelect" && definition.type == "multiSelect" {
+        let removed = pruneOptions ? (property.options ?? []).filter { option in option.name != rename?.from && !(definition.options ?? []).contains { $0.name == option.name } }.map(\.name) : []
+        return NoteProperty(name: property.name, type: "multiSelect", value: .list(values.filter { !removed.contains($0) }), editable: property.editable, options: definition.options)
+    }
     let value: PropertyValue
     switch definition.type {
     case "text": value = .text(values.joined(separator: "\n"))
@@ -305,7 +338,9 @@ func newPropertyDefinition(_ properties: [NoteProperty], type: String, options: 
 
 // Preview and first save share the same library schema, never another note's values.
 func inheritedProperties(_ properties: [NoteProperty], stored: [String: PropertyDefinition]) throws -> [NoteProperty] {
+    let properties = properties.map(listAsMultiSelect)
     var definitions = stored
+    for (name, definition) in stored { definitions[name] = resolvedPropertyDefinition(definition, properties: properties.filter { $0.name == name }) }
     for property in properties where property.editable && property.type != "unsupported" && definitions[property.name] == nil {
         definitions[property.name] = newPropertyDefinition(properties.filter { $0.name == property.name }, type: property.type, options: nil, includeValues: false)
     }

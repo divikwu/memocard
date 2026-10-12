@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { within, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, within, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { Note } from '@memocard/contracts';
@@ -25,10 +25,15 @@ it('distinguishes tag sources, selects existing tags, creates tags and removes o
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : operation === 'listTags' ? {tags:[{name:'共享'},{name:'属性/分类'}]} : {properties:[],tagProperty:{name:'tags',type:'list',value:['共享'],editable:true},writable:true,contentHash:'hash'});
  const user = userEvent.setup();
  render(<NoteProperties note={note} tags={['共享','正文/分类']} canEdit busy={false} onApply={onApply} onLocateTag={onLocateTag} />);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
  const trigger = await screen.findByRole('button',{name:'编辑标签'});
+ expect(screen.getByRole('button',{name:/^属性$/}).getAttribute('aria-expanded')).toBe('false');
+ expect(screen.queryByText('更新时间')).toBeNull();
  expect(within(trigger).getAllByText('共享')).toHaveLength(1);
  expect(within(trigger).getByText('正文/分类')).toBeTruthy();
+ await user.click(screen.getByRole('button',{name:/^属性$/}));
+ expect(screen.getAllByText('共享')).toHaveLength(1);
+ await user.click(screen.getByRole('button',{name:/^属性$/}));
+ expect(screen.getByRole('button',{name:'编辑标签'})).toBe(trigger);
  expect(screen.queryByText('正文标签')).toBeNull();
  const sharedBadge = within(trigger).getByText('共享');
  expect(sharedBadge.hasAttribute('title')).toBe(false);
@@ -71,8 +76,27 @@ async function setup(onApply = vi.fn().mockResolvedValue(undefined)) {
  await screen.findByRole('button',{name:'编辑属性 摘要'});
  return {user,onApply};
 }
+it('uses multi-select editing for legacy lists and removes the separate list type from menus',async () => {
+ const {user,onApply} = await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 aliases'}));
+ expect(await screen.findByRole('combobox',{name:'搜索或创建选项'})).toBeTruthy();
+ expect(screen.getByRole('button',{name:'移除选项 别名一'})).toBeTruthy();
+ expect(onApply).not.toHaveBeenCalled();
+ await user.click(screen.getByRole('button',{name:'移除选项 别名一'}));
+ await waitFor(() => expect(onApply).toHaveBeenCalledWith(expect.objectContaining({type:'multiSelect',value:['别名二']})));
+ await user.keyboard('{Escape}');
+ await user.click(screen.getByRole('button',{name:'添加属性'}));
+ expect(screen.queryByRole('button',{name:'文本列表'})).toBeNull();
+ expect(screen.getByRole('button',{name:/^多选$/})).toBeTruthy();
+ await user.keyboard('{Escape}');
+ await user.click(screen.getByRole('button',{name:'属性菜单 aliases'}));
+ const typeTrigger = await screen.findByRole('menuitem',{name:/^类型/});
+ typeTrigger.focus(); await user.keyboard('{ArrowRight}');
+ expect(await screen.findByRole('menuitemradio',{name:/^多选$/})).toBeTruthy();
+ expect(screen.queryByRole('menuitemradio',{name:'文本列表'})).toBeNull();
+});
 it.each([
- ['文本','text',''], ['文本列表','list',[]], ['日期','date',''], ['复选框','checkbox',false],
+ ['文本','text',''], ['日期','date',''], ['复选框','checkbox',false],
 ])('creates an empty %s property immediately after choosing its type',async (label,type,value) => {
  const {user,onApply}=await setup();
  await user.click(screen.getByRole('button',{name:'添加属性'}));
@@ -161,10 +185,55 @@ it('toggles checkbox directly and presents a date input and list chips',async ()
  const {user,onApply} = await setup();
  await user.click(screen.getByRole('checkbox',{name:'切换属性 已验证'}));
  expect(onApply).toHaveBeenCalledWith({name:'已验证',type:'checkbox',value:false});
+ onApply.mockClear();
+ screen.getByRole('checkbox',{name:'切换属性 已验证'}).focus();
+ await user.keyboard('[Space]');
+ expect(onApply).toHaveBeenCalledWith({name:'已验证',type:'checkbox',value:true});
  expect(screen.getByText('别名一')).toBeTruthy();
  await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
  expect(await screen.findByLabelText('属性值')).toHaveProperty('placeholder','YYYY-MM-DD');
  expect(screen.getByRole('grid')).toBeTruthy();
+});
+
+it('responds immediately to a checkbox click and retains the value during the save and refresh',async () => {
+ let finishSave!: () => void;
+ const onApply = vi.fn(() => new Promise<void>(resolve => { finishSave = resolve; }));
+ const user = userEvent.setup();
+ const props = {note,tags:[],canEdit:true,busy:false,onApply};
+ const {rerender} = render(<NoteProperties {...props} />);
+ await user.click(screen.getByRole('button',{name:/^属性$/}));
+ const checkbox = await screen.findByRole('checkbox',{name:'切换属性 已验证'});
+ const summary = screen.getByRole('button',{name:'编辑属性 摘要'});
+ await user.click(checkbox);
+ expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ rerender(<NoteProperties {...props} busy />);
+ expect(checkbox).toHaveProperty('disabled',true);
+ expect(screen.getByLabelText('笔记属性').hasAttribute('data-updating')).toBe(true);
+ await user.click(checkbox);
+ expect(onApply).toHaveBeenCalledTimes(1);
+ await act(async () => { finishSave(); });
+ let finishRefresh!: (value:unknown) => void;
+ vi.mocked(request).mockImplementation(async () => new Promise(resolve => { finishRefresh = resolve; }));
+ rerender(<NoteProperties {...props} note={{...note,contentHash:'new-hash'}} />);
+ expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ expect(checkbox).toHaveProperty('disabled',true);
+ expect(screen.getByRole('button',{name:'编辑属性 摘要'})).toBe(summary);
+ await act(async () => { finishRefresh({properties:properties.map(property => property.name === '已验证' ? {...property,value:false} : property),writable:true,contentHash:'new-hash'}); });
+ expect(checkbox).toHaveProperty('disabled',false);
+ expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ expect(screen.getByLabelText('笔记属性').hasAttribute('data-updating')).toBe(false);
+});
+
+it('restores the checkbox value and reports a failed save',async () => {
+ let failSave!: (reason:Error) => void;
+ const onApply = vi.fn(() => new Promise<void>((_,reject) => { failSave = reject; }));
+ const {user} = await setup(onApply);
+ const checkbox = screen.getByRole('checkbox',{name:'切换属性 已验证'});
+ await user.click(checkbox);
+ expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ await act(async () => { failSave(new Error('文件冲突')); });
+ expect(checkbox.getAttribute('aria-checked')).toBe('true');
+ expect(await screen.findByRole('alert')).toHaveProperty('textContent','文件冲突');
 });
 
 it('commits on keyboard focus leaving the value editor',async () => {
@@ -219,9 +288,7 @@ it('supports calendar arrow keys and Space selection',async () => {
 
 it('reads both tag sources without offering edits when the note is read-only',async () => {
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : ({properties:[],tagProperty:{name:'tags',type:'list',value:['只读属性'],editable:true},writable:true,contentHash:'hash'}));
- const user = userEvent.setup();
  render(<NoteProperties note={note} tags={['只读正文']} canRead canEdit={false} busy={false} onApply={vi.fn()} />);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
  expect(await screen.findByText('只读属性')).toBeTruthy();
  expect(screen.getByText('只读正文')).toBeTruthy();
  expect(screen.queryByRole('button',{name:'编辑标签'})).toBeNull();
@@ -304,7 +371,7 @@ it('duplicates a choice property with a unique name and preserves values and col
  const deletion=await screen.findByRole('menuitem',{name:'删除属性'});
  expect(deletion.getAttribute('data-variant')).toBe('default');
  await user.click(screen.getByRole('menuitem',{name:'创建属性副本'}));
- await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'阶段 副本2',type:'select',value:'进行中',create:true,options:[{name:'进行中',color:'blue'},{name:'完成',color:'green'}]}));
+ await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'阶段 副本2',type:'select',value:'进行中',create:true,copyFrom:'阶段',options:[{name:'进行中',color:'blue'},{name:'完成',color:'green'}]}));
  expect(onApply).toHaveBeenCalledTimes(1);
 });
 
@@ -317,7 +384,7 @@ async function openTypes(user:ReturnType<typeof userEvent.setup>,name:string) {
 it('switches types from the property menu and retains compatible values',async () => {
  const {user,onApply}=await setup();
  const types=await openTypes(user,'摘要');
- expect(within(types).getAllByRole('menuitemradio')).toHaveLength(6);
+ expect(within(types).getAllByRole('menuitemradio')).toHaveLength(5);
  expect(within(types).getByRole('menuitemradio',{name:'文本'}).getAttribute('aria-checked')).toBe('true');
  await user.click(within(types).getByRole('menuitemradio',{name:'多选'}));
  await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'摘要',type:'multiSelect',value:['原值'],options:[{name:'原值',color:'default'}],definition:true}));
@@ -393,7 +460,10 @@ it('previews inherited library fields on an unsaved page without editing or writ
  await user.click(screen.getByRole('button',{name:/^属性$/}));
  expect(await screen.findByText('库摘要')).toBeTruthy();
  expect(request).toHaveBeenCalledWith('getNoteProperties',{});
- expect(screen.getByRole('checkbox',{name:'切换属性 已验证'})).toHaveProperty('checked',false);
+ const checkbox = screen.getByRole('checkbox',{name:'切换属性 已验证'});
+ expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ expect(checkbox).toHaveProperty('disabled',true);
+ await user.click(checkbox);
  expect(screen.queryByText('只读')).toBeNull();
  expect(screen.queryByText('高级 YAML 语法请在源文件中编辑。')).toBeNull();
  expect(screen.queryByRole('button',{name:'编辑属性 库摘要'})).toBeNull();

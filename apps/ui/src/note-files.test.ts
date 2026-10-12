@@ -6,7 +6,7 @@ it('uses safe readable names, case-insensitive collisions and bounded UTF-8 file
   expect(namedNotePath('notes/id.md', 'Name', ['notes/name.md'])).toBe('notes/Name (2).md');
   expect(safeNoteTitle('../a:b/')).toBe('a b');
   expect(safeNoteTitle('CON')).toBe('_CON');
-  expect(safeNoteTitle('')).toBe('未命名');
+  expect(safeNoteTitle('')).toBe('新内容');
   expect(new TextEncoder().encode(safeNoteTitle('中文🌱'.repeat(100))).length).toBeLessThanOrEqual(200);
 });
 

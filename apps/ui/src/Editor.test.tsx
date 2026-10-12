@@ -173,6 +173,7 @@ it('focuses a new page title without saving and autosaves title-only changes', a
   const unload = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload); expect(unload.defaultPrevented).toBe(false);
   const title = screen.getByRole('textbox', { name: '页面标题' });
   expect(document.activeElement).toBe(title);
+  expect(title.getAttribute('placeholder')).toBe('新内容');
   fireEvent.change(title, { target: { value: '只有标题' } });
   await act(async () => { await vi.advanceTimersByTimeAsync(650); });
   expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: '只有标题', body: '', baseHash: null }));
@@ -181,6 +182,87 @@ it('closes an untouched new page without creating a note', async () => {
   const { onClose, onSaved } = await editor({ ...initial, title: '' });
   finishEditor(); await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   expect(onSaved).not.toHaveBeenCalled(); expect(native).not.toHaveBeenCalled();
+});
+it.each(['新内容', '新内容 (2)', '未命名', '未命名 (2)'])('shows a title placeholder for a reopened default filename without renaming it (%s)', async filename => {
+  await editor({ ...initial, title: filename, body: '原文', relativePath: `notes/${filename}.md`, baseHash: 'old' });
+  const title = screen.getByRole('textbox', { name: '页面标题' }) as HTMLTextAreaElement;
+  expect(title.value).toBe('');
+  expect(title.placeholder).toBe('新内容');
+  vi.useFakeTimers(); replaceEditorText('继续编辑正文');
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: filename, relativePath: `notes/${filename}.md`, body: '继续编辑正文' }));
+  expect(title.value).toBe('');
+  fireEvent.change(title, { target: { value: '手动标题' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(title.value).toBe('手动标题');
+  expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: '手动标题' }));
+});
+it('keeps the title input empty after body-only autosave assigns a default filename', async () => {
+  native.mockImplementation(async op => op === 'saveNote' ? { ...saved, title: '新内容 (2)', relativePath: 'notes/新内容 (2).md' } : undefined);
+  await editor({ ...initial, title: '' });
+  const title = screen.getByRole('textbox', { name: '页面标题' }) as HTMLTextAreaElement;
+  vi.useFakeTimers(); replaceEditorText('仅输入正文');
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(title.value).toBe('');
+  expect(title.placeholder).toBe('新内容');
+  replaceEditorText('继续编辑正文');
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(native).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ title: '新内容 (2)', relativePath: 'notes/新内容 (2).md', body: '继续编辑正文' }));
+  expect(title.value).toBe('');
+});
+it('allows a default-looking title to be entered manually without clearing it while typing', async () => {
+  await editor({ ...initial, title: '' });
+  const title = screen.getByRole('textbox', { name: '页面标题' }) as HTMLTextAreaElement;
+  fireEvent.change(title, { target: { value: '新内容' } });
+  expect(title.value).toBe('新内容');
+});
+it('keeps a manually entered default-looking title visible after a filename collision', async () => {
+  native.mockImplementation(async op => op === 'saveNote' ? { ...saved, title: '新内容 (2)', relativePath: 'notes/新内容 (2).md' } : undefined);
+  await editor({ ...initial, title: '' });
+  const title = screen.getByRole('textbox', { name: '页面标题' }) as HTMLTextAreaElement;
+  vi.useFakeTimers();
+  fireEvent.change(title, { target: { value: '新内容' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(title.value).toBe('新内容 (2)');
+  fireEvent.change(title, { target: { value: '' } });
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(title.value).toBe('');
+});
+it('shows inherited tags in the default property row and preserves the caret when typing the first body text', async () => {
+  await editor({ ...initial, title: '', tags: ['生活'] });
+  expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
+  expect(screen.queryByLabelText('继承标签')).toBeNull();
+  expect(screen.getAllByText('生活')).toHaveLength(1);
+  expect(screen.queryByText('更新时间')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '属性' }));
+  expect(screen.getAllByText('生活')).toHaveLength(1);
+  expect(readEditorText()).toBe('');
+  const rich = noteEditor();
+  act(() => { rich.commands.focus('start'); rich.commands.insertContent('第一句'); });
+  expect(readEditorText()).toBe('第一句');
+  expect(rich.state.selection.from).toBe(4);
+  act(() => { rich.commands.insertContent('继续'); });
+  expect(readEditorText()).toBe('第一句继续');
+  finishEditor();
+  await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: '', body: '第一句继续', tags: [], inheritedTags: ['生活'] })));
+});
+it('keeps the body empty when a title is entered first and retains inherited tag properties', async () => {
+  await editor({ ...initial, title: '', tags: ['生活'] });
+  fireEvent.change(screen.getByRole('textbox', { name: '页面标题' }), { target: { value: '实际标题' } });
+  fireEvent.keyDown(screen.getByRole('textbox', { name: '页面标题' }), { key: 'Enter' });
+  act(() => { noteEditor().commands.insertContent('实际正文'); });
+  expect(readEditorText()).toBe('实际正文');
+  finishEditor();
+  await waitFor(() => expect(native).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: '实际标题', body: '实际正文', tags: [], inheritedTags: ['生活'] })));
+});
+it('preserves undo and avoids creating a file when all input is undone', async () => {
+  const { onClose } = await editor({ ...initial, title: '', tags: ['生活'] });
+  act(() => { noteEditor().commands.insertContent('临时正文'); });
+  expect(readEditorText()).toBe('临时正文');
+  act(() => { noteEditor().commands.undo(); });
+  expect(readEditorText().trim()).toBe('');
+  finishEditor(); await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  expect(native).not.toHaveBeenCalledWith('saveNote', expect.anything());
 });
 it('keeps title focus and autosaves when the parent mirrors the edited title', async () => {
   function Page() {
@@ -221,6 +303,7 @@ it('keeps composition Enter in the title and moves ordinary Enter to the body', 
 it('summarizes body tags above the editor without restoring property tags', async () => {
  await editor({...initial, body:'#测试/笔记', tags:['测试/笔记'], baseHash:'old'});
  expect(screen.queryByLabelText('笔记标签')).toBeNull();
+ expect(screen.getByLabelText('笔记属性').textContent).toContain('测试/笔记');
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#测试/笔记');
  fireEvent.click(await screen.findByRole('button', {name:'属性'}));
  expect(screen.getByLabelText('笔记属性').textContent).toContain('测试/笔记');
@@ -233,7 +316,7 @@ it('shows source metadata read-only and updates it only after a successful save'
  const handle = createRef<EditorHandle>();
  render(<Editor initial={source} initialNote={note} handle={handle} capabilities={new Set(['saveNote'])} onClose={vi.fn()} onSaved={vi.fn()} />);
  expect(screen.queryByRole('dialog')).toBeNull();
- expect((await screen.findByLabelText('笔记属性')).querySelectorAll('dt')).toHaveLength(0);
+ expect((await screen.findByLabelText('笔记属性')).querySelectorAll('dt')).toHaveLength(1);
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('2030');
  expect(screen.queryByText('笔记.md')).toBeNull();
  expect(screen.queryByText('更新时间')).toBeNull();

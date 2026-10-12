@@ -15,11 +15,11 @@ it('edits one YAML property while preserving unknown fields, comments, BOM, CRLF
 it('round trips all four types and deletes only the selected property', () => {
   let source = '# Plain\nbody #tag\n';
   for (const change of [
-    {name:'摘要',type:'text' as const,value:'yes'}, {name:'aliases',type:'list' as const,value:['One','two: #literal']},
+    {name:'摘要',type:'text' as const,value:'yes'}, {name:'aliases',type:'multiSelect' as const,value:['One','two: #literal']},
     {name:'due',type:'date' as const,value:'2026-10-12'}, {name:'done',type:'checkbox' as const,value:false},
   ]) source = patchProperty(source, {...change,create:true});
   const values = readProperties(source, 'hash').properties;
-  expect(values.map(value => value.type)).toEqual(['text','list','date','checkbox']);
+  expect(values.map(value => value.type)).toEqual(['text','multiSelect','date','checkbox']);
   source = patchProperty(source, {name:'done',type:'checkbox',value:true});
   expect(readProperties(source, 'hash').properties.at(-1)?.value).toBe(true);
   source = patchProperty(source, {name:'due',remove:true});
@@ -58,11 +58,11 @@ it('keeps malformed or advanced YAML tags read-only and rejects invalid tag muta
 it('creates empty properties and preserves the date type through fill, clear, reload and deletion', () => {
   let source = '\uFEFF---\r\n# keep\r\nunknown: null # user comment\r\n---\r\nBody #keep\r\n';
   for (const change of [
-    {name:'empty text',type:'text' as const,value:''}, {name:'empty list',type:'list' as const,value:[]},
+    {name:'empty text',type:'text' as const,value:''}, {name:'empty list',type:'multiSelect' as const,value:[]},
     {name:'empty date',type:'date' as const,value:''}, {name:'unchecked',type:'checkbox' as const,value:false},
   ]) source = patchProperty(source, {...change,create:true});
   expect(readProperties(source,'hash').properties.slice(1)).toEqual([
-    {name:'empty text',type:'text',value:'',editable:true}, {name:'empty list',type:'list',value:[],editable:true},
+    {name:'empty text',type:'text',value:'',editable:true}, {name:'empty list',type:'multiSelect',value:[],editable:true,options:[]},
     {name:'empty date',type:'date',value:'',editable:true}, {name:'unchecked',type:'checkbox',value:false,editable:true},
   ]);
   source = patchProperty(source,{name:'empty date',type:'date',value:'2028-02-29'});

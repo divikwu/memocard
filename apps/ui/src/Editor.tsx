@@ -20,6 +20,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   const vaultId = useTagColorVault();
   const field = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLTextAreaElement>(null);
+  const lastEnteredTitle = useRef<string | null>(null);
   const initialDraft = useRef(initial).current;
   const titleFirst = initialDraft.title !== undefined && !initialDraft.baseHash;
   const [, render] = useState(0);
@@ -31,6 +32,8 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   callbacks.current = { onCommitted, onTitleChange };
   const [session] = useState(() => new EditorSession(initialDraft, request, capabilities.has('saveDraft'), () => render(value => value + 1), note => { lastNote.current = note; callbacks.current.onCommitted?.(note); }));
   const { body, relativePath, title, tags } = session.current;
+  // Default filenames remain in the save session without filling the title input.
+  const titleValue = !lastEnteredTitle.current?.trim() && /^(?:新内容|未命名)(?: \([1-9]\d*\))?$/.test(title ?? '') ? '' : title ?? '';
   const note = lastNote.current ?? initialNote;
   const metadata = note?.id === session.current.id ? note : undefined;
   useLayoutEffect(() => {
@@ -154,11 +157,15 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   }
   const error = localError || (session.error ? errorMessage(session.error) : '');
   return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor">
-    <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新页面" className="note-page-title" value={session.current.title ?? ''} readOnly={working || !canSave} onChange={event => session.update(body, relativePath, event.target.value.replace(/[\r\n]+/g, ' '))} onKeyDown={event => {
+    <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新内容" className="note-page-title" value={titleValue} readOnly={working || !canSave} onChange={event => {
+      const value = event.target.value.replace(/[\r\n]+/g, ' ');
+      lastEnteredTitle.current = value;
+      session.update(body, relativePath, value);
+    }} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
     }} />
-    <NoteProperties onChangeTag={changeTag} note={metadata} tags={tags} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onLocateTag={tag => {
+    <NoteProperties onChangeTag={changeTag} note={metadata} tags={[...tags, ...session.current.inheritedTags ?? []]} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onLocateTag={tag => {
       const target = Array.from(field.current?.querySelectorAll('.rich-inline-tag') ?? []).find(element => element.getAttribute('data-tag') === encodeURIComponent(tag));
       if (!target) return;
       field.current?.focus();

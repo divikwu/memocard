@@ -20,6 +20,46 @@ it('does not rewrite an untouched existing note, but saves an explicitly cleared
 it('does not create a tag-only new note', async () => {
   const { session, transport } = setup({ ...initial, tags: ['标签'] }); session.update(''); await session.flush(); expect(transport).not.toHaveBeenCalled(); session.dispose();
 });
+it('retains inherited tags without saving an untouched new page', async () => {
+  const { session, transport } = setup({ ...initial, title: '', tags: ['生活'] });
+  expect(session.current.body).toBe(''); expect(session.current.inheritedTags).toEqual(['生活']);
+  await session.flush(); await session.recover();
+  expect(session.dirty).toBe(false); expect(transport).not.toHaveBeenCalled(); session.dispose();
+});
+it.each([{ title: '', body: '实际内容' }, { title: '只有标题', body: '' }])('autosaves actual input with inherited tag properties without changing the body (%j)', async content => {
+  vi.useFakeTimers();
+  const { session, transport } = setup({ ...initial, title: '', tags: ['生活'] });
+  session.update(content.body, undefined, content.title); await vi.advanceTimersByTimeAsync(650);
+  expect(transport).toHaveBeenCalledWith('saveNote', expect.objectContaining({ title: content.title, body: content.body, tags: [], inheritedTags: ['生活'] }));
+  expect(session.dirty).toBe(false); session.dispose();
+});
+it('does not duplicate inherited tags that the user typed explicitly', async () => {
+  const { session, transport } = setup({ ...initial, title: '', tags: ['生活'] });
+  session.update('#生活'); await session.flush();
+  expect(transport).toHaveBeenCalledWith('saveNote', expect.objectContaining({ body: '#生活', tags: ['生活'], inheritedTags: ['生活'] })); session.dispose();
+});
+it('recovers pending inherited tag properties and stops resending them after the first commit', async () => {
+  const { session, transport } = setup({ ...initial, title: '', body: '恢复的正文', tags: [], inheritedTags: ['生活'], updatedAt: '2026-10-12T00:00:00Z' });
+  await session.flush();
+  expect(transport).toHaveBeenCalledWith('saveNote', expect.objectContaining({ body: '恢复的正文', inheritedTags: ['生活'] }));
+  expect(session.current.inheritedTags).toBeUndefined();
+  session.update('继续写'); await session.flush();
+  expect(transport).toHaveBeenLastCalledWith('saveNote', expect.not.objectContaining({ inheritedTags: expect.anything() }));
+  expect(session.current.body).toBe('继续写'); session.dispose();
+});
+it('saves an explicitly typed tag after the user clears earlier content', async () => {
+  const { session, transport } = setup({ ...initial, title: '', tags: ['生活'] });
+  session.update('临时内容'); session.update(''); session.update('#生活'); await session.flush();
+  expect(transport).toHaveBeenCalledWith('saveNote', expect.objectContaining({ body: '#生活', tags: ['生活'] })); session.dispose();
+});
+it.each(['', ' \t\n'])('retires recovery if actual input is cleared before the first save (%j)', async body => {
+  const { session, transport } = setup({ ...initial, title: '', tags: ['生活'] });
+  session.update('临时内容'); await session.recover();
+  session.update(body); await session.recover(); await session.flush();
+  expect(session.dirty).toBe(false);
+  expect(transport).toHaveBeenLastCalledWith('saveDraft', expect.objectContaining({ body: '', tags: [], baseHash: null }));
+  expect(transport.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(0); session.dispose();
+});
 it.each(['', ' \t\n'])('does not save a new page with only blank title and body (%j)', async blank => {
   vi.useFakeTimers();
   const { session, transport } = setup({ ...initial, title: blank, body: blank });

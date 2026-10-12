@@ -7,7 +7,7 @@ func safeNoteTitle(_ title: String) -> String {
         .trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: ". "))
     if value.range(of: #"^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)"#, options: [.regularExpression, .caseInsensitive]) != nil { value = "_" + value }
     while value.utf8.count > 200 { value.removeLast() }
-    return value.isEmpty ? "未命名" : value
+    return value.isEmpty ? "新内容" : value
 }
 
 func namedNotePath(_ path: String, title: String, paths: [String]) -> String {

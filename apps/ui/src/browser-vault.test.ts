@@ -16,6 +16,114 @@ const source = (id = noteId, body = "中文 test\n", extra = "") => `---\nid: "$
 const bytes = (text: string) => new TextEncoder().encode(text);
 const error = (name: string) => new DOMException(name, name);
 
+it.each([false,true])('saves inherited tags as properties and recovers them without adding body text (shared=%s)', async shared => {
+  const root = shared ? new TestDirectory('shared') : await fixture();
+  const h = harness(root); await call(h.core,'selectVault');
+  const input = {id:secondId,title:'实际标题',body:'实际正文 #手动',tags:['手动'],inheritedTags:['生活/记录'],baseHash:null};
+  await call(h.core,'saveDraft',input);
+  const reopened = harness(root,h.storage); await call(reopened.core,'selectVault');
+  const recovered = (await call<{drafts:BrowserDraft[]}>(reopened.core,'getDrafts')).drafts.find(draft=>draft.id===secondId)!;
+  expect(recovered.inheritedTags).toEqual(['生活/记录']);
+  const saved = await call<Note>(reopened.core,'saveNote',recovered);
+  expect(saved.body).toBe(input.body); expect(saved.tags).toEqual(['生活/记录','手动']);
+  const properties = await call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties',{id:secondId});
+  expect(properties.tagProperty?.value).toEqual(['生活/记录']);
+  expect((await call<{drafts:BrowserDraft[]}>(reopened.core,'getDrafts')).drafts).toEqual([]);
+  const edited = await call<Note>(reopened.core,'saveNote',{id:secondId,body:'继续写',tags:[],baseHash:saved.contentHash});
+  expect(edited.body).toBe('继续写'); expect(edited.tags).toEqual(['生活/记录']);
+  expect((await call<NotePage>(reopened.core,'queryNotes',{tags:['生活']})).notes.map(note=>note.id)).toContain(secondId);
+});
+
+it.each([false,true])('edits legacy YAML lists as multi-select without rewriting on read or losing original values (shared=%s)',async shared => {
+ const root = shared ? new TestDirectory('shared') : await fixture();
+ const notes = shared ? root : await root.getDirectoryHandle('notes');
+ const values = ['One',' One ','','One','[[项目]]','x'.repeat(101),'two\nlines'];
+ const extra = `aliases: ${JSON.stringify(values)}\nunknown: {nested: keep}\n`;
+ const file = await notes.getFileHandle(shared ? 'A.md' : `${noteId}.md`,{create:true});
+ file.bytes = bytes(shared ? `---\n${extra}---\nBody #keep` : source(noteId,'Body #keep',extra));
+ const config = await (await root.getDirectoryHandle('.memocard',{create:true})).getFileHandle('property-definitions.json',{create:true});
+ config.bytes = bytes(JSON.stringify({aliases:{type:'list'}}));
+ const original = file.text, h = harness(root); await call(h.core,'selectVault');
+ const note = (await call<NotePage>(h.core,'queryNotes')).notes.find(note=>note.body==='Body #keep')!;
+ const get = () => call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:note.id});
+ const fields = await get(), property = fields.properties.find(p=>p.name==='aliases')!;
+ expect(property).toMatchObject({type:'multiSelect',value:values});
+ expect(file.text).toBe(original);
+ expect(JSON.parse(config.text).aliases.type).toBe('list');
+ const options = [...property.options!,{name:'Added',color:'blue'}];
+ const saved = await call<Note>(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,definitionHash:fields.definitionHash,name:'aliases',type:'multiSelect',value:[...values,'Added'],options,definition:true});
+ expect(saved.body).toBe('Body #keep');
+ expect((await get()).properties.find(p=>p.name==='aliases')!.value).toEqual([...values,'Added']);
+ expect(file.text).toContain('unknown: {nested: keep}');
+ const other=await notes.getFileHandle('Outside.md',{create:true}), otherId=createId();
+ other.bytes=bytes(shared ? '---\naliases: [External]\n---\nOutside' : source(otherId,'Outside','aliases: [External]\n'));
+ const outside=(await call<NotePage>(h.core,'queryNotes')).notes.find(note=>note.body==='Outside')!;
+ const recolored=options.map(option=>({...option,color:'green'}));
+ const changed=await call<Note>(h.core,'updateNoteProperty',{id:note.id,baseHash:saved.contentHash,name:'aliases',type:'multiSelect',value:[...values,'Added'],options:recolored,definition:true});
+ const external=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:outside.id});
+ expect(external.properties.find(p=>p.name==='aliases')!.value).toEqual(['External']);
+ const reopened = harness(root,h.storage); await call(reopened.core,'selectVault');
+ await call(reopened.core,'saveNote',{id:note.id,body:'Edited body',tags:[],baseHash:changed.contentHash});
+ const after = await call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties',{id:note.id});
+ expect(after.properties.find(p=>p.name==='aliases')).toMatchObject({type:'multiSelect',value:[...values,'Added']});
+});
+
+it.each([false,true])('caps inferred options across legacy notes without blocking new notes or pruning values (registered=%s)',async registered => {
+ const h=await open(), values=Array.from({length:210},(_,i)=>`Option ${i}`);
+ const a=await h.notes.getFileHandle(`${noteId}.md`), b=await h.notes.getFileHandle(`${secondId}.md`,{create:true});
+ a.bytes=bytes(source(noteId,'A',`field: ${JSON.stringify(values.slice(0,105))}\n`));
+ b.bytes=bytes(source(secondId,'B',`field: ${JSON.stringify(values.slice(105))}\n`));
+ if (registered) (await (await h.root.getDirectoryHandle('.memocard')).getFileHandle('property-definitions.json',{create:true})).bytes=bytes(JSON.stringify({field:{type:'list'}}));
+ const preview=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties');
+ expect(preview.properties.find(p=>p.name==='field')!.options).toHaveLength(200);
+ const created=await call<Note>(h.core,'saveNote',{id:createId(),body:'New body',tags:[],baseHash:null});
+ expect(created.body).toBe('New body');
+ const note=await call<Note>(h.core,'getNote',{id:noteId});
+ const fields=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:noteId});
+ const property=fields.properties.find(p=>p.name==='field')!;
+ await call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,definitionHash:fields.definitionHash,name:'field',type:'multiSelect',value:property.value,options:property.options,definition:true});
+ const after=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:secondId});
+ expect(after.properties.find(p=>p.name==='field')!.value).toEqual(values.slice(105));
+});
+
+it.each([false,true])('treats prototype-like YAML names as ordinary properties (shared=%s)',async shared=>{
+ const root=shared ? new TestDirectory('shared') : await fixture(), notes=shared ? root : await root.getDirectoryHandle('notes');
+ const file=await notes.getFileHandle(shared ? 'Names.md' : `${noteId}.md`,{create:true});
+ const fields='constructor: text\ntoString: text\n__proto__: text\n';
+ file.bytes=bytes(shared ? `---\n${fields}---\nNames` : source(noteId,'Names',fields));
+ const h=harness(root); await call(h.core,'selectVault');
+ const note=(await call<NotePage>(h.core,'queryNotes')).notes.find(n=>n.body==='Names')!;
+ let props=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:note.id});
+ for (const name of ['constructor','toString','__proto__']) expect(props.properties.find(p=>p.name===name)).toMatchObject({type:'text',value:'text'});
+ const updated=await call<Note>(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name:'constructor',type:'text',value:'edited'});
+ await call(h.core,'updateNoteProperty',{id:note.id,baseHash:updated.contentHash,name:'__proto__',type:'multiSelect',definition:true});
+ props=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:note.id});
+ expect(props.properties.find(p=>p.name==='__proto__')).toMatchObject({type:'multiSelect',value:['text']});
+ expect(props.properties.find(p=>p.name==='constructor')).toMatchObject({type:'text',value:'edited'});
+});
+
+it.each([false,true])('copies and renames legacy list values without losing duplicates or blanks (shared=%s)',async shared=>{
+ const root=shared ? new TestDirectory('shared') : await fixture(), notes=shared ? root : await root.getDirectoryHandle('notes');
+ const values=['One','One','',' spaced '];
+ for (const [id,path,body] of [[noteId,shared?'A.md':`${noteId}.md`,'A'],[secondId,shared?'B.md':`${secondId}.md`,'B']]) {
+  const file=await notes.getFileHandle(path,{create:true}), fields=`aliases: ${JSON.stringify(values)}\n`;
+  file.bytes=bytes(shared ? `---\n${fields}---\n${body}` : source(id,body,fields));
+ }
+ const h=harness(root);await call(h.core,'selectVault');
+ const page=await call<NotePage>(h.core,'queryNotes'), a=page.notes.find(n=>n.body==='A')!, b=page.notes.find(n=>n.body==='B')!;
+ const fields=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:a.id});
+ const property=fields.properties.find(p=>p.name==='aliases')!;
+ const copied=await call<Note>(h.core,'updateNoteProperty',{id:a.id,baseHash:a.contentHash,name:'aliases copy',type:'multiSelect',value:values,options:property.options,create:true,copyFrom:'aliases'});
+ const afterCopy=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:a.id});
+ expect(afterCopy.properties.find(p=>p.name==='aliases copy')!.value).toEqual(values);
+ const changed=await call<Note>(h.core,'updateNoteProperty',{id:a.id,baseHash:copied.contentHash,name:'aliases',type:'multiSelect',value:['Two','Two','',' spaced '],options:[{name:'Two',color:'blue'}],definition:true,optionRename:{from:'One',to:'Two'}});
+ for (const id of [a.id,b.id]) {
+  const after=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id});
+  expect(after.properties.find(p=>p.name==='aliases')!.value).toEqual(['Two','Two','',' spaced ']);
+ }
+ await expect(call(h.core,'updateNoteProperty',{id:a.id,baseHash:changed.contentHash,name:'bad copy',type:'multiSelect',value:['','',''],options:[],create:true,copyFrom:'aliases'})).rejects.toMatchObject({code:'INVALID_PROPERTY'});
+});
+
 it('saves property tags independently, merges filters and counts once, and checks stale hashes', async () => {
   const h = await open();
   const file = await h.notes.getFileHandle(`${noteId}.md`);
@@ -690,7 +798,7 @@ it("creates readable plain Markdown and serializes simultaneous first scans", as
   expect(a.notes.map(note => note.id)).toEqual(b.notes.map(note => note.id));
   expect(new Set(a.notes.map(note => note.id)).size).toBe(2);
   const note = await call<Note>(h.core, "saveNote", { id: secondId, body: "# 我的记录\n\n正文", tags: [], baseHash: null });
-  expect(note.relativePath).toBe(`我的记录.md`);
+  expect(note.relativePath).toBe(`新内容.md`);
   expect((await root.getFileHandle(note.relativePath)).text).toBe("# 我的记录\n\n正文");
 });
 
@@ -729,12 +837,31 @@ it("uses filename titles and renames without changing identity", async () => {
   const h = await open();
   const id = "dddddddd-bbbb-4ccc-8ddd-eeeeeeeeeeee";
   let page = await call<Note>(h.core, "saveNote", { id, title: "", body: "", tags: [], baseHash: null });
-  expect(page.title).toBe("未命名"); expect(page.body).toBe("");
+  expect(page.title).toBe("新内容"); expect(page.body).toBe("");
   for (const [title, body] of [["只有标题", ""], ["", "只有正文"], ["", ""]]) {
     page = await call<Note>(h.core, "saveNote", { id, title, body, tags: [], baseHash: page.contentHash });
-    expect(page).toMatchObject({ id, title: title || "未命名", body, relativePath: `notes/${title || "未命名"}.md` });
-    expect(await call<Note>(h.core, "getNote", { id })).toMatchObject({ title: title || "未命名", body });
+    expect(page).toMatchObject({ id, title: title || "新内容", body, relativePath: `notes/${title || "新内容"}.md` });
+    expect(await call<Note>(h.core, "getNote", { id })).toMatchObject({ title: title || "新内容", body });
   }
+});
+
+it.each([true, false])('keeps body-only notes unnamed until a title is entered (legacy: %s)', async legacy => {
+  const root = legacy ? await fixture() : new TestDirectory('plain'), h = harness(root);
+  await call(h.core, 'selectVault');
+  let page = await call<Note>(h.core, 'saveNote', { id: secondId, title: '', body: '# 正文标题\n\n正文', tags: [], inheritedTags: ['work'], baseHash: null });
+  const path = `${legacy ? 'notes/' : ''}新内容.md`;
+  expect(page).toMatchObject({ title: '新内容', relativePath: path, tags: ['work'] });
+  const duplicate = await call<Note>(h.core, 'saveNote', { id: createId(), title: '', body: '另一条正文', tags: [], baseHash: null });
+  expect(duplicate).toMatchObject({ title: '新内容 (2)', relativePath: `${legacy ? 'notes/' : ''}新内容 (2).md` });
+  expect(await call<Note>(h.core, 'saveNote', { id: duplicate.id, title: duplicate.title, body: '继续写另一条正文', tags: [], baseHash: duplicate.contentHash })).toMatchObject({ title: '新内容 (2)', relativePath: duplicate.relativePath });
+  page = await call<Note>(h.core, 'saveNote', { id: secondId, body: '修改正文', tags: [], baseHash: page.contentHash });
+  expect(page).toMatchObject({ title: '新内容', relativePath: path, body: '修改正文' });
+  const reopened = harness(root, h.storage);
+  expect(await call<Note>(reopened.core, 'getNote', { id: secondId })).toMatchObject({ title: '新内容', relativePath: path });
+  page = await call<Note>(reopened.core, 'saveNote', { id: secondId, title: '手动标题', body: page.body, tags: [], baseHash: page.contentHash });
+  expect(page).toMatchObject({ id: secondId, title: '手动标题', relativePath: `${legacy ? 'notes/' : ''}手动标题.md`, body: '修改正文', tags: ['work'] });
+  page = await call<Note>(reopened.core, 'saveNote', { id: secondId, body: '再次修改正文', tags: [], baseHash: page.contentHash });
+  expect(page).toMatchObject({ title: '手动标题', relativePath: `${legacy ? 'notes/' : ''}手动标题.md` });
 });
 
 it('renames with collision suffix, updates references, preserves properties and stable identity after reopen', async () => {
@@ -875,12 +1002,23 @@ it.each([false,true])('synchronizes property types and option definitions across
  await call(h.core,'updateNoteProperty',{id:unrelatedNote.id,baseHash:unrelatedNote.contentHash,name:'field',type:'multiSelect',value:[],options:[],create:true});
  expect((await get(unrelatedNote.id)).properties.find(p=>p.name==='field')!.options).toEqual([options[1],{name:'写作',color:'blue'}]);
 });
-it('rejects overflowing shared options rather than truncating values',async()=>{
+it('preserves mixed source types while creating a shared multi-select definition',async()=>{
+ const h=await open(), a=await h.notes.getFileHandle(`${noteId}.md`), b=await h.notes.getFileHandle(`${secondId}.md`,{create:true});
+ a.bytes=bytes(source(noteId,'A','field: One # memocard:choice={"type":"select","options":[{"name":"One","color":"blue"}]}\n'));
+ b.bytes=bytes(source(secondId,'B','field: Two\n'));
+ const note=await call<Note>(h.core,'getNote',{id:noteId});
+ await call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type:'multiSelect',definition:true});
+ const fields=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:secondId});
+ expect(fields.properties.find(p=>p.name==='field')!.value).toEqual(['Two']);
+});
+it('retains list values beyond the choice menu option limit',async()=>{
  const h=await open(), a=await h.notes.getFileHandle(`${noteId}.md`);
  a.bytes=bytes(source(noteId,'A',`field: ${JSON.stringify(Array.from({length:201},(_,i)=>`Option ${i}`))}\n`));
  const original=a.text,note=await call<Note>(h.core,'getNote',{id:noteId});
- await expect(call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type:'multiSelect',definition:true})).rejects.toMatchObject({code:'INVALID_PROPERTY'});
- expect(a.text).toBe(original);
+ await call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type:'multiSelect',definition:true});
+ const fields=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:noteId});
+ expect(fields.properties.find(p=>p.name==='field')!.value).toEqual(Array.from({length:201},(_,i)=>`Option ${i}`));
+ expect(a.text.split('---\n').at(-1)).toBe(original.split('---\n').at(-1));
 });
 it('rolls back every note and the definition when a batch write fails',async()=>{
  const h=await open(), a=await h.notes.getFileHandle(`${noteId}.md`), b=await h.notes.getFileHandle(`${secondId}.md`,{create:true});
@@ -888,7 +1026,7 @@ it('rolls back every note and the definition when a batch write fails',async()=>
  const originals=[a.text,b.text];
  const note=await call<Note>(h.core,'getNote',{id:noteId});
  b.closeError=true;
- await expect(call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type:'list',value:['One'],definition:true})).rejects.toBeTruthy();
+ await expect(call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type:'multiSelect',value:['One'],definition:true})).rejects.toBeTruthy();
  b.closeError=false;
  expect([a.text,b.text]).toEqual(originals);
  expect((await h.root.getDirectoryHandle('.memocard')).children.has('property-definitions.json')).toBe(false);
@@ -898,7 +1036,7 @@ it('rejects a batch containing an unsupported property without any partial updat
  const h=await open(), a=await h.notes.getFileHandle(`${noteId}.md`), b=await h.notes.getFileHandle(`${secondId}.md`,{create:true});
  a.bytes=bytes(source(noteId,'A','field: One\n'));b.bytes=bytes(source(secondId,'B','field: {nested: Two}\n'));
  const originals=[a.text,b.text], note=await call<Note>(h.core,'getNote',{id:noteId});
- await expect(call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type:'list',value:['One'],definition:true})).rejects.toMatchObject({code:'INVALID_PROPERTY'});
+ await expect(call(h.core,'updateNoteProperty',{id:noteId,baseHash:note.contentHash,name:'field',type:'multiSelect',value:['One'],definition:true})).rejects.toMatchObject({code:'INVALID_PROPERTY'});
  expect([a.text,b.text]).toEqual(originals);
 });
 
@@ -914,7 +1052,7 @@ it.each([false,true])('inherits library fields on first save, with empty values 
  config.bytes=bytes(JSON.stringify({choice:{type:'multiSelect',options:[{name:'Shared','color':'green'}]},registered:{type:'text'}}));
  const preview=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties');
  expect(preview.properties.map(p=>[p.name,p.type,p.value])).toEqual([
-  ['aliases','list',[]],['checked','checkbox',false],['choice','multiSelect',[]],['multiple','multiSelect',[]],['registered','text',''],['summary','text',''],['when','date','']
+  ['aliases','multiSelect',[]],['checked','checkbox',false],['choice','multiSelect',[]],['multiple','multiSelect',[]],['registered','text',''],['summary','text',''],['when','date','']
  ]);
  expect(preview.properties.find(p=>p.name==='choice')!.options).toEqual([{name:'Shared',color:'green'}]);
  expect(a.text).toBe(before);expect(notes.children.size).toBe(count);
