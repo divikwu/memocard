@@ -1,6 +1,7 @@
 import type { Note, NoteQuickFilter } from "@memocard/contracts";
 
 // Keep the same grammar in MemoCardCore/NoteFilters.swift.
+// Deliberately omit the Unicode regex flag: URL markers accept ASCII casing, not ſ → s folding.
 export function noteQuickFilters(note: Pick<Note, "body" | "tags">): NoteQuickFilter[] {
   let text = note.body
     .replace(/<!--[\s\S]*?-->/g, '')

@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { noteQuickFilters } from "./note-filters";
+import unicodeCases from "../../../tests/fixtures/note-filters-unicode.json";
 
 describe("note quick filters", () => {
+  it.each(unicodeCases)("shares native Unicode classification for $body", ({body,expected}) => {
+    for (const prefix of ['', '[plain]\n', '普通正文 café 👩🏽‍💻 #工作/设计\n'.repeat(80)]) {
+      for (const tags of [[], ['工作/设计']]) {
+        expect(noteQuickFilters({body:prefix+body,tags})).toEqual([...(tags.length?[]:['untagged']),...expected]);
+      }
+    }
+  });
   it.each([
     ["普通笔记", [], ["untagged"]],
     ["#工作 ![照片](assets/photo.png)", ["工作"], ["images"]],

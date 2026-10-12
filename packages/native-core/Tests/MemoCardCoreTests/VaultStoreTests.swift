@@ -1274,6 +1274,21 @@ final class VaultStoreTests: XCTestCase {
         }
     }
 
+    func testQuickFiltersShareUnicodeClassificationWithBrowser() throws {
+        struct Fixture: Decodable { let body: String; let expected: Set<NoteQuickFilter> }
+        let package = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let fixture = package.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("tests/fixtures/note-filters-unicode.json")
+        let cases = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: fixture))
+        for item in cases {
+            for prefix in ["", "[plain]\n", String(repeating: "普通正文 café 👩🏽‍💻 #工作/设计\n", count: 80)] {
+                for tags in [[], ["工作/设计"]] {
+                    let note = Note(title: nil, id: "test", body: prefix + item.body, tags: tags, createdAt: "", updatedAt: "", deletedAt: nil, contentHash: "", relativePath: "", sourceUrl: "")
+                    XCTAssertEqual(noteQuickFilters(note), tags.isEmpty ? item.expected.union([.untagged]) : item.expected, item.body)
+                }
+            }
+        }
+    }
+
     func testQuickFilterGuardPreservesLongUnicodeAndCaseInsensitiveMarkdown() {
         let prefix = String(repeating: "普通正文 café 👩🏽‍💻 #工作/设计\n", count: 80)
         let cases: [(String, Set<NoteQuickFilter>)] = [
