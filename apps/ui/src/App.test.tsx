@@ -144,7 +144,7 @@ describe("note workspace", () => {
     expect(card?.className).not.toContain("bg-muted/50");
     expect(card?.className).toContain("shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]");
     expect(card?.className).not.toContain("shadow-none");
-    expect(screen.getByText("新页面").className).toContain("text-base");
+    expect(screen.getByText("新内容").className).toContain("text-base");
     expect(card?.querySelector("time")?.className).toContain("text-xs");
     expect(screen.getByRole("button", { name: "筛选标签 生活" }).className).toContain("text-xs");
     expect(screen.queryByText("编辑")).toBeNull();
@@ -721,9 +721,23 @@ it('keeps the breadcrumb in sync with unsaved page titles and empty-title fallba
   fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
   const title = await screen.findByRole('textbox', { name: '页面标题' });
   const breadcrumb = screen.getByRole('navigation', { name: '当前位置' });
-  expect(breadcrumb.textContent).toBe('新页面');
+  expect(breadcrumb.textContent).toBe('新内容');
   fireEvent.change(title, { target: { value: '搜索' } });
   expect(breadcrumb.textContent).toBe('搜索');
   fireEvent.change(title, { target: { value: '' } });
-  expect(breadcrumb.textContent).toBe('新页面');
+  expect(breadcrumb.textContent).toBe('新内容');
+});
+it('leaves an untouched page created under a tag without writing a note or recovery', async () => {
+  render(<App />); await screen.findByText(note.body);
+  fireEvent.click(screen.getByRole('button', { name: '生活' }));
+  await screen.findByRole('heading', { name: '# 生活', level: 1 });
+  fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
+  const title = await screen.findByRole('textbox', { name: '页面标题' });
+  expect((title as HTMLTextAreaElement).value).toBe('');
+  expect(readEditorText()).toBe('');
+  expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
+  fireEvent.click(screen.getByRole('button', { name: '所有笔记' }));
+  await screen.findByRole('list', { name: '笔记列表' });
+  expect(bridge.request).not.toHaveBeenCalledWith('saveNote', expect.anything());
+  expect(bridge.request).not.toHaveBeenCalledWith('saveDraft', expect.anything());
 });

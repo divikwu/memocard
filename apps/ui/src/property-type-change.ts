@@ -2,6 +2,14 @@ import type { NoteProperty, PropertyChange, PropertyOption, PropertyType } from 
 
 const isDate = (value:string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
 
+// `list` is only a legacy storage type; custom properties use the multi-select editor.
+export function listAsMultiSelect(property:NoteProperty):NoteProperty {
+  if (property.type !== 'list') return property;
+  const values = Array.isArray(property.value) ? property.value : [];
+  const options = [...new Set(values)].filter(name => name.length > 0 && name.length <= 100 && name === name.trim() && ![...name].some(character => character.charCodeAt(0) < 32)).slice(0,200).map(name => ({name,color:'default' as const}));
+  return {...property,type:'multiSelect',options};
+}
+
 export function propertyTypeChange(property:NoteProperty, type:PropertyType): PropertyChange {
   const source = property.value;
   const values = Array.isArray(source) ? source : source === '' ? [] : [String(source)];

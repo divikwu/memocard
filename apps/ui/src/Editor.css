@@ -83,17 +83,26 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
   overflow-wrap: anywhere;
 }
 
+.note-property-checkbox-value { display: flex; align-items: center; }
 .note-property-checkbox {
   display: inline-flex;
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
+  padding: 0;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--input);
+  border: 1px solid var(--muted-foreground);
   border-radius: 4px;
+  background: transparent;
+  line-height: 1;
 }
-.note-property-checkbox[data-checked] { background: var(--primary); color: var(--primary-foreground); }
+.note-property-checkbox[data-checked] { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.note-property-checkbox-indicator { display: flex; align-items: center; justify-content: center; }
+.note-property-checkbox-indicator > svg { width: 12px; height: 12px; }
+.note-property-checkbox:disabled { opacity: 0.5; }
 .note-property-checkbox:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.note-properties[data-updating] :is(.note-property-label, .note-property-edit, .note-property-action, .note-property-checkbox):disabled { opacity: 1; }
 .note-property-confirm {
   position: fixed;
   left: 50%;
@@ -112,8 +121,6 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
 .note-property-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
 .note-properties .note-property-name { width: 100%; justify-content: flex-start; font-size: inherit; font-weight: 400; }
-.note-property-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.note-property-chips [data-slot="badge"] { white-space: normal; overflow-wrap: anywhere; }
 .note-property-popup { width: min(360px, calc(100vw - 24px)); padding: 12px; animation: none; }
 .note-property-popup textarea { max-height: 240px; }
 .note-property-create-popup { width: min(280px, calc(100vw - 24px)); padding: 8px; }

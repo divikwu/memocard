@@ -286,7 +286,8 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   render(<App />);
   await user.click(await screen.findByRole("button", { name: "工作/项目" }));
   await user.click(await screen.findByRole("button", { name: "新建" }));
-  expect(readEditorText()).toBe("#工作/项目");
+  expect(readEditorText()).toBe("");
+  expect(screen.getByLabelText("笔记属性").textContent).toContain("工作/项目");
   expect(screen.queryByRole("button", { name: "移除标签 工作/项目" })).toBeNull();
   expect(screen.queryByLabelText("笔记标签")).toBeNull();
   expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();

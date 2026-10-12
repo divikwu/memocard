@@ -7,7 +7,7 @@ export function safeNoteTitle(title: string): string {
   let value = title.normalize('NFC').replace(/[\\/:*?"<>|#^[\]\x00-\x1f\x7f]/g, ' ').trim().replace(/^[. ]+|[. ]+$/g, '');
   if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(value)) value = `_${value}`;
   while (new TextEncoder().encode(value).length > 200) value = [...value].slice(0, -1).join('');
-  return value || '未命名';
+  return value || '新内容';
 }
 export function namedNotePath(path: string, title: string, paths: string[]): string {
   const directory = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : '';
@@ -21,8 +21,7 @@ export function noteSavePath(save: { id: string; title?: string; body: string; r
   if (existing) return save.title === undefined || safeNoteTitle(save.title) === fileTitle(existing) ? existing : namedNotePath(existing, save.title, paths);
   const path = save.relativePath ?? `${compatible ? '' : 'notes/'}${save.id}.md`;
   if (save.relativePath && !path.endsWith(`${save.id}.md`)) return path;
-  const title = save.title?.trim() || (save.body.split(/\r?\n/).find(line => line.trim()) ?? '未命名').replace(/^[#\s]+/, '');
-  return namedNotePath(path, title, paths);
+  return namedNotePath(path, save.title ?? '', paths);
 }
 
 /** Rewrite resolved destinations only; preserve YAML, literal code, display text and fragments. */

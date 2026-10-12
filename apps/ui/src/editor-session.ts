@@ -4,7 +4,7 @@ import type { Draft } from './bridge';
 
 type Transport = <T>(operation: string, params?: Record<string, unknown>) => Promise<T>;
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict';
-const key = (draft: Draft) => JSON.stringify([draft.title, draft.body, draft.tags, draft.relativePath]);
+const key = (draft: Draft) => JSON.stringify([draft.title, draft.body, draft.tags, draft.inheritedTags, draft.relativePath]);
 export const conflictError = (error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && ['REVISION_CONFLICT', 'HASH_CONFLICT', 'SOURCE_CONFLICT', 'NOTE_NOT_FOUND', 'NOTE_DELETED'].includes(String(error.code)));
 
 /** One queue owns both recovery and source writes, so an old commit cannot erase newer recovery. */
@@ -20,7 +20,8 @@ export class EditorSession {
   private disposed = false;
   private writing = false;
   constructor(initial: Draft, private transport: Transport, private canDraft: boolean, private notify: () => void, private committed: (note: Note) => void) {
-    this.current = { ...initial, tags: inlineTags(initial.body), relativePath: initial.relativePath ?? `notes/${initial.id}.md` };
+    const inheritedTags = !initial.baseHash ? initial.inheritedTags ?? (!initial.body.trim() ? initial.tags : []) : [];
+    this.current = { ...initial, ...(inheritedTags.length ? { inheritedTags } : {}), tags: inlineTags(initial.body), relativePath: initial.relativePath ?? `notes/${initial.id}.md` };
     this.hadRecovery = Boolean(initial.updatedAt);
     this.persisted = initial.baseHash && !initial.updatedAt ? key(this.current) : '';
   }
@@ -49,8 +50,10 @@ export class EditorSession {
     });
   }
   private params(draft: Draft): Record<string, unknown> {
-    const { id, title, body, tags, baseHash, relativePath, vaultBinding, draftKey } = draft;
-    return { id, ...(title === undefined ? {} : { title }), body, tags, baseHash, relativePath, ...(vaultBinding ? { vaultBinding } : {}), ...(draftKey ? { draftKey } : {}) };
+    const { id, title, baseHash, relativePath, vaultBinding, draftKey } = draft;
+    const empty = !baseHash && !title?.trim() && !draft.body.trim();
+    const body = empty ? '' : draft.body, tags = empty ? [] : draft.tags;
+    return { id, ...(title === undefined ? {} : { title }), body, tags, ...(!empty && draft.inheritedTags?.length ? { inheritedTags: draft.inheritedTags } : {}), baseHash, relativePath, ...(vaultBinding ? { vaultBinding } : {}), ...(draftKey ? { draftKey } : {}) };
   }
   save(): Promise<void> {
     clearTimeout(this.timer);
@@ -65,8 +68,8 @@ export class EditorSession {
         const note = await this.transport<Note>('saveNote', this.params(snapshot));
         const path = note.relativePath ?? snapshot.relativePath;
         const title = note.title ?? snapshot.title, body = note.body ?? snapshot.body;
-        this.persisted = key({ ...snapshot, title, body, relativePath: path });
-        this.current = { ...this.current, title: this.current.title === snapshot.title ? title : this.current.title, body: this.current.body === snapshot.body ? body : this.current.body, relativePath: this.current.relativePath === snapshot.relativePath ? path : this.current.relativePath, baseHash: note.contentHash };
+        this.persisted = key({ ...snapshot, title, body, inheritedTags: undefined, relativePath: path });
+        this.current = { ...this.current, title: this.current.title === snapshot.title ? title : this.current.title, body: this.current.body === snapshot.body ? body : this.current.body, inheritedTags: undefined, relativePath: this.current.relativePath === snapshot.relativePath ? path : this.current.relativePath, baseHash: note.contentHash };
         this.hadRecovery = this.dirty;
         this.state = this.dirty ? 'idle' : 'saved'; this.error = null;
         // The source bridge removes only the matching recovery. Restore the newest version immediately.

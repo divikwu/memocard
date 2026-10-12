@@ -540,6 +540,7 @@ public actor VaultStore {
     private func saveNote(_ request: SaveRequest) throws -> Note {
         let id = try canonicalID(request.id)
         let tags = try validatedTags(inlineTags(request.body))
+        let inheritedTags = try validatedTags(request.inheritedTags ?? [])
         let (root, metadata) = try active()
         let snapshot = try scan()
         if snapshot.duplicateIDs.contains(id) { throw VaultError(code: "DUPLICATE_ID", message: "笔记 ID 重复，无法覆盖保存。") }
@@ -550,9 +551,7 @@ public actor VaultStore {
         if existing?.note.deletedAt != nil { throw VaultError(code: "NOTE_DELETED", message: "此笔记已删除，无法编辑。") }
         var requestedPath = request.relativePath
         if existing == nil && request.baseHash == nil && (requestedPath == nil || requestedPath!.hasSuffix(id + ".md")) {
-            let line = request.body.components(separatedBy: .newlines).first { !$0.trimmingCharacters(in: .whitespaces).isEmpty } ?? "未命名"
-            let title = request.title?.trimmingCharacters(in: .whitespacesAndNewlines)
-            requestedPath = namedNotePath(requestedPath ?? "\(compatible ? "" : "notes/")\(id).md", title: title?.isEmpty == false ? title! : line.replacingOccurrences(of: #"^[#\s]+"#, with: "", options: .regularExpression), paths: snapshot.notes.map { $0.note.relativePath })
+            requestedPath = namedNotePath(requestedPath ?? "\(compatible ? "" : "notes/")\(id).md", title: request.title ?? "", paths: snapshot.notes.map { $0.note.relativePath })
         }
         if let existing, let title = request.title, safeNoteTitle(title) != fileTitle(existing.note.relativePath) {
             let path = namedNotePath(existing.note.relativePath, title: title, paths: snapshot.notes.map { $0.note.relativePath })
@@ -587,6 +586,9 @@ public actor VaultStore {
             var data = try self.compatible ? encodedObsidianNote(original, body: request.body, title: request.title) : encodedNote(frontmatter: frontmatter, body: request.body, originalHeader: original?.originalHeader)
             for property in inherited {
                 data = try patchNoteProperty(data, change: PropertyChange(id: id, baseHash: "", name: property.name, type: property.type, value: property.value, remove: nil, create: true, options: property.options))
+            }
+            if existing == nil && !inheritedTags.isEmpty {
+                data = try patchNoteProperty(data, change: PropertyChange(id: id, baseHash: "", name: "tags", type: "list", value: .list(inheritedTags), remove: nil, create: nil))
             }
             if let config, try self.readPropertyDefinitions(root).hash != config.hash { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已修改，请重新保存。") }
             guard data.count <= 8 * 1024 * 1024 else {
@@ -683,11 +685,12 @@ public actor VaultStore {
     private func effectiveNoteProperties(_ data: Data, snapshot: Snapshot, root: URL) throws -> NoteProperties {
         let config = try readPropertyDefinitions(root)
         let raw = try readNoteProperties(data)
-        let needsOptions = raw.properties.contains { $0.type != "unsupported" && $0.options != nil && config.values[$0.name] == nil }
-        let all = needsOptions ? try libraryProperties(snapshot) : []
+        let needsOptions = raw.properties.contains { $0.type == "list" || config.values[$0.name]?.type == "list" || ($0.type != "unsupported" && $0.options != nil && config.values[$0.name] == nil) }
+        let all = needsOptions ? try libraryProperties(snapshot).map(listAsMultiSelect) : []
         let properties = raw.properties.map { property -> NoteProperty in
             guard property.type != "unsupported" else { return property }
-            if let definition = config.values[property.name] { return convertedProperty(property, definition: definition) }
+            let property = listAsMultiSelect(property)
+            if let definition = config.values[property.name] { return convertedProperty(property, definition: resolvedPropertyDefinition(definition, properties: all.filter { $0.name == property.name })) }
             guard property.options != nil else { return property }
             return NoteProperty(name: property.name, type: property.type, value: property.value, editable: property.editable, options: mergedPropertyOptions(all.filter { $0.name == property.name }))
         }
@@ -698,10 +701,12 @@ public actor VaultStore {
         guard change.definitionHash == nil || change.definitionHash == config.hash else { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已在其他位置修改，请重新打开后重试。") }
         let original = try readSource(root.appendingPathComponent(existing.note.relativePath))
         guard sha256(original) == change.baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
-        guard let current = try readNoteProperties(original).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
-        let properties = try libraryProperties(snapshot).filter { $0.name == change.name }
-        let typeChanged = (config.values[change.name]?.type ?? current.type) != type
+        guard let current = try effectiveNoteProperties(original, snapshot: snapshot, root: root).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
+        let properties = try libraryProperties(snapshot).filter { $0.name == change.name }.map(listAsMultiSelect)
+        let typeChanged = (config.values[change.name].map { resolvedPropertyDefinition($0, properties: properties).type } ?? current.type) != type
         let definition = newPropertyDefinition(properties, type: type, options: change.options, includeValues: typeChanged)
+        let previousDefinition = config.values[change.name].map { resolvedPropertyDefinition($0, properties: properties) }
+        let previousOptions = mergedPropertyOptions(properties)
         guard validPropertyDefinition(definition) else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型或选项定义无效，最多支持 200 个选项。") }
         if let rename = change.optionRename {
             let previous = config.values[change.name]?.options ?? mergedPropertyOptions(properties)
@@ -714,7 +719,9 @@ public actor VaultStore {
             guard sha256(before) == item.note.contentHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
             guard let property = try readNoteProperties(before).properties.first(where: { $0.name == change.name }) else { continue }
             guard property.editable else { throw VaultError(code: "INVALID_PROPERTY", message: "「\(item.note.relativePath)」的此属性只读，库级修改未保存。") }
-            let converted = convertedProperty(property, definition: definition, rename: change.optionRename)
+            let normalized = listAsMultiSelect(property)
+            let effective = previousDefinition.map { convertedProperty(normalized, definition: $0) } ?? NoteProperty(name: normalized.name, type: normalized.type, value: normalized.value, editable: normalized.editable, options: normalized.options == nil ? nil : previousOptions)
+            let converted = convertedProperty(effective, definition: definition, rename: change.optionRename, pruneOptions: !typeChanged)
             let value = item.note.id == existing.note.id && !typeChanged ? change.value ?? converted.value : converted.value
             let update = PropertyChange(id: item.note.id, baseHash: item.note.contentHash, name: change.name, type: definition.type, value: value, remove: nil, create: nil, options: definition.options)
             let after = try patchNoteProperty(before, change: update, updatedAt: compatible ? nil : timestamp())
@@ -758,7 +765,8 @@ public actor VaultStore {
         let config = try readPropertyDefinitions(root)
         guard change.definitionHash == nil || change.definitionHash == config.hash else { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已在其他位置修改，请重新打开后重试。") }
         var adjusted = change
-        if let definition = config.values[change.name], change.remove != true, change.renameTo == nil {
+        if let stored = config.values[change.name], change.remove != true, change.renameTo == nil {
+            let definition = resolvedPropertyDefinition(stored, properties: stored.type == "list" ? try libraryProperties(snapshot).filter { $0.name == change.name } : [])
             guard change.type == definition.type else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型已变化，请重新打开后编辑。") }
             if let options = change.options, !(change.create == true && options.isEmpty) {
                 guard options.count == definition.options?.count, zip(options, definition.options ?? []).allSatisfy({ $0.name == $1.name && $0.color == $1.color }) else { throw VaultError(code: "INVALID_PROPERTY", message: "选项已变化，请重新打开后编辑。") }
@@ -863,12 +871,13 @@ public actor VaultStore {
 
     private func removeCommittedDraft(_ request: SaveRequest, id: String, tags: [String]) throws {
         guard let metadata else { return }
+        let inheritedTags = try validatedTags(request.inheritedTags ?? [])
         let path = localDataURL.appendingPathComponent("drafts/\(metadata.vaultId)/\(id).json")
         try validate(path, inside: localDataURL)
         guard fm.fileExists(atPath: path.path) else { return }
         try coordinateWrite(path, inside: localDataURL, options: .forDeleting) { coordinated in
             let draft = try JSONDecoder().decode(Draft.self, from: Data(contentsOf: coordinated))
-            guard draft.id == id, draft.title == request.title, draft.body == request.body, draft.tags == tags, draft.baseHash == request.baseHash else { return }
+            guard draft.id == id, draft.title == request.title, draft.body == request.body, draft.tags == tags, (draft.inheritedTags ?? []) == inheritedTags, draft.baseHash == request.baseHash else { return }
             try self.fm.removeItem(at: coordinated)
         }
     }
@@ -900,9 +909,10 @@ public actor VaultStore {
     private func saveDraft(_ request: SaveRequest) throws -> Data {
         let id = try canonicalID(request.id)
         let tags = try validatedTags(inlineTags(request.body))
+        let inheritedTags = request.baseHash == nil ? try validatedTags(request.inheritedTags ?? []) : []
         let directory = try draftDirectory()
         let target = directory.appendingPathComponent("\(id).json")
-        let draft = Draft(title: request.title, id: id, body: request.body, tags: tags, baseHash: request.baseHash,
+        let draft = Draft(title: request.title, id: id, body: request.body, tags: tags, inheritedTags: inheritedTags.isEmpty ? nil : inheritedTags, baseHash: request.baseHash,
                           relativePath: request.relativePath, updatedAt: timestamp())
         try coordinateWrite(target, inside: localDataURL) { try encode(draft).write(to: $0, options: .atomic) }
         return try encode(draft)

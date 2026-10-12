@@ -84,7 +84,7 @@ export const NotePreview = memo(function NotePreview({ title, body, notePath, on
     return () => observer.disconnect();
   }, [displayBody, compact]);
   return <div ref={viewport} data-overflow={compact && overflows ? "true" : undefined} className={compact ? "typeset-summary note-card-preview relative h-full overflow-hidden text-muted-foreground" : expanded ? "typeset-content" : "typeset-summary"}>
-    {showTitle && (title || !body.trim()) && <h2 className="mb-3 text-xl font-semibold">{title || "新页面"}</h2>}
+    {showTitle && (title || !body.trim()) && <h2 className="mb-3 text-xl font-semibold">{title || "新内容"}</h2>}
     <div className={compactClip !== null || (!expanded && !compact) ? "overflow-hidden" : undefined} style={compact && compactClip !== null ? { maxHeight: compactClip } : !expanded && !compact ? { maxHeight: 360 } : undefined}>
       <div ref={content} className={`break-words ${compact ? "text-sm leading-6" : "text-[15px] leading-7"}`}><Markdown body={displayBody || (compact ? "" : "还没有正文")} notePath={notePath} onError={onError} /></div>
     </div>

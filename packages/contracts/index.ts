@@ -9,6 +9,8 @@ export type BridgeRequest = {version:1; requestId:string; operation:string; para
 export type BridgeError = {code:string;message:string;retryable:boolean};
 export type BridgeResponse<T = unknown> = {ok:true;data:T}|{ok:false;error:BridgeError};
 export type ConnectionConfig = {version:1;host:'127.0.0.1';port:number;token:string;instanceId:string;vaultId:string};
+// `list` is a legacy parsing/definition value and the reserved tags transport only.
+// Custom properties expose multiSelect instead.
 export type PropertyType = 'text' | 'list' | 'date' | 'checkbox' | 'select' | 'multiSelect';
 export type PropertyOption = {name:string; color:'default' | 'brown' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'pink' | 'red'};
 export type PropertyLabels = {labels:Record<string,string>; contentHash:string};

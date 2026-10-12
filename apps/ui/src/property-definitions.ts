@@ -1,6 +1,6 @@
 import type { NoteProperty, PropertyDefinition, PropertyOption, PropertyType } from '@memocard/contracts';
 import { BrowserVaultError } from './browser-files';
-import { propertyTypeChange } from './property-type-change';
+import { propertyTypeChange, listAsMultiSelect } from './property-type-change';
 
 export const propertyDefinitionPath = '.memocard/property-definitions.json';
 const types = ['text','list','date','checkbox','select','multiSelect'];
@@ -18,10 +18,20 @@ export function parsePropertyDefinitions(raw:string):Record<string,PropertyDefin
 export function mergedPropertyOptions(properties:NoteProperty[]):PropertyOption[] {
   const options:PropertyOption[] = [];
   for (const property of properties) for (const option of property.options ?? []) if (!options.some(item => item.name === option.name)) options.push(option);
-  return options;
+  // Bound inferred menu choices, never the selected values stored in YAML.
+  return options.slice(0,200);
 }
-export function convertedProperty(property:NoteProperty, definition:PropertyDefinition, rename?:{from:string;to:string}):NoteProperty {
+export function resolvedPropertyDefinition(definition:PropertyDefinition, properties:NoteProperty[]):PropertyDefinition {
+  return definition.type === 'list' ? newPropertyDefinition(properties.map(listAsMultiSelect),'multiSelect') : definition;
+}
+export function convertedProperty(property:NoteProperty, definition:PropertyDefinition, rename?:{from:string;to:string}, pruneOptions = false):NoteProperty {
+  property = listAsMultiSelect(property);
+  definition = resolvedPropertyDefinition(definition,[property]);
   const value = rename ? Array.isArray(property.value) ? property.value.map(value => value === rename.from ? rename.to : value) : property.value === rename.from ? rename.to : property.value : property.value;
+  if (property.type === 'multiSelect' && definition.type === 'multiSelect' && Array.isArray(value)) {
+    const removed = pruneOptions ? (property.options ?? []).filter(option => option.name !== rename?.from && !definition.options!.some(next => next.name === option.name)).map(option => option.name) : [];
+    return {...property,value:value.filter(item => !removed.includes(item)),options:definition.options};
+  }
   const change = propertyTypeChange({...property,value},definition.type);
   if (definition.type === 'select' || definition.type === 'multiSelect') {
     const selected = (Array.isArray(change.value) ? change.value : change.value ? [String(change.value)] : []).filter(value => definition.options!.some(option => option.name === value));
@@ -42,7 +52,8 @@ export function newPropertyDefinition(properties:NoteProperty[], type:PropertyTy
 
 // Preview and first save share the same library schema, never another note's values.
 export function inheritedProperties(properties:NoteProperty[], stored:Record<string,PropertyDefinition>):NoteProperty[] {
-  const definitions:Record<string,PropertyDefinition> = Object.assign(Object.create(null),stored);
+  properties = properties.map(listAsMultiSelect);
+  const definitions:Record<string,PropertyDefinition> = Object.assign(Object.create(null),Object.fromEntries(Object.entries(stored).map(([name,definition]) => [name,resolvedPropertyDefinition(definition,properties.filter(property => property.name === name))])));
   for (const property of properties) if (property.editable && property.type !== 'unsupported' && !definitions[property.name]) {
     definitions[property.name] = newPropertyDefinition(properties.filter(item => item.name === property.name),property.type);
   }

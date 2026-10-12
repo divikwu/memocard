@@ -460,8 +460,8 @@
 .note-page-title::placeholder { color: var(--muted-foreground); opacity: .5; }
 .note-page-title:focus { caret-color: var(--foreground); }
 
-/* Text fields share the layout switcher's gray focus background. */
-:is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]), textarea):focus {
+/* Text fields except the page title share the layout switcher's gray focus background. */
+:is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"]), textarea:not(.note-page-title)):focus {
   background-color: var(--muted);
   outline: none;
   box-shadow: none;

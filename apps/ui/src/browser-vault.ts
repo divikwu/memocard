@@ -15,7 +15,7 @@ type Metadata = { formatVersion: 1 | 2; vaultId: string };
 type Binding = StoredSelection & { binding: string };
 type Snapshot = { folders: string[]; parsed: ParsedBrowserNote[]; duplicateIds: Set<string>; coverage: Coverage };
 type ParsedCacheEntry = { hash: string; vaultId: string; identityId?: string; createdAt?: string; modified?: number; parsed: ParsedBrowserNote; quickFilters?: NoteQuickFilter[] };
-type Save = { id: string; title?: string; body: string; tags: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
+type Save = { id: string; title?: string; body: string; tags: string[]; inheritedTags?: string[]; baseHash: string | null; relativePath?: string; draftKey: string };
 type BrowserLock = <T>(name: string, task: () => Promise<T>) => Promise<T>;
 type Options = {
   storage?: BrowserVaultStorage;
@@ -371,7 +371,8 @@ export class BrowserVault {
     if (!/^[a-f\d-]{36}:[a-f\d-]{36}$/.test(draftKey) || draftKey.split(":")[1] !== id) throw new BrowserVaultError("INVALID_PARAMS", "草稿标识无效。");
     const body = checkString(params.body, "body");
     validatedTags(params.tags);
-    return { id, ...(params.title === undefined ? {} : { title: checkString(params.title, "title") }), body, tags: inlineTags(body), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
+    const inheritedTags = !params.baseHash && params.inheritedTags !== undefined ? validatedTags(params.inheritedTags) : [];
+    return { id, ...(params.title === undefined ? {} : { title: checkString(params.title, "title") }), body, tags: inlineTags(body), ...(inheritedTags.length ? { inheritedTags } : {}), baseHash: params.baseHash as string | null ?? null, relativePath, draftKey };
   }
 
   private async storeDraft(selected: Binding, save: Save): Promise<BrowserDraft> {
@@ -458,6 +459,7 @@ export class BrowserVault {
         const all = snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).flatMap(item => readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties);
         let source = new TextDecoder().decode(bytes);
         for (const property of inheritedProperties(all,definitions)) source = patchProperty(source,{name:property.name,type:property.type as import('@memocard/contracts').PropertyType,value:property.value,options:property.options,create:true});
+        if (save.inheritedTags?.length) source = patchProperty(source,{name:'tags',type:'list',value:save.inheritedTags});
         bytes = textBytes(source);
       }
       if (bytes.length > 8 * 1024 * 1024) throw new BrowserVaultError('NOTE_TOO_LARGE','单条 Markdown 最大支持 8 MiB。');

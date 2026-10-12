@@ -3,7 +3,8 @@ import type { BrowserDirectoryHandle, ParsedBrowserNote } from './browser-files'
 import type { BrowserVaultStorage } from './browser-storage';
 import { BrowserVaultError, canonicalId, fileAt, readBytes, sha256, parseObsidianNote, parseBrowserNote } from './browser-files';
 import { readProperties, patchProperty } from './note-properties';
-import { inheritedProperties, convertedProperty, mergedPropertyOptions, newPropertyDefinition, parsePropertyDefinitions, propertyDefinitionPath, validPropertyDefinition } from './property-definitions';
+import { inheritedProperties, convertedProperty, mergedPropertyOptions, newPropertyDefinition, parsePropertyDefinitions, propertyDefinitionPath, validPropertyDefinition, resolvedPropertyDefinition } from './property-definitions';
+import { listAsMultiSelect } from './property-type-change';
 import { commitRename, renameSource } from './browser-rename';
 
 const bytes = (value:string) => new TextEncoder().encode(value);
@@ -16,7 +17,8 @@ export async function propertyOperation(operation:string, params:Record<string,u
   let definitions:Record<string,PropertyDefinition>;
   try { definitions = parsePropertyDefinitions(config ?? ''); } catch { return invalid('属性定义配置无法读取，请检查 .memocard/property-definitions.json。'); }
   const definitionHash = await sha256(bytes(config ?? ''));
-  const all = snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).flatMap(item => readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties);
+  const all = snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).flatMap(item => readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties.map(listAsMultiSelect));
+  definitions = Object.fromEntries(Object.entries(definitions).map(([name,definition]) => [name,resolvedPropertyDefinition(definition,all.filter(property => property.name === name))]));
   if (operation === 'getNoteProperties' && params.id === undefined) {
     await active();
     return {properties:inheritedProperties(all,definitions),contentHash:'',writable:false,definitionHash};
@@ -32,6 +34,7 @@ export async function propertyOperation(operation:string, params:Record<string,u
   const source = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(before);
   function effective(property:NoteProperty):NoteProperty {
     if (property.type === 'unsupported') return property;
+    property = listAsMultiSelect(property);
     const definition = definitions[property.name];
     if (definition) return convertedProperty(property,definition);
     return property.options ? {...property,options:mergedPropertyOptions(all.filter(item => item.name === property.name))} : property;
@@ -64,7 +67,7 @@ export async function propertyOperation(operation:string, params:Record<string,u
       const property = readProperties(original,item.note.contentHash).properties.find(property => property.name === change.name);
       if (!property) continue;
       if (!property.editable) return invalid(`「${item.note.relativePath}」的此属性只读，库级修改未保存。`);
-      const converted = convertedProperty(property,definition,change.optionRename);
+      const converted = convertedProperty(effective(property),definition,change.optionRename,!typeChanged);
       // A type switch converts each note independently; option actions can also change this note's selection.
       const value = item.note.id === id && !typeChanged && change.value !== undefined ? change.value : converted.value;
       const after = patchProperty(original,{name:change.name,...definition,value},compatible ? undefined : new Date().toISOString());

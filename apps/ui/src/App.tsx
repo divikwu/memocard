@@ -350,14 +350,14 @@ export function App() {
     : !status.coverage.complete ? "部分文件尚未就绪" : "已连接文件夹";
   const openingNote = !editing && pendingRoute !== null && !error && (loading || Boolean(status?.connected));
   const detailView = Boolean(editing) || openingNote;
-  const title = editing ? (editing.title?.trim() || "新页面") : openingNote ? "正在打开笔记" : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
+  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? "正在打开笔记" : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
   const newNote = async () => {
     if (selectingVault.current || (editingRef.current && !(await leaveEditor()))) return;
     editorGeneration.current++;
     if (openingLink.current) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
     const id = createId();
-    showEditor({ id, title: '', body: tag ? `#${tag}\n\n` : '', tags: tag ? [tag] : [], baseHash: null, relativePath: `${folders.includes('') ? '' : 'notes/'}${id}.md`, ...(isBrowserVault ? { vaultBinding: environment?.vaultBinding } : {}) });
+    showEditor({ id, title: '', body: '', tags: [], ...(tag ? { inheritedTags: [tag] } : {}), baseHash: null, relativePath: `${folders.includes('') ? '' : 'notes/'}${id}.md`, ...(isBrowserVault ? { vaultBinding: environment?.vaultBinding } : {}) });
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
   };
 
@@ -502,7 +502,7 @@ export function App() {
                 <div className="mt-2 flex gap-2"><Button variant="outline" size="sm" onClick={() => { if (unfiledRecovery.length === 1) void resumeDraft(unfiledRecovery[0]); else setRecoveryOpen(true); }}>恢复内容</Button><Button variant="ghost" size="sm" onClick={() => setRecoveryDismissed(true)}>稍后处理</Button></div>
               </AlertDescription>
             </Alert>}
-            <Dialog open={recoveryOpen} onOpenChange={setRecoveryOpen}><DialogContent><DialogTitle>恢复未保存内容</DialogTitle><DialogDescription>选择要恢复的内容，继续编辑并保存。</DialogDescription><div className="max-h-80 space-y-2 overflow-auto">{unfiledRecovery.map(draft => <Button className="h-auto w-full justify-start whitespace-normal text-left" variant="ghost" key={draft.draftKey ?? draft.id} onClick={() => void resumeDraft(draft)}>{draft.title || draft.body.slice(0, 100) || "新页面"}</Button>)}</div></DialogContent></Dialog>
+            <Dialog open={recoveryOpen} onOpenChange={setRecoveryOpen}><DialogContent><DialogTitle>恢复未保存内容</DialogTitle><DialogDescription>选择要恢复的内容，继续编辑并保存。</DialogDescription><div className="max-h-80 space-y-2 overflow-auto">{unfiledRecovery.map(draft => <Button className="h-auto w-full justify-start whitespace-normal text-left" variant="ghost" key={draft.draftKey ?? draft.id} onClick={() => void resumeDraft(draft)}>{draft.title || draft.body.slice(0, 100) || "新内容"}</Button>)}</div></DialogContent></Dialog>
 
             {loading && !status?.connected ? <LoadingNotes /> : !status?.connected ? <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">

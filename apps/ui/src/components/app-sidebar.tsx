@@ -5,7 +5,7 @@ import type { NoteFilterCounts, NoteQuickFilter } from "@memocard/contracts";
 import type { RegisteredVault } from "../bridge";
 import { NoteFilterNavigation } from "./note-filter-navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sidebar, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail } from "@/components/ui/sidebar";
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail } from "@/components/ui/sidebar";
 import { SidebarTreeItem } from "./sidebar-tree-item";
 
 type SidebarView = "notes" | "settings";
@@ -58,7 +58,9 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
     </SidebarHeader>
     <SidebarContent>
       <Suspense fallback={<div className="h-12" />}><TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={name => onNavigate("notes", name)} /></Suspense>
-      <SidebarGroup className="mt-auto"><SidebarGroupContent><SidebarMenu>
+    </SidebarContent>
+    <SidebarFooter className="shrink-0">
+      <SidebarGroup className="p-0"><SidebarGroupContent><SidebarMenu>
         <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="日历功能暂未开放"><CalendarDays /><span>日历</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="帮助功能暂未开放"><CircleHelp /><span>Help</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem>
@@ -87,7 +89,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
           </DropdownMenu>
         </SidebarMenuItem>
       </SidebarMenu>{hasVaultIssue && <p className="px-2 py-1 text-xs text-destructive">{vaultStatusText}</p>}</SidebarGroupContent></SidebarGroup>
-    </SidebarContent>
+    </SidebarFooter>
     <SidebarRail />
   </Sidebar>;
 }

@@ -50,7 +50,7 @@ export default function ChoicePropertyEditor({property, busy, error, onSave}: {p
       }}>
       <Combobox.Chips className="note-tag-input" aria-label="已选选项">
         <div className="note-tag-header"><div className="note-tag-selected" onClick={event => { if (event.target === event.currentTarget) input.current?.focus(); }}>
-        {selected.map(value => <Combobox.Chip key={value} className={`note-tag-chip note-tag-pill note-tag-color-${options.find(option => option.name === value)?.color ?? 'default'}`}>
+        {selected.map((value,index) => <Combobox.Chip key={`${index}:${value}`} className={`note-tag-chip note-tag-pill note-tag-color-${options.find(option => option.name === value)?.color ?? 'default'}`}>
           <span>{value}</span><Combobox.ChipRemove className="note-tag-remove" disabled={disabled} aria-label={`移除选项 ${value}`}><X className="size-3" /></Combobox.ChipRemove>
         </Combobox.Chip>)}
         <Combobox.Input ref={input} autoFocus aria-label="搜索或创建选项" placeholder={selected.length ? '' : '搜索或创建选项…'} className="note-tag-search" onKeyDownCapture={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); } }} />
