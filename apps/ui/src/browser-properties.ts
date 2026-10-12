@@ -18,7 +18,7 @@ export async function propertyOperation(operation:string, params:Record<string,u
   try { definitions = parsePropertyDefinitions(config ?? ''); } catch { return invalid('属性定义配置无法读取，请检查 .memocard/property-definitions.json。'); }
   const definitionHash = await sha256(bytes(config ?? ''));
   const all = snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).flatMap(item => readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties.map(listAsMultiSelect));
-  definitions = Object.fromEntries(Object.entries(definitions).map(([name,definition]) => [name,resolvedPropertyDefinition(definition,all.filter(property => property.name === name))]));
+  for (const [name,definition] of Object.entries(definitions)) definitions[name] = resolvedPropertyDefinition(definition,all.filter(property => property.name === name));
   if (operation === 'getNoteProperties' && params.id === undefined) {
     await active();
     return {properties:inheritedProperties(all,definitions),contentHash:'',writable:false,definitionHash};
@@ -49,7 +49,7 @@ export async function propertyOperation(operation:string, params:Record<string,u
   let change = { ...params, name: typeof params.name === 'string' ? params.name : '' } as PropertyChange;
   const current = readProperties(source,hash).properties.find(property => property.name === change.name);
   if (change.definition) {
-    if (!current?.editable || change.create || change.remove || change.renameTo || !change.type) return invalid('只有可编辑的自定义属性支持修改库级定义。');
+    if (!current?.editable || change.create || change.remove || change.renameTo || change.copyFrom !== undefined || !change.type) return invalid('只有可编辑的自定义属性支持修改库级定义。');
     const properties = all.filter(property => property.name === change.name);
     const typeChanged = effective(current).type !== change.type;
     const definition = newPropertyDefinition(properties,change.type,change.options,typeChanged);
@@ -70,14 +70,15 @@ export async function propertyOperation(operation:string, params:Record<string,u
       const converted = convertedProperty(effective(property),definition,change.optionRename,!typeChanged);
       // A type switch converts each note independently; option actions can also change this note's selection.
       const value = item.note.id === id && !typeChanged && change.value !== undefined ? change.value : converted.value;
-      const after = patchProperty(original,{name:change.name,...definition,value},compatible ? undefined : new Date().toISOString());
+      const retainedValues = change.optionRename && Array.isArray(property.value) ? property.value.map(value => value === change.optionRename!.from ? change.optionRename!.to : value) : undefined;
+      const after = patchProperty(original,{name:change.name,...definition,value},compatible ? undefined : new Date().toISOString(),retainedValues);
       if (bytes(after).length > 8 * 1024 * 1024) throw new BrowserVaultError('NOTE_TOO_LARGE','单条 Markdown 最大支持 8 MiB。');
       const identity = {id:item.note.id,path:item.note.relativePath,hash:await sha256(bytes(after)),createdAt:item.note.createdAt};
       const parsed = compatible ? await parseObsidianNote(bytes(after),identity.path,vaultId,identity,Date.now()) : await parseBrowserNote(bytes(after),identity.path,vaultId);
       changes.push({path:identity.path,before:original,after});
       if (item.note.id === id) saved = parsed.note;
     }
-    definitions = {...definitions,[change.name]:definition};
+    definitions[change.name] = definition;
     changes.push({path:propertyDefinitionPath,before:config,after:JSON.stringify(definitions)});
     await commitRename(root,compatible,storage,scope,{changes,identities:await storage.identities(scope)},active,false);
     return {...saved!,vaultBinding};

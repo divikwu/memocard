@@ -142,7 +142,7 @@ export default function NoteProperties({ note, tags: bodyValues, relativePath, c
     const names = new Set(data?.properties.map(item => item.name));
     let name = '', index = 1;
     do { const suffix = ` 副本${index === 1 ? '' : index}`; name = property.name.slice(0, 100 - suffix.length) + suffix; index++; } while (names.has(name));
-    void apply({name,type:property.type as PropertyType,value:property.value,create:true,...(property.options ? {options:property.options} : {})}).catch(() => undefined);
+    void apply({name,type:property.type as PropertyType,value:property.value,create:true,copyFrom:property.name,...(property.options ? {options:property.options} : {})}).catch(() => undefined);
   }
   function switchType(property:NoteProperty, type:PropertyType) {
     if (busy || loading || property.type === type) return;

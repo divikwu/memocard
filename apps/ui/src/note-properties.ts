@@ -64,7 +64,7 @@ export function readProperties(source: string, contentHash: string): NotePropert
   const parsed = propertySource(source);
   return { properties: parsed.entries.filter(entry => !reserved.has(entry.property.name)).map(entry => entry.property), tagProperty:tagProperty(parsed), contentHash, writable: parsed.writable };
 }
-export function patchProperty(source: string, change: PropertyChange, updatedAt?: string): string {
+export function patchProperty(source: string, change: PropertyChange, updatedAt?: string, retainedValues?: string[]): string {
   const parsed = propertySource(source);
   const name = change.name?.trim();
   if (!name || name.length > 100 || [...name].some(character => character.charCodeAt(0) < 32) || (reserved.has(name) && name !== 'tags')) invalid('属性名为空、过长或属于系统保留字段。');
@@ -73,6 +73,9 @@ export function patchProperty(source: string, change: PropertyChange, updatedAt?
   if (change.create && existing) invalid('属性已存在。');
   if (!change.create && !existing && name !== 'tags') invalid('属性已被移除，请重新加载。');
   if (name === 'tags' ? !tagProperty(parsed).editable : existing && !existing.property.editable) invalid('此属性只能在源文件中编辑。');
+  const copied = parsed.entries.find(entry => entry.property.name === change.copyFrom);
+  if (change.copyFrom !== undefined && (!change.create || change.remove || change.renameTo !== undefined || change.definition || reserved.has(name) || reserved.has(change.copyFrom) || !copied?.property.editable)) invalid('只能复制当前笔记中可编辑的自定义属性。');
+  const original = copied?.property ?? existing?.property;
   let replacement: string[] = [];
   if (change.renameTo !== undefined) {
     const target = change.renameTo.trim();
@@ -92,11 +95,12 @@ export function patchProperty(source: string, change: PropertyChange, updatedAt?
     }
     if (type === 'list' && name !== 'tags') invalid('文本列表已合并为多选。');
     if (type === 'checkbox' ? typeof value !== 'boolean' : ['list','multiSelect'].includes(type ?? '') ? !Array.isArray(value) || !value.every(item => typeof item === 'string') : !['text', 'date', 'select'].includes(type ?? '') || typeof value !== 'string') invalid('属性值与类型不匹配。');
-    const options = change.options ?? (existing ? listAsMultiSelect(existing.property).options : undefined) ?? (type === 'multiSelect' && Array.isArray(value) ? listAsMultiSelect({name,type:'list',value,editable:true}).options : undefined) ?? [];
+    const options = change.options ?? (original ? listAsMultiSelect(original).options : undefined) ?? (type === 'multiSelect' && Array.isArray(value) ? listAsMultiSelect({name,type:'list',value,editable:true}).options : undefined) ?? [];
     if (type === 'select' || type === 'multiSelect') {
       const values = Array.isArray(value) ? value : value === '' ? [] : [value];
-      const previous = Array.isArray(existing?.property.value) ? [...existing.property.value] : [];
-      const retained = type === 'multiSelect' && ['list','multiSelect'].includes(existing?.property.type ?? '');
+      // Renames supply values mapped from the verified source; copies read their source above.
+      const previous = [...retainedValues ?? (Array.isArray(original?.value) ? original.value : [])];
+      const retained = type === 'multiSelect' && (retainedValues !== undefined || ['list','multiSelect'].includes(original?.type ?? ''));
       const seen = new Set<unknown>();
       if (!validOptions(options) || !values.every(item => {
         const index = previous.indexOf(item as string);

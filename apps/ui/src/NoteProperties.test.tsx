@@ -371,7 +371,7 @@ it('duplicates a choice property with a unique name and preserves values and col
  const deletion=await screen.findByRole('menuitem',{name:'删除属性'});
  expect(deletion.getAttribute('data-variant')).toBe('default');
  await user.click(screen.getByRole('menuitem',{name:'创建属性副本'}));
- await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'阶段 副本2',type:'select',value:'进行中',create:true,options:[{name:'进行中',color:'blue'},{name:'完成',color:'green'}]}));
+ await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'阶段 副本2',type:'select',value:'进行中',create:true,copyFrom:'阶段',options:[{name:'进行中',color:'blue'},{name:'完成',color:'green'}]}));
  expect(onApply).toHaveBeenCalledTimes(1);
 });
 

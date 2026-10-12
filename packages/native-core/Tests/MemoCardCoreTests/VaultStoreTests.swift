@@ -83,6 +83,34 @@ final class VaultStoreTests: XCTestCase {
         let fields = try await call(core, "getNoteProperties", ["id": secondId])["properties"] as! [[String: Any]]
         XCTAssertEqual(fields.first { $0["name"] as? String == "field" }?["value"] as? [String], ["Two"])
     }
+    func testLegacyListCopiesAndOptionRenamesPreserveLiteralValues() async throws {
+        for shared in [false, true] {
+            if shared {
+                vault = temporary.appendingPathComponent("shared-copy")
+                try FileManager.default.createDirectory(at: vault, withIntermediateDirectories: true)
+            }
+            let core = try await store(create: !shared), values = ["One", "One", "", " spaced "]
+            let encoded = String(data: try JSONSerialization.data(withJSONObject: values), encoding: .utf8)!
+            for body in ["A", "B"] {
+                if shared { try Data("---\naliases: \(encoded)\n---\n\(body)".utf8).write(to: vault.appendingPathComponent("\(body).md")) }
+                else { _ = try writeNote(id: UUID().uuidString.lowercased(), body: body, extra: "aliases: \(encoded)\n") }
+            }
+            let page = try await call(core, "queryNotes")["notes"] as! [[String: Any]]
+            let a = page.first { ($0["body"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) == "A" }!
+            let b = page.first { ($0["body"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) == "B" }!
+            let fields = try await call(core, "getNoteProperties", ["id": a["id"]!])["properties"] as! [[String: Any]]
+            let property = fields.first { $0["name"] as? String == "aliases" }!
+            let copied = try await call(core, "updateNoteProperty", ["id": a["id"]!, "baseHash": a["contentHash"]!, "name": "aliases copy", "type": "multiSelect", "value": values, "options": property["options"]!, "create": true, "copyFrom": "aliases"])
+            let afterCopy = try await call(core, "getNoteProperties", ["id": a["id"]!])["properties"] as! [[String: Any]]
+            XCTAssertEqual(afterCopy.first { $0["name"] as? String == "aliases copy" }?["value"] as? [String], values)
+            let changed = try await call(core, "updateNoteProperty", ["id": a["id"]!, "baseHash": copied["contentHash"]!, "name": "aliases", "type": "multiSelect", "value": ["Two", "Two", "", " spaced "], "options": [["name": "Two", "color": "blue"]], "definition": true, "optionRename": ["from": "One", "to": "Two"]])
+            for id in [a["id"]!, b["id"]!] {
+                let after = try await call(core, "getNoteProperties", ["id": id])["properties"] as! [[String: Any]]
+                XCTAssertEqual(after.first { $0["name"] as? String == "aliases" }?["value"] as? [String], ["Two", "Two", "", " spaced "])
+            }
+            await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": a["id"]!, "baseHash": changed["contentHash"]!, "name": "bad copy", "type": "multiSelect", "value": ["", "", ""], "options": [], "create": true, "copyFrom": "aliases"]) }
+        }
+    }
     func testInheritedTagsStayInPropertiesForLegacyNotes() async throws { try await inheritedTagsStayInProperties(shared: false) }
     func testInheritedTagsStayInPropertiesForObsidianNotes() async throws { try await inheritedTagsStayInProperties(shared: true) }
     private func inheritedTagsStayInProperties(shared: Bool) async throws {

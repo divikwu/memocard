@@ -701,7 +701,7 @@ public actor VaultStore {
         guard change.definitionHash == nil || change.definitionHash == config.hash else { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已在其他位置修改，请重新打开后重试。") }
         let original = try readSource(root.appendingPathComponent(existing.note.relativePath))
         guard sha256(original) == change.baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
-        guard let current = try effectiveNoteProperties(original, snapshot: snapshot, root: root).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
+        guard let current = try effectiveNoteProperties(original, snapshot: snapshot, root: root).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, change.copyFrom == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
         let properties = try libraryProperties(snapshot).filter { $0.name == change.name }.map(listAsMultiSelect)
         let typeChanged = (config.values[change.name].map { resolvedPropertyDefinition($0, properties: properties).type } ?? current.type) != type
         let definition = newPropertyDefinition(properties, type: type, options: change.options, includeValues: typeChanged)
@@ -724,7 +724,9 @@ public actor VaultStore {
             let converted = convertedProperty(effective, definition: definition, rename: change.optionRename, pruneOptions: !typeChanged)
             let value = item.note.id == existing.note.id && !typeChanged ? change.value ?? converted.value : converted.value
             let update = PropertyChange(id: item.note.id, baseHash: item.note.contentHash, name: change.name, type: definition.type, value: value, remove: nil, create: nil, options: definition.options)
-            let after = try patchNoteProperty(before, change: update, updatedAt: compatible ? nil : timestamp())
+            var retainedValues: [String]?
+            if let rename = change.optionRename, case .list(let values) = property.value { retainedValues = values.map { $0 == rename.from ? rename.to : $0 } }
+            let after = try patchNoteProperty(before, change: update, updatedAt: compatible ? nil : timestamp(), retainedValues: retainedValues)
             guard after.count <= 8 * 1024 * 1024 else { throw VaultError(code: "NOTE_TOO_LARGE", message: "单条 Markdown 最大支持 8 MiB。") }
             let identity = FileIdentity(id: item.note.id, path: item.note.relativePath, hash: sha256(after), createdAt: item.note.createdAt)
             let parsed = try compatible ? parseObsidianNote(after, relativePath: identity.path, vaultID: metadata.vaultId, identity: identity, modified: Date()) : parseNote(after, relativePath: identity.path, vaultID: metadata.vaultId)

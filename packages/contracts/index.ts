@@ -17,4 +17,4 @@ export type PropertyLabels = {labels:Record<string,string>; contentHash:string};
 export type PropertyDefinition = {type:PropertyType; options?:PropertyOption[]};
 export type NoteProperty = {name:string; type:PropertyType | 'unsupported'; value:string | string[] | boolean; editable:boolean; options?:PropertyOption[]};
 export type NoteProperties = {properties:NoteProperty[]; tagProperty?:NoteProperty; contentHash:string; writable:boolean; definitionHash?:string};
-export type PropertyChange = {definition?:boolean; definitionHash?:string; optionRename?:{from:string;to:string}; name:string; renameTo?:string; type?:PropertyType; value?:string | string[] | boolean; remove?:boolean; create?:boolean; options?:PropertyOption[]};
+export type PropertyChange = {definition?:boolean; definitionHash?:string; optionRename?:{from:string;to:string}; name:string; renameTo?:string; copyFrom?:string; type?:PropertyType; value?:string | string[] | boolean; remove?:boolean; create?:boolean; options?:PropertyOption[]};

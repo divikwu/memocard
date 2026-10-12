@@ -14,6 +14,7 @@ struct PropertyChange: Decodable {
     var definition: Bool? = nil
     var definitionHash: String? = nil
     var optionRename: OptionRename? = nil
+    var copyFrom: String? = nil
 }
 enum PropertyValue: Codable {
     case text(String), list([String]), checkbox(Bool)
@@ -157,7 +158,7 @@ func readNoteProperties(_ data: Data) throws -> NoteProperties {
     let parsed = try propertySource(source)
     return NoteProperties(properties: parsed.entries.filter { !reservedProperties.contains($0.property.name) }.map(\.property), tagProperty: tagProperty(parsed), contentHash: sha256(data), writable: parsed.writable)
 }
-func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? = nil) throws -> Data {
+func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? = nil, retainedValues: [String]? = nil) throws -> Data {
     guard String(data: data, encoding: .utf8) != nil else { throw propertyError("笔记必须为 UTF-8。") }
     let source = String(decoding: data, as: UTF8.self)
     var parsed = try propertySource(source)
@@ -168,6 +169,11 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
     if change.create == true && existing != nil { throw propertyError("属性已存在。") }
     if change.create != true && existing == nil && name != "tags" { throw propertyError("属性已被移除，请重新加载。") }
     if name == "tags" ? !tagProperty(parsed).editable : existing?.property.editable == false { throw propertyError("此属性只能在源文件中编辑。") }
+    let copied = parsed.entries.first { $0.property.name == change.copyFrom }
+    if let copyFrom = change.copyFrom {
+        guard change.create == true, change.remove != true, change.renameTo == nil, change.definition != true, !reservedProperties.contains(name), !reservedProperties.contains(copyFrom), copied?.property.editable == true else { throw propertyError("只能复制当前笔记中可编辑的自定义属性。") }
+    }
+    let original = copied?.property ?? existing?.property
     let encoder = JSONEncoder(); encoder.outputFormatting = [.withoutEscapingSlashes]
     var replacement: [String] = []
     if let renameTo = change.renameTo {
@@ -200,12 +206,13 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
         if change.type == "date", case .text(let date) = value { encodedValue = date.isEmpty ? "null # memocard:type=date" : date } else { encodedValue = String(data: encoded, encoding: .utf8)! }
         var suffix = ""
         if change.type == "select" || change.type == "multiSelect" {
-            let options = change.options ?? existing.map { listAsMultiSelect($0.property).options ?? [] } ?? listAsMultiSelect(NoteProperty(name: name, type: "list", value: value, editable: true)).options ?? []
+            let options = change.options ?? original.map { listAsMultiSelect($0).options ?? [] } ?? listAsMultiSelect(NoteProperty(name: name, type: "list", value: value, editable: true)).options ?? []
             let values: [String]
             switch value { case .text(let text): values = text.isEmpty ? [] : [text]; case .list(let list): values = list; default: values = [] }
             var previous: [String] = []
-            if case .list(let items)? = existing?.property.value { previous = items }
-            let retained = change.type == "multiSelect" && ["list", "multiSelect"].contains(existing?.property.type ?? "")
+            if let retainedValues { previous = retainedValues }
+            else if case .list(let items)? = original?.value { previous = items }
+            let retained = change.type == "multiSelect" && (retainedValues != nil || ["list", "multiSelect"].contains(original?.type ?? ""))
             var seen = Set<String>()
             guard validOptions(options), values.allSatisfy({ selected in
                 if retained, let index = previous.firstIndex(of: selected) { previous.remove(at: index); seen.insert(selected); return true }

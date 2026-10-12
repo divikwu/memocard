@@ -86,6 +86,44 @@ it.each([false,true])('caps inferred options across legacy notes without blockin
  expect(after.properties.find(p=>p.name==='field')!.value).toEqual(values.slice(105));
 });
 
+it.each([false,true])('treats prototype-like YAML names as ordinary properties (shared=%s)',async shared=>{
+ const root=shared ? new TestDirectory('shared') : await fixture(), notes=shared ? root : await root.getDirectoryHandle('notes');
+ const file=await notes.getFileHandle(shared ? 'Names.md' : `${noteId}.md`,{create:true});
+ const fields='constructor: text\ntoString: text\n__proto__: text\n';
+ file.bytes=bytes(shared ? `---\n${fields}---\nNames` : source(noteId,'Names',fields));
+ const h=harness(root); await call(h.core,'selectVault');
+ const note=(await call<NotePage>(h.core,'queryNotes')).notes.find(n=>n.body==='Names')!;
+ let props=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:note.id});
+ for (const name of ['constructor','toString','__proto__']) expect(props.properties.find(p=>p.name===name)).toMatchObject({type:'text',value:'text'});
+ const updated=await call<Note>(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name:'constructor',type:'text',value:'edited'});
+ await call(h.core,'updateNoteProperty',{id:note.id,baseHash:updated.contentHash,name:'__proto__',type:'multiSelect',definition:true});
+ props=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:note.id});
+ expect(props.properties.find(p=>p.name==='__proto__')).toMatchObject({type:'multiSelect',value:['text']});
+ expect(props.properties.find(p=>p.name==='constructor')).toMatchObject({type:'text',value:'edited'});
+});
+
+it.each([false,true])('copies and renames legacy list values without losing duplicates or blanks (shared=%s)',async shared=>{
+ const root=shared ? new TestDirectory('shared') : await fixture(), notes=shared ? root : await root.getDirectoryHandle('notes');
+ const values=['One','One','',' spaced '];
+ for (const [id,path,body] of [[noteId,shared?'A.md':`${noteId}.md`,'A'],[secondId,shared?'B.md':`${secondId}.md`,'B']]) {
+  const file=await notes.getFileHandle(path,{create:true}), fields=`aliases: ${JSON.stringify(values)}\n`;
+  file.bytes=bytes(shared ? `---\n${fields}---\n${body}` : source(id,body,fields));
+ }
+ const h=harness(root);await call(h.core,'selectVault');
+ const page=await call<NotePage>(h.core,'queryNotes'), a=page.notes.find(n=>n.body==='A')!, b=page.notes.find(n=>n.body==='B')!;
+ const fields=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:a.id});
+ const property=fields.properties.find(p=>p.name==='aliases')!;
+ const copied=await call<Note>(h.core,'updateNoteProperty',{id:a.id,baseHash:a.contentHash,name:'aliases copy',type:'multiSelect',value:values,options:property.options,create:true,copyFrom:'aliases'});
+ const afterCopy=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:a.id});
+ expect(afterCopy.properties.find(p=>p.name==='aliases copy')!.value).toEqual(values);
+ const changed=await call<Note>(h.core,'updateNoteProperty',{id:a.id,baseHash:copied.contentHash,name:'aliases',type:'multiSelect',value:['Two','Two','',' spaced '],options:[{name:'Two',color:'blue'}],definition:true,optionRename:{from:'One',to:'Two'}});
+ for (const id of [a.id,b.id]) {
+  const after=await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id});
+  expect(after.properties.find(p=>p.name==='aliases')!.value).toEqual(['Two','Two','',' spaced ']);
+ }
+ await expect(call(h.core,'updateNoteProperty',{id:a.id,baseHash:changed.contentHash,name:'bad copy',type:'multiSelect',value:['','',''],options:[],create:true,copyFrom:'aliases'})).rejects.toMatchObject({code:'INVALID_PROPERTY'});
+});
+
 it('saves property tags independently, merges filters and counts once, and checks stale hashes', async () => {
   const h = await open();
   const file = await h.notes.getFileHandle(`${noteId}.md`);
