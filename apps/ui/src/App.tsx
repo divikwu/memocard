@@ -710,7 +710,7 @@ export function App() {
               description={localWebReconnectRequired ? bridgeErrorCode(error) === "WEB_UNAUTHORIZED" ? "从 MemoCard 重新打开此页面以恢复访问。" : "重新打开 MemoCard，继续读取和保存笔记。" : needsPermission ? "重新授权后，即可读取和保存笔记。" : "重新选择笔记文件夹，并允许访问。"}>
               {selectionNotice && !localWebReconnectRequired && !needsPermission && <details className="mb-3 max-w-sm text-sm text-muted-foreground"><summary className="mx-auto w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words text-pretty">{selectionNotice}</p></details>}
               <div className="flex flex-wrap justify-center gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} /> : <Button onClick={() => needsPermission ? void reauthorizeVault() : void selectVault(false)} disabled={working || switchingVault}>{needsPermission ? "重新授权" : "重新选择"}</Button>}</div>
-            </EmptyState> : listTimeoutVisible === "initial" ? <EmptyState compact role="alert" icon="connection" title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button disabled={refreshingPages || switchingVault} onClick={() => void refresh()}>重试</Button></EmptyState> : loading && notes.length === 0 ? <LoadingNotes /> : !status?.connected && notes.length === 0 ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none">
+            </EmptyState> : listTimeoutVisible === "initial" ? <EmptyState compact role="alert" icon="connection" title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button disabled={refreshingPages || switchingVault} onClick={() => void refresh()}>重试</Button></EmptyState> : loading && notes.length === 0 ? <LoadingNotes /> : !status?.connected && notes.length === 0 ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none">
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
                 <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><FolderOpen className="size-6" strokeWidth={1.5} /></span>
                 <h2 className="text-lg font-semibold">{unsupportedBrowser ? "需要启动 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
@@ -741,7 +741,7 @@ function StatusRow({ label, value }: { label: string; value: string | number }) 
 }
 
 function LoadingNotes() {
-  return <div role="status" aria-label="正在读取笔记库" className="space-y-3"><span className="sr-only">正在读取笔记库…</span>{[0, 1, 2].map((item) => <Card key={item} className="rounded-xl border-0 bg-muted/50 shadow-none"><CardContent className="space-y-4"><Skeleton className="h-3 w-28" /><div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div><Skeleton className="h-5 w-16" /></CardContent></Card>)}</div>;
+  return <div role="status" aria-label="正在读取笔记库" className="space-y-3"><span className="sr-only">正在读取笔记库…</span>{[0, 1, 2].map((item) => <Card key={item} className="rounded-xl border-0 bg-sidebar shadow-none"><CardContent className="space-y-4"><Skeleton className="h-3 w-28" /><div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div><Skeleton className="h-5 w-16" /></CardContent></Card>)}</div>;
 }
 
 function LoadingNote() {
@@ -750,7 +750,7 @@ function LoadingNote() {
 
 function EmptyState({ icon, title, description, children, compact = false, role }: { icon: "note" | "search" | "folder" | "connection"; title: string; description: string; children?: React.ReactNode; compact?: boolean; role?: "alert" | "status" }) {
   const Icon = icon === "search" ? Search : icon === "folder" ? FolderOpen : icon === "connection" ? CircleAlert : Layers2;
-  return <Card role={role ?? (compact ? "status" : undefined)} className="gap-0 rounded-xl border-0 bg-muted/50 py-0 shadow-none"><CardContent className={cn("flex flex-col items-center px-6 text-center", compact ? "py-10" : "py-14")}><span className={cn("flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground", compact ? "mb-4" : "mb-5")}><Icon className="size-6" strokeWidth={1.5} /></span><h2 className="text-balance text-lg font-semibold">{title}</h2><p className="mt-2 max-w-sm text-pretty text-sm leading-6 text-muted-foreground">{description}</p>{children && <div className={compact ? "mt-4" : "mt-6"}>{children}</div>}</CardContent></Card>;
+  return <Card role={role ?? (compact ? "status" : undefined)} className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none"><CardContent className={cn("flex flex-col items-center px-6 text-center", compact ? "py-10" : "py-14")}><span className={cn("flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground", compact ? "mb-4" : "mb-5")}><Icon className="size-6" strokeWidth={1.5} /></span><h2 className="text-balance text-lg font-semibold">{title}</h2><p className="mt-2 max-w-sm text-pretty text-sm leading-6 text-muted-foreground">{description}</p>{children && <div className={compact ? "mt-4" : "mt-6"}>{children}</div>}</CardContent></Card>;
 }
 
 function formatDate(value: string) {
