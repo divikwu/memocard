@@ -189,7 +189,10 @@ it('shows current colors and resets them without changing the emoji or body',asy
  expect(field.querySelector('.rich-callout-content')?.textContent).toBe('正文');
 });
 it('opens the icon picker with the keyboard and exposes the expanded state',async()=>{
- await setup('开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>');
+ const {field}=await setup('开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>');
+ // Tiptap finishes its initial focus on the next animation frame.
+ await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
+ expect(document.activeElement).toBe(field);
  const trigger=screen.getByRole('button',{name:'更改标注图标'});
  act(()=>trigger.focus());await userEvent.setup().keyboard('{Enter}');
  await screen.findByRole('textbox',{name:'搜索 Emoji'});
