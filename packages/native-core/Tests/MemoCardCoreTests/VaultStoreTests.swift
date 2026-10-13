@@ -928,6 +928,148 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual(edited["body"] as? String, "Edited")
     }
 
+    func testLegacyMissingLibraryFieldsStayVirtualUntilEdited() async throws { try await missingLibraryFieldsStayVirtual(shared: false) }
+    func testObsidianMissingLibraryFieldsStayVirtualUntilEdited() async throws { try await missingLibraryFieldsStayVirtual(shared: true) }
+    private func missingLibraryFieldsStayVirtual(shared: Bool) async throws {
+        let core = try await store(create: !shared)
+        let a = vault.appendingPathComponent(shared ? "A.md" : "notes/A.md"), b = vault.appendingPathComponent(shared ? "B.md" : "notes/B.md")
+        if shared {
+            try Data("---\nsummary: Original\n---\nBody A".utf8).write(to: a)
+            try Data("Body B".utf8).write(to: b)
+        } else {
+            _ = try writeNote(id: UUID().uuidString.lowercased(), filename: "A", body: "Body A", extra: "summary: Original\n")
+            _ = try writeNote(id: UUID().uuidString.lowercased(), filename: "B", body: "Body B")
+        }
+        let config = vault.appendingPathComponent(propertyDefinitionPath)
+        try Data(#"{"choice":{"type":"select","options":[{"name":"One","color":"blue"}]},"checked":{"type":"checkbox"},"when":{"type":"date"}}"#.utf8).write(to: config)
+        let page = try await call(core, "queryNotes")["notes"] as! [[String: Any]]
+        let aid = page.first { $0["body"] as? String == "Body A" }!["id"] as! String, bid = page.first { $0["body"] as? String == "Body B" }!["id"] as! String
+        let originalA = try Data(contentsOf: a), originalB = try Data(contentsOf: b)
+        func fields(_ id: String) async throws -> [[String: Any]] { try await call(core, "getNoteProperties", ["id": id])["properties"] as! [[String: Any]] }
+        let initial = try await fields(bid)
+        XCTAssertEqual(initial.map { $0["name"] as! String }, ["checked", "choice", "summary", "when"])
+        XCTAssertEqual(initial.first { $0["name"] as? String == "checked" }?["value"] as? Bool, false)
+        XCTAssertEqual(initial.first { $0["name"] as? String == "summary" }?["value"] as? String, "")
+        let aFields = try await fields(aid)
+        XCTAssertEqual(aFields.first { $0["name"] as? String == "summary" }?["value"] as? String, "Original")
+        XCTAssertEqual(try Data(contentsOf: a), originalA); XCTAssertEqual(try Data(contentsOf: b), originalB)
+        let misses = await core.propertyParseMissCount
+        _ = try await fields(bid)
+        let warmMisses = await core.propertyParseMissCount
+        XCTAssertEqual(warmMisses, misses)
+        var note = try await call(core, "getNote", ["id": bid])
+        note = try await save(core, id: bid, body: "Edited body", hash: note["contentHash"] as? String)
+        XCTAssertFalse(String(decoding: try Data(contentsOf: b), as: UTF8.self).contains("summary:"))
+        func change(_ params: [String: Any]) async throws -> [String: Any] {
+            let note = try await call(core, "getNote", ["id": bid]), data = try await call(core, "getNoteProperties", ["id": bid])
+            return try await call(core, "updateNoteProperty", params.merging(["id": bid, "baseHash": note["contentHash"]!, "definitionHash": data["definitionHash"]!]) { first, _ in first })
+        }
+        let beforeOptions = try Data(contentsOf: b)
+        _ = try await change(["name": "choice", "type": "select", "value": "", "options": [["name": "One", "color": "purple"]], "definition": true])
+        XCTAssertEqual(try Data(contentsOf: b), beforeOptions)
+        _ = try await change(["name": "summary copy", "type": "text", "value": "", "create": true, "copyFrom": "summary"])
+        var source = String(decoding: try Data(contentsOf: b), as: UTF8.self)
+        XCTAssertTrue(source.contains("\"summary copy\": \"\"")); XCTAssertFalse(source.contains("\"summary\":"))
+        let result = try await change(["name": "choice", "type": "select", "value": "One", "options": [["name": "One", "color": "purple"]]])
+        let loaded = try await call(core, "getNoteProperties", ["id": bid])
+        XCTAssertEqual(result["propertyData"] as! NSDictionary, loaded as NSDictionary)
+        source = String(decoding: try Data(contentsOf: b), as: UTF8.self)
+        XCTAssertTrue(source.contains("\"choice\": \"One\"")); XCTAssertFalse(source.contains("\"when\":")); XCTAssertFalse(source.contains("\"checked\":"))
+        XCTAssertEqual(try Data(contentsOf: a), originalA)
+        _ = try await change(["name": "when", "type": "date", "value": "2026-10-13"])
+        _ = try await change(["name": "checked", "type": "checkbox", "value": true])
+        _ = try await change(["name": "choice", "remove": true])
+        let cleared = try await fields(bid)
+        XCTAssertFalse(cleared.contains { $0["name"] as? String == "choice" })
+        XCTAssertEqual(cleared.first { $0["name"] as? String == "when" }?["value"] as? String, "2026-10-13")
+        XCTAssertEqual(cleared.first { $0["name"] as? String == "checked" }?["value"] as? Bool, true)
+        let beforeRemove = try Data(contentsOf: b)
+        await expectCode("INVALID_PROPERTY") { _ = try await change(["name": "choice", "remove": true]) }; XCTAssertEqual(try Data(contentsOf: b), beforeRemove)
+        _ = try await change(["name": "new field", "type": "text", "value": "Value", "create": true])
+        let inherited = try await fields(aid)
+        XCTAssertEqual(inherited.first { $0["name"] as? String == "new field" }?["value"] as? String, "")
+        XCTAssertEqual(try Data(contentsOf: a), originalA)
+        let beforeReopen = try await fields(bid)
+        let reopened = try await store(create: !shared)
+        let afterReopen = try await call(reopened, "getNoteProperties", ["id": bid])["properties"] as! [[String: Any]]
+        XCTAssertEqual(afterReopen as NSArray, beforeReopen as NSArray)
+    }
+
+    func testLegacyLibraryDeletionRemovesEveryValueAndDefinition() async throws { try await libraryDeletionRemovesEveryValue(shared: false) }
+    func testObsidianLibraryDeletionRemovesEveryValueAndDefinition() async throws { try await libraryDeletionRemovesEveryValue(shared: true) }
+    private func libraryDeletionRemovesEveryValue(shared: Bool) async throws {
+        let core = try await store(create: !shared)
+        var files: [URL] = []
+        for index in 0..<3 {
+            let name = ["A", "B", "C"][index], fields = (index < 2 ? "field: Value \(index)\n" : "") + "keep: Keep\n"
+            if shared {
+                let file = vault.appendingPathComponent("\(name).md")
+                try Data("---\n\(fields)---\nBody \(index)".utf8).write(to: file); files.append(file)
+            } else { files.append(try writeNote(id: UUID().uuidString.lowercased(), filename: name, body: "Body \(index)", extra: fields)) }
+        }
+        let config = vault.appendingPathComponent(propertyDefinitionPath)
+        try Data(#"{"field":{"type":"text"},"onlySchema":{"type":"date"},"keep":{"type":"text"}}"#.utf8).write(to: config)
+        let page = try await call(core, "queryNotes")["notes"] as! [[String: Any]]
+        let c = page.first { $0["body"] as? String == "Body 2" }!, b = page.first { $0["body"] as? String == "Body 1" }!, cid = c["id"] as! String
+        func fields(_ id: String) async throws -> [String: Any] { try await call(core, "getNoteProperties", ["id": id]) }
+        let before = try Data(contentsOf: files[2]), initial = try await fields(cid), staleHash = initial["definitionHash"]!
+        let result = try await call(core, "updateNoteProperty", ["id": cid, "baseHash": c["contentHash"]!, "definitionHash": staleHash, "name": "field", "remove": true])
+        let current = try await fields(cid)
+        XCTAssertEqual(result["propertyData"] as! NSDictionary, current as NSDictionary)
+        for note in page {
+            let values = try await fields(note["id"] as! String)["properties"] as! [[String: Any]]
+            XCTAssertFalse(values.contains { $0["name"] as? String == "field" })
+            XCTAssertEqual(values.first { $0["name"] as? String == "keep" }?["value"] as? String, "Keep")
+        }
+        for file in files { XCTAssertFalse(String(decoding: try Data(contentsOf: file), as: UTF8.self).contains("field:")) }
+        XCTAssertEqual(try Data(contentsOf: files[2]), before)
+        let definitions = try JSONSerialization.jsonObject(with: Data(contentsOf: config)) as! [String: Any]
+        XCTAssertEqual(Set(definitions.keys), Set(["onlySchema", "keep"]))
+        let freshB = try await call(core, "getNote", ["id": b["id"]!])
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNoteProperty", ["id": b["id"]!, "baseHash": freshB["contentHash"]!, "definitionHash": staleHash, "name": "field", "type": "text", "value": "Stale"]) }
+        _ = try await call(core, "updateNoteProperty", ["id": cid, "baseHash": c["contentHash"]!, "definitionHash": current["definitionHash"]!, "name": "onlySchema", "remove": true])
+        XCTAssertEqual(try Data(contentsOf: files[2]), before)
+        let preview = try await call(core, "getNoteProperties")["properties"] as! [[String: Any]]
+        XCTAssertEqual(preview.map { $0["name"] as! String }, ["keep"])
+        let saved = try await save(core, body: "New")
+        let savedFields = try await fields(saved["id"] as! String)["properties"] as! [[String: Any]]
+        XCTAssertEqual(savedFields.map { $0["name"] as! String }, ["keep"])
+        let reopened = try await store(create: !shared)
+        let reloaded = try await call(reopened, "getNoteProperties", ["id": b["id"]!])["properties"] as! [[String: Any]]
+        XCTAssertEqual(reloaded.map { $0["name"] as! String }, ["keep"])
+    }
+
+    func testLibraryDeletionRejectsReadonlyValueWithoutPartialChanges() async throws {
+        let core = try await store(), id = UUID().uuidString.lowercased()
+        let a = try writeNote(id: id, filename: "A", extra: "field: One\n"), b = try writeNote(id: UUID().uuidString.lowercased(), filename: "B", extra: "field: {nested: keep}\n")
+        let config = vault.appendingPathComponent(propertyDefinitionPath)
+        try Data(#"{"field":{"type":"text"}}"#.utf8).write(to: config)
+        let originals = try [a, b, config].map { try Data(contentsOf: $0) }, note = try await call(core, "getNote", ["id": id])
+        await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "field", "remove": true]) }
+        XCTAssertEqual(try [a, b, config].map { try Data(contentsOf: $0) }, originals)
+    }
+
+    func testInterruptedLibraryDeletionRestoresEveryValueAndDefinition() async throws {
+        let core = try await store()
+        let ids = [UUID().uuidString.lowercased(), UUID().uuidString.lowercased()]
+        let files = try ids.map { try writeNote(id: $0, extra: "field: Original\n") }
+        let config = vault.appendingPathComponent(propertyDefinitionPath), definition = Data(#"{"field":{"type":"text"}}"#.utf8)
+        try definition.write(to: config)
+        _ = try await call(core, "queryNotes")
+        let originals = try files.map { try Data(contentsOf: $0) }
+        let after = try originals.enumerated().map { index, data in try patchNoteProperty(data, change: PropertyChange(id: ids[index], baseHash: "", name: "field", type: nil, value: nil, remove: true, create: nil)) }
+        var changes = files.indices.map { ["path": "notes/\(ids[$0]).md", "before": originals[$0].base64EncodedString(), "after": after[$0].base64EncodedString()] }
+        changes.append(["path": propertyDefinitionPath, "before": definition.base64EncodedString(), "after": Data("{}".utf8).base64EncodedString()])
+        let journal = await core.identityURL.appendingPathExtension("rename.json")
+        try JSONSerialization.data(withJSONObject: ["root": vault.path, "changes": changes, "identities": []]).write(to: journal)
+        try after[0].write(to: files[0]); try Data("{}".utf8).write(to: config)
+        let reopened = try await store()
+        _ = try await call(reopened, "queryNotes")
+        XCTAssertEqual(try files.map { try Data(contentsOf: $0) }, originals)
+        XCTAssertEqual(try Data(contentsOf: config), definition)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: journal.path))
+    }
+
     func testVaultPropertyDefinitionsSynchronizeTypesOptionsAndKeepValuesIndependent() async throws {
         try await verifySharedPropertyDefinitions(shared: false)
     }

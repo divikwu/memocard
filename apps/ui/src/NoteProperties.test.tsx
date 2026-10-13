@@ -76,6 +76,17 @@ async function setup(onApply = vi.fn().mockResolvedValue(undefined)) {
  await screen.findByRole('button',{name:'编辑属性 摘要'});
  return {user,onApply};
 }
+it('uses month/day/year for timestamps, date values and the date editor',async () => {
+ const user = userEvent.setup();
+ render(<NoteProperties note={{...note,createdAt:new Date(2026,9,9,16,5).toISOString(),updatedAt:new Date(2026,9,10,0,5).toISOString()}} tags={[]} canEdit busy={false} onApply={vi.fn()} />);
+ await user.click(screen.getByRole('button',{name:/^属性$/}));
+ const date = await screen.findByRole('button',{name:'编辑属性 日期'});
+ expect(date.textContent).toBe('10/12/2026');
+ expect(screen.getByText('10/09/2026 16:05')).toBeTruthy();
+ expect(screen.getByText('10/10/2026 00:05')).toBeTruthy();
+ await user.click(date);
+ expect(await screen.findByRole('textbox',{name:'属性值'})).toHaveProperty('value','10/12/2026');
+});
 it('uses multi-select editing for legacy lists and removes the separate list type from menus',async () => {
  const {user,onApply} = await setup();
  await user.click(screen.getByRole('button',{name:'编辑属性 aliases'}));
@@ -151,6 +162,8 @@ it('places delete in the property-name menu and keeps confirmation cancellable',
  await user.click(screen.getByRole('button',{name:'属性菜单 摘要'}));
  await user.click(await screen.findByRole('menuitem',{name:'删除属性'}));
  expect(await screen.findByRole('alertdialog')).toBeTruthy();
+ expect(screen.getByText('将从所有笔记中删除此属性及已填写的值，此操作无法撤销。')).toBeTruthy();
+ expect(screen.queryByRole('menuitem',{name:'清空值'})).toBeNull();
  await user.click(screen.getByRole('button',{name:'取消'}));
  expect(onApply).not.toHaveBeenCalled();
 });
@@ -195,7 +208,7 @@ it('toggles checkbox directly and presents a date input and list chips',async ()
  expect(onApply).toHaveBeenCalledWith({name:'已验证',type:'checkbox',value:true});
  expect(screen.getByText('别名一')).toBeTruthy();
  await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
- expect(await screen.findByLabelText('属性值')).toHaveProperty('placeholder','YYYY-MM-DD');
+ expect(await screen.findByLabelText('属性值')).toHaveProperty('placeholder','MM/DD/YYYY');
  expect(screen.getByRole('grid')).toBeTruthy();
 });
 
@@ -283,27 +296,27 @@ it('rejects impossible dates, retains input, and cancels without a write',async 
  const {user,onApply} = await setup();
  await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
  const input = await screen.findByRole('textbox',{name:'属性值'});
- await user.clear(input); await user.type(input,'2026-02-30{Enter}');
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效日期（YYYY-MM-DD）。');
+ await user.clear(input); await user.type(input,'02/30/2026{Enter}');
+ expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效日期（MM/DD/YYYY）。');
  expect(onApply).not.toHaveBeenCalled();
  await user.keyboard('{Escape}');
  expect(onApply).not.toHaveBeenCalled();
  expect(screen.queryByRole('dialog')).toBeNull();
 });
-it.each(['2026-99-99','2026-02-30','12/10/2026'])('shows date feedback for %s without relying on the native invalid event',async value => {
+it.each(['99/99/2026','02/30/2026','31/12/2026'])('shows date feedback for %s without relying on the native invalid event',async value => {
  const {user,onApply} = await setup();
  await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
  const input = await screen.findByRole('textbox',{name:'属性值'});
  const submit = vi.spyOn(HTMLFormElement.prototype,'requestSubmit').mockImplementation(() => {});
  await user.clear(input); await user.type(input,`${value}{Enter}`);
  const alert = await screen.findByRole('alert');
- expect(alert.textContent).toBe('请输入有效日期（YYYY-MM-DD）。');
+ expect(alert.textContent).toBe('请输入有效日期（MM/DD/YYYY）。');
  expect(input.getAttribute('aria-invalid')).toBe('true');
  expect(input.getAttribute('aria-describedby')).toBe(alert.id);
  expect((input as HTMLInputElement).value).toBe(value);
  expect(onApply).not.toHaveBeenCalled();
  expect(submit).not.toHaveBeenCalled();
- await user.clear(input); await user.type(input,'2028-02-29{Enter}');
+ await user.clear(input); await user.type(input,'02/29/2028{Enter}');
  await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:'2028-02-29'}));
  expect(screen.queryByRole('alert')).toBeNull();
  expect(submit).not.toHaveBeenCalled();
@@ -313,9 +326,9 @@ it('shows an invalid typed date on blur and clears feedback when a calendar date
  await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
  const input = await screen.findByRole('textbox',{name:'属性值'});
  vi.spyOn(HTMLFormElement.prototype,'requestSubmit').mockImplementation(() => {});
- await user.clear(input); await user.type(input,'2026-99-99');
+ await user.clear(input); await user.type(input,'99/99/2026');
  await user.click(screen.getByRole('button',{name:'下个月'}));
- expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效日期（YYYY-MM-DD）。');
+ expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效日期（MM/DD/YYYY）。');
  expect(onApply).not.toHaveBeenCalled();
  await user.click(screen.getByRole('button',{name:'2026年11月5日'}));
  await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:'2026-11-05'}));
@@ -326,10 +339,10 @@ it('saves a typed leap date and preserves it on a write conflict',async () => {
  const {user} = await setup(onApply);
  await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
  const input = await screen.findByRole('textbox',{name:'属性值'});
- await user.clear(input); await user.type(input,'2028-02-29{Enter}');
+ await user.clear(input); await user.type(input,'02/29/2028{Enter}');
  await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:'2028-02-29'}));
  expect((await screen.findByRole('alert')).textContent).toContain('文件已被修改');
- expect((input as HTMLInputElement).value).toBe('2028-02-29');
+ expect((input as HTMLInputElement).value).toBe('02/29/2028');
 });
 it('supports calendar arrow keys and Space selection',async () => {
  const {user,onApply} = await setup();

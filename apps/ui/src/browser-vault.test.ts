@@ -1141,6 +1141,100 @@ it.each([false,true])('inherits library fields on first save, with empty values 
  await call(h.core,'saveNote',{id:saved.id,body:'Edited',tags:[],baseHash:saved.contentHash});
  expect((await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:saved.id})).properties).toEqual(preview.properties);
 });
+it.each([false,true])('shows missing library fields without writing them and saves only edited values (shared=%s)',async shared => {
+ const root=shared ? new TestDirectory('shared') : await fixture();
+ const notes=shared ? root : await root.getDirectoryHandle('notes');
+ const a=await notes.getFileHandle(shared ? 'A.md' : `${noteId}.md`,{create:true});
+ const b=await notes.getFileHandle(shared ? 'B.md' : `${secondId}.md`,{create:true});
+ a.bytes=bytes(shared ? '---\nsummary: Original\n---\nBody A' : source(noteId,'Body A','summary: Original\n'));
+ b.bytes=bytes(shared ? 'Body B' : source(secondId,'Body B'));
+ const config=await (await root.getDirectoryHandle('.memocard',{create:true})).getFileHandle('property-definitions.json',{create:true});
+ config.bytes=bytes(JSON.stringify({choice:{type:'select',options:[{name:'One',color:'blue'}]},checked:{type:'checkbox'},when:{type:'date'}}));
+ const h=harness(root);await call(h.core,'selectVault');
+ const page=await call<NotePage>(h.core,'queryNotes'), aid=page.notes.find(n=>n.body==='Body A')!.id,bid=page.notes.find(n=>n.body==='Body B')!.id;
+ const original=[a.text,b.text];
+ const get=async(id=bid)=>call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id});
+ let fields=await get();
+ expect(fields.properties.map(p=>[p.name,p.type,p.value])).toEqual([['checked','checkbox',false],['choice','select',''],['summary','text',''],['when','date','']]);
+ expect((await get(aid)).properties.find(p=>p.name==='summary')!.value).toBe('Original');
+ expect([a.text,b.text]).toEqual(original);
+ let note=await call<Note>(h.core,'getNote',{id:bid});
+ note=await call<Note>(h.core,'saveNote',{id:bid,body:'Edited body',tags:[],baseHash:note.contentHash});
+ expect(b.text).not.toMatch(/summary:|choice:|checked:|when:/);
+ const change=async(change:Record<string,unknown>)=>{
+  fields=await get();note=await call<Note>(h.core,'getNote',{id:bid});
+  return call<import('@memocard/contracts').PropertyUpdateResult>(h.core,'updateNoteProperty',{id:bid,baseHash:note.contentHash,definitionHash:fields.definitionHash,...change});
+ };
+ // Changing options for a virtual field must not create an empty source field.
+ const beforeOptions=b.text;
+ await change({name:'choice',type:'select',value:'',options:[{name:'One',color:'purple'}],definition:true});
+ expect(b.text).toBe(beforeOptions);
+ await change({name:'summary copy',type:'text',value:'',create:true,copyFrom:'summary'});
+ expect(b.text).toContain('"summary copy": ""');expect(b.text).not.toContain('"summary":');
+ const result=await change({name:'choice',type:'select',value:'One',options:[{name:'One',color:'purple'}]});
+ expect(result.propertyData).toEqual(await get());
+ expect(b.text).toContain('"choice": "One"');expect(b.text).not.toMatch(/summary"?:|checked"?:|when"?:/);
+ expect(a.text).toBe(original[0]);
+ await change({name:'when',type:'date',value:'2026-10-13'});
+ await change({name:'checked',type:'checkbox',value:true});
+ expect((await get()).properties.find(p=>p.name==='when')!.value).toBe('2026-10-13');
+ expect((await get()).properties.find(p=>p.name==='checked')!.value).toBe(true);
+ await change({name:'choice',remove:true});
+ expect((await get()).properties.some(p=>p.name==='choice')).toBe(false);
+ const cleared=b.text;await expect(change({name:'choice',remove:true})).rejects.toMatchObject({code:'INVALID_PROPERTY'});expect(b.text).toBe(cleared);
+ await change({name:'new field',type:'text',value:'Value',create:true});
+ expect((await get(aid)).properties.find(p=>p.name==='new field')!.value).toBe('');
+ expect(a.text).toBe(original[0]);
+ const reopened=harness(root,h.storage);await call(reopened.core,'selectVault');
+ expect((await call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties',{id:bid})).properties).toEqual((await get()).properties);
+});
+it.each([false,true])('deletes a library field from every note and the schema, including from a virtual row (shared=%s)',async shared => {
+ const root=shared ? new TestDirectory('shared') : await fixture(), notes=shared ? root : await root.getDirectoryHandle('notes');
+ const cId='11111111-1111-4111-8111-111111111113';
+ const files=await Promise.all((shared ? ['A','B','C'] : [noteId,secondId,cId]).map(name=>notes.getFileHandle(`${name}.md`,{create:true})));
+ for (const [index,file] of files.entries()) file.bytes=bytes(shared ? `---\n${index<2 ? `field: Value ${index}\n` : ''}keep: Keep\n---\nBody ${index}` : source([noteId,secondId,cId][index],`Body ${index}`,`${index<2 ? `field: Value ${index}\n` : ''}keep: Keep\n`));
+ const config=await (await root.getDirectoryHandle('.memocard',{create:true})).getFileHandle('property-definitions.json',{create:true});
+ config.bytes=bytes(JSON.stringify({field:{type:'text'},onlySchema:{type:'date'},keep:{type:'text'}}));
+ const h=harness(root);await call(h.core,'selectVault');
+ const page=await call<NotePage>(h.core,'queryNotes'), c=page.notes.find(n=>n.body==='Body 2')!, b=page.notes.find(n=>n.body==='Body 1')!;
+ const get=async(id=c.id)=>call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id});
+ const before=files[2].text, fields=await get(), staleHash=fields.definitionHash;
+ expect(fields.properties.find(p=>p.name==='field')!.value).toBe('');
+ const result=await call<import('@memocard/contracts').PropertyUpdateResult>(h.core,'updateNoteProperty',{id:c.id,baseHash:c.contentHash,definitionHash:staleHash,name:'field',remove:true});
+ expect(result.propertyData).toEqual(await get());
+ for (const note of page.notes) {
+  const data=await get(note.id);expect(data.properties.some(p=>p.name==='field')).toBe(false);
+  expect(data.properties.find(p=>p.name==='keep')!.value).toBe('Keep');
+ }
+ expect(files[2].text).toBe(before);expect(files.every(file=>!file.text.includes('field:'))).toBe(true);
+ expect(JSON.parse(config.text)).toEqual({onlySchema:{type:'date'},keep:{type:'text'}});
+ const freshB=await call<Note>(h.core,'getNote',{id:b.id});
+ await expect(call(h.core,'updateNoteProperty',{id:b.id,baseHash:freshB.contentHash,definitionHash:staleHash,name:'field',type:'text',value:'Stale'})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+ await call(h.core,'updateNoteProperty',{id:c.id,baseHash:c.contentHash,definitionHash:(await get()).definitionHash,name:'onlySchema',remove:true});
+ expect(files[2].text).toBe(before);expect(JSON.parse(config.text)).toEqual({keep:{type:'text'}});
+ expect((await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties')).properties.map(p=>p.name)).toEqual(['keep']);
+ const saved=await call<Note>(h.core,'saveNote',{id:'11111111-1111-4111-8111-111111111114',body:'New',tags:[],baseHash:null});
+ expect((await get(saved.id)).properties.map(p=>p.name)).toEqual(['keep']);
+ const reopened=harness(root,h.storage);await call(reopened.core,'selectVault');
+ expect((await call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties',{id:b.id})).properties.map(p=>p.name)).toEqual(['keep']);
+});
+it.each([false,true])('rejects readonly library deletion and rolls back a failed batch write (shared=%s)',async shared => {
+ const root=shared ? new TestDirectory('shared') : await fixture(), notes=shared ? root : await root.getDirectoryHandle('notes');
+ const a=await notes.getFileHandle(shared ? 'A.md' : `${noteId}.md`,{create:true}), b=await notes.getFileHandle(shared ? 'B.md' : `${secondId}.md`,{create:true});
+ const noteSource=(id:string,field:string)=>shared ? `---\nfield: ${field}\n---\nBody` : source(id,'Body',`field: ${field}\n`);
+ a.bytes=bytes(noteSource(noteId,'One'));b.bytes=bytes(noteSource(secondId,'{nested: keep}'));
+ const config=await (await root.getDirectoryHandle('.memocard',{create:true})).getFileHandle('property-definitions.json',{create:true});config.bytes=bytes('{"field":{"type":"text"}}');
+ const h=harness(root);await call(h.core,'selectVault');
+ const remove=async()=>{
+  const note=(await call<NotePage>(h.core,'queryNotes')).notes.find(n=>n.relativePath.endsWith(a.name))!;
+  return call(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name:'field',remove:true});
+ };
+ let originals=[a.text,b.text,config.text];
+ await expect(remove()).rejects.toMatchObject({code:'INVALID_PROPERTY'});expect([a.text,b.text,config.text]).toEqual(originals);
+ b.bytes=bytes(noteSource(secondId,'Two'));originals=[a.text,b.text,config.text];
+ b.closeError=true;await expect(remove()).rejects.toBeTruthy();b.closeError=false;
+ expect([a.text,b.text,config.text]).toEqual(originals);
+});
 it('keeps a new-note draft and creates no file when the shared schema is corrupt',async()=>{
  const h=await open(),count=h.notes.children.size;
  const config=await (await h.root.getDirectoryHandle('.memocard')).getFileHandle('property-definitions.json',{create:true});config.bytes=bytes('{broken');

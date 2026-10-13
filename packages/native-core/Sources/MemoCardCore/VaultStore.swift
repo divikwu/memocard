@@ -1028,14 +1028,17 @@ public actor VaultStore {
     }
     private func effectiveNoteProperties(_ data: Data, snapshot: Snapshot, config: (before: Data?, values: [String: PropertyDefinition], hash: String)) throws -> NoteProperties {
         let raw = try readNoteProperties(data)
-        let needsOptions = raw.properties.contains { $0.type == "list" || config.values[$0.name]?.type == "list" || ($0.type != "unsupported" && $0.options != nil && config.values[$0.name] == nil) }
-        let all = needsOptions ? try libraryProperties(snapshot).map(listAsMultiSelect) : []
-        let properties = raw.properties.map { property -> NoteProperty in
+        let all = try libraryProperties(snapshot).map(listAsMultiSelect)
+        var properties = raw.properties.map { property -> NoteProperty in
             guard property.type != "unsupported" else { return property }
             let property = listAsMultiSelect(property)
             if let definition = config.values[property.name] { return convertedProperty(property, definition: resolvedPropertyDefinition(definition, properties: all.filter { $0.name == property.name })) }
             guard property.options != nil else { return property }
             return NoteProperty(name: property.name, type: property.type, value: property.value, editable: property.editable, options: mergedPropertyOptions(all.filter { $0.name == property.name }))
+        }
+        let names = Set(properties.map(\.name))
+        properties += try inheritedProperties(all, stored: config.values).filter { !names.contains($0.name) }.map {
+            NoteProperty(name: $0.name, type: $0.type, value: $0.value, editable: raw.writable, options: $0.options)
         }
         return NoteProperties(properties: properties, tagProperty: raw.tagProperty, contentHash: raw.contentHash, writable: raw.writable, definitionHash: config.hash)
     }
@@ -1044,35 +1047,44 @@ public actor VaultStore {
         guard change.definitionHash == nil || change.definitionHash == config.hash else { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已在其他位置修改，请重新打开后重试。") }
         let original = try readSource(root.appendingPathComponent(existing.note.relativePath))
         guard sha256(original) == change.baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
-        guard let current = try effectiveNoteProperties(original, snapshot: snapshot, config: config).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.remove != true, change.renameTo == nil, change.copyFrom == nil, let type = change.type else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
+        let removing = change.remove == true
+        guard let current = try effectiveNoteProperties(original, snapshot: snapshot, config: config).properties.first(where: { $0.name == change.name }), current.editable, change.create != true, change.renameTo == nil, change.copyFrom == nil, removing || change.type != nil else { throw VaultError(code: "INVALID_PROPERTY", message: "只有可编辑的自定义属性支持修改库级定义。") }
+        let type = change.type ?? current.type
         let properties = try libraryProperties(snapshot).filter { $0.name == change.name }.map(listAsMultiSelect)
         guard properties.allSatisfy({ $0.editable }) else { throw VaultError(code: "INVALID_PROPERTY", message: "此属性包含只读值，库级修改未保存。") }
         let typeChanged = (config.values[change.name].map { resolvedPropertyDefinition($0, properties: properties).type } ?? current.type) != type
         let definition = newPropertyDefinition(properties, type: type, options: change.options, includeValues: typeChanged)
         let previousDefinition = config.values[change.name].map { resolvedPropertyDefinition($0, properties: properties) }
         let previousOptions = mergedPropertyOptions(properties)
-        guard validPropertyDefinition(definition) else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型或选项定义无效，最多支持 200 个选项。") }
-        if let rename = change.optionRename {
+        guard removing || validPropertyDefinition(definition) else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型或选项定义无效，最多支持 200 个选项。") }
+        if !removing, let rename = change.optionRename {
             let previous = config.values[change.name]?.options ?? mergedPropertyOptions(properties)
             guard !typeChanged, previous.contains(where: { $0.name == rename.from }), !previous.contains(where: { $0.name == rename.to }), definition.options?.contains(where: { $0.name == rename.to }) == true, definition.options?.contains(where: { $0.name == rename.from }) == false else { throw VaultError(code: "INVALID_PROPERTY", message: "选项重命名无效。") }
         }
         var changes: [RenameChange] = []
-        var saved: Note?
+        var saved = existing.note
         var updatedSnapshot = snapshot
         var savedData = original
         for (index, item) in snapshot.notes.enumerated() where item.note.deletedAt == nil {
+            if removing, let cached = parsedCache[item.note.relativePath], cached.hash == item.note.contentHash, let fields = cached.properties, !fields.contains(where: { $0.name == change.name }) { continue }
             let before = try coordinateRead(root.appendingPathComponent(item.note.relativePath), inside: root) { try self.readSource($0) }
             guard sha256(before) == item.note.contentHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，库级属性未更新。") }
-            guard let property = try readNoteProperties(before).properties.first(where: { $0.name == change.name }) else { continue }
+            let raw = try readNoteProperties(before)
+            let stored = raw.properties.first(where: { $0.name == change.name })
+            // Missing fields stay virtual unless this edit supplies a value for the current note.
+            let hasValue = change.value.map { value in
+                switch value { case .text(let text): return !text.isEmpty; case .list(let list): return !list.isEmpty; case .checkbox(let checked): return checked }
+            } ?? false
+            guard let property = stored ?? (!removing && item.note.id == existing.note.id && hasValue ? current : nil) else { continue }
             guard property.editable else { throw VaultError(code: "INVALID_PROPERTY", message: "「\(item.note.relativePath)」的此属性只读，库级修改未保存。") }
             let normalized = listAsMultiSelect(property)
             let effective = previousDefinition.map { convertedProperty(normalized, definition: $0) } ?? NoteProperty(name: normalized.name, type: normalized.type, value: normalized.value, editable: normalized.editable, options: normalized.options == nil ? nil : previousOptions)
-            let converted = convertedProperty(effective, definition: definition, rename: change.optionRename, pruneOptions: !typeChanged)
-            if (typeChanged || normalized.type != definition.type) && !losslessPropertyConversion(normalized, converted) {
+            let converted = removing ? property : convertedProperty(effective, definition: definition, rename: change.optionRename, pruneOptions: !typeChanged)
+            if !removing && (typeChanged || normalized.type != definition.type) && !losslessPropertyConversion(normalized, converted) {
                 throw VaultError(code: "LOSSY_PROPERTY_CONVERSION", message: "「\(item.note.relativePath)」的「\(change.name)」无法无损转换。笔记库未修改，请先保留或调整原值。")
             }
             let value = item.note.id == existing.note.id && !typeChanged ? change.value ?? converted.value : converted.value
-            let update = PropertyChange(id: item.note.id, baseHash: item.note.contentHash, name: change.name, type: definition.type, value: value, remove: nil, create: nil, options: definition.options)
+            let update = PropertyChange(id: item.note.id, baseHash: item.note.contentHash, name: change.name, type: definition.type, value: value, remove: removing ? true : nil, create: stored == nil ? true : nil, options: definition.options)
             var retainedValues: [String]?
             if let rename = change.optionRename, case .list(let values) = property.value { retainedValues = values.map { $0 == rename.from ? rename.to : $0 } }
             let after = try patchNoteProperty(before, change: update, updatedAt: compatible ? nil : timestamp(), retainedValues: retainedValues)
@@ -1084,7 +1096,8 @@ public actor VaultStore {
             if item.note.id == existing.note.id { saved = parsed.note; savedData = after }
         }
         var definitions = config.values
-        definitions[change.name] = definition
+        if removing { definitions.removeValue(forKey: change.name) }
+        else { definitions[change.name] = definition }
         let definitionData = try encode(definitions)
         changes.append(RenameChange(path: propertyDefinitionPath, before: config.before, after: definitionData))
         let propertyData = try effectiveNoteProperties(savedData, snapshot: updatedSnapshot, config: (definitionData, definitions, sha256(definitionData)))
@@ -1107,7 +1120,7 @@ public actor VaultStore {
             }
         } catch { try recoverRename(); throw error }
         parsedCache.removeAll(); invalidateSnapshot()
-        return PropertyUpdateResult(note: saved!, propertyData: propertyData)
+        return PropertyUpdateResult(note: saved, propertyData: propertyData)
     }
     private func updateNoteProperty(_ change: PropertyChange) throws -> PropertyUpdateResult {
         let id = try canonicalID(change.id)
@@ -1115,7 +1128,7 @@ public actor VaultStore {
         guard snapshot.coverage.complete else { throw VaultError(code: "SCAN_INCOMPLETE", message: "笔记库尚未完整读取，无法安全修改属性。") }
         guard let existing = snapshot.notes.first(where: { $0.note.id == id }), existing.note.deletedAt == nil else { throw VaultError(code: "NOTE_NOT_FOUND", message: "找不到可编辑的笔记。") }
         let (root, metadata) = try active()
-        if change.definition == true { return try updatePropertyDefinition(change, snapshot: snapshot, existing: existing, root: root, metadata: metadata) }
+        if change.definition == true || change.remove == true { return try updatePropertyDefinition(change, snapshot: snapshot, existing: existing, root: root, metadata: metadata) }
         let config = try readPropertyDefinitions(root)
         guard change.definitionHash == nil || change.definitionHash == config.hash else { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已在其他位置修改，请重新打开后重试。") }
         var adjusted = change
@@ -1131,6 +1144,16 @@ public actor VaultStore {
             try self.requireNoConflict(url)
             let before = try self.readSource(url)
             guard sha256(before) == change.baseHash, try self.readPropertyDefinitions(root).before == config.before else { throw VaultError(code: "HASH_CONFLICT", message: "文件或属性定义已修改，请重新加载。") }
+            let raw = try readNoteProperties(before)
+            let effective = try self.effectiveNoteProperties(before, snapshot: snapshot, config: config)
+            if let copyFrom = adjusted.copyFrom, !raw.properties.contains(where: { $0.name == copyFrom }), let copied = effective.properties.first(where: { $0.name == copyFrom && $0.editable }), adjusted.create == true {
+                adjusted = PropertyChange(id: id, baseHash: change.baseHash, name: change.name, type: copied.type, value: copied.value, remove: nil, create: true, options: copied.options)
+            }
+            if !raw.properties.contains(where: { $0.name == change.name }), let inherited = effective.properties.first(where: { $0.name == change.name && $0.editable }), change.create != true, change.renameTo == nil {
+                guard adjusted.type == inherited.type else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型已变化，请重新打开后编辑。") }
+                adjusted.create = true
+                adjusted.options = inherited.options
+            }
             let data = try patchNoteProperty(before, change: adjusted, updatedAt: self.compatible ? nil : timestamp())
             let identity = FileIdentity(id: id, path: existing.note.relativePath, hash: sha256(data), createdAt: existing.note.createdAt)
             let parsed = try self.compatible ? parseObsidianNote(data, relativePath: identity.path, vaultID: metadata.vaultId, identity: identity, modified: Date()) : parseNote(data, relativePath: identity.path, vaultID: metadata.vaultId)
