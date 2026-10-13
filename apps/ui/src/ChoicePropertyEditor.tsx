@@ -38,7 +38,7 @@ export default function ChoicePropertyEditor({property, busy, error, onSave}: {p
     } catch { return false; /* Preserve input and selection; the parent displays the error. */ }
     finally { saving.current = false; setPending(false); }
   }
-  return <div className="note-tag-editor" aria-busy={pending}>
+  return <div className="note-tag-editor" data-empty={candidates.length === 0 && !name ? '' : undefined} aria-busy={pending}>
     <Combobox.Root multiple inline open autoHighlight items={candidates} filter={null} value={selected} inputValue={query} readOnly={disabled}
       onInputValueChange={(value,details) => { if (details.reason === 'input-change') setQuery(value); else details.cancel(); }}
       onValueChange={(next,details) => {
@@ -75,7 +75,7 @@ export default function ChoicePropertyEditor({property, busy, error, onSave}: {p
             deleteDescription={`将从库内所有「${property.name}」属性中删除此选项及对应已选值，其他属性和标签保留。`} /> }
         </div>}
       </PropertyOptionList>
-      {!candidates.length && <p className="note-tag-hint text-xs text-muted-foreground">{name ? '没有匹配的选项，名称最多 100 个字。' : '输入名称，创建第一个选项。'}</p>}
+      {!candidates.length && name && <p className="note-tag-hint text-xs text-muted-foreground">没有匹配的选项，名称最多 100 个字。</p>}
     </Combobox.Root>
     {error && <p role="alert" className="px-3 pb-2 text-sm text-destructive">{error}</p>}
   </div>;

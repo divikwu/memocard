@@ -8,7 +8,7 @@ struct PropertyChange: Codable {
     let type: String?
     let value: PropertyValue?
     let remove: Bool?
-    let create: Bool?
+    var create: Bool?
     var options: [PropertyOption]? = nil
     var renameTo: String? = nil
     var definition: Bool? = nil

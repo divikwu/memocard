@@ -160,7 +160,7 @@ describe("note workspace", () => {
     expect(document.activeElement).toBe(expand);
     const properties = screen.getByLabelText('笔记属性');
     expect(properties.textContent).toContain(`${note.id}.md`);
-    expect(properties.textContent).toContain('2026/09/28');
+    expect(properties.textContent).toContain('09/28/2026');
     expect(expand.getAttribute('aria-expanded')).toBe('true');
     expect(document.activeElement).toBe(expand);
     await user.keyboard(' ');

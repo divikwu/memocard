@@ -344,7 +344,7 @@ it('shows source metadata read-only and updates it only after a successful save'
  fireEvent.click(await screen.findByRole('button', {name:'属性'}));
  const panel = screen.getByLabelText('笔记属性');
  expect(panel.textContent).toContain('笔记.md');expect(panel.textContent).not.toContain('所在目录');expect(panel.textContent).not.toContain('项目');
- expect(panel.textContent).toContain('2026/10/01');expect(panel.textContent).toContain('2026/10/02');
+ expect(panel.textContent).toContain('10/01/2026');expect(panel.textContent).toContain('10/02/2026');
  expect(Array.from(panel.querySelectorAll('dt'), node => node.textContent)).toEqual(['标签','更新时间','创建时间','文件名']);
  expect(native).not.toHaveBeenCalled();
  fireEvent.click(await screen.findByRole('button', {name:'属性'}));
@@ -353,7 +353,7 @@ it('shows source metadata read-only and updates it only after a successful save'
  replaceEditorText('更新正文 #生活');
  await act(async () => { await handle.current!.flush(); });
  fireEvent.click(await screen.findByRole('button', {name:'属性'}));
- expect(screen.getByLabelText('笔记属性').textContent).toContain('2026/10/10');
+ expect(screen.getByLabelText('笔记属性').textContent).toContain('10/10/2026');
  expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#生活');
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#工作');

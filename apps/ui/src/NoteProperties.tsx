@@ -20,10 +20,11 @@ import { request, errorMessage } from './bridge';
 import { tagKey } from './inline-tags';
 import { propertyTypeChange, listAsMultiSelect } from './property-type-change';
 import { defaultPropertyLabel } from './property-labels';
+import { formatPropertyDate } from './property-dates';
 
 const noteTime = (value?: string) => {
   const date = value ? new Date(value) : null;
-  return date && Number.isFinite(date.getTime()) ? date.toLocaleString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false }) : null;
+  return date && Number.isFinite(date.getTime()) ? date.toLocaleString('en-US', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23' }).replace(',', '') : null;
 };
 const display = (value: NoteProperty['value']) => Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? value ? '已勾选' : '未勾选' : value || '空';
 const editableTypes = ['text','select','multiSelect','date','checkbox'] as const;
@@ -199,7 +200,7 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
     const source = propertyTags.includes(tag) ? tags.includes(tag) ? '属性和正文均有' : '属性标签' : '正文标签';
     const descriptionId = `${tooltipId}-${encodeURIComponent(tag)}`;
     return <Tooltip key={tag}><TooltipTrigger aria-describedby={descriptionId} render={<TagPill name={tag} />} /><TooltipContent id={descriptionId} role="tooltip" className="animate-none">{source}</TooltipContent></Tooltip>;
-  })}</TooltipProvider> : <span className="text-muted-foreground">暂无标签</span>;
+  })}</TooltipProvider> : <span className="note-property-empty">{canEdit && data?.tagProperty?.editable ? '添加标签' : '未添加标签'}</span>;
   const contextualError = Boolean(editing || adding || removing || renaming || typeChange);
   const notice = <>
     {error && (readFailed || error !== saveError) && !contextualError && <PageNotice title={readFailed ? '无法读取属性' : '属性操作未完成'} actions={readFailed ? <Button variant="outline" size="sm" disabled={busy || loading} onClick={() => setReadRevision(value => value+1)}>重试读取</Button> : undefined}>{error}</PageNotice>}
@@ -224,7 +225,10 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
           const editable = property.editable && canEdit && !!note?.contentHash;
           const choice = property.type === 'select' || property.type === 'multiSelect';
           const choiceValues = Array.isArray(property.value) ? property.value : property.value ? [String(property.value)] : [];
-          const value = choice ? choiceValues.length ? <span className="note-property-tags">{choiceValues.map((value,index) => <ChoicePill key={`${index}:${value}`} name={value} options={property.options} />)}</span> : <span className="text-muted-foreground">空</span> : property.value ? display(property.value) : <span className="text-muted-foreground">空</span>;
+          const emptyValue = <span className="note-property-empty">{editable ? choice ? '选择选项' : property.type === 'date' ? '选择日期' : '添加文本' : '未填写'}</span>;
+          const hasValue = Array.isArray(property.value) ? property.value.length > 0 : property.value !== '' && property.value != null;
+          const formattedValue = property.type === 'date' && typeof property.value === 'string' ? formatPropertyDate(property.value) : display(property.value);
+          const value = choice ? choiceValues.length ? <span className="note-property-tags">{choiceValues.map((value,index) => <ChoicePill key={`${index}:${value}`} name={value} options={property.options} />)}</span> : emptyValue : hasValue ? formattedValue : emptyValue;
           return <div key={property.name} className="note-property-row">
             <dt className="min-w-0">{editable ? <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" className="note-property-label note-property-name text-muted-foreground" onFocus={event => { propertyTrigger.current = event.currentTarget; }} disabled={busy || loading || !labelData} aria-label={`属性菜单 ${name}`} />}><Icon /><span className="truncate" title={name}>{name}</span></DropdownMenuTrigger><DropdownMenuContent align="start" className="note-property-menu" finalFocus={() => !renaming && !removing && !editing && !typeChange} aria-label={`管理属性 ${name}`}>
               <DropdownMenuItem onClick={() => { renameLabel(`property:${property.name}`); }}><Pencil />重命名</DropdownMenuItem>
@@ -238,7 +242,7 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
               </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => { setError(''); duplicate(property); }}><Copy />创建属性副本</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { setError(''); setRemoving(property); }}><Trash2 />删除属性</DropdownMenuItem>
+              <DropdownMenuItem className="note-property-delete" onClick={() => { setError(''); setRemoving(property); }}><Trash2 />删除属性</DropdownMenuItem>
             </DropdownMenuContent></DropdownMenu> : <span className="note-property-label text-muted-foreground"><Icon /><span className="truncate" title={name}>{name}</span></span>}</dt>
             <dd className="min-w-0">{property.type === 'checkbox' && property.editable ? <div className="note-property-value note-property-checkbox-value"><Checkbox.Root render={<button type="button" />} nativeButton checked={property.value === true} onCheckedChange={checked => { void toggleCheckbox(property.name,checked); }} disabled={!editable || busy || loading} aria-label={`切换属性 ${name}`} className="note-property-checkbox"><Checkbox.Indicator className="note-property-checkbox-indicator"><Check aria-hidden="true" strokeWidth={2.5} /></Checkbox.Indicator></Checkbox.Root></div> : editable ? property.type === 'text' ? editing === property.name ? <PropertyForm inPlace property={property} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} /> : <Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} onClick={() => { setEditing(property.name); setAdding(false); setError(''); }}>{value}</Button> : <Popover open={editing === property.name} onOpenChange={(value,details) => {
               if (value) { setEditing(property.name); setAdding(false); setError(''); }
@@ -246,7 +250,7 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
               else if (choice) setEditing(null);
               else if (details.reason !== 'escape-key') { details.cancel(); formRef.current?.requestSubmit(); }
               else setEditing(null);
-            }}><PopoverTrigger render={<Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} />}>{value}</PopoverTrigger><PopoverContent align="start" aria-label={`编辑属性 ${name}`} className={choice ? 'note-property-popup note-tag-popup' : property.type === 'date' ? 'note-property-popup note-date-popup' : 'note-property-popup'}>{choice ? <ChoicePropertyEditor property={property} error={error} busy={busy || loading} onSave={apply} /> : <PropertyForm property={property} formRef={formRef} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} />}</PopoverContent></Popover> : <div className="note-property-value text-muted-foreground" title={property.editable ? undefined : "此属性暂不支持编辑"}>{value} {!property.editable && <span className="text-xs">只读</span>}</div>}</dd>
+            }}><PopoverTrigger render={<Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} />}>{value}</PopoverTrigger><PopoverContent align="start" sideOffset={choice ? ({anchor}) => -anchor.height : undefined} aria-label={`编辑属性 ${name}`} className={choice ? 'note-property-popup note-tag-popup' : property.type === 'date' ? 'note-property-popup note-date-popup' : 'note-property-popup'}>{choice ? <ChoicePropertyEditor property={property} error={error} busy={busy || loading} onSave={apply} /> : <PropertyForm property={property} formRef={formRef} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} />}</PopoverContent></Popover> : <div className="note-property-value text-muted-foreground" title={property.editable ? undefined : "此属性暂不支持编辑"}>{value} {!property.editable && <span className="text-xs">只读</span>}</div>}</dd>
           </div>;
         })}
       </dl>
@@ -264,7 +268,7 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
       }}>确认更改</Button></div></AlertDialog.Popup></AlertDialog.Portal>
     </AlertDialog.Root>
     <AlertDialog.Root open={Boolean(removing)} onOpenChange={value => { if (!busy && !value) setRemoving(null); }}>
-      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop" /><AlertDialog.Popup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除属性「{removing ? label(`property:${removing.name}`) : ''}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 break-words text-sm text-muted-foreground">仅从当前笔记删除此属性及其值：{removing ? display(removing.value) : ''}</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-destructive">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={busy} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-destructive" disabled={busy} onClick={() => { if (removing) void apply({name:removing.name,remove:true}).catch(() => undefined); }}>确认删除</Button></div></AlertDialog.Popup></AlertDialog.Portal>
+      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop" /><AlertDialog.Popup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除属性「{removing ? label(`property:${removing.name}`) : ''}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 break-words text-sm text-muted-foreground">将从所有笔记中删除此属性及已填写的值，此操作无法撤销。</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-destructive">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={busy} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-destructive" disabled={busy} onClick={() => { if (removing) void apply({name:removing.name,remove:true}).catch(() => undefined); }}>确认删除</Button></div></AlertDialog.Popup></AlertDialog.Portal>
     </AlertDialog.Root>
   </Collapsible></>;
 }
