@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { act, within, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { Note } from '@memocard/contracts';
 import NoteProperties from './NoteProperties';
 import { request } from './bridge';
 vi.mock('./bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
+// Keep cold calendar compilation outside the property interaction deadline.
+beforeAll(async()=>{await import('./DatePropertyPicker');},15000);
 const note = {id:'note',contentHash:'hash',updatedAt:'2026-10-10T00:00:00Z'} as Note;
 const properties = [
  {name:'摘要',type:'text',value:'原值',editable:true},
@@ -86,7 +88,7 @@ it('uses month/day/year for timestamps, date values and the date editor',async (
  expect(screen.getByText('10/10/2026 00:05')).toBeTruthy();
  await user.click(date);
  expect(await screen.findByRole('textbox',{name:'属性值'}, {timeout:5000})).toHaveProperty('value','10/12/2026');
-});
+},15000);
 it('uses multi-select editing for legacy lists and removes the separate list type from menus',async () => {
  const {user,onApply} = await setup();
  await user.click(screen.getByRole('button',{name:'编辑属性 aliases'}));

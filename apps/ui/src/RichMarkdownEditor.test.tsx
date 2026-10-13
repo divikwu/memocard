@@ -1,12 +1,14 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
 import { RichMarkdownEditor, type RichEditorProps } from './RichMarkdownEditor';
 import userEvent from '@testing-library/user-event';
 import { canWrapCallout, unwrapCallout, wrapCallout } from './rich-callout';
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
 vi.mock('./bridge', () => ({ request: vi.fn() }));
+// Compile the shared picker before timing editor interactions on cold CI workers.
+beforeAll(async()=>{await import('./components/tag-emoji-picker');},15000);
 beforeEach(() => {
  vi.stubGlobal('DragEvent', MouseEvent);
  vi.stubGlobal('PointerEvent', class extends MouseEvent { pointerId=1; pointerType='mouse'; });
@@ -119,7 +121,7 @@ it('edits an icon directly, retains the caret and saves only the new icon throug
  act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
  cleanup();const reopened=await setup(saved);
  expect(reopened.field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('🧑🏽‍💻');
-});
+},15000);
 it('filters common emoji, applies one immediately and supports removing and adding the icon',async()=>{
  const {editor,field,change}=await setup('开头\n\n<aside data-callout="gray" data-callout-icon="💡"><p>正文</p></aside>');
  fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
@@ -135,7 +137,7 @@ it('filters common emoji, applies one immediately and supports removing and addi
  fireEvent.change(await screen.findByRole('textbox',{name:'搜索 Emoji'}),{target:{value:'灯泡'}});fireEvent.click(screen.getByRole('button',{name:/灯泡/}));
  expect(field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('💡');
  act(()=>editor.commands.undo());expect(field.querySelector('aside')?.hasAttribute('data-callout-icon')).toBe(false);
-});
+},15000);
 it('closes the icon picker with Escape or outside click without writing',async()=>{
  const {change}=await setup('开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>',{},true);
  const trigger=screen.getByRole('button',{name:'更改标注图标'});
