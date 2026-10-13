@@ -7,12 +7,13 @@ import { richTable, RichTableRow, RichTableHeader, alignRichColumn } from './ric
 import { TaskList, TaskItem } from '@tiptap/extension-list';
 import { Mathematics } from '@tiptap/extension-mathematics';
 import Image from '@tiptap/extension-image';
-import { afterEach, it, expect } from 'vitest';
+import { afterEach, beforeEach, it, expect, vi } from 'vitest';
 import { semanticExtensions, WikiLink, FootnoteReference, FootnoteDefinition } from './rich-semantic';
 import { richBlockAt, moveRichBlock, moveRichBlocks, richBlockMoveSources, richBlockMoveTarget } from './rich-blocks';
 import { MarkdownSource, SourceMetadata, PreservedMarkdown } from './wysiwyg-markdown';
 const editors: Editor[] = [];
-afterEach(() => editors.splice(0).forEach(editor => editor.destroy()));
+beforeEach(() => vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} }));
+afterEach(() => { editors.splice(0).forEach(editor => editor.destroy()); vi.unstubAllGlobals(); });
 function setup(body: string) {
  const editor: Editor = new Editor({ extensions: [StarterKit.configure({ trailingNode: false }), Markdown, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editor), PreservedMarkdown, richTable(() => editor), RichTableRow, RichTableHeader, TableCell, TaskList, TaskItem.configure({nested:true}), Image, Mathematics.configure({katexOptions:{output:'mathml',throwOnError:false,trust:false}})] });
  editors.push(editor);

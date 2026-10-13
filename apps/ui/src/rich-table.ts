@@ -1,8 +1,21 @@
-import { Table, TableRow, TableHeader } from '@tiptap/extension-table';
+import { Table, TableRow, TableHeader, TableView } from '@tiptap/extension-table';
 import { DOMSerializer, DOMParser } from '@tiptap/pm/model';
 import { TableMap } from '@tiptap/pm/tables';
 import { editRichStructure } from './rich-blocks';
 import type { Editor } from '@tiptap/react';
+import { observeTableOverflow } from './table-overflow';
+
+class ScrollableTableView extends TableView {
+  private dispose: () => void;
+  constructor(...args: ConstructorParameters<typeof TableView>) {
+    super(...args);
+    this.dom.setAttribute('role', 'region');
+    this.dom.setAttribute('aria-label', '表格，可左右滚动');
+    this.dom.tabIndex = 0;
+    this.dispose = observeTableOverflow(this.dom, this.table);
+  }
+  destroy() { this.dispose(); }
+}
 
 export function richTable(getEditor: () => Editor | null) {
   return Table.extend({
@@ -29,7 +42,7 @@ export function richTable(getEditor: () => Editor | null) {
       if (footer.childNodes.length) table.append(footer);
       return table.outerHTML;
     },
-  }).configure({ resizable: false });
+  }).configure({ resizable: false, View: ScrollableTableView });
 }
 export const RichTableRow = TableRow.extend({
   addAttributes() { return { ...this.parent?.(), footer: { default: false, parseHTML: element => element.parentElement?.tagName === 'TFOOT', renderHTML: attrs => attrs.footer ? { 'data-footer': '' } : {} } }; },

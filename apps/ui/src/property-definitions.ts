@@ -3,7 +3,7 @@ import { BrowserVaultError } from './browser-files';
 import { propertyTypeChange, listAsMultiSelect } from './property-type-change';
 
 export const propertyDefinitionPath = '.memocard/property-definitions.json';
-const types = ['text','list','date','checkbox','select','multiSelect'];
+const types = ['text','list','number','date','checkbox','select','multiSelect','image'];
 const colors = ['default','brown','orange','yellow','green','blue','purple','pink','red'];
 export function validPropertyDefinition(value:unknown): value is PropertyDefinition {
   if (!value || typeof value !== 'object') return false;

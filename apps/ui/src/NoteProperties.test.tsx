@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { act, within, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { Note } from '@memocard/contracts';
 import NoteProperties from './NoteProperties';
 import { request } from './bridge';
 vi.mock('./bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
+// Keep cold calendar compilation outside the property interaction deadline.
+beforeAll(async()=>{await import('./DatePropertyPicker');},15000);
 const note = {id:'note',contentHash:'hash',updatedAt:'2026-10-10T00:00:00Z'} as Note;
 const properties = [
  {name:'摘要',type:'text',value:'原值',editable:true},
@@ -85,8 +87,8 @@ it('uses month/day/year for timestamps, date values and the date editor',async (
  expect(screen.getByText('10/09/2026 16:05')).toBeTruthy();
  expect(screen.getByText('10/10/2026 00:05')).toBeTruthy();
  await user.click(date);
- expect(await screen.findByRole('textbox',{name:'属性值'})).toHaveProperty('value','10/12/2026');
-});
+ expect(await screen.findByRole('textbox',{name:'属性值'}, {timeout:5000})).toHaveProperty('value','10/12/2026');
+},15000);
 it('uses multi-select editing for legacy lists and removes the separate list type from menus',async () => {
  const {user,onApply} = await setup();
  await user.click(screen.getByRole('button',{name:'编辑属性 aliases'}));
@@ -107,7 +109,7 @@ it('uses multi-select editing for legacy lists and removes the separate list typ
  expect(screen.queryByRole('menuitemradio',{name:'文本列表'})).toBeNull();
 });
 it.each([
- ['文本','text',''], ['日期','date',''], ['复选框','checkbox',false],
+ ['文本','text',''], ['数字','number',''], ['日期','date',''], ['复选框','checkbox',false], ['图片','image',''],
 ])('creates an empty %s property immediately after choosing its type',async (label,type,value) => {
  const {user,onApply}=await setup();
  await user.click(screen.getByRole('button',{name:'添加属性'}));
@@ -453,7 +455,7 @@ async function openTypes(user:ReturnType<typeof userEvent.setup>,name:string) {
 it('switches types from the property menu and retains compatible values',async () => {
  const {user,onApply}=await setup();
  const types=await openTypes(user,'摘要');
- expect(within(types).getAllByRole('menuitemradio')).toHaveLength(5);
+ expect(within(types).getAllByRole('menuitemradio')).toHaveLength(7);
  expect(within(types).getByRole('menuitemradio',{name:'文本'}).getAttribute('aria-checked')).toBe('true');
  await user.click(within(types).getByRole('menuitemradio',{name:'多选'}));
  const confirmation=await screen.findByRole('alertdialog');
@@ -596,4 +598,63 @@ it.each(['getNoteProperties','getPropertyLabels'])('retries failed %s reads with
  expect(screen.getByText('原值')).toBeTruthy();
  expect(vi.mocked(request).mock.calls.filter(([op])=>op === operation)).toHaveLength(2);
  expect(onApply).not.toHaveBeenCalled();
+});
+
+it('validates number input and saves zero, negative decimals and empty values',async () => {
+ vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : {properties:[...properties,{name:'数量',type:'number',value:'',editable:true}],writable:true,contentHash:'hash'});
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 数量'}));
+ let input=await screen.findByRole('textbox',{name:'属性值'});
+ expect(input.tagName).toBe('TEXTAREA');
+ expect(input.closest('form')?.classList.contains('note-property-inline')).toBe(true);
+ expect(screen.queryByRole('dialog',{name:'编辑属性 数量'})).toBeNull();
+ expect(screen.queryByRole('button',{name:'保存属性'})).toBeNull();
+ await user.type(input,'abc{Enter}');
+ expect(await screen.findByRole('alert')).toHaveProperty('textContent','请输入有效数字。');
+ expect(onApply).not.toHaveBeenCalled();
+ for (const value of ['0','-3.25','']) {
+  await user.clear(input);
+  if(value) await user.type(input,value);
+  await user.keyboard('{Enter}');
+  await waitFor(()=>expect(onApply).toHaveBeenLastCalledWith({name:'数量',type:'number',value}));
+  if(value!=='') { await user.click(screen.getByRole('button',{name:'编辑属性 数量'})); input=await screen.findByRole('textbox',{name:'属性值'}); }
+ }
+});
+it('enables time on an existing date and saves it when clicking outside',async () => {
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ await user.click(await screen.findByRole('switch',{name:'包含时间'}));
+ fireEvent.input(screen.getByLabelText('时间'),{target:{value:'14:30:15.123'}});
+ await user.click(document.body);
+ await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:expect.stringMatching(/^2026-10-12T14:30:15\.123[+-]\d{2}:\d{2}$/)}));
+});
+it('preserves existing time and timezone when changing the day, and can remove time',async () => {
+ vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : {properties:[...properties.filter(item=>item.name!=='日期'),{name:'日期',type:'date',value:'2026-10-12T14:30:15.123+08:00',editable:true}],writable:true,contentHash:'hash'});
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ expect((await screen.findByRole('switch',{name:'包含时间'})).getAttribute('aria-checked')).toBe('true');
+ expect(screen.getByLabelText('时间')).toHaveProperty('value','14:30:15.123');
+ await user.click(screen.getByRole('button',{name:'2026年10月15日'}));
+ await waitFor(()=>expect(onApply).toHaveBeenLastCalledWith({name:'日期',type:'date',value:'2026-10-15T14:30:15.123+08:00'}));
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ await user.click(await screen.findByRole('switch',{name:'包含时间'}));
+ expect(screen.queryByLabelText('时间')).toBeNull();
+ await user.click(screen.getByRole('button',{name:'2026年10月15日'}));
+ await waitFor(()=>expect(onApply).toHaveBeenLastCalledWith({name:'日期',type:'date',value:'2026-10-15'}));
+});
+
+it('saves inline number input on blur and discards changes on Escape like text input',async () => {
+ vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : {properties:[...properties,{name:'数量',type:'number',value:'1',editable:true}],writable:true,contentHash:'hash'});
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 数量'}));
+ let input=await screen.findByRole('textbox',{name:'属性值'});
+ await user.clear(input); await user.type(input,'2.5');
+ await user.click(screen.getByText('原值'));
+ await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'数量',type:'number',value:'2.5'}));
+ await user.click(screen.getByRole('button',{name:'编辑属性 数量'}));
+ input=await screen.findByRole('textbox',{name:'属性值'});
+ await user.clear(input); await user.type(input,'3{Escape}');
+ expect(screen.queryByRole('textbox',{name:'属性值'})).toBeNull();
+ expect(screen.getByRole('button',{name:'编辑属性 数量'}).textContent).toBe('2.5');
+ expect(onApply).toHaveBeenCalledTimes(1);
 });

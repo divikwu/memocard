@@ -1,6 +1,7 @@
 import type { NoteProperty, PropertyChange, PropertyOption, PropertyType } from '@memocard/contracts';
-
-const isDate = (value:string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0,10) === value;
+import { validPropertyImage } from './property-image';
+import { validPropertyDate } from './property-dates';
+import { validPropertyNumber } from './property-numbers';
 
 // `list` is only a legacy storage type; custom properties use the multi-select editor.
 export function listAsMultiSelect(property:NoteProperty):NoteProperty {
@@ -17,6 +18,8 @@ export function propertyTypeChange(property:NoteProperty, type:PropertyType): Pr
   let value:PropertyChange['value'];
   let options:PropertyOption[] | undefined;
   if (type === 'text') value = values.join('\n');
+  else if (type === 'number') value = values.length === 1 && validPropertyNumber(values[0]!) ? values[0]! : '';
+  else if (type === 'image') value = values.length === 1 && validPropertyImage(values[0]!) ? values[0]! : '';
   else if (type === 'list') value = values;
   else if (choice) {
     const normalized = [...new Set(values.map(item => item.trim()).filter(item => item.length > 0 && item.length <= 100 && ![...item].some(character => character.charCodeAt(0) < 32)))];
@@ -25,7 +28,7 @@ export function propertyTypeChange(property:NoteProperty, type:PropertyType): Pr
     const selected = normalized.filter(name => options!.some(option => option.name === name));
     value = type === 'select' ? selected[0] ?? '' : selected;
   } else if (type === 'date') {
-    value = values.length === 1 && isDate(values[0]!) ? values[0]! : '';
+    value = values.length === 1 && validPropertyDate(values[0]!) ? values[0]! : '';
   } else {
     value = typeof source === 'boolean' ? source : values.length === 1 && values[0] === 'true';
   }

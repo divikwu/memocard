@@ -120,7 +120,17 @@ export async function parseBrowserNote(bytes: Uint8Array, relativePath: string, 
 }
 
 export function encodeBrowserNote(frontmatter: Document, body: string): Uint8Array {
-  const bytes = new TextEncoder().encode(`---\n${frontmatter.toString({ lineWidth: 0 })}---\n${body}`);
+  let yaml = frontmatter.toString({ lineWidth: 0 });
+  // YAML's JS values can round decimals/large integers and normalize timestamp offsets.
+  const serialized = parseDocument(yaml, { schema: 'yaml-1.1' });
+  const replacements: {from:number; to:number; source:string}[] = [];
+  if (isMap(frontmatter.contents)) for (const pair of frontmatter.contents.items) {
+    if (!isScalar(pair.key) || !isScalar(pair.value) || !pair.value.source || !(typeof pair.value.value === 'number' || pair.value.value instanceof Date)) continue;
+    const node = serialized.get(pair.key.value as string, true);
+    if (isScalar(node) && node.range) replacements.push({from:node.range[0],to:node.range[1],source:pair.value.source});
+  }
+  for (const item of replacements.sort((a,b)=>b.from-a.from)) yaml = yaml.slice(0,item.from) + item.source + yaml.slice(item.to);
+  const bytes = new TextEncoder().encode(`---\n${yaml}---\n${body}`);
   if (bytes.byteLength > maxNoteBytes) throw new BrowserVaultError("NOTE_TOO_LARGE", "单条 Markdown 最大支持 8 MiB。");
   return bytes;
 }

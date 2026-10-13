@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import TagEmojiPicker from "./tag-emoji-picker";
@@ -27,4 +27,27 @@ it("searches Chinese names across categories and returns the native emoji", asyn
   await user.clear(screen.getByRole("textbox", { name: "搜索 Emoji" }));
   await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "no-matching-emoji");
   expect(screen.getByRole("status").textContent).toBe("没有匹配的 Emoji");
+});
+it("finds a pasted emoji and accepts a custom grapheme without losing skin tones", async () => {
+  const onSelect = vi.fn();
+  render(<TagEmojiPicker onSelect={onSelect} />);
+  const input = screen.getByRole("textbox", { name: "搜索 Emoji" });
+  fireEvent.change(input, { target: { value: "🎨" } });
+  fireEvent.click(screen.getByRole("button", { name: /调色板/ }));
+  expect(onSelect).toHaveBeenLastCalledWith("🎨");
+  fireEvent.change(input, { target: { value: "🧑🏽‍💻" } });
+  fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+  expect(onSelect).toHaveBeenCalledTimes(1);
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(onSelect).toHaveBeenLastCalledWith("🧑🏽‍💻");
+  fireEvent.change(input, { target: { value: "💡💡" } });
+  expect(screen.queryByRole("button", { name: /使用/ })).toBeNull();
+});
+it("disables search, emoji selection and categories while saving", () => {
+  const onSelect = vi.fn();
+  render(<TagEmojiPicker disabled onSelect={onSelect} />);
+  expect(screen.getByRole("textbox", { name: "搜索 Emoji" }).hasAttribute("disabled")).toBe(true);
+  for (const button of screen.getAllByRole("button")) expect(button.hasAttribute("disabled")).toBe(true);
+  fireEvent.click(screen.getAllByRole("button")[0]);
+  expect(onSelect).not.toHaveBeenCalled();
 });

@@ -1,9 +1,10 @@
 import { Extension, Node, type Editor, type JSONContent } from '@tiptap/react';
+import { DOMSerializer } from '@tiptap/pm/model';
 import { semanticTags } from './rich-semantic';
 import { parser, GFM } from '@lezer/markdown';
 
 const markdownParser = parser.configure(GFM);
-const sourceTypes = ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'horizontalRule', 'image', 'wikiImage', 'table', 'blockMath', 'footnoteDefinition', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd'];
+const sourceTypes = ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'horizontalRule', 'image', 'wikiImage', 'table', 'blockMath', 'footnoteDefinition', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'aside'];
 export const SourceMetadata = Extension.create({
   name: 'sourceMetadata',
   addGlobalAttributes: () => [{ types: sourceTypes, attributes: {
@@ -104,7 +105,9 @@ export class MarkdownSource {
     if (nodes.length === 1 && nodes[0].type === 'paragraph' && !nodes[0].content?.length) return '';
     return this.prefix + nodes.map((node, i) => {
       const unchanged = node.attrs?.original != null && node.attrs.fingerprint === fingerprint(node);
-      const raw = node.type === 'preservedMarkdown' ? String(node.attrs?.source ?? '') : unchanged ? String(node.attrs!.original) : editor.markdown!.serialize({ type: 'doc', content: [node] }).replace(/^\n+|\n+$/g, '').replace(/\r?\n/g, this.eol);
+      // Keep an HTML paragraph as HTML: Markdown delimiters can lose emphasis next to Chinese punctuation.
+      const htmlParagraph = node.type === 'paragraph' && /^\s*<p(?:\s|>)/i.test(String(node.attrs?.original ?? ''));
+      const raw = node.type === 'preservedMarkdown' ? String(node.attrs?.source ?? '') : unchanged ? String(node.attrs!.original) : htmlParagraph ? (DOMSerializer.fromSchema(editor.schema).serializeNode(editor.schema.nodeFromJSON(node)) as HTMLElement).outerHTML : editor.markdown!.serialize({ type: 'doc', content: [node] }).replace(/^\n+|\n+$/g, '').replace(/\r?\n/g, this.eol);
       const separator = node.attrs?.separator as string | undefined;
       return raw + (i < nodes.length - 1 ? separator || this.eol.repeat(2) : this.suffix);
     }).join('');

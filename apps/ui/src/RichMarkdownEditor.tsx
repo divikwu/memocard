@@ -1,5 +1,5 @@
 import { lazy, Suspense, forwardRef, useCallback, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from 'react';
-import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type NodeViewProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
+import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type NodeViewProps, type NodeViewRendererProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown as MarkdownExtension } from '@tiptap/markdown';
 import { TableCell } from '@tiptap/extension-table';
@@ -19,17 +19,23 @@ import { richTable, RichTableRow, RichTableHeader, alignRichColumn } from './ric
 import { Popover } from "@base-ui/react/popover";
 import { Menu } from '@base-ui/react/menu';
 import { useIsMobile } from './hooks/use-mobile';
-import { Plus, GripVertical, Type, Heading, List, ListOrdered, ListTodo, Quote, Code, Minus, Table, Sigma, Image as ImageIcon, Search, ArrowUp, ArrowDown, Copy, Trash2, RefreshCw, Check, ChevronRight, type LucideIcon } from 'lucide-react';
+import { Plus, GripVertical, Type, Heading, List, ListOrdered, ListTodo, Quote, Code, Minus, Table, Sigma, Image as ImageIcon, Search, ArrowUp, ArrowDown, Copy, Trash2, RefreshCw, Check, ChevronRight, MessageSquareQuote, type LucideIcon } from 'lucide-react';
 import { MarkdownSource, SourceMetadata, PreservedMarkdown } from './wysiwyg-markdown';
 const Markdown = lazy(() => import('./markdown').then(module => ({ default: module.Markdown })));
 import { imageSource, openVaultLink } from './vault-links';
 import { externalUrl } from './urls';
 import { request } from './bridge';
 import { semanticExtensions, WikiLink, FootnoteReference, FootnoteDefinition } from './rich-semantic';
-import { bindNoteImage } from './note-image';
+import { NoteImage } from './NoteImage';
+import { RichCodeBlock } from './RichCodeBlock';
+import { canWrapCallout, newCallout, unwrapCallout, wrapCallout } from './rich-callout';
+import type { CalloutIconTarget } from './rich-callout-view';
+import { CalloutColorsMenu } from './CalloutColorsMenu';
+const CalloutIconPicker = lazy(() => import('./CalloutIconPicker').then(module => ({ default: module.CalloutIconPicker })));
 import './typeset.css';
 import './block-controls.css';
 import './rich-editor.css';
+import './import-layout.css';
 
 export type RichEditorProps = {
   value: string; notePath: string; disabled: boolean; autoFocus?: boolean;
@@ -37,13 +43,9 @@ export type RichEditorProps = {
   onImage?: (insert: (markdown: string) => void) => void;
 };
 function SafeImage({ node, extension }: NodeViewProps) {
-  const ref = useRef<HTMLImageElement>(null);
   const path = extension.options.notePath() as string;
-  useEffect(() => {
-    const source = imageSource(String(node.attrs.src), path, node.type.name === 'wikiImage');
-    if (source && ref.current) return bindNoteImage(ref.current, source);
-  }, [node.attrs.src, node.type.name, path]);
-  return <NodeViewWrapper className="rich-image"><img ref={ref} alt={String(node.attrs.alt ?? '图片')} draggable={false} /></NodeViewWrapper>;
+  const source = imageSource(String(node.attrs.src), path, node.type.name === 'wikiImage');
+  return <NodeViewWrapper className="rich-image">{source ? <NoteImage source={source} alt={String(node.attrs.alt ?? '图片')} /> : <span>图片链接不可用</span>}</NodeViewWrapper>;
 }
 function PreservedContent({ node, extension }: NodeViewProps) {
   return <NodeViewWrapper className="rich-preserved" contentEditable={false}>
@@ -68,6 +70,32 @@ const PreservedExtension = PreservedMarkdown.extend({
   addOptions: () => ({ notePath: () => 'notes/note.md' }),
   addNodeView() { return ReactNodeViewRenderer(PreservedContent); },
 });
+const RichStarterKit = StarterKit.extend({
+  addExtensions() {
+    return this.parent!().map(extension => extension.name === 'codeBlock' ? extension.extend({
+      addNodeView() {
+        const mermaid = (node: { attrs: Record<string, unknown> }) => String(node.attrs.language ?? '').toLowerCase() === 'mermaid';
+        const render = ReactNodeViewRenderer(RichCodeBlock, { update: ({ newNode, updateProps }) => {
+          if (!mermaid(newNode)) return false;
+          updateProps(); return true;
+        } });
+        return (props: NodeViewRendererProps) => {
+          if (mermaid(props.node)) return render(props);
+          const dom = document.createElement('pre'), code = document.createElement('code');
+          code.spellcheck = false;
+          dom.append(code);
+          const update = (node: typeof props.node) => {
+            if (node.type !== props.node.type || mermaid(node)) return false;
+            code.className = node.attrs.language ? `language-${node.attrs.language}` : '';
+            return true;
+          };
+          update(props.node);
+          return { dom, contentDOM: code, update };
+        };
+      },
+    }) : extension);
+  },
+});
 
 type MenuItem = { label: string; keywords?: string; icon?: LucideIcon; hint?: string; group?: string; searchOnly?: boolean; convertible?: boolean; run: (chain: ChainedCommands) => ChainedCommands };
 const insertItems: MenuItem[] = [
@@ -77,6 +105,7 @@ const insertItems: MenuItem[] = [
   { label: '有序列表', keywords: 'ordered list numbered', icon: ListOrdered, hint: '1.', convertible: true, run: e => e.toggleOrderedList() },
   { label: '待办事项', keywords: 'todo task checkbox', icon: ListTodo, hint: '[]', convertible: true, run: e => e.toggleTaskList() },
   { label: '引用', keywords: 'quote blockquote', icon: Quote, hint: '>', convertible: true, run: e => e.toggleBlockquote() },
+  { label: '标注', keywords: 'callout 提示 警告 呼应', icon: MessageSquareQuote, convertible: true, run: e => e.wrapIn('aside', newCallout) },
   { label: '分割线', keywords: 'divider hr 分隔线', icon: Minus, hint: '---', run: e => e.setHorizontalRule() },
   { label: '代码', keywords: 'code 代码块', icon: Code, hint: '```', group: '其他内容', convertible: true, run: e => e.toggleCodeBlock() },
   { label: '表格', keywords: 'table', icon: Table, group: '其他内容', run: e => e.insertTable({ rows: 3, cols: 3, withHeaderRow: true }) },
@@ -94,6 +123,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   const [filter, setFilter] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [conversionOpen, setConversionOpen] = useState(false);
+  const [calloutIcon, setCalloutIcon] = useState<CalloutIconTarget | null>(null);
   const isMobile = useIsMobile();
   const [toolbar, setToolbar] = useState({ top: 14, pos: 0 });
   const [inlineTop, setInlineTop] = useState(0);
@@ -121,7 +151,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     immediatelyRender: false,
     // Plain Markdown is parsed explicitly; rich/literal clipboard content must not run Markdown paste rules.
     enablePasteRules: false,
-    extensions: [RichInlineTags, RichHeadingFolding, StarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current),
+    extensions: [RichInlineTags, RichHeadingFolding, RichStarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current, setCalloutIcon),
       richTable(() => editorRef.current), RichTableRow, RichTableHeader, TableCell, TaskList, TaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' }, a11y: { checkboxLabel: node => `待办：${node.textContent}` } }),
       SafeImageExtension.configure({ notePath: () => latest.current.notePath }), WikiImageExtension.configure({ notePath: () => latest.current.notePath }),
       PreservedExtension.configure({ notePath: () => latest.current.notePath }),
@@ -289,7 +319,12 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     initialized.current = true;
     if (latest.current.autoFocus !== false) { editor.commands.focus('start'); editor.view.focus(); }
   }, [editor]);
-  useEffect(() => { editor?.setEditable(!props.disabled, false); }, [editor, props.disabled]);
+  useEffect(() => {
+    editor?.setEditable(!props.disabled, false);
+    // Refresh native callout controls when editability changes without changing the document.
+    editor?.commands.setMeta('addToHistory', false);
+    if (props.disabled) setCalloutIcon(null);
+  }, [editor, props.disabled]);
   useEffect(() => {
     if (editor && props.value !== emitted.current) {
       emitted.current = props.value;
@@ -461,6 +496,9 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   }
   const selectedBlocks = selectedRichBlocks(editor, toolbar.pos);
   const firstSelected = selectedBlocks[0], lastSelected = selectedBlocks[selectedBlocks.length - 1];
+  const selectedCallout = selectedBlocks.length === 1 && firstSelected.node.type.name === 'aside';
+  const canConvertText = selectedBlocks.length === 1 && firstSelected.node.isTextblock;
+  const canConvertCallout = canWrapCallout(editor, selectedBlocks);
   const movingSection = selectedBlocks.length === 1 && firstSelected.node.type.name === 'heading' && !(editor.state.selection instanceof AllSelection);
   const moveSources = richBlockMoveSources(editor, toolbar.pos);
   const upTarget = richBlockMoveTarget(editor, moveSources, -1, movingSection), downTarget = richBlockMoveTarget(editor, moveSources, 1, movingSection);
@@ -479,9 +517,10 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     setMenu('block');
   }
   const isCurrentType = (item: MenuItem) => {
+    if (item.label === '标注') return selectedCallout;
     if (item.icon === Heading) return editor.isActive('heading', { level: item.hint!.length });
     const type = item.icon === List ? 'bulletList' : item.icon === ListOrdered ? 'orderedList' : item.icon === ListTodo ? 'taskList' : item.icon === Quote ? 'blockquote' : item.icon === Code ? 'codeBlock' : 'paragraph';
-    return editor.isActive(type) && (type !== 'paragraph' || !['bulletList', 'orderedList', 'taskList', 'blockquote'].some(name => editor.isActive(name)));
+    return editor.isActive(type) && (type !== 'paragraph' || !['bulletList', 'orderedList', 'taskList', 'blockquote', 'aside'].some(name => editor.isActive(name)));
   }
   function choose(item: MenuItem) {
     if (item.label === '图片') props.onImage?.(markdown => run({ label: '图片', run: chain => chain.insertContent(markdown, { contentType: 'markdown' }) }));
@@ -583,16 +622,18 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         <button className="rich-insert-close" onClick={closeMenu}>关闭菜单<kbd>esc</kbd></button>
       </>
     </Popover.Popup></Popover.Positioner></Popover.Portal>}
-    {menu === 'block' && <Menu.Portal><Menu.Positioner anchor={gripRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Menu.Popup ref={menuRef} className="rich-block-menu" aria-label="内容块操作菜单" finalFocus={() => editor.view.dom}>
+    {menu === 'block' && <Menu.Portal><Menu.Positioner anchor={gripRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Menu.Popup ref={menuRef} className="rich-block-menu" aria-label="内容块操作菜单" finalFocus={calloutIcon !== null ? false : () => editor.view.dom}>
       <Menu.SubmenuRoot open={conversionOpen} onOpenChange={setConversionOpen}>
-        <Menu.SubmenuTrigger disabled={selectedBlocks.length !== 1 || !firstSelected?.node.isTextblock}><RefreshCw aria-hidden="true" /><span>转换为</span><ChevronRight className="rich-menu-check" aria-hidden="true" /></Menu.SubmenuTrigger>
+        <Menu.SubmenuTrigger disabled={!canConvertText && !canConvertCallout && !selectedCallout}><RefreshCw aria-hidden="true" /><span>转换为</span><ChevronRight className="rich-menu-check" aria-hidden="true" /></Menu.SubmenuTrigger>
         <Menu.Portal><Menu.Positioner collisionPadding={12} sideOffset={isMobile ? -260 : 6} alignOffset={-5} className="z-50"><Menu.Popup className="rich-block-menu rich-convert-menu" aria-label="转换为">
-          {insertItems.filter(item => item.convertible).map((item, index) => { const Icon = item.icon ?? Type; const current = isCurrentType(item); const label = item.icon === Heading ? `标题 ${item.hint!.length}` : item.label; return <div key={item.label}>
+          {insertItems.filter(item => item.convertible && (canConvertText || item.label === '标注')).map((item, index) => { const Icon = item.icon ?? Type; const current = isCurrentType(item); const label = item.icon === Heading ? `标题 ${item.hint!.length}` : item.label; return <div key={item.label}>
             {(index === 7 || index === 10) && <Menu.Separator />}
-            <Menu.Item aria-label={label} onClick={() => { if (current) { closeMenu(); return; } insertion.current = null; slash.current = null; editor.commands.setTextSelection(toolbar.pos + 1); choose(item); }}><Icon aria-hidden="true" /><span>{label}</span>{current && <Check className="rich-menu-check" aria-label="当前类型" />}</Menu.Item>
+            <Menu.Item aria-label={label} disabled={item.label === '标注' && !selectedCallout && !canConvertCallout} onClick={() => { if (current) { closeMenu(); return; } if (item.label === '标注') { wrapCallout(editor, selectedBlocks); closeMenu(); return; } insertion.current = null; slash.current = null; editor.commands.setTextSelection(toolbar.pos + 1); choose(item); }}><Icon aria-hidden="true" /><span>{label}</span>{current && <Check className="rich-menu-check" aria-label="当前类型" />}</Menu.Item>
           </div>; })}
+          {selectedCallout && <Menu.Item onClick={() => { unwrapCallout(editor, firstSelected.pos); closeMenu(); }}><Type aria-hidden="true" /><span>普通区块</span></Menu.Item>}
         </Menu.Popup></Menu.Positioner></Menu.Portal>
       </Menu.SubmenuRoot>
+      {selectedCallout && <><CalloutColorsMenu editor={editor} pos={firstSelected.pos} onClose={closeMenu} /><Menu.Item onClick={() => { const dom = editor.view.nodeDOM(firstSelected.pos); if (dom instanceof HTMLElement) dom.querySelector<HTMLButtonElement>('.rich-callout-icon')?.click(); setMenu(null); }}><MessageSquareQuote aria-hidden="true" /><span>编辑图标</span></Menu.Item></>}
       <Menu.Item onClick={() => { const block = richBlockAt(editor, toolbar.pos); insertion.current = block ? block.pos + block.node.nodeSize : null; slash.current = null; setFilter(''); setActiveIndex(0); setMenu('insert'); }}><Plus aria-hidden="true" /><span>在下方插入</span></Menu.Item>
       <Menu.Item onClick={() => { duplicateRichBlocks(editor, selectedBlocks); closeMenu(); }}><Copy aria-hidden="true" /><span>复制</span></Menu.Item>
       <Menu.Separator />
@@ -602,6 +643,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       <Menu.Item data-variant="destructive" onClick={() => { if (firstSelected && lastSelected) editRichStructure(editor, () => { editor.commands.deleteRange({ from: firstSelected.pos, to: lastSelected.pos + lastSelected.node.nodeSize }); }); closeMenu(); }}><Trash2 aria-hidden="true" /><span>删除</span></Menu.Item>
       {(selectedBlocks.length > 1 || movingSection) && <><Menu.Separator /><div className="rich-block-menu-note" role="status">{movingSection ? `章节移动包含 ${moveSources.length} 个块；其他操作仅作用于标题` : `已选择 ${selectedBlocks.length} 个块`}</div></>}
     </Menu.Popup></Menu.Positioner></Menu.Portal>}
+    {calloutIcon !== null && <Suspense fallback={<span role="status">正在打开图标选择器…</span>}><CalloutIconPicker editor={editor} target={calloutIcon} onClose={() => setCalloutIcon(null)} /></Suspense>}
     {!props.disabled && editor.isActive('table') && <div className="rich-table-tools" aria-label="表格操作">
       <button onClick={() => editor.chain().focus().addRowAfter().run()}>添加行</button><button onClick={() => editor.chain().focus().addColumnAfter().run()}>添加列</button>
       <select aria-label="列对齐" defaultValue="" onChange={event => { alignRichColumn(editor, event.target.value); event.target.value = ''; }}><option value="" disabled>对齐</option><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option></select>

@@ -1216,6 +1216,61 @@ final class VaultStoreTests: XCTestCase {
         let persisted = try await call(reopened, "getPropertyLabels")
         XCTAssertEqual(persisted["labels"] as? [String: String], saved["labels"] as? [String: String])
     }
+    func testNumbersAndOptionalDateTimesSurviveBodySaveAndReopen() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let url = try writeNote(id: id, body: "Body #keep\n", extra: "unknown: {nested: value}\n")
+        var note = try await call(core, "getNote", ["id": id])
+        for (name, type) in [("weight", "number"), ("due", "date")] {
+            note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": name, "type": type, "value": "", "create": true])
+        }
+        for value in ["0", "-3", "3.2", "9007199254740993", "3.0000000000000001", "1e3", ""] {
+            note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "weight", "type": "number", "value": value])
+            note = try await save(core, id: id, body: "Edited #keep\n", hash: note["contentHash"] as? String)
+            let fields = try await call(core, "getNoteProperties", ["id": id])
+            let field = (fields["properties"] as? [[String: Any]])?.first { $0["name"] as? String == "weight" }
+            XCTAssertEqual(field?["type"] as? String, "number"); XCTAssertEqual(field?["value"] as? String, value)
+        }
+        for value in ["2026-10-13T09:30:42.123+08:00", "2026-10-13T01:30:42.123Z", "2026-10-13", ""] {
+            note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "due", "type": "date", "value": value])
+            note = try await save(core, id: id, body: "Edited #keep\n", hash: note["contentHash"] as? String)
+            let reopened = try await store(create: false)
+            let fields = try await call(reopened, "getNoteProperties", ["id": id])
+            let field = (fields["properties"] as? [[String: Any]])?.first { $0["name"] as? String == "due" }
+            XCTAssertEqual(field?["type"] as? String, "date"); XCTAssertEqual(field?["value"] as? String, value)
+        }
+        for (name, type, value) in [("weight", "number", "NaN"), ("weight", "number", "01"), ("weight", "number", "1e999"), ("due", "date", "2026-02-30T09:30:00Z"), ("due", "date", "2026-10-13T24:00:00Z")] {
+            await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": name, "type": type, "value": value]) }
+        }
+        XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).hasSuffix("Edited #keep\n"))
+        XCTAssertTrue(validPropertyDefinition(PropertyDefinition(type: "number")))
+        XCTAssertEqual(convertedProperty(NoteProperty(name: "weight", type: "text", value: .text("3.2"), editable: true), definition: PropertyDefinition(type: "number")).type, "number")
+    }
+
+    func testImagePropertySurvivesBodySaveReopenAndClear() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let url = try writeNote(id: id, body: "Body #keep\n", extra: "unknown: {nested: value}\n")
+        var note = try await call(core, "getNote", ["id": id])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "cover", "type": "image", "value": "", "create": true])
+        note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "cover", "type": "image", "value": "../assets/cover.png"])
+        note = try await save(core, id: id, body: "Edited #keep\n", hash: note["contentHash"] as? String)
+        let reopened = try await store(create: false)
+        var fields = try await call(reopened, "getNoteProperties", ["id": id])
+        var cover = (fields["properties"] as? [[String: Any]])?.first { $0["name"] as? String == "cover" }
+        XCTAssertEqual(cover?["type"] as? String, "image")
+        XCTAssertEqual(cover?["value"] as? String, "../assets/cover.png")
+        let raw = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(raw.contains("nested")); XCTAssertTrue(raw.hasSuffix("Edited #keep\n"))
+        for path in ["https://example.com/a.png", "/tmp/a.png", "assets/.hidden.png", "assets/a.txt", "assets/%2e%2e/a.png", "assets/%2fetc.png"] {
+            await expectCode("INVALID_PROPERTY") { _ = try await self.call(reopened, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "cover", "type": "image", "value": path]) }
+        }
+        note = try await call(reopened, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "cover", "type": "image", "value": ""])
+        fields = try await call(reopened, "getNoteProperties", ["id": id])
+        cover = (fields["properties"] as? [[String: Any]])?.first { $0["name"] as? String == "cover" }
+        XCTAssertEqual(cover?["type"] as? String, "image"); XCTAssertEqual(cover?["value"] as? String, "")
+    }
+
     func testPropertyTypeSwitchPersistsTextDateAndChoiceTypesAfterBodySave() async throws {
         let core = try await store()
         let id = UUID().uuidString.lowercased()
