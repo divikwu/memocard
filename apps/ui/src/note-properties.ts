@@ -3,6 +3,9 @@ import type { NoteProperties, NoteProperty, PropertyChange, PropertyType, Proper
 import { BrowserVaultError } from './browser-files';
 import { normalizePropertyTag, propertyTags } from './inline-tags';
 import { listAsMultiSelect } from './property-type-change';
+import { validPropertyImage } from './property-image';
+import { validPropertyDate } from './property-dates';
+import { validPropertyNumber } from './property-numbers';
 
 const choiceColors = new Set(['default','brown','orange','yellow','green','blue','purple','pink','red']);
 function validOptions(value: unknown): value is PropertyOption[] {
@@ -10,7 +13,7 @@ function validOptions(value: unknown): value is PropertyOption[] {
 }
 const reserved = new Set(['id', 'createdAt', 'updatedAt', 'deletedAt', 'tags']);
 const invalid = (message: string): never => { throw new BrowserVaultError('INVALID_PROPERTY', message); };
-const date = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+const date = validPropertyDate;
 export function propertySource(source: string) {
   const match = /^(\uFEFF)?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
   const yaml = match?.[2] ?? '';
@@ -33,7 +36,9 @@ export function propertySource(source: string) {
     let value: NoteProperty['value'] = '复杂 YAML 值';
     if (isScalar(node) && !['BLOCK_LITERAL', 'BLOCK_FOLDED'].includes(node.type ?? '')) {
       if (node.value === null && /:\s*null\s+#\s*memocard:type=date\s*$/.test(lines[starts[index]!.line] ?? '')) { type = 'date'; value = ''; }
+      else if (node.value === null && node.comment?.trim() === 'memocard:type=number') { type = 'number'; value = ''; }
       else if (typeof node.value === 'boolean') { type = 'checkbox'; value = node.value; }
+      else if (typeof node.value === 'number' && node.source && validPropertyNumber(node.source)) { type = 'number'; value = node.source; }
       else if (typeof node.value === 'string') { value = node.value; type = date(value) && node.comment?.trim() !== 'memocard:type=text' ? 'date' : 'text'; }
       else if (node.value instanceof Date && node.source && date(node.source)) { type = 'date'; value = node.source; }
       else value = node.source ?? String(node.value ?? '');
@@ -41,6 +46,8 @@ export function propertySource(source: string) {
       type = 'list'; value = node.items.map(item => (item as {value:string}).value);
     }
     let options: PropertyOption[] | undefined;
+    if (node?.comment?.trim() === 'memocard:type=number' && type !== 'number') type = type === 'text' && validPropertyNumber(value as string) ? 'number' : 'unsupported';
+    if (node?.comment?.trim() === 'memocard:type=image') type = type === 'text' && validPropertyImage(value as string) ? 'image' : 'unsupported';
     const metadata = /^memocard:choice=(.*)$/.exec(node?.comment?.trim() ?? '');
     if (metadata) {
       let choice;
@@ -94,7 +101,9 @@ export function patchProperty(source: string, change: PropertyChange, updatedAt?
       value = propertyTags(value);
     }
     if (type === 'list' && name !== 'tags') invalid('文本列表已合并为多选。');
-    if (type === 'checkbox' ? typeof value !== 'boolean' : ['list','multiSelect'].includes(type ?? '') ? !Array.isArray(value) || !value.every(item => typeof item === 'string') : !['text', 'date', 'select'].includes(type ?? '') || typeof value !== 'string') invalid('属性值与类型不匹配。');
+    if (type === 'checkbox' ? typeof value !== 'boolean' : ['list','multiSelect'].includes(type ?? '') ? !Array.isArray(value) || !value.every(item => typeof item === 'string') : !['text', 'number', 'date', 'select', 'image'].includes(type ?? '') || typeof value !== 'string') invalid('属性值与类型不匹配。');
+    if (type === 'image' && !validPropertyImage(value as string)) invalid('图片属性需为笔记库中的图片路径。');
+    if (type === 'number' && value !== '' && !validPropertyNumber(value as string)) invalid('请输入有效数字。');
     const options = change.options ?? (original ? listAsMultiSelect(original).options : undefined) ?? (type === 'multiSelect' && Array.isArray(value) ? listAsMultiSelect({name,type:'list',value,editable:true}).options : undefined) ?? [];
     if (type === 'select' || type === 'multiSelect') {
       const values = Array.isArray(value) ? value : value === '' ? [] : [value];
@@ -111,7 +120,7 @@ export function patchProperty(source: string, change: PropertyChange, updatedAt?
     }
     if (type === 'date' && value !== '' && !date(value as string)) invalid('请输入有效日期。');
     if (JSON.stringify(value).length > 65536) invalid('属性值过长。');
-    replacement = [`${JSON.stringify(name)}: ${type === 'date' ? value === '' ? 'null # memocard:type=date' : value : JSON.stringify(value)}${type === 'select' || type === 'multiSelect' ? ` # memocard:choice=${JSON.stringify({type,options})}` : type === 'text' && date(value as string) ? ' # memocard:type=text' : ''}`];
+    replacement = [`${JSON.stringify(name)}: ${type === 'date' ? value === '' ? 'null # memocard:type=date' : JSON.stringify(value) : type === 'number' ? value === '' ? 'null # memocard:type=number' : `${value} # memocard:type=number` : JSON.stringify(value)}${type === 'select' || type === 'multiSelect' ? ` # memocard:choice=${JSON.stringify({type,options})}` : type === 'image' ? ' # memocard:type=image' : type === 'text' && date(value as string) ? ' # memocard:type=text' : ''}`];
   }
   const newline = source.includes('\r\n') ? '\r\n' : '\n';
   if (existing) parsed.lines.splice(existing.start, existing.end - existing.start, ...replacement);

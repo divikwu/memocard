@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
 import { RichMarkdownEditor, type RichEditorProps } from './RichMarkdownEditor';
 import userEvent from '@testing-library/user-event';
+import { canWrapCallout, unwrapCallout, wrapCallout } from './rich-callout';
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
 vi.mock('./bridge', () => ({ request: vi.fn() }));
 beforeEach(() => {
@@ -21,11 +22,20 @@ afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 async function setup(value: string, extra: Partial<RichEditorProps> = {}, page = false) {
  const change=vi.fn(),save=vi.fn();
  const content=<RichMarkdownEditor value={value} disabled={false} notePath="notes/a.md" onChange={change} onSave={save} onError={vi.fn()} {...extra}/>;
- render(page ? <div className="note-page-scroll">{content}<button>其他操作</button></div> : content);
+ const rendered=render(page ? <div className="note-page-scroll">{content}<button>其他操作</button></div> : content);
  const field=await screen.findByRole('textbox',{name:'笔记内容'});
  const editor=(field as HTMLDivElement & {editor: Editor}).editor;
  await waitFor(()=> value.startsWith('<!--') ? expect(editor.state.doc.firstChild?.type.name).toBe('preservedMarkdown') : expect(editor.getText()).toContain(value.startsWith('#') ? '标题' : value.split('\n')[0].replace(/\[\^[^\]]+\]/g, '')));
- return {editor,field,change,save};
+ return {editor,field,change,save,rerender:rendered.rerender};
+}
+async function chooseCalloutColor(name: string) {
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
+ act(()=>screen.getByRole('menuitem',{name:'颜色'}).focus());
+ await userEvent.setup().keyboard('{ArrowRight}');
+ const popup=await screen.findByRole('menu',{name:'标注颜色'});
+ fireEvent.click(within(popup).getByRole('menuitemradio',{name}));
+ await waitFor(()=>expect(screen.queryByRole('menu',{name:'标注颜色'})).toBeNull());
 }
 it('opens without a write, renders heading syntax invisibly and edits semantic text',async()=>{
  const {editor,field,change}=await setup('# 标题\n\n正文');
@@ -33,6 +43,314 @@ it('opens without a write, renders heading syntax invisibly and edits semantic t
  act(()=>{editor.commands.insertContentAt(2,'新');});
  expect(change).toHaveBeenLastCalledWith('# 标新题\n\n正文');
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('# 标题\n\n正文');
+});
+it('inserts an editable callout from the block menu and keeps it after reopening',async()=>{
+ const {editor,field,change}=await setup('开头');
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'在下方插入'}));
+ fireEvent.click(screen.getByRole('menuitem',{name:'标注'}));
+ expect(field.querySelector('aside')?.getAttribute('data-callout')).toBe('gray');
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='aside')pos=at;});
+ act(()=>{editor.commands.insertContentAt(pos+2,'新建标注');});
+ const saved=change.mock.lastCall![0] as string;
+ cleanup();const reopened=await setup(saved);
+ expect(reopened.field.querySelector('.rich-callout-content')?.textContent).toBe('新建标注');
+ expect(reopened.field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('💡');
+});
+it('creates a callout through slash search and Enter without retaining the command text',async()=>{
+ const {editor,field}=await setup('开头');
+ act(()=>{editor.chain().focus('end').splitBlock().insertContent('/callout').run();});
+ await screen.findByRole('menu',{name:'插入内容块菜单'});
+ expect(screen.getByRole('menuitem',{name:'标注'})).toBeTruthy();
+ fireEvent.keyDown(field,{key:'Enter'});
+ expect(field.querySelector('aside[data-callout="gray"]')).toBeTruthy();
+ expect(editor.getText()).not.toContain('/callout');
+});
+it('converts a paragraph to a callout and back without losing inline formats, with one-step undo',async()=>{
+ const original='开头\n\n**重点** 与 `token`\n\n结束';
+ const {editor,field,change}=await setup(original);
+ act(()=>editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize+1));
+ const user=userEvent.setup();
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
+ act(()=>screen.getByRole('menuitem',{name:'转换为'}).focus());await user.keyboard('{ArrowRight}');
+ fireEvent.click(await screen.findByRole('menuitem',{name:'标注'}));
+ expect(field.querySelector('aside strong')?.textContent).toBe('重点');
+ expect(field.querySelector('aside code')?.textContent).toBe('token');
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+ act(()=>editor.commands.redo());
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
+ act(()=>screen.getByRole('menuitem',{name:'转换为'}).focus());await user.keyboard('{ArrowRight}');
+ fireEvent.click(await screen.findByRole('menuitem',{name:'普通区块'}));
+ expect(field.querySelector('aside')).toBeNull();expect(change).toHaveBeenLastCalledWith(original);
+});
+it('wraps and unwraps several blocks while preserving headings, lists and links',async()=>{
+ const original='开头\n\n## 小标题\n\n- **第一项**\n- [第二项](https://example.com)\n\n结尾';
+ const {editor,field,change}=await setup(original);
+ const blocks: Parameters<typeof wrapCallout>[1]=[];
+ editor.state.doc.forEach((node,pos,index)=>blocks.push({node,pos,index,parent:-1}));
+ expect(canWrapCallout(editor,blocks)).toBe(true);
+ act(()=>wrapCallout(editor,blocks));
+ expect(field.querySelector('aside h2')?.textContent).toBe('小标题');
+ expect(field.querySelectorAll('aside li')).toHaveLength(2);
+ expect(field.querySelector('aside a')?.getAttribute('href')).toBe('https://example.com');
+ act(()=>unwrapCallout(editor,0));
+ expect(change).toHaveBeenLastCalledWith(original);
+ act(()=>editor.commands.undo());expect(field.querySelector('aside h2')).toBeTruthy();
+});
+it('edits an icon directly, retains the caret and saves only the new icon through reopening',async()=>{
+ const original='开头\n\n<aside data-callout="blue" data-callout-icon="ℹ️"><p><strong>标题</strong></p><ul><li>正文</li></ul></aside>\n\n结尾';
+ const {editor,field,change}=await setup(original);
+ const pos=editor.state.doc.firstChild!.nodeSize;
+ act(()=>editor.commands.setTextSelection(pos+3));
+ const selection=editor.state.selection.toJSON();
+ fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
+ const input=await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ await waitFor(()=>expect(document.activeElement).toBe(input));
+ expect(change).not.toHaveBeenCalled();expect(editor.state.selection.toJSON()).toEqual(selection);
+ fireEvent.change(input,{target:{value:'🧑🏽‍💻'}});
+ fireEvent.keyDown(input,{key:'Enter'});
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标注图标'})).toBeNull());
+ const saved=change.mock.lastCall![0] as string;
+ expect(saved).toContain('🧑🏽‍💻');expect(saved).not.toContain('rich-callout');expect(saved).not.toContain('<button');
+ expect(field.querySelector('aside strong')?.textContent).toBe('标题');expect(field.querySelectorAll('aside li')).toHaveLength(1);
+ expect(editor.state.selection.toJSON()).toEqual(selection);
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+ cleanup();const reopened=await setup(saved);
+ expect(reopened.field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('🧑🏽‍💻');
+});
+it('filters common emoji, applies one immediately and supports removing and adding the icon',async()=>{
+ const {editor,field,change}=await setup('开头\n\n<aside data-callout="gray" data-callout-icon="💡"><p>正文</p></aside>');
+ fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
+ const input=await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ fireEvent.change(input,{target:{value:'警告'}});
+ expect(screen.queryByRole('button',{name:/灯泡/})).toBeNull();expect(change).not.toHaveBeenCalled();
+ fireEvent.click(screen.getByRole('button',{name:'警告、小心'}));
+ expect(field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('⚠️');
+ fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
+ await screen.findByRole('textbox',{name:'搜索 Emoji'});fireEvent.click(screen.getByRole('button',{name:'清除'}));
+ expect(field.querySelector('aside')?.hasAttribute('data-callout-icon')).toBe(false);
+ fireEvent.click(screen.getByRole('button',{name:'添加标注图标'}));
+ fireEvent.change(await screen.findByRole('textbox',{name:'搜索 Emoji'}),{target:{value:'灯泡'}});fireEvent.click(screen.getByRole('button',{name:/灯泡/}));
+ expect(field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('💡');
+ act(()=>editor.commands.undo());expect(field.querySelector('aside')?.hasAttribute('data-callout-icon')).toBe(false);
+});
+it('closes the icon picker with Escape or outside click without writing',async()=>{
+ const {change}=await setup('开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>',{},true);
+ const trigger=screen.getByRole('button',{name:'更改标注图标'});
+ act(()=>trigger.focus());fireEvent.click(trigger);
+ let input=await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ fireEvent.change(input,{target:{value:'🧭'}});
+ await userEvent.setup().keyboard('{Escape}');
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标注图标'})).toBeNull());
+ await waitFor(()=>expect(document.activeElement).toBe(trigger));
+ fireEvent.click(trigger);input=await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ fireEvent.change(input,{target:{value:'🧭'}});
+ const outside=screen.getByRole('button',{name:'其他操作'});
+ fireEvent.pointerDown(outside,{button:0,pointerType:'mouse'});fireEvent.mouseDown(outside);fireEvent.click(outside);
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标注图标'})).toBeNull());
+ expect(change).not.toHaveBeenCalled();
+});
+it('changes background and text independently from the block submenu, preserving content with undo and reopening',async()=>{
+ const original='开头\n\n<aside data-callout="blue" data-callout-icon="ℹ️"><p><strong>标题</strong></p><ul><li>正文</li></ul></aside>';
+ const {editor,field,change}=await setup(original);
+ act(()=>editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize+2));
+ await chooseCalloutColor('紫色背景');
+ const purple=change.mock.lastCall![0] as string;
+ expect(field.querySelector('aside')?.getAttribute('data-callout')).toBe('purple');
+ await chooseCalloutColor('棕色文字');
+ const saved=change.mock.lastCall![0] as string;
+ expect(saved).toContain('data-callout-text-color="brown"');expect(saved).toContain('data-callout="purple"');
+ expect(field.querySelector('aside strong')?.textContent).toBe('标题');expect(field.querySelectorAll('aside li')).toHaveLength(1);
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(purple);
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+ cleanup();const reopened=await setup(saved);
+ expect(reopened.field.querySelector('aside')?.getAttribute('data-callout-text-color')).toBe('brown');
+ expect(reopened.field.querySelector('aside')?.getAttribute('data-callout')).toBe('purple');
+});
+it('shows current colors and resets them without changing the emoji or body',async()=>{
+ const {editor,field}=await setup('开头\n\n<aside data-callout="purple" data-callout-text-color="brown" data-callout-icon="🧭"><p>正文</p></aside>');
+ act(()=>editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize+2));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
+ act(()=>screen.getByRole('menuitem',{name:'颜色'}).focus());await userEvent.setup().keyboard('{ArrowRight}');
+ await screen.findByRole('menu',{name:'标注颜色'});
+ expect(screen.getByRole('menuitemradio',{name:'紫色背景'}).getAttribute('aria-checked')).toBe('true');
+ expect(screen.getByRole('menuitemradio',{name:'棕色文字'}).getAttribute('aria-checked')).toBe('true');
+ fireEvent.click(screen.getByRole('menuitemradio',{name:'默认文字'}));
+ await waitFor(()=>expect(screen.queryByRole('menu',{name:'标注颜色'})).toBeNull());
+ await chooseCalloutColor('默认背景');
+ expect(field.querySelector('aside')?.hasAttribute('data-callout-text-color')).toBe(false);
+ expect(field.querySelector('aside')?.getAttribute('data-callout')).toBe('default');
+ expect(field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('🧭');
+ expect(field.querySelector('.rich-callout-content')?.textContent).toBe('正文');
+});
+it('opens the icon picker with the keyboard and exposes the expanded state',async()=>{
+ await setup('开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>');
+ const trigger=screen.getByRole('button',{name:'更改标注图标'});
+ act(()=>trigger.focus());await userEvent.setup().keyboard('{Enter}');
+ await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ expect(trigger.getAttribute('aria-expanded')).toBe('true');
+ await userEvent.setup().keyboard('{Escape}');
+ await waitFor(()=>expect(trigger.getAttribute('aria-expanded')).toBe('false'));
+});
+it('uses the same picker from the block menu and safely follows a moved position',async()=>{
+ const {editor,field}=await setup('开头\n\n<aside data-callout="blue"><p>正文</p></aside>');
+ act(()=>editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize+2));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'编辑图标'}));
+ await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ act(()=>editor.commands.insertContentAt(1,'更长的开头'));
+ fireEvent.change(screen.getByRole('textbox',{name:'搜索 Emoji'}),{target:{value:'指南针'}});fireEvent.click(screen.getByRole('button',{name:/指南针/}));
+ expect(field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('🧭');
+});
+it('does not apply icon changes to a deleted block or allow edits while disabled',async()=>{
+ const original='开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>';
+ const {editor,change}=await setup(original);
+ fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
+ await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ act(()=>editor.commands.deleteRange({from:editor.state.doc.firstChild!.nodeSize,to:editor.state.doc.content.size}));
+ change.mockClear();fireEvent.change(screen.getByRole('textbox',{name:'搜索 Emoji'}),{target:{value:'灯泡'}});fireEvent.click(screen.getByRole('button',{name:/灯泡/}));
+ expect(screen.getByRole('alert').textContent).toContain('标注已变化');expect(change).not.toHaveBeenCalled();
+ cleanup();const readonly=await setup(original,{disabled:true});
+ expect(screen.queryByRole('button',{name:'更改标注图标'})).toBeNull();
+ expect(readonly.field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('💡');
+});
+it('closes the picker and updates native buttons when editing is disabled and reenabled',async()=>{
+ const raw='开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>';
+ const {field,change,rerender}=await setup(raw);
+ fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
+ await screen.findByRole('textbox',{name:'搜索 Emoji'});
+ const props={value:raw,notePath:'notes/a.md',onChange:change,onSave:vi.fn(),onError:vi.fn()};
+ rerender(<RichMarkdownEditor {...props} disabled />);
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标注图标'})).toBeNull());
+ expect(screen.queryByRole('button',{name:'更改标注图标'})).toBeNull();
+ expect(field.getAttribute('contenteditable')).toBe('false');expect(change).not.toHaveBeenCalled();
+ rerender(<RichMarkdownEditor {...props} disabled={false} />);
+ await screen.findByRole('button',{name:'更改标注图标'});expect(change).not.toHaveBeenCalled();
+});
+it('previews Mermaid while preserving editable fences and ordinary code through reopening',async()=>{
+ const code='flowchart TD\nA[开始] --> B[完成]';
+ const ordinary='```typescript\nconst n = 1;\n```';
+ const {editor,field,change}=await setup('开头\n\n```mermaid\n'+code+'\n```\n\n'+ordinary);
+ await screen.findByRole('button',{name:'放大 Mermaid 图表'});
+ expect(change).not.toHaveBeenCalled();
+ expect(field.querySelector('pre code.language-mermaid')?.textContent).toBe(code);
+ const contentDOM=field.querySelector('pre code.language-mermaid');
+ fireEvent.click(screen.getByRole('tab',{name:'仅图形'}));
+ expect(contentDOM?.closest<HTMLElement>('.mermaid-source')?.hidden).toBe(true);
+ fireEvent.click(screen.getByRole('tab',{name:'仅源码'}));
+ expect(screen.queryByRole('img',{name:'Mermaid 图表'})).toBeNull();
+ const user=userEvent.setup();
+ act(()=>screen.getByRole('tab',{name:'仅源码'}).focus());
+ await user.keyboard('{ArrowRight}');
+ expect(screen.getByRole('tab',{name:'仅图形'}).getAttribute('aria-selected')).toBe('true');
+ fireEvent.click(screen.getByRole('tab',{name:'仅源码'}));
+ expect(field.querySelector('pre code.language-mermaid')).toBe(contentDOM);
+ expect(change).not.toHaveBeenCalled();
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='codeBlock'&&node.attrs.language==='mermaid')pos=at+node.nodeSize-2;});
+ act(()=>{editor.commands.insertContentAt(pos,'新');});
+ const saved=change.mock.lastCall![0] as string;
+ fireEvent.click(screen.getByRole('tab',{name:'源码与图形'}));
+ await waitFor(()=>expect(screen.getByRole('img',{name:'Mermaid 图表'}).shadowRoot?.textContent).toContain('完成新'));
+ expect(saved).toContain(ordinary);expect(saved).not.toContain('<svg');expect(saved).not.toContain('mermaid-preview');
+ cleanup();const reopened=await setup(saved);
+ await screen.findByRole('button',{name:'放大 Mermaid 图表'});
+ expect(screen.getByRole('tab',{name:'源码与图形'}).getAttribute('aria-selected')).toBe('true');
+ expect(reopened.field.querySelector('pre code.language-mermaid')?.textContent).toBe('flowchart TD\nA[开始] --> B[完成新]');
+ expect(reopened.field.querySelector('pre code.language-typescript')?.textContent).toBe('const n = 1;');
+});
+it('keeps callout paragraphs and layout metadata through editing and reopening',async()=>{
+ const raw='<aside data-callout="blue" data-callout-icon="🧭"><p>第一段</p><p>第二段</p></aside>';
+ const {editor,field,change}=await setup('开头\n\n'+raw+'\n\n结尾');
+ expect(field.querySelector('aside')?.getAttribute('data-callout')).toBe('blue');
+ expect(field.querySelectorAll('aside > .rich-callout-content > p')).toHaveLength(2);expect(change).not.toHaveBeenCalled();
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='paragraph'&&node.textContent==='第二段')pos=at+1;});
+ act(()=>{editor.commands.insertContentAt(pos,'新');});
+ const saved=change.mock.lastCall![0] as string;
+ expect(saved).toContain('data-callout="blue"');expect(saved).toContain('data-callout-icon="🧭"');expect(saved).toContain('<p>新第二段</p>');
+ cleanup();const reopened=await setup(saved);
+ expect(reopened.field.querySelectorAll('aside > .rich-callout-content > p')).toHaveLength(2);
+ expect(reopened.field.querySelector('.rich-callout-content')?.textContent).toBe('第一段新第二段');
+});
+it('keeps the guide info, warning and quote callouts separate through edits and reopening',async()=>{
+ const panels=[{color:'blue',icon:'ℹ️',title:'信息提示',body:'信息正文'},{color:'yellow',icon:'⚠️',title:'警告',body:'警告正文'},{color:'gray',icon:'❝',title:'引言',body:'引言正文'}];
+ const raw=panels.map(p=>`<aside data-callout="${p.color}" data-callout-icon="${p.icon}"><p><strong>${p.title}</strong></p><p>${p.body}</p></aside>`).join('\n\n');
+ const {editor,field,change}=await setup('开头\n\n'+raw+'\n\n结尾');
+ expect(field.querySelectorAll('aside')).toHaveLength(3);
+ for(const panel of panels){
+  let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='paragraph'&&node.textContent===panel.body)pos=at+2;});
+  act(()=>{editor.commands.insertContentAt(pos,'新');});
+ }
+ const saved=change.mock.lastCall![0] as string;
+ cleanup();const reopened=await setup(saved);
+ const asides=[...reopened.field.querySelectorAll('aside')];expect(asides).toHaveLength(3);
+ asides.forEach((aside,i)=>{
+  expect(aside.getAttribute('data-callout')).toBe(panels[i].color);expect(aside.getAttribute('data-callout-icon')).toBe(panels[i].icon);
+  expect(aside.querySelectorAll(':scope > .rich-callout-content > p')).toHaveLength(2);expect(aside.querySelector('strong')?.textContent).toBe(panels[i].title);
+  expect(aside.querySelector('.rich-callout-content')!.children[1].textContent).toBe(panels[i].body[0]+'新'+panels[i].body.slice(1));
+ });
+ expect(saved.startsWith('开头\n\n')).toBe(true);expect(saved.endsWith('\n\n结尾')).toBe(true);
+});
+it('keeps code inside emphasized text and lists after editing and reopening',async()=>{
+ const raw='**`bodyState` 在 `onExitComplete` 中清理**：正文。\n\n- **`fetchBodyData(slug)`**：返回 `Promise<BodyResult>`\n- **`AnimatePresence key={selectedSlug}`**：说明\n- **卡片原生 `<a>` 标签**：说明';
+ const {editor,field,change}=await setup('开头\n\n'+raw);
+ const expected=['bodyState','onExitComplete','fetchBodyData(slug)','Promise<BodyResult>','AnimatePresence key={selectedSlug}','<a>'];
+ expect([...field.querySelectorAll('code')].map(e=>e.textContent)).toEqual(expected);
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='paragraph'&&node.textContent.startsWith('fetchBodyData'))pos=at+node.nodeSize-1;});
+ act(()=>{editor.commands.insertContentAt(pos,'新');});
+ cleanup();const reopened=await setup(change.mock.lastCall![0] as string);
+ expect([...reopened.field.querySelectorAll('code')].map(e=>e.textContent)).toEqual(expected.map((text,i)=>i===3?text+'新':text));
+ expect(reopened.field.querySelectorAll('strong code')).toHaveLength(5);
+ expect(reopened.field.querySelectorAll('li')).toHaveLength(3);
+ expect(reopened.field.textContent).toContain('返回 Promise<BodyResult>新');
+});
+it('keeps a quoted CSS example as code when edited and reopened',async()=>{
+ const {editor,field,change}=await setup('开头\n\n> ```css\n> primary-color: #1A73E8;\n> border-radius: 8px;\n> ```\n\n结尾');
+ expect(field.querySelector('blockquote pre code')?.className).toBe('language-css');
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='codeBlock')pos=at+node.nodeSize-1;});
+ act(()=>{editor.commands.insertContentAt(pos,'\n/* 示例 */');});
+ cleanup();const reopened=await setup(change.mock.lastCall![0] as string);
+ expect(reopened.field.querySelector('blockquote pre code')?.textContent).toBe('primary-color: #1A73E8;\nborder-radius: 8px;\n/* 示例 */');
+ expect(reopened.field.querySelectorAll('blockquote')).toHaveLength(1);
+ expect(reopened.field.querySelector('pre code')?.className).toBe('language-css');
+});
+it('keeps callout lists and wiki destinations when edited and reopened',async()=>{
+ const raw='<aside data-callout="blue" data-callout-icon="ℹ️"><p><strong>项目信息</strong></p><ul><li><strong>客户</strong>: 示例</li><li><strong>平台</strong>: Web</li></ul></aside>\n\n[[../../README]]\n\n<aside data-callout="green" data-callout-icon="✅"><p><strong>项目成果</strong></p><p>成果正文</p></aside>';
+ const {editor,change}=await setup('开头\n\n'+raw);
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='paragraph'&&node.textContent==='成果正文')pos=at+node.nodeSize-1;});
+ act(()=>{editor.commands.insertContentAt(pos,'新');});
+ cleanup();const reopened=await setup(change.mock.lastCall![0] as string);
+ expect([...reopened.field.querySelectorAll('aside')].map(e=>e.getAttribute('data-callout'))).toEqual(['blue','green']);
+ expect(reopened.field.querySelectorAll('aside li')).toHaveLength(2);
+ expect([...reopened.field.querySelectorAll('aside strong')].map(e=>e.textContent)).toEqual(['项目信息','客户','平台','项目成果']);
+ expect(reopened.field.querySelector('a[data-wiki-target]')?.getAttribute('data-wiki-target')).toBe('../../README');
+ expect(reopened.field.textContent).toContain('成果正文新');
+});
+it('keeps HTML paragraph emphasis at Chinese punctuation boundaries after editing and reopening',async()=>{
+ const raw='<p>在数字产品设计中，<strong>第 04 条（易于理解）</strong>和<strong>第 10 条（极简）</strong>尤为重要。</p>';
+ const {editor,field,change}=await setup('开头\n\n'+raw+'\n\n结尾');
+ expect([...field.querySelectorAll('strong')].map(e=>e.textContent)).toEqual(['第 04 条（易于理解）','第 10 条（极简）']);
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='paragraph'&&node.textContent.startsWith('在数字产品设计中'))pos=at+node.nodeSize-1;});
+ act(()=>{editor.commands.insertContentAt(pos,'新');});
+ const saved=change.mock.lastCall![0] as string;
+ cleanup();const reopened=await setup(saved);
+ expect([...reopened.field.querySelectorAll('strong')].map(e=>e.textContent)).toEqual(['第 04 条（易于理解）','第 10 条（极简）']);
+ expect(reopened.field.textContent).toContain('在数字产品设计中，第 04 条（易于理解）和第 10 条（极简）尤为重要。新');
+});
+it('keeps grouped images, ratios and captions when a gallery is edited and reopened',async()=>{
+ const raw='<figure data-image-columns="40,60"><img src="../assets/a.png" alt="第一张"><img src="../assets/b.png" alt="第二张"><figcaption>原说明</figcaption></figure>';
+ const {editor,field,change}=await setup('开头\n\n'+raw+'\n\n结尾');
+ expect(field.querySelector('figure')?.getAttribute('data-image-columns')).toBe('40,60');
+ expect(field.querySelectorAll('figure img')).toHaveLength(2);expect(change).not.toHaveBeenCalled();
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.type.name==='figcaption')pos=at+1;});
+ act(()=>{editor.commands.insertContentAt(pos,'新');});
+ const saved=change.mock.lastCall![0] as string;
+ expect(saved).toContain('data-image-columns="40,60"');expect(saved).not.toContain('style=');
+ expect(saved).toContain('src="../assets/a.png"');expect(saved).toContain('src="../assets/b.png"');
+ cleanup();const reopened=await setup(saved);
+ expect(reopened.field.querySelectorAll('figure img')).toHaveLength(2);
+ expect(reopened.field.querySelector('figcaption')?.textContent).toBe('新原说明');
 });
 it('folds a heading section up to its next peer without changing Markdown or undo history',async()=>{
  const {editor,field,change,save}=await setup('## 标题 A\n\n正文 A\n\n### 子标题\n\n子正文\n\n## 标题 B\n\n正文 B');
@@ -274,6 +592,35 @@ it('edits formulas with a live rendered preview and saves Markdown',async()=>{
  fireEvent.click(screen.getByRole('button',{name:'应用公式'}));
  expect(change).toHaveBeenLastCalledWith('正文\n\n$x^3$');
 });
+it('round-trips guide inline styles and both formulas without rewriting its table or code block',async()=>{
+ const table='| 功能 | 状态 |\n| :--- | ---: |\n| 渲染 | 完整 |';
+ const code='```typescript\nconst literal = "*text* ~~text~~ $x$";\n```';
+ const value='正文\n\n**加粗**、*斜体 (Italic)*、~~删除线 (Strikethrough)~~、`行内代码 (Inline Code)`。\n\n行内公式：$e^{i\\pi} + 1 = 0$\n\n$$\nI = \\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}\n$$\n\n'+table+'\n\n'+code;
+ const {editor,field,change}=await setup(value);
+ expect(field.querySelector('em')?.textContent).toBe('斜体 (Italic)');
+ expect(field.querySelector('s')?.textContent).toBe('删除线 (Strikethrough)');
+ expect(field.querySelector('p > code')?.textContent).toBe('行内代码 (Inline Code)');
+ expect(field.querySelectorAll('math')).toHaveLength(2);
+ for(const target of ['斜体 (Italic)','删除线 (Strikethrough)','行内代码 (Inline Code)']){
+  let pos=0;editor.state.doc.descendants((node,at)=>{if(node.isText&&node.text===target)pos=at+1;});
+  act(()=>{editor.commands.insertContentAt(pos,'新');});
+ }
+ fireEvent.click(screen.getByRole('button',{name:'编辑行内公式'}));
+ fireEvent.change(screen.getByRole('textbox',{name:'公式表达式'}),{target:{value:'e^{i \\pi} + 1 = 0'}});
+ fireEvent.click(screen.getByRole('button',{name:'应用公式'}));
+ fireEvent.click(screen.getByRole('button',{name:'编辑块公式'}));
+ fireEvent.change(screen.getByRole('textbox',{name:'公式表达式'}),{target:{value:'I = \\int_{0}^{\\infty} e^{-x^2}\\,dx = \\frac{\\sqrt{\\pi}}{2}'}});
+ fireEvent.click(screen.getByRole('button',{name:'应用公式'}));
+ const saved=change.mock.lastCall![0] as string;
+ expect(saved).toContain(table);expect(saved).toContain(code);
+ cleanup();const reopened=await setup(saved);
+ expect(reopened.field.querySelector('em')?.textContent).toBe('斜新体 (Italic)');
+ expect(reopened.field.querySelector('s')?.textContent).toBe('删新除线 (Strikethrough)');
+ expect(reopened.field.querySelector('p > code')?.textContent).toBe('行新内代码 (Inline Code)');
+ expect(reopened.field.querySelectorAll('math')).toHaveLength(2);
+ expect(reopened.field.querySelector('.katex-error')).toBeNull();
+ expect(saved).toContain('e^{i \\pi} + 1 = 0');expect(saved).toContain('e^{-x^2}\\,dx');
+});
 it('inserts a block after its source and undoes insertion in one step',async()=>{
  const {editor,change}=await setup('正文');
  fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
@@ -490,6 +837,23 @@ it('creates and removes a link through properties without losing selected text',
  act(()=>{editor.commands.setTextSelection({from:1,to:3});});
  fireEvent.click(screen.getByRole('button',{name:'更多格式'}));fireEvent.click(screen.getByRole('button',{name:'移除链接'}));
  expect(change).toHaveBeenLastCalledWith('正文');
+});
+it('round-trips guide links, task states and footnote content through edits',async()=>{
+ const value='正文\n\n这是一个[外部链接](https://google.com)。\n\n[内部链接](other.md)\n\n- [x] 已完成的任务\n- [ ] 待完成的任务\n- [ ] 正在进行中的任务\n\n这是带有脚注的句子 [^1]。\n\n[^1]: 这是脚注的内容。';
+ const {editor,field,change}=await setup(value);
+ expect([...field.querySelectorAll('a')].map(a=>a.getAttribute('href'))).toEqual(['https://google.com','other.md']);
+ expect(field.querySelectorAll('[data-footnote]')).toHaveLength(1);
+ fireEvent.click(screen.getByRole('checkbox',{name:'待办：待完成的任务'}));
+ let pos=0;editor.state.doc.descendants((node,at)=>{if(node.isText&&node.text==='这是脚注的内容。')pos=at+2;});
+ act(()=>{editor.commands.insertContentAt(pos,'新');});
+ const saved=change.mock.lastCall![0] as string;
+ expect(saved).toContain('[外部链接](https://google.com)');expect(saved).toContain('[内部链接](other.md)');
+ expect(saved).toContain('- [x] 待完成的任务');expect(saved).toContain('[^1]: 这是新脚注的内容。');
+ cleanup();const reopened=await setup(saved);
+ expect([...reopened.field.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].map(c=>c.checked)).toEqual([true,true,false]);
+ expect(reopened.field.querySelector('[data-footnote-definition="1"]')?.textContent).toBe('这是新脚注的内容。');
+ expect(reopened.field.querySelector('[data-footnote="1"]')?.textContent).toBe('1');
+ expect([...reopened.field.querySelectorAll('a')].map(a=>a.getAttribute('href'))).toEqual(['https://google.com','other.md']);
 });
 it.each([
  '<!-- original -->',

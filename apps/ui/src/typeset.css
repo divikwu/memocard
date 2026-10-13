@@ -225,6 +225,36 @@
       vertical-align: -0.1em;
       accent-color: var(--color-primary, currentColor);
     }
+    &:where(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"]) {
+      appearance: none;
+      display: inline-grid;
+      place-items: center;
+      width: 16px;
+      height: 16px;
+      border: 1px solid var(--muted-foreground);
+      border-radius: 3px;
+      background: var(--background);
+      cursor: pointer;
+    }
+    &:where(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"]):checked {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+    &:where(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"]):checked::before {
+      content: "";
+      width: 5px;
+      height: 9px;
+      border: solid var(--primary-foreground);
+      border-width: 0 2px 2px 0;
+      transform: translateY(-1px) rotate(45deg);
+    }
+    &:where(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"]):focus-visible {
+      outline: 2px solid var(--ring);
+      outline-offset: 2px;
+    }
+    &:where(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"]):disabled {
+      cursor: default;
+    }
 
     /* Disclosures. */
     &:where(details) {
@@ -318,7 +348,7 @@
     /* Dividers. */
     &:where(hr) {
       border: 0;
-      border-block-start: 1px solid var(--typeset-rule);
+      border-block-start: 1px solid var(--border);
       margin-block-start: calc(var(--typeset-flow) * 2.4);
       margin-block-end: 0;
     }
@@ -373,15 +403,21 @@
     /* Tables. Separators sit on cells, not tr:last-child: append-safe.
        Bare tables stay real tables (keep their semantics) and wrap to fit. */
     &:where(table) {
+      width: 100%;
       max-width: 100%;
-      font-size: 1em;
+      font-size: 0.875em;
       line-height: 1.5;
       font-variant-numeric: tabular-nums;
       border-collapse: separate;
       border-spacing: 0;
-      border-block-end: 1px solid var(--typeset-rule);
+      border: 1px solid var(--border);
+      border-radius: var(--radius, 0.5em);
       margin-block-start: var(--typeset-flow);
       margin-block-end: 0;
+    }
+    &:where(td, th) {
+      min-width: 7em;
+      overflow-wrap: normal;
     }
 
     /* Horizontal scroll for any wide block. Wrap it and the wrapper owns the
@@ -396,25 +432,23 @@
     }
     &:where(.typeset-scroll table) {
       width: max-content;
+      min-width: 100%;
       max-width: none;
     }
     &:where(thead th) {
       font-weight: 500;
       text-align: start;
-      white-space: nowrap;
+      white-space: normal;
       padding: 0.65em 1em;
     }
     &:where(:is(tbody, tfoot) :is(td, th)) {
       padding: 0.75em 1em;
       text-align: start;
       vertical-align: top;
-      border-block-start: 1px solid var(--typeset-rule);
+      border-block-start: 1px solid var(--border);
     }
     &:where(tbody th, tfoot th) {
       font-weight: 500;
-    }
-    &:where(th:first-child, td:first-child) {
-      padding-inline-start: 0;
     }
     &:where(th[align="center"], td[align="center"]) {
       text-align: center;

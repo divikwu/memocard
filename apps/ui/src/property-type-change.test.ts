@@ -10,6 +10,8 @@ it.each([
   ['date','2028-02-29','text','2028-02-29'], ['list',['2028-02-29'],'date','2028-02-29'],
   ['text','true','checkbox',true], ['text','false','checkbox',false],
   ['text','','checkbox',false], ['list',[],'date',''],
+  ['text','3.2','number','3.2'], ['number','0','text','0'], ['text','bad','number',''],
+  ['text','2026-10-13T09:30:42.123+08:00','date','2026-10-13T09:30:42.123+08:00'],
 ] as const)('preserves compatible %s values when switching to %s', (from,value,to,expected) => {
   const result = propertyTypeChange(property(from,Array.isArray(value) ? [...value] : value as string | boolean),to);
   expect(result).toEqual({name:'字段',type:to,value:expected});
@@ -37,4 +39,11 @@ it('normalizes choice values, removes unused definitions and caps option counts'
 it.each([['date','2026-02-30',''],['date','hello',''],['checkbox','hello',false]] as const)('clears an incompatible %s value according to the conversion rules', (type,value,expected) => {
   const result = propertyTypeChange(property('text',value),type);
   expect(result.value).toBe(expected);
+});
+
+it('preserves one local image reference and lets loss checks reject incompatible conversions', () => {
+  expect(propertyTypeChange(property('text','../assets/cover.png'),'image').value).toBe('../assets/cover.png');
+  expect(propertyTypeChange(property('image','../assets/cover.png'),'text').value).toBe('../assets/cover.png');
+  expect(propertyTypeChange(property('multiSelect',['assets/a.png','assets/b.png']),'image').value).toBe('');
+  expect(propertyTypeChange(property('text','https://example.com/a.png'),'image').value).toBe('');
 });

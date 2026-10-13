@@ -49,6 +49,17 @@ describe("directory-backed image rendering", () => {
     bindNoteImage(image, "blob:http://localhost/untrusted");
     expect(readBrowserAsset).not.toHaveBeenCalled();
   });
+  it.each([false, true])("reports asset failures only while the binding is alive (disposed: %s)", async (disposed) => {
+    let reject!: (error: Error) => void;
+    vi.mocked(readBrowserAsset).mockReturnValue(new Promise((_resolve, fail) => { reject = fail; }));
+    const onError = vi.fn();
+    const release = bindNoteImage(document.createElement('img'), 'memocard-asset://vault/assets/missing.png', onError);
+    if (disposed) release();
+    reject(new Error('Missing asset'));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(onError).toHaveBeenCalledTimes(disposed ? 0 : 1);
+  });
   it("keeps native image delivery unchanged", () => {
     state.browser = false;
     const image = document.createElement("img");

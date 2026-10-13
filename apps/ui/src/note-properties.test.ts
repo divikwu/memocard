@@ -1,6 +1,31 @@
 import { expect, it } from 'vitest';
 import { parseDocument } from 'yaml';
 import { patchProperty, readProperties } from './note-properties';
+import { encodeBrowserNote } from './browser-files';
+
+it('round trips numbers without rounding on body saves, and retains the type when cleared',()=>{
+  let source = 'Body #keep';
+  source = patchProperty(source,{name:'weight',type:'number',value:'',create:true});
+  for (const value of ['0','-3','3.2','9007199254740993','3.0000000000000001','1e3','']) {
+    source = patchProperty(source,{name:'weight',type:'number',value});
+    expect(readProperties(source,'hash').properties[0]).toMatchObject({type:'number',value,editable:true});
+    const doc = parseDocument(source.split('---\n')[1]!,{schema:'yaml-1.1'});
+    const saved = new TextDecoder().decode(encodeBrowserNote(doc,'Edited body'));
+    expect(readProperties(saved,'hash').properties[0]).toMatchObject({type:'number',value});
+  }
+  for (const value of ['NaN','Infinity','1e999','01','hello','1,000','0xFF']) expect(()=>patchProperty(source,{name:'weight',type:'number',value})).toThrow('数字');
+});
+it('retains complete timestamps, date-shaped text and empty dates across reload',()=>{
+  let source = 'Body';
+  for (const value of ['2026-10-13T09:30:42.123+08:00','2026-10-13T01:30:42.123Z','2026-10-13','']) {
+    source = patchProperty(source,{name:'due',type:'date',value,...(!source.startsWith('---') ? {create:true} : {})});
+    const saved = new TextDecoder().decode(encodeBrowserNote(parseDocument(source.split('---\n')[1]!,{schema:'yaml-1.1'}),'Edited'));
+    expect(readProperties(saved,'hash').properties[0]).toMatchObject({type:'date',value});
+  }
+  source = patchProperty(source,{name:'due',type:'text',value:'2026-10-13T09:30:42.123+08:00'});
+  expect(readProperties(source,'hash').properties[0].type).toBe('text');
+  for (const value of ['2026-02-30T09:30:00Z','2026-10-13T24:00:00Z']) expect(()=>patchProperty(source,{name:'due',type:'date',value})).toThrow('日期');
+});
 
 it('edits one YAML property while preserving unknown fields, comments, BOM, CRLF and body bytes', () => {
   const source = '\uFEFF---\r\n# keep header\r\nsummary: old # original\r\n# keep unknown\r\nunknown:\r\n  nested: [1, two]\r\naliases: ["One", "Two"]\r\n---\r\n# Body\r\n\r\n<!-- literal -->\r\n';
@@ -159,4 +184,22 @@ it('persists a date-shaped text value through type switching and YAML serializat
  const date=patchProperty(text,{name:'field',type:'date',value:'2028-02-29'});
  expect(readProperties(date,'hash').properties[0]?.type).toBe('date');
  expect(date).not.toContain('memocard:type=text');
+});
+
+
+it('round trips an empty image, a relative image and clearing without changing body or unknown fields', () => {
+  const original = '\uFEFF---\r\nunknown: {nested: value} # keep\r\n---\r\nBody #keep\r\n';
+  let source = patchProperty(original,{name:'封面',type:'image',value:'',create:true});
+  for (const value of ['../assets/cover.png','../assets/replaced.jpg','']) {
+    source = patchProperty(source,{name:'封面',type:'image',value});
+    expect(readProperties(source,'hash').properties.find(item => item.name === '封面')).toMatchObject({type:'image',value,editable:true});
+    expect(source).toContain('unknown: {nested: value} # keep\r\n');
+    expect(source.endsWith('Body #keep\r\n')).toBe(true);
+    const yaml = parseDocument(source.split('---\r\n')[1]!,{schema:'yaml-1.1'}).toString({lineWidth:0});
+    expect(readProperties(`---\n${yaml}---\nEdited body`,'hash').properties.find(item => item.name === '封面')).toMatchObject({type:'image',value});
+  }
+});
+it.each(['https://example.com/a.png','data:image/png;base64,abc','/tmp/a.png','assets/.hidden.png','assets/a.txt','assets/%2e%2e/a.png','assets/%2fetc.png'])('rejects an invalid image reference %s without reinterpreting it as editable', value => {
+  expect(() => patchProperty('Body',{name:'cover',type:'image',value,create:true})).toThrow();
+  expect(readProperties(`---\ncover: ${JSON.stringify(value)} # memocard:type=image\n---\nBody`,'hash').properties[0]).toMatchObject({type:'unsupported',editable:false});
 });

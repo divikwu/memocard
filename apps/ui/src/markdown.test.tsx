@@ -56,6 +56,22 @@ it('sanitizes active HTML, styles, remote images and embedded content', () => {
   expect(html).toContain('<details>');
   for (const unsafe of ['onclick', 'onerror', 'onload', '<iframe', '<svg', 'position:fixed', 'src="https://']) expect(html).not.toContain(unsafe);
 });
+it('renders validated image columns and callouts without accepting arbitrary styles', () => {
+ const html=renderToStaticMarkup(<Markdown body={'<aside data-callout="blue" data-callout-icon="🧭" style="position:fixed"><p>第一段</p><p>第二段</p></aside>\n\n<figure data-image-columns="40,60" style="position:fixed"><img src="../assets/a.png" alt="第一张"><img src="../assets/b.png" alt="第二张"></figure>'} />);
+ expect(html).toContain('data-callout="blue"');expect(html).toContain('data-callout-icon="🧭"');
+ expect(html).toContain('data-image-columns="40,60"');expect(html).toContain('grid-template-columns:40fr 60fr');
+ expect(html).toContain('aria-label="查看大图 第一张"');expect(html).not.toContain('position:fixed');
+ const invalid=renderToStaticMarkup(<Markdown body={'<figure data-image-columns="1,9999"><p>内容</p></figure><aside data-callout="url(evil)"><p>说明</p></aside>'} />);
+ expect(invalid).not.toContain('data-image-columns=');expect(invalid).not.toContain('data-callout=');
+});
+it('renders the callout palette and rejects unvalidated text colors', () => {
+ for(const color of ['default','gray','brown','orange','yellow','green','blue','purple','pink','red']) {
+  const html=renderToStaticMarkup(<Markdown body={`<aside data-callout="${color}" data-callout-text-color="${color}" data-callout-icon="🧑🏽‍💻"><p>正文</p></aside>`} />);
+  expect(html).toContain(`data-callout="${color}"`);expect(html).toContain(`data-callout-text-color="${color}"`);expect(html).toContain('🧑🏽‍💻');
+ }
+ const html=renderToStaticMarkup(<Markdown body={'<aside data-callout="gray" data-callout-text-color="url(evil)" style="color:red"><p>正文</p></aside>'} />);
+ expect(html).not.toContain('data-callout-text-color');expect(html).not.toContain('color:red');
+});
 
 it('keeps sanitized footnote anchors connected to their targets', () => {
   const html = renderToStaticMarkup(<Markdown body={'注释[^1]\n\n[^1]: 内容'} />);

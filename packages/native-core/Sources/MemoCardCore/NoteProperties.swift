@@ -67,10 +67,33 @@ struct PropertyUpdateResult: Encodable {
 }
 private let reservedProperties: Set<String> = ["id", "createdAt", "updatedAt", "deletedAt", "tags"]
 private func propertyError(_ message: String) -> VaultError { VaultError(code: "INVALID_PROPERTY", message: message) }
+func validPropertyImage(_ value: String) -> Bool {
+    if value.isEmpty { return true }
+    guard !value.hasPrefix("/"), value.range(of: #"[\\:?#\x00-\x1f\x7f]"#, options: .regularExpression) == nil else { return false }
+    let parts = value.components(separatedBy: "/")
+    guard parts.allSatisfy({ encoded in
+        guard let part = encoded.removingPercentEncoding, !part.isEmpty, part.range(of: #"[\\/:?#\x00-\x1f\x7f]"#, options: .regularExpression) == nil else { return false }
+        return part == "." || part == ".." ? part == encoded : !part.hasPrefix(".")
+    }), let last = parts.last?.removingPercentEncoding else { return false }
+    return last.range(of: #"\.(png|jpe?g|webp|gif|heic|heif)$"#, options: [.regularExpression, .caseInsensitive]) != nil
+}
+func propertyNumber(_ value: String) -> Bool {
+    value.range(of: #"^[+-]?(?:(?:0|[1-9]\d*)(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?$"#, options: .regularExpression) != nil && Double(value)?.isFinite == true
+}
 func propertyDate(_ value: String) -> Bool {
-    guard value.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else { return false }
+    guard value.range(of: #"^\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:\d{2}))?$"#, options: .regularExpression) != nil, !value.hasPrefix("0000") else { return false }
     let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.timeZone = TimeZone(secondsFromGMT: 0); formatter.dateFormat = "yyyy-MM-dd"; formatter.isLenient = false
-    return formatter.date(from: value).map { formatter.string(from: $0) == value } ?? false
+    let day = String(value.prefix(10))
+    guard formatter.date(from: day).map({ formatter.string(from: $0) == day }) == true else { return false }
+    if value.count == 10 { return true }
+    let time = String(value.dropFirst(11))
+    guard let hour = Int(time.prefix(2)), hour < 24, let minute = Int(time.dropFirst(3).prefix(2)), minute < 60 else { return false }
+    if time.dropFirst(5).hasPrefix(":"), let second = Int(time.dropFirst(6).prefix(2)), second >= 60 { return false }
+    if !time.hasSuffix("Z") {
+        let zone = String(time.suffix(6))
+        guard let hours = Int(zone.dropFirst().prefix(2)), hours < 24, let minutes = Int(zone.suffix(2)), minutes < 60 else { return false }
+    }
+    return true
 }
 private func propertyComment(_ line: String) -> String? {
     let characters = Array(line)
@@ -131,11 +154,21 @@ private func propertySource(_ source: String) throws -> PropertySource {
         var type = "unsupported"
         var value = PropertyValue.text(node.scalar?.string ?? "复杂 YAML 值")
         if node.null != nil && lines[start].range(of: #":\s*null\s+#\s*memocard:type=date\s*$"#, options: .regularExpression) != nil { type = "date"; value = .text("") }
+        else if node.null != nil && propertyComment(lines[start]) == "memocard:type=number" { type = "number"; value = .text("") }
         else if !blockScalar && node.tag == Tag(.bool), let boolean = node.bool { type = "checkbox"; value = .checkbox(boolean) }
+        else if !blockScalar && (node.tag == Tag(.int) || node.tag == Tag(.float)), let text = node.scalar?.string, propertyNumber(text) { type = "number"; value = .text(text) }
         else if !blockScalar && node.tag == Tag(.str), let text = node.scalar?.string { type = propertyDate(text) && propertyComment(lines[start]) != "memocard:type=text" ? "date" : "text"; value = .text(text) }
         else if !blockScalar && node.tag == Tag(.timestamp), let text = node.scalar?.string, propertyDate(text) { type = "date"; value = .text(text) }
         else if let sequence = node.sequence, sequence.allSatisfy({ $0.tag == Tag(.str) }) { type = "list"; value = .list(sequence.map { $0.scalar!.string }) }
         var options: [PropertyOption]? = nil
+        if propertyComment(lines[start]) == "memocard:type=number", type != "number" {
+            if type == "text", case .text(let number) = value, propertyNumber(number) { type = "number" }
+            else { type = "unsupported" }
+        }
+        if propertyComment(lines[start]) == "memocard:type=image" {
+            if type == "text", case .text(let path) = value, validPropertyImage(path) { type = "image" }
+            else { type = "unsupported" }
+        }
         if let comment = propertyComment(lines[start]), comment.hasPrefix("memocard:choice=") {
             let metadata = try? JSONDecoder().decode(ChoiceMetadata.self, from: Data(comment.dropFirst("memocard:choice=".count).utf8))
             let values: [String]
@@ -206,6 +239,8 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
         if change.type == "list" && name != "tags" { throw propertyError("文本列表已合并为多选。") }
         switch (change.type, value) {
         case ("text", .text), ("list", .list), ("checkbox", .checkbox), ("select", .text), ("multiSelect", .list): break
+        case ("image", .text(let path)): guard validPropertyImage(path) else { throw propertyError("图片属性需为笔记库中的图片路径。") }
+        case ("number", .text(let number)): guard number.isEmpty || propertyNumber(number) else { throw propertyError("请输入有效数字。") }
         case ("date", .text(let date)): guard date.isEmpty || propertyDate(date) else { throw propertyError("请输入有效日期。") }
         default: throw propertyError("属性值与类型不匹配。")
         }
@@ -213,7 +248,9 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
         guard encoded.count <= 65536 else { throw propertyError("属性值过长。") }
         let encodedName = String(data: try encoder.encode(name), encoding: .utf8)!
         let encodedValue: String
-        if change.type == "date", case .text(let date) = value { encodedValue = date.isEmpty ? "null # memocard:type=date" : date } else { encodedValue = String(data: encoded, encoding: .utf8)! }
+        if change.type == "date", case .text(let date) = value { encodedValue = date.isEmpty ? "null # memocard:type=date" : String(data: encoded, encoding: .utf8)! }
+        else if change.type == "number", case .text(let number) = value { encodedValue = number.isEmpty ? "null # memocard:type=number" : number + " # memocard:type=number" }
+        else { encodedValue = String(data: encoded, encoding: .utf8)! }
         var suffix = ""
         if change.type == "select" || change.type == "multiSelect" {
             let options = change.options ?? original.map { listAsMultiSelect($0).options ?? [] } ?? listAsMultiSelect(NoteProperty(name: name, type: "list", value: value, editable: true)).options ?? []
@@ -231,6 +268,8 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
             let metadata = try encoder.encode(ChoiceMetadata(type: change.type!, options: options))
             guard metadata.count <= 65536 else { throw propertyError("属性值过长。") }
             suffix = " # memocard:choice=" + String(data: metadata, encoding: .utf8)!
+        } else if change.type == "image" {
+            suffix = " # memocard:type=image"
         } else if change.type == "text", case .text(let text) = value, propertyDate(text) {
             suffix = " # memocard:type=text"
         }
@@ -255,11 +294,12 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
 
 // Legacy body saves serialize YAML, so restore property metadata comments that Yams discards.
 func preservingPropertyTypes(_ yaml: String, originalHeader: String?) throws -> String {
-    guard let originalHeader, originalHeader.contains("memocard:") else { return yaml }
+    guard let originalHeader else { return yaml }
     let original = try propertySource(originalHeader)
     let typed = original.entries.filter { entry in
+        if entry.property.type == "image" { return true }
         if ["select", "multiSelect"].contains(entry.property.type) { return true }
-        if entry.property.type == "date", case .text("") = entry.property.value { return true }
+        if ["date", "number"].contains(entry.property.type) { return true }
         if entry.property.type == "text", case .text(let text) = entry.property.value { return propertyDate(text) }
         return false
     }
@@ -280,7 +320,7 @@ struct PropertyDefinition: Codable {
 }
 let propertyDefinitionPath = ".memocard/property-definitions.json"
 func validPropertyDefinition(_ value: PropertyDefinition) -> Bool {
-    guard ["text", "list", "date", "checkbox", "select", "multiSelect"].contains(value.type) else { return false }
+    guard ["text", "list", "number", "date", "checkbox", "select", "multiSelect", "image"].contains(value.type) else { return false }
     if value.type == "select" || value.type == "multiSelect" { return value.options.map(validOptions) ?? false }
     return value.options == nil
 }
@@ -330,6 +370,8 @@ func convertedProperty(_ property: NoteProperty, definition: PropertyDefinition,
     let value: PropertyValue
     switch definition.type {
     case "text": value = .text(values.joined(separator: "\n"))
+    case "number": value = .text(values.count == 1 && propertyNumber(values[0]) ? values[0] : "")
+    case "image": value = .text(values.count == 1 && validPropertyImage(values[0]) ? values[0] : "")
     case "list": value = .list(values)
     case "date": value = .text(values.count == 1 && propertyDate(values[0]) ? values[0] : "")
     case "checkbox": value = .checkbox(values.count == 1 && values[0] == "true")

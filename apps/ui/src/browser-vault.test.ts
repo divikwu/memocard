@@ -16,6 +16,28 @@ const source = (id = noteId, body = "中文 test\n", extra = "") => `---\nid: "$
 const bytes = (text: string) => new TextEncoder().encode(text);
 const error = (name: string) => new DOMException(name, name);
 
+it.each([false,true])('preserves numbers and complete date times through browser saves and reopen (shared=%s)',async shared => {
+  const root = shared ? new TestDirectory('shared') : await fixture();
+  const notes = shared ? root : await root.getDirectoryHandle('notes');
+  const file = await notes.getFileHandle(shared ? 'A.md' : `${noteId}.md`,{create:true});
+  file.bytes = bytes(shared ? 'Body #keep' : source(noteId,'Body #keep'));
+  const h = harness(root); await call(h.core,'selectVault');
+  let note = (await call<NotePage>(h.core,'queryNotes')).notes.find(n=>n.body==='Body #keep')!;
+  for (const [name,type,value] of [['weight','number','3.0000000000000001'],['due','date','2026-10-13T09:30:42.123+08:00']]) {
+    note = await call<Note>(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name,type,value,create:true});
+  }
+  note = await call<Note>(h.core,'saveNote',{id:note.id,baseHash:note.contentHash,body:'Edited #keep',tags:[]});
+  const reopened = harness(root,h.storage); await call(reopened.core,'selectVault');
+  const fields = await call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties',{id:note.id});
+  expect(fields.properties.find(p=>p.name==='weight')).toMatchObject({type:'number',value:'3.0000000000000001'});
+  expect(fields.properties.find(p=>p.name==='due')).toMatchObject({type:'date',value:'2026-10-13T09:30:42.123+08:00'});
+  expect(file.text).toContain('3.0000000000000001'); expect(file.text.endsWith('Edited #keep')).toBe(true);
+  for (const name of ['weight','due']) {
+    note = await call<Note>(reopened.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name,type:name==='weight'?'number':'date',value:''});
+  }
+  expect((await call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties',{id:note.id})).properties.filter(p=>['weight','due'].includes(p.name)).every(p=>p.value==='')).toBe(true);
+});
+
 it.each(['body','property','new'])('rolls back a browser source commit when identity persistence fails (%s)',async operation => {
   const root = new TestDirectory('shared');
   const file = await root.getFileHandle('A.md',{create:true});
@@ -1278,4 +1300,25 @@ it.each([false,true])('recovers property intents and serializes twenty edits wit
   expect(fields.properties.find(property=>property.name==='checked')?.value).toBe(true);
   expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts.filter(draft=>draft.baseHash || draft.body || draft.title)).toEqual([]);
   expect(session.dirty).toBe(false); session.dispose();
+});
+
+
+it.each([false,true])('persists a single image property through body saves, reopen and inheritance (shared=%s)', async shared => {
+  const root = shared ? new TestDirectory('shared') : await fixture();
+  const notes = shared ? root : await root.getDirectoryHandle('notes');
+  const file = await notes.getFileHandle(shared ? 'A.md' : `${noteId}.md`,{create:true});
+  file.bytes = bytes(shared ? '---\nunknown: {nested: value}\n---\nBody #keep' : source(noteId,'Body #keep','unknown: {nested: value}\n'));
+  const h = harness(root); await call(h.core,'selectVault');
+  let note = (await call<NotePage>(h.core,'queryNotes')).notes.find(note => note.body === 'Body #keep')!;
+  note = await call<Note>(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name:'cover',type:'image',value:'',create:true});
+  note = await call<Note>(h.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name:'cover',type:'image',value:'../assets/cover.png'});
+  note = await call<Note>(h.core,'saveNote',{id:note.id,baseHash:note.contentHash,body:'Edited #keep',tags:note.tags});
+  const reopened = harness(root,h.storage); await call(reopened.core,'selectVault');
+  const read = () => call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties',{id:note.id});
+  expect((await read()).properties.find(item => item.name === 'cover')).toMatchObject({type:'image',value:'../assets/cover.png'});
+  expect(file.text).toContain('nested'); expect(file.text.endsWith('Edited #keep')).toBe(true);
+  const inherited = await call<import('@memocard/contracts').NoteProperties>(reopened.core,'getNoteProperties');
+  expect(inherited.properties.find(item => item.name === 'cover')).toMatchObject({type:'image',value:''});
+  note = await call<Note>(reopened.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name:'cover',type:'image',value:''});
+  expect((await read()).properties.find(item => item.name === 'cover')).toMatchObject({type:'image',value:''});
 });

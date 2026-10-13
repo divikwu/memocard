@@ -1,8 +1,8 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
+import { lazy, Suspense, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import type { Note, NoteProperties as Properties, NoteProperty, PropertyChange, PropertyType, PropertyLabels } from '@memocard/contracts';
 import { Checkbox } from '@base-ui/react/checkbox';
 import { AlertDialog } from '@base-ui/react/alert-dialog';
-import { CalendarDays, Check, ChevronDown, ChevronUp, Clock, FileText, Plus, Tags, Text, SquareCheck, Pencil, Trash2, Copy, CircleChevronDown, ListChecks, SlidersHorizontal } from 'lucide-react';
+import { CalendarDays, Check, ChevronDown, ChevronUp, Clock, FileText, Plus, Tags, Text, SquareCheck, Pencil, Trash2, Copy, CircleChevronDown, ListChecks, SlidersHorizontal, Image, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageNotice } from '@/components/page-notice';
 import { Input } from '@/components/ui/input';
@@ -14,22 +14,24 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChoicePropertyEditor, { ChoicePill } from './ChoicePropertyEditor';
-import DatePropertyPicker from './DatePropertyPicker';
+const DatePropertyPicker = lazy(() => import('./DatePropertyPicker'));
+const ImagePropertyEditor = lazy(() => import('./ImagePropertyEditor'));
 import TagPropertyEditor from './TagPropertyEditor';
 import { request, errorMessage } from './bridge';
 import { tagKey } from './inline-tags';
 import { propertyTypeChange, listAsMultiSelect } from './property-type-change';
 import { defaultPropertyLabel } from './property-labels';
 import { formatPropertyDate } from './property-dates';
+import { validPropertyNumber } from './property-numbers';
 
 const noteTime = (value?: string) => {
   const date = value ? new Date(value) : null;
   return date && Number.isFinite(date.getTime()) ? date.toLocaleString('en-US', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23' }).replace(',', '') : null;
 };
 const display = (value: NoteProperty['value']) => Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? value ? '已勾选' : '未勾选' : value || '空';
-const editableTypes = ['text','select','multiSelect','date','checkbox'] as const;
+const editableTypes = ['text','number','select','multiSelect','date','checkbox','image'] as const;
 const systemNames = {'system:tags':Tags,'system:updatedAt':Clock,'system:createdAt':CalendarDays,'system:filename':FileText};
-const propertyTypes = {text:{label:'文本',Icon:Text},select:{label:'选择',Icon:CircleChevronDown},multiSelect:{label:'多选',Icon:ListChecks},date:{label:'日期',Icon:CalendarDays},checkbox:{label:'复选框',Icon:SquareCheck},unsupported:{label:'只读',Icon:Text}};
+const propertyTypes = {text:{label:'文本',Icon:Text},number:{label:'数字',Icon:Hash},select:{label:'选择',Icon:CircleChevronDown},multiSelect:{label:'多选',Icon:ListChecks},date:{label:'日期',Icon:CalendarDays},checkbox:{label:'复选框',Icon:SquareCheck},image:{label:'图片',Icon:Image},unsupported:{label:'只读',Icon:Text}};
 function PropertyCreator({busy, error, onSave}: {busy:boolean; error?:string; onSave:(change:PropertyChange)=>Promise<void>}) {
   const [name, setName] = useState('');
   const submitting = useRef(false);
@@ -49,6 +51,8 @@ function PropertyForm({ property, busy, onSave, onCancel, formRef, error, inPlac
   const name = property.name;
   const type = property.type === 'unsupported' ? 'text' : property.type;
   const [text, setText] = useState(Array.isArray(property.value) ? property.value.join('\n') : typeof property.value === 'string' ? property.value : '');
+  const [invalidNumber, setInvalidNumber] = useState(false);
+  const numberErrorId = useId();
   const submitting = useRef(false);
   const cancelled = useRef(false);
   const textField = useRef<HTMLTextAreaElement>(null);
@@ -59,6 +63,7 @@ function PropertyForm({ property, busy, onSave, onCancel, formRef, error, inPlac
   }, [text, inPlace]);
   function save(value:PropertyChange['value']) {
     if (busy || submitting.current) return;
+    if (type === 'number' && typeof value === 'string' && value !== '' && !validPropertyNumber(value)) { setInvalidNumber(true); return; }
     if (JSON.stringify(value) === JSON.stringify(property.value)) { onCancel(); return; }
     submitting.current = true;
     void onSave({name,type,value}).catch(() => undefined).finally(() => { submitting.current = false; });
@@ -71,7 +76,8 @@ function PropertyForm({ property, busy, onSave, onCancel, formRef, error, inPlac
     event.preventDefault();
     save(text);
   }}>
-    {type === 'date' ? <DatePropertyPicker autoFocus value={text} onChange={setText} onSelect={value => { setText(value); save(value); }} busy={busy} /> : <Textarea ref={textField} autoFocus aria-label="属性值" onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && (type === 'text' || event.ctrlKey || event.metaKey)) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="输入属性值" value={text} onChange={event => setText(event.target.value)} disabled={busy} className="min-h-16" />}
+    {type === 'date' ? <Suspense fallback={<span role="status">正在读取日期…</span>}><DatePropertyPicker autoFocus value={text} onChange={setText} onSelect={value => { setText(value); save(value); }} busy={busy} /></Suspense> : <Textarea ref={textField} autoFocus aria-label="属性值" inputMode={type === 'number' ? 'decimal' : undefined} aria-invalid={invalidNumber || undefined} aria-describedby={invalidNumber ? numberErrorId : undefined} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing && (type === 'text' || type === 'number' || event.ctrlKey || event.metaKey)) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder={type === 'number' ? '输入数字' : '输入属性值'} value={text} onChange={event => { setText(event.target.value); setInvalidNumber(false); }} disabled={busy} className={type === 'number' ? 'min-h-16 tabular-nums' : 'min-h-16'} />}
+    {invalidNumber && <p id={numberErrorId} role="alert" className="text-sm text-destructive">请输入有效数字。</p>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {!inPlace && type !== 'date' && <div className="flex flex-wrap gap-2"><Button type="submit" size="sm" disabled={busy}>保存属性</Button><Button type="button" variant="ghost" size="sm" disabled={busy} onClick={onCancel}>取消</Button></div>}
   </form>;
@@ -84,7 +90,7 @@ function applyPendingChange(current:Properties | undefined, change:PropertyChang
   return {...current,properties:change.remove ? current.properties.filter(property => property.name !== change.name) : existing ? current.properties.map(property => property.name === change.name ? updated : property) : [...current.properties,updated]};
 }
 
-export default function NoteProperties({ note, savedProperties, saveError, renderHeader, pendingChanges = [], tags: bodyValues, relativePath, canEdit, canRead = canEdit, busy, onApply, onLocateTag, onChangeTag }: { note?:Note; savedProperties?:Properties; saveError?:string; renderHeader?:(notice:ReactNode, ownsSaveError:boolean)=>ReactNode; pendingChanges?:PropertyChange[]; tags:string[]; relativePath?:string; canEdit:boolean; canRead?:boolean; busy:boolean; onApply:(change:PropertyChange)=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
+export default function NoteProperties({ note, savedProperties, saveError, renderHeader, pendingChanges = [], tags: bodyValues, relativePath, vaultBinding, canEdit, canRead = canEdit, busy, onApply, onLocateTag, onChangeTag }: { note?:Note; savedProperties?:Properties; saveError?:string; renderHeader?:(notice:ReactNode, ownsSaveError:boolean)=>ReactNode; pendingChanges?:PropertyChange[]; tags:string[]; relativePath?:string; vaultBinding?:string; canEdit:boolean; canRead?:boolean; busy:boolean; onApply:(change:PropertyChange)=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
   const tags = [...new Set(bodyValues.map(tagKey))];
   const tooltipId = useId();
   const [open, setOpen] = useState(false);
@@ -225,7 +231,7 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
           const editable = property.editable && canEdit && !!note?.contentHash;
           const choice = property.type === 'select' || property.type === 'multiSelect';
           const choiceValues = Array.isArray(property.value) ? property.value : property.value ? [String(property.value)] : [];
-          const emptyValue = <span className="note-property-empty">{editable ? choice ? '选择选项' : property.type === 'date' ? '选择日期' : '添加文本' : '未填写'}</span>;
+          const emptyValue = <span className="note-property-empty">{editable ? choice ? '选择选项' : property.type === 'date' ? '选择日期' : property.type === 'number' ? '输入数字' : '添加文本' : '未填写'}</span>;
           const hasValue = Array.isArray(property.value) ? property.value.length > 0 : property.value !== '' && property.value != null;
           const formattedValue = property.type === 'date' && typeof property.value === 'string' ? formatPropertyDate(property.value) : display(property.value);
           const value = choice ? choiceValues.length ? <span className="note-property-tags">{choiceValues.map((value,index) => <ChoicePill key={`${index}:${value}`} name={value} options={property.options} />)}</span> : emptyValue : hasValue ? formattedValue : emptyValue;
@@ -244,7 +250,7 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
               <DropdownMenuItem onClick={() => { setError(''); duplicate(property); }}><Copy />创建属性副本</DropdownMenuItem>
               <DropdownMenuItem className="note-property-delete" onClick={() => { setError(''); setRemoving(property); }}><Trash2 />删除属性</DropdownMenuItem>
             </DropdownMenuContent></DropdownMenu> : <span className="note-property-label text-muted-foreground"><Icon /><span className="truncate" title={name}>{name}</span></span>}</dt>
-            <dd className="min-w-0">{property.type === 'checkbox' && property.editable ? <div className="note-property-value note-property-checkbox-value"><Checkbox.Root render={<button type="button" />} nativeButton checked={property.value === true} onCheckedChange={checked => { void toggleCheckbox(property.name,checked); }} disabled={!editable || busy || loading} aria-label={`切换属性 ${name}`} className="note-property-checkbox"><Checkbox.Indicator className="note-property-checkbox-indicator"><Check aria-hidden="true" strokeWidth={2.5} /></Checkbox.Indicator></Checkbox.Root></div> : editable ? property.type === 'text' ? editing === property.name ? <PropertyForm inPlace property={property} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} /> : <Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} onClick={() => { setEditing(property.name); setAdding(false); setError(''); }}>{value}</Button> : <Popover open={editing === property.name} onOpenChange={(value,details) => {
+            <dd className="min-w-0">{property.type === 'image' ? <Suspense fallback={<span role="status">正在读取图片…</span>}><ImagePropertyEditor key={`${note?.id}:${vaultBinding}:${property.name}`} name={name} value={typeof property.value === 'string' ? property.value : ''} noteId={note?.id} notePath={relativePath ?? note?.relativePath ?? 'notes/note.md'} vaultBinding={vaultBinding} editable={editable} busy={busy || loading} onSave={value => apply({name:property.name,type:'image',value})} /></Suspense> : property.type === 'checkbox' && property.editable ? <div className="note-property-value note-property-checkbox-value"><Checkbox.Root render={<button type="button" />} nativeButton checked={property.value === true} onCheckedChange={checked => { void toggleCheckbox(property.name,checked); }} disabled={!editable || busy || loading} aria-label={`切换属性 ${name}`} className="note-property-checkbox"><Checkbox.Indicator className="note-property-checkbox-indicator"><Check aria-hidden="true" strokeWidth={2.5} /></Checkbox.Indicator></Checkbox.Root></div> : editable ? property.type === 'text' || property.type === 'number' ? editing === property.name ? <PropertyForm inPlace property={property} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} /> : <Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} onClick={() => { setEditing(property.name); setAdding(false); setError(''); }}>{value}</Button> : <Popover open={editing === property.name} onOpenChange={(value,details) => {
               if (value) { setEditing(property.name); setAdding(false); setError(''); }
               else if (busy) details.cancel();
               else if (choice) setEditing(null);

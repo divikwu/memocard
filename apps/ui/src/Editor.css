@@ -154,26 +154,14 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
 .note-property-inline [role="alert"] { padding: 6px; }
 
 .note-date-popup { width: min(280px, calc(100vw - 24px)); max-height: var(--available-height); overflow-y: auto; }
-.note-date-picker { min-width: 0; }
-.note-date-picker .rdp-root { position: relative; margin-top: 8px; font-size: 14px; line-height: 20px; }
-.note-date-picker > [role="alert"] + .rdp-root { margin-top: 0; }
-.note-date-picker .rdp-month_caption { display: flex; align-items: center; height: 32px; padding-inline: 4px; font-weight: 500; }
-.note-date-picker .rdp-nav { position: absolute; top: 0; right: 0; display: flex; }
-.note-date-picker .rdp-button_previous, .note-date-picker .rdp-button_next { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 4px; }
-.note-date-picker .rdp-chevron { width: 16px; height: 16px; fill: currentColor; }
-.note-date-picker .rdp-month_grid { width: 100%; table-layout: fixed; border-collapse: collapse; }
-.note-date-picker .rdp-weekday { height: 32px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; }
-.note-date-picker .rdp-day { padding: 0; text-align: center; }
-.note-date-picker .rdp-day_button { display: block; width: 32px; height: 32px; margin-inline: auto; border-radius: 50%; }
-.note-date-picker .rdp-outside { color: var(--muted-foreground); }
-.note-date-picker button:hover { background: var(--hover-bg); color: var(--accent-foreground); }
-.note-date-picker button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
-.note-date-picker .rdp-selected .rdp-day_button { background: var(--primary); color: var(--primary-foreground); }
-.note-date-picker .rdp-today:not(.rdp-selected) .rdp-day_button { background: var(--secondary); color: var(--secondary-foreground); font-weight: 600; }
-.note-date-picker .rdp-disabled { opacity: .5; }
-.note-date-picker .note-date-today { width: 100%; margin-top: 8px; font-weight: 400; }
+
 
 .note-property-name[data-popup-open] { background: var(--hover-bg); }
 .note-property-menu { width: min(220px, calc(100vw - 24px)); }
 .note-property-menu :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) { min-height: 32px; border-radius: var(--hover-action-radius); }
 .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]), .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]) > svg { color: var(--destructive); }
+
+.note-property-image-thumbnail { width: 32px; height: 32px; object-fit: cover; }
+.note-property-image-preview { max-height: 24rem; }
+.note-property-image-popup { width: min(24rem, var(--available-width)); }
+.note-property-image-toolbar { justify-content: flex-end; }
