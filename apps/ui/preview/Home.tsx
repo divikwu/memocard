@@ -27,10 +27,10 @@ function Home(){
             </Card>
           </a>;
         })}
-        <a href="/preview/mascots.html" aria-label="吉祥物，11 个角色" className="group block min-w-0 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
+        <a href="/preview/mascots.html" aria-label="吉祥物，13 个角色" className="group block min-w-0 rounded-xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50">
           <Card className="h-full gap-3 py-4 group-hover:bg-hover">
             <CardHeader className="gap-3 px-4">
-              <div className="flex items-center gap-2"><span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted"><Bot aria-hidden="true" className="size-5 text-muted-foreground" /></span><h2 className="text-balance text-base font-semibold">吉祥物</h2><span className="ml-auto shrink-0 rounded-md bg-muted px-2 py-1 text-xs tabular-nums text-muted-foreground">11 个角色</span></div>
+              <div className="flex items-center gap-2"><span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted"><Bot aria-hidden="true" className="size-5 text-muted-foreground" /></span><h2 className="text-balance text-base font-semibold">吉祥物</h2><span className="ml-auto shrink-0 rounded-md bg-muted px-2 py-1 text-xs tabular-nums text-muted-foreground">13 个角色</span></div>
               <CardDescription className="text-pretty leading-relaxed">预览 MemoCard 与机器人角色的鼠标跟随和点击反应。</CardDescription>
             </CardHeader>
             <CardFooter className="mt-auto justify-between border-t px-4 text-sm font-medium [.border-t]:pt-3"><span>打开预览</span><ArrowRight aria-hidden="true" className="size-4 text-muted-foreground" /></CardFooter>
