@@ -1,4 +1,4 @@
-.block-controls { position: absolute; left: calc(var(--editor-gutter) - 32px); z-index: 5; display: flex; gap: 2px; color: var(--muted-foreground); transform: translateY(-50%); }
+.block-controls { position: absolute; left: calc(var(--editor-gutter) - 28px); z-index: 5; display: flex; gap: 2px; color: var(--muted-foreground); transform: translateY(-50%); }
 .block-controls button { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; }
 .block-controls button[draggable="true"] { cursor: grab; }
 :where(:root:not(.dark)) .block-controls button[draggable="true"] { color: #949494; }

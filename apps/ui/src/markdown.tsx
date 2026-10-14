@@ -32,13 +32,13 @@ export function Markdown({ body, notePath, onError }: { body: string; notePath?:
   const anchorPrefix = `note-${useId()}-`;
   return <div className="markdown typeset"><ReactMarkdown
     remarkPlugins={[remarkGfm, wikiMarkdown, remarkMath]}
-    rehypePlugins={[rehypeRaw, [rehypeSanitize, { ...defaultSchema, clobberPrefix: anchorPrefix, protocols: { ...defaultSchema.protocols, href: [...(defaultSchema.protocols?.href ?? []), 'memocard-wiki'], src: [...(defaultSchema.protocols?.src ?? []), 'memocard-wiki'] }, tagNames: [...(defaultSchema.tagNames ?? []), 'mark', 'abbr', 'kbd', 'sub', 'sup', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'aside'], attributes: { ...defaultSchema.attributes, code: [...(defaultSchema.attributes?.code ?? []), ['className', /^language-./, 'math-inline', 'math-display']], abbr: ['title'], figure: [['dataImageColumns', /^\d+(?:\.\d+)?(?:,\d+(?:\.\d+)?){1,2}$/]], aside: [['dataCallout', ...calloutColors], ['dataCalloutTextColor', ...calloutColors], 'dataCalloutIcon'] } }], [rehypeKatex, { output: 'mathml', throwOnError: false, trust: false }]]}
-    urlTransform={(url, key) => {
+    rehypePlugins={[rehypeRaw, [rehypeSanitize, { ...defaultSchema, clobberPrefix: anchorPrefix, protocols: { ...defaultSchema.protocols, href: [...(defaultSchema.protocols?.href ?? []), 'memocard-wiki'], src: [...(defaultSchema.protocols?.src ?? []), 'memocard-wiki'] }, tagNames: [...(defaultSchema.tagNames ?? []), 'mark', 'abbr', 'kbd', 'sub', 'sup', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'aside'], attributes: { ...defaultSchema.attributes, code: [...(defaultSchema.attributes?.code ?? []), ['className', /^language-./, 'math-inline', 'math-display']], abbr: ['title'], img: [...(defaultSchema.attributes?.img ?? []), ['dataWikiImage', '']], figure: [['dataImageColumns', /^\d+(?:\.\d+)?(?:,\d+(?:\.\d+)?){1,2}$/]], aside: [['dataCallout', ...calloutColors], ['dataCalloutTextColor', ...calloutColors], 'dataCalloutIcon'] } }], [rehypeKatex, { output: 'mathml', throwOnError: false, trust: false }]]}
+    urlTransform={(url, key, node) => {
       if (key === "href" && url.startsWith("#")) return `#${anchorPrefix}${url.slice(1)}`;
       const wiki = url.startsWith("memocard-wiki:");
       let target = url;
       try { if (wiki) target = decodeURIComponent(url.slice("memocard-wiki:".length)); } catch { return ""; }
-      if (key === "src") return imageSource(target, notePath ?? "notes/note.md", wiki) ?? "";
+      if (key === "src") return imageSource(target, notePath ?? "notes/note.md", wiki || node.properties.dataWikiImage != null) ?? "";
       return externalUrl(url) ?? (internalTarget(target) ? `memocard-internal:${encodeURIComponent(JSON.stringify({ target, wiki }))}` : "");
     }}
     components={{

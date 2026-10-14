@@ -5,6 +5,7 @@ import type { Editor } from '@tiptap/react';
 import { RichMarkdownEditor, type RichEditorProps } from './RichMarkdownEditor';
 import userEvent from '@testing-library/user-event';
 import { canWrapCallout, unwrapCallout, wrapCallout } from './rich-callout';
+import { applyImageTransaction, arrangeImageRows, imageMoveTransaction, setImageWidths, splitImageRow } from './rich-image-layout';
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
 vi.mock('./bridge', () => ({ request: vi.fn() }));
 // Compile the shared picker before timing editor interactions on cold CI workers.
@@ -45,6 +46,13 @@ it('opens without a write, renders heading syntax invisibly and edits semantic t
  act(()=>{editor.commands.insertContentAt(2,'新');});
  expect(change).toHaveBeenLastCalledWith('# 标新题\n\n正文');
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('# 标题\n\n正文');
+});
+it('restores the exact blank Markdown source after undoing body input',async()=>{
+ const original=' \r\n\t';
+ const {editor,change}=await setup('',{value:original,title:'空白页面'});
+ act(()=>editor.commands.insertContent('输入'));
+ act(()=>editor.commands.undo());
+ expect(change).toHaveBeenLastCalledWith(original);
 });
 it('inserts an editable callout from the block menu and keeps it after reopening',async()=>{
  const {editor,field,change}=await setup('开头');
@@ -356,6 +364,161 @@ it('keeps grouped images, ratios and captions when a gallery is edited and reope
  cleanup();const reopened=await setup(saved);
  expect(reopened.field.querySelectorAll('figure img')).toHaveLength(2);
  expect(reopened.field.querySelector('figcaption')?.textContent).toBe('新原说明');
+});
+const layoutImages = '<figure data-image-columns="40,60"><img src="../assets/a.png" alt="甲"><img src="../assets/b.png" alt="乙"><figcaption>共同说明</figcaption></figure>';
+function imagePos(editor: Editor, alt: string) {
+ let found=-1;editor.state.doc.descendants((node,pos)=>{if(['image','wikiImage'].includes(node.type.name)&&node.attrs.alt===alt)found=pos;});
+ if(found<0)throw new Error(`Missing image: ${alt}`);return found;
+}
+it('joins images from their layout menu with one-step undo and saves a reopenable row',async()=>{
+ const original='开头\n\n![甲](../assets/a.png)\n\n![乙](../assets/b.png)\n\n结束';
+ const {editor,field,change}=await setup(original);
+ fireEvent.click(screen.getByRole('button',{name:'图片布局 甲'}));
+ fireEvent.click(await screen.findByRole('menuitem',{name:'与下一行并排'}));
+ await waitFor(()=>expect(field.querySelectorAll('figure img')).toHaveLength(2));
+ const saved=change.mock.lastCall![0] as string;expect(saved).not.toContain('style=');
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+ act(()=>editor.commands.redo());expect(change).toHaveBeenLastCalledWith(saved);
+ cleanup();const reopened=await setup(saved);
+ expect([...reopened.field.querySelectorAll('figure img')].map(img=>img.getAttribute('alt'))).toEqual(['甲','乙']);
+ expect(reopened.change).not.toHaveBeenCalled();
+});
+it('reorders, extracts and splits grouped images without losing captions or surrounding text',async()=>{
+ const original='开头\n\n'+layoutImages+'\n\n![丙](../assets/c.png)\n\n结束';
+ const {editor,field,change}=await setup(original);
+ act(()=>applyImageTransaction(editor,imageMoveTransaction(editor,imagePos(editor,'乙'),imagePos(editor,'甲'),'left')));
+ await waitFor(()=>expect([...field.querySelectorAll('figure img')].map(img=>img.getAttribute('alt'))).toEqual(['乙','甲']));
+ expect(field.querySelector('figcaption')?.textContent).toBe('共同说明');
+ act(()=>splitImageRow(editor,imagePos(editor,'乙'),true));
+ expect(field.querySelectorAll('figure img')).toHaveLength(1);expect(field.querySelector('figcaption')?.textContent).toBe('共同说明');
+ act(()=>editor.commands.undo());act(()=>splitImageRow(editor,imagePos(editor,'甲')));
+ expect(field.querySelectorAll('figure img')).toHaveLength(0);expect(field.querySelector('figcaption')?.textContent).toBe('共同说明');
+ const saved=change.mock.lastCall![0] as string;cleanup();const reopened=await setup(saved);
+ expect([...reopened.field.querySelectorAll('img')].map(img=>img.getAttribute('alt'))).toEqual(['乙','甲','丙']);
+ expect(reopened.field.textContent).toContain('共同说明');expect(reopened.field.textContent).toContain('结束');
+});
+it('keeps an open image menu attached to its image when preceding text changes',async()=>{
+ const {editor,field}=await setup('开头\n\n![甲](../assets/a.png)\n\n![乙](../assets/b.png)\n\n结束');
+ fireEvent.click(screen.getByRole('button',{name:'图片布局 甲'}));
+ await screen.findByRole('menuitem',{name:'与下一行并排'});
+ act(()=>editor.commands.insertContentAt(2,'新增文字'));
+ fireEvent.click(screen.getByRole('menuitem',{name:'与下一行并排'}));
+ await waitFor(()=>expect([...field.querySelectorAll('figure img')].map(img=>img.getAttribute('alt'))).toEqual(['甲','乙']));
+ expect(editor.getText()).toContain('开新增文字头');
+});
+it('moves images across rows, collapses an empty source row, and rejects full or incompatible targets',async()=>{
+ const {editor,field}=await setup('开头\n\n'+layoutImages+'\n\n![丙](../assets/c.png)\n\n![丁](../assets/d.png)\n\n<blockquote><img src="../assets/e.png" alt="戊"></blockquote>');
+ const before=editor.getJSON();
+ expect(imageMoveTransaction(editor,imagePos(editor,'甲'),imagePos(editor,'戊'),'left')).toBeNull();expect(editor.getJSON()).toEqual(before);
+ act(()=>applyImageTransaction(editor,imageMoveTransaction(editor,imagePos(editor,'丙'),imagePos(editor,'乙'),'right')));
+ await waitFor(()=>expect(field.querySelectorAll('figure img')).toHaveLength(3));
+ expect(imageMoveTransaction(editor,imagePos(editor,'丁'),imagePos(editor,'乙'),'left')).toBeNull();
+ act(()=>applyImageTransaction(editor,imageMoveTransaction(editor,imagePos(editor,'甲'),imagePos(editor,'丁'),'above')));
+ await waitFor(()=>expect([...field.querySelectorAll('img')].map(img=>img.getAttribute('alt'))).toEqual(['乙','丙','甲','丁','戊']));
+ expect(field.querySelectorAll('figure img')).toHaveLength(2);expect(field.querySelector('figcaption')?.textContent).toBe('共同说明');
+});
+it('previews column resizing without writes, cancels it, then commits one undoable change',async()=>{
+ const original='开头\n\n'+layoutImages;const {editor,field,change}=await setup(original);
+ const row=field.querySelector('figure')!;
+ row.getBoundingClientRect=()=>new DOMRect(0,0,616,300);
+ const handle=screen.getByRole('separator',{name:'调整第 1、2 列宽度'});
+ fireEvent.pointerDown(handle,{button:0,clientX:252,pointerId:1});fireEvent.pointerMove(handle,{clientX:312,pointerId:1});
+ expect(change).not.toHaveBeenCalled();expect(row.style.gridTemplateColumns).toBe('50fr 50fr');
+ fireEvent.keyDown(handle,{key:'Escape'});expect(row.style.gridTemplateColumns).toBe('40fr 60fr');
+ fireEvent.pointerDown(handle,{button:0,clientX:252,pointerId:1});fireEvent.pointerMove(handle,{clientX:312,pointerId:1});fireEvent.pointerUp(handle,{pointerId:1});
+ expect(row.getAttribute('data-image-columns')).toBe('50,50');expect(change).toHaveBeenCalledTimes(1);
+ fireEvent.keyDown(handle,{key:'z',metaKey:true});expect(change).toHaveBeenLastCalledWith(original);
+ fireEvent.keyDown(handle,{key:'ArrowLeft'});expect(row.getAttribute('data-image-columns')).toBe('38,62');
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+});
+it('arranges selected image rows into two or three columns and preserves wiki image identity',async()=>{
+ const {request}=await import('./bridge');vi.mocked(request).mockResolvedValue({kind:'image',path:'assets/a.png'});
+ const {editor,field,change}=await setup('开头\n\n![[a.png|甲]]\n\n![乙](../assets/b.png)\n\n![丙](../assets/c.png)');
+ act(()=>arrangeImageRows(editor,imagePos(editor,'甲'),editor.state.doc.content.size,3));
+ await waitFor(()=>expect(field.querySelectorAll('figure img')).toHaveLength(3));
+ const saved=change.mock.lastCall![0] as string;expect(saved).toContain('data-wiki-image');
+ cleanup();const reopened=await setup(saved);
+ expect(reopened.editor.state.doc.nodeAt(imagePos(reopened.editor,'甲'))?.type.name).toBe('wikiImage');
+ const from=reopened.editor.state.doc.firstChild!.nodeSize;
+ act(()=>arrangeImageRows(reopened.editor,from,reopened.editor.state.doc.content.size,2));
+ expect(reopened.field.querySelectorAll('figure img')).toHaveLength(2);await waitFor(()=>expect(reopened.field.querySelectorAll('img')).toHaveLength(3));
+});
+it('drops an image beside another and consumes cancelled and stale drops without changing content',async()=>{
+ const original='开头\n\n![甲](../assets/a.png)\n\n![乙](../assets/b.png)';
+ const {editor,field,change}=await setup(original);
+ field.getBoundingClientRect=()=>new DOMRect(0,0,700,800);
+ const target=screen.getByRole('button',{name:'查看大图 乙'}).closest('.rich-image')!;
+ target.getBoundingClientRect=()=>new DOMRect(0,400,300,200);
+ const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
+ const start=()=>{fireEvent.mouseMove(screen.getByRole('button',{name:'查看大图 甲'}));fireEvent.dragStart(screen.getByRole('button',{name:'内容块操作'}),{dataTransfer:transfer});};
+ start();fireEvent.dragOver(target,{clientX:290,clientY:500,dataTransfer:transfer});
+ expect(document.querySelector('.rich-image-drop-guide')).toBeTruthy();
+ fireEvent.keyDown(window,{key:'Escape'});fireEvent.drop(target,{clientX:290,clientY:500,dataTransfer:transfer});
+ expect(change).not.toHaveBeenCalled();expect(document.querySelector('.rich-image-drop-guide')).toBeNull();
+ start();act(()=>editor.commands.insertContentAt(2,'新'));const changed=change.mock.lastCall![0];
+ fireEvent.drop(target,{clientX:290,clientY:500,dataTransfer:transfer});expect(change).toHaveBeenLastCalledWith(changed);
+ act(()=>editor.commands.undo());start();fireEvent.drop(target,{clientX:290,clientY:500,dataTransfer:transfer});
+ await waitFor(()=>expect(field.querySelectorAll('figure img')).toHaveLength(2));act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+});
+it('drags an image surface without opening the viewer and preserves a fresh single click',async()=>{
+ const original='开头\n\n'+layoutImages+'\n\n![丙](../assets/c.png)';
+ const {editor,field,change}=await setup(original);
+ field.getBoundingClientRect=()=>new DOMRect(0,0,700,900);
+ const source=screen.getByRole('button',{name:'查看大图 乙'}),target=screen.getByRole('button',{name:'查看大图 丙'}).closest('.rich-image')!;
+ target.getBoundingClientRect=()=>new DOMRect(0,600,300,200);
+ const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
+ expect(source.draggable).toBe(true);
+ fireEvent.dragStart(source,{dataTransfer:transfer});
+ expect(transfer.setData).toHaveBeenCalledWith('application/x-memocard-image','move');
+ fireEvent.keyDown(window,{key:'Escape'});fireEvent.drop(target,{clientX:290,clientY:700,dataTransfer:transfer});
+ fireEvent.click(source,{detail:1});expect(screen.queryByRole('dialog')).toBeNull();expect(change).not.toHaveBeenCalled();
+ fireEvent.pointerDown(source,{button:0});fireEvent.dragStart(source,{dataTransfer:transfer});
+ fireEvent.drop(target,{clientX:290,clientY:700,dataTransfer:transfer});
+ await waitFor(()=>expect([...field.querySelectorAll('img')].map(img=>img.getAttribute('alt'))).toEqual(['甲','丙','乙']));
+ expect(field.querySelector('figcaption')?.textContent).toBe('共同说明');expect(screen.queryByRole('dialog')).toBeNull();
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+ const restored=await screen.findByRole('button',{name:'查看大图 乙'});
+ fireEvent.pointerDown(restored,{button:0});fireEvent.click(restored,{detail:1});
+ expect(await screen.findByRole('dialog',{name:'乙'})).toBeTruthy();
+ fireEvent.click(screen.getByRole('button',{name:'关闭图片'}));
+});
+it('hides layout controls and refuses layout writes in a disabled editor',async()=>{
+ const {editor,field,change}=await setup('开头\n\n'+layoutImages,{disabled:true});
+ expect(screen.queryByRole('button',{name:'图片布局 甲'})).toBeNull();expect(screen.queryByRole('separator',{name:'调整第 1、2 列宽度'})).toBeNull();
+ expect(splitImageRow(editor,imagePos(editor,'甲'))).toBe(false);expect(setImageWidths(editor,editor.state.doc.firstChild!.nodeSize,[50,50])).toBe(false);
+ expect(field.querySelectorAll('figure img')).toHaveLength(2);expect(change).not.toHaveBeenCalled();
+ expect(screen.getByRole('button',{name:'查看大图 甲'}).draggable).toBe(false);
+ act(()=>editor.setEditable(true));expect(screen.getByRole('button',{name:'查看大图 甲'}).draggable).toBe(true);
+ act(()=>editor.setEditable(false));expect(screen.getByRole('button',{name:'查看大图 甲'}).draggable).toBe(false);
+});
+it('uses the left block handle for a hovered grouped image and can drag the whole row with Alt',async()=>{
+ const original='开头\n\n'+layoutImages+'\n\n![丙](../assets/c.png)';
+ const {editor,field,change}=await setup(original);
+ expect(screen.queryByRole('button',{name:'拖动图片 乙'})).toBeNull();
+ const second=screen.getByRole('button',{name:'查看大图 乙'}),dom=editor.view.nodeDOM(imagePos(editor,'乙')) as HTMLElement;
+ dom.getBoundingClientRect=()=>new DOMRect(350,100,280,400);
+ fireEvent.mouseMove(second,{clientX:400,clientY:120});
+ expect(field.closest('.rich-editor')!.querySelector<HTMLElement>('.block-controls')!.style.left).toBe('322px');
+ const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
+ fireEvent.dragStart(screen.getByRole('button',{name:'内容块操作'}),{dataTransfer:transfer,altKey:true});
+ expect(editor.state.doc.nodeAt(editor.state.selection.from)?.type.name).toBe('figure');
+ fireEvent.dragEnd(screen.getByRole('button',{name:'内容块操作'}));
+ fireEvent.mouseMove(second,{clientX:400,clientY:120});
+ fireEvent.dragStart(screen.getByRole('button',{name:'内容块操作'}),{dataTransfer:transfer});
+ const target=screen.getByRole('button',{name:'查看大图 丙'}).closest('.rich-image')!;
+ field.getBoundingClientRect=()=>new DOMRect(0,0,700,900);target.getBoundingClientRect=()=>new DOMRect(0,600,300,200);
+ fireEvent.drop(target,{clientX:290,clientY:700,dataTransfer:transfer});
+ await waitFor(()=>expect([...field.querySelectorAll('img')].map(img=>img.getAttribute('alt'))).toEqual(['甲','丙','乙']));
+ act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+});
+it('moves an individual image before text without losing its former row caption',async()=>{
+ const {editor,field,change}=await setup('开头\n\n'+layoutImages+'\n\n结束');
+ const original=editor.getJSON(),last=editor.state.doc.content.size-editor.state.doc.lastChild!.nodeSize;
+ act(()=>applyImageTransaction(editor,imageMoveTransaction(editor,imagePos(editor,'乙'),last,'above')));
+ await waitFor(()=>expect(field.querySelectorAll('img')).toHaveLength(2));
+ expect(field.querySelectorAll('figure img')).toHaveLength(1);expect(field.querySelector('figcaption')?.textContent).toBe('共同说明');
+ expect(change.mock.lastCall![0]).toMatch(/!\[乙\].*\n\n结束/);
+ act(()=>editor.commands.undo());expect(editor.getJSON()).toEqual(original);
 });
 it('folds a heading section up to its next peer without changing Markdown or undo history',async()=>{
  const {editor,field,change,save}=await setup('## 标题 A\n\n正文 A\n\n### 子标题\n\n子正文\n\n## 标题 B\n\n正文 B');
@@ -680,7 +843,7 @@ it('moves peer sections from the heading menu with one-step undo and redo',async
  const original='## 标题 A\n\n正文 A\n\n### 子标题\n\n子正文\n\n## 标题 B\n\n正文 B';
  const moved='## 标题 B\n\n正文 B\n\n## 标题 A\n\n正文 A\n\n### 子标题\n\n子正文';
  const {editor,change}=await setup(original);
- expect(screen.getByRole('button',{name:'内容块操作'}).title).toContain('移动标题');
+ await waitFor(()=>expect(screen.getByRole('button',{name:'内容块操作'}).title).toContain('移动标题'));
  expect(screen.getByRole('button',{name:'内容块操作'}).title).toContain('Option/Alt');
  fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
  expect(screen.getByRole('status').textContent).toContain('章节移动包含 4 个块');

@@ -450,7 +450,7 @@
 .note-page-scroll { padding-inline: 16px; }
 .note-page-width { max-width: var(--note-measure, 720px); width: calc(100% - 48px); margin-left: 48px; margin-right: 0; padding-block: 24px; }
 .note-page-width .rich-editor { --editor-gutter: 0px; --editor-inset-right: 0px; }
-.note-page-width .block-controls { left: -32px; gap: 0; }
+.note-page-width .block-controls { left: calc(var(--editor-gutter) - 28px); gap: 0; }
 @media (min-width: 768px) {
   .note-page-scroll { padding-inline: 96px; }
   .note-page-width { width: 100%; margin-inline: auto; padding-top: 32px; }

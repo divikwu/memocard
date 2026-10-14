@@ -2,6 +2,7 @@ import { Mark, Node, type Editor } from '@tiptap/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import { calloutColor, imageColumns } from './import-layout';
 import { calloutView, type CalloutIconTarget } from './rich-callout-view';
+import { imageRowView } from './rich-image-row-view';
 
 export const semanticTags = ['mark', 'abbr', 'kbd', 'sup', 'sub', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'aside'];
 export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (target: CalloutIconTarget) => void) {
@@ -16,6 +17,7 @@ export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (t
     name: tag, group: 'block', content: ['summary', 'figcaption', 'dt'].includes(tag) ? 'inline*' : 'block+',
     defining: true,
     ...(tag === 'aside' && editIcon ? { addNodeView: () => (props: Parameters<typeof calloutView>[0]) => calloutView(props, editIcon) } : {}),
+    ...(tag === 'figure' ? { addNodeView: () => imageRowView } : {}),
     addAttributes: () => tag === 'figure' ? {
       columns: { default: null, parseHTML: element => imageColumns(element.getAttribute('data-image-columns'))?.join(',') ?? null, renderHTML: attrs => imageColumns(attrs.columns) ? { 'data-image-columns': attrs.columns } : {} },
     } : tag === 'aside' ? {
