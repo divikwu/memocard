@@ -5,6 +5,7 @@ import { createRef, useState } from 'react';
 import { Editor, type EditorHandle } from './Editor';
 import { noteEditor, readEditorText, replaceEditorText } from './editor-test-utils';
 import { request, type Draft } from './bridge';
+import type { Note, NoteProperties, PropertyChange } from '@memocard/contracts';
 import { TagColorProvider } from './TagColorProvider';
 import * as tagOperations from './rename-tag-operation';
 vi.mock('./bridge', () => ({ request: vi.fn(), errorMessage: (error: unknown) => error instanceof Error ? error.message : '文件冲突' }));
@@ -32,6 +33,210 @@ beforeEach(() => {
 
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+async function historyEditor(waitForProperty?: () => Promise<void>) {
+ let note: Note = { ...saved, title:'原题', body:'正文', tags:[], createdAt:'', updatedAt:'', sourceUrl:'' };
+ let properties: NoteProperties = { contentHash:note.contentHash, writable:true, definitionHash:'definition',
+   tagProperty:{name:'tags',type:'list',value:['work'],editable:true},
+   properties:[{name:'已验证',type:'checkbox',value:false,editable:true},{name:'摘要',type:'text',value:'原值',editable:true},
+     {name:'状态',type:'multiSelect',value:['设计'],editable:true,options:[{name:'设计',color:'blue'},{name:'开发',color:'green'}]}] };
+ let revision = 0;
+ native.mockImplementation(async (operation, params) => {
+   if (operation === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
+   if (operation === 'listTags') return {tags:[{name:'work'},{name:'life'}]};
+   if (operation === 'getNoteProperties') return properties;
+   if (operation === 'saveNote') note = {...note,title:String(params!.title ?? note.title),body:String(params!.body),contentHash:`body-${++revision}`};
+   if (operation === 'updateNoteProperty') {
+     await waitForProperty?.();
+     const change = params as PropertyChange;
+     note = {...note,contentHash:`property-${++revision}`};
+     properties = {...properties,contentHash:note.contentHash,...(change.definition ? {definitionHash:`definition-${revision}`} : {}),
+       ...(change.name === 'tags' ? {tagProperty:{...properties.tagProperty!,value:change.value!}} : {properties:properties.properties.map(property => property.name === change.name ? {...property,value:change.value!,...(change.options ? {options:change.options} : {})} : property)})};
+     return {...note,propertyData:properties};
+   }
+   if (operation === 'saveNote') return note;
+ });
+ const handle = createRef<EditorHandle>();
+ render(<Editor initial={{...initial,title:note.title,body:note.body,baseHash:note.contentHash}} initialNote={note}
+   capabilities={new Set(['saveNote','saveDraft','getNoteProperties','updateNoteProperty'])} handle={handle} onClose={vi.fn()} onSaved={vi.fn()} />);
+ await waitFor(()=>expect(noteEditor().getText()).toBe('正文'));
+ fireEvent.click(screen.getByRole('button',{name:'属性'}));
+ await screen.findByRole('checkbox',{name:'切换属性 已验证'});
+ return {handle,stored:()=>({note,properties})};
+}
+
+it('undoes title, body and property edits in chronological order and persists their redo', async () => {
+ const {handle,stored}=await historyEditor();
+ const title=screen.getByRole('textbox',{name:'页面标题'});
+ fireEvent.change(title,{target:{value:'新'}});fireEvent.change(title,{target:{value:'新题'}});fireEvent.blur(title);
+ act(()=>{noteEditor().commands.insertContentAt(3,'改');});
+ fireEvent.click(screen.getByRole('checkbox',{name:'切换属性 已验证'}));
+ await waitFor(()=>expect(stored().properties.properties[0].value).toBe(true));
+ const grip=screen.getByRole('button',{name:'内容块操作'});
+ fireEvent.keyDown(grip,{key:'z',metaKey:true});
+ expect(screen.getByRole('checkbox',{name:'切换属性 已验证'}).getAttribute('aria-checked')).toBe('false');
+ expect(readEditorText()).toBe('正文改');expect(title).toHaveProperty('value','新题');
+ fireEvent.keyDown(grip,{key:'z',metaKey:true});expect(readEditorText()).toBe('正文');
+ fireEvent.keyDown(title,{key:'z',metaKey:true});expect(title).toHaveProperty('value','原题');
+ for(let i=0;i<3;i++) fireEvent.keyDown(grip,{key:'z',metaKey:true,shiftKey:true});
+ expect(title).toHaveProperty('value','新题');expect(readEditorText()).toBe('正文改');
+ await act(async()=>{await handle.current!.flush();});
+ expect(stored().note).toMatchObject({title:'新题',body:'正文改'});expect(stored().properties.properties[0].value).toBe(true);
+});
+
+it('queues property undo and redo behind an in-flight write using the latest saved hashes', async () => {
+ let release!:()=>void;
+ const first=new Promise<void>(resolve=>{release=resolve;});let writes=0;
+ const {handle,stored}=await historyEditor(()=>++writes===1 ? first : Promise.resolve());
+ const checkbox=screen.getByRole('checkbox',{name:'切换属性 已验证'});
+ fireEvent.click(checkbox);
+ await waitFor(()=>expect(writes).toBe(1));
+ fireEvent.keyDown(checkbox,{key:'z',ctrlKey:true});expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ fireEvent.keyDown(checkbox,{key:'y',ctrlKey:true});expect(checkbox.getAttribute('aria-checked')).toBe('true');
+ await act(async()=>{release();await handle.current!.flush();});
+ const changes=native.mock.calls.filter(([op])=>op==='updateNoteProperty').map(([,params])=>params!);
+ expect(changes.map(change=>change.value)).toEqual([true,false,true]);
+ expect(changes.map(change=>change.baseHash)).toEqual(['saved-hash','property-1','property-2']);
+ expect(changes.map(change=>change.definitionHash)).toEqual(['definition','definition','definition']);
+ expect(stored().properties.properties[0].value).toBe(true);
+});
+
+it('keeps unsubmitted property text local, ignores composition undo and clears redo after a new title edit', async () => {
+ await historyEditor();
+ const title=screen.getByRole('textbox',{name:'页面标题'});
+ fireEvent.change(title,{target:{value:'改题'}});fireEvent.blur(title);
+ fireEvent.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
+ const input=screen.getByRole('textbox',{name:'属性值'});
+ fireEvent.change(input,{target:{value:'未提交'}});
+ expect(fireEvent.keyDown(input,{key:'z',metaKey:true})).toBe(true);
+ expect(title).toHaveProperty('value','改题');
+ fireEvent.keyDown(title,{key:'z',metaKey:true,isComposing:true});expect(title).toHaveProperty('value','改题');
+ fireEvent.keyDown(input,{key:'Escape'});
+ fireEvent.keyDown(title,{key:'z',metaKey:true});expect(title).toHaveProperty('value','原题');
+ fireEvent.change(title,{target:{value:'新分支'}});
+ fireEvent.keyDown(title,{key:'z',metaKey:true,shiftKey:true});expect(title).toHaveProperty('value','新分支');
+});
+
+it('updates open choice and tag popups when their committed values are undone and redone', async () => {
+ const {handle,stored}=await historyEditor();
+ fireEvent.click(screen.getByRole('button',{name:'编辑属性 状态'}));
+ fireEvent.click(await screen.findByRole('option',{name:'选项 开发'}));
+ await waitFor(()=>expect(stored().properties.properties[2].value).toEqual(['设计','开发']));
+ fireEvent.keyDown(screen.getByRole('combobox'),{key:'z',metaKey:true});
+ await waitFor(()=>expect(screen.queryByRole('button',{name:'移除选项 开发'})).toBeNull());
+ fireEvent.keyDown(screen.getByRole('combobox'),{key:'z',metaKey:true,shiftKey:true});
+ await screen.findByRole('button',{name:'移除选项 开发'});
+ fireEvent.keyDown(screen.getByRole('combobox'),{key:'Escape'});
+ fireEvent.click(screen.getByRole('button',{name:'编辑标签'}));
+ fireEvent.click(await screen.findByRole('button',{name:'移除属性标签 work'}));
+ await waitFor(()=>expect(stored().properties.tagProperty!.value).toEqual([]));
+ fireEvent.keyDown(screen.getByRole('combobox'),{key:'z',metaKey:true});
+ await screen.findByRole('button',{name:'移除属性标签 work'});
+ await act(async()=>{await handle.current!.flush();});
+ expect(stored().properties.tagProperty!.value).toEqual(['work']);
+});
+
+it('retains an undo intent after a property write fails and retries to the undone value', async () => {
+ let fail=true;
+ const {handle,stored}=await historyEditor(async()=>{if(fail) throw new Error('暂时不可写');});
+ const checkbox=screen.getByRole('checkbox',{name:'切换属性 已验证'});
+ fireEvent.click(checkbox);
+ await screen.findByText('暂时不可写');
+ fireEvent.keyDown(checkbox,{key:'z',metaKey:true});
+ expect(checkbox.getAttribute('aria-checked')).toBe('false');
+ fail=false;
+ await act(async()=>{await handle.current!.flush();});
+ expect(stored().properties.properties[0].value).toBe(false);
+ expect(stored().note.body).toBe('正文');
+ expect(native.mock.calls.filter(([op])=>op==='updateNoteProperty').map(([,change])=>change!.value)).toEqual([true,true,false]);
+});
+
+it('undoes a submitted property while focus is on the page and leaves unrelated search input alone', async () => {
+ const {handle,stored}=await historyEditor();
+ fireEvent.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
+ const input=screen.getByRole('textbox',{name:'属性值'});
+ fireEvent.change(input,{target:{value:'修改摘要'}});fireEvent.submit(input.closest('form')!);
+ await waitFor(()=>expect(stored().properties.properties[1].value).toBe('修改摘要'));
+ const search=document.createElement('input');document.body.append(search);
+ fireEvent.keyDown(search,{key:'z',metaKey:true});expect(stored().properties.properties[1].value).toBe('修改摘要');search.remove();
+ fireEvent.keyDown(document.body,{key:'z',metaKey:true});
+ await act(async()=>{await handle.current!.flush();});
+ expect(stored().properties.properties[1].value).toBe('原值');
+});
+
+it('separates title typing after a pause, omits no-op changes and leaves saved content free of history metadata', async () => {
+ const {handle,stored}=await historyEditor();
+ const title=screen.getByRole('textbox',{name:'页面标题'});
+ vi.useFakeTimers();
+ fireEvent.change(title,{target:{value:'第一段'}});
+ vi.setSystemTime(Date.now()+600);
+ fireEvent.change(title,{target:{value:'第二段'}});
+ fireEvent.change(title,{target:{value:'第二段'}});
+ fireEvent.keyDown(title,{key:'z',metaKey:true});expect(title).toHaveProperty('value','第一段');
+ fireEvent.keyDown(title,{key:'z',metaKey:true});expect(title).toHaveProperty('value','原题');
+ fireEvent.keyDown(title,{key:'z',metaKey:true,shiftKey:true});
+ await act(async()=>{await handle.current!.flush();});
+ expect(stored().note).toMatchObject({title:'第一段',body:'正文'});
+ expect(native.mock.calls.find(([op])=>op==='saveNote')?.[1]).not.toHaveProperty('noteEdit');
+});
+
+it.each(['choice','tags'])('keeps the %s popup on the undone value when the earlier save completes', async kind => {
+ let release!:()=>void;let writes=0;
+ const first=new Promise<void>(resolve=>{release=resolve;});
+ const {handle,stored}=await historyEditor(()=>++writes===1 ? first : Promise.resolve());
+ if(kind==='choice') {
+   fireEvent.click(screen.getByRole('button',{name:'编辑属性 状态'}));
+   fireEvent.click(await screen.findByRole('option',{name:'选项 开发'}));
+ } else {
+   fireEvent.click(screen.getByRole('button',{name:'编辑标签'}));
+   fireEvent.click(await screen.findByRole('button',{name:'移除属性标签 work'}));
+ }
+ await waitFor(()=>expect(writes).toBe(1));
+ fireEvent.keyDown(screen.getByRole('combobox'),{key:'z',metaKey:true});
+ await act(async()=>{release();await handle.current!.flush();});
+ if(kind==='choice') {
+   expect(screen.queryByRole('button',{name:'移除选项 开发'})).toBeNull();
+   expect(stored().properties.properties[2].value).toEqual(['设计']);
+ } else {
+   expect(screen.getByRole('button',{name:'移除属性标签 work'})).toBeTruthy();
+   expect(stored().properties.tagProperty!.value).toEqual(['work']);
+ }
+});
+
+it('undoes selecting a newly created choice while retaining its library option and history boundary', async () => {
+ const {handle,stored}=await historyEditor();
+ fireEvent.change(screen.getByRole('textbox',{name:'页面标题'}),{target:{value:'边界前的标题'}});
+ fireEvent.click(screen.getByRole('button',{name:'编辑属性 状态'}));
+ fireEvent.change(screen.getByRole('combobox'),{target:{value:'新选项'}});
+ fireEvent.click(await screen.findByRole('option',{name:'创建选项 新选项'}));
+ await waitFor(()=>expect(stored().properties.properties[2].value).toEqual(['设计','新选项']));
+ await waitFor(()=>expect(screen.getByRole('combobox').getAttribute('aria-readonly')).not.toBe('true'));
+ fireEvent.keyDown(screen.getByRole('combobox'),{key:'z',metaKey:true});
+ await act(async()=>{await handle.current!.flush();});
+ expect(stored().properties.properties[2].value).toEqual(['设计']);
+ expect(stored().properties.properties[2].options!.map(option=>option.name)).toContain('新选项');
+ fireEvent.keyDown(screen.getByRole('textbox',{name:'页面标题'}),{key:'z',metaKey:true});
+ expect(screen.getByRole('textbox',{name:'页面标题'})).toHaveProperty('value','边界前的标题');
+ fireEvent.keyDown(screen.getByRole('textbox',{name:'页面标题'}),{key:'z',metaKey:true,shiftKey:true});
+ await act(async()=>{await handle.current!.flush();});
+ expect(stored().properties.properties[2].value).toEqual(['设计','新选项']);
+});
+
+it('redoes only the changed field without rewriting another field restored by earlier undo', async () => {
+ const {handle}=await historyEditor();
+ fireEvent.click(screen.getByRole('checkbox',{name:'切换属性 已验证'}));
+ fireEvent.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
+ const input=screen.getByRole('textbox',{name:'属性值'});
+ fireEvent.change(input,{target:{value:'新值'}});fireEvent.submit(input.closest('form')!);
+ await act(async()=>{await handle.current!.flush();});
+ fireEvent.keyDown(document.body,{key:'z',metaKey:true});fireEvent.keyDown(document.body,{key:'z',metaKey:true});
+ await act(async()=>{await handle.current!.flush();});
+ const writes=native.mock.calls.filter(([op])=>op==='updateNoteProperty').length;
+ fireEvent.keyDown(document.body,{key:'z',metaKey:true,shiftKey:true});
+ await act(async()=>{await handle.current!.flush();});
+ const changes=native.mock.calls.filter(([op])=>op==='updateNoteProperty').slice(writes).map(([,change])=>change!);
+ expect(changes).toHaveLength(1);expect(changes[0]).toMatchObject({name:'已验证',value:true});
+});
 it('is a focused page, without a dialog or title field, and Escape does not leave', async () => {
   const { onClose } = await editor(); expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.activeElement).toBe(screen.getByRole('textbox', { name: '笔记内容' }));
@@ -73,6 +278,7 @@ it('protects unload until the source is committed, not just recovery', async () 
   await editor(); replaceEditorText('尚未保存'); finishEditor();
   await waitFor(() => expect(complete).toBeTypeOf('function'));
   expect(screen.queryByText('保存中…')).toBeNull();
+  fireEvent.keyDown(screen.getByRole('textbox',{name:'笔记内容'}),{key:'z',metaKey:true});expect(readEditorText()).toBe('尚未保存');
   const event = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(event); expect(event.defaultPrevented).toBe(true);
   await act(async () => { complete(saved); }); const done = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(done); expect(done.defaultPrevented).toBe(false);
 });

@@ -16,6 +16,8 @@ export default function TagPropertyEditor({ tags: propertyValues, bodyTags: body
   const tooltipId = useId();
   const [selected, setSelected] = useState(tags);
   const propertyKey = JSON.stringify(tags);
+  const propertyRevision = useRef({ key: propertyKey, revision: 0 });
+  if (propertyRevision.current.key !== propertyKey) propertyRevision.current = { key: propertyKey, revision: propertyRevision.current.revision + 1 };
   useEffect(() => { setSelected(JSON.parse(propertyKey)); }, [propertyKey]);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<string[]>([]);
@@ -41,12 +43,12 @@ export default function TagPropertyEditor({ tags: propertyValues, bodyTags: body
   async function save(next:string[]) {
     if (disabled || saving.current) return;
     saving.current = true; setPending(true);
+    const revision = propertyRevision.current.revision;
     try {
       await onSave(next);
-      setSelected(next);
+      if (revision === propertyRevision.current.revision) { setSelected(next); input.current?.focus(); }
       setOptions(previous => [...new Set([...previous, ...next])]);
       if (next.length > selected.length) setQuery('');
-      input.current?.focus();
     }
     catch { /* The parent keeps the error and input visible. */ }
     finally { saving.current = false; setPending(false); }

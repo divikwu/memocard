@@ -25,7 +25,7 @@
 .rich-heading-fold:hover { background: var(--hover-bg); color: var(--foreground); }
 .rich-heading-fold[aria-expanded="true"] svg { transform: rotate(90deg); }
 .rich-editor-content .rich-folded-content { display: none !important; }
-.rich-editor .block-controls[data-heading] { left: calc(var(--editor-gutter) - 60px); }
+.rich-editor .block-controls[data-heading] { left: calc(var(--editor-gutter) - 56px); }
 .rich-editor-content :is(.ProseMirror-selectednode, .rich-selected-block) { outline: none; background: #e2edfb; border-radius: 4px; }
 .rich-editor[data-dragging] .rich-editor-content :is(.ProseMirror-selectednode, .rich-selected-block) { background: transparent; opacity: .2; }
 .rich-editor-content ul[data-type="taskList"] { list-style: none; padding-left: 0; }

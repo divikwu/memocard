@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { NoteProperty, PropertyChange, PropertyOption } from '@memocard/contracts';
 import { Combobox } from '@base-ui/react/combobox';
 import { X } from 'lucide-react';
@@ -18,6 +18,14 @@ export default function ChoicePropertyEditor({property, busy, error, onSave}: {p
   const multiple = property.type === 'multiSelect';
   const [options, setOptions] = useState(property.options ?? []);
   const [selected, setSelected] = useState(Array.isArray(property.value) ? property.value : property.value ? [String(property.value)] : []);
+  const propertyKey = JSON.stringify([property.value, property.options]);
+  const propertyRevision = useRef({ key: propertyKey, revision: 0 });
+  if (propertyRevision.current.key !== propertyKey) propertyRevision.current = { key: propertyKey, revision: propertyRevision.current.revision + 1 };
+  useEffect(() => {
+    const [value, options] = JSON.parse(propertyKey);
+    setSelected(Array.isArray(value) ? value : value ? [String(value)] : []);
+    setOptions(options ?? []);
+  }, [propertyKey]);
   const [query, setQuery] = useState('');
   const [pending, setPending] = useState(false);
   const saving = useRef(false);
@@ -31,9 +39,11 @@ export default function ChoicePropertyEditor({property, busy, error, onSave}: {p
   async function save(next:string[], nextOptions = options, keepOpen = multiple, optionRename?:{from:string;to:string}) {
     if (disabled || saving.current) return false;
     saving.current = true; setPending(true);
+    const revision = propertyRevision.current.revision;
     try {
       await onSave({name:property.name,type:multiple ? 'multiSelect' : 'select',value:multiple ? next : next[0] ?? '',options:nextOptions,...(JSON.stringify(nextOptions) !== JSON.stringify(options) ? {definition:true} : {}),...(optionRename ? {optionRename} : {})}, keepOpen);
-      setSelected(next); setOptions(nextOptions); setQuery(''); input.current?.focus();
+      if (revision === propertyRevision.current.revision) { setSelected(next); setOptions(nextOptions); input.current?.focus(); }
+      setQuery('');
       return true;
     } catch { return false; /* Preserve input and selection; the parent displays the error. */ }
     finally { saving.current = false; setPending(false); }

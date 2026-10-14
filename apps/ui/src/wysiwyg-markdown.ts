@@ -26,7 +26,7 @@ export const PreservedMarkdown = Node.create({
 function fingerprint(node: JSONContent): string {
   const clean = (value: JSONContent): JSONContent => {
     const attrs = { ...value.attrs };
-    delete attrs.original; delete attrs.fingerprint; delete attrs.separator;
+    delete attrs.original; delete attrs.fingerprint; delete attrs.separator; delete attrs.noteEdit;
     return { ...value, attrs: Object.keys(attrs).length ? attrs : undefined, content: value.content?.map(clean) };
   };
   return JSON.stringify(clean(node));

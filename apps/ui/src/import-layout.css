@@ -53,7 +53,7 @@
 .dark .typeset aside[data-callout-text-color="purple"] { color: #d8b4fe; }
 .dark .typeset aside[data-callout-text-color="pink"] { color: #f9a8d4; }
 .dark .typeset aside[data-callout-text-color="red"] { color: #fca5a5; }
-.typeset figure[data-image-columns] { display: grid; gap: 24px; align-items: start; }
+.typeset figure[data-image-columns] { display: grid; gap: 16px; align-items: start; }
 .typeset figure[data-image-columns] > * { min-width: 0; margin: 0; }
 .typeset figure[data-image-columns] img { margin: 0; width: 100%; height: auto; }
 .typeset figure[data-image-columns] figcaption { grid-column: 1 / -1; }

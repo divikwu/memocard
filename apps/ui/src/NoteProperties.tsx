@@ -90,7 +90,7 @@ function applyPendingChange(current:Properties | undefined, change:PropertyChang
   return {...current,properties:change.remove ? current.properties.filter(property => property.name !== change.name) : existing ? current.properties.map(property => property.name === change.name ? updated : property) : [...current.properties,updated]};
 }
 
-export default function NoteProperties({ note, savedProperties, saveError, renderHeader, pendingChanges = [], tags: bodyValues, relativePath, vaultBinding, canEdit, canRead = canEdit, busy, onApply, onLocateTag, onChangeTag }: { note?:Note; savedProperties?:Properties; saveError?:string; renderHeader?:(notice:ReactNode, ownsSaveError:boolean)=>ReactNode; pendingChanges?:PropertyChange[]; tags:string[]; relativePath?:string; vaultBinding?:string; canEdit:boolean; canRead?:boolean; busy:boolean; onApply:(change:PropertyChange)=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
+export default function NoteProperties({ note, savedProperties, saveError, renderHeader, pendingChanges = [], tags: bodyValues, relativePath, vaultBinding, canEdit, canRead = canEdit, busy, onApply, onApplyValue, onLocateTag, onChangeTag }: { note?:Note; savedProperties?:Properties; saveError?:string; renderHeader?:(notice:ReactNode, ownsSaveError:boolean)=>ReactNode; pendingChanges?:PropertyChange[]; tags:string[]; relativePath?:string; vaultBinding?:string; canEdit:boolean; canRead?:boolean; busy:boolean; onApply:(change:PropertyChange)=>Promise<void>; onApplyValue?:(change:PropertyChange, previous:PropertyChange)=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
   const tags = [...new Set(bodyValues.map(tagKey))];
   const tooltipId = useId();
   const [open, setOpen] = useState(false);
@@ -173,7 +173,10 @@ export default function NoteProperties({ note, savedProperties, saveError, rende
   async function apply(change:PropertyChange, keepOpen = false) {
     setError('');
     const close = () => { if (!keepOpen) setEditing(current => current === change.name ? null : current); setAdding(false); setRemoving(null); setRenaming(null); };
-    const pending = onApply({...change,...(change.name !== 'tags' && data?.definitionHash ? {definitionHash:data.definitionHash} : {})});
+    const property = change.name === 'tags' ? data?.tagProperty : data?.properties.find(property => property.name === change.name);
+    const previous = property && property.type !== 'unsupported' ? { name: change.name, type: property.type, value: property.value ?? '', ...(change.name !== 'tags' && data?.definitionHash ? {definitionHash:data.definitionHash} : {}) } : undefined;
+    const intent = {...change,...(change.name !== 'tags' && data?.definitionHash ? {definitionHash:data.definitionHash} : {})};
+    const pending = previous && onApplyValue ? onApplyValue(intent, previous) : onApply(intent);
     if (!change.definition && !change.create && !change.remove) {
       setData(current => applyPendingChange(current, change));
       close();

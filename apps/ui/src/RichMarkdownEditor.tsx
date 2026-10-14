@@ -1,5 +1,5 @@
 import { lazy, Suspense, forwardRef, useCallback, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState } from 'react';
-import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, type NodeViewProps, type NodeViewRendererProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
+import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, useEditorState, type NodeViewProps, type NodeViewRendererProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown as MarkdownExtension } from '@tiptap/markdown';
 import { TableCell } from '@tiptap/extension-table';
@@ -31,21 +31,33 @@ import { RichCodeBlock } from './RichCodeBlock';
 import { canWrapCallout, newCallout, unwrapCallout, wrapCallout } from './rich-callout';
 import type { CalloutIconTarget } from './rich-callout-view';
 import { CalloutColorsMenu } from './CalloutColorsMenu';
+import { RichImageTools } from './RichImageTools';
+import { RichImageDrag, beginImageDrag, isImageDragging } from './rich-image-drag';
+import { arrangeImageRows, imageRow, isLayoutImage } from './rich-image-layout';
+import { RichNoteHistory, noteEdit, type NoteEdit } from './rich-note-history';
 const CalloutIconPicker = lazy(() => import('./CalloutIconPicker').then(module => ({ default: module.CalloutIconPicker })));
 import './typeset.css';
 import './block-controls.css';
 import './rich-editor.css';
 import './import-layout.css';
+import './rich-image-layout.css';
 
 export type RichEditorProps = {
   value: string; notePath: string; disabled: boolean; autoFocus?: boolean;
   onChange: (value: string) => void; onSave: () => void; onError: (message: string) => void;
   onImage?: (insert: (markdown: string) => void) => void;
+  title?: string; onEditorReady?: (editor: TiptapEditor | null) => void;
+  onNoteEdit?: (next: NoteEdit, previous: NoteEdit) => void;
 };
-function SafeImage({ node, extension }: NodeViewProps) {
+function SafeImage({ node, extension, editor, getPos }: NodeViewProps) {
   const path = extension.options.notePath() as string;
   const source = imageSource(String(node.attrs.src), path, node.type.name === 'wikiImage');
-  return <NodeViewWrapper className="rich-image">{source ? <NoteImage source={source} alt={String(node.attrs.alt ?? '图片')} /> : <span>图片链接不可用</span>}</NodeViewWrapper>;
+  const editable = useEditorState({ editor, selector: ({ editor }) => editor.isEditable });
+  return <NodeViewWrapper className="rich-image">{source ? <NoteImage source={source} alt={String(node.attrs.alt ?? '图片')} onDragStart={editable ? event => {
+    event.stopPropagation();
+    const pos = getPos();
+    if (pos == null) event.preventDefault(); else beginImageDrag(editor, pos, event.nativeEvent);
+  } : undefined} /> : <span>图片链接不可用</span>}<RichImageTools editor={editor} getPos={getPos} alt={String(node.attrs.alt || '图片')} /></NodeViewWrapper>;
 }
 function PreservedContent({ node, extension }: NodeViewProps) {
   return <NodeViewWrapper className="rich-preserved" contentEditable={false}>
@@ -58,7 +70,9 @@ const SafeImageExtension = Image.extend<ImageOptions & { notePath: () => string 
   addNodeView() { return ReactNodeViewRenderer(SafeImage); },
 });
 const WikiImageExtension = SafeImageExtension.extend({
-  name: 'wikiImage', markdownTokenName: 'wikiImage',
+  name: 'wikiImage', priority: 110, markdownTokenName: 'wikiImage',
+  parseHTML: () => [{ tag: 'img[data-wiki-image]' }],
+  renderHTML: ({ HTMLAttributes }) => ['img', { ...HTMLAttributes, 'data-wiki-image': '' }],
   markdownTokenizer: {
     name: 'wikiImage', level: 'block', start: src => src.indexOf('![['),
     tokenize: src => { const match = /^!\[\[([^\]\n]+)\]\](?:\n|$)/.exec(src); return match ? { type: 'wikiImage', raw: match[0], text: match[1] } : undefined; },
@@ -125,7 +139,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   const [conversionOpen, setConversionOpen] = useState(false);
   const [calloutIcon, setCalloutIcon] = useState<CalloutIconTarget | null>(null);
   const isMobile = useIsMobile();
-  const [toolbar, setToolbar] = useState({ top: 14, pos: 0 });
+  const [toolbar, setToolbar] = useState<{ top: number; pos: number; left?: number }>({ top: 14, pos: 0 });
   const [inlineTop, setInlineTop] = useState(0);
   const [, setRevision] = useState(0);
   const [dropTop, setDropTop] = useState<number | null>(null);
@@ -151,7 +165,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     immediatelyRender: false,
     // Plain Markdown is parsed explicitly; rich/literal clipboard content must not run Markdown paste rules.
     enablePasteRules: false,
-    extensions: [RichInlineTags, RichHeadingFolding, RichStarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current, setCalloutIcon),
+    extensions: [RichNoteHistory, RichInlineTags, RichHeadingFolding, RichImageDrag, RichStarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current, setCalloutIcon),
       richTable(() => editorRef.current), RichTableRow, RichTableHeader, TableCell, TaskList, TaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' }, a11y: { checkboxLabel: node => `待办：${node.textContent}` } }),
       SafeImageExtension.configure({ notePath: () => latest.current.notePath }), WikiImageExtension.configure({ notePath: () => latest.current.notePath }),
       PreservedExtension.configure({ notePath: () => latest.current.notePath }),
@@ -257,8 +271,12 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         editRichStructure(e, () => { e.commands.insertContent(new MarkdownSource().parse(e, text)); }); return true;
       },
     },
-    onUpdate({ editor: e }) {
+    onTransaction({ editor: e, transaction }) {
+      if (initialized.current && !transaction.getMeta('noteHistorySeed') && transaction.before.attrs.noteEdit !== e.state.doc.attrs.noteEdit) latest.current.onNoteEdit?.(noteEdit(e.state.doc), noteEdit(transaction.before));
+    },
+    onUpdate({ editor: e, transaction }) {
       if (!initialized.current) return;
+      if (transaction.before.content.eq(e.state.doc.content)) return;
       const value = source.current.serialize(e); emitted.current = value; latest.current.onChange(value);
       const selection = e.state.selection;
       const text = selection.$from.parent.textContent;
@@ -301,7 +319,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   }
   function positionToolbar(e: TiptapEditor, pos = e.state.selection.from) {
     if (!root.current) return;
-    const block = richBlock(e, pos);
+    const image = isLayoutImage(e.state.doc.nodeAt(pos));
+    const block = image ? richBlockAt(e, pos) : richBlock(e, pos);
     if (!block) return;
     const from = block.pos;
     const element = e.view.nodeDOM(from);
@@ -309,15 +328,25 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       const rect = element.getBoundingClientRect();
       const line = parseFloat(getComputedStyle(element).lineHeight) || 26;
       const top = rect.top - root.current.getBoundingClientRect().top + Math.min(rect.height, line) / 2;
-      setToolbar(current => current.pos === from && current.top === top ? current : { pos: from, top });
+      const left = image ? rect.left - root.current.getBoundingClientRect().left - 28 : undefined;
+      setToolbar(current => current.pos === from && current.top === top && current.left === left ? current : { pos: from, top, left });
     }
   }
   useImperativeHandle(ref, () => root.current?.querySelector('[role=textbox]') as HTMLDivElement);
   useLayoutEffect(() => {
     if (!editor || initialized.current) return;
-    editor.chain().setMeta('addToHistory', false).setContent(source.current.parse(editor, latest.current.value), { emitUpdate: false }).run();
-    initialized.current = true;
-    if (latest.current.autoFocus !== false) { editor.commands.focus('start'); editor.view.focus(); }
+    // Image node views mount React portals; create them after the current React commit.
+    queueMicrotask(() => {
+      if (editor.isDestroyed || initialized.current) return;
+      editor.chain().setMeta('addToHistory', false).setContent(source.current.parse(editor, latest.current.value), { emitUpdate: false }).setMeta('noteHistorySeed', true).command(({ tr }) => { tr.setDocAttribute('noteEdit', { title: latest.current.title, properties: {} }); return true; }).run();
+      initialized.current = true;
+      setRevision(n => n + 1);
+      if (latest.current.autoFocus !== false) { editor.commands.focus('start'); editor.view.focus(); }
+    });
+  }, [editor]);
+  useEffect(() => {
+    latest.current.onEditorReady?.(editor);
+    return () => latest.current.onEditorReady?.(null);
   }, [editor]);
   useEffect(() => {
     editor?.setEditable(!props.disabled, false);
@@ -328,7 +357,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   useEffect(() => {
     if (editor && props.value !== emitted.current) {
       emitted.current = props.value;
-      const doc = editor.schema.nodeFromJSON(source.current.parse(editor, props.value));
+      const parsed = editor.schema.nodeFromJSON(source.current.parse(editor, props.value));
+      const doc = parsed.type.create({ ...parsed.attrs, noteEdit: { title: latest.current.title, properties: {} } }, parsed.content, parsed.marks);
       editor.view.updateState(EditorState.create({ doc, plugins: editor.state.plugins }));
     }
   }, [editor, props.value]);
@@ -379,7 +409,11 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     const hover = (event: MouseEvent) => {
       const target = event.target, element = root.current;
       if (element?.contains(target as Node)) setTyping(false);
-      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools, .rich-heading-fold-widget')) return;
+      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || isImageDragging(editor) || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools, .rich-heading-fold-widget')) return;
+      const controls = controlsRef.current?.getBoundingClientRect();
+      if (toolbar.left != null && controls && event.clientY >= controls.top && event.clientY <= controls.bottom && event.clientX >= controls.left && event.clientX <= controls.right + 12) return;
+      const image = target.closest('.rich-image');
+      if (image && editor.view.dom.contains(image)) { positionToolbar(editor, editor.view.posAtDOM(image, 0)); return; }
       const rect = editor.view.dom.getBoundingClientRect();
       if (!element.contains(target)) {
         let surface = element.parentElement;
@@ -503,6 +537,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   const moveSources = richBlockMoveSources(editor, toolbar.pos);
   const upTarget = richBlockMoveTarget(editor, moveSources, -1, movingSection), downTarget = richBlockMoveTarget(editor, moveSources, 1, movingSection);
   const gripTitle = movingSection ? '拖动以移动标题，Option/Alt 拖动以移动整个章节；点击打开菜单，Shift 点击扩展块选择'
+    : isLayoutImage(firstSelected?.node) ? '拖到图片侧边并排，拖到上下方换行；Option/Alt 拖动整行，点击打开菜单'
     : firstSelected && ['listItem', 'taskItem'].includes(firstSelected.node.type.name) ? '拖动以移动列表项，Option/Alt 拖动以移动整个列表；Shift 点击扩展块选择'
     : '拖动以移动，点击打开菜单；Shift 点击扩展块选择';
   const query = filter.trim().toLowerCase();
@@ -511,6 +546,8 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   const closeMenu = () => { slash.current = null; insertion.current = null; setMenu(null); editor.commands.focus(); };
   const openBlockMenu = () => {
     if (editor.view.composing || props.disabled || !richBlockAt(editor, toolbar.pos)) return;
+    const row = isLayoutImage(editor.state.doc.nodeAt(toolbar.pos)) ? imageRow(editor, toolbar.pos) : null;
+    if (row && row.pos !== toolbar.pos) { positionToolbar(editor, row.pos); editor.commands.setNodeSelection(row.pos); setMenu('block'); return; }
     const selected = selectedRichBlocks(editor, toolbar.pos);
     if (selected.length > 1) selectRichBlocks(editor, selected);
     else if (editor.state.selection.empty || richBlock(editor, editor.state.selection.from)?.pos !== toolbar.pos) editor.commands.setNodeSelection(toolbar.pos);
@@ -533,6 +570,9 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     onPointerCancel={() => stopRangeSelection(true)} onLostPointerCapture={() => stopRangeSelection()}
     onKeyDownCapture={event => {
     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229 || editor.view.composing) return;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && (event.target as HTMLElement).closest('.rich-image-tools, .rich-image-column-controls')) {
+      event.preventDefault(); event.stopPropagation(); if (event.shiftKey) editor.commands.redo(); else editor.commands.undo(); return;
+    }
     if (event.key === 'Escape' && dragging.current) { event.preventDefault(); event.stopPropagation(); stopDrag(true); }
     if (event.key === 'Escape' && rangeGesture.current) { event.preventDefault(); event.stopPropagation(); stopRangeSelection(true); }
   }}
@@ -552,10 +592,12 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     }}
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null)) { cancelAnimationFrame(frame.current); frame.current = 0; setDropTop(null); } }}
   >
-    <div ref={controlsRef} className="block-controls" data-heading={richBlockAt(editor, toolbar.pos)?.node.type.name === 'heading' && richSectionEnd(editor.state.doc, toolbar.pos) > toolbar.pos + editor.state.doc.nodeAt(toolbar.pos)!.nodeSize || undefined} style={{ top: toolbar.top }}>
+    <div ref={controlsRef} className="block-controls" data-heading={richBlockAt(editor, toolbar.pos)?.node.type.name === 'heading' && richSectionEnd(editor.state.doc, toolbar.pos) > toolbar.pos + editor.state.doc.nodeAt(toolbar.pos)!.nodeSize || undefined} style={{ top: toolbar.top, left: toolbar.left }}>
       <button ref={gripRef} type="button" aria-label="内容块操作" title={gripTitle} disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
         if (editor.view.composing) { event.preventDefault(); return; }
-        dragging.current = event.altKey ? richBlockMoveSources(editor, toolbar.pos, true) : selectedRichBlocks(editor, toolbar.pos);
+        const selected = selectedRichBlocks(editor, toolbar.pos), row = isLayoutImage(editor.state.doc.nodeAt(toolbar.pos)) ? imageRow(editor, toolbar.pos) : null;
+        if (row && selected.length === 1 && !event.altKey) { beginImageDrag(editor, toolbar.pos, event.nativeEvent); return; }
+        dragging.current = row && event.altKey ? [richBlockAt(editor, row.pos)!] : event.altKey ? richBlockMoveSources(editor, toolbar.pos, true) : selectedRichBlocks(editor, toolbar.pos);
         if (!dragging.current.length) { dragging.current = null; event.preventDefault(); return; }
         setIsDragging(true);
         beforeDrag.current = editor.state;
@@ -634,6 +676,9 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         </Menu.Popup></Menu.Positioner></Menu.Portal>
       </Menu.SubmenuRoot>
       {selectedCallout && <><CalloutColorsMenu editor={editor} pos={firstSelected.pos} onClose={closeMenu} /><Menu.Item onClick={() => { const dom = editor.view.nodeDOM(firstSelected.pos); if (dom instanceof HTMLElement) dom.querySelector<HTMLButtonElement>('.rich-callout-icon')?.click(); setMenu(null); }}><MessageSquareQuote aria-hidden="true" /><span>编辑图标</span></Menu.Item></>}
+      {firstSelected && lastSelected && arrangeImageRows(editor, firstSelected.pos, lastSelected.pos + lastSelected.node.nodeSize, 2, false) && <>
+        {([2, 3] as const).map(columns => <Menu.Item key={columns} onClick={() => { arrangeImageRows(editor, firstSelected.pos, lastSelected.pos + lastSelected.node.nodeSize, columns); closeMenu(); }}><ImageIcon aria-hidden="true" /><span>每行{columns === 2 ? '两' : '三'}张</span></Menu.Item>)}
+      </>}
       <Menu.Item onClick={() => { const block = richBlockAt(editor, toolbar.pos); insertion.current = block ? block.pos + block.node.nodeSize : null; slash.current = null; setFilter(''); setActiveIndex(0); setMenu('insert'); }}><Plus aria-hidden="true" /><span>在下方插入</span></Menu.Item>
       <Menu.Item onClick={() => { duplicateRichBlocks(editor, selectedBlocks); closeMenu(); }}><Copy aria-hidden="true" /><span>复制</span></Menu.Item>
       <Menu.Separator />

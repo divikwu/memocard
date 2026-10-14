@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PageNotice } from '@/components/page-notice';
 import { request, errorMessage, type Attachment, type Draft } from './bridge';
@@ -11,6 +11,8 @@ import NoteProperties from './NoteProperties';
 import './Editor.css';
 import { useTagColorVault } from './TagColorProvider';
 import { changeTagSettings } from './tag-settings';
+import type { Editor as TiptapEditor } from '@tiptap/react';
+import { changeNoteProperty, changeNoteTitle, endNoteTyping, resetNoteHistory, type NoteEdit } from './rich-note-history';
 
 export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void> };
 export function Editor({ initial, initialNote, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, onTagsChanged, handle }: {
@@ -22,6 +24,11 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   const vaultId = useTagColorVault();
   const field = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLTextAreaElement>(null);
+  const richEditor = useRef<TiptapEditor | null>(null);
+  const propertyWrite = useRef<Promise<void>>(Promise.resolve());
+  const propertyValues = useRef<Record<string, PropertyChange>>({});
+  const libraryEdit = useRef(false);
+  const recordingSavedValue = useRef(false);
   const lastEnteredTitle = useRef<string | null>(null);
   const initialDraft = useRef(initial).current;
   const titleFirst = initialDraft.title !== undefined && !initialDraft.baseHash;
@@ -80,9 +87,48 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
     window.addEventListener('beforeunload', unload); document.addEventListener('visibilitychange', hidden);
     return () => { session.dispose(); window.removeEventListener('beforeunload', unload); document.removeEventListener('visibilitychange', hidden); };
   }, [session, initialDraft, canSave, titleFirst]);
-  async function applyProperty(change: PropertyChange) {
+  function applyNoteEdit(next: NoteEdit, previous: NoteEdit) {
+    if (recordingSavedValue.current) return;
+    if (next.title !== previous.title) {
+      lastEnteredTitle.current = next.title ?? '';
+      session.update(session.current.body, session.current.relativePath, next.title ?? '');
+    }
+    for (const [name, change] of Object.entries(next.properties)) {
+      if (JSON.stringify(change) !== JSON.stringify(previous.properties[name])) {
+        const current = propertyValues.current[name];
+        if (current?.type === change.type && JSON.stringify(current.value) === JSON.stringify(change.value)) continue;
+        propertyValues.current[name] = change;
+        propertyWrite.current = session.changeProperty(change);
+        void propertyWrite.current.catch(() => undefined);
+      }
+    }
+  }
+  async function applyProperty(change: PropertyChange, previous?: PropertyChange) {
     if (busy.current || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑属性。');
-    await session.changeProperty(change);
+    if (previous && richEditor.current && !change.definition && !change.create && !change.remove && !change.renameTo) {
+      const value = { name: change.name, type: change.type, value: change.value, ...(change.definitionHash ? { definitionHash: change.definitionHash } : {}) };
+      propertyValues.current[change.name] = previous;
+      if (changeNoteProperty(richEditor.current, value, previous)) await propertyWrite.current;
+      return;
+    }
+    libraryEdit.current = true;
+    try {
+      await session.changeProperty(change);
+      const editor = richEditor.current;
+      if (editor) {
+        resetNoteHistory(editor, session.current.title);
+        propertyValues.current = {};
+        // Creating a choice also selects it. Keep that note-local selection undoable
+        // after the new library option is committed, without deleting the option.
+        const before = previous && (Array.isArray(previous.value) ? previous.value : previous.value ? [previous.value] : []);
+        if (previous && change.definition && change.type === previous.type && !change.optionRename && change.options && before?.every(value => change.options!.some(option => option.name === value))) {
+          propertyValues.current[change.name] = {name:change.name,type:change.type,value:change.value};
+          recordingSavedValue.current = true;
+          try { changeNoteProperty(editor, {name:change.name,type:change.type,value:change.value,definitionHash:change.definitionHash}, previous); }
+          finally { recordingSavedValue.current = false; }
+        }
+      }
+    } finally { libraryEdit.current = false; }
   }
   async function changeTag(from:string, to:string | null) {
     if (busy.current || !vaultId || !canSave || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑标签。');
@@ -102,6 +148,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
           const saved = await request<Note>('getNote', {id:session.current.id});
           lastNote.current = saved;
           session.replace({...session.current, body:saved.body, title:saved.title, tags:saved.tags, relativePath:saved.relativePath, baseHash:saved.contentHash});
+          if (richEditor.current) resetNoteHistory(richEditor.current, saved.title);
           callbacks.current.onCommitted?.(saved);
           onTagsChanged?.(from, to);
         }
@@ -130,6 +177,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       const note = await request<Note>('getNote', { id: session.current.id });
       // Commit the chosen source version with its hash so the bridge clears matching recovery.
       session.replace({ ...session.current, body: note.body, title: note.title, tags: note.tags, relativePath: note.relativePath, baseHash: note.contentHash, pendingProperties: [] }, true);
+      if (richEditor.current) resetNoteHistory(richEditor.current, note.title);
       await session.flush();
       setLocalError('');
     } catch (error) { setLocalError(errorMessage(error)); }
@@ -143,6 +191,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       const current = session.current;
       const directory = current.relativePath?.slice(0, current.relativePath.lastIndexOf('/') + 1) ?? 'notes/';
       session.replace({ id, title: current.title, body: current.body, tags: current.tags, pendingProperties: current.pendingProperties, baseHash: null, relativePath: `${directory}${id}.md`, ...(current.vaultBinding ? { vaultBinding: current.vaultBinding } : {}) });
+      if (richEditor.current) resetNoteHistory(richEditor.current, current.title);
       await session.flush();
       // Retire the original recovery only after the copy is durably committed.
       if (capabilities.has('saveDraft')) await request('saveDraft', { ...current, title: undefined, body: '', tags: [], baseHash: null, pendingProperties: [] });
@@ -154,12 +203,31 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   const heading = <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新内容" className="note-page-title" value={titleValue} readOnly={working || !canSave} onChange={event => {
       const value = event.target.value.replace(/[\r\n]+/g, ' ');
       lastEnteredTitle.current = value;
-      session.update(body, relativePath, value);
-    }} onKeyDown={event => {
+      if (richEditor.current) changeNoteTitle(richEditor.current, value); else session.update(body, relativePath, value);
+    }} onBlur={() => { if (richEditor.current) endNoteTyping(richEditor.current); }} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
     }} />;
-  return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor">
+  const undoKey = useCallback((event: KeyboardEvent | React.KeyboardEvent) => {
+    const native = 'nativeEvent' in event ? event.nativeEvent : event;
+    if (!(event.metaKey || event.ctrlKey) || event.altKey || native.isComposing || native.keyCode === 229) return;
+    const undo = event.key.toLowerCase() === 'z', redo = event.key.toLowerCase() === 'y' && event.ctrlKey;
+    const editor = richEditor.current;
+    if ((!undo && !redo) || !editor || editor.view.composing) return;
+    if (!canSave || working || libraryEdit.current) { event.preventDefault(); event.stopPropagation(); return; }
+    const input = event.target;
+    // Unsubmitted field text and search queries retain their local input undo.
+    if ((input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) && input !== titleField.current && (input.value || input.closest('form'))) return;
+    event.preventDefault(); event.stopPropagation();
+    if (redo || event.shiftKey) editor.commands.redo(); else editor.commands.undo();
+  }, [canSave, working]);
+  useEffect(() => {
+    // Closing an in-place property form can leave focus on the page itself.
+    const key = (event: KeyboardEvent) => { if (event.target === document.body || event.target === document.documentElement) undoKey(event); };
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [undoKey]);
+  return <section aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor" onKeyDownCapture={undoKey}>
     <NoteProperties saveError={error} renderHeader={(notice, ownsSaveError) => <>
       {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : conversionRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !conversionRejected || session.state === 'conflict') ? <>
         {session.state === 'error' && !conversionRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
@@ -168,7 +236,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       {notice}
       {pendingLink && <PageNotice tone="info" title="有待打开的笔记">完成当前记录后，将打开收到的笔记链接。</PageNotice>}
       {heading}
-    </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} vaultBinding={session.current.vaultBinding} onChangeTag={changeTag} note={metadata} tags={[...tags, ...session.current.inheritedTags ?? []]} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onLocateTag={tag => {
+    </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} vaultBinding={session.current.vaultBinding} onChangeTag={changeTag} note={metadata} tags={[...tags, ...session.current.inheritedTags ?? []]} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onApplyValue={applyProperty} onLocateTag={tag => {
       const target = Array.from(field.current?.querySelectorAll('.rich-inline-tag') ?? []).find(element => element.getAttribute('data-tag') === encodeURIComponent(tag));
       if (!target) return;
       field.current?.focus();
@@ -176,6 +244,6 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range);
       target.scrollIntoView({block:'center'});
     }} />
-    <div className="typeset-content"><RichMarkdownEditor autoFocus={!titleFirst} ref={field} value={body} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
+    <div className="typeset-content"><RichMarkdownEditor autoFocus={!titleFirst} ref={field} value={body} title={title} onEditorReady={editor => { richEditor.current = editor; }} onNoteEdit={applyNoteEdit} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
   </section>;
 }
