@@ -5,6 +5,8 @@ import { Button } from '../src/components/ui/button';
 import './styles.css';
 
 const mascots=[
+  {id:'memocard-final-black-pen',name:'MemoCard · 黑笔最终版',description:'腮红招手 · 黑银色笔与圆脚'},
+  {id:'memocard-final-black-pen',name:'MemoCard · 黑笔渐隐版',description:'底部柔化 · 渐隐融入页面',fade:true},
   {id:'memocard-final',name:'MemoCard · 最终版',description:'闭眼招手 · 铅笔与圆脚'},
   {id:'memocard-primary',name:'MemoCard',description:'记录与陪伴 · 铅笔与咖啡'},
   {id:'memocard-primary',name:'MemoCard · 渐隐版',description:'底部柔化 · 渐隐融入页面',fade:true},
