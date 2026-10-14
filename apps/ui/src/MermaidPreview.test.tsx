@@ -41,7 +41,7 @@ it('replaces the preview after editing and recovers after invalid syntax', async
 it('previews fenced Mermaid in the read renderer without converting ordinary code', async () => {
   render(<Markdown body={'```mermaid\nflowchart TD\nA[阅读预览] --> B\n```\n\n```typescript\nconst n = 1;\n```'} />);
   await screen.findByRole('button', { name: '放大 Mermaid 图表' });
-  expect(diagram().textContent).toContain('阅读预览');
+  await waitFor(() => expect(diagram()?.textContent).toContain('阅读预览'));
   expect(document.querySelector('pre code.language-mermaid')?.textContent).toContain('flowchart TD');
   expect(document.querySelector('pre code.language-typescript')?.textContent).toContain('const n = 1;');
   expect(screen.getAllByRole('button', { name: '放大 Mermaid 图表' })).toHaveLength(1);
