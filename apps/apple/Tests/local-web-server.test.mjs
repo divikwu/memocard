@@ -169,6 +169,19 @@ test('requires authentication for draft reminder review before dispatch', async 
   assert.equal(JSON.parse(reply.body).data.count, 1, 'Unauthorized review must not reach the handler.');
 });
 
+test('authenticates pin metadata reads and writes before dispatch', async t => {
+  const host = await webHost(t);
+  for (const operation of ['getNotePins', 'setNotePinned']) {
+    assert.equal((await call(host.config, {body:envelope({}, {operation})})).status, 401);
+  }
+  const cookie = await authenticate(host);
+  for (const operation of ['getNotePins', 'setNotePinned']) {
+    const reply = await call(host.config, {body:envelope({}, {operation}), headers:{Cookie:cookie}});
+    assert.equal(reply.status, 200);
+    assert.equal(JSON.parse(reply.body).data.operation, operation);
+  }
+});
+
 test('requires exact Host and Origin and refuses cross-site requests and duplicate cookies', async t => {
   const host = await webHost(t);
   const cookie = await authenticate(host);
@@ -276,4 +289,40 @@ test('rotates browser authorization without changing the listener origin', async
   assert.equal((await call(host.config, { headers: { Cookie: oldCookie } })).status, 401);
   const newCookie = await authenticate(host);
   assert.equal((await call(host.config, { headers: { Cookie: newCookie } })).status, 200);
+});
+
+
+test('authenticates draft deletion before dispatch', async t => {
+  const host = await webHost(t);
+  const body = envelope({id:randomUUID(), draftKey:randomUUID(), revision:'reviewed-version'}, {operation:'deleteDraft'});
+  assert.equal((await call(host.config, {body})).status, 401);
+  const cookie = await authenticate(host);
+  const reply = await call(host.config, {body, headers:{Cookie:cookie}});
+  assert.equal(reply.status, 200);
+  assert.equal(JSON.parse(reply.body).data.operation, 'deleteDraft');
+  assert.equal(JSON.parse(reply.body).data.count, 1);
+});
+
+
+test('authenticates note deletion before dispatch', async t => {
+  const host=await webHost(t);
+  const body=envelope({id:randomUUID(),baseHash:'reviewed-source'}, {operation:'deleteNote'});
+  assert.equal((await call(host.config,{body})).status,401);
+  const cookie=await authenticate(host);
+  const reply=await call(host.config,{body,headers:{Cookie:cookie}});
+  assert.equal(reply.status,200);
+  assert.equal(JSON.parse(reply.body).data.operation,'deleteNote');
+  assert.equal(JSON.parse(reply.body).data.count,1);
+});
+
+
+test('authenticates recycle-bin reads and restores before dispatch', async t => {
+  const host=await webHost(t);
+  const cookie=await authenticate(host);
+  for (const operation of ['getTrash','getTrashedNote','restoreNote','permanentlyDeleteNote']) {
+    const body=envelope({trashKey:randomUUID()+'/Old.md',baseHash:'reviewed-source'}, {operation});
+    assert.equal((await call(host.config,{body})).status,401);
+    const reply=await call(host.config,{body,headers:{Cookie:cookie}});
+    assert.equal(reply.status,200);assert.equal(JSON.parse(reply.body).data.operation,operation);
+  }
 });

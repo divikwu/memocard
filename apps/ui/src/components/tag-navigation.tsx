@@ -1,6 +1,6 @@
 import { renameTagColors } from '@/tag-colors';
 import { lazy, Suspense, useRef, useState, useSyncExternalStore } from "react";
-import { ChevronRight, MoreHorizontal, Search, Tag, X } from "lucide-react";
+import { ChevronRight, Hash, MoreHorizontal, Search, X } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuBadge, SidebarMenuAction, SidebarMenuSub } from "@/components/ui/sidebar";
@@ -85,7 +85,7 @@ function TagBranch({ path, tags, selected, onSelect, preferences, onPin, onIcon,
   const children = flat ? [] : tags.filter(item => item.name.startsWith(path + "/") && !item.name.slice(path.length + 1).includes("/"));
   const name = path.slice(path.lastIndexOf("/") + 1);
   const nested = !flat && !root && path.includes("/");
-  return <SidebarTreeItem className={`sidebar-tag-row${menuOpen ? " sidebar-tag-row-open" : ""}`} nested={nested} label={flat || root ? path : name} icon={preferences.icons[path] || <Tag className="size-3.5" />} buttonProps={{ "aria-label": path, onClick: () => onSelect(path), title: path }} isActive={selected === path} toggleLabel={`展开或收起标签 ${path}`} accessories={<>
+  return <SidebarTreeItem className={`sidebar-tag-row${menuOpen ? " sidebar-tag-row-open" : ""}`} nested={nested} label={flat || root ? path : name} icon={preferences.icons[path] || <Hash className="size-3.5" />} buttonProps={{ "aria-label": path, onClick: () => onSelect(path), title: path }} isActive={selected === path} toggleLabel={`展开或收起标签 ${path}`} accessories={<>
         <SidebarMenuBadge aria-hidden="true" className={`opacity-0 group-hover/tag-section:opacity-100 group-has-[:focus-visible]/tag-section:opacity-100 ${menuOpen ? "opacity-0!" : ""} group-hover/tree-row:opacity-0! group-focus-within/tree-row:opacity-0! max-md:hidden text-muted-foreground/65 peer-hover/menu-button:text-muted-foreground/65 peer-data-[active=true]/menu-button:text-muted-foreground/65 ${nested ? "top-1" : ""}`}>{tags.find(item => item.name === path)?.count}</SidebarMenuBadge>
         <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger render={<SidebarMenuAction ref={menuAnchor} aria-label={`标签操作 ${path}`} className={`sidebar-tag-more md:opacity-0 group-hover/tree-row:opacity-100 group-focus-within/tree-row:opacity-100 data-[popup-open]:opacity-100 ${nested ? " top-1" : ""}`}><MoreHorizontal /></SidebarMenuAction>} />

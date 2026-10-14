@@ -83,7 +83,7 @@ export function createWebTransport(fetcher: typeof fetch = fetch): Transport {
   const connecting = window.location.hash.startsWith("#/connect?");
   let token = connecting ? new URLSearchParams(window.location.hash.slice("#/connect?".length)).get("token") : null;
   // The one-time credential must not remain in browser history or in copied links.
-  if (connecting) window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#/notes`);
+  if (connecting) window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#/home`);
   let session: Promise<void> | undefined;
 
   async function post(path: string, value: unknown): Promise<unknown> {

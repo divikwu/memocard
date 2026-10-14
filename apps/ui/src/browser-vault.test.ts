@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import type { BridgeRequest, Note, NotePage, VaultStatus, PropertyLabels } from "@memocard/contracts";
+import type { BridgeRequest, Note, NotePage, NotePins, VaultStatus, PropertyLabels } from "@memocard/contracts";
 import { BrowserVault } from "./browser-vault";
 import { parseBrowserNote } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserWritable } from "./browser-files";
@@ -15,6 +15,68 @@ const secondId = "11111111-1111-4111-8111-111111111112";
 const source = (id = noteId, body = "中文 test\n", extra = "") => `---\nid: "${id}"\ncreatedAt: "2026-09-28T04:00:00Z"\nupdatedAt: "2026-09-28T04:00:00Z"\ntags: ["日常", "machine learning", "C#,F#", "#literal"]\n${extra}---\n${body}`;
 const bytes = (text: string) => new TextEncoder().encode(text);
 const error = (name: string) => new DOMException(name, name);
+
+it('rejects capture operations from a different vault before reading or writing files', async () => {
+  const h=harness(await fixture());await call(h.core,'selectVault');
+  for(const operation of ['getNote','saveNote','saveDraft','getTrash','getTrashedNote','restoreNote','permanentlyDeleteNote','importAttachment']) await expect(call(h.core,operation,{vaultId:'other-vault'})).rejects.toMatchObject({code:'VAULT_CHANGED'});
+  expect((await call<NotePage>(h.core,'queryNotes')).notes).toHaveLength(1);
+  expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts).toHaveLength(0);
+});
+
+it.each([false, true])('persists pins independently of Markdown, edits and vault selection (shared=%s)', async shared => {
+  const root = shared ? new TestDirectory('shared') : await fixture();
+  const directory = shared ? root : await root.getDirectoryHandle('notes');
+  const file = await directory.getFileHandle(shared ? 'Original.md' : `${noteId}.md`, { create: true });
+  file.bytes = bytes(shared ? 'Body' : source());
+  const h = harness(root); await call(h.core, 'selectVault');
+  const note = (await call<NotePage>(h.core, 'queryNotes')).notes[0];
+  const original = file.text;
+  const initial = await call<NotePins>(h.core, 'getNotePins');
+  const pinned = await call<NotePins>(h.core, 'setNotePinned', { id: note.id, pinned: true, baseHash: initial.contentHash });
+  expect(file.text).toBe(original);
+  expect(await call<NotePins>(h.core, 'setNotePinned', { id: note.id, pinned: true, baseHash: pinned.contentHash })).toEqual(pinned);
+  await expect(call(h.core, 'setNotePinned', { id: note.id, pinned: false, baseHash: initial.contentHash })).rejects.toMatchObject({ code: 'HASH_CONFLICT' });
+  await call(h.core, 'saveNote', { id: note.id, title: 'Renamed', body: 'Edited', tags: [], baseHash: note.contentHash });
+  const reopened = harness(root, h.storage); await call(reopened.core, 'selectVault');
+  const persisted = await call<NotePins>(reopened.core, 'getNotePins');
+  expect(persisted.pins).toEqual(pinned.pins);
+  if (shared) {
+    const independent = harness(root); await call(independent.core, 'selectVault');
+    const sameFile = (await call<NotePage>(independent.core, 'queryNotes')).notes[0];
+    expect(sameFile.id).not.toBe(note.id);
+    expect((await call<NotePins>(independent.core, 'getNotePins')).pins).toEqual({ [sameFile.id]: pinned.pins[note.id] });
+  }
+  expect((await call<NotePage>(reopened.core, 'queryNotes', { pinned: true, sort: 'pinnedAt' })).notes.map(note => note.id)).toEqual([note.id]);
+  const other = await fixture('other', '33333333-3333-4333-8333-333333333333');
+  h.choose(other); await call(h.core, 'selectVault');
+  expect((await call<NotePins>(h.core, 'getNotePins')).pins).toEqual({});
+  h.choose(root); await call(h.core, 'selectVault');
+  expect(await call(h.core, 'getNotePins')).toEqual(persisted);
+  await call(h.core, 'setNotePinned', { id: note.id, pinned: false, baseHash: persisted.contentHash });
+  expect((await call<NotePage>(h.core, 'queryNotes', { pinned: true })).notes).toHaveLength(0);
+});
+
+it('sorts the whole browser vault by update time and invalidates pinned pagination on changes', async () => {
+  const root = await fixture(), directory = await root.getDirectoryHandle('notes');
+  (await directory.getFileHandle(`${noteId}.md`)).bytes = bytes(source().replace('updatedAt: "2026-09-28T04:00:00Z"', 'updatedAt: "2026-10-14T04:00:00Z"'));
+  (await directory.getFileHandle(`${secondId}.md`, { create: true })).bytes = bytes(source(secondId).replaceAll('2026-09-28T04:00:00Z', '2026-10-13T04:00:00Z'));
+  const h = harness(root); await call(h.core, 'selectVault');
+  const page = await call<NotePage>(h.core, 'queryNotes', { sort: 'updatedAt', limit: 1 });
+  expect(page.notes[0].id).toBe(noteId);
+  expect((await call<NotePage>(h.core, 'queryNotes', { sort: 'updatedAt', limit: 1, cursor: page.nextCursor })).notes[0].id).toBe(secondId);
+  await expect(call(h.core, 'queryNotes', { limit: 1, cursor: page.nextCursor })).rejects.toMatchObject({ code: 'CURSOR_QUERY_MISMATCH' });
+  const meta = await root.getDirectoryHandle('.memocard'), file = await meta.getFileHandle('pins.json', { create: true });
+  file.bytes = bytes(JSON.stringify({ [noteId]: '2026-10-14T10:00:00Z', [secondId]: '2026-10-14T10:00:00Z' }));
+  const pinned = await call<NotePage>(h.core, 'queryNotes', { sort: 'pinnedAt', pinned: true, limit: 1 });
+  expect(pinned.notes[0].id).toBe(noteId);
+  expect((await call<NotePage>(h.core, 'queryNotes', { sort: 'pinnedAt', pinned: true, limit: 1, cursor: pinned.nextCursor })).notes[0].id).toBe(secondId);
+  const state = await call<NotePins>(h.core, 'getNotePins');
+  await call(h.core, 'setNotePinned', { id: noteId, pinned: false, baseHash: state.contentHash });
+  await expect(call(h.core, 'queryNotes', { sort: 'pinnedAt', pinned: true, limit: 1, cursor: pinned.nextCursor })).rejects.toMatchObject({ code: 'STALE_CURSOR' });
+  file.bytes = bytes('{broken');
+  await expect(call(h.core, 'setNotePinned', { id: secondId, pinned: true, baseHash: state.contentHash })).rejects.toMatchObject({ code: 'INVALID_PINS' });
+  expect(file.text).toBe('{broken');
+});
 
 it.each([false,true])('preserves numbers and complete date times through browser saves and reopen (shared=%s)',async shared => {
   const root = shared ? new TestDirectory('shared') : await fixture();
@@ -325,7 +387,8 @@ class TestStorage implements BrowserVaultStorage {
   }
   async removeMatchingDraft(scope: string, draft: BrowserDraft) {
     const key = `${scope}:${draft.draftKey}`, existing = this.records.get(key);
-    if (existing?.title === draft.title && existing?.body === draft.body && existing.baseHash === draft.baseHash && JSON.stringify(existing.tags) === JSON.stringify(draft.tags) && JSON.stringify(existing.pendingProperties ?? []) === JSON.stringify(draft.pendingProperties ?? [])) this.records.delete(key);
+    if (existing?.title === draft.title && existing?.id === draft.id && existing?.body === draft.body && existing.baseHash === draft.baseHash && existing.revision === draft.revision && existing.updatedAt === draft.updatedAt && JSON.stringify(existing.tags) === JSON.stringify(draft.tags) && JSON.stringify(existing.inheritedTags ?? []) === JSON.stringify(draft.inheritedTags ?? []) && JSON.stringify(existing.pendingProperties ?? []) === JSON.stringify(draft.pendingProperties ?? [])) return this.records.delete(key);
+    return false;
   }
 }
 
@@ -1321,4 +1384,170 @@ it.each([false,true])('persists a single image property through body saves, reop
   expect(inherited.properties.find(item => item.name === 'cover')).toMatchObject({type:'image',value:''});
   note = await call<Note>(reopened.core,'updateNoteProperty',{id:note.id,baseHash:note.contentHash,name:'cover',type:'image',value:''});
   expect((await read()).properties.find(item => item.name === 'cover')).toMatchObject({type:'image',value:''});
+});
+
+
+it('deletes only the reviewed browser draft and rejects stale revisions and another vault', async()=>{
+  const h=harness(await fixture()); await call(h.core,'selectVault');
+  const saved=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  const first=await call<BrowserDraft>(h.core,'saveDraft',{id:saved.id,body:'First edit',tags:[],baseHash:saved.contentHash});
+  const otherId=createId();
+  await call(h.core,'saveDraft',{id:otherId,body:'Other draft',tags:[],baseHash:null});
+  const changed=await call<BrowserDraft>(h.core,'saveDraft',{id:saved.id,body:'Newer edit',tags:[],baseHash:saved.contentHash});
+  await expect(call(h.core,'deleteDraft',{id:first.id,draftKey:first.draftKey,revision:first.revision})).rejects.toMatchObject({code:'DRAFT_CHANGED'});
+  await expect(call(h.core,'deleteDraft',{id:changed.id,draftKey:changed.draftKey,revision:changed.revision,vaultId:'other'})).rejects.toMatchObject({code:'VAULT_CHANGED'});
+  expect(await call(h.core,'deleteDraft',{id:changed.id,draftKey:changed.draftKey,revision:changed.revision})).toEqual({deleted:true});
+  const remaining=await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts');
+  expect(remaining.drafts.map(draft=>draft.id)).toEqual([otherId]);
+  expect((await call<Note>(h.core,'getNote',{id:saved.id})).body).toBe(saved.body);
+});
+
+it('exposes a stable revision for legacy browser drafts and protects concurrent updates',async()=>{
+  const h=harness(await fixture()); await call(h.core,'selectVault');
+  const draft=await call<BrowserDraft>(h.core,'saveDraft',{id:createId(),body:'Legacy draft',tags:[],baseHash:null});
+  for(const stored of h.storage.records.values())delete stored.revision;
+  const {drafts}=await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts');
+  expect(drafts[0].revision).toBeTruthy();
+  const implementation=h.storage.removeMatchingDraft.bind(h.storage);
+  h.storage.removeMatchingDraft=async(scope,reviewed)=>{
+    const stored=h.storage.records.get(`${scope}:${reviewed.draftKey}`)!;
+    stored.body='Concurrent edit';
+    return implementation(scope,reviewed);
+  };
+  await expect(call(h.core,'deleteDraft',{id:draft.id,draftKey:draft.draftKey,revision:drafts[0].revision})).rejects.toMatchObject({code:'DRAFT_CHANGED'});
+  expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts[0].body).toBe('Concurrent edit');
+  h.storage.removeMatchingDraft=implementation;
+  const fresh=(await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts[0];
+  await call(h.core,'deleteDraft',{id:fresh.id,draftKey:fresh.draftKey,revision:fresh.revision});
+  expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts).toEqual([]);
+});
+
+
+it.each([false,true])('archives exact browser note bytes and excludes them from collections (compatible=%s)',async compatible=>{
+  const root=compatible ? new TestDirectory('Shared') : await fixture();
+  if(compatible)root.children.set('Raw.md',new TestFile('Raw.md','\ufeff---\r\nid: user-owned\r\ndeletedAt: user-owned\r\ntags: [work]\r\n---\r\nBody\r\n'));
+  const h=harness(root);await call(h.core,'selectVault');
+  const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  let directory=root;for(const part of note.relativePath.split('/').slice(0,-1))directory=await directory.getDirectoryHandle(part);
+  const original=(await directory.getFileHandle(note.relativePath.split('/').at(-1)!)).bytes.slice();
+  const pins=await call<NotePins>(h.core,'getNotePins');await call(h.core,'setNotePinned',{id:note.id,pinned:true,baseHash:pins.contentHash});
+  await expect(call(h.core,'deleteNote',{id:note.id,baseHash:'wrong'})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+  await expect(call(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash,vaultId:'other'})).rejects.toMatchObject({code:'VAULT_CHANGED'});
+  const deleted=await call<{trashPath:string}>(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash});
+  let archive=root;for(const part of deleted.trashPath.split('/').slice(0,-1))archive=await archive.getDirectoryHandle(part);
+  expect((await archive.getFileHandle(deleted.trashPath.split('/').at(-1)!)).bytes).toEqual(original);
+  expect((await call<NotePage>(h.core,'queryNotes')).notes).toEqual([]);
+  expect((await call<NotePins>(h.core,'getNotePins')).pins).toEqual({});
+  expect((await call<{tags:unknown[]}>(h.core,'listTags')).tags).toEqual([]);
+  await expect(call(h.core,'getNote',{id:note.id})).rejects.toMatchObject({code:'NOTE_NOT_FOUND'});
+  await expect(call(h.core,'saveNote',{id:note.id,body:'Stale save',baseHash:note.contentHash,tags:[]})).rejects.toMatchObject({code:'NOTE_NOT_FOUND'});
+});
+
+it('keeps the original browser note if creating its recovery copy fails',async()=>{
+  const root=await fixture(),h=harness(root);await call(h.core,'selectVault');
+  const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  const write=vi.spyOn(TestFile.prototype,'createWritable').mockRejectedValueOnce(error('NoModificationAllowedError'));
+  await expect(call(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash})).rejects.toBeTruthy();
+  write.mockRestore();
+  expect((await call<Note>(h.core,'getNote',{id:note.id})).contentHash).toBe(note.contentHash);
+});
+
+
+it.each([false,true])('lists, previews and restores exact archived bytes and identity after reopening (compatible=%s)',async compatible=>{
+  const root=compatible ? new TestDirectory('Shared') : await fixture();
+  if(compatible)root.children.set('Raw.md',new TestFile('Raw.md','\ufeff---\r\ntags: [work]\r\n---\r\nBody ![image](assets/keep.png)\r\n'));
+  const h=harness(root);await call(h.core,'selectVault');
+  const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  let directory=root;for(const part of note.relativePath.split('/').slice(0,-1))directory=await directory.getDirectoryHandle(part);
+  const original=(await directory.getFileHandle(note.relativePath.split('/').at(-1)!)).bytes.slice();
+  await call(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash});
+  const reopened=harness(root,h.storage);await call(reopened.core,'selectVault');
+  const list=await call<import('@memocard/contracts').TrashList>(reopened.core,'getTrash');
+  expect(list.notes).toHaveLength(1);expect(list.issues).toEqual([]);const item=list.notes[0];expect(item.id).toBe(note.id);
+  expect((await call<import('@memocard/contracts').TrashNote>(reopened.core,'getTrashedNote',{trashKey:item.trashKey})).note.body).toBe(note.body);
+  await expect(call(reopened.core,'restoreNote',{trashKey:item.trashKey,baseHash:'stale'})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+  await expect(call(reopened.core,'restoreNote',{trashKey:item.trashKey,baseHash:item.contentHash,vaultId:'other'})).rejects.toMatchObject({code:'VAULT_CHANGED'});
+  const restored=await call<Note>(reopened.core,'restoreNote',{trashKey:item.trashKey,baseHash:item.contentHash});
+  expect(restored.id).toBe(note.id);expect(restored.contentHash).toBe(note.contentHash);
+  expect((await directory.getFileHandle(note.relativePath.split('/').at(-1)!)).bytes).toEqual(original);
+  expect((await call<import('@memocard/contracts').TrashList>(reopened.core,'getTrash')).notes).toEqual([]);
+  expect((await call<Note>(reopened.core,'getNote',{id:note.id})).body).toBe(note.body);
+});
+
+it('restores under a new filename without overwriting a same-name file or directory',async()=>{
+  const root=new TestDirectory('Shared');root.children.set('Raw.md',new TestFile('Raw.md','Old #work'));
+  const h=harness(root);await call(h.core,'selectVault');const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  await call(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash});
+  const item=(await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes[0];
+  root.children.set('Raw.md',new TestFile('Raw.md','Keep this'));root.children.set('Raw (2).md',new TestDirectory('Raw (2).md'));
+  const restored=await call<Note>(h.core,'restoreNote',{trashKey:item.trashKey,baseHash:item.contentHash});
+  expect(restored.relativePath).toBe('Raw (3).md');expect((await root.getFileHandle('Raw.md')).text).toBe('Keep this');expect(restored.body).toBe('Old #work');
+});
+
+it.each(['journal','identity'])('retains the archive and rolls back restored files on %s write failure',async failure=>{
+  const root=new TestDirectory('Shared');root.children.set('Raw.md',new TestFile('Raw.md','Original'));
+  const h=harness(root);await call(h.core,'selectVault');const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  await call(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash});
+  const item=(await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes[0];
+  // Let the scan prune the deleted identity before injecting commit failure.
+  await call(h.core,'queryNotes');
+  if(failure==='journal')h.storage.failWrites=true;
+  const persist=h.storage.saveIdentities.bind(h.storage);
+  const spy=failure==='identity' ? vi.spyOn(h.storage,'saveIdentities').mockImplementation(async(scope,items)=>{
+    if(items.some(identity=>identity.id===note.id))throw error('QuotaExceededError');await persist(scope,items);
+  }) : undefined;
+  await expect(call(h.core,'restoreNote',{trashKey:item.trashKey,baseHash:item.contentHash})).rejects.toBeTruthy();
+  h.storage.failWrites=false;spy?.mockRestore();expect(root.children.has('Raw.md')).toBe(false);
+  expect((await call<import('@memocard/contracts').TrashNote>(h.core,'getTrashedNote',{trashKey:item.trashKey})).note.body).toBe('Original');
+  const restored=await call<Note>(h.core,'restoreNote',{trashKey:item.trashKey,baseHash:item.contentHash});expect(restored.id).toBe(note.id);
+});
+
+it('supports old metadata-free archives, rejects traversal, and leaves corrupt entries intact',async()=>{
+  const root=await fixture(),h=harness(root);await call(h.core,'selectVault');const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  const receipt=await call<{trashPath:string}>(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash});
+  const trash=await (await root.getDirectoryHandle('.memocard')).getDirectoryHandle('trash'),entry=await trash.getDirectoryHandle(receipt.trashPath.split('/')[2]);entry.children.delete('entry.json');
+  const corrupt=new TestDirectory(createId());corrupt.children.set('Broken.md',new TestFile('Broken.md',new Uint8Array([255])));trash.children.set(corrupt.name,corrupt);
+  const list=await call<import('@memocard/contracts').TrashList>(h.core,'getTrash');expect(list.notes).toHaveLength(1);expect(list.issues).toHaveLength(1);
+  await expect(call(h.core,'getTrashedNote',{trashKey:createId()+'/../outside.md'})).rejects.toBeTruthy();
+  await call(h.core,'restoreNote',{trashKey:list.notes[0].trashKey,baseHash:list.notes[0].contentHash});expect(corrupt.children.has('Broken.md')).toBe(true);
+});
+
+
+it.each([false,true])('permanently deletes only the reviewed browser archive and preserves attachments (compatible=%s)',async compatible=>{
+  const root=compatible ? new TestDirectory('Shared') : await fixture();
+  if(compatible)root.children.set('Raw.md',new TestFile('Raw.md','Erase this'));
+  const h=harness(root);await call(h.core,'selectVault');const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  const other=await call<Note>(h.core,'saveNote',{id:createId(),title:'Other',body:'Keep archive',tags:[],baseHash:null});
+  const live=await call<Note>(h.core,'saveNote',{id:createId(),title:'Live',body:'Keep live',tags:[],baseHash:null});
+  const assets=await root.getDirectoryHandle('assets',{create:true});assets.children.set('shared.png',new TestFile('shared.png',new Uint8Array([1,2,3])));
+  for(const item of [note,other])await call(h.core,'deleteNote',{id:item.id,baseHash:item.contentHash});
+  const item=(await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes.find(item=>item.id===note.id)!;
+  await expect(call(h.core,'permanentlyDeleteNote',{trashKey:item.trashKey,baseHash:'stale'})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+  await expect(call(h.core,'permanentlyDeleteNote',{trashKey:createId()+'/../Live.md',baseHash:item.contentHash})).rejects.toBeTruthy();
+  expect(await call(h.core,'permanentlyDeleteNote',{trashKey:item.trashKey,baseHash:item.contentHash})).toEqual({deleted:true});
+  expect((await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes.map(item=>item.id)).toEqual([other.id]);
+  await expect(call(h.core,'restoreNote',{trashKey:item.trashKey,baseHash:item.contentHash})).rejects.toBeTruthy();
+  expect((await call<Note>(h.core,'getNote',{id:live.id})).body).toBe('Keep live');expect((await assets.getFileHandle('shared.png')).bytes).toEqual(new Uint8Array([1,2,3]));
+});
+
+it('retains the browser archive when permanent deletion is denied and permits retry',async()=>{
+  const h=harness(await fixture());await call(h.core,'selectVault');const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  await call(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash});const item=(await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes[0];
+  const spy=vi.spyOn(TestDirectory.prototype,'removeEntry').mockRejectedValueOnce(error('NoModificationAllowedError'));
+  await expect(call(h.core,'permanentlyDeleteNote',{trashKey:item.trashKey,baseHash:item.contentHash})).rejects.toBeTruthy();spy.mockRestore();
+  expect((await call<import('@memocard/contracts').TrashNote>(h.core,'getTrashedNote',{trashKey:item.trashKey})).note.contentHash).toBe(item.contentHash);
+  await call(h.core,'permanentlyDeleteNote',{trashKey:item.trashKey,baseHash:item.contentHash});expect((await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes).toEqual([]);
+});
+
+it('settles an interrupted archive transaction before permanent deletion so later scans cannot restore it',async()=>{
+  const root=await fixture(),h=harness(root);await call(h.core,'selectVault');const note=(await call<NotePage>(h.core,'queryNotes')).notes[0];
+  const receipt=await call<{trashPath:string}>(h.core,'deleteNote',{id:note.id,baseHash:note.contentHash});
+  const item=(await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes[0];
+  let directory=root;for(const part of receipt.trashPath.split('/').slice(0,-1))directory=await directory.getDirectoryHandle(part);
+  const archive=await directory.getFileHandle(receipt.trashPath.split('/').at(-1)!);
+  const scope=`${h.storage.selection!.directoryId}:${h.storage.selection!.vaultId}`;
+  await h.storage.saveRenameJournal(scope,{identities:[],changes:[{path:receipt.trashPath,before:archive.text,after:null}]});
+  await call(h.core,'permanentlyDeleteNote',{trashKey:item.trashKey,baseHash:item.contentHash});
+  expect(h.storage.journals.size).toBe(0);
+  await call(h.core,'queryNotes');expect((await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes).toEqual([]);
 });

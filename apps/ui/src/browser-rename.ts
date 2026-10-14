@@ -5,10 +5,14 @@ import { propertyDefinitionPath } from './property-definitions';
 import { BrowserVaultError, fileAt, readBytes, sha256, type BrowserDirectoryHandle } from './browser-files';
 import type { BrowserVaultStorage, RenameJournal } from './browser-storage';
 import type { FileIdentity } from './browser-files';
+import { readNotePins } from './browser-note-pins';
+import { trashFile } from './browser-trash-files';
 
 const decode = (bytes: Uint8Array) => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
 async function transactionFile(root:BrowserDirectoryHandle, path:string, compatible:boolean, create = false) {
+  if (path.startsWith('.memocard/trash/')) return trashFile(root,path.slice('.memocard/trash/'.length),create);
   if (path === propertyDefinitionPath) return (await root.getDirectoryHandle('.memocard',{create})).getFileHandle('property-definitions.json',{create});
+  if (path === '.memocard/pins.json') return (await root.getDirectoryHandle('.memocard',{create})).getFileHandle('pins.json',{create});
   return fileAt(root,path,compatible ? 'vault' : 'notes',create);
 }
 export async function renameSource(root: BrowserDirectoryHandle, path: string, compatible: boolean): Promise<string | null> {
@@ -54,16 +58,17 @@ export async function recoverRename(root: BrowserDirectoryHandle, compatible: bo
   await storage.saveRenameJournal(scope, undefined);
 }
 
-export async function commitRename(root: BrowserDirectoryHandle, compatible: boolean, storage: BrowserVaultStorage, scope: string, journal: RenameJournal, active: () => Promise<unknown>, move = true) {
+export async function commitRename(root: BrowserDirectoryHandle, compatible: boolean, storage: BrowserVaultStorage, scope: string, journal: RenameJournal, active: () => Promise<unknown>, move = true, restoredIdentity?: FileIdentity) {
   await storage.saveRenameJournal(scope, journal);
   try {
     for (const change of journal.changes) await write(root, change.path, change.before, change.after, compatible, active);
     if (compatible) {
       const from = journal.changes.at(-1)!.path, to = journal.changes[0].path;
-      await storage.saveIdentities(scope, await Promise.all(journal.identities.map(async item => {
+      const next = await Promise.all(journal.identities.filter(item=>move || !journal.changes.some(change=>change.path===item.path && change.after===null)).map(async item => {
         const path = move && item.path === from ? to : item.path, changed = journal.changes.find(change => change.path === path && change.after !== null);
         return { ...item, path, hash: changed ? await sha256(new TextEncoder().encode(changed.after!)) : item.hash };
-      })));
+      }));
+      await storage.saveIdentities(scope,restoredIdentity ? [...next.filter(item=>item.id!==restoredIdentity.id && item.path!==restoredIdentity.path),restoredIdentity] : next);
     }
     await storage.saveRenameJournal(scope, undefined);
   } catch (error) { await recoverRename(root, compatible, storage, scope, active); throw error; }
@@ -104,6 +109,15 @@ export async function renameNote(root: BrowserDirectoryHandle, compatible: boole
       if (textBytes(next).length > 8 * 1024 * 1024) throw new BrowserVaultError("NOTE_TOO_LARGE", "引用文件超出大小限制，重命名未提交。");
       if (await sha256(textBytes(source)) !== item.note.contentHash) throw new BrowserVaultError('HASH_CONFLICT', '引用文件已改变。');
       changes.push({ path: item.note.relativePath, before: source, after: next });
+    }
+  }
+  if (compatible) {
+    const stored = await readNotePins(root), date = stored.pins[`path:${old}`];
+    if (date) {
+      const pins = { ...stored.pins }; delete pins[`path:${old}`]; pins[`path:${path}`] = date;
+      const before = await renameSource(root, '.memocard/pins.json', compatible);
+      if (await sha256(textBytes(before ?? '')) !== stored.contentHash) throw new BrowserVaultError('HASH_CONFLICT', '固定记录已改变，重命名未提交。');
+      changes.push({ path: '.memocard/pins.json', before, after: JSON.stringify(pins) });
     }
   }
   changes.push({ path: old, before, after: null });

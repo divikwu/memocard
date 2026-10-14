@@ -6,6 +6,7 @@ import { BrowserVaultError, canonicalId, encodeBrowserNote, encodeObsidianNote, 
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker, BrowserWritable, ParsedBrowserNote } from "./browser-files";
 import { IndexedDBVaultStorage } from "./browser-storage";
 import type { BrowserDraft, BrowserVaultStorage, StoredSelection } from "./browser-storage";
+import { readNotePins, resolvedNotePins, setNotePinned } from "./browser-note-pins";
 
 export { BrowserVaultError } from "./browser-files";
 export type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker } from "./browser-files";
@@ -27,7 +28,7 @@ type Options = {
   parseCompatible?: typeof parseObsidianNote;
 };
 const propertyOperations = ["getNoteProperties", "updateNoteProperty"];
-const operations = ["getStatus", "queryNotes", "getNote", "saveNote", ...propertyOperations, "getPropertyLabels", "renamePropertyLabel", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "importAttachment"];
+const operations = ["getStatus", "queryNotes", "getNote", "saveNote", ...propertyOperations, "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"];
 const coverageEmpty = (): Coverage => ({ complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: null });
 const now = () => new Date().toISOString();
 const textBytes = (text: string) => new TextEncoder().encode(text);
@@ -50,6 +51,12 @@ const browserLock: BrowserLock = (name, task) => {
 function checkString(value: unknown, name: string): string {
   if (typeof value !== "string") throw new BrowserVaultError("INVALID_PARAMS", `${name} 必须是字符串。`);
   return value;
+}
+
+async function draftRevision(draft: BrowserDraft): Promise<string> {
+  if (draft.revision) return draft.revision;
+  const stored = {...draft}; delete stored.vaultBinding;
+  return sha256(textBytes(JSON.stringify(stored)));
 }
 
 export class BrowserVault {
@@ -355,7 +362,7 @@ export class BrowserVault {
     if (!selected) return base;
     this.requireBinding(selected);
     if (await selected.handle.queryPermission({ mode: "readwrite" }).catch(() => "denied") !== "granted") {
-      return { ...base, syncState: "unauthorized", capabilities: ["saveDraft", "getDrafts", "reauthorizeVault"] };
+      return { ...base, syncState: "unauthorized", capabilities: ["saveDraft", "getDrafts", "deleteDraft", "reauthorizeVault"] };
     }
     const snapshot = await this.scan(selected);
     this.seedRefreshSnapshot(snapshot);
@@ -391,7 +398,7 @@ export class BrowserVault {
       }
       draftKey = recovered.key;
     }
-    const draft = { ...save, draftKey, updatedAt: now(), vaultBinding: selected.binding };
+    const draft = { ...save, draftKey, revision: createId(), updatedAt: now(), vaultBinding: selected.binding };
     await this.storage.putDraft(scope, draft);
     if (!save.baseHash && !save.title?.trim() && !save.body.trim() && !save.pendingProperties?.length) {
       const recovered = [...this.recoveredDrafts.values()].find(value => value.key === draftKey);
@@ -407,6 +414,42 @@ export class BrowserVault {
     const parts = safeParts(path, this.compatible ? "vault" : "notes");
     if (!snapshot.folders.includes(parts.slice(0, -1).join("/"))) throw new BrowserVaultError("FOLDER_NOT_FOUND", "保存目录已移除，请保留草稿并重新选择目录。");
     return path;
+  }
+
+  private async deleteNote(selected: Binding, params: Record<string,unknown>) {
+    const id=canonicalId(params.id), baseHash=checkString(params.baseHash,'baseHash');
+    return this.lock(`memocard:browser:vault:${selected.vaultId}`,async()=>{
+      this.invalidateSnapshot();
+      const snapshot=await this.scan(selected);
+      if(!snapshot.coverage.complete)throw new BrowserVaultError('SCAN_INCOMPLETE','笔记库尚未完成校验，请稍后重试。');
+      if(snapshot.duplicateIds.has(id))throw new BrowserVaultError('DUPLICATE_ID','笔记 ID 重复，无法删除。');
+      const note=snapshot.parsed.find(item=>item.note.id===id && !item.note.deletedAt)?.note;
+      if(!note)throw new BrowserVaultError('NOTE_NOT_FOUND','找不到此笔记。');
+      return this.lock(`memocard:browser:index:${this.scope(selected)}`,async()=>{
+        await this.active(selected);
+        const parts=safeParts(note.relativePath,this.compatible ? 'vault' : 'notes');
+        const source=await fileAt(selected.handle,note.relativePath,this.compatible ? 'vault' : 'notes');
+        const bytes=await readBytes(source);
+        if(await sha256(bytes)!==baseHash)throw new BrowserVaultError('HASH_CONFLICT','笔记已在其他位置修改，请重新读取后再删除。');
+        const token=createId(), trashPath=`.memocard/trash/${token}/${note.relativePath}`;
+        let archive=selected.handle;
+        for(const part of ['.memocard','trash',token,...parts.slice(0,-1)]){await this.active(selected);archive=await archive.getDirectoryHandle(part,{create:true});}
+        const backup=await archive.getFileHandle(parts.at(-1)!,{create:true});
+        const stream=await backup.createWritable({mode:'exclusive'});
+        try{await this.active(selected);await stream.write(bytes);await stream.close();}
+        catch(error){await stream.abort().catch(()=>undefined);throw error;}
+        if(await sha256(await readBytes(backup))!==baseHash)throw new BrowserVaultError('IO_ERROR','回收副本校验失败，原笔记已保留。');
+        await (await import('./browser-trash')).writeTrashMetadata(selected.handle,token,note);
+        await this.active(selected);
+        const current=await fileAt(selected.handle,note.relativePath,this.compatible ? 'vault' : 'notes');
+        if(!await current.isSameEntry(source) || await sha256(await readBytes(current))!==baseHash)throw new BrowserVaultError('HASH_CONFLICT','笔记已在其他位置修改，原笔记和回收副本均已保留。');
+        await this.active(selected);
+        const {commitRename}=await import('./browser-rename');
+        await commitRename(selected.handle,this.compatible,this.storage,this.scope(selected),{changes:[{path:note.relativePath,before:new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes),after:null}],identities:await this.storage.identities(this.scope(selected))},()=>this.active(selected),false);
+        this.parsedCache.clear();this.invalidateSnapshot();
+        return {id,relativePath:note.relativePath,trashPath};
+      });
+    });
   }
 
   private async save(selected: Binding, save: Save): Promise<Note & { vaultBinding: string }> {
@@ -533,6 +576,8 @@ export class BrowserVault {
   }
 
   private async query(selected: Binding, params: Record<string, unknown>): Promise<NotePage> {
+    const sort = params.sort ?? 'createdAt';
+    if (typeof sort !== 'string' || !['createdAt', 'updatedAt', 'pinnedAt'].includes(sort) || (params.pinned !== undefined && typeof params.pinned !== 'boolean')) throw new BrowserVaultError('INVALID_PARAMS', '笔记排序或固定筛选无效。');
     const query = params.query === undefined ? "" : checkString(params.query, "query");
     const tags = params.tags === undefined ? [] : validatedTags(params.tags);
     const quickFilter = params.quickFilter as NoteQuickFilter | undefined;
@@ -543,8 +588,12 @@ export class BrowserVault {
     const limit = params.limit ?? 50;
     if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1 || limit > 100 || (params.deleted !== undefined && typeof params.deleted !== "boolean")) throw new BrowserVaultError("INVALID_PARAMS", "分页大小必须为 1 至 100，deleted 必须为布尔值。");
     const snapshot = await this.snapshotFor("queryNotes", selected);
-    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false })));
-    const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues })));
+    const pins = params.pinned !== undefined || sort === 'pinnedAt' ? resolvedNotePins(await readNotePins(selected.handle), snapshot.parsed.map(item => item.note), this.compatible) : { pins: {} as Record<string, string>, contentHash: '' };
+    await this.active(selected);
+    const sortAt = (note: Note) => sort === 'updatedAt' ? note.updatedAt : sort === 'pinnedAt' ? pins.pins[note.id] ?? note.createdAt : note.createdAt;
+    const sortDates = new Map(snapshot.parsed.map(({ note }) => [note.id, parseDate(sortAt(note))]));
+    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned })));
+    const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(sort === 'updatedAt' ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
     let after: { id: string; createdAt: string } | undefined;
     if (params.cursor !== undefined) {
       let cursor: unknown;
@@ -553,7 +602,8 @@ export class BrowserVault {
       if (cursor.queryHash !== queryHash) throw new BrowserVaultError("CURSOR_QUERY_MISMATCH", "筛选条件已变化，请从第一页重新读取。");
       if (cursor.snapshotHash !== snapshotHash) throw new BrowserVaultError("STALE_CURSOR", "笔记库已变化，请从第一页重新读取。", true);
       const id = canonicalId(cursor.id), createdAt = checkString(cursor.createdAt, "createdAt"); parseDate(createdAt);
-      after = { id, createdAt };
+      const sortAt = 'sortAt' in cursor ? checkString(cursor.sortAt, 'sortAt') : createdAt; parseDate(sortAt);
+      after = { id, createdAt: sortAt };
     }
     const folder = params.folder === undefined ? undefined : checkString(params.folder, "folder");
     if (folder) safeParts(folder, this.compatible ? "vault" : "notes");
@@ -568,13 +618,16 @@ export class BrowserVault {
       if (!note.deletedAt) for (const filter of filters.get(note.id)!) filterCounts[filter]++;
     }
     const matching = snapshot.parsed.map(({ note }) => note).filter((note) => {
-      const date = parseDate(note.createdAt);
+      const date = sortDates.get(note.id)!, createdDate = parseDate(note.createdAt);
       return (!folder || note.relativePath.startsWith(`${folder}/`)) && !!note.deletedAt === (params.deleted ?? false)
+        && (params.pinned === undefined || Boolean(pins.pins[note.id]) === params.pinned)
+        && (sort !== 'pinnedAt' || Boolean(pins.pins[note.id]))
         && (!quickFilter || filters.get(note.id)!.includes(quickFilter))
         && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || value.startsWith(tag + "/")))
-        && (from === undefined || date >= from) && (to === undefined || date < to)
+        && (from === undefined || createdDate >= from) && (to === undefined || createdDate < to)
         && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
     });
+    if (sort !== 'createdAt') matching.sort((a, b) => sortDates.get(b.id)! - sortDates.get(a.id)! || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     const notes: Note[] = [];
     let byteCount = 0;
     for (const note of matching.slice(0, limit)) {
@@ -583,7 +636,7 @@ export class BrowserVault {
       notes.push({ ...note, vaultBinding: selected.binding } as Note); byteCount += size;
     }
     const last = notes.at(-1);
-    const nextCursor = matching.length > notes.length && last ? btoa(JSON.stringify({ id: last.id, createdAt: last.createdAt, queryHash, snapshotHash })) : null;
+    const nextCursor = matching.length > notes.length && last ? btoa(JSON.stringify({ id: last.id, createdAt: last.createdAt, sortAt: sortAt(last), queryHash, snapshotHash })) : null;
     return { notes, nextCursor, coverage: snapshot.coverage, filterCounts };
   }
 
@@ -645,13 +698,46 @@ export class BrowserVault {
     if (operation === "getEnvironment") return this.environment();
     if (operation === "getStatus") return this.status(selected);
     this.requireBinding(selected, params.vaultBinding);
+    if (["getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].includes(operation) && params.vaultId !== undefined && params.vaultId !== selected.vaultId) throw new BrowserVaultError('VAULT_CHANGED', '笔记库已切换，请重新打开笔记。');
     if (operation === "saveDraft") return this.storeDraft(selected, this.saveParams(params));
     if (operation === "getDrafts") {
       const drafts = await this.storage.drafts(this.scope(selected));
       this.requireBinding(selected);
-      return { drafts: drafts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((draft) => ({ ...draft, vaultBinding: selected.binding })) };
+      return { drafts: await Promise.all(drafts.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map(async draft => ({ ...draft, revision: await draftRevision(draft), vaultBinding: selected.binding }))) };
     }
+    if (operation === "deleteDraft") {
+      const id = canonicalId(checkString(params.id, "id")), key = checkString(params.draftKey, "draftKey"), revision = checkString(params.revision, "revision");
+      if (params.unscoped || params.scope !== undefined) throw new BrowserVaultError("INVALID_PARAMS", "草稿不属于当前笔记库。");
+      const draft = (await this.storage.drafts(this.scope(selected))).find(item => item.id === id && item.draftKey === key);
+      if (!draft || await draftRevision(draft) !== revision) throw new BrowserVaultError("DRAFT_CHANGED", "草稿已变化，请刷新草稿后重试。");
+      this.requireBinding(selected);
+      if (!await this.storage.removeMatchingDraft(this.scope(selected), draft)) throw new BrowserVaultError("DRAFT_CHANGED", "草稿已变化，请刷新草稿后重试。");
+      return {deleted:true};
+    }
+    if (['getTrash','getTrashedNote','restoreNote','permanentlyDeleteNote'].includes(operation)) {
+      await this.active(selected);
+      const trash=await import('./browser-trash'),context={root:selected.handle,vaultId:selected.vaultId,compatible:this.compatible,active:()=>this.active(selected)};
+      if(operation==='getTrash')return trash.getTrash(context);
+      const key=checkString(params.trashKey,'trashKey');
+      if(operation==='getTrashedNote')return trash.readTrashedNote(context,key);
+      const hash=checkString(params.baseHash,'baseHash');
+      return this.lock(`memocard:browser:vault:${selected.vaultId}`,async()=>{
+        if(operation==='permanentlyDeleteNote')return this.lock(`memocard:browser:index:${this.scope(selected)}`,async()=>{
+          const {recoverRename}=await import('./browser-rename');
+          await recoverRename(selected.handle,this.compatible,this.storage,this.scope(selected),context.active);
+          return trash.permanentlyDeleteNote(context,key,hash);
+        });
+        const snapshot=await this.scan(selected);
+        return this.lock(`memocard:browser:index:${this.scope(selected)}`,()=>trash.restoreNote(context,key,hash,this.storage,this.scope(selected),snapshot));
+      }).finally(()=>{this.parsedCache.clear();this.invalidateSnapshot();});
+    }
+    if (operation === "deleteNote") return this.deleteNote(selected,params);
     if (operation === "saveNote") return this.save(selected, this.saveParams(params));
+    if (operation === 'getNotePins') { await this.active(selected); const pins = await readNotePins(selected.handle); const notes = Object.keys(pins.pins).length ? (await this.scan(selected)).parsed.map(item => item.note) : []; await this.active(selected); return resolvedNotePins(pins, notes, this.compatible); }
+    if (operation === 'setNotePinned') {
+      if (params.vaultId !== undefined && params.vaultId !== selected.vaultId) throw new BrowserVaultError('VAULT_CHANGED', '笔记库已切换，请重新打开笔记。');
+      return this.lock(`memocard:browser:vault:${selected.vaultId}`, () => setNotePinned(params, selected.handle, this.compatible, () => this.active(selected), () => this.scan(selected))).finally(() => this.invalidateSnapshot());
+    }
     if (operation === "getPropertyLabels" || operation === "renamePropertyLabel") {
       const { propertyLabelOperation } = await import('./browser-property-labels');
       return this.lock(`memocard:browser:vault:${selected.vaultId}`, () => propertyLabelOperation(operation, params, selected.handle, () => this.active(selected), () => this.scan(selected)));

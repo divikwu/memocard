@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Note, VaultStatus } from "@memocard/contracts";
+import type { Note, NotePins, VaultStatus } from "@memocard/contracts";
 import type { Draft } from "./bridge";
 import { App } from "./App";
 import { readEditorText, replaceEditorText } from "./editor-test-utils";
@@ -33,7 +33,7 @@ let pendingDrafts: Draft[] = [];
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("./components/note-collection"), import("./Editor")]);
+  await Promise.all([import("./components/note-collection"), import("./components/app-sidebar"), import("./Editor")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -75,6 +75,92 @@ afterEach(() => {
 });
 
 describe("note workspace", () => {
+  it("clears quick capture only after saving and refreshes the recent tab from its first page", async () => {
+    window.history.replaceState(null, "", "#/home");
+    const implementation=bridge.request.getMockImplementation()!;
+    let saved:Note | null=null;
+    bridge.request.mockImplementation(async(operation,params)=>{
+      if(operation==='getStatus')return {...status,capabilities:[...status.capabilities,'getNotePins']};
+      if(operation==='getNotePins')return {pins:{[note.id]:'2026-10-14T08:00:00Z'},contentHash:'pins'};
+      if(operation==='queryNotes')return {notes:params?.pinned ? [note] : saved ? [saved,note] : [note],nextCursor:null,coverage:status.coverage};
+      if(operation==='saveNote')return saved={...note,id:params?.id as string,title:'新内容',body:params?.body as string,tags:[],contentHash:'new-source',relativePath:'新内容.md'};
+      return implementation(operation,params);
+    });
+    const user=userEvent.setup();render(<App />);
+    await screen.findByRole('textbox',{name:'快速输入内容'});
+    await user.click(screen.getByRole('tab',{name:/已固定/}));
+    await screen.findByRole('button',{name:'打开 新内容'});
+    await user.type(screen.getByRole('textbox',{name:'快速输入内容'}),'从主页记录的新想法');
+    await user.click(screen.getByRole('button',{name:'记录'}));
+    await waitFor(()=>expect((screen.getByRole('textbox',{name:'快速输入内容'}) as HTMLTextAreaElement).value).toBe(''));
+    await waitFor(()=>expect(screen.getByRole('tab',{name:'最近更新'}).getAttribute('aria-selected')).toBe('true'));
+    await waitFor(()=>expect(document.querySelector(`[data-note-id="${saved?.id}"]`)).not.toBeNull());
+    const last=bridge.request.mock.calls.filter(([op])=>op==='queryNotes').at(-1)?.[1];
+    expect(last).toMatchObject({sort:'updatedAt',limit:30});
+    expect(last).not.toHaveProperty('cursor');
+    expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(1);
+  });
+
+  it("defaults home to recent updates and keeps pin actions in detail while returning to the chosen tab", async () => {
+    window.history.replaceState(null, "", "#/home");
+    localStorage.removeItem("memocard:home-layout");
+    const user = userEvent.setup();
+    const implementation = bridge.request.getMockImplementation()!;
+    let pins: NotePins = {pins:{}, contentHash:"empty-pins"};
+    bridge.request.mockImplementation(async (operation, params) => {
+      if (operation === "getStatus") return {...status, capabilities:[...status.capabilities,"getNotePins","setNotePinned"]};
+      if (operation === "getNotePins") return pins;
+      if (operation === "setNotePinned") {
+        expect(params).toEqual({id:note.id, pinned:!pins.pins[note.id], baseHash:pins.contentHash, vaultId:status.vaultId});
+        pins = {pins:params?.pinned ? {[note.id]:"2026-10-14T08:00:00Z"} : {}, contentHash:params?.pinned ? "pinned" : "unpinned"};
+        return pins;
+      }
+      if (operation === "queryNotes") return {notes:params?.pinned && !pins.pins[note.id] ? [] : [note], nextCursor:null, coverage:status.coverage};
+      return implementation(operation, params);
+    });
+    render(<App />);
+    await screen.findByRole("button", {name:"Boop the MemoCard · 黑笔最终版"});
+    expect(screen.getByRole("heading", {name:"主页", level:1}).classList.contains("sr-only")).toBe(true);
+    await screen.findByRole("button", {name:"打开 新内容"});
+    expect(screen.getByRole("tab", {name:"最近更新"}).getAttribute("aria-selected")).toBe("true");
+    expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({sort:"updatedAt"}));
+    expect(screen.queryByRole("button", {name:/固定/})).toBeNull();
+    await user.click(screen.getByRole("button", {name:"打开 新内容"}));
+    await screen.findByRole("textbox", {name:"笔记内容"});
+    await user.click(screen.getByRole("button", {name:"固定到主页"}));
+    await screen.findByRole("button", {name:"取消固定"});
+    expect(bridge.request.mock.calls.some(([op]) => op === "saveNote")).toBe(false);
+    await user.click(screen.getByRole("button", {name:"返回主页"}));
+    await user.click(await screen.findByRole("tab", {name:/已固定/}));
+    await screen.findByRole("button", {name:"打开 新内容"});
+    expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({sort:"pinnedAt", pinned:true}));
+    expect(screen.queryByRole("button", {name:/固定/})).toBeNull();
+    await user.click(screen.getByRole("button", {name:"打开 新内容"}));
+    await user.click(await screen.findByRole("button", {name:"取消固定"}));
+    await screen.findByRole("button", {name:"固定到主页"});
+    await user.click(screen.getByRole("button", {name:"返回主页"}));
+    await screen.findByText("把常用笔记固定在这里");
+    expect(screen.getByRole("tab", {name:/已固定/}).getAttribute("aria-selected")).toBe("true");
+  });
+
+  it("enables pinning a new note only after its first source save", async () => {
+    const implementation = bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation, params) => operation === "getStatus"
+      ? Promise.resolve({...status, capabilities:[...status.capabilities,"getNotePins","setNotePinned"]})
+      : operation === "getNotePins" ? Promise.resolve({pins:{},contentHash:"empty"}) : implementation(operation, params));
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("button", {name:/打开.*的笔记/});
+    await user.click(screen.getByRole("button", {name:"新建笔记"}));
+    const pin = await screen.findByRole("button", {name:"固定到主页"});
+    expect(pin.hasAttribute("disabled")).toBe(true);
+    await user.click(pin);
+    expect(bridge.request.mock.calls.some(([op]) => op === "setNotePinned")).toBe(false);
+    replaceEditorText("新笔记首次保存", await screen.findByRole("textbox", {name:"笔记内容"}));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({body:"新笔记首次保存"})), {timeout:3000});
+    await waitFor(() => expect(screen.getByRole("button", {name:"固定到主页"}).hasAttribute("disabled")).toBe(false));
+  });
+
   it("shows indexing progress without disabling editing or replacing unsaved content", async () => {
     vi.useFakeTimers();
     const implementation = bridge.request.getMockImplementation()!;
@@ -235,7 +321,7 @@ describe("note workspace", () => {
     expect(readEditorText(await within(editor).findByRole("textbox", { name: "笔记内容" }))).toBe("尚未提交的草稿文字");
     const back = screen.getByRole("button", { name: "返回笔记列表" });
     expect(back.closest("header")).not.toBeNull();
-    expect(back.className).toContain("md:hidden");
+    expect(back.className).not.toContain("md:hidden");
     expect(within(editor).queryByRole("button", { name: "返回笔记列表" })).toBeNull();
     await user.click(back);
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({ body: "尚未提交的草稿文字", baseHash: "draft-base-hash" })));
@@ -1224,4 +1310,104 @@ it('returns from a failed detail without saving or leaving the list disabled', a
   expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
   expect(window.location.hash).toBe('#/notes');
   expect(bridge.request).not.toHaveBeenCalledWith('saveNote', expect.anything());
+});
+
+
+it('confirms deletion of one exact draft, retains failures, and updates the draft count',async()=>{
+  window.history.replaceState(null,'','#/home');
+  const implementation=bridge.request.getMockImplementation()!;
+  const first={id:note.id,body:'Delete this draft',tags:[],baseHash:null,draftKey:'first',revision:'v1'};
+  const sibling={...first,body:'Keep this draft',draftKey:'second',revision:'v2'};
+  let records=[first,sibling],fail=true;
+  bridge.request.mockImplementation((op,params)=>{
+    if(op==='getStatus')return {...status,capabilities:[...status.capabilities,'deleteDraft']};
+    if(op==='getDrafts')return {drafts:records};
+    if(op==='deleteDraft'){
+      if(fail)return Promise.reject(new Error('草稿已变化，请刷新草稿后重试。'));
+      records=records.filter(draft=>draft.draftKey!==params?.draftKey);return {deleted:true};
+    }
+    return implementation(op,params);
+  });
+  const user=userEvent.setup();render(<App />);
+  await user.click(await screen.findByRole('button',{name:'恢复内容'}));
+  await user.click(await screen.findByRole('button',{name:'删除草稿：Delete this draft'}));
+  expect(await screen.findByRole('heading',{name:'删除这条草稿？'})).toBeTruthy();
+  await user.click(screen.getByRole('button',{name:'取消'}));
+  await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('button',{name:'删除草稿：Delete this draft'})));
+  expect(bridge.request.mock.calls.filter(([op])=>op==='deleteDraft')).toHaveLength(0);
+  await user.click(screen.getByRole('button',{name:'删除草稿：Delete this draft'}));
+  await user.click(screen.getByRole('button',{name:'确认删除'}));
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent','草稿已变化，请刷新草稿后重试。');
+  expect(screen.getByRole('button',{name:'继续编辑：Delete this draft'})).toBeTruthy();
+  fail=false;
+  await user.click(screen.getByRole('button',{name:'删除草稿：Delete this draft'}));
+  await user.click(screen.getByRole('button',{name:'确认删除'}));
+  await waitFor(()=>expect(screen.queryByRole('button',{name:'继续编辑：Delete this draft'})).toBeNull());
+  expect(screen.getByRole('button',{name:'继续编辑：Keep this draft'})).toBeTruthy();
+  expect(bridge.request).toHaveBeenCalledWith('deleteDraft',{id:first.id,draftKey:'first',revision:'v1',unscoped:undefined,vaultId:status.vaultId});
+  expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
+  await user.keyboard('{Escape}');
+  await user.click(screen.getByRole('button',{name:'稍后处理'}));
+  expect(await screen.findByRole('button',{name:'保留草稿（1）'})).toBeTruthy();
+});
+
+
+it('confirms note deletion after flushing edits, retains failures, and returns to the refreshed home',async()=>{
+  window.history.replaceState(null,'','#/home');
+  const implementation=bridge.request.getMockImplementation()!;
+  let current={...note},deleted=false,fail=true;
+  bridge.request.mockImplementation((op,params)=>{
+    if(op==='getStatus')return {...status,capabilities:[...status.capabilities,'deleteNote']};
+    if(op==='queryNotes')return {notes:deleted ? [] : [current],nextCursor:null,coverage:status.coverage};
+    if(op==='getNote')return current;
+    if(op==='saveNote')return current={...current,body:params?.body as string,contentHash:'latest-hash'};
+    if(op==='deleteNote'){
+      if(fail)return Promise.reject(new Error('回收目录暂不可写'));
+      deleted=true;return {id:note.id,relativePath:note.relativePath,trashPath:'.memocard/trash/test/source.md'};
+    }
+    return implementation(op,params);
+  });
+  const user=userEvent.setup();render(<App />);
+  await user.click(await screen.findByRole('button',{name:'打开 新内容'}));
+  await screen.findByRole('textbox',{name:'笔记内容'});
+  replaceEditorText('删除前的新修改');
+  await user.click(screen.getByRole('button',{name:'页面操作'}));
+  await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
+  await user.click(await screen.findByRole('button',{name:'取消'}));
+  expect(bridge.request.mock.calls.filter(([op])=>op==='deleteNote')).toHaveLength(0);
+  await user.click(screen.getByRole('button',{name:'页面操作'}));
+  await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
+  await user.click(await screen.findByRole('button',{name:'确认删除'}));
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent','回收目录暂不可写');
+  await user.click(screen.getByRole('button',{name:'取消'}));
+  expect(readEditorText()).toBe('删除前的新修改');
+  fail=false;
+  await user.click(screen.getByRole('button',{name:'页面操作'}));
+  await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
+  await user.click(await screen.findByRole('button',{name:'确认删除'}));
+  await waitFor(()=>expect(window.location.hash).toBe('#/home'));
+  await waitFor(()=>expect(screen.queryByRole('button',{name:'打开 新内容'})).toBeNull());
+  expect(bridge.request).toHaveBeenCalledWith('deleteNote',{id:note.id,baseHash:'latest-hash',vaultId:status.vaultId});
+  expect(screen.queryByRole('textbox',{name:'笔记内容'})).toBeNull();
+});
+
+
+it('opens the recycle bin from the sidebar and refreshes collections after restore',async()=>{
+  const implementation=bridge.request.getMockImplementation()!;let trashed=true;
+  bridge.request.mockImplementation(async(op,params)=>{
+    if(op==='getStatus')return {...status,capabilities:[...status.capabilities,'getTrash','getTrashedNote','restoreNote']};
+    if(op==='getTrash')return {notes:trashed ? [{trashKey:'archive/Old.md',id:note.id,title:'已删除的想法',relativePath:'Old.md',deletedAt:note.updatedAt,contentHash:note.contentHash,preview:note.body}] : [],issues:[]};
+    if(op==='restoreNote'){trashed=false;return {...note,title:'已删除的想法'};}
+    return implementation(op,params);
+  });
+  const user=userEvent.setup();render(<App/>);
+  await user.click(await screen.findByRole('button',{name:`笔记库：${status.vaultName}`}));
+  await user.click(await screen.findByRole('menuitem',{name:'回收站'}));
+  await screen.findByRole('button',{name:'恢复笔记：已删除的想法'});expect(window.location.hash).toBe('#/trash');
+  const requests=bridge.request.mock.calls.length;
+  await user.click(screen.getByRole('button',{name:'恢复笔记：已删除的想法'}));
+  await screen.findByText('回收站是空的');
+  await waitFor(()=>expect(bridge.request.mock.calls.slice(requests).some(([op])=>op==='listTags')).toBe(true));
+  await user.click(screen.getByRole('button',{name:'所有笔记'}));
+  await screen.findByRole('button',{name:/^打开 / });
 });

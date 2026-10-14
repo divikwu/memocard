@@ -14,7 +14,7 @@ export type BrowserVaultStorage = {
   remember(handle: BrowserDirectoryHandle, vaultId: string): Promise<StoredSelection>;
   drafts(scope: string): Promise<BrowserDraft[]>;
   putDraft(scope: string, draft: BrowserDraft): Promise<void>;
-  removeMatchingDraft(scope: string, draft: BrowserDraft): Promise<void>;
+  removeMatchingDraft(scope: string, draft: BrowserDraft): Promise<boolean>;
 };
 
 type DraftRecord = { scope: string; draft: BrowserDraft };
@@ -98,18 +98,19 @@ export class IndexedDBVaultStorage implements BrowserVaultStorage {
     return this.write([[`draft:${scope}:${draft.draftKey}`, { scope, draft: stored }]]);
   }
 
-  async removeMatchingDraft(scope: string, draft: BrowserDraft): Promise<void> {
+  async removeMatchingDraft(scope: string, draft: BrowserDraft): Promise<boolean> {
     const db = await this.db();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction("state", "readwrite");
+      let removed = false;
       const store = transaction.objectStore("state");
       const key = `draft:${scope}:${draft.draftKey}`;
       const request = store.get(key);
       request.onsuccess = () => {
         const existing = request.result as DraftRecord | undefined;
-        if (existing && sameDraft(existing.draft, draft)) store.delete(key);
+        if (existing && sameDraft(existing.draft, draft) && existing.draft.revision === draft.revision && existing.draft.updatedAt === draft.updatedAt) { store.delete(key); removed = true; }
       };
-      transaction.oncomplete = () => resolve();
+      transaction.oncomplete = () => resolve(removed);
       transaction.onerror = () => reject(transaction.error);
       transaction.onabort = () => reject(transaction.error);
     });

@@ -14,7 +14,7 @@ describe("local web bridge", () => {
     const session = new Promise<Response>((resolve) => { authenticate = resolve; });
     const fetcher = vi.fn<typeof fetch>().mockImplementation(async (path) => path === "/api/session" ? session : response({ ok: true, data: { connected: true } }));
     const call = createBridge(createWebTransport(fetcher));
-    expect(window.location.hash).toBe("#/notes");
+    expect(window.location.hash).toBe("#/home");
     const first = call("getStatus");
     const second = call("getEnvironment");
     await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
@@ -42,7 +42,7 @@ describe("local web bridge", () => {
     const call = createBridge(createWebTransport(fetcher));
     await expect(call("getNote", { id: "note" })).rejects.toMatchObject({ code: "WEB_UNAUTHORIZED" });
     expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(window.location.hash).toBe("#/notes");
+    expect(window.location.hash).toBe("#/home");
   });
 
   it("reports a stopped local service as requiring a fresh launch URL", async () => {

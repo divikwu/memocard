@@ -29,6 +29,7 @@ function SheetPortal({
 
 function SheetOverlay({
   className,
+  style,
   ...props
 }: (React.ComponentProps<typeof SheetPrimitive.Backdrop> & { className?: string })) {
   return (
@@ -38,6 +39,7 @@ function SheetOverlay({
         "fixed inset-0 z-50 bg-black/50 data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
         className
       )}
+      style={state => ({ animationFillMode: "both", ...(typeof style === "function" ? style(state) : style) })}
       {...props}
     />
   )
@@ -45,6 +47,7 @@ function SheetOverlay({
 
 function SheetContent({
   className,
+  style,
   children,
   side = "right",
   showCloseButton = true,
@@ -70,6 +73,7 @@ function SheetContent({
             "inset-x-0 bottom-0 h-auto border-t data-[closed]:slide-out-to-bottom data-[open]:slide-in-from-bottom",
           className
         )}
+        style={state => ({ animationFillMode: "both", ...(typeof style === "function" ? style(state) : style) })}
         {...props}
       >
         {children}

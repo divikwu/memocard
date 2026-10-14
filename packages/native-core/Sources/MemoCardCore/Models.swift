@@ -131,6 +131,8 @@ struct Query: Codable {
     var limit: Int?
     var cursor: String?
     var deleted: Bool?
+    var sort: String?
+    var pinned: Bool?
 }
 
 struct PageCursor: Codable {
@@ -138,6 +140,12 @@ struct PageCursor: Codable {
     let id: String
     let queryHash: String
     let snapshotHash: String
+    var sortAt: String? = nil
+}
+
+struct NotePins: Encodable {
+    let pins: [String: String]
+    let contentHash: String
 }
 
 struct ParsedNote {

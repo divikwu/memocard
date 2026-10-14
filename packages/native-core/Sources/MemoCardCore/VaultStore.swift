@@ -221,9 +221,15 @@ public actor VaultStore {
     public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) async throws -> Data {
         do {
             try requireBinding(expectedBinding)
+            if ["getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
+                struct Scope: Decodable { var vaultId: String?; var vaultBinding: UUID? }
+                let scope = try decode(Scope.self, params)
+                try requireBinding(scope.vaultBinding)
+                if let vaultId = scope.vaultId, vaultId != (try active()).1.vaultId { throw VaultError(code: "VAULT_CHANGED", message: "笔记库已切换，请重新打开笔记。") }
+            }
             let operationBinding = binding
             if let task = sourceIndexTask {
-                var wait = ["saveNote", "updateNoteProperty", "getNoteProperties", "resolveLink", "importAttachment"].contains(operation)
+                var wait = ["saveNote", "updateNoteProperty", "getNoteProperties", "resolveLink", "deleteNote", "restoreNote", "importAttachment"].contains(operation)
                 if operation == "getNote", let id = (try? JSONSerialization.jsonObject(with: params)) as? [String: Any] {
                     let requestedID = id["id"] as? String
                     wait = initialScan?.result.notes.contains(where: { $0.note.id == requestedID }) != true
@@ -241,7 +247,7 @@ public actor VaultStore {
                 }
             }
             // Source recovery must not block the independent device-only recovery store.
-            if !["saveDraft", "getDrafts", "dismissDraftReminder"].contains(operation) { try recoverRename() }
+            if !["saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft"].contains(operation) { try recoverRename() }
             switch operation {
             case "getStatus":
                 struct Request: Decodable { var background: Bool? }
@@ -270,6 +276,12 @@ public actor VaultStore {
                 let data = try coordinateRead(root.appendingPathComponent(note.relativePath), inside: root) { try self.readSource($0) }
                 return try encode(effectiveNoteProperties(data, snapshot: snapshot, config: readPropertyDefinitions(root)))
             case "getPropertyLabels": return try encode(readPropertyLabels())
+            case "getNotePins": return try encode(readNotePins())
+            case "setNotePinned":
+                struct Request: Decodable { let id: String; let pinned: Bool; let baseHash: String; let vaultId: String? }
+                let request = try decode(Request.self, params)
+                if let vaultId = request.vaultId, vaultId != (try active()).1.vaultId { throw VaultError(code: "VAULT_CHANGED", message: "笔记库已切换，请重新打开笔记。") }
+                return try encode(setNotePinned(id: request.id, pinned: request.pinned, baseHash: request.baseHash))
             case "renamePropertyLabel":
                 struct Request: Decodable { let key: String; let label: String; let baseHash: String }
                 let request = try decode(Request.self, params)
@@ -286,12 +298,29 @@ public actor VaultStore {
                 struct Folders: Encodable { let folders: [String]; let coverage: Coverage }
                 return try encode(Folders(folders: snapshot.folders.sorted(), coverage: snapshot.coverage))
             case "listTags": return try listTags()
+            case "getTrash": return try getTrash()
+            case "getTrashedNote":
+                struct Request: Decodable { let trashKey: String }
+                return try encode(readTrashedNote(try decode(Request.self, params).trashKey))
+            case "restoreNote":
+                struct Request: Decodable { let trashKey: String; let baseHash: String }
+                let input = try decode(Request.self, params)
+                return try encode(restoreNote(input.trashKey, baseHash: input.baseHash))
+            case "permanentlyDeleteNote":
+                struct Request: Decodable { let trashKey: String; let baseHash: String }
+                let input = try decode(Request.self,params)
+                return try permanentlyDeleteNote(input.trashKey,baseHash:input.baseHash)
+            case "deleteNote":
+                struct Request: Decodable { let id: String; let baseHash: String }
+                let input = try decode(Request.self, params)
+                return try deleteNote(id: input.id, baseHash: input.baseHash)
             case "saveDraft": return try saveDraft(try decode(SaveRequest.self, params))
             case "getDrafts": return try getDrafts()
-            case "dismissDraftReminder":
+            case "dismissDraftReminder", "deleteDraft":
                 struct Request: Decodable { let id: String; let draftKey: String; let revision: String; let unscoped: Bool?; let scope: String? }
                 let input = try decode(Request.self, params)
-                return try dismissDraftReminder(id: input.id, source: RecoverySource(draftKey: input.draftKey, revision: input.revision, unscoped: input.unscoped, scope: input.scope))
+                let source = RecoverySource(draftKey: input.draftKey, revision: input.revision, unscoped: input.unscoped, scope: input.scope)
+                return operation == "deleteDraft" ? try deleteDraft(id: input.id, source: source) : try dismissDraftReminder(id: input.id, source: source)
             case "importAttachment":
                 invalidateSnapshot()
                 struct Request: Decodable { let name: String; let base64: String; let noteId: String?; let notePath: String? }
@@ -744,7 +773,7 @@ public actor VaultStore {
                 try values.encode(capabilities, forKey: .capabilities)
             }
         }
-        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "importAttachment"]
+        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"]
         guard let root, let metadata else {
             return try encode(Status(connected: false, vaultId: nil, vaultName: nil,
                 coverage: Coverage(complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: nil),
@@ -761,6 +790,13 @@ public actor VaultStore {
 
     private func queryNotes(_ query: Query) throws -> Data {
         let snapshot = try snapshot(for: "queryNotes")
+        let sort = query.sort ?? "createdAt"
+        guard ["createdAt", "updatedAt", "pinnedAt"].contains(sort) else { throw VaultError(code: "INVALID_PARAMS", message: "笔记排序无效。") }
+        let pins = query.pinned != nil || sort == "pinnedAt" ? try readNotePins(snapshot: snapshot) : NotePins(pins: [:], contentHash: "")
+        let sortDates = try Dictionary(uniqueKeysWithValues: snapshot.notes.map { parsed in
+            (parsed.note.id, sort == "updatedAt" ? try parseDate(parsed.note.updatedAt) : sort == "pinnedAt" ? try parseDate(pins.pins[parsed.note.id] ?? parsed.note.createdAt) : parsed.createdDate)
+        })
+        let ordered = sort == "createdAt" ? snapshot.notes : snapshot.notes.sorted { sortDates[$0.note.id] == sortDates[$1.note.id] ? $0.note.id < $1.note.id : sortDates[$0.note.id]! > sortDates[$1.note.id]! }
         if let folder = query.folder, !folder.isEmpty {
             let parts = folder.split(separator: "/", omittingEmptySubsequences: false)
             guard (compatible || parts.first == "notes"), !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }), !folder.contains("\\"), !folder.contains("\0") else {
@@ -777,17 +813,18 @@ public actor VaultStore {
         let queryHash = sha256(try encode(fingerprintQuery))
         // indexedAt changes on every scan and must not invalidate an unchanged snapshot.
         // Source hashes cover the whole Markdown; do not encode every body again to fingerprint a page.
-        struct Fingerprint: Encodable { let id: String; let hash: String; let path: String; let source: String }
+        struct Fingerprint: Encodable { let id: String; let hash: String; let path: String; let source: String; let updatedAt: String? }
         let fingerprints = snapshot.notes.map {
-            Fingerprint(id: $0.note.id, hash: $0.note.contentHash, path: $0.note.relativePath, source: $0.note.sourceUrl)
+            Fingerprint(id: $0.note.id, hash: $0.note.contentHash, path: $0.note.relativePath, source: $0.note.sourceUrl, updatedAt: sort == "updatedAt" ? $0.note.updatedAt : nil)
         }
-        let snapshotHash = sha256(try encode(fingerprints) + Data("\(snapshot.coverage.pending):\(snapshot.coverage.issues)".utf8))
+        let snapshotHash = sha256(try encode(fingerprints) + Data("\(snapshot.coverage.pending):\(snapshot.coverage.issues):\(pins.contentHash)".utf8))
         var cursor: PageCursor?
         if let raw = query.cursor {
             guard let data = Data(base64Encoded: raw) else { throw VaultError(code: "INVALID_CURSOR", message: "分页游标无效。") }
             do { cursor = try JSONDecoder().decode(PageCursor.self, from: data) }
             catch { throw VaultError(code: "INVALID_CURSOR", message: "分页游标无效。") }
             _ = try parseDate(cursor!.createdAt)
+            if let sortAt = cursor!.sortAt { _ = try parseDate(sortAt) }
             _ = try canonicalID(cursor!.id)
             guard cursor!.queryHash == queryHash else {
                 throw VaultError(code: "CURSOR_QUERY_MISMATCH", message: "筛选条件已变化，请从第一页重新读取。")
@@ -796,7 +833,7 @@ public actor VaultStore {
                 throw VaultError(code: "STALE_CURSOR", message: "笔记库已变化，请从第一页重新读取。", retryable: true)
             }
         }
-        let cursorDate = try cursor.map { try parseDate($0.createdAt) }
+        let cursorDate = try cursor.map { try parseDate($0.sortAt ?? $0.createdAt) }
         let filters = Dictionary(uniqueKeysWithValues: snapshot.notes.map { parsed in
             let note = parsed.note
             let filters = parsedCache[note.relativePath]?.quickFilters ?? (indexing != nil ? (note.tags.isEmpty ? [.untagged] : []) : noteQuickFilters(note))
@@ -807,15 +844,17 @@ public actor VaultStore {
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
             for filter in filters[parsed.note.id]! { filterCounts[filter.rawValue, default: 0] += 1 }
         }
-        let matches = snapshot.notes.filter { parsed in
-            let note = parsed.note, date = parsed.createdDate
+        let matches = ordered.filter { parsed in
+            let note = parsed.note, date = sortDates[parsed.note.id]!
+            if let pinned = query.pinned, (pins.pins[note.id] != nil) != pinned { return false }
+            if sort == "pinnedAt", pins.pins[note.id] == nil { return false }
             if let folder = query.folder, !folder.isEmpty, !note.relativePath.hasPrefix(folder + "/") { return false }
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
             if let filter = query.quickFilter, !filters[note.id]!.contains(filter) { return false }
             if let text = query.query, !text.isEmpty, ((note.title ?? "") + "\n" + note.body).range(of: text, options: [.caseInsensitive, .literal]) == nil { return false }
             if let tags = query.tags, !tags.allSatisfy({ value in let tag = tagKey(value); return note.tags.contains { $0 == tag || $0.hasPrefix(tag + "/") } }) { return false }
-            if let from, date < from { return false }
-            if let to, date >= to { return false }
+            if let from, parsed.createdDate < from { return false }
+            if let to, parsed.createdDate >= to { return false }
             if let cursor, let cursorDate, !(date < cursorDate || (date == cursorDate && note.id > cursor.id)) { return false }
             return true
         }.map(\.note)
@@ -834,7 +873,7 @@ public actor VaultStore {
         }
         notesData.append(contentsOf: "]".utf8)
         let next = matches.count > page.count ? try page.last.map {
-            try encode(PageCursor(createdAt: $0.createdAt, id: $0.id, queryHash: queryHash, snapshotHash: snapshotHash)).base64EncodedString()
+            try encode(PageCursor(createdAt: $0.createdAt, id: $0.id, queryHash: queryHash, snapshotHash: snapshotHash, sortAt: sort == "updatedAt" ? $0.updatedAt : sort == "pinnedAt" ? pins.pins[$0.id] : nil)).base64EncodedString()
         } : nil
         // Reuse encoded notes instead of serializing potentially multi-megabyte bodies twice.
         var result = Data("{\"coverage\":".utf8)
@@ -958,6 +997,66 @@ public actor VaultStore {
     private func validPropertyLabel(_ value: String) -> Bool {
         !value.isEmpty && value.count <= 100 && value == value.trimmingCharacters(in: .whitespacesAndNewlines) && !value.unicodeScalars.contains { $0.value < 32 }
     }
+    private func decodedNotePins(_ data: Data) throws -> NotePins {
+        do {
+            let pins = data.isEmpty ? [:] : try JSONDecoder().decode([String: String].self, from: data)
+            for (id, date) in pins {
+                if id.hasPrefix("path:") {
+                    let path = String(id.dropFirst(5)), parts = path.split(separator: "/", omittingEmptySubsequences: false)
+                    guard path.lowercased().hasSuffix(".md"), !parts.contains(where: { $0.isEmpty || $0.hasPrefix(".") }), !path.contains("\\"), !path.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) else { throw VaultError(code: "INVALID_PINS", message: "固定记录路径无效。") }
+                } else if try canonicalID(id) != id { throw VaultError(code: "INVALID_PINS", message: "固定记录身份无效。") }
+                _ = try parseDate(date)
+            }
+            return NotePins(pins: pins, contentHash: sha256(data))
+        } catch { throw VaultError(code: "INVALID_PINS", message: "固定记录无法读取，请检查 .memocard/pins.json。") }
+    }
+
+    private func resolvedNotePins(_ stored: NotePins, snapshot: Snapshot) -> NotePins {
+        let pins = Dictionary(uniqueKeysWithValues: snapshot.notes.compactMap { item -> (String, String)? in
+            guard item.note.deletedAt == nil, let date = stored.pins[compatible ? "path:" + item.note.relativePath : item.note.id] else { return nil }
+            return (item.note.id, date)
+        })
+        return NotePins(pins: pins, contentHash: stored.contentHash)
+    }
+
+    private func readStoredNotePins() throws -> NotePins {
+        let (root, _) = try active()
+        let path = root.appendingPathComponent(".memocard/pins.json")
+        try validate(path, inside: root)
+        if !fm.fileExists(atPath: path.path) { return try decodedNotePins(Data()) }
+        return try coordinateRead(path, inside: root) { try self.decodedNotePins(self.readSource($0)) }
+    }
+
+    private func readNotePins(snapshot: Snapshot? = nil) throws -> NotePins {
+        let stored = try readStoredNotePins()
+        if stored.pins.isEmpty { return stored }
+        return try resolvedNotePins(stored, snapshot: snapshot ?? scan())
+    }
+
+    private func setNotePinned(id: String, pinned: Bool, baseHash: String) throws -> NotePins {
+        let id = try canonicalID(id)
+        let snapshot = try scan()
+        guard snapshot.coverage.complete else { throw VaultError(code: "SCAN_INCOMPLETE", message: "笔记库尚未完整读取，暂时无法修改固定状态。") }
+        let note = try getNote(id: id, snapshot: snapshot)
+        guard note.deletedAt == nil else { throw VaultError(code: "NOTE_NOT_FOUND", message: "找不到此笔记。") }
+        let key = compatible ? "path:" + note.relativePath : id
+        let (root, _) = try active()
+        let path = root.appendingPathComponent(".memocard/pins.json")
+        return try coordinateWrite(path, inside: root) { url in
+            try self.requireNoConflict(url)
+            let data = self.fm.fileExists(atPath: url.path) ? try self.readSource(url) : Data()
+            let current = try self.decodedNotePins(data)
+            guard current.contentHash == baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "固定状态已在其他位置修改，请重试。", retryable: true) }
+            var pins = current.pins
+            if pinned { if pins[key] == nil { pins[key] = timestamp() } }
+            else { pins.removeValue(forKey: key) }
+            if pins == current.pins { return self.resolvedNotePins(current, snapshot: snapshot) }
+            let bytes = try encode(pins)
+            try bytes.write(to: url, options: .atomic)
+            return self.resolvedNotePins(NotePins(pins: pins, contentHash: sha256(bytes)), snapshot: snapshot)
+        }
+    }
+
     private func propertyLabelBytes(_ url: URL) throws -> Data {
         guard fm.fileExists(atPath: url.path) else { return Data() }
         return try readSource(url)
@@ -1182,7 +1281,8 @@ public actor VaultStore {
     private var renameJournalURL: URL { identityURL.appendingPathExtension("rename.json") }
 
     private func renameBytes(_ path: String, root: URL) throws -> Data? {
-        if path != propertyDefinitionPath { _ = try newNotePath(path, id: "", root: root) }
+        if path.hasPrefix(".memocard/trash/") { _ = try trashLocation(String(path.dropFirst(".memocard/trash/".count))) }
+        else if path != propertyDefinitionPath && path != ".memocard/pins.json" { _ = try newNotePath(path, id: "", root: root) }
         let url = root.appendingPathComponent(path)
         try validate(url, inside: root)
         return fm.fileExists(atPath: url.path) ? try readSource(url) : nil
@@ -1228,6 +1328,15 @@ public actor VaultStore {
                 guard next.count <= 8 * 1024 * 1024 else { throw VaultError(code: "NOTE_TOO_LARGE", message: "引用文件超出大小限制，重命名未提交。") }
                 guard sha256(source) == note.note.contentHash else { throw VaultError(code: "HASH_CONFLICT", message: "引用笔记已被外部修改，重命名未提交。") }
                 changes.append(RenameChange(path: note.note.relativePath, before: source, after: next))
+            }
+        }
+        if compatible {
+            let stored = try readStoredNotePins()
+            if let date = stored.pins["path:" + old] {
+                var pins = stored.pins; pins.removeValue(forKey: "path:" + old); pins["path:" + path] = date
+                let before = try readSource(root.appendingPathComponent(".memocard/pins.json"))
+                guard sha256(before) == stored.contentHash else { throw VaultError(code: "HASH_CONFLICT", message: "固定记录已改变，重命名未提交。") }
+                changes.append(RenameChange(path: ".memocard/pins.json", before: before, after: try encode(pins)))
             }
         }
         changes.append(RenameChange(path: old, before: original, after: nil))
@@ -1397,6 +1506,151 @@ public actor VaultStore {
         try fm.createDirectory(at: path.deletingLastPathComponent(), withIntermediateDirectories: true)
         try coordinateWrite(path, inside: localDataURL) { try encode(reviews).write(to: $0, options: .atomic) }
         return try encode(["reminderDismissed": true])
+    }
+
+    private struct TrashMetadata: Codable { let id: String; let relativePath: String; let createdAt: String; let deletedAt: String }
+    private struct TrashedNote: Encodable { let trashKey: String; let deletedAt: String; let note: Note }
+
+    private func trashLocation(_ key: String) throws -> (token: String, path: String, url: URL) {
+        let (root, _) = try active(), parts = key.split(separator:"/",omittingEmptySubsequences:false)
+        guard parts.count >= 2, !key.contains("\\") else { throw VaultError(code:"INVALID_TRASH",message:"回收记录标识无效。") }
+        let token = try canonicalID(String(parts[0])), path = parts.dropFirst().joined(separator:"/")
+        let sourceParts = parts.dropFirst()
+        guard (compatible || sourceParts.first == "notes"), path.lowercased().hasSuffix(".md"),
+              sourceParts.allSatisfy({ !$0.isEmpty && !$0.hasPrefix(".") }),
+              !path.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) else {
+            throw VaultError(code:"PATH_NOT_ALLOWED",message:"回收记录路径无效。")
+        }
+        let url = root.appendingPathComponent(".memocard/trash/\(token)/\(path)")
+        try validate(url,inside:root)
+        return (token,path,url)
+    }
+
+    private func readTrashedNote(_ key: String) throws -> TrashedNote {
+        let location = try trashLocation(key), (root, metadata) = try active()
+        let bytes = try coordinateRead(location.url,inside:root) { url in
+            guard try self.fileType(url) == .typeRegular else { throw VaultError(code:"INVALID_TRASH",message:"回收笔记必须是普通文件。") }
+            return try self.readSource(url)
+        }
+        let directory = root.appendingPathComponent(".memocard/trash/\(location.token)"), info = directory.appendingPathComponent("entry.json")
+        let record: TrashMetadata? = fm.fileExists(atPath:info.path) ? try coordinateRead(info,inside:root) { try JSONDecoder().decode(TrashMetadata.self,from:self.readSource($0)) } : nil
+        if let record { guard record.relativePath == location.path, (try canonicalID(record.id)) == record.id else { throw VaultError(code:"INVALID_TRASH",message:"回收记录与文件不匹配。") } }
+        let date = try record?.deletedAt ?? timestamp(directory.resourceValues(forKeys:[.creationDateKey]).creationDate ?? Date())
+        let id = record?.id ?? location.token, createdAt = record?.createdAt ?? date
+        let note = try compatible ? parseObsidianNote(bytes,relativePath:location.path,vaultID:metadata.vaultId,identity:FileIdentity(id:id,path:location.path,hash:sha256(bytes),createdAt:createdAt),modified:Date()).note : parseNote(bytes,relativePath:location.path,vaultID:metadata.vaultId).note
+        if let record, note.id != record.id { throw VaultError(code:"INVALID_TRASH",message:"回收记录与笔记身份不匹配。") }
+        return TrashedNote(trashKey:key,deletedAt:date,note:note)
+    }
+
+    private func getTrash() throws -> Data {
+        struct Item: Encodable { let trashKey: String; let id: String; let title: String?; let relativePath: String; let deletedAt: String; let contentHash: String; let preview: String }
+        struct Issue: Encodable { let path: String; let message: String }
+        struct Result: Encodable { let notes: [Item]; let issues: [Issue] }
+        let (root, _) = try active(), directory = root.appendingPathComponent(".memocard/trash")
+        try validate(directory,inside:root)
+        guard fm.fileExists(atPath:directory.path) else { return try encode(Result(notes:[],issues:[])) }
+        var notes:[Item]=[], issues:[Issue]=[]
+        func walk(_ folder:URL, prefix:String) throws {
+            for url in try fm.contentsOfDirectory(at:folder,includingPropertiesForKeys:nil) where !url.lastPathComponent.hasPrefix(".") {
+                let key = prefix.isEmpty ? url.lastPathComponent : prefix + "/" + url.lastPathComponent
+                do {
+                    try validate(url,inside:root)
+                    if try fileType(url) == .typeDirectory { if prefix.isEmpty { _ = try canonicalID(url.lastPathComponent) }; try walk(url,prefix:key) }
+                    else if url.pathExtension.lowercased() == "md" {
+                        let value = try readTrashedNote(key), note=value.note
+                        notes.append(Item(trashKey:key,id:note.id,title:note.title,relativePath:note.relativePath,deletedAt:value.deletedAt,contentHash:note.contentHash,preview:String(note.body.prefix(200))))
+                    }
+                } catch { issues.append(Issue(path:key,message:"此回收记录无法读取，原文件已保留。")) }
+            }
+        }
+        try walk(directory,prefix:"")
+        return try encode(Result(notes:notes.sorted { $0.deletedAt == $1.deletedAt ? $0.trashKey < $1.trashKey : $0.deletedAt > $1.deletedAt },issues:issues))
+    }
+
+    private func permanentlyDeleteNote(_ key: String, baseHash: String) throws -> Data {
+        let location = try trashLocation(key), (root, _) = try active()
+        try coordinateWrite(location.url,inside:root,options:.forDeleting) { url in
+            try self.requireNoConflict(url)
+            guard try self.fileType(url) == .typeRegular else { throw VaultError(code:"INVALID_TRASH",message:"回收笔记必须是普通文件。") }
+            guard sha256(try self.readSource(url)) == baseHash else { throw VaultError(code:"HASH_CONFLICT",message:"回收笔记已变化，请刷新后重新确认。") }
+            try self.fm.removeItem(at:url)
+        }
+        return try encode(["deleted":true])
+    }
+
+    private func restoreNote(_ key: String, baseHash: String) throws -> Note {
+        let archived = try readTrashedNote(key), location = try trashLocation(key), (root, metadata) = try active(), snapshot = try scan()
+        guard snapshot.coverage.complete else { throw VaultError(code:"SCAN_INCOMPLETE",message:"笔记库尚未完成校验，请稍后重试。",retryable:true) }
+        guard !snapshot.notes.contains(where:{$0.note.id == archived.note.id}) else { throw VaultError(code:"DUPLICATE_ID",message:"此笔记身份已存在，回收记录已保留。") }
+        var restored:Note?
+        do { try coordinateWrite(root,inside:root,options:.forMerging) { _ in
+            try self.validate(location.url,inside:root)
+            let original = try self.readSource(location.url)
+            guard archived.note.contentHash == baseHash, sha256(original) == baseHash else { throw VaultError(code:"HASH_CONFLICT",message:"回收笔记已变化，请刷新后重试。") }
+            var path = location.path, count = 2
+            let originalURL = root.appendingPathComponent(path)
+            while self.fm.fileExists(atPath:root.appendingPathComponent(path).path) {
+                let name = originalURL.deletingPathExtension().lastPathComponent + " (\(count))." + originalURL.pathExtension
+                path = originalURL.deletingLastPathComponent().appendingPathComponent(name).path.replacingOccurrences(of:root.path + "/",with:"");count += 1
+            }
+            let target = root.appendingPathComponent(path)
+            try self.validate(target,inside:root);try self.fm.createDirectory(at:target.deletingLastPathComponent(),withIntermediateDirectories:true);try self.validate(target,inside:root)
+            let journal = RenameJournal(root:root.path,scope:self.localScope,changes:[RenameChange(path:path,before:nil,after:original),RenameChange(path:".memocard/trash/" + key,before:original,after:nil)],identities:self.identities)
+            try encode(journal).write(to:self.renameJournalURL,options:.atomic)
+            try self.fm.moveItem(at:location.url,to:target)
+            let identity=FileIdentity(id:archived.note.id,path:path,hash:baseHash,createdAt:archived.note.createdAt)
+            if self.compatible { try self.persistIdentities(self.identities.filter{$0.id != identity.id && $0.path != path} + [identity]) }
+            try self.fm.removeItem(at:self.renameJournalURL)
+            restored = try self.compatible ? parseObsidianNote(original,relativePath:path,vaultID:metadata.vaultId,identity:identity,modified:Date()).note : parseNote(original,relativePath:path,vaultID:metadata.vaultId).note
+        }} catch { try recoverRename();throw error }
+        parsedCache.removeAll();invalidateSnapshot()
+        return restored!
+    }
+
+    private func deleteNote(id: String, baseHash: String) throws -> Data {
+        let id = try canonicalID(id), (root, _) = try active(), snapshot = try scan()
+        guard snapshot.coverage.complete else { throw VaultError(code: "SCAN_INCOMPLETE", message: "笔记库尚未完成校验，请稍后重试。", retryable: true) }
+        guard !snapshot.duplicateIDs.contains(id) else { throw VaultError(code: "DUPLICATE_ID", message: "笔记 ID 重复，无法删除。") }
+        guard let note = snapshot.notes.first(where: { $0.note.id == id })?.note, note.deletedAt == nil else { throw VaultError(code: "NOTE_NOT_FOUND", message: "找不到此笔记。") }
+        let source = root.appendingPathComponent(note.relativePath)
+        let trashPath = ".memocard/trash/\(UUID().uuidString.lowercased())/\(note.relativePath)"
+        let target = root.appendingPathComponent(trashPath)
+        do { try coordinateWrite(source, inside: root, options: .forMoving) { url in
+            try self.requireNoConflict(url)
+            guard try self.fileType(url) == .typeRegular else { throw VaultError(code: "PATH_NOT_ALLOWED", message: "笔记必须是普通文件。") }
+            let original = try self.readSource(url)
+            guard sha256(original) == baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "笔记已在其他位置修改，请重新读取后再删除。") }
+            try self.validate(target, inside: root)
+            try self.fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try self.validate(target, inside: root)
+            let tokenDirectory = root.appendingPathComponent(trashPath.split(separator:"/").prefix(3).joined(separator:"/"))
+            let metadataURL = tokenDirectory.appendingPathComponent("entry.json")
+            try self.validate(metadataURL, inside:root)
+            try encode(TrashMetadata(id:id,relativePath:note.relativePath,createdAt:note.createdAt,deletedAt:timestamp())).write(to:metadataURL,options:.atomic)
+            let journal = RenameJournal(root:root.path,scope:self.localScope,changes:[RenameChange(path:trashPath,before:nil,after:original),RenameChange(path:note.relativePath,before:original,after:nil)],identities:self.identities)
+            try encode(journal).write(to:self.renameJournalURL,options:.atomic)
+            try self.fm.moveItem(at: url, to: target)
+            if self.compatible { try self.persistIdentities(self.identities.filter{$0.id != id}) }
+            try self.fm.removeItem(at:self.renameJournalURL)
+        }} catch { try recoverRename();throw error }
+        parsedCache.removeAll(); invalidateSnapshot()
+        struct Deleted: Encodable { let id: String; let relativePath: String; let trashPath: String }
+        return try encode(Deleted(id: id, relativePath: note.relativePath, trashPath: trashPath))
+    }
+
+    private func deleteDraft(id: String, source: RecoverySource) throws -> Data {
+        let id = try canonicalID(id), key = try validatedDraftKey(source.draftKey, id: id)
+        let path = try recoveryDirectory(source).appendingPathComponent("\(key).json")
+        try coordinateWrite(path, inside: localDataURL, options: .forDeleting) { url in
+            guard self.fm.fileExists(atPath: url.path) else { throw VaultError(code: "DRAFT_CHANGED", message: "草稿已变化，请刷新草稿后重试。", retryable: true) }
+            guard try self.fileType(url) == .typeRegular else { throw VaultError(code: "INVALID_DRAFT", message: "草稿必须是普通文件，原记录已保留。") }
+            let bytes = try Data(contentsOf: url), draft = try JSONDecoder().decode(Draft.self, from: bytes)
+            guard draft.id == id, (draft.revision ?? sha256(bytes)) == source.revision else {
+                throw VaultError(code: "DRAFT_CHANGED", message: "草稿已变化，请刷新草稿后重试。", retryable: true)
+            }
+            try self.fm.removeItem(at: url)
+        }
+        return try encode(["deleted": true])
     }
 
     private func getDrafts() throws -> Data {

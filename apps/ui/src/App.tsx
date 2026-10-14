@@ -1,11 +1,10 @@
 import { TagColorProvider } from './TagColorProvider';
 import { renamedTag } from "./rename-tag";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, X } from "lucide-react";
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { NavActions } from "./components/nav-actions";
+import { Sidebar, SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage } from "@/components/ui/breadcrumb";
-import { NavActions } from "@/components/nav-actions";
-import { AppSidebar } from "@/components/app-sidebar";
 import { noteFilterEmptyTitles, noteFilterLabels } from "./note-filter-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -16,26 +15,43 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { Note, NoteFilterCounts, NotePage, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
+import type { Note, NoteFilterCounts, NotePage, NotePins, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
 import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type DraftList, type DraftIssue, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
 import type { EditorHandle } from "./Editor";
+import type { NoteDeleteTarget } from "./components/note-delete-dialog";
+import type { QuickCaptureHandle } from "./components/quick-capture";
 import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
 import { cn } from "@/lib/utils";
 
-type View = "notes" | "settings";
+type View = "home" | "notes" | "settings" | "trash";
 type TagCount = { name: string; count: number };
-const getView = (): View => window.location.hash === "#/settings" ? "settings" : "notes";
+const getView = (): View => window.location.hash === "#/trash" ? "trash" : window.location.hash === "#/settings" ? "settings" : window.location.hash.startsWith("#/notes") ? "notes" : "home";
 const bridgeErrorCode = (error: unknown): string | null => typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
 const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error === "object" && error !== null && "retryable" in error && typeof error.retryable === "boolean" ? error.retryable : null;
 const loadEditor = () => import("./Editor").then((module) => ({ default: module.Editor }));
 const Editor = lazy(loadEditor);
+const NotePinButton = lazy(() => import("./components/note-pin-button").then(module => ({default:module.NotePinButton})));
+const QuickCapture = lazy(() => import("./components/quick-capture").then(module => ({default:module.QuickCapture})));
+const HomeMascot = lazy(() => import("./components/home-mascot").then(module => ({default:module.HomeMascot})));
 const NoteCollection = lazy(() => import("./components/note-collection").then((module) => ({ default: module.NoteCollection })));
 const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
+const AppSidebar = lazy(() => import("./components/app-sidebar").then(module => ({default:module.AppSidebar})));
+const TrashPage = lazy(() => import("./components/trash-page"));
+
+const NoteDeleteDialog = lazy(() => import("./components/note-delete-dialog"));
 const Switch = lazy(() => import("@/components/ui/switch").then(module => ({ default: module.Switch })));
 
 export function App() {
   const [view, setView] = useState<View>(getView);
+  const [trashVersion,setTrashVersion] = useState(0);
+  const returnView = useRef<View>(getView() === "settings" || getView() === "trash" ? "notes" : getView());
+  const [homeTab, setHomeTab] = useState<"recent" | "pinned">("recent");
+  const [captureOpened, setCaptureOpened] = useState(() => getView() === 'home');
+  const [notePins, setNotePins] = useState<(NotePins & { vaultId: string }) | null>(null);
+  const [pinReadError, setPinReadError] = useState<unknown>(null);
+  const [pinWorking, setPinWorking] = useState(false);
+  const pinEpoch = useRef(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const searchField = useRef<HTMLInputElement>(null);
@@ -44,6 +60,7 @@ export function App() {
   const returnScroll = useRef(0);
   const refreshAnchor = useRef<{id: string; top: number} | null>(null);
   const editorHandle = useRef<EditorHandle | null>(null);
+  const quickCaptureHandle = useRef<QuickCaptureHandle | null>(null);
   const editorHash = useRef('');
   const routeHandler = useRef<() => void>(() => {});
   const routeLoading = useRef('');
@@ -52,6 +69,10 @@ export function App() {
   const returnFocus = useRef<HTMLElement | null>(null);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
+  const [draftToDelete, setDraftToDelete] = useState<{draft:Draft; vaultId:string; vaultBinding?:string} | null>(null);
+  const deletingDraft = useRef(false);
+  const draftDeleteFocus = useRef<HTMLButtonElement>(null);
+  const [noteToDelete, setNoteToDelete] = useState<NoteDeleteTarget | null>(null);
   const [reminderWorking, setReminderWorking] = useState(false);
   const [recoveryError, setRecoveryError] = useState<unknown>(null);
   const [routeReady, setRouteReady] = useState(false);
@@ -113,7 +134,7 @@ export function App() {
     setPendingRoute(null); setWorking(false);
     editorHash.current = '';
     attemptedRoute.current = '';
-    window.history.replaceState(null, '', '#/notes');
+    window.history.replaceState(null, '', `#/${returnView.current}`);
     return true;
   }, []);
   const restoreListPosition = useCallback(() => {
@@ -152,7 +173,7 @@ export function App() {
       if (current !== generation.current) return;
       setStatus(nextStatus); setEnvironment(nextEnvironment); setWebConnected(true);
       serviceResponded = true;
-      listKey = JSON.stringify([nextStatus.vaultId, resetFilters ? "" : debouncedQuery, resetFilters ? null : tag, resetFilters ? null : quickFilter]);
+      listKey = JSON.stringify([nextStatus.vaultId, resetFilters ? "" : debouncedQuery, resetFilters ? null : tag, resetFilters ? null : quickFilter, view, homeTab]);
       if (connectionLost.current) { connectionLost.current = false; setError(""); }
       const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
       const deepLink = /^#\/notes\/([^/]+)$/.exec(window.location.hash);
@@ -172,7 +193,7 @@ export function App() {
         // Keep the last list only when the same vault needs its permission renewed.
         if (!allowed.has("reauthorizeVault") || !nextStatus.vaultId || nextStatus.vaultId !== loadedVaultId.current) {
           loadedListKey.current = null;
-          setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setFilterCounts(undefined);
+          setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setFilterCounts(undefined); setNotePins(null);
         }
         setCursor(null); return;
       }
@@ -186,7 +207,7 @@ export function App() {
       // Replay the loaded extent using one fresh cursor chain; never merge two snapshots.
       const pageCount = background && !resetFilters ? loadedPages.current : 1;
       const readPages = async (): Promise<NotePage | null> => {
-        if (!allowed.has("queryNotes")) return null;
+        if (!allowed.has("queryNotes") || view === "trash") return null;
         for (let attempt = 0; ; attempt++) {
           try {
             let page: NotePage | null = null;
@@ -194,7 +215,7 @@ export function App() {
             const refreshed: Note[] = [];
             for (let index = 0; index < pageCount; index++) {
               if (current !== generation.current) return null;
-              page = await request<NotePage>("queryNotes", { query: resetFilters ? "" : debouncedQuery, tags: !resetFilters && tag ? [tag] : [], ...(quickFilter && !resetFilters ? { quickFilter } : {}), limit: 30, ...(nextCursor ? {cursor: nextCursor} : {}) });
+              page = await request<NotePage>("queryNotes", { query: resetFilters || view === "home" ? "" : debouncedQuery, tags: !resetFilters && view !== "home" && tag ? [tag] : [], ...(quickFilter && !resetFilters && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), limit: 30, ...(nextCursor ? {cursor: nextCursor} : {}) });
               refreshed.push(...page.notes);
               nextCursor = page.nextCursor;
               if (!nextCursor) break;
@@ -206,11 +227,15 @@ export function App() {
           }
         }
       };
+      const epoch = pinEpoch.current;
+      const pinsResult = allowed.has("getNotePins") ? request<NotePins>("getNotePins").then(pins => {
+        if (current === generation.current && epoch === pinEpoch.current && nextStatus.vaultId) { setNotePins({ ...pins, vaultId: nextStatus.vaultId }); setPinReadError(null); }
+      }).catch(cause => { if (current === generation.current && epoch === pinEpoch.current) { setNotePins(null); setPinReadError(cause); } }) : Promise.resolve();
       const [page, tagResult, folderResult] = await Promise.all([
         readPages(),
         allowed.has("listTags") ? request<{ tags: TagCount[] }>("listTags") : Promise.resolve({ tags: [] }),
         allowed.has("listFolders") ? request<{ folders: string[] }>("listFolders") : Promise.resolve({ folders: [] }),
-        registry,
+        registry, pinsResult,
       ]);
       if (current !== generation.current) return;
       if (background && !editingRef.current && scrollContainer.current && scrollContainer.current.scrollTop > 0) {
@@ -239,7 +264,7 @@ export function App() {
         if (pendingRefresh.current && !loadingMore.current && !selectingVault.current) void refresh(true);
       }
     }
-  }, [debouncedQuery, tag, quickFilter]);
+  }, [debouncedQuery, tag, quickFilter, view, homeTab]);
 
   const invalidateRequests = useCallback(() => { generation.current++; }, []);
   useEffect(() => { void refresh(); return invalidateRequests; }, [refresh, invalidateRequests]);
@@ -270,9 +295,10 @@ export function App() {
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(""), 3500); return () => clearTimeout(timer); }, [notice]);
 
   async function selectVault(create: boolean) {
+    if (quickCaptureHandle.current?.isBusy()) return;
     if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setSelectionNotice("");
-    selectingVault.current = true;
+    selectingVault.current = true; pinEpoch.current++;
     setSwitchingVault(true);
     generation.current++;
     editorGeneration.current++;
@@ -287,7 +313,7 @@ export function App() {
         reconnectVault(result.reconnectUrl);
         return;
       }
-      setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
+      setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined); setNotePins(null); setPinReadError(null);
       setRecoveryDismissed(false); setRecoveryOpen(false);
       loadedListKey.current = null;
       setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setFolders([]); setCursor(null);
@@ -300,14 +326,15 @@ export function App() {
   }
 
   const activateVault = useCallback(async (vaultId: string) => {
+    if (quickCaptureHandle.current?.isBusy()) return;
     if (selectingVault.current || vaultId === status?.vaultId || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
-    selectingVault.current = true;
+    selectingVault.current = true; pinEpoch.current++;
     setSwitchingVault(true); setWorking(true); setError("");
     generation.current++; editorGeneration.current++;
     try {
       const result = await request<SelectVaultResult>("activateVault", { vaultId });
       if ("reconnectUrl" in result) { reconnectVault(result.reconnectUrl); return; }
-      setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined);
+      setQuery(""); setDebouncedQuery(""); setTag(null); setQuickFilter(null); setFilterCounts(undefined); setNotePins(null); setPinReadError(null);
       loadedListKey.current = null;
       loadedPages.current = 1;
       await refresh(false, true);
@@ -342,17 +369,17 @@ export function App() {
     editorGeneration.current++;
     if (openingLink.current && openingLink.current !== draft.id) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
-    if (!editingRef.current && !editorHash.current) { returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
+    if (!editingRef.current && !editorHash.current) { returnView.current = view === 'settings' || view === 'trash' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
     const hash = `#/notes/${draft.baseHash ? draft.id : 'new'}`;
     editorHash.current = hash;
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
-    setView('notes');
+    setView(returnView.current);
     editingRef.current = draft;
     setEditing({ ...draft, note });
     setPendingRoute(null);
     setWorking(false);
-  }, []);
+  }, [view]);
 
   const openNote = useCallback(async (id: string, fromLink = false, draft?: Draft) => {
     if (selectingVault.current) return;
@@ -364,11 +391,11 @@ export function App() {
     if (openingLink.current && openingLink.current !== id && !fromLink) setPendingOpenNote(openingLink.current);
     openingLink.current = fromLink ? id : null;
     const currentRequest = ++editorGeneration.current;
-    if (!wasDetail) { returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
+    if (!wasDetail) { returnView.current = view === 'settings' || view === 'trash' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
     const hash = `#/notes/${id}`;
     editorHash.current = hash; attemptedRoute.current = hash;
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
-    setPendingRoute(hash); setView('notes'); setMenuOpen(false);
+    setPendingRoute(hash); setView(returnView.current); setMenuOpen(false);
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
     const candidates = drafts.filter(item => item.id === id && !item.unscoped);
     const pending = draft ?? (candidates.length === 1 ? candidates[0] : undefined);
@@ -387,7 +414,7 @@ export function App() {
     } finally {
       if (currentRequest === editorGeneration.current) { setWorking(false); openingLink.current = null; }
     }
-  }, [drafts, showEditor, environment?.vaultBinding, leaveEditor]);
+  }, [drafts, showEditor, environment?.vaultBinding, leaveEditor, view]);
 
   useEffect(() => () => { editorGeneration.current++; }, []);
 
@@ -400,19 +427,20 @@ export function App() {
     return unsubscribe;
   }, [openNote]);
 
-  function finishEditing() {
+  function finishEditing(_saved?:Note, deleted = false) {
     editorGeneration.current++;
     editingRef.current = null;
     setEditing(null);
     setPendingRoute(null);
     editorHash.current = '';
     attemptedRoute.current = '';
-    window.history.replaceState(null, '', '#/notes');
-    setView('notes');
+    window.history.replaceState(null, '', `#/${returnView.current}`);
+    setView(returnView.current);
     restoreListPosition();
     if (quickFilter) loadedPages.current = 1;
     void refresh(true);
-    if (pendingOpenNote) {
+    if (deleted) setPendingOpenNote(null);
+    if (pendingOpenNote && !deleted) {
       const id = pendingOpenNote;
       setPendingOpenNote(null);
       void openNote(id, true);
@@ -425,7 +453,7 @@ export function App() {
     setPaging(true);
     const current = generation.current;
     try {
-      const page = await request<NotePage>("queryNotes", { query: debouncedQuery, tags: tag ? [tag] : [], ...(quickFilter ? { quickFilter } : {}), limit: 30, cursor });
+      const page = await request<NotePage>("queryNotes", { query: view === "home" ? "" : debouncedQuery, tags: view !== "home" && tag ? [tag] : [], ...(quickFilter && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), limit: 30, cursor });
       if (generation.current !== current) return;
       setNotes((previous) => [...previous, ...page.notes.filter((note) => !previous.some((item) => item.id === note.id))]); setCursor(page.nextCursor);
       loadedPages.current++;
@@ -457,6 +485,40 @@ export function App() {
     finally { setWorking(false); }
   }
 
+  function changeHomeTab(tab: "recent" | "pinned") {
+    if (tab === homeTab) return;
+    generation.current++; loadedPages.current = 1; returnScroll.current = 0;
+    loadedListKey.current = null; setListTimeout(null);
+    setNotes([]); setCursor(null); setLoading(true); setError("");
+    setHomeTab(tab);
+    if (scrollContainer.current) scrollContainer.current.scrollTop = 0;
+  }
+
+  async function togglePinned() {
+    if (!editing?.baseHash || !notePins || notePins.vaultId !== status?.vaultId || pinWorking || selectingVault.current) return;
+    const id = editing.id, vaultId = notePins.vaultId, desired = !notePins.pins[id];
+    const epoch = ++pinEpoch.current;
+    setPinWorking(true); setPinReadError(null);
+    try {
+      let current: NotePins = notePins;
+      for (let attempt = 0; ; attempt++) {
+        try {
+          const updated = await request<NotePins>("setNotePinned", { id, pinned: desired, baseHash: current.contentHash, vaultId, ...(isBrowserVault ? { vaultBinding: editing.vaultBinding ?? environment?.vaultBinding } : {}) });
+          if (epoch === pinEpoch.current && loadedVaultId.current === vaultId && !selectingVault.current) {
+            setNotePins({ ...updated, vaultId }); setNotice(desired ? "已固定到主页" : "已取消固定");
+            if (refreshCount.current > 0) pendingRefresh.current = true; else void refresh(true);
+          }
+          break;
+        } catch (cause) {
+          if (bridgeErrorCode(cause) !== "HASH_CONFLICT" || attempt > 0 || epoch !== pinEpoch.current || selectingVault.current) throw cause;
+          current = await request<NotePins>("getNotePins");
+        }
+      }
+    } catch (cause) { if (epoch === pinEpoch.current) setPinReadError(cause); }
+    finally { setPinWorking(false); }
+  }
+
+  const isNotePinned = Boolean(editing && notePins?.vaultId === status?.vaultId && notePins?.pins[editing.id]);
   const canCreate = Boolean(status?.connected && capabilities.has("saveNote") && (!isLocalWeb || webConnected) && (!isBrowserVault || !loading) && !switchingVault);
   const localWebReconnectRequired = isLocalWeb && ["BRIDGE_UNAVAILABLE", "WEB_UNAUTHORIZED"].includes(bridgeErrorCode(error) ?? "");
   const retryableError = bridgeErrorRetryable(error) ?? true;
@@ -474,9 +536,9 @@ export function App() {
   const detailReadFailed = openingNote && Boolean(error) && !localWebReconnectRequired;
   const canRetryDetail = retryableError && bridgeErrorCode(error) !== "NOTE_NOT_FOUND";
   const openingTitle = pendingRoute ? notes.find(note => note.id === decodeURIComponent(pendingRoute.slice("#/notes/".length)))?.title?.trim() : undefined;
-  const connectionState = !detailView && view === "notes" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
-  const listTimeoutVisible = !detailView && view === "notes" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
-  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
+  const connectionState = !detailView && view !== "settings" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
+  const listTimeoutVisible = !detailView && view !== "settings" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
+  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "home" ? "主页" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
   const newNote = async () => {
     if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setError('');
@@ -519,23 +581,40 @@ export function App() {
     finally { setReminderWorking(false); }
   };
 
+  const deleteDraft = async () => {
+    if (!draftToDelete || deletingDraft.current || reminderWorking || selectingVault.current) return;
+    const {draft, vaultId, vaultBinding} = draftToDelete;
+    const current = generation.current;
+    deletingDraft.current = true; setReminderWorking(true); setRecoveryError(null);
+    try {
+      await request("deleteDraft", {id:draft.id, draftKey:draft.draftKey, revision:draft.revision, unscoped:draft.unscoped, ...(draft.recoveryScope ? {scope:draft.recoveryScope} : {}), vaultId, ...(vaultBinding ? {vaultBinding} : {})});
+      if (current === generation.current) {
+        setDrafts(items => items.filter(item => !(item.id === draft.id && item.draftKey === draft.draftKey && item.revision === draft.revision && item.unscoped === draft.unscoped && item.recoveryScope === draft.recoveryScope)));
+        setNotice("草稿已删除");
+      }
+    } catch (cause) { if (current === generation.current) setRecoveryError(cause); }
+    finally { deletingDraft.current = false; setReminderWorking(false); setDraftToDelete(null); }
+  };
+
   const navigate = async (nextView: View, nextTag: string | null = null, nextFilter: NoteQuickFilter | null = null) => {
     const returningFromDetail = Boolean(editorHash.current);
     if (!(await leaveEditor())) return;
     openingLink.current = null;
     setError('');
     setView(nextView);
-    if (nextView === "notes") {
-      if (nextTag !== tag || nextFilter !== quickFilter) {
+    if (nextView === 'home') setCaptureOpened(true);
+    if (nextView !== "settings") {
+      if (nextView !== view || nextTag !== tag || nextFilter !== quickFilter) {
         generation.current++; loadedPages.current = 1;
         loadedListKey.current = null; setListTimeout(null);
         setNotes([]); setCursor(null); setLoading(true);
       }
       setTag(nextTag); setQuickFilter(nextFilter);
+      if (nextView === "home") { setQuery(""); setDebouncedQuery(""); }
     }
     window.location.hash = `#/${nextView}`;
     setMenuOpen(false);
-    if (returningFromDetail && nextView === 'notes') restoreListPosition();
+    if (returningFromDetail && nextView === returnView.current) restoreListPosition();
   };
 
   const searchNotes = async () => {
@@ -546,7 +625,7 @@ export function App() {
 
   useEffect(() => {
     routeHandler.current = () => {
-      const requested = window.location.hash || '#/notes';
+      const requested = window.location.hash || '#/home';
       if (requested === editorHash.current || routeLoading.current === requested) return;
       routeLoading.current = requested;
       attemptedRoute.current = requested;
@@ -559,13 +638,17 @@ export function App() {
         if (match && status?.connected) {
           if (match[1] === 'new') await newNote();
           else await openNote(decodeURIComponent(match[1]));
-        } else { setView(getView()); setMenuOpen(false); if (requested === '#/notes') restoreListPosition(); }
+        } else {
+          setView(getView()); setMenuOpen(false);
+          if (getView() === 'home') { setCaptureOpened(true); setQuery(''); setDebouncedQuery(''); setTag(null); setQuickFilter(null); }
+          if (requested === '#/notes' || requested === '#/home' || requested === '#/trash') restoreListPosition();
+        }
       })().finally(() => { routeLoading.current = ''; });
     };
     if (!editingRef.current && routeReady && status?.connected && attemptedRoute.current !== window.location.hash && /^#\/notes\//.test(window.location.hash)) routeHandler.current();
   });
 
-  const navigation = <AppSidebar
+  const navigation = <Suspense fallback={<Sidebar aria-hidden="true" />}><AppSidebar
     view={view} tag={tag} quickFilter={quickFilter} filterCounts={filterCounts} tags={tags} onRenameTag={async (from, to) => {
       if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
       try {
@@ -573,7 +656,7 @@ export function App() {
         if (tag) setTag(renamedTag(tag, from, to));
       } finally { await refresh(); }
     }}
-    connected={Boolean(status?.connected)}
+    canTrash={capabilities.has("getTrash") && capabilities.has("restoreNote")} connected={Boolean(status?.connected)}
     vaultId={status?.vaultId} vaultName={status?.vaultName || "记忆卡"} registeredVaults={registeredVaults} vaultStatusText={vaultStatusText}
     hasVaultIssue={Boolean(error || needsPermission || (status?.connected && !status.indexing && !status.coverage.complete))}
     canCreate={canCreate} canChooseVault={chooseAllowed} canCreateVault={createAllowed}
@@ -582,26 +665,28 @@ export function App() {
     onSearch={searchNotes} onSelectVault={(create) => void selectVault(create)}
     onActivateVault={(vaultId) => void activateVault(vaultId)}
     onReauthorize={() => void reauthorizeVault()}
-  />;
+  /></Suspense>;
 
   return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
     {navigation}
     <SidebarInset className="min-w-0 min-h-0">
       <header className="flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm">
-          {detailView && <Button variant="ghost" size="icon" className={cn("shrink-0", editing && "md:hidden")} onClick={() => openingNote ? void navigate('notes', tag, quickFilter) : void editorHandle.current?.finish()} aria-label="返回笔记列表"><ArrowLeft className="size-4" /></Button>}
+          {detailView && <Button variant="ghost" size="icon" className="shrink-0" onClick={() => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish()} aria-label={returnView.current === "home" ? "返回主页" : "返回笔记列表"}><ArrowLeft className="size-4" /></Button>}
           <SidebarTrigger className={`shrink-0 ${editing ? "hidden md:inline-flex" : ""}`} />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <Breadcrumb aria-label="当前位置" className="min-w-0"><BreadcrumbList><BreadcrumbItem className="min-w-0"><BreadcrumbPage className="line-clamp-1">{title}</BreadcrumbPage></BreadcrumbItem></BreadcrumbList></Breadcrumb>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2 px-3">
           {!isConnectedClient && <span className="hidden text-xs text-muted-foreground sm:inline">浏览器预览</span>}
-          <NavActions canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={() => void refresh()} onSettings={() => navigate("settings")} />
+          {editing && capabilities.has("setNotePinned") && <Suspense fallback={null}><NotePinButton pinned={isNotePinned} unsaved={!editing.baseHash} disabled={!editing.baseHash || !notePins || notePins.vaultId !== status?.vaultId || pinWorking || switchingVault || !status?.connected || (isLocalWeb && !webConnected)} onClick={() => void togglePinned()} /></Suspense>}
+          <NavActions canDeleteNote={canCreate && !pinWorking && !working} onDeleteNote={editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => {setNoteToDelete({id:editing.id,title,vaultId:status.vaultId!,vaultBinding:editing.vaultBinding ?? environment?.vaultBinding});} : undefined} canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={() => {if(view === "trash")setTrashVersion(value=>value+1);void refresh();}} onSettings={() => navigate("settings")} />
         </div>
       </header>
-      <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view === "notes" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
+      <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view !== "settings" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
         <div className={cn("page-content mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-6 md:py-8" : "max-w-3xl py-6 md:py-8")}>
           {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请选择文件夹并允许访问，首次读取可能需要一些时间。</AlertDescription></Alert>}
+          {Boolean(pinReadError) && <PageNotice title="固定状态暂不可用" actions={<Button variant="outline" size="sm" disabled={pinWorking || refreshingPages || switchingVault} onClick={() => void refresh(true)}>重试</Button>}>{errorMessage(pinReadError)}</PageNotice>}
           {selectionNotice && !switchingVault && !connectionState && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription><p>笔记库未切换，请重新选择并允许访问文件夹。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words">{selectionNotice}</p></details><div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void selectVault(false)} disabled={working}>重新选择</Button></div></AlertDescription></Alert>}
           {needsPermission && !connectionState && <Alert><FolderOpen className="size-4" /><AlertTitle>重新授权笔记文件夹</AlertTitle><AlertDescription className="flex flex-col items-start gap-3"><p>文件夹访问权限已失效，请重新授权以读取和保存。</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void reauthorizeVault()} disabled={working}>重新授权</Button></div></AlertDescription></Alert>}
           {Boolean(error) && !detailReadFailed && !(connectionState && localWebReconnectRequired) && <PageNotice title={localWebReconnectRequired ? "连接已断开" : openingNote ? "无法打开笔记" : "操作未完成"} actions={<>{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} variant="outline" size="sm" /> : retryableError && <Button variant="outline" size="sm" onClick={() => { if (openingNote && pendingRoute) void openNote(decodeURIComponent(pendingRoute.slice('#/notes/'.length))); else void refresh(); }} disabled={!isConnectedClient || loading || switchingVault}>重试</Button>}{openingNote && <Button variant="outline" size="sm" onClick={() => void navigate("notes", tag, quickFilter)}>返回列表</Button>}</>}>{errorMessage(error)}</PageNotice>}
@@ -624,7 +709,7 @@ export function App() {
 
           {draftIssues.length > 0 && <Alert role="status"><Info className="size-4" /><AlertTitle>部分草稿无法读取</AlertTitle><AlertDescription><p>原记录已保留，其他草稿仍可恢复。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><div className="mt-2 space-y-2">{draftIssues.map((issue,index) => <div key={`${issue.path ?? issue.code}:${index}`}><p>{issue.message}</p>{issue.path && <p className="break-all select-text text-xs">{issue.path}</p>}</div>)}</div></details></AlertDescription></Alert>}
 
-            {!detailView && view === "notes" && status?.connected && recoveryChoices.length > 0 && !recoveryDismissed && <Alert>
+            {!detailView && view !== "settings" && status?.connected && recoveryChoices.length > 0 && !recoveryDismissed && <Alert>
               <CircleAlert className="size-4" /><AlertTitle>发现 {recoveryChoices.length} 条{recoveryChoices.some(draft => draft.unscoped) ? "历史草稿" : "未保存内容"}</AlertTitle>
               <AlertDescription>可继续编辑，稍后处理不会删除草稿。
                 <div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => { if (recoveryChoices.length === 1 && !recoveryChoices[0].unscoped) void resumeDraft(recoveryChoices[0]); else setRecoveryOpen(true); }}>{recoveryChoices.some(draft => draft.unscoped) ? "查看草稿" : "恢复内容"}</Button><Button variant="outline" size="sm" onClick={() => setRecoveryDismissed(true)}>稍后处理</Button></div>
@@ -632,9 +717,23 @@ export function App() {
             </Alert>}
 
           {listTimeoutVisible === "refresh" && <PageNotice title="刷新超时" actions={<Button variant="outline" size="sm" disabled={refreshingPages || switchingVault} onClick={() => void refresh(true)}>重试</Button>}>当前显示上次读取的内容。</PageNotice>}
-          <div className={detailView || view === "settings" ? "sr-only" : "min-w-0 px-2 pb-2"}>
-            <h1 className="truncate text-[32px] font-bold leading-[1.2] tracking-tight">{title}</h1>
-          </div>
+          {!(view === "trash" && !detailView && status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote")) && <div className={detailView || view === "settings" ? "sr-only" : view === "home" ? "flex justify-center" : "min-w-0 px-2 pb-2"} style={view === "home" && !detailView ? {marginBlockStart:24,marginBlockEnd:8} : undefined}>
+            <h1 className={view === "home" && !detailView ? "sr-only" : "truncate text-[32px] font-bold leading-[1.2] tracking-tight"}>{title}</h1>
+            {view === "home" && !detailView && <Suspense fallback={<div style={{width:144,height:144}} />}><HomeMascot /></Suspense>}
+          </div>}
+          {captureOpened && status?.vaultId && loadedVaultId.current === status.vaultId && <div hidden={detailView || view !== "home"}>
+            <Suspense fallback={<div style={{height:162}} />}><QuickCapture key={`${status.vaultId}:${environment?.vaultBinding ?? ''}`} handle={quickCaptureHandle}
+              vaultId={status.vaultId} vaultBinding={environment?.vaultBinding} rootNotes={folders.includes('')} tags={tags.map(tag=>tag.name)}
+              disabled={!canCreate} canImage={capabilities.has('importAttachment') || capabilities.has('pickImage')}
+              draftCount={status?.connected && (recoveryDismissed || recoveryChoices.length === 0) ? recoveryRecords.length : 0} onOpenDrafts={() => setRecoveryOpen(true)}
+              onRecorded={() => {
+                setNotice('已记录'); loadedPages.current=1;
+                if (homeTab !== 'recent') changeHomeTab('recent');
+                else if (refreshCount.current > 0 || loadingMore.current) pendingRefresh.current=true;
+                else void refresh(true);
+              }} />
+            </Suspense>
+          </div>}
           {openingNote ? (detailReadFailed ? <EmptyState compact role="alert" icon="connection" title={bridgeErrorCode(error) === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(error)}>
             <div className="flex flex-wrap justify-center gap-2">
               {canRetryDetail && <Button disabled={loading || working || switchingVault} onClick={() => {
@@ -646,12 +745,13 @@ export function App() {
             </div>
           </EmptyState> : error ? null : <LoadingNote />) : editing ? <Suspense fallback={<LoadingNote />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
             setNotes(current => current.map(item => item.id === note.id ? note : item));
+            setEditing(current => current ? { ...current, id: note.id, baseHash: note.contentHash, note } : current);
             editorHash.current = `#/notes/${note.id}`;
             window.history.replaceState(null, '', editorHash.current);
             // Keep the session and undo history mounted after the first commit.
             if (editingRef.current) editingRef.current = { ...editingRef.current, id: note.id, baseHash: note.contentHash };
           }} /></Suspense> : <>
-          {view === "settings" ? <div className="space-y-8">
+          {view === "trash" ? status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote") ? <Suspense fallback={<LoadingNotes />}><TrashPage canPermanentlyDelete={capabilities.has("permanentlyDeleteNote")} key={`${status?.vaultId}:${environment?.vaultBinding ?? ''}`} vaultId={status?.vaultId ?? ''} vaultBinding={environment?.vaultBinding} refreshVersion={trashVersion} onRestored={()=>{if(refreshCount.current>0)pendingRefresh.current=true;else void refresh(true);}} /></Suspense> : loading ? <LoadingNotes /> : <EmptyState icon="folder" title={status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记库。"} /> : view === "settings" ? <div className="space-y-8">
             <section aria-labelledby="vault-settings-heading" className="space-y-3">
               <h2 id="vault-settings-heading" className="text-balance text-base font-medium">笔记库</h2>
               <Card className="gap-0 py-0 shadow-none"><CardContent className="divide-y divide-border/60 px-4">
@@ -686,9 +786,10 @@ export function App() {
               <p className="text-pretty text-sm leading-6 text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}
           </div> : <>
-            {status?.connected && recoveryRecords.length > 0 && (recoveryDismissed || recoveryChoices.length === 0) && <Button variant="ghost" size="sm" onClick={() => setRecoveryOpen(true)}>保留草稿（{recoveryRecords.length}）</Button>}
-            <Dialog open={recoveryOpen} onOpenChange={open => { setRecoveryOpen(open); setRecoveryError(null); }}><DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-md"><div className="pr-6"><DialogTitle className="text-balance">草稿</DialogTitle><DialogDescription className="sr-only">可继续编辑保留的草稿。不再提醒不会删除草稿。历史草稿请先确认所属笔记库。</DialogDescription></div>
+            {view !== "home" && status?.connected && recoveryRecords.length > 0 && (recoveryDismissed || recoveryChoices.length === 0) && <Button variant="ghost" size="sm" onClick={() => setRecoveryOpen(true)}>保留草稿（{recoveryRecords.length}）</Button>}
+            <Dialog open={recoveryOpen} onOpenChange={open => { if (deletingDraft.current) return; setRecoveryOpen(open); setRecoveryError(null); if (!open) setDraftToDelete(null); }}><DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-md" style={{"--tw-enter-scale":"1","--tw-exit-scale":"1"} as React.CSSProperties}><div className="pr-6"><DialogTitle className="text-balance">草稿</DialogTitle><DialogDescription className="sr-only">可继续编辑保留的草稿。不再提醒不会删除草稿。历史草稿请先确认所属笔记库。</DialogDescription></div>
               {recoveryError != null && <div className="space-y-2"><p role="alert" className="text-sm text-destructive">{errorMessage(recoveryError)}</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void refreshDrafts()}>刷新草稿</Button></div></div>}
+              {recoveryRecords.length === 0 && <p className="text-sm text-muted-foreground">暂无草稿。</p>}
               <div className="max-h-64 space-y-3 overflow-auto sm:max-h-80">{recoveryRecords.map(draft => <article className="space-y-3 rounded-lg border p-3" key={`${draft.recoveryScope ?? (draft.unscoped ? 'legacy' : 'current')}:${draft.draftKey ?? draft.id}`}>
                 <div className="space-y-1.5"><p className="line-clamp-2 text-pretty text-sm font-medium leading-6">{draft.title || draft.body.slice(0, 100) || "空正文"}</p>
                   {draft.title && draft.body && <p className="line-clamp-2 text-pretty text-sm leading-6 text-muted-foreground">{draft.body.slice(0,100)}</p>}
@@ -699,18 +800,21 @@ export function App() {
                   {draft.pendingProperties?.length ? <p className="text-pretty text-xs text-muted-foreground">{draft.pendingProperties.map(change => `${change.name}：${change.value === undefined ? '属性更改' : Array.isArray(change.value) ? change.value.join('、') : String(change.value)}`).join('；')}</p> : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button variant="outline" size="sm" aria-label={`继续编辑：${draft.title || draft.body.slice(0,100) || '空正文'}`} onClick={() => void resumeDraft(draft)}>继续编辑</Button>
+                  <Button variant="outline" size="sm" aria-label={`继续编辑：${draft.title || draft.body.slice(0,100) || '空正文'}`} disabled={reminderWorking} onClick={() => void resumeDraft(draft)}>继续编辑</Button>
+                  {capabilities.has("deleteDraft") && draft.draftKey && draft.revision && status?.vaultId && <Button variant="outline" size="sm" style={{"--accent-foreground":"var(--destructive)"} as React.CSSProperties} disabled={reminderWorking} aria-label={`删除草稿：${draft.title || draft.body.slice(0,100) || '空正文'}`} onClick={event => { draftDeleteFocus.current = event.currentTarget; setRecoveryError(null); setDraftToDelete({draft, vaultId:status.vaultId!, vaultBinding:draft.vaultBinding ?? environment?.vaultBinding}); }}><Trash2 className="size-3.5" />删除</Button>}
                   {draft.reminderDismissed ? <span className="flex items-center gap-1 text-xs text-muted-foreground"><Check className="size-3.5" aria-hidden="true" />已关闭提醒</span> : draft.unscoped && draft.draftKey && draft.revision && capabilities.has("dismissDraftReminder") && <Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void dismissDraftReminder(draft)}>不再提醒</Button>}
                 </div>
               </article>)}</div>
+            <Dialog open={draftToDelete !== null} onOpenChange={open => { if (!open && !deletingDraft.current) setDraftToDelete(null); }}><DialogContent className="sm:max-w-md" finalFocus={() => draftDeleteFocus.current?.isConnected ? draftDeleteFocus.current : true}><DialogTitle>删除这条草稿？</DialogTitle><DialogDescription>删除后无法恢复，已保存的笔记不受影响。</DialogDescription><p className="line-clamp-2 text-sm">{draftToDelete?.draft.title || draftToDelete?.draft.body.slice(0,100) || "空正文"}</p><div className="flex gap-2" style={{justifyContent:"flex-end"}}><Button variant="outline" size="sm" autoFocus disabled={reminderWorking} onClick={() => setDraftToDelete(null)}>取消</Button><Button variant="destructive" size="sm" disabled={reminderWorking} onClick={() => void deleteDraft()}>{reminderWorking ? "正在删除…" : "确认删除"}</Button></div></DialogContent></Dialog>
             </DialogContent></Dialog>
+
 
             {connectionState ? <EmptyState compact icon={localWebReconnectRequired ? "connection" : "folder"}
               title={localWebReconnectRequired ? bridgeErrorCode(error) === "WEB_UNAUTHORIZED" ? "访问授权已失效" : "本机服务未连接" : needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"}
               description={localWebReconnectRequired ? bridgeErrorCode(error) === "WEB_UNAUTHORIZED" ? "从 MemoCard 重新打开此页面以恢复访问。" : "重新打开 MemoCard，继续读取和保存笔记。" : needsPermission ? "重新授权后，即可读取和保存笔记。" : "重新选择笔记文件夹，并允许访问。"}>
               {selectionNotice && !localWebReconnectRequired && !needsPermission && <details className="mb-3 max-w-sm text-sm text-muted-foreground"><summary className="mx-auto w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words text-pretty">{selectionNotice}</p></details>}
               <div className="flex flex-wrap justify-center gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} /> : <Button onClick={() => needsPermission ? void reauthorizeVault() : void selectVault(false)} disabled={working || switchingVault}>{needsPermission ? "重新授权" : "重新选择"}</Button>}</div>
-            </EmptyState> : listTimeoutVisible === "initial" ? <EmptyState compact role="alert" icon="connection" title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button disabled={refreshingPages || switchingVault} onClick={() => void refresh()}>重试</Button></EmptyState> : loading && notes.length === 0 ? <LoadingNotes /> : !status?.connected && notes.length === 0 ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none">
+            </EmptyState> : listTimeoutVisible === "initial" ? <EmptyState compact role="alert" icon="connection" title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button disabled={refreshingPages || switchingVault} onClick={() => void refresh()}>重试</Button></EmptyState> : loading && notes.length === 0 && (view !== "home" || !status?.connected) ? <LoadingNotes /> : !status?.connected && notes.length === 0 ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none">
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
                 <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><FolderOpen className="size-6" strokeWidth={1.5} /></span>
                 <h2 className="text-lg font-semibold">{unsupportedBrowser ? "需要启动 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
@@ -721,12 +825,20 @@ export function App() {
                 </div>}
                 <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" />{isBrowserVault || isNative ? "只访问你授权的文件夹" : "只访问你通过 MemoCard 本机宿主授权的文件夹"}</p>
               </CardContent>
-            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !status?.connected || (isLocalWeb && !webConnected) || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault || refreshingPages || localWebReconnectRequired || needsPermission} canOpen={!working && Boolean(status?.connected) && (!isLocalWeb || webConnected) && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : error ? null : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={status?.indexing ? "笔记正在陆续载入" : query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
+            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection key={view === "home" ? "home" : "notes"} home={view === "home" ? { tab: homeTab, pinnedCount: notePins && notePins.vaultId === status?.vaultId ? Object.keys(notePins.pins).length : 0, onTabChange: changeHomeTab } : undefined} notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !status?.connected || (isLocalWeb && !webConnected) || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault || refreshingPages || localWebReconnectRequired || needsPermission} canOpen={!working && Boolean(status?.connected) && (!isLocalWeb || webConnected) && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : error ? null : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={status?.indexing ? "笔记正在陆续载入" : view === "home" && homeTab === "pinned" ? "把常用笔记固定在这里" : query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : view === "home" && homeTab === "pinned" ? "在笔记详情右上角点击大头钉，即可固定到主页。" : query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{view === "home" && homeTab === "pinned" ? <Button variant="outline" onClick={() => void navigate("notes")}>浏览笔记</Button> : quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
           </>}
           </>}
         </div>
       </div>
     </SidebarInset>
+    {noteToDelete && <Suspense fallback={null}><NoteDeleteDialog target={noteToDelete} prepareDelete={async()=>loadedVaultId.current===noteToDelete.vaultId ? editorHandle.current?.prepareDelete() ?? null : null} onCancel={()=>setNoteToDelete(null)} onDeleted={()=>{
+      const target=noteToDelete;setNoteToDelete(null);
+      if(editingRef.current?.id!==target.id || loadedVaultId.current!==target.vaultId)return;
+      setNotes(items=>items.filter(item=>item.id!==target.id));
+      loadedPages.current=1;setNotice("笔记已移入回收目录");
+      if(refreshCount.current>0 || loadingMore.current)pendingRefresh.current=true;
+      finishEditing(undefined,true);
+    }} /></Suspense>}
     {notice && <div role="status" className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
     <Dialog open={searchOpen} onOpenChange={setSearchOpen}><DialogContent initialFocus={searchField}><DialogTitle>搜索笔记</DialogTitle><DialogDescription>输入关键词筛选笔记，关闭后查看结果。</DialogDescription>
       <div className="relative"><Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" /><Input ref={searchField} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索笔记内容" aria-label="搜索笔记" disabled={!status?.connected || switchingVault} className="h-9 bg-background pl-9 pr-10 shadow-none" />{query && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-8 -translate-y-1/2" onClick={() => setQuery("")} aria-label="清空搜索"><X className="size-3.5" /></Button>}</div>
