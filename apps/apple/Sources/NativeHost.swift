@@ -91,7 +91,7 @@ final class NativeHost: ObservableObject {
             await startTask?.value
             let data: Any
             switch operation {
-            case "getEnvironment": data = ["platform": platform, "phase": "M1", "storage": "native", "mcpEnabled": server != nil, "capabilities": hostCapabilities]
+            case "getEnvironment": data = ["platform": platform, "phase": "M1", "storage": "native", "mcpEnabled": server != nil, "vaultBinding": vaultGeneration.uuidString.lowercased(), "capabilities": hostCapabilities]
             case "uiReady":
                 uiReady = true
                 await deliverPendingNote()
@@ -129,6 +129,7 @@ final class NativeHost: ObservableObject {
             case "getStatus": data = try await status()
             case "pickImage":
                 guard vaultURL != nil, !openingVault else { throw fault("STORE_UNAVAILABLE", "请先选择笔记库") }
+                if let binding = params["vaultBinding"] as? String, UUID(uuidString: binding) != vaultGeneration { throw fault("VAULT_CHANGED", "笔记库已切换，请重新选择图片") }
                 let generation = vaultGeneration
                 let url = try await pick(types: [.png, .jpeg, .gif, .webP, .heic, .heif], title: "选择图片")
                 guard generation == vaultGeneration, !openingVault else { throw fault("CANCELLED", "笔记库已变化，请重新选择图片") }
@@ -139,6 +140,8 @@ final class NativeHost: ObservableObject {
                 var attachment: [String: Any] = ["name": url.lastPathComponent, "base64": imageData.base64EncodedString()]
                 if let noteID = params["noteId"] { attachment["noteId"] = noteID }
                 if let notePath = params["notePath"] { attachment["notePath"] = notePath }
+                if let vaultID = params["vaultId"] { attachment["vaultId"] = vaultID }
+                if let binding = params["vaultBinding"] { attachment["vaultBinding"] = binding }
                 data = try await invoke("importAttachment", attachment)
             case "setMCPEnabled":
                 #if os(macOS)
@@ -167,7 +170,7 @@ final class NativeHost: ObservableObject {
                 data = ["opened": true]
             default:
                 data = try await invoke(operation, params)
-                if ["saveNote", "updateNoteProperty", "importAttachment"].contains(operation) { notify("notesChanged") }
+                if ["saveNote", "updateNoteProperty", "setNotePinned", "importAttachment"].contains(operation) { notify("notesChanged") }
             }
             return ["ok": true, "data": data]
         } catch { return failure(error) }

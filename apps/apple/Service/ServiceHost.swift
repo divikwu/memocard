@@ -139,7 +139,7 @@ final class ServiceHost {
 
     private let webOperations: Set<String> = [
         "getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "listTags", "listFolders",
-        "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "importAttachment",
+        "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "getNotePins", "setNotePinned", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "importAttachment",
     ]
 
     private func webRequest(_ request: [String: Any]) async -> [String: Any] {
@@ -165,7 +165,7 @@ final class ServiceHost {
             if operation == "getEnvironment" {
                 return ["ok": true, "data": [
                     "platform": "web", "phase": "M1", "storage": "local-web", "mcpEnabled": false,
-                    "webEnabled": true, "capabilities": ["selectVault", "createVault", "listVaults", "activateVault", "pickImage", "openExternal"],
+                    "webEnabled": true, "vaultBinding": vaultGeneration.uuidString.lowercased(), "capabilities": ["selectVault", "createVault", "listVaults", "activateVault", "pickImage", "openExternal"],
                 ]]
             }
             let selectedStore = store

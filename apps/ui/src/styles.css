@@ -1,4 +1,7 @@
 @import "tailwindcss" source("./");
+@source not "./components/ui/input-group.tsx";
+@source not "./components/quick-capture.tsx";
+@source not "./components/trash-page.tsx";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @font-face {

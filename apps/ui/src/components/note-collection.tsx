@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { ArrowDown, LayoutGrid, List, LoaderCircle, Plus, Search, X } from "lucide-react";
+import { ArrowDown, Clock3, LayoutGrid, List, LoaderCircle, Pin, Plus, Search, X } from "lucide-react";
 import type { Note } from "@memocard/contracts";
 import { NotePreview } from "../NotePreview";
 import TagPill from "../TagPill";
@@ -11,12 +11,13 @@ import { cn } from "@/lib/utils";
 
 type Layout = "cards" | "list";
 const layoutKey = "memocard:note-layout";
-function savedLayout(): Layout {
-  try { return localStorage.getItem(layoutKey) === "list" ? "list" : "cards"; }
-  catch { return "cards"; }
+function savedLayout(key = layoutKey, fallback: Layout = "cards"): Layout {
+  try { const saved = localStorage.getItem(key); return saved === "list" || saved === "cards" ? saved : fallback; }
+  catch { return fallback; }
 }
 
 type NoteCollectionProps = {
+  home?: { tab: "recent" | "pinned"; pinnedCount: number; onTabChange: (tab: "recent" | "pinned") => void };
   notes: Note[];
   query: string;
   onQueryChange: (query: string) => void;
@@ -36,13 +37,52 @@ type NoteCollectionProps = {
   formatDate: (value: string) => string;
 };
 
-export function NoteCollection({ notes, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
-  const [layout, setLayout] = useState<Layout>(savedLayout);
+export function NoteCollection({ home, notes, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
+  const storageKey = home ? "memocard:home-layout" : layoutKey;
+  const [layout, setLayout] = useState<Layout>(() => savedLayout(storageKey, home ? "list" : "cards"));
   const cards = layout === "cards";
   function changeLayout(next: Layout) {
     setLayout(next);
-    try { localStorage.setItem(layoutKey, next); } catch { /* Keep switching available when browser storage is unavailable. */ }
+    try { localStorage.setItem(storageKey, next); } catch { /* Keep switching available when browser storage is unavailable. */ }
   }
+  const collection = <div className="space-y-4">
+    {notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={cn(cards ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4" : "flex flex-col")}>
+      {notes.map(note => <li key={note.id} data-note-id={note.id} className="min-w-0">
+        <Card className={cn("gap-0 overflow-hidden bg-card py-0 transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40", cards ? "h-64 rounded-[16px] border border-border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]" : "rounded-lg border-0 shadow-none")}>
+          <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row items-center")}>
+            <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={cards ? `打开 ${formatDate(home ? note.updatedAt : note.createdAt)} 的笔记` : `打开 ${note.title?.trim() || "新内容"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
+              <div className={cn("w-full", cards ? "px-4 pb-2 pt-4" : "px-2 py-2")}>
+                <span className={cn("block min-w-0 truncate font-medium", cards ? "text-base" : "text-sm")}>{note.title?.trim() || "新内容"}</span>
+                {cards && <time className="mt-1 block text-xs text-muted-foreground/80" dateTime={home ? note.updatedAt : note.createdAt}>{formatDate(home ? note.updatedAt : note.createdAt)}</time>}
+              </div>
+              {cards && <div className="min-h-0 w-full flex-1 overflow-hidden px-4 pb-4">
+                <NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={onError} />
+              </div>}
+            </button>
+            {note.tags.length > 0 && <div className={cn("flex items-center gap-2 overflow-hidden", cards ? "min-h-10 px-4 pb-3" : "min-w-0 max-w-1/3 shrink-0 pr-2")}>
+              {note.tags.slice(0, 2).map(name => <TagPill key={name} name={name} render={<button type="button" aria-label={`筛选标签 ${name}`} onClick={() => onSelectTag(name)} />} className={cn("h-5 px-1.5 py-0 font-normal", !cards && "min-w-0 shrink")}><span className="truncate">{name}</span></TagPill>)}
+              {note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}
+            </div>}
+            {!cards && <time className="w-28 shrink-0 whitespace-nowrap pr-2 text-right text-xs tabular-nums text-muted-foreground/80" dateTime={home ? note.updatedAt : note.createdAt}>{formatDate(home ? note.updatedAt : note.createdAt)}</time>}
+          </CardContent>
+        </Card>
+      </li>)}
+    </ul> : children}
+    {hasMore && <div className="flex justify-center pt-3"><Button variant="outline" onClick={onLoadMore} disabled={loadMoreDisabled}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
+  </div>;
+  if (home) return <Tabs value={home.tab} onValueChange={value => { if (value === "recent" || value === "pinned") home.onTabChange(value); }} className="gap-4">
+    <div className="flex items-center justify-between gap-3">
+      <TabsList variant="line" aria-label="主页内容" className="gap-2">
+        <TabsTrigger value="recent" className="px-1"><Clock3 aria-hidden="true" />最近更新</TabsTrigger>
+        <TabsTrigger value="pinned"><Pin aria-hidden="true" />已固定<span className="text-xs tabular-nums text-muted-foreground">{home.pinnedCount}</span></TabsTrigger>
+      </TabsList>
+      <div role="group" aria-label="主页布局" className="flex shrink-0 rounded-lg bg-muted p-[3px]">
+        <Button variant="ghost" size="icon-sm" aria-label="卡片布局" aria-pressed={cards} className={cards ? "bg-background" : undefined} onClick={() => changeLayout("cards")}><LayoutGrid /></Button>
+        <Button variant="ghost" size="icon-sm" aria-label="列表布局" aria-pressed={!cards} className={!cards ? "bg-background" : undefined} onClick={() => changeLayout("list")}><List /></Button>
+      </div>
+    </div>
+    <TabsContent value={home.tab}>{collection}</TabsContent>
+  </Tabs>;
   return <Tabs value={layout} onValueChange={value => { if (value === "cards" || value === "list") changeLayout(value); }} className="@container gap-4">
     <div className="grid grid-cols-1 items-center gap-3 text-xs text-muted-foreground @xl:grid-cols-[minmax(0,1fr)_auto]">
       <div className="relative min-w-0 @xl:w-60">
@@ -58,30 +98,6 @@ export function NoteCollection({ notes, query, onQueryChange, searchPlaceholder,
         <Button type="button" variant="outline" size="sm" className="text-foreground" disabled={!canCreate} onClick={onNewNote}><Plus aria-hidden="true" className="size-4" />新建</Button>
       </div>
     </div>
-    <TabsContent value={layout} className="space-y-4">
-    {notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={cn(cards ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4" : "flex flex-col")}>
-      {notes.map(note => <li key={note.id} data-note-id={note.id} className="min-w-0">
-        <Card className={cn("gap-0 overflow-hidden bg-card py-0 transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40", cards ? "h-64 rounded-[16px] border border-border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]" : "rounded-lg border-0 shadow-none")}>
-          <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row items-center")}>
-            <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={cards ? `打开 ${formatDate(note.createdAt)} 的笔记` : `打开 ${note.title?.trim() || "新内容"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
-              <div className={cn("w-full", cards ? "px-4 pb-2 pt-4" : "px-2 py-2")}>
-                <span className={cn("block min-w-0 truncate font-medium", cards ? "text-base" : "text-sm")}>{note.title?.trim() || "新内容"}</span>
-                {cards && <time className="mt-1 block text-xs text-muted-foreground/80" dateTime={note.createdAt}>{formatDate(note.createdAt)}</time>}
-              </div>
-              {cards && <div className="min-h-0 w-full flex-1 overflow-hidden px-4 pb-4">
-                <NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={onError} />
-              </div>}
-            </button>
-            {note.tags.length > 0 && <div className={cn("flex items-center gap-2 overflow-hidden", cards ? "min-h-10 px-4 pb-3" : "min-w-0 max-w-1/3 shrink-0 pr-2")}>
-              {note.tags.slice(0, 2).map(name => <TagPill key={name} name={name} render={<button type="button" aria-label={`筛选标签 ${name}`} onClick={() => onSelectTag(name)} />} className={cn("h-5 px-1.5 py-0 font-normal", !cards && "min-w-0 shrink")}><span className="truncate">{name}</span></TagPill>)}
-              {note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}
-            </div>}
-            {!cards && <time className="w-28 shrink-0 whitespace-nowrap pr-2 text-right text-xs tabular-nums text-muted-foreground/80" dateTime={note.createdAt}>{formatDate(note.createdAt)}</time>}
-          </CardContent>
-        </Card>
-      </li>)}
-    </ul> : children}
-    {hasMore && <div className="flex justify-center pt-3"><Button variant="outline" onClick={onLoadMore} disabled={loadMoreDisabled}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
-    </TabsContent>
+    <TabsContent value={layout} className="space-y-4">{collection}</TabsContent>
   </Tabs>;
 }

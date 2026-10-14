@@ -33,6 +33,7 @@ function DialogClose({
 
 function DialogOverlay({
   className,
+  style,
   ...props
 }: (React.ComponentProps<typeof DialogPrimitive.Backdrop> & { className?: string })) {
   return (
@@ -42,6 +43,7 @@ function DialogOverlay({
         "fixed inset-0 z-50 bg-black/50 data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
         className
       )}
+      style={state => ({ animationFillMode: "both", ...(typeof style === "function" ? style(state) : style) })}
       {...props}
     />
   )
@@ -49,6 +51,7 @@ function DialogOverlay({
 
 function DialogContent({
   className,
+  style,
   children,
   showCloseButton = true,
   ...props
@@ -64,6 +67,7 @@ function DialogContent({
           "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border border-transparent bg-background shadow-overlay p-6 duration-200 outline-none data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95 sm:max-w-lg",
           className
         )}
+        style={state => ({ animationFillMode: "both", ...(typeof style === "function" ? style(state) : style) })}
         {...props}
       >
         {children}

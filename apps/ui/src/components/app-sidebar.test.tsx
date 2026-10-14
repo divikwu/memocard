@@ -27,6 +27,29 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("AppSidebar", () => {
+  it("keeps trash and help inside the vault menu and preserves trash navigation", async () => {
+    const props = createProps({ canTrash: true, view: "trash" });
+    renderSidebar(props);
+    expect(screen.queryByRole("button", { name: "回收站" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Help|帮助/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "日历" })).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "笔记库：我的笔记" }));
+    const trash = await screen.findByRole("menuitem", { name: "回收站" });
+    expect(trash.getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("menuitem", { name: "帮助" }).getAttribute("aria-disabled")).toBe("true");
+    await userEvent.click(trash);
+    expect(props.onNavigate).toHaveBeenCalledExactlyOnceWith("trash");
+    await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  });
+
+  it("disables trash when the connected service does not support it", async () => {
+    const props = createProps({ canTrash: false });
+    renderSidebar(props);
+    await userEvent.click(screen.getByRole("button", { name: "笔记库：我的笔记" }));
+    expect((await screen.findByRole("menuitem", { name: "回收站" })).getAttribute("aria-disabled")).toBe("true");
+    expect(props.onNavigate).not.toHaveBeenCalled();
+  });
+
   it("defaults to collapsed quick filters and preserves navigation and the active filter when toggling", async () => {
     const props = createProps({ quickFilter: "images", filterCounts: { untagged: 12, images: 4, links: 0 } });
     renderSidebar(props);

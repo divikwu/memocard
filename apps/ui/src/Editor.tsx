@@ -14,7 +14,7 @@ import { changeTagSettings } from './tag-settings';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { changeNoteProperty, changeNoteTitle, endNoteTyping, resetNoteHistory, type NoteEdit } from './rich-note-history';
 
-export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void> };
+export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void>; prepareDelete: () => Promise<{id:string; contentHash:string} | null> };
 export function Editor({ initial, initialNote, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, onTagsChanged, handle }: {
   initial: Draft; initialNote?: Note; capabilities: Set<string>; pendingLink?: boolean;
   onClose: () => void; onSaved: (note: Note) => void;
@@ -74,7 +74,10 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
     finally { busy.current = false; setWorking(false); }
   }
   useEffect(() => {
-    if (handle) handle.current = { flush, finish };
+    if (handle) handle.current = { flush, finish, prepareDelete:async()=>{
+      if (!(await flush()) || !session.current.baseHash) return null;
+      return {id:session.current.id,contentHash:session.current.baseHash};
+    } };
     return () => { if (handle) handle.current = null; };
   });
   useEffect(() => {

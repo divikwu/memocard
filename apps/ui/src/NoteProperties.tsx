@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useId, useLayoutEffect, useRef, useState, ty
 import type { Note, NoteProperties as Properties, NoteProperty, PropertyChange, PropertyType, PropertyLabels } from '@memocard/contracts';
 import { Checkbox } from '@base-ui/react/checkbox';
 import { AlertDialog } from '@base-ui/react/alert-dialog';
-import { CalendarDays, Check, ChevronDown, ChevronUp, Clock, FileText, Plus, Tags, Text, SquareCheck, Pencil, Trash2, Copy, CircleChevronDown, ListChecks, SlidersHorizontal, Image, Hash } from 'lucide-react';
+import { CalendarDays, Check, ChevronDown, ChevronUp, Clock, FileText, Plus, Text, SquareCheck, Pencil, Trash2, Copy, CircleChevronDown, ListChecks, SlidersHorizontal, Image, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageNotice } from '@/components/page-notice';
 import { Input } from '@/components/ui/input';
@@ -30,7 +30,7 @@ const noteTime = (value?: string) => {
 };
 const display = (value: NoteProperty['value']) => Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? value ? '已勾选' : '未勾选' : value || '空';
 const editableTypes = ['text','number','select','multiSelect','date','checkbox','image'] as const;
-const systemNames = {'system:tags':Tags,'system:updatedAt':Clock,'system:createdAt':CalendarDays,'system:filename':FileText};
+const systemNames = {'system:tags':Hash,'system:updatedAt':Clock,'system:createdAt':CalendarDays,'system:filename':FileText};
 const propertyTypes = {text:{label:'文本',Icon:Text},number:{label:'数字',Icon:Hash},select:{label:'选择',Icon:CircleChevronDown},multiSelect:{label:'多选',Icon:ListChecks},date:{label:'日期',Icon:CalendarDays},checkbox:{label:'复选框',Icon:SquareCheck},image:{label:'图片',Icon:Image},unsupported:{label:'只读',Icon:Text}};
 function PropertyCreator({busy, error, onSave}: {busy:boolean; error?:string; onSave:(change:PropertyChange)=>Promise<void>}) {
   const [name, setName] = useState('');

@@ -4,6 +4,94 @@ import UniformTypeIdentifiers
 @testable import MemoCardCore
 
 final class VaultStoreTests: XCTestCase {
+    func testCaptureOperationsRejectAnotherVaultOrDirectoryBindingBeforeMutation() async throws {
+        let core = try await store()
+        for operation in ["getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"] {
+            await expectCode("VAULT_CHANGED") { _ = try await self.call(core, operation, ["vaultId": "other-vault"]) }
+            await expectCode("UNAUTHORIZED") { _ = try await self.call(core, operation, ["vaultBinding": UUID().uuidString.lowercased()]) }
+        }
+        let notes = try await call(core, "queryNotes")["notes"] as! [[String: Any]]
+        let drafts = try await call(core, "getDrafts")["drafts"] as! [[String: Any]]
+        XCTAssertTrue(notes.isEmpty)
+        XCTAssertTrue(drafts.isEmpty)
+    }
+
+    func testMarkdownPinsAreSharedAcrossLocalIdentitiesAndFollowTransactionalRenames() async throws {
+        let source = vault.appendingPathComponent("Original.md")
+        try Data("Body".utf8).write(to: source)
+        let core = try await store(create: false)
+        let note = (try await call(core, "queryNotes")["notes"] as! [[String: Any]])[0]
+        let initial = try await call(core, "getNotePins")
+        let pinned = try await call(core, "setNotePinned", ["id": note["id"]!, "pinned": true, "baseHash": initial["contentHash"]!])
+        let other = try VaultStore(localDataURL: temporary.appendingPathComponent("other-local"))
+        try await other.open(url: vault, create: false)
+        let otherNote = (try await call(other, "queryNotes")["notes"] as! [[String: Any]])[0]
+        XCTAssertNotEqual(note["id"] as? String, otherNote["id"] as? String)
+        let state = try await call(other, "getNotePins")
+        XCTAssertEqual((state["pins"] as? [String: String])?[otherNote["id"] as! String], (pinned["pins"] as? [String: String])?[note["id"] as! String])
+        let renamed = try await call(other, "saveNote", ["id": otherNote["id"]!, "title": "Renamed", "body": "Edited", "tags": [], "baseHash": otherNote["contentHash"]!])
+        let fresh = try VaultStore(localDataURL: temporary.appendingPathComponent("fresh-local"))
+        try await fresh.open(url: vault, create: false)
+        let list = try await call(fresh, "queryNotes", ["pinned": true, "sort": "pinnedAt"])["notes"] as! [[String: Any]]
+        XCTAssertEqual(list.count, 1)
+        XCTAssertEqual(list.first?["relativePath"] as? String, renamed["relativePath"] as? String)
+        XCTAssertEqual(list.first?["body"] as? String, "Edited")
+        let metadata = try String(contentsOf: vault.appendingPathComponent(".memocard/pins.json"), encoding: .utf8)
+        XCTAssertTrue(metadata.contains("path:Renamed.md"))
+        XCTAssertFalse(metadata.contains("path:Original.md"))
+    }
+
+    func testNotePinsPersistWithoutChangingSourcesAndRejectStaleWrites() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased(), other = UUID().uuidString.lowercased()
+        let path = try writeNote(id: id)
+        _ = try writeNote(id: other)
+        let original = try Data(contentsOf: path)
+        let modified = try path.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+        let initial = try await call(core, "getNotePins")
+        let pinned = try await call(core, "setNotePinned", ["id": id, "pinned": true, "baseHash": initial["contentHash"]!])
+        let again = try await call(core, "setNotePinned", ["id": id, "pinned": true, "baseHash": pinned["contentHash"]!])
+        XCTAssertEqual(again["contentHash"] as? String, pinned["contentHash"] as? String)
+        XCTAssertEqual(try Data(contentsOf: path), original)
+        XCTAssertEqual(try path.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate, modified)
+        let reopened = try await store(create: false)
+        let restored = try await call(reopened, "getNotePins")
+        XCTAssertEqual(restored["pins"] as? [String: String], pinned["pins"] as? [String: String])
+        let list = try await call(reopened, "queryNotes", ["pinned": true, "sort": "pinnedAt"])["notes"] as! [[String: Any]]
+        XCTAssertEqual(list.compactMap { $0["id"] as? String }, [id])
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "setNotePinned", ["id": other, "pinned": true, "baseHash": initial["contentHash"]!]) }
+        _ = try await call(core, "setNotePinned", ["id": id, "pinned": false, "baseHash": pinned["contentHash"]!])
+        let empty = try await call(core, "queryNotes", ["pinned": true])["notes"] as! [[String: Any]]
+        XCTAssertTrue(empty.isEmpty)
+        let config = vault.appendingPathComponent(".memocard/pins.json")
+        try Data("{broken".utf8).write(to: config)
+        await expectCode("INVALID_PINS") { _ = try await self.call(core, "setNotePinned", ["id": id, "pinned": true, "baseHash": pinned["contentHash"]!]) }
+        XCTAssertEqual(try String(contentsOf: config, encoding: .utf8), "{broken")
+    }
+
+    func testUpdatedAndPinnedQueriesUseStablePaginationAcrossTheWholeVault() async throws {
+        let core = try await store()
+        let old = "11111111-1111-4111-8111-111111111111", newer = "11111111-1111-4111-8111-111111111112"
+        let path = try writeNote(id: old, date: "2026-09-01T09:00:00Z")
+        let original = try String(contentsOf: path, encoding: .utf8)
+        try Data(original.replacingOccurrences(of: "updatedAt: \"2026-09-01T09:00:00Z\"", with: "updatedAt: \"2026-10-14T09:00:00Z\"").utf8).write(to: path)
+        _ = try writeNote(id: newer, date: "2026-10-13T09:00:00Z")
+        let first = try await call(core, "queryNotes", ["sort": "updatedAt", "limit": 1])
+        XCTAssertEqual((first["notes"] as! [[String: Any]])[0]["id"] as? String, old)
+        let second = try await call(core, "queryNotes", ["sort": "updatedAt", "limit": 1, "cursor": first["nextCursor"]!])
+        XCTAssertEqual((second["notes"] as! [[String: Any]])[0]["id"] as? String, newer)
+        await expectCode("CURSOR_QUERY_MISMATCH") { _ = try await self.call(core, "queryNotes", ["limit": 1, "cursor": first["nextCursor"]!]) }
+        let config = vault.appendingPathComponent(".memocard/pins.json")
+        try encode([old: "2026-10-14T10:00:00Z", newer: "2026-10-14T10:00:00Z"]).write(to: config)
+        let pinned = try await call(core, "queryNotes", ["sort": "pinnedAt", "pinned": true, "limit": 1])
+        XCTAssertEqual((pinned["notes"] as! [[String: Any]])[0]["id"] as? String, old)
+        let next = try await call(core, "queryNotes", ["sort": "pinnedAt", "pinned": true, "limit": 1, "cursor": pinned["nextCursor"]!])
+        XCTAssertEqual((next["notes"] as! [[String: Any]])[0]["id"] as? String, newer)
+        let state = try await call(core, "getNotePins")
+        _ = try await call(core, "setNotePinned", ["id": old, "pinned": false, "baseHash": state["contentHash"]!])
+        await expectCode("STALE_CURSOR") { _ = try await self.call(core, "queryNotes", ["sort": "pinnedAt", "pinned": true, "limit": 1, "cursor": pinned["nextCursor"]!]) }
+    }
+
     func testBackgroundStatusReturnsBeforeReadingSourcesAndDraftsRemainAvailable() async throws {
         let core = try await store()
         for _ in 0..<200 { _ = try writeNote(id: UUID().uuidString.lowercased()) }
@@ -440,6 +528,171 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual((verified2)["body"] as? String, "Recovered explicitly")
         let verified3 = try await call(clone, "getNote", ["id": id])
         XCTAssertEqual((verified3)["body"] as? String, "Source")
+    }
+
+    func testPermanentDeletionChecksReviewedHashAndRemovesOnlyOneArchive() async throws {
+        let core=try await store(), first=try await save(core,body:"Erase this"), second=try await save(core,body:"Keep archive"), live=try await save(core,body:"Keep live")
+        let asset=vault.appendingPathComponent("assets/shared.png");try Data([1,2,3]).write(to:asset)
+        for note in [first,second] { _ = try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!]) }
+        let items=try await call(core,"getTrash")["notes"] as! [[String:Any]], target=items.first{$0["id"] as? String == first["id"] as? String}!
+        let archived=vault.appendingPathComponent(".memocard/trash/"+(target["trashKey"] as! String)), original=try Data(contentsOf:archived)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core,"permanentlyDeleteNote",["trashKey":target["trashKey"]!,"baseHash":"stale"]) }
+        XCTAssertEqual(try Data(contentsOf:archived),original)
+        let deleted=try await call(core,"permanentlyDeleteNote",["trashKey":target["trashKey"]!,"baseHash":target["contentHash"]!])
+        XCTAssertEqual(deleted["deleted"] as? Bool,true);XCTAssertFalse(FileManager.default.fileExists(atPath:archived.path))
+        let remaining=try await call(core,"getTrash")["notes"] as! [[String:Any]]
+        XCTAssertEqual(remaining.compactMap{$0["id"] as? String},[second["id"] as! String])
+        let loaded=try await call(core,"getNote",["id":live["id"]!]);XCTAssertEqual(loaded["body"] as? String,"Keep live")
+        XCTAssertEqual(try Data(contentsOf:asset),Data([1,2,3]))
+        do { _ = try await call(core,"restoreNote",["trashKey":target["trashKey"]!,"baseHash":target["contentHash"]!]);XCTFail("Deleted source must not restore") } catch {}
+        await expectCode("PATH_NOT_ALLOWED") { _ = try await self.call(core,"permanentlyDeleteNote",["trashKey":UUID().uuidString.lowercased()+"/../outside.md","baseHash":"stale"]) }
+    }
+
+    func testPermanentDeletionRejectsSymlinkWithoutTouchingTarget() async throws {
+        let core=try await store(), note=try await save(core,body:"Keep this")
+        let receipt=try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!]), archive=vault.appendingPathComponent(receipt["trashPath"] as! String)
+        let target=temporary.appendingPathComponent("outside.md");try Data("External".utf8).write(to:target)
+        try FileManager.default.removeItem(at:archive);try FileManager.default.createSymbolicLink(at:archive,withDestinationURL:target)
+        await expectCode("SYMLINK_NOT_ALLOWED") { _ = try await self.call(core,"permanentlyDeleteNote",["trashKey":String((receipt["trashPath"] as! String).dropFirst(".memocard/trash/".count)),"baseHash":note["contentHash"]!]) }
+        XCTAssertEqual(try String(contentsOf:target,encoding:.utf8),"External")
+    }
+
+    func testTrashRestoresExactCompatibleSourceAndIdentityAfterReopening() async throws {
+        let folder = vault.appendingPathComponent("Folder");try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        let path=folder.appendingPathComponent("Raw.md"), bytes=Data("\u{feff}---\r\ntags: [work]\r\n---\r\nBody ![image](../assets/keep.png)\r\n".utf8)
+        try bytes.write(to:path)
+        let core=try await store(create:false), note=(try await call(core,"queryNotes")["notes"] as! [[String:Any]])[0]
+        _ = try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!])
+        try FileManager.default.removeItem(at:folder)
+        await core.close()
+        let reopened=try await store(create:false), items=try await call(reopened,"getTrash")["notes"] as! [[String:Any]]
+        XCTAssertEqual(items.count,1);XCTAssertEqual(items[0]["id"] as? String,note["id"] as? String)
+        let preview=try await call(reopened,"getTrashedNote",["trashKey":items[0]["trashKey"]!])["note"] as! [String:Any]
+        XCTAssertEqual(preview["body"] as? String,note["body"] as? String)
+        let restored=try await call(reopened,"restoreNote",["trashKey":items[0]["trashKey"]!,"baseHash":items[0]["contentHash"]!])
+        XCTAssertEqual(restored["id"] as? String,note["id"] as? String);XCTAssertEqual(try Data(contentsOf:path),bytes)
+        let remaining=try await call(reopened,"getTrash")["notes"] as! [[String:Any]]
+        XCTAssertTrue(remaining.isEmpty)
+        let loaded=try await call(reopened,"getNote",["id":note["id"]!])
+        XCTAssertEqual(loaded["contentHash"] as? String,note["contentHash"] as? String)
+    }
+
+    func testTrashRestoreAvoidsFilenameCollisionAndRejectsStaleHash() async throws {
+        let core=try await store(), note=try await save(core,body:"Original #work"), path=vault.appendingPathComponent(note["relativePath"] as! String)
+        _ = try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!])
+        let item=(try await call(core,"getTrash")["notes"] as! [[String:Any]])[0]
+        let other=try await save(core,body:"Do not overwrite"), before=try Data(contentsOf:path)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core,"restoreNote",["trashKey":item["trashKey"]!,"baseHash":"stale"]) }
+        let restored=try await call(core,"restoreNote",["trashKey":item["trashKey"]!,"baseHash":item["contentHash"]!])
+        XCTAssertEqual(restored["relativePath"] as? String,"notes/新内容 (2).md")
+        XCTAssertEqual(try Data(contentsOf:path),before)
+        let notes=try await call(core,"queryNotes")["notes"] as! [[String:Any]]
+        XCTAssertEqual(Set(notes.compactMap{$0["id"] as? String}),Set([note["id"] as! String,other["id"] as! String]))
+        await expectCode("PATH_NOT_ALLOWED") { _ = try await self.call(core,"getTrashedNote",["trashKey":UUID().uuidString.lowercased()+"/../outside.md"]) }
+    }
+
+    func testTrashReadsOldArchiveWithoutMetadataAndRetainsUnreadableEntries() async throws {
+        let core=try await store(), note=try await save(core)
+        let deleted=try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!]), archive=vault.appendingPathComponent(deleted["trashPath"] as! String)
+        try FileManager.default.removeItem(at:archive.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("entry.json"))
+        let corrupt=vault.appendingPathComponent(".memocard/trash/"+UUID().uuidString.lowercased()+"/Broken.md")
+        try FileManager.default.createDirectory(at:corrupt.deletingLastPathComponent(),withIntermediateDirectories:true);try Data([0xff]).write(to:corrupt)
+        let list=try await call(core,"getTrash"), items=list["notes"] as! [[String:Any]]
+        XCTAssertEqual(items.count,1);XCTAssertEqual((list["issues"] as! [[String:Any]]).count,1)
+        _ = try await call(core,"restoreNote",["trashKey":items[0]["trashKey"]!,"baseHash":items[0]["contentHash"]!])
+        XCTAssertTrue(FileManager.default.fileExists(atPath:corrupt.path))
+    }
+
+    func testCompatibleRestoreHandlesImmediateReplacementAndBlockedJournal() async throws {
+        let path=vault.appendingPathComponent("Raw.md");try Data("Original".utf8).write(to:path)
+        let core=try await store(create:false), note=(try await call(core,"queryNotes")["notes"] as! [[String:Any]])[0]
+        _ = try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!])
+        try Data("Replacement".utf8).write(to:path)
+        let item=(try await call(core,"getTrash")["notes"] as! [[String:Any]])[0]
+        let blocked=await core.identityURL.appendingPathExtension("rename.json")
+        try FileManager.default.createDirectory(at:blocked,withIntermediateDirectories:true)
+        do { _ = try await call(core,"restoreNote",["trashKey":item["trashKey"]!,"baseHash":item["contentHash"]!]);XCTFail("Blocked journal should fail") } catch {}
+        try FileManager.default.removeItem(at:blocked)
+        XCTAssertEqual(try String(contentsOf:path,encoding:.utf8),"Replacement")
+        let restored=try await call(core,"restoreNote",["trashKey":item["trashKey"]!,"baseHash":item["contentHash"]!])
+        XCTAssertEqual(restored["relativePath"] as? String,"Raw (2).md")
+        XCTAssertEqual(restored["id"] as? String,note["id"] as? String)
+        XCTAssertEqual(try String(contentsOf:path,encoding:.utf8),"Replacement")
+    }
+
+    func testDeleteNoteArchivesExactSourceAndPreservesAttachmentsAndOtherNotes() async throws {
+        let core = try await store(), note = try await save(core, body: "Keep bytes #work ![image](../assets/keep.png)")
+        let other = try await save(core, body: "Other source"), id = note["id"] as! String
+        let path = vault.appendingPathComponent(note["relativePath"] as! String), original = try Data(contentsOf: path)
+        let asset = vault.appendingPathComponent("assets/keep.png"); try Data([1,2,3]).write(to:asset)
+        _ = try await call(core, "setNotePinned", ["id":id,"pinned":true,"baseHash":try await call(core,"getNotePins")["contentHash"]!])
+        let receipt = try await call(core, "deleteNote", ["id":id,"baseHash":note["contentHash"]!])
+        XCTAssertFalse(FileManager.default.fileExists(atPath:path.path))
+        XCTAssertEqual(try Data(contentsOf:vault.appendingPathComponent(receipt["trashPath"] as! String)),original)
+        XCTAssertEqual(try Data(contentsOf:asset),Data([1,2,3]))
+        let notes = try await call(core,"queryNotes")["notes"] as! [[String:Any]]
+        XCTAssertEqual(notes.compactMap{$0["id"] as? String},[other["id"] as! String])
+        let resolvedPins = try await call(core,"getNotePins")["pins"] as! [String:String]
+        let resolvedTags = try await call(core,"listTags")["tags"] as! [[String:Any]]
+        XCTAssertTrue(resolvedPins.isEmpty)
+        XCTAssertTrue(resolvedTags.isEmpty)
+        await expectCode("NOTE_NOT_FOUND") { _ = try await self.call(core,"getNote",["id":id]) }
+        await expectCode("NOTE_NOT_FOUND") { _ = try await self.save(core,id:id,body:"Stale save",hash:note["contentHash"] as? String) }
+    }
+
+    func testDeleteCompatibleNoteRejectsExternalEditsAndPreservesOriginalFormatting() async throws {
+        let folder = vault.appendingPathComponent("Folder");try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+        let path = folder.appendingPathComponent("Raw.md"), original = Data("\u{feff}---\r\nid: user-owned\r\ndeletedAt: user-owned\r\n---\r\nBody\r\n".utf8)
+        try original.write(to:path)
+        let core = try await store(create:false), note = (try await call(core,"queryNotes")["notes"] as! [[String:Any]])[0], id = note["id"] as! String
+        var changed=original;changed.append(Data("External\r\n".utf8));try changed.write(to:path)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core,"deleteNote",["id":id,"baseHash":note["contentHash"]!]) }
+        XCTAssertEqual(try Data(contentsOf:path),changed)
+        let receipt = try await call(core,"deleteNote",["id":id,"baseHash":sha256(changed)])
+        XCTAssertEqual(try Data(contentsOf:vault.appendingPathComponent(receipt["trashPath"] as! String)),changed)
+        XCTAssertEqual(receipt["relativePath"] as? String,"Folder/Raw.md")
+    }
+
+    func testDeleteNoteRejectsSymlinkedRecoveryDirectoryWithoutMovingSource() async throws {
+        let core = try await store(), note = try await save(core), path=vault.appendingPathComponent(".memocard/trash")
+        try FileManager.default.createSymbolicLink(at:path,withDestinationURL:temporary)
+        await expectCode("SYMLINK_NOT_ALLOWED") { _ = try await self.call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!]) }
+        XCTAssertTrue(FileManager.default.fileExists(atPath:vault.appendingPathComponent(note["relativePath"] as! String).path))
+    }
+
+    func testDeleteDraftIsRevisionCheckedAndPreservesSiblingDraftAndSource() async throws {
+        let core = try await store(), note = try await save(core, body: "Saved source"), id = note["id"] as! String
+        let key = "\(UUID().uuidString.lowercased()):\(id)", sibling = "\(UUID().uuidString.lowercased()):\(id)"
+        let original = try await call(core, "saveDraft", ["id":id, "draftKey":key, "body":"First edit", "tags":[], "baseHash":note["contentHash"]!])
+        _ = try await call(core, "saveDraft", ["id":id, "draftKey":sibling, "body":"Other edit", "tags":[], "baseHash":note["contentHash"]!])
+        let changed = try await call(core, "saveDraft", ["id":id, "draftKey":key, "body":"Newer edit", "tags":[], "baseHash":note["contentHash"]!])
+        await expectCode("DRAFT_CHANGED") { _ = try await self.call(core, "deleteDraft", ["id":id, "draftKey":key, "revision":original["revision"]!]) }
+        let result = try await call(core, "deleteDraft", ["id":id, "draftKey":key, "revision":changed["revision"]!])
+        XCTAssertEqual(result["deleted"] as? Bool, true)
+        let remaining = try await call(core, "getDrafts")["drafts"] as! [[String:Any]]
+        XCTAssertEqual(remaining.compactMap { $0["draftKey"] as? String }, [sibling])
+        let saved = try await call(core, "getNote", ["id":id])
+        XCTAssertEqual(saved["body"] as? String, "Saved source")
+        await expectCode("DRAFT_CHANGED") { _ = try await self.call(core, "deleteDraft", ["id":id, "draftKey":key, "revision":changed["revision"]!]) }
+        await expectCode("INVALID_DRAFT") { _ = try await self.call(core, "deleteDraft", ["id":id, "draftKey":"../other", "revision":"unknown"]) }
+    }
+
+    func testDeleteLegacyDraftUsesExactRecoveryScopeAndDerivedRevision() async throws {
+        let core = try await store(), id = UUID().uuidString.lowercased()
+        _ = try await call(core, "saveDraft", ["id":id, "body":"Legacy edit", "tags":[]])
+        let metadata = try JSONDecoder().decode(VaultMetadata.self, from: Data(contentsOf: vault.appendingPathComponent(".memocard/vault.json")))
+        let legacy = local.appendingPathComponent("drafts/\(metadata.vaultId)")
+        try FileManager.default.createDirectory(at: legacy, withIntermediateDirectories: true)
+        let current = try await core.draftDirectory().appendingPathComponent("\(id).json")
+        let original = legacy.appendingPathComponent("\(id).json")
+        var record = try JSONSerialization.jsonObject(with: Data(contentsOf: current)) as! [String:Any]
+        record.removeValue(forKey:"revision")
+        try JSONSerialization.data(withJSONObject:record).write(to:original)
+        let found = try await call(core, "getDrafts")["unscopedDrafts"] as! [[String:Any]]
+        let draft = found.first!
+        _ = try await call(core, "deleteDraft", ["id":id, "draftKey":id, "revision":draft["revision"]!, "unscoped":true])
+        XCTAssertFalse(FileManager.default.fileExists(atPath:original.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath:current.path))
     }
 
     func testHistoricalDraftReminderReviewPreservesOriginalAndIsRevisionAndVaultScoped() async throws {

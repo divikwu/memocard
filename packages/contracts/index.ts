@@ -1,10 +1,14 @@
 export type Note = {id:string; title?:string; body:string; tags:string[]; createdAt:string; updatedAt:string; deletedAt?:string; contentHash:string; relativePath:string; sourceUrl:string};
+export type TrashItem = {trashKey:string; id:string; title?:string; relativePath:string; deletedAt:string; contentHash:string; preview:string};
+export type TrashNote = {trashKey:string; deletedAt:string; note:Note};
+export type TrashList = {notes:TrashItem[]; issues:{path:string; message:string}[]};
 export type Coverage = {complete:boolean; indexed:number; pending:number; issues:number; indexedAt:string|null};
 export type IndexingProgress = {phase:"reading" | "indexing"; processed:number; total:number|null};
 export type VaultStatus = {connected:boolean; vaultId:string|null; vaultName:string|null; coverage:Coverage; indexing?:IndexingProgress; phase:string; syncState:string; capabilities:string[]};
 export type NoteQuickFilter = "untagged" | "images" | "links";
 export type NoteFilterCounts = Record<NoteQuickFilter, number>;
-export type NoteQuery = {query?:string; tags?:string[]; quickFilter?:NoteQuickFilter; from?:string; to?:string; limit?:number; cursor?:string; deleted?:boolean};
+export type NoteQuery = {query?:string; tags?:string[]; quickFilter?:NoteQuickFilter; from?:string; to?:string; limit?:number; cursor?:string; deleted?:boolean; sort?:'createdAt' | 'updatedAt' | 'pinnedAt'; pinned?:boolean};
+export type NotePins = {pins:Record<string,string>; contentHash:string};
 export type NotePage = {notes:Note[]; nextCursor:string|null; coverage:Coverage; filterCounts?:NoteFilterCounts};
 export type BridgeRequest = {version:1; requestId:string; operation:string; params:Record<string,unknown>};
 export type BridgeError = {code:string;message:string;retryable:boolean};

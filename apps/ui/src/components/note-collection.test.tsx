@@ -9,7 +9,28 @@ vi.mock("../NotePreview", () => ({ NotePreview: ({ body }: { body: string }) => 
 const note: Note = { id: "note-1", title: "散步的想法", body: "周末散步时想到的记录", tags: ["生活"], createdAt: "2026-10-10T08:00:00Z", updatedAt: "2026-10-10T08:00:00Z", contentHash: "hash", relativePath: "notes/note-1.md", sourceUrl: "memocard://note/note-1" };
 const props = { notes: [note], query: "", onQueryChange: vi.fn(), searchPlaceholder: "搜索当前标签内容", searchDisabled: false, hasMore: true, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "10月10日 16:00" };
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); localStorage.removeItem("memocard:note-layout"); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); localStorage.removeItem("memocard:note-layout"); localStorage.removeItem("memocard:home-layout"); });
+
+it("shares the home layout across content tabs without exposing pin actions on notes", async () => {
+  const user = userEvent.setup();
+  const onTabChange = vi.fn();
+  const updated = { ...note, updatedAt: "2026-10-14T08:00:00Z" };
+  const view = render(<NoteCollection {...props} notes={[updated]} home={{tab:"recent", pinnedCount:1, onTabChange}} />);
+  expect(screen.getByRole("tab", {name:"最近更新"}).getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByRole("list", {name:"笔记列表"}).getAttribute("data-layout")).toBe("list");
+  expect(screen.getByText("10月10日 16:00").getAttribute("datetime")).toBe(updated.updatedAt);
+  await user.click(screen.getByRole("button", {name:"卡片布局"}));
+  await user.click(screen.getByRole("tab", {name:/已固定/}));
+  expect(onTabChange).toHaveBeenCalledWith("pinned");
+  view.rerender(<NoteCollection {...props} home={{tab:"pinned", pinnedCount:1, onTabChange}} />);
+  expect(screen.getByRole("list", {name:"笔记列表"}).getAttribute("data-layout")).toBe("cards");
+  expect(screen.queryByRole("button", {name:/固定/})).toBeNull();
+  expect(screen.queryByText("查看全部")).toBeNull();
+  expect(screen.queryByRole("textbox")).toBeNull();
+  view.unmount();
+  render(<NoteCollection {...props} home={{tab:"recent", pinnedCount:1, onTabChange}} />);
+  expect(screen.getByRole("button", {name:"卡片布局"}).getAttribute("aria-pressed")).toBe("true");
+});
 
 it("shows titles, clickable tags and trailing time in the list and restores content in cards", async () => {
   const user = userEvent.setup();
