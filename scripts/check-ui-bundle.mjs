@@ -8,7 +8,8 @@ const assets = [...html.matchAll(/(?:src|href)="\.\/([^"?#]+\.(?:js|css))"/g)].m
 if (!assets.length) throw new Error("UI build does not reference an initial JS or CSS asset.");
 
 // Utilities are emitted once in the entry CSS so lazy routes cannot override responsive rules.
-const limits = { js: 600 * 1024, css: 92 * 1024, gzip: 182 * 1024, fonts: 1024 * 1024 };
+// Reserve 4 KiB gzip for the shared layout-matched loading shells.
+const limits = { js: 600 * 1024, css: 92 * 1024, gzip: 186 * 1024, fonts: 1024 * 1024 };
 let compressed = 0;
 for (const asset of assets) {
   const bytes = await readFile(resolve(root, asset));
@@ -23,8 +24,8 @@ if (compressed > limits.gzip) throw new Error(`Initial JS and CSS gzip size is $
 const manifest = JSON.parse(await readFile(resolve(root, ".vite/manifest.json"), "utf8"));
 for (const route of [
   { name: "home with quick capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1300 * 1024, gzip: 400 * 1024 },
-  { name: "list", entries: ["src/components/note-collection.tsx"], raw: 1250 * 1024, gzip: 380 * 1024 },
-  { name: "detail", entries: ["src/Editor.tsx"], raw: 1750 * 1024, gzip: 520 * 1024 },
+  { name: "list", entries: ["src/components/note-collection.tsx"], raw: 1254 * 1024, gzip: 380 * 1024 },
+  { name: "detail", entries: ["src/Editor.tsx"], raw: 1750 * 1024, gzip: 524 * 1024 },
   { name: "detail with preserved Markdown", entries: ["src/Editor.tsx", "src/markdown.tsx"], raw: 2100 * 1024, gzip: 630 * 1024 },
 ]) {
   const visited = new Set();

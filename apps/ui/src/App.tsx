@@ -3,7 +3,7 @@ import { renamedTag } from "./rename-tag";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
 import { NavActions } from "./components/nav-actions";
-import { Sidebar, SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { noteFilterEmptyTitles, noteFilterLabels } from "./note-filter-labels";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -38,6 +38,7 @@ const HomeMascot = lazy(() => import("./components/home-mascot").then(module => 
 const NoteCollection = lazy(() => import("./components/note-collection").then((module) => ({ default: module.NoteCollection })));
 const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
 const AppSidebar = lazy(() => import("./components/app-sidebar").then(module => ({default:module.AppSidebar})));
+import { LoadingCapture, LoadingCollection, LoadingNote, LoadingSidebar, LoadingThemeSettings, LoadingTrash } from "./components/loading-states";
 const TrashPage = lazy(() => import("./components/trash-page"));
 
 const NoteDeleteDialog = lazy(() => import("./components/note-delete-dialog"));
@@ -657,8 +658,8 @@ export function App() {
     if (!editingRef.current && routeReady && status?.connected && attemptedRoute.current !== window.location.hash && /^#\/notes\//.test(window.location.hash)) routeHandler.current();
   });
 
-  const navigation = <Suspense fallback={<Sidebar aria-hidden="true" />}><AppSidebar
-    view={view} tag={tag} quickFilter={quickFilter} filterCounts={filterCounts} tags={tags} onRenameTag={async (from, to) => {
+  const navigation = <Suspense fallback={<LoadingSidebar vaultName={status?.vaultName || "记忆卡"} />}><AppSidebar
+    view={view} tag={tag} quickFilter={quickFilter} filterCounts={filterCounts} tags={tags} loadingTags={loading && tags.length === 0} onRenameTag={async (from, to) => {
       if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
       try {
         await (await import("./rename-tag-operation")).renameTag(from, to, status.vaultId, request);
@@ -733,7 +734,7 @@ export function App() {
             {view === "home" && !detailView && <Suspense fallback={<div style={{width:144,height:144}} />}><HomeMascot /></Suspense>}
           </div>}
           {captureOpened && status?.vaultId && loadedVaultId.current === status.vaultId && <div hidden={detailView || view !== "home"}>
-            <Suspense fallback={<div style={{height:162}} />}><QuickCapture key={`${status.vaultId}:${environment?.vaultBinding ?? ''}`} handle={quickCaptureHandle}
+            <Suspense fallback={<LoadingCapture />}><QuickCapture key={`${status.vaultId}:${environment?.vaultBinding ?? ''}`} handle={quickCaptureHandle}
               vaultId={status.vaultId} vaultBinding={environment?.vaultBinding} rootNotes={folders.includes('')} tags={tags.map(tag=>tag.name)}
               disabled={!canCreate} canImage={capabilities.has('importAttachment') || capabilities.has('pickImage')}
               draftCount={status?.connected && (recoveryDismissed || recoveryChoices.length === 0) ? recoveryRecords.length : 0} onOpenDrafts={() => setRecoveryOpen(true)}
@@ -745,6 +746,7 @@ export function App() {
               }} />
             </Suspense>
           </div>}
+          {captureOpened && view === "home" && !detailView && loading && (!status?.vaultId || loadedVaultId.current !== status.vaultId) && <LoadingCapture />}
           {openingNote ? (detailReadFailed ? <EmptyState compact role="alert" icon="connection" title={bridgeErrorCode(error) === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(error)}>
             <div className="flex flex-wrap justify-center gap-2">
               {canRetryDetail && <Button disabled={loading || working || switchingVault} onClick={() => {
@@ -762,7 +764,7 @@ export function App() {
             // Keep the session and undo history mounted after the first commit.
             if (editingRef.current) editingRef.current = { ...editingRef.current, id: note.id, baseHash: note.contentHash };
           }} /></Suspense> : <>
-          {view === "trash" ? status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote") ? <Suspense fallback={<LoadingNotes />}><TrashPage canPermanentlyDelete={capabilities.has("permanentlyDeleteNote")} key={`${status?.vaultId}:${environment?.vaultBinding ?? ''}`} vaultId={status?.vaultId ?? ''} vaultBinding={environment?.vaultBinding} refreshVersion={trashVersion} onRestored={()=>{if(refreshCount.current>0)pendingRefresh.current=true;else void refresh(true);}} /></Suspense> : loading ? <LoadingNotes /> : <EmptyState icon="folder" title={status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记库。"} /> : view === "settings" ? <div className="space-y-8">
+          {view === "trash" ? status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote") ? <Suspense fallback={<LoadingTrash canPermanentlyDelete={capabilities.has("permanentlyDeleteNote")} />}><TrashPage canPermanentlyDelete={capabilities.has("permanentlyDeleteNote")} key={`${status?.vaultId}:${environment?.vaultBinding ?? ''}`} vaultId={status?.vaultId ?? ''} vaultBinding={environment?.vaultBinding} refreshVersion={trashVersion} onRestored={()=>{if(refreshCount.current>0)pendingRefresh.current=true;else void refresh(true);}} /></Suspense> : loading ? <LoadingTrash toolbar={false} /> : <EmptyState icon="folder" title={status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记库。"} /> : view === "settings" ? <div className="space-y-8">
             <section aria-labelledby="vault-settings-heading" className="space-y-3">
               <h2 id="vault-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">笔记库</h2>
               <Card className="gap-0 py-0 shadow-none"><CardContent className="divide-y divide-border/60 px-4">
@@ -787,13 +789,13 @@ export function App() {
                 </Collapsible>}
               </CardContent></Card>
             </section>
-            <Suspense fallback={<Skeleton className="h-44 rounded-xl" />}><ThemeSettings /></Suspense>
+            <Suspense fallback={<LoadingThemeSettings />}><ThemeSettings /></Suspense>
             {capabilities.has("openWeb") && <section aria-labelledby="web-settings-heading" className="space-y-3"><h2 id="web-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">本机 Web</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
               <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-6 text-muted-foreground">通过 MemoCard 菜单栏服务，在浏览器中打开统一的多笔记库界面。</p></div>
               <div className="flex flex-wrap gap-2"><Button onClick={() => void openLocalWeb()} disabled={working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button></div>
             </CardContent></Card></section>}
             {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">MCP 本机读取</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
-              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-6 text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Suspense fallback={<Skeleton className="h-5 w-8" />}><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></Suspense></div>
+              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-6 text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Suspense fallback={<span role="status" aria-label="正在读取开关"><Skeleton className="w-8 rounded-full" style={{height:"1.15rem"}} /></span>}><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></Suspense></div>
               <p className="text-pretty text-sm leading-6 text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}
           </div> : <>
@@ -825,7 +827,7 @@ export function App() {
               description={localWebReconnectRequired ? bridgeErrorCode(error) === "WEB_UNAUTHORIZED" ? "从 MemoCard 重新打开此页面以恢复访问。" : "重新打开 MemoCard，继续读取和保存笔记。" : needsPermission ? "重新授权后，即可读取和保存笔记。" : "重新选择笔记文件夹，并允许访问。"}>
               {selectionNotice && !localWebReconnectRequired && !needsPermission && <details className="mb-3 max-w-sm text-sm text-muted-foreground"><summary className="mx-auto w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words text-pretty">{selectionNotice}</p></details>}
               <div className="flex flex-wrap justify-center gap-2">{localWebReconnectRequired ? <Button render={<a href="memocard-service://open-web">重新打开</a>} /> : <Button onClick={() => needsPermission ? void reauthorizeVault() : void selectVault(false)} disabled={working || switchingVault}>{needsPermission ? "重新授权" : "重新选择"}</Button>}</div>
-            </EmptyState> : listTimeoutVisible === "initial" ? <EmptyState compact role="alert" icon="connection" title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button disabled={refreshingPages || switchingVault} onClick={() => void refresh()}>重试</Button></EmptyState> : loading && notes.length === 0 && (view !== "home" || !status?.connected) ? <LoadingNotes /> : !status?.connected && notes.length === 0 ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none">
+            </EmptyState> : listTimeoutVisible === "initial" ? <EmptyState compact role="alert" icon="connection" title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button disabled={refreshingPages || switchingVault} onClick={() => void refresh()}>重试</Button></EmptyState> : !loading && !status?.connected && notes.length === 0 ? !localWebReconnectRequired && !needsPermission && !selectionNotice && <Card className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none">
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
                 <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><FolderOpen className="size-6" strokeWidth={1.5} /></span>
                 <h2 className="text-lg font-semibold">{unsupportedBrowser ? "需要启动 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
@@ -836,7 +838,7 @@ export function App() {
                 </div>}
                 <p className="mt-5 flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" />{isBrowserVault || isNative ? "只访问你授权的文件夹" : "只访问你通过 MemoCard 本机宿主授权的文件夹"}</p>
               </CardContent>
-            </Card> : <Suspense fallback={<LoadingNotes />}><NoteCollection key={view === "home" ? "home" : "notes"} home={view === "home" ? { tab: homeTab, pinnedCount: notePins && notePins.vaultId === status?.vaultId ? Object.keys(notePins.pins).length : 0, onTabChange: changeHomeTab } : undefined} notes={notes} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !status?.connected || (isLocalWeb && !webConnected) || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault || refreshingPages || localWebReconnectRequired || needsPermission} canOpen={!working && Boolean(status?.connected) && (!isLocalWeb || webConnected) && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{loading && notes.length === 0 ? <LoadingNotes /> : error ? null : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={status?.indexing ? "笔记正在陆续载入" : view === "home" && homeTab === "pinned" ? "把常用笔记固定在这里" : query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : view === "home" && homeTab === "pinned" ? "在笔记详情右上角点击大头钉，即可固定到主页。" : query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{view === "home" && homeTab === "pinned" ? <Button variant="outline" onClick={() => void navigate("notes")}>浏览笔记</Button> : quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
+            </Card> : <Suspense fallback={<LoadingCollection home={view === "home"} />}><NoteCollection key={view === "home" ? "home" : "notes"} home={view === "home" ? { tab: homeTab, pinnedCount: notePins && notePins.vaultId === status?.vaultId ? Object.keys(notePins.pins).length : 0, onTabChange: changeHomeTab } : undefined} notes={notes} loading={loading || (view !== "home" && query !== debouncedQuery)} searching={view !== "home" && (query !== debouncedQuery || Boolean(query))} query={query} onQueryChange={setQuery} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={switchingVault || !status?.connected || (isLocalWeb && !webConnected) || !capabilities.has("queryNotes")} canCreate={canCreate} onNewNote={() => void newNote()} hasMore={Boolean(cursor)} paging={paging} loadMoreDisabled={paging || switchingVault || refreshingPages || localWebReconnectRequired || needsPermission} canOpen={!working && Boolean(status?.connected) && (!isLocalWeb || webConnected) && capabilities.has("getNote")} onOpen={id => void openNote(id)} onSelectTag={name => navigate("notes", name)} onLoadMore={() => void loadMore()} onError={setError} formatDate={formatDate}>{error ? null : <EmptyState icon={query || tag || quickFilter ? "search" : "note"} title={status?.indexing ? "笔记正在陆续载入" : view === "home" && homeTab === "pinned" ? "把常用笔记固定在这里" : query || tag ? "没有找到相关笔记" : quickFilter ? noteFilterEmptyTitles[quickFilter] : "记下第一条笔记"} description={status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : view === "home" && homeTab === "pinned" ? "在笔记详情右上角点击大头钉，即可固定到主页。" : query || tag ? "换一个关键词，或清除筛选。" : quickFilter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : quickFilter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : quickFilter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。"}>{view === "home" && homeTab === "pinned" ? <Button variant="outline" onClick={() => void navigate("notes")}>浏览笔记</Button> : quickFilter ? <Button variant="outline" onClick={() => { setQuery(""); setDebouncedQuery(""); void navigate("notes"); }}>查看所有笔记</Button> : !query && !tag && <Button disabled={!canCreate} onClick={newNote}><Plus className="size-4" />新建笔记</Button>}</EmptyState>}</NoteCollection></Suspense>}
           </>}
           </>}
         </div>
@@ -861,14 +863,6 @@ export function App() {
 
 function StatusRow({ label, value }: { label: string; value: string | number }) {
   return <div className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"><dt className="text-muted-foreground">{label}</dt><dd className="text-right tabular-nums">{value}</dd></div>;
-}
-
-function LoadingNotes() {
-  return <div role="status" aria-label="正在读取笔记库" className="space-y-3"><span className="sr-only">正在读取笔记库…</span>{[0, 1, 2].map((item) => <Card key={item} className="rounded-xl border-0 bg-sidebar shadow-none"><CardContent className="space-y-4"><Skeleton className="h-3 w-28" /><div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div><Skeleton className="h-5 w-16" /></CardContent></Card>)}</div>;
-}
-
-function LoadingNote() {
-  return <div role="status" aria-label="正在打开笔记" className="space-y-6"><span className="sr-only">正在打开笔记…</span><Skeleton className="h-9 w-3/4" /><Skeleton className="h-5 w-20" /><Separator /><div className="space-y-3"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div></div>;
 }
 
 function EmptyState({ icon, title, description, children, compact = false, role }: { icon: "note" | "search" | "folder" | "connection"; title: string; description: string; children?: React.ReactNode; compact?: boolean; role?: "alert" | "status" }) {

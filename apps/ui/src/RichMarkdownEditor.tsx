@@ -53,7 +53,7 @@ function SafeImage({ node, extension, editor, getPos }: NodeViewProps) {
   const path = extension.options.notePath() as string;
   const source = imageSource(String(node.attrs.src), path, node.type.name === 'wikiImage');
   const editable = useEditorState({ editor, selector: ({ editor }) => editor.isEditable });
-  return <NodeViewWrapper className="rich-image">{source ? <NoteImage source={source} alt={String(node.attrs.alt ?? '图片')} onDragStart={editable ? event => {
+  return <NodeViewWrapper className="rich-image">{source ? <NoteImage source={source} alt={String(node.attrs.alt ?? '图片')} width={node.attrs.width ?? undefined} height={node.attrs.height ?? undefined} onDragStart={editable ? event => {
     event.stopPropagation();
     const pos = getPos();
     if (pos == null) event.preventDefault(); else beginImageDrag(editor, pos, event.nativeEvent);

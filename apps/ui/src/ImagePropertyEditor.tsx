@@ -1,18 +1,23 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, MoreHorizontal, Maximize, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { request, errorMessage, type Attachment } from './bridge';
 import { imageSource } from './vault-links';
 import { bindNoteImage } from './note-image';
-const ImageViewer = lazy(() => import('./ImageViewer'));
+import ImageViewer from './ImageViewer';
 
 function PropertyImage({source, name, preview = false}:{source:string; name:string; preview?:boolean}) {
   const ref = useRef<HTMLImageElement>(null);
   const [failed, setFailed] = useState(false);
-  useEffect(() => ref.current ? bindNoteImage(ref.current,source) : undefined,[source]);
-  return <><img ref={ref} alt={name} onError={() => setFailed(true)} className={preview ? 'note-property-image-preview w-full rounded-md object-contain' : 'note-property-image-thumbnail rounded-md'} />{failed && <span className="text-xs text-muted-foreground">图片暂时无法读取</span>}</>;
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => ref.current ? bindNoteImage(ref.current,source, () => setFailed(true)) : undefined,[source]);
+  return <><span aria-busy={!loaded && !failed} className={preview ? `relative block w-full${!loaded && !failed ? ' min-h-20' : ''}` : 'relative block size-8'}>
+    <img ref={ref} alt={name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} className={preview ? 'note-property-image-preview w-full rounded-md object-contain' : 'note-property-image-thumbnail rounded-md'} />
+    {!loaded && !failed && <span role="status" aria-label="正在读取图片"><span className="sr-only">正在读取图片…</span><Skeleton className={preview ? 'absolute inset-0 min-h-20 w-full' : 'absolute inset-0 size-8'} /></span>}
+  </span>{failed && <span className="text-xs text-muted-foreground">图片暂时无法读取</span>}</>;
 }
 
 export default function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, editable, busy, onSave}:{name:string; value:string; noteId?:string; notePath:string; vaultBinding?:string; editable:boolean; busy:boolean; onSave:(value:string)=>Promise<void>}) {
@@ -50,6 +55,6 @@ export default function ImagePropertyEditor({name, value, noteId, notePath, vaul
       {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
     </PopoverContent></Popover> : editable ? upload : <span className="note-property-empty">空白</span>}
     {error && !open && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
-    {fullscreen && source && <Suspense fallback={<span role="status">正在打开图片…</span>}><ImageViewer source={source} alt={name} onClose={() => setFullscreen(false)} /></Suspense>}
+    {fullscreen && source && <ImageViewer source={source} alt={name} onClose={() => setFullscreen(false)} />}
   </div>;
 }

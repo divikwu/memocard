@@ -61,6 +61,11 @@
 .note-image-trigger:hover { background: transparent; }
 .note-image-trigger img { display: block; margin: 0; }
 .note-image-trigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.note-image-trigger[data-image-state="loading"] { position: relative; }
+.note-image-trigger[data-image-state="loading"]:not([data-image-sized]) { min-width: min(160px, 100%); min-height: 80px; }
+.note-image-trigger[data-image-state="loading"]::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--accent); animation: pulse 2s cubic-bezier(.4, 0, .6, 1) infinite; }
+.note-image-trigger[data-image-state="loading"] img { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .note-image-trigger[data-image-state="loading"]::after { animation: none; } }
 .typeset figure[data-image-columns] .note-image-trigger { width: 100%; }
 .typeset :is(.typeset-scroll, .tableWrapper)[data-overflow="true"]::after { content: '左右滚动查看完整表格'; display: block; position: sticky; left: 0; width: fit-content; padding-block: 6px; color: var(--muted-foreground); font: 12px/1.5 var(--font-sans); }
 .typeset :is(.typeset-scroll, .tableWrapper):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }

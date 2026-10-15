@@ -472,3 +472,6 @@
 
 /* Body tags, property tags and tag-picker chips share one appearance. */
 .rich-inline-tag, .note-tag-pill { max-width: 100%; min-height: 20px; border: 0; border-radius: 9999px; padding: 0 6px; background: var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); font-size: 14px; line-height: 20px; font-weight: 400; white-space: normal; overflow-wrap: anywhere; }
+
+.loading-capture-textarea { min-height: 112px; }
+@media (max-width: 700px) { .loading-capture-textarea { min-height: 104px; } }
