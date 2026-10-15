@@ -7,7 +7,8 @@ const html = await readFile(resolve(root, "index.html"), "utf8");
 const assets = [...html.matchAll(/(?:src|href)="\.\/([^"?#]+\.(?:js|css))"/g)].map((match) => match[1]);
 if (!assets.length) throw new Error("UI build does not reference an initial JS or CSS asset.");
 
-const limits = { js: 600 * 1024, css: 85 * 1024, gzip: 182 * 1024, fonts: 1024 * 1024 };
+// Utilities are emitted once in the entry CSS so lazy routes cannot override responsive rules.
+const limits = { js: 600 * 1024, css: 92 * 1024, gzip: 182 * 1024, fonts: 1024 * 1024 };
 let compressed = 0;
 for (const asset of assets) {
   const bytes = await readFile(resolve(root, asset));
@@ -53,6 +54,10 @@ let fonts = 0;
 for (const entry of fontFiles) fonts += (await readFile(resolve(root, "assets", entry.name))).length;
 if (fonts > limits.fonts) throw new Error(`Packaged fonts are ${fonts} bytes; the font budget is ${limits.fonts} bytes.`);
 for (const entry of await readdir(resolve(root, "assets"))) {
+  if (entry.endsWith(".css") && !assets.includes(`assets/${entry}`)
+      && /@layer\s+utilities\s*\{/.test(await readFile(resolve(root, "assets", entry), "utf8"))) {
+    throw new Error(`Lazy CSS ${entry} emits global utilities that can override responsive styles.`);
+  }
   if (/\.(?:js|css)$/.test(entry) && /radix/i.test(await readFile(resolve(root, "assets", entry), "utf8"))) {
     throw new Error(`Radix reference in shipped UI asset: ${entry}`);
   }

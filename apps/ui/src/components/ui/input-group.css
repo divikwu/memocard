@@ -1,3 +1,0 @@
-@import "tailwindcss/utilities" layer(utilities) source(none);
-@reference "../../styles.css";
-@source "./input-group.tsx";

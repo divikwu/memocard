@@ -23,6 +23,7 @@ import type { QuickCaptureHandle } from "./components/quick-capture";
 import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type View = "home" | "notes" | "settings" | "trash";
 type TagCount = { name: string; count: number };
@@ -43,6 +44,7 @@ const NoteDeleteDialog = lazy(() => import("./components/note-delete-dialog"));
 const Switch = lazy(() => import("@/components/ui/switch").then(module => ({ default: module.Switch })));
 
 export function App() {
+  const isMobile = useIsMobile();
   const [view, setView] = useState<View>(getView);
   const [trashVersion,setTrashVersion] = useState(0);
   const returnView = useRef<View>(getView() === "settings" || getView() === "trash" ? "notes" : getView());
@@ -54,6 +56,13 @@ export function App() {
   const pinEpoch = useRef(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const handleSidebarOpenChange = useCallback((open: boolean) => {
+    const restoreToggleFocus = document.activeElement?.getAttribute("data-slot") === "sidebar-trigger";
+    setSidebarOpen(open);
+    if (restoreToggleFocus) requestAnimationFrame(() => {
+      document.querySelector<HTMLButtonElement>(open ? '#desktop-sidebar [data-slot="sidebar-trigger"]' : 'main header [data-slot="sidebar-trigger"]')?.focus();
+    });
+  }, []);
   const searchField = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const scrollContainer = useRef<HTMLDivElement>(null);
@@ -667,14 +676,16 @@ export function App() {
     onReauthorize={() => void reauthorizeVault()}
   /></Suspense>;
 
-  return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
+  return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
     {navigation}
     <SidebarInset className="min-w-0 min-h-0">
       <header className="flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm">
-          {detailView && <Button variant="ghost" size="icon" className="shrink-0" onClick={() => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish()} aria-label={returnView.current === "home" ? "返回主页" : "返回笔记列表"}><ArrowLeft className="size-4" /></Button>}
-          <SidebarTrigger className={`shrink-0 ${editing ? "hidden md:inline-flex" : ""}`} />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+          {detailView && <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={() => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish()} aria-label={returnView.current === "home" ? "返回主页" : "返回笔记列表"}><ArrowLeft className="size-4" /></Button>}
+          {(isMobile ? !editing : !sidebarOpen) && <>
+            <SidebarTrigger className="shrink-0" />
+            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+          </>}
           <Breadcrumb aria-label="当前位置" className="min-w-0"><BreadcrumbList><BreadcrumbItem className="min-w-0"><BreadcrumbPage className="line-clamp-1">{title}</BreadcrumbPage></BreadcrumbItem></BreadcrumbList></Breadcrumb>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2 px-3">
@@ -753,7 +764,7 @@ export function App() {
           }} /></Suspense> : <>
           {view === "trash" ? status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote") ? <Suspense fallback={<LoadingNotes />}><TrashPage canPermanentlyDelete={capabilities.has("permanentlyDeleteNote")} key={`${status?.vaultId}:${environment?.vaultBinding ?? ''}`} vaultId={status?.vaultId ?? ''} vaultBinding={environment?.vaultBinding} refreshVersion={trashVersion} onRestored={()=>{if(refreshCount.current>0)pendingRefresh.current=true;else void refresh(true);}} /></Suspense> : loading ? <LoadingNotes /> : <EmptyState icon="folder" title={status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记库。"} /> : view === "settings" ? <div className="space-y-8">
             <section aria-labelledby="vault-settings-heading" className="space-y-3">
-              <h2 id="vault-settings-heading" className="text-balance text-base font-medium">笔记库</h2>
+              <h2 id="vault-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">笔记库</h2>
               <Card className="gap-0 py-0 shadow-none"><CardContent className="divide-y divide-border/60 px-4">
                 <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                   <div className="min-w-0 space-y-1">
@@ -767,9 +778,9 @@ export function App() {
                   <div className="min-w-0 space-y-1"><p className="text-sm font-medium">新笔记库</p><p className="text-pretty text-sm text-muted-foreground">在空文件夹中创建，不会移动或删除现有笔记。</p></div>
                   <Button variant="outline" className="shrink-0 self-start shadow-none sm:self-center" onClick={() => void selectVault(true)} disabled={working || Boolean(editing)}>创建新笔记库</Button>
                 </div>}
-                {status?.connected && <Collapsible>
-                  <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0"><span>文件状态</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
-                  <CollapsibleContent className="space-y-4 pb-4">
+                {status?.connected && <Collapsible className="-mx-4">
+                  <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between rounded-none rounded-b-xl px-4 has-[>svg]:px-4 data-[panel-open]:rounded-b-none"><span>文件状态</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
+                  <CollapsibleContent className="space-y-4 px-4 pb-4">
                     <p className="text-pretty text-sm text-muted-foreground">仅反映此设备的文件读取情况，不代表其他设备已完成同步。</p>
                     <dl className="divide-y divide-border/60 text-sm"><StatusRow label="已索引笔记" value={status.coverage.indexed} /><StatusRow label="待读取文件" value={status.coverage.pending} /><StatusRow label="需要处理的文件" value={status.coverage.issues} /><StatusRow label="最近索引时间" value={status.coverage.indexedAt ? formatDate(status.coverage.indexedAt) : "—"} /></dl>
                   </CollapsibleContent>
@@ -777,11 +788,11 @@ export function App() {
               </CardContent></Card>
             </section>
             <Suspense fallback={<Skeleton className="h-44 rounded-xl" />}><ThemeSettings /></Suspense>
-            {capabilities.has("openWeb") && <section aria-labelledby="web-settings-heading" className="space-y-3"><h2 id="web-settings-heading" className="text-balance text-base font-medium">本机 Web</h2><Card className="shadow-none"><CardContent className="space-y-4">
+            {capabilities.has("openWeb") && <section aria-labelledby="web-settings-heading" className="space-y-3"><h2 id="web-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">本机 Web</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
               <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-6 text-muted-foreground">通过 MemoCard 菜单栏服务，在浏览器中打开统一的多笔记库界面。</p></div>
               <div className="flex flex-wrap gap-2"><Button onClick={() => void openLocalWeb()} disabled={working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button></div>
             </CardContent></Card></section>}
-            {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="text-balance text-base font-medium">MCP 本机读取</h2><Card className="shadow-none"><CardContent className="space-y-4">
+            {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">MCP 本机读取</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
               <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-6 text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Suspense fallback={<Skeleton className="h-5 w-8" />}><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></Suspense></div>
               <p className="text-pretty text-sm leading-6 text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}

@@ -31,7 +31,7 @@ function FontSelect({ label, value, onChange }: { label: string; value: FontChoi
     <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
       <p className="min-w-0 text-sm">{label}</p>
       <Select value={value} onValueChange={next => { if (next) onChange(next as FontChoice); }}>
-        <SelectTrigger aria-label={label} className="w-full shrink-0 shadow-none sm:w-40">
+        <SelectTrigger aria-label={label} className="w-full shrink-0 shadow-none sm:w-48">
           <SelectValue style={{ fontFamily: FONT_FAMILIES[value] }}>{fontLabels[value]}</SelectValue>
         </SelectTrigger>
         <SelectContent align="end" className="max-h-80">
@@ -56,7 +56,7 @@ export function ThemeSettings() {
   const radius = radii.find(option => option.value === theme.radius)!;
   return (
     <><section aria-labelledby="appearance-heading" className="space-y-3">
-      <div className="flex min-h-8 items-center justify-between gap-4">
+      <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
         <h2 id="appearance-heading" className="text-balance text-base font-medium">外观</h2>
         <Button variant="ghost" size="sm" onClick={theme.resetAppearance} className="shrink-0 text-muted-foreground">
           <RotateCcw aria-hidden="true" />恢复默认
@@ -68,7 +68,7 @@ export function ThemeSettings() {
         <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
           <div className="min-w-0 space-y-1"><p className="text-sm font-medium">显示模式</p><p className="text-pretty text-sm text-muted-foreground">选择浅色、深色或跟随系统。</p></div>
           <Select value={theme.theme} onValueChange={next => { if (next) theme.setTheme(next as Parameters<typeof theme.setTheme>[0]); }}>
-            <SelectTrigger aria-label="显示模式" className="w-full shrink-0 shadow-none sm:w-40">
+            <SelectTrigger aria-label="显示模式" className="w-full shrink-0 shadow-none sm:w-48">
               <SelectValue>{modes.find(mode => mode.value === theme.theme)?.label}</SelectValue>
             </SelectTrigger>
             <SelectContent align="end">
@@ -81,7 +81,7 @@ export function ThemeSettings() {
         <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
           <div className="min-w-0 space-y-1"><p className="text-sm font-medium">强调色</p><p className="text-pretty text-sm text-muted-foreground">用于按钮和选中状态。</p></div>
           <Select value={theme.palette} onValueChange={next => { if (next) theme.setPalette(next as Parameters<typeof theme.setPalette>[0]); }}>
-            <SelectTrigger aria-label="强调色" className="w-full shrink-0 shadow-none sm:w-40">
+            <SelectTrigger aria-label="强调色" className="w-full shrink-0 shadow-none sm:w-48">
               <SelectValue className="capitalize">
                 <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full border border-foreground/10" style={{ backgroundColor: `var(--palette-${theme.palette}-swatch)` }} />
                 {paletteLabels[theme.palette]}
@@ -99,13 +99,13 @@ export function ThemeSettings() {
             </SelectContent>
           </Select>
         </div>
-        <Collapsible>
-          <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between px-0 has-[>svg]:px-0"><span>高级外观</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
-          <CollapsibleContent className="divide-y divide-border/60">
+        <Collapsible className="-mx-4">
+          <CollapsibleTrigger render={<Button variant="ghost" className="group h-14 w-full justify-between rounded-none rounded-b-xl px-4 has-[>svg]:px-4 data-[panel-open]:rounded-b-none"><span>高级外观</span><ChevronDown aria-hidden="true" className="size-4 text-muted-foreground group-data-[panel-open]:rotate-180" /></Button>} />
+          <CollapsibleContent className="divide-y divide-border/60 px-4">
         <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
           <p className="min-w-0 text-sm">中性色</p>
           <Select value={theme.neutralPalette} onValueChange={next => { if (next) theme.setNeutralPalette(next as Parameters<typeof theme.setNeutralPalette>[0]); }}>
-            <SelectTrigger aria-label="中性色" className="w-full shrink-0 shadow-none sm:w-40">
+            <SelectTrigger aria-label="中性色" className="w-full shrink-0 shadow-none sm:w-48">
               <SelectValue className="capitalize">{neutralLabels[theme.neutralPalette]}</SelectValue>
             </SelectTrigger>
             <SelectContent align="end">
@@ -120,7 +120,7 @@ export function ThemeSettings() {
         <div className="flex flex-col items-start justify-between gap-3 py-4 sm:flex-row sm:items-center sm:gap-6">
           <p className="min-w-0 text-sm">圆角</p>
           <Select value={theme.radius} onValueChange={next => { if (next) theme.setRadius(next as Parameters<typeof theme.setRadius>[0]); }}>
-            <SelectTrigger aria-label="圆角" className="w-full shrink-0 shadow-none sm:w-40">
+            <SelectTrigger aria-label="圆角" className="w-full shrink-0 shadow-none sm:w-48">
               <SelectValue>{radius.label}</SelectValue>
             </SelectTrigger>
             <SelectContent align="end">

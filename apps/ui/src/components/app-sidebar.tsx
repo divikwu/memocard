@@ -5,7 +5,7 @@ import type { NoteFilterCounts, NoteQuickFilter } from "@memocard/contracts";
 import type { RegisteredVault } from "../bridge";
 import { NoteFilterNavigation } from "./note-filter-navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail } from "@/components/ui/sidebar";
+import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { SidebarTreeItem } from "./sidebar-tree-item";
 
 type SidebarView = "home" | "notes" | "settings" | "trash";
@@ -43,19 +43,24 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
   canCreate, canChooseVault, canCreateVault, needsPermission, working,
   onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize,
 }: AppSidebarProps) {
+  const { isMobile } = useSidebar();
   return <Sidebar id="desktop-sidebar" aria-label="笔记导航" className="border-r-0">
     <SidebarHeader>
-      <button type="button" aria-label="MemoCard，返回主页" className="flex h-10 items-center gap-2 rounded-md px-1.5 text-left outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("home", null)}>
-        <img src="./favicon.png" alt="" draggable={false} className="size-7 shrink-0 object-contain" />
-        <span className="truncate text-sm font-semibold">MemoCard</span>
-      </button>
+      <div className="flex items-center gap-2">
+        <button type="button" aria-label="MemoCard，返回主页" className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-(--hover-row-radius) px-1.5 text-left outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("home", null)}>
+          <img src="./favicon.png" alt="" draggable={false} className="size-7 shrink-0 object-contain" />
+          <span className="truncate text-sm font-semibold">MemoCard</span>
+        </button>
+        {!isMobile && <SidebarTrigger className="shrink-0" />}
+      </div>
       <nav aria-label="主要导航"><SidebarMenu>
         <SidebarMenuItem><SidebarMenuButton disabled={!connected} onClick={onSearch}><Search /><span>搜索</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton disabled={!canCreate || working} onClick={onNewNote}><Plus /><span>新建笔记</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton isActive={view === "home"} aria-current={view === "home" ? "page" : undefined} onClick={() => onNavigate("home")}><House /><span>主页</span></SidebarMenuButton></SidebarMenuItem>
-        <SidebarTreeItem label="所有笔记" icon={<Notebook className="size-3.5" />} buttonProps={{ onClick: () => onNavigate("notes", null) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
+        <SidebarTreeItem label="所有笔记" icon={<Notebook className="size-4" />} buttonProps={{ onClick: () => onNavigate("notes", null) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
           <NoteFilterNavigation view={view} quickFilter={quickFilter} filterCounts={filterCounts} connected={connected} onNavigate={onNavigate} />
         </SidebarTreeItem>
+        <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="日历功能暂未开放"><CalendarDays /><span>日历</span></SidebarMenuButton></SidebarMenuItem>
       </SidebarMenu></nav>
     </SidebarHeader>
     <SidebarContent>
@@ -63,10 +68,9 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
     </SidebarContent>
     <SidebarFooter className="shrink-0">
       <SidebarGroup className="p-0"><SidebarGroupContent><SidebarMenu>
-        <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="日历功能暂未开放"><CalendarDays /><span>日历</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem>
           <DropdownMenu>
-            <DropdownMenuTrigger render={<SidebarMenuButton className="w-full" aria-label={`笔记库：${vaultName}`}>
+            <DropdownMenuTrigger render={<SidebarMenuButton className="w-full data-[popup-open]:bg-hover" aria-label={`笔记库：${vaultName}`}>
               <Layers aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate font-medium" title={vaultName}>{vaultName}</span><ChevronDown className="opacity-50" aria-hidden="true" />
             </SidebarMenuButton>} />
