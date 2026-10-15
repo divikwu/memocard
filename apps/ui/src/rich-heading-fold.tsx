@@ -1,4 +1,4 @@
-import { Extension } from '@tiptap/react';
+import { Extension, type Editor } from '@tiptap/react';
 import { Plugin, PluginKey, TextSelection, NodeSelection } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { createRoot } from 'react-dom/client';
@@ -7,6 +7,10 @@ import { RichHeadingFoldButton } from './RichHeadingFoldButton';
 
 // View-only state: no node attributes, document changes, or undo entries.
 const folding = new PluginKey<Set<number>>('headingFolding');
+
+export function unfoldRichHeadings(editor: Editor) {
+  if (folding.getState(editor.state)?.size) editor.view.dispatch(editor.state.tr.setMeta(folding, 'expandAll'));
+}
 
 export const RichHeadingFolding = Extension.create({
   name: 'headingFolding',
@@ -17,6 +21,7 @@ export const RichHeadingFolding = Extension.create({
       state: {
         init: () => new Set<number>(),
         apply(tr, previous) {
+          if (tr.getMeta(folding) === 'expandAll') return new Set<number>();
           const next = new Set<number>();
           for (const pos of previous) {
             const mapped = tr.mapping.mapResult(pos, 1);

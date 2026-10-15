@@ -534,6 +534,18 @@ it('folds a heading section up to its next peer without changing Markdown or und
  fireEvent.click(screen.getByRole('button',{name:'展开“标题 A”章节'}));
  expect(field.querySelector('[hidden]')).toBeNull();expect(change).not.toHaveBeenCalled();
 });
+it('reveals folded chapters when switching to mobile without changing content or history',async()=>{
+ let resize=()=>{};
+ const media={matches:false,addEventListener:(_event:string,listener:()=>void)=>{resize=listener;},removeEventListener:vi.fn()};
+ vi.stubGlobal('matchMedia',vi.fn((query:string)=>query.includes('767px')?media:{matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
+ const {editor,field,change}=await setup('## 标题\n\n正文');
+ fireEvent.click(await screen.findByRole('button',{name:'收起“标题”章节'}));
+ expect(field.querySelector('p')?.hasAttribute('hidden')).toBe(true);
+ const before=editor.getJSON();
+ act(()=>{media.matches=true;resize();});
+ expect(field.querySelector('[hidden]')).toBeNull();
+ expect(editor.getJSON()).toEqual(before);expect(change).not.toHaveBeenCalled();expect(editor.can().undo()).toBe(false);
+});
 it('keeps child folds when reopening a parent and reveals a programmatic selection',async()=>{
  const {editor,field,change}=await setup('## 标题 A\n\n父正文\n\n### 子标题\n\n子正文\n\n## 标题 B\n\n其他正文');
  fireEvent.click(await screen.findByRole('button',{name:'收起“子标题”章节'}));

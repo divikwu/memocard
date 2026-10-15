@@ -8,6 +8,13 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
   --editor-gutter: var(--note-content-inset);
   --editor-inset-right: var(--note-content-inset);
 }
+@media (max-width: 767px) {
+  .note-page-width .rich-heading-fold-widget { display: none; }
+  /* Keep the original draggable hit area inside the 16px gutter + 8px inset. */
+  .note-page-width .block-controls { left: calc(var(--editor-gutter) - 24px) !important; }
+  .note-page-width .block-controls button { opacity: 0; touch-action: none; }
+  .note-page-width .block-controls button:focus-visible { opacity: 1; outline-offset: -2px; }
+}
 .note-properties {
   --property-label-width: min(160px, 40%);
   padding: 0 2px 12px;

@@ -89,6 +89,54 @@ function setup(draft = initial) {
   const session = new EditorSession(draft, transport as never, true, vi.fn(), committed);
   return { session, transport, committed };
 }
+it.each([false, true])('retires a moved-section recovery after undo returns to the saved note (pending=%s)', async pending => {
+  vi.useFakeTimers();
+  const original = '## Alpha\n\nFirst\n\n## Beta\n\nSecond';
+  const moved = '## Beta\n\nSecond\n\n## Alpha\n\nFirst';
+  const drafts = new Map<string, Record<string, unknown>>();
+  drafts.set('another-session', { body: 'Unrelated recovery' });
+  let release!: () => void;
+  let started!: () => void;
+  const writing = new Promise<void>(resolve => { started = resolve; });
+  const gate = pending ? new Promise<void>(resolve => { release = resolve; }) : Promise.resolve();
+  const transport = vi.fn(async (op: string, params: Record<string, unknown>) => {
+    if (op === 'saveDraft') {
+      if (params.body === moved) started();
+      await gate;
+      if (params.baseHash === null && params.body === '' && params.title === '') drafts.delete(String(params.draftKey));
+      else drafts.set(String(params.draftKey), params);
+    }
+  });
+  const session = new EditorSession({ ...initial, title: 'Sections', body: original, baseHash: 'original' }, transport as never, true, vi.fn(), vi.fn(), true);
+  session.update(moved);
+  if (pending) await writing; else await session.recover();
+  session.update(original);
+  const flushed = session.flush();
+  if (pending) release();
+  await flushed;
+  expect(session.current.body).toBe(original);expect(session.dirty).toBe(false);
+  expect([...drafts.keys()]).toEqual(['another-session']);
+  expect(transport.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(0);
+  session.dispose();
+});
+it('blocks leaving when retiring an undone recovery fails and retries the cleanup', async () => {
+  const failure = new Error('Recovery unavailable');
+  let failCleanup = true;
+  const transport = vi.fn(async (op: string, params: Record<string, unknown>) => {
+    if (op === 'saveDraft' && params.baseHash === null && failCleanup) throw failure;
+  });
+  const session = new EditorSession({ ...initial, body: 'Original', baseHash: 'original' }, transport as never, true, vi.fn(), vi.fn(), true);
+  session.update('Moved'); await session.recover();
+  session.update('Original'); await session.recover().catch(() => undefined);
+  await expect(session.flush()).rejects.toBe(failure);
+  expect(session.state).toBe('error');expect(session.current.body).toBe('Original');
+  failCleanup = false;
+  await session.flush();
+  expect(session.state).toBe('saved');expect(session.dirty).toBe(false);
+  expect(transport).toHaveBeenLastCalledWith('saveDraft', expect.objectContaining({ draftKey: session.current.draftKey, title: '', body: '', baseHash: null }));
+  expect(transport.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(0);
+  session.dispose();
+});
 it('does not rewrite an untouched existing note, but saves an explicitly cleared body', async () => {
   const { session, transport } = setup({ ...initial, body: 'old', baseHash: 'original' });
   await session.flush(); expect(transport).not.toHaveBeenCalled();

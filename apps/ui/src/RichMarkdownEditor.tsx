@@ -11,7 +11,7 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { richBlock, richBlockAt, richSectionEnd, selectedRichBlocks, richBlockMoveSources, richBlockMoveTarget, selectRichBlocks, selectRichBlockRange, extendRichBlocksTo, blockMoveTransaction, moveRichBlocks, duplicateRichBlocks, editRichStructure, type RichBlock } from './rich-blocks';
 import { BlockRangeSelection } from './rich-block-selection';
 import { RichInlineTags } from './rich-inline-tags';
-import { RichHeadingFolding } from './rich-heading-fold';
+import { RichHeadingFolding, unfoldRichHeadings } from './rich-heading-fold';
 import { RichTagSuggestions } from './RichTagSuggestions';
 import { RichMath } from './RichMath';
 import { RichFormatTools } from './RichFormatTools';
@@ -354,6 +354,9 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     editor?.commands.setMeta('addToHistory', false);
     if (props.disabled) setCalloutIcon(null);
   }, [editor, props.disabled]);
+  useEffect(() => {
+    if (editor && isMobile) unfoldRichHeadings(editor);
+  }, [editor, isMobile]);
   useEffect(() => {
     if (editor && props.value !== emitted.current) {
       emitted.current = props.value;

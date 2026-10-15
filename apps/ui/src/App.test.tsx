@@ -268,7 +268,7 @@ describe("note workspace", () => {
     expect(pageTitle.closest(".sr-only")).toBeNull();
     const contentScroll = pageTitle.parentElement?.parentElement?.parentElement;
     expect(contentScroll?.className).toContain("px-4");
-    expect(contentScroll?.className).toContain("md:px-[104px]");
+    expect(contentScroll?.className).toContain("page-list-scroll");
     expect(contentScroll?.className).not.toContain("xl:px-16");
     const list = await screen.findByRole("list", { name: "笔记列表" });
     expect(list.className).toContain("grid");

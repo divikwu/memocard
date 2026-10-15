@@ -65,6 +65,11 @@ export class EditorSession {
     return this.enqueue(async () => {
       this.recoveryQueued = false;
       if (this.dirty || key(this.current) !== this.persisted) await this.transport('saveDraft', this.params(this.current));
+      else if (this.hadRecovery) {
+        // Undo can return to the saved source while an older recovery still exists.
+        await this.transport('saveDraft', { ...this.params(this.current), pendingProperties: [], title: '', body: '', tags: [], baseHash: null });
+        this.hadRecovery = this.dirty;
+      }
     });
   }
   private params(draft: Draft): Record<string, unknown> {
@@ -114,7 +119,7 @@ export class EditorSession {
   }
   private async drain(oneProperty = false): Promise<void> {
     if (this.state === 'conflict') throw this.error;
-    if (!this.dirty && !this.propertyRecovery) return;
+    if (!this.dirty && !this.propertyRecovery && !this.hadRecovery) return;
     try {
       while (this.dirty) {
         await this.saveBody();
@@ -145,7 +150,7 @@ export class EditorSession {
         if (this.canDraft) await this.transport('saveDraft', this.params(this.current));
         if (oneProperty) break;
       }
-      if (!this.dirty && this.propertyRecovery && this.canDraft) {
+      if (!this.dirty && (this.propertyRecovery || this.hadRecovery) && this.canDraft) {
         await this.transport('saveDraft', { ...this.params(this.current), pendingProperties: [], title: '', body: '', tags: [], baseHash: null });
       }
       if (!this.dirty) { this.propertyRecovery = false; this.hadRecovery = false; }
