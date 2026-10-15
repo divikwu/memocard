@@ -17,7 +17,7 @@ beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
   sheet = document.createElement('style');
   // JSDOM does not resolve inherited custom properties in background shorthands.
-  sheet.textContent = (styles.match(/\.sidebar-tag-[^{}]+\{[^{}]*\}/g) ?? []).join('\n')
+  sheet.textContent = (styles.match(/\.sidebar-(?:tree-row|tag-)[^{}]+\{[^{}]*\}/g) ?? []).join('\n')
     .replaceAll('var(--hover-bg)', 'rgba(0, 0, 0, 0.06)')
     .replaceAll('var(--hover-row-radius)', '8px')
     .replaceAll('var(--hover-action-radius)', '4px');
@@ -29,7 +29,7 @@ it.each(['parent', 'parent/child'])('keeps the whole %s row highlighted while fo
   const user = userEvent.setup();
   render(<SidebarProvider><TagNavigation vaultId="hover-test" tags={[{ name: 'parent', count: 1 }, { name: 'parent/child', count: 1 }]} selected={null} onSelect={() => {}} /><button>移出焦点</button></SidebarProvider>);
   const action = screen.getByRole('button', { name: `标签操作 ${path}` });
-  const row = action.closest('.sidebar-tag-row')!;
+  const row = action.closest('.sidebar-tree-row')!;
   await user.click(action);
   await user.unhover(action);
   const menuItem = await screen.findByRole('menuitem', { name: '置顶标签' });

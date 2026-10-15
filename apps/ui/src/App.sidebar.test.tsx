@@ -188,6 +188,9 @@ describe("sidebar workspace actions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
+    const collapse = screen.getByRole("button", { name: "收起侧栏" });
+    expect(collapse.parentElement).toBe(screen.getByRole("button", { name: "MemoCard，返回主页" }).parentElement);
+    expect(collapse.closest("main")).toBeNull();
     await user.click(screen.getByRole("button", { name: /^生活/ }));
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     fireEvent.change(screen.getByRole("textbox", { name: "搜索笔记" }), { target: { value: "散步" } });
@@ -196,7 +199,10 @@ describe("sidebar workspace actions", () => {
 
     await user.click(screen.getByRole("button", { name: "收起侧栏" }));
     expect(screen.queryByRole("navigation", { name: "主要导航" })).toBeNull();
+    expect(screen.getByRole("button", { name: "展开侧栏" }).closest("header")).toBeTruthy();
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "展开侧栏" })));
     await user.click(screen.getByRole("button", { name: "展开侧栏" }));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "收起侧栏" })));
 
     expect(screen.getByRole("navigation", { name: "主要导航" })).toBeTruthy();
     expect((screen.getByRole("textbox", { name: "搜索当前视图笔记" }) as HTMLInputElement).value).toBe("散步");

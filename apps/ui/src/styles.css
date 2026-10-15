@@ -1,7 +1,4 @@
 @import "tailwindcss" source("./");
-@source not "./components/ui/input-group.tsx";
-@source not "./components/quick-capture.tsx";
-@source not "./components/trash-page.tsx";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @font-face {
@@ -392,15 +389,15 @@
   }
 }
 
-/* Sidebar tags and property options share hover colors and corner radii. */
-.sidebar-tag-row { border-radius: var(--hover-row-radius); }
-.sidebar-tag-row > :is([data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]) { border-radius: inherit; }
-.sidebar-tag-row:is(:hover, :focus-within, .sidebar-tag-row-open) { background: var(--hover-bg); }
-.sidebar-tag-row:is(:hover, :focus-within, .sidebar-tag-row-open) > :is([data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]) { background: transparent; }
-.sidebar-tag-row > [data-sidebar="menu-action"] { top: 50%; width: 24px; height: 24px; transform: translateY(-50%); border-radius: var(--hover-action-radius); background: transparent; color: var(--muted-foreground); }
-.sidebar-tag-row > .sidebar-tree-toggle { left: 4px; right: auto; }
+/* Sidebar tree rows and property options share hover colors and corner radii. */
+.sidebar-tree-row { border-radius: var(--hover-row-radius); }
+.sidebar-tree-row > :is([data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]) { border-radius: inherit; }
+.sidebar-tree-row:is(:hover, :focus-within, .sidebar-tag-row-open) { background: var(--hover-bg); }
+.sidebar-tree-row:is(:hover, :focus-within, .sidebar-tag-row-open) > :is([data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]) { background: transparent; }
+.sidebar-tree-row > [data-sidebar="menu-action"] { top: 50%; width: 24px; height: 24px; transform: translateY(-50%); border-radius: var(--hover-action-radius); background: transparent; color: var(--muted-foreground); }
+.sidebar-tree-row > .sidebar-tree-toggle { left: 4px; right: auto; }
 .sidebar-tag-more { right: 4px; }
-.sidebar-tag-row > [data-sidebar="menu-action"]:is(:hover, :focus-visible, [data-popup-open]) { background: var(--hover-bg); color: var(--foreground); }
+.sidebar-tree-row > [data-sidebar="menu-action"]:is(:hover, :focus-visible, [data-popup-open]) { background: var(--hover-bg); color: var(--foreground); }
 
 /* MemoCard content uses the same theme tokens as the application controls. */
 .dark .block-editor { --note-block-selection: rgba(82, 156, 235, 0.24); }

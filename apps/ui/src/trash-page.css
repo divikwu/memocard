@@ -1,6 +1,3 @@
-@import "tailwindcss/utilities" layer(utilities) source(none);
-@reference "./styles.css";
-@source "./components/trash-page.tsx";
 .trash-page, .trash-list { display: grid; gap: 16px; }
 .trash-list { gap: 8px; }
 .trash-toolbar, .trash-item, .trash-item-actions, .trash-preview-actions { display: flex; align-items: center; gap: 12px; }
