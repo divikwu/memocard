@@ -7,6 +7,7 @@ import { NoteFilterNavigation } from "./note-filter-navigation";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarRail, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { SidebarTreeItem } from "./sidebar-tree-item";
+import { LoadingTags } from "./loading-states";
 
 type SidebarView = "home" | "notes" | "settings" | "trash";
 const TagNavigation = lazy(() => import("./tag-navigation").then(module => ({ default: module.TagNavigation })));
@@ -17,6 +18,7 @@ export interface AppSidebarProps {
   quickFilter?: NoteQuickFilter | null;
   filterCounts?: NoteFilterCounts;
   tags: { name: string; count: number }[];
+  loadingTags?: boolean;
   vaultName: string;
   vaultId?: string | null;
   registeredVaults?: RegisteredVault[];
@@ -39,7 +41,7 @@ export interface AppSidebarProps {
 }
 
 
-export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, canTrash = false, vaultStatusText, hasVaultIssue,
+export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, loadingTags = false, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, canTrash = false, vaultStatusText, hasVaultIssue,
   canCreate, canChooseVault, canCreateVault, needsPermission, working,
   onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize,
 }: AppSidebarProps) {
@@ -64,7 +66,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
       </SidebarMenu></nav>
     </SidebarHeader>
     <SidebarContent>
-      <Suspense fallback={<div className="h-12" />}><TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={name => onNavigate("notes", name)} /></Suspense>
+      <Suspense fallback={<LoadingTags />}>{loadingTags ? <LoadingTags /> : <TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={name => onNavigate("notes", name)} />}</Suspense>
     </SidebarContent>
     <SidebarFooter className="shrink-0">
       <SidebarGroup className="p-0"><SidebarGroupContent><SidebarMenu>

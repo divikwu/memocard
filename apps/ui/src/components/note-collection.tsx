@@ -9,16 +9,14 @@ import { Input } from "./ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { cn } from "@/lib/utils";
 
-type Layout = "cards" | "list";
-const layoutKey = "memocard:note-layout";
-function savedLayout(key = layoutKey, fallback: Layout = "cards"): Layout {
-  try { const saved = localStorage.getItem(key); return saved === "list" || saved === "cards" ? saved : fallback; }
-  catch { return fallback; }
-}
+import { collectionClasses, layoutKey, savedLayout, type Layout } from "./note-collection-layout";
+import { LoadingCollectionItems } from "./loading-states";
 
 type NoteCollectionProps = {
   home?: { tab: "recent" | "pinned"; pinnedCount: number; onTabChange: (tab: "recent" | "pinned") => void };
   notes: Note[];
+  loading?: boolean;
+  searching?: boolean;
   query: string;
   onQueryChange: (query: string) => void;
   searchPlaceholder: string;
@@ -37,18 +35,20 @@ type NoteCollectionProps = {
   formatDate: (value: string) => string;
 };
 
-export function NoteCollection({ home, notes, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
+export function NoteCollection({ home, notes, loading = false, searching = false, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
   const storageKey = home ? "memocard:home-layout" : layoutKey;
   const [layout, setLayout] = useState<Layout>(() => savedLayout(storageKey, home ? "list" : "cards"));
   const cards = layout === "cards";
+  const { gridClass, cardClass } = collectionClasses(cards);
   function changeLayout(next: Layout) {
     setLayout(next);
     try { localStorage.setItem(storageKey, next); } catch { /* Keep switching available when browser storage is unavailable. */ }
   }
-  const collection = <div className="space-y-4">
-    {notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={cn(cards ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4" : "flex flex-col")}>
+  const collection = <>
+    {loading && <span role="status" aria-label={searching ? "正在搜索笔记" : "正在读取笔记库"} className="sr-only">{searching ? "正在搜索笔记…" : "正在读取笔记库…"}</span>}
+    <div className="space-y-4" aria-busy={loading}>{notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={gridClass}>
       {notes.map(note => <li key={note.id} data-note-id={note.id} className="min-w-0">
-        <Card className={cn("gap-0 overflow-hidden bg-card py-0 transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40", cards ? "h-64 rounded-[16px] border border-border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]" : "rounded-lg border-0 shadow-none")}>
+        <Card className={cn(cardClass, "transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40")}>
           <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row flex-wrap items-center sm:flex-nowrap")}>
             <button type="button" className={cn("flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default", !cards && "basis-full sm:basis-auto")} aria-label={`打开 ${note.title?.trim() || "新内容"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
               <div className={cn("w-full", cards ? "px-4 pb-2 pt-4" : "px-2 py-2")}>
@@ -67,16 +67,17 @@ export function NoteCollection({ home, notes, query, onQueryChange, searchPlaceh
           </CardContent>
         </Card>
       </li>)}
-    </ul> : children}
+    </ul> : loading ? <LoadingCollectionItems cards={cards} /> : children}
     {hasMore && <div className="flex justify-center pt-3"><Button variant="outline" size="sm" onClick={onLoadMore} disabled={loadMoreDisabled}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
-  </div>;
+  </div></>;
   if (home) return <Tabs value={home.tab} onValueChange={value => { if (value === "recent" || value === "pinned") home.onTabChange(value); }} className="gap-4">
     <div className="flex items-center justify-between gap-3">
       <TabsList variant="line" aria-label="主页内容" className="gap-2">
         <TabsTrigger value="recent" className="px-1"><Clock3 aria-hidden="true" />最近更新</TabsTrigger>
         <TabsTrigger value="pinned"><Pin aria-hidden="true" />已固定<span className="text-xs tabular-nums text-muted-foreground">{home.pinnedCount}</span></TabsTrigger>
       </TabsList>
-      <div role="group" aria-label="主页布局" className="flex shrink-0 rounded-lg bg-muted p-[3px]">
+      <div role="group" aria-label="主页布局" className="relative flex shrink-0 rounded-lg bg-muted p-[3px]">
+        {loading && notes.length > 0 && <LoaderCircle aria-hidden="true" style={{left:-24}} className="absolute top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground motion-reduce:animate-none" />}
         <Button variant="ghost" size="icon-sm" aria-label="卡片布局" title="卡片布局" aria-pressed={cards} className="text-foreground/60 hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground" onClick={() => changeLayout("cards")}><LayoutGrid /></Button>
         <Button variant="ghost" size="icon-sm" aria-label="列表布局" title="列表布局" aria-pressed={!cards} className="text-foreground/60 hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground" onClick={() => changeLayout("list")}><List /></Button>
       </div>
@@ -86,7 +87,7 @@ export function NoteCollection({ home, notes, query, onQueryChange, searchPlaceh
   return <Tabs value={layout} onValueChange={value => { if (value === "cards" || value === "list") changeLayout(value); }} className="@container gap-4">
     <div className="grid grid-cols-1 items-center gap-3 text-xs text-muted-foreground @xl:grid-cols-[minmax(0,1fr)_auto]">
       <div className="relative min-w-0 @xl:w-60">
-        <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2" />
+        {loading ? <LoaderCircle aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 animate-spin motion-reduce:animate-none" /> : <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2" />}
         <Input value={query} onChange={event => onQueryChange(event.target.value)} placeholder={searchPlaceholder} aria-label="搜索当前视图笔记" disabled={searchDisabled} className="h-8 bg-background pl-8 pr-8 text-foreground" />
         {query && <Button type="button" variant="ghost" size="icon-xs" className="absolute right-1 top-1/2 -translate-y-1/2" onClick={() => onQueryChange("")} disabled={searchDisabled} aria-label="清空当前搜索"><X className="size-3" /></Button>}
       </div>

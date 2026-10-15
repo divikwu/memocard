@@ -26,7 +26,7 @@ function ScrollableTable({ children }: { children?: ReactNode }) {
 }
 
 // Keep the component type stable across background refreshes so resolved images stay mounted.
-const markdownImage: Components["img"] = ({ src, alt }) => typeof src === "string" && src ? <NoteImage source={src} alt={alt ?? "笔记图片"} loading="lazy" /> : <span className="blocked-image">{alt || "图片"} · 仅显示笔记库中的图片</span>;
+const markdownImage: Components["img"] = ({ src, alt, width, height }) => typeof src === "string" && src ? <NoteImage source={src} alt={alt ?? "笔记图片"} loading="lazy" width={width} height={height} /> : <span className="blocked-image">{alt || "图片"} · 仅显示笔记库中的图片</span>;
 
 export function Markdown({ body, notePath, onError }: { body: string; notePath?: string; onError?: (message: string) => void }) {
   const anchorPrefix = `note-${useId()}-`;

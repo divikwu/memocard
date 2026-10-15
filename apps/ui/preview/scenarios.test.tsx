@@ -164,7 +164,7 @@ it('shows an initial timeout below the heading and retries through a loading sta
   });
   mock.retry();fireEvent.click(within(alert).getByRole('button',{name:'重试'}));
   expect(await screen.findByRole('status',{name:'正在读取笔记库'})).toBeTruthy();
-  expect(screen.queryByRole('textbox',{name:'搜索当前视图笔记'})).toBeNull();
+  expect(screen.getByRole('textbox',{name:'搜索当前视图笔记'})).toBeTruthy();
   await waitFor(()=>expect(finish).toBeTypeOf('function'));
   finish();
   expect(await screen.findByRole('list',{name:'笔记列表'})).toBeTruthy();

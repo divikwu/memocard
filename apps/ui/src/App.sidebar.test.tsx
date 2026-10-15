@@ -74,7 +74,7 @@ describe("sidebar workspace actions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
-    await user.click(screen.getByRole("button", { name: /^生活/ }));
+    await user.click(await screen.findByRole("button", { name: /^生活/ }));
     const search = await screen.findByRole("textbox", { name: "搜索当前视图笔记" });
     await user.type(search, "不存在");
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在", tags: ["生活"], limit: 30 }));
@@ -98,7 +98,7 @@ describe("sidebar workspace actions", () => {
     });
     render(<App />);
     await screen.findByText(note.body);
-    await userEvent.setup().click(screen.getByRole("button", { name: "展开或收起快捷筛选" }));
+    await userEvent.setup().click(await screen.findByRole("button", { name: "展开或收起快捷筛选" }));
     await userEvent.setup().click(screen.getByRole("button", { name: "有图片" }));
     await waitFor(() => expect(finishQuery).toBeTypeOf("function"));
     expect(screen.getByRole("status", { name: "正在读取笔记库" })).toBeTruthy();

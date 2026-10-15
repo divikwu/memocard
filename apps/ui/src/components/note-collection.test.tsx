@@ -132,3 +132,29 @@ it("defaults to cards for invalid preferences and keeps switching available with
   await userEvent.setup().click(screen.getByRole("tab", { name: "列表布局" }));
   expect(screen.getByRole("tab", { name: "列表布局" }).getAttribute("aria-selected")).toBe("true");
 });
+
+it("keeps the toolbar and saved layout mounted while the first page loads", async () => {
+  localStorage.setItem("memocard:note-layout", "list");
+  const view = render(<NoteCollection {...props} notes={[]} loading hasMore={false} />);
+  expect(screen.getByRole("textbox", {name:"搜索当前视图笔记"})).toBeTruthy();
+  expect(screen.getByRole("button", {name:"新建"})).toBeTruthy();
+  expect(screen.getByRole("tab", {name:"列表布局"}).getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByRole("status", {name:"正在读取笔记库"})).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("tab", {name:"卡片布局"}));
+  view.rerender(<NoteCollection {...props} loading={false} />);
+  expect(screen.getByRole("tab", {name:"卡片布局"}).getAttribute("aria-selected")).toBe("true");
+  expect(await screen.findByText(note.body)).toBeTruthy();
+  expect(screen.queryByRole("status")).toBeNull();
+});
+
+it("marks retained search results busy until the replacement arrives", () => {
+  const view = render(<NoteCollection {...props} query="新关键词" loading searching />);
+  const list = screen.getByRole("list", {name:"笔记列表"});
+  expect(list.parentElement?.getAttribute("aria-busy")).toBe("true");
+  expect(screen.getByRole("button", {name:`打开 ${note.title}`})).toBeTruthy();
+  expect(screen.getByRole("status", {name:"正在搜索笔记"})).toBeTruthy();
+  view.rerender(<NoteCollection {...props} query="新关键词" notes={[]} hasMore={false}><p>没有相关笔记</p></NoteCollection>);
+  expect(screen.getByText("没有相关笔记")).toBeTruthy();
+  expect(screen.queryByRole("status")).toBeNull();
+  expect(screen.queryByRole("button", {name:`打开 ${note.title}`})).toBeNull();
+});

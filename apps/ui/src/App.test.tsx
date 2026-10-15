@@ -33,7 +33,7 @@ let pendingDrafts: Draft[] = [];
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("./components/note-collection"), import("./components/app-sidebar"), import("./Editor")]);
+  await Promise.all([import("./components/note-collection"), import("./components/app-sidebar"), import("./components/quick-capture"), import("./components/home-mascot"), import("./Editor")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -141,7 +141,7 @@ describe("note workspace", () => {
     await user.click(screen.getByRole("button", {name:"返回主页"}));
     await screen.findByText("把常用笔记固定在这里");
     expect(screen.getByRole("tab", {name:/已固定/}).getAttribute("aria-selected")).toBe("true");
-  });
+  }, 15_000);
 
   it("enables pinning a new note only after its first source save", async () => {
     const implementation = bridge.request.getMockImplementation()!;

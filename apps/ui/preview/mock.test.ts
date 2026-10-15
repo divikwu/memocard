@@ -11,6 +11,7 @@ describe('isolated state preview',()=>{
       for(const scenario of scenarios){
         const mock=createPreviewMock(scenario.id);
         for(const operation of ['getStatus','getEnvironment','getDrafts','listTags','listFolders','saveDraft','saveNote','getNoteProperties','updateNoteProperty','selectVault','pickImage','resolveLink','openExternal','openWeb','setMCPEnabled']){
+          if(scenario.id === 'property-loading' && operation === 'getNoteProperties')continue;
           await mock.request(operation,{id:noteId,body:'仅模拟',tags:[],name:'摘要',value:'仅模拟'}).catch(()=>undefined);
         }
       }

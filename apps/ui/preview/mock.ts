@@ -1,4 +1,4 @@
-import type { Note, NoteProperties, VaultStatus, PropertyChange } from '@memocard/contracts';
+import type { Note, NoteProperties, VaultStatus, PropertyChange, TrashItem } from '@memocard/contracts';
 import type { Draft, DraftList } from '../src/bridge';
 import { noteId } from './catalog';
 
@@ -6,14 +6,18 @@ export class PreviewFailure extends Error {
   constructor(public code:string, message:string, public retryable=false) { super(message); }
 }
 export function createPreviewMock(scenario:string) {
-  const browser = ['permission','folder-cancel','unsupported','image-read-error'].includes(scenario);
+  const browser = ['permission','folder-cancel','unsupported','image-read-error','image-loading'].includes(scenario);
   const capabilities = ['getStatus','getEnvironment','queryNotes','getNote','getDrafts','listTags','listFolders','saveNote','saveDraft','getNoteProperties','updateNoteProperty','getPropertyLabels','setPropertyLabels','dismissDraftReminder','selectVault','pickImage','resolveLink'];
   if (scenario === 'unsupported') capabilities.splice(0,capabilities.length,'getStatus','getEnvironment');
   if (scenario === 'permission') capabilities.push('reauthorizeVault');
   const note:Note = {id:noteId,title:'模拟笔记 · 产品验收',body:'这是一条模拟笔记，可以自由编辑。\n\n#验收\n\n所有修改只存在预览内存中。',tags:['验收'],contentHash:'preview-hash',relativePath:'notes/模拟笔记.md',sourceUrl:'',createdAt:'2026-10-12T01:00:00Z',updatedAt:'2026-10-12T08:00:00Z'};
+  if (scenario === 'loading') capabilities.push('getTrash','getTrashedNote','restoreNote');
+  if (scenario === 'image-loading') note.body = '<img src="../assets/loading-preview.png" width="320" height="320" alt="加载预览图片" />\n\n' + note.body;
   if (scenario === 'image-read-error') note.body += '\n\n![无法读取的模拟图片](../assets/missing.png)';
   if (scenario === 'link-error') note.body += '\n\n[[缺失笔记]]';
   let notes = [note];
+  if (scenario === 'loading') notes = ['产品验收', '界面布局', '加载反馈', '设计笔记', '移动端记录', '桌面端记录'].map((title, index) => ({...note,id:index === 0 ? noteId : `aaaaaaaa-bbbb-4ccc-8ddd-${String(index).padStart(12,'0')}`,title:`模拟笔记 · ${title}`}));
+  let trash:TrashItem[] = [{trashKey:'preview-trash',id:note.id,title:'模拟已删除笔记',relativePath:note.relativePath,contentHash:note.contentHash,deletedAt:note.updatedAt,preview:'此记录只存在预览内存中。'}];
   const coverage = {complete:!['partial','partial-reading','combined','index-reading','index-writing'].includes(scenario),indexed:2,pending:['partial','partial-reading','combined'].includes(scenario)?3:0,issues:scenario === 'combined'?1:0,indexedAt:'2026-10-12T08:00:00Z'};
   const status:VaultStatus = {connected:!['permission','folder-cancel','unsupported'].includes(scenario),vaultId:'preview-only-vault',vaultName:'模拟笔记库 · 不连接真实文件',phase:'M1',syncState:'local',coverage,capabilities};
   if (scenario.startsWith('index-')) status.indexing = {phase:scenario === 'index-reading'?'reading':'indexing',processed:1280,total:scenario === 'index-reading'?null:10000};
@@ -77,6 +81,7 @@ export function createPreviewMock(scenario:string) {
         notes=[saved,...notes.filter(item=>item.id !== saved.id)];result=saved;break;
       }
       case 'getNoteProperties':
+        if(scenario === 'property-loading') return new Promise<T>(() => {});
         if(scenario === 'property-read-error' && failureActive)return fail('INVALID_PROPERTY','属性定义配置无法读取，请检查 .memocard/property-definitions.json。');
         result={...properties,contentHash:notes.find(item=>item.id === params.id)?.contentHash ?? properties.contentHash};break;
       case 'getPropertyLabels':result={labels:{},contentHash:'preview-labels'};break;
@@ -90,6 +95,9 @@ export function createPreviewMock(scenario:string) {
       }
       case 'listTags':result={tags:[{name:'验收',count:1},{name:'设计',count:1}]};break;
       case 'listFolders':result={folders:['notes']};break;
+      case 'getTrash':result={notes:trash,issues:[]};break;
+      case 'getTrashedNote':result={note,trashKey:'preview-trash'};break;
+      case 'restoreNote':trash=[];result=note;break;
       case 'selectVault':
         if (scenario === 'folder-cancel' && !failureActive) { status.connected=true;result={vaultId:status.vaultId}; }
         else result={cancelled:true,diagnostic:'模拟：未授予文件夹访问权限'};break;
