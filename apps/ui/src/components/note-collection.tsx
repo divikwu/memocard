@@ -49,8 +49,8 @@ export function NoteCollection({ home, notes, loading = false, searching = false
     <div className="space-y-4" aria-busy={loading}>{notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={gridClass}>
       {notes.map(note => <li key={note.id} data-note-id={note.id} className="min-w-0">
         <Card className={cn(cardClass, "transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40")}>
-          <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row flex-wrap items-center sm:flex-nowrap")}>
-            <button type="button" className={cn("flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default", !cards && "basis-full sm:basis-auto")} aria-label={`打开 ${note.title?.trim() || "新内容"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
+          <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row items-center")}>
+            <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none disabled:cursor-default" aria-label={`打开 ${note.title?.trim() || "新内容"}`} onClick={() => onOpen(note.id)} disabled={!canOpen}>
               <div className={cn("w-full", cards ? "px-4 pb-2 pt-4" : "px-2 py-2")}>
                 <span className={cn("block min-w-0 truncate font-medium", cards ? "text-base" : "text-sm")}>{note.title?.trim() || "新内容"}</span>
                 {cards && <time className="mt-1 block text-xs tabular-nums text-muted-foreground/80" dateTime={home ? note.updatedAt : note.createdAt}>{formatDate(home ? note.updatedAt : note.createdAt)}</time>}
@@ -59,11 +59,11 @@ export function NoteCollection({ home, notes, loading = false, searching = false
                 <NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={onError} />
               </div>}
             </button>
-            {note.tags.length > 0 && <div className={cn("flex items-center gap-2 overflow-hidden", cards ? "min-h-10 px-4 pb-3" : "min-w-0 max-w-[calc(100%-7rem)] shrink-0 px-2 pb-2 sm:max-w-1/3 sm:pb-0 sm:pl-0")}>
+            {note.tags.length > 0 && <div className={cn("flex items-center gap-2 overflow-hidden", cards ? "min-h-10 px-4 pb-3" : "collection-list-meta min-w-0 max-w-1/3 shrink-0 pr-2")}>
               {note.tags.slice(0, 2).map(name => <TagPill key={name} name={name} render={<button type="button" aria-label={`筛选标签 ${name}`} onClick={() => onSelectTag(name)} />} className={cn("h-5 px-1.5 py-0 font-normal", !cards && "min-w-0 shrink")}><span className="truncate">{name}</span></TagPill>)}
               {note.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{note.tags.length - 2}</span>}
             </div>}
-            {!cards && <time className="ml-auto w-28 shrink-0 whitespace-nowrap pb-2 pr-2 text-right text-xs tabular-nums text-muted-foreground/80 sm:ml-0 sm:pb-0" dateTime={home ? note.updatedAt : note.createdAt}>{formatDate(home ? note.updatedAt : note.createdAt)}</time>}
+            {!cards && <time className="collection-list-meta ml-auto w-28 shrink-0 whitespace-nowrap pr-2 text-right text-xs tabular-nums text-muted-foreground/80" dateTime={home ? note.updatedAt : note.createdAt}>{formatDate(home ? note.updatedAt : note.createdAt)}</time>}
           </CardContent>
         </Card>
       </li>)}

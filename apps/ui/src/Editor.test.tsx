@@ -577,6 +577,47 @@ it('does not invent file dates or create a file when inspecting an empty new not
  await act(async () => { await handle.current!.flush(); });
  expect(native).not.toHaveBeenCalled();
 });
+it('persists a keyboard undo after moving a heading section', async () => {
+  const original = '## Alpha\n\nFirst\n\n## Beta\n\nSecond';
+  const moved = '## Beta\n\nSecond\n\n## Alpha\n\nFirst';
+  await editor({ ...initial, title: 'Sections', body: original, baseHash: 'original' });
+  vi.useFakeTimers();
+  fireEvent.click(screen.getByRole('button', { name: '内容块操作' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '下移章节' }));
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(native).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ body: moved }));
+  fireEvent.keyDown(screen.getByRole('textbox', { name: '笔记内容' }), { key: 'z', metaKey: true });
+  await act(async () => { await vi.advanceTimersByTimeAsync(650); });
+  expect(native).toHaveBeenLastCalledWith('saveNote', expect.objectContaining({ body: original }));
+});
+it('reopens the saved section order after undoing a move before autosave', async () => {
+  const original = '## Alpha\n\nFirst\n\n## Beta\n\nSecond';
+  const moved = '## Beta\n\nSecond\n\n## Alpha\n\nFirst';
+  const drafts = new Map<string, Draft>();
+  native.mockImplementation(async (op, params) => {
+    if (op === 'saveDraft') {
+      if (params?.baseHash === null && params.body === '' && params.title === '') drafts.delete(String(params.draftKey));
+      else drafts.set(String(params?.draftKey), { ...params, updatedAt: '2026-10-15T00:00:00Z' } as Draft);
+    }
+    return op === 'saveNote' ? { ...saved, ...params } : undefined;
+  });
+  const handle = createRef<EditorHandle>();
+  const source = { ...initial, title: 'Sections', body: original, baseHash: 'original' };
+  const props = { capabilities: new Set(['saveNote', 'saveDraft']), onClose: vi.fn(), onSaved: vi.fn() };
+  const view = render(<Editor initial={source} handle={handle} {...props} />);
+  await screen.findByRole('textbox', { name: '笔记内容' });
+  fireEvent.click(screen.getByRole('button', { name: '内容块操作' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: '下移章节' }));
+  await waitFor(() => expect([...drafts.values()][0]?.body).toBe(moved));
+  fireEvent.keyDown(screen.getByRole('textbox', { name: '笔记内容' }), { key: 'z', metaKey: true });
+  await act(async () => { await handle.current!.flush(); });
+  view.unmount();
+  render(<Editor initial={[...drafts.values()][0] ?? source} {...props} />);
+  const field = await screen.findByRole('textbox', { name: '笔记内容' });
+  await waitFor(() => expect([...field.querySelectorAll('h2')].map(node => node.textContent)).toEqual(['Alpha', 'Beta']));
+  expect(drafts.size).toBe(0);
+  expect(native.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(0);
+});
 it('persists a block redo while the preceding undo is still saving', async () => {
   const { duplicateRichBlocks, richBlockAt } = await import('./rich-blocks');
   await editor({ ...initial, title: '连续块', body: 'Alpha\n\nBeta\n\nGamma', baseHash: 'original' });

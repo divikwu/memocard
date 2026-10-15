@@ -32,6 +32,10 @@ function fingerprint(node: JSONContent): string {
   return JSON.stringify(clean(node));
 }
 
+function hasHtmlMarks(node: JSONContent): boolean {
+  return !!node.marks?.some(mark => ['mark', 'abbr', 'kbd', 'sup', 'sub'].includes(mark.type)) || !!node.content?.some(hasHtmlMarks);
+}
+
 export class MarkdownSource {
   private original = '';
   private initial = '';
@@ -105,9 +109,9 @@ export class MarkdownSource {
     if (nodes.length === 1 && nodes[0].type === 'paragraph' && !nodes[0].content?.length) return '';
     return this.prefix + nodes.map((node, i) => {
       const unchanged = node.attrs?.original != null && node.attrs.fingerprint === fingerprint(node);
-      // Keep an HTML paragraph as HTML: Markdown delimiters can lose emphasis next to Chinese punctuation.
-      const htmlParagraph = node.type === 'paragraph' && /^\s*<p(?:\s|>)/i.test(String(node.attrs?.original ?? ''));
-      const raw = node.type === 'preservedMarkdown' ? String(node.attrs?.source ?? '') : unchanged ? String(node.attrs!.original) : htmlParagraph ? (DOMSerializer.fromSchema(editor.schema).serializeNode(editor.schema.nodeFromJSON(node)) as HTMLElement).outerHTML : editor.markdown!.serialize({ type: 'doc', content: [node] }).replace(/^\n+|\n+$/g, '').replace(/\r?\n/g, this.eol);
+      // Mixed HTML marks and Markdown delimiters can reopen as literal punctuation; serialize these edited blocks as HTML.
+      const htmlContent = hasHtmlMarks(node) || node.type === 'paragraph' && /^\s*<p(?:\s|>)/i.test(String(node.attrs?.original ?? ''));
+      const raw = node.type === 'preservedMarkdown' ? String(node.attrs?.source ?? '') : unchanged ? String(node.attrs!.original) : htmlContent ? (DOMSerializer.fromSchema(editor.schema).serializeNode(editor.schema.nodeFromJSON(node)) as HTMLElement).outerHTML : editor.markdown!.serialize({ type: 'doc', content: [node] }).replace(/^\n+|\n+$/g, '').replace(/\r?\n/g, this.eol);
       const separator = node.attrs?.separator as string | undefined;
       return raw + (i < nodes.length - 1 ? separator || this.eol.repeat(2) : this.suffix);
     }).join('');

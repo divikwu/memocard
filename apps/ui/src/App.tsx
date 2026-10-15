@@ -679,7 +679,7 @@ export function App() {
 
   return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
     {navigation}
-    <SidebarInset className="min-w-0 min-h-0">
+    <SidebarInset className="@container min-w-0 min-h-0">
       <header className="flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm">
           {detailView && <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={() => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish()} aria-label={returnView.current === "home" ? "返回主页" : "返回笔记列表"}><ArrowLeft className="size-4" /></Button>}
@@ -695,8 +695,8 @@ export function App() {
           <NavActions canDeleteNote={canCreate && !pinWorking && !working} onDeleteNote={editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => {setNoteToDelete({id:editing.id,title,vaultId:status.vaultId!,vaultBinding:editing.vaultBinding ?? environment?.vaultBinding});} : undefined} canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={() => {if(view === "trash")setTrashVersion(value=>value+1);void refresh();}} onSettings={() => navigate("settings")} />
         </div>
       </header>
-      <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view !== "settings" ? "px-4 md:px-[104px]" : "px-4 md:px-16")}>
-        <div className={cn("page-content mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-6 md:py-8" : "max-w-3xl py-6 md:py-8")}>
+      <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view !== "settings" ? "page-list-scroll px-4" : "px-4 md:px-16")}>
+        <div className={cn("page-content mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-6 md:py-8" : "max-w-3xl py-6 md:py-8")} style={!detailView && view === "notes" ? {maxWidth:1280} : undefined}>
           {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请选择文件夹并允许访问，首次读取可能需要一些时间。</AlertDescription></Alert>}
           {Boolean(pinReadError) && <PageNotice title="固定状态暂不可用" actions={<Button variant="outline" size="sm" disabled={pinWorking || refreshingPages || switchingVault} onClick={() => void refresh(true)}>重试</Button>}>{errorMessage(pinReadError)}</PageNotice>}
           {selectionNotice && !switchingVault && !connectionState && <Alert role="status"><Info className="size-4" /><AlertTitle>文件夹授权未完成</AlertTitle><AlertDescription><p>笔记库未切换，请重新选择并允许访问文件夹。</p><details className="w-full"><summary className="w-fit cursor-pointer">查看详情</summary><p className="mt-2 break-words">{selectionNotice}</p></details><div className="mt-2 flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" onClick={() => void selectVault(false)} disabled={working}>重新选择</Button></div></AlertDescription></Alert>}

@@ -49,10 +49,6 @@
 .rich-formula { position: fixed; z-index: 60; top: 20%; left: 50%; transform: translateX(-50%); width: min(440px, calc(100vw - 32px)); padding: 16px; border: 1px solid transparent; border-radius: 10px; background: var(--popover); box-shadow: var(--overlay-shadow); }
 .rich-formula input { display: block; width: 100%; margin-block: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--note-mono-font); }
 .rich-formula .markdown { min-height: 48px; }
-.rich-inline-tools { position: absolute; left: var(--editor-gutter); z-index: 6; display: flex; padding: 3px; border: 1px solid transparent; border-radius: 6px; background: var(--popover); box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
-.rich-inline-tools button { min-width: 32px; min-height: 32px; border-radius: var(--hover-action-radius); }
-.rich-inline-tools button[aria-pressed="true"] { background: var(--accent); }
-.rich-inline-tools button:hover { background: var(--hover-bg); }
 .rich-editor button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .rich-footnote { font-size: .875em; color: var(--muted-foreground); }
 .rich-footnote::before { content: attr(data-footnote-definition) '. '; user-select: none; }
@@ -68,14 +64,6 @@
   .rich-editor .block-controls:hover, .rich-editor .block-controls:focus-within, .rich-editor[data-menu-open] .block-controls { opacity: 1; }
 }
 .dark .rich-editor-content :is(.ProseMirror-selectednode, .rich-selected-block) { background: #233d57; }
-.rich-format-menu { z-index: 60; display: grid; width: 220px; border: 1px solid transparent; border-radius: 8px; background: var(--popover); box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
-.rich-format-menu button { display: block; width: 100%; text-align: left; padding: 6px 10px; border-radius: 4px; }
-.rich-format-menu button:hover { background: var(--hover-bg); }
-.rich-format-menu button:disabled { opacity: .4; }
-.rich-properties textarea, .rich-properties input, .rich-properties select { width: 100%; padding: 8px; margin-block: 6px; border: 1px solid var(--border); border-radius: 4px; }
-.rich-properties textarea { min-height: 90px; }
-.rich-properties button { padding: 6px 10px; }
-.rich-link-results { max-height: 160px; overflow: auto; display: grid; }
 .rich-math { position: relative; }
 .rich-math-block { display: block; margin-block-start: var(--typeset-flow); text-align: center; }
 .rich-math > button { color: inherit; cursor: text; }

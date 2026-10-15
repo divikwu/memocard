@@ -447,13 +447,23 @@
 :is(.page-content, section.note-editor) > [data-slot="alert"] { margin-block: 0 32px; }
 :is(.page-content, section.note-editor) > [data-slot="alert"]:has(+ [data-slot="alert"]) { margin-block-end: 8px; }
 
-.note-page-scroll { padding-inline: 16px; }
-.note-page-width { max-width: var(--note-measure, 720px); width: calc(100% - 48px); margin-left: 48px; margin-right: 0; padding-block: 24px; }
-.note-page-width .rich-editor { --editor-gutter: 0px; --editor-inset-right: 0px; }
-.note-page-width .block-controls { left: calc(var(--editor-gutter) - 28px); gap: 0; }
+.page-list-scroll, .note-page-scroll { --page-gutter: 16px; padding-inline: calc(var(--page-gutter) + var(--note-rail, 0px)); }
+@container (width < 768px) {
+  .collection-list-meta { display: none; }
+}
+@container (min-width: 640px) {
+  .page-list-scroll, .note-page-scroll { --page-gutter: 24px; }
+}
+@container (min-width: 1024px) {
+  .page-list-scroll, .note-page-scroll { --page-gutter: 32px; }
+}
+
+.note-page-width { max-width: var(--note-measure, 720px); width: 100%; margin-inline: auto; padding-block: 24px; }
+.note-page-width .block-controls { gap: 0; }
 @media (min-width: 768px) {
-  .note-page-scroll { padding-inline: 96px; }
-  .note-page-width { width: 100%; margin-inline: auto; padding-top: 32px; }
+  /* Two 24px actions + two 4px gaps, minus the document's existing 8px inset. */
+  .note-page-scroll { --note-rail: 48px; }
+  .note-page-width { padding-top: 32px; }
 }
 
 .markdown .contains-task-list > li:not(.task-list-item) { list-style-type: disc; }
