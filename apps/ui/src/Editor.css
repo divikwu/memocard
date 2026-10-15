@@ -156,7 +156,7 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
 .note-date-popup { width: min(280px, calc(100vw - 24px)); max-height: var(--available-height); overflow-y: auto; }
 
 
-.note-property-name[data-popup-open] { background: var(--hover-bg); }
+.note-property-name[data-popup-open], .note-property-edit[data-popup-open], .note-property-action[data-popup-open] { background: var(--hover-bg); }
 .note-property-menu { width: min(220px, calc(100vw - 24px)); }
 .note-property-menu :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) { min-height: 32px; border-radius: var(--hover-action-radius); }
 .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]), .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]) > svg { color: var(--destructive); }

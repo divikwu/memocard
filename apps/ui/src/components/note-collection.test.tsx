@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import type { Note } from "@memocard/contracts";
@@ -10,6 +10,15 @@ const note: Note = { id: "note-1", title: "散步的想法", body: "周末散步
 const props = { notes: [note], query: "", onQueryChange: vi.fn(), searchPlaceholder: "搜索当前标签内容", searchDisabled: false, hasMore: true, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "10月10日 16:00" };
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); localStorage.removeItem("memocard:note-layout"); localStorage.removeItem("memocard:home-layout"); });
+
+it.each(["cards", "list"])("identifies notes by title even when their dates match in %s layout", layout => {
+  localStorage.setItem("memocard:note-layout", layout);
+  render(<NoteCollection {...props} notes={[note, { ...note, id: "note-2", title: "第二条笔记" }, { ...note, id: "note-3", title: " " }]} />);
+  for (const title of ["散步的想法", "第二条笔记", "新内容"]) {
+    fireEvent.click(screen.getByRole("button", { name: `打开 ${title}` }));
+  }
+  expect(props.onOpen.mock.calls).toEqual([[note.id], ["note-2"], ["note-3"]]);
+});
 
 it("shares the home layout across content tabs without exposing pin actions on notes", async () => {
   const user = userEvent.setup();
