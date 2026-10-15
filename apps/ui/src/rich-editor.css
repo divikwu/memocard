@@ -50,7 +50,7 @@
 .rich-formula input { display: block; width: 100%; margin-block: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--note-mono-font); }
 .rich-formula .markdown { min-height: 48px; }
 .rich-inline-tools { position: absolute; left: var(--editor-gutter); z-index: 6; display: flex; padding: 3px; border: 1px solid transparent; border-radius: 6px; background: var(--popover); box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
-.rich-inline-tools button { min-width: 32px; min-height: 30px; border-radius: 3px; }
+.rich-inline-tools button { min-width: 32px; min-height: 32px; border-radius: var(--hover-action-radius); }
 .rich-inline-tools button[aria-pressed="true"] { background: var(--accent); }
 .rich-inline-tools button:hover { background: var(--hover-bg); }
 .rich-editor button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -105,14 +105,14 @@
 .rich-insert-empty { padding: 20px 10px; color: var(--muted-foreground); text-align: center; }
 .rich-insert-search input:focus-visible { outline: none; }
 
-.rich-menu.rich-insert-menu, .rich-block-menu { z-index: 50; border: 1px solid transparent; background: var(--popover); color: var(--popover-foreground); border-radius: 16px; box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
+.rich-menu.rich-insert-menu, .rich-block-menu { z-index: 50; border: 1px solid transparent; background: var(--popover); color: var(--popover-foreground); border-radius: calc(var(--radius) - 2px); box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
 .rich-block-menu { overflow-y: auto; width: min(260px, calc(100vw - 24px)); max-height: var(--available-height); padding: 4px; animation: none; }
-.rich-insert-menu [role="menuitem"], .rich-block-menu :is([role="menuitem"], [role="menuitemradio"]) { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 5px 10px; border-radius: 10px; cursor: default; outline: none; }
+.rich-insert-menu [role="menuitem"], .rich-block-menu :is([role="menuitem"], [role="menuitemradio"]) { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 5px 8px; border-radius: var(--hover-action-radius); cursor: default; outline: none; }
 .rich-block-menu :is([role="menuitem"], [role="menuitemradio"])[data-highlighted], .rich-block-menu [role="menuitem"][data-popup-open] { background: var(--hover-bg); color: var(--accent-foreground); }
 .rich-block-menu [role="menuitem"][data-disabled] { opacity: .4; }
 .rich-block-menu [data-variant="destructive"], .rich-block-menu [data-variant="destructive"][data-highlighted] { color: var(--destructive); }
 .rich-block-menu [role="separator"] { margin: 6px 8px; }
-.rich-block-menu svg { width: 18px; height: 18px; flex-shrink: 0; }
+.rich-insert-menu [role="menuitem"] > svg, .rich-block-menu svg { width: 16px; height: 16px; flex-shrink: 0; }
 .rich-block-menu .rich-menu-check { margin-left: auto; color: var(--muted-foreground); }
 .rich-convert-menu { width: min(220px, calc(100vw - 24px)); overflow-y: auto; }
 .rich-block-menu-note { padding: 6px 10px; color: var(--muted-foreground); font-size: 12px; }

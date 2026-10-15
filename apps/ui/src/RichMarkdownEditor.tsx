@@ -658,7 +658,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
           {items.length === 0 && <p className="rich-insert-empty">未找到匹配的内容块</p>}
           {items.map((item, index) => { const Icon = item.icon ?? Type; const group = item.group ?? '基本区块'; return <div key={item.label}>
             {(index === 0 || (items[index - 1].group ?? '基本区块') !== group) && <div className="block-menu-label">{group}</div>}
-            <button role="menuitem" aria-label={item.label} data-active={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} onMouseDown={event => event.preventDefault()} onClick={() => choose(item)}><Icon size={18} aria-hidden="true" /><span>{item.label}</span>{item.hint && <kbd aria-hidden="true">{item.hint}</kbd>}</button>
+            <button role="menuitem" aria-label={item.label} data-active={index === activeIndex} onMouseEnter={() => setActiveIndex(index)} onMouseDown={event => event.preventDefault()} onClick={() => choose(item)}><Icon size={16} aria-hidden="true" /><span>{item.label}</span>{item.hint && <kbd aria-hidden="true">{item.hint}</kbd>}</button>
           </div>; })}
         </div>
         <button className="rich-insert-close" onClick={closeMenu}>关闭菜单<kbd>esc</kbd></button>
