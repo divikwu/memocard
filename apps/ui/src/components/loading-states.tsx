@@ -77,13 +77,13 @@ export function LoadingThemeSettings() {
 export function LoadingCollectionItems({ cards }: { cards: boolean }) {
   const { gridClass, cardClass } = collectionClasses(cards);
   return <div aria-hidden="true" data-layout={cards ? "cards" : "list"} data-slot="collection-skeleton" className={gridClass}>{[0, 1, 2, 3, 4, 5].map(item => <Card key={item} className={cardClass}>
-      <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row flex-wrap items-center sm:flex-nowrap")}>
-        <div className={cn("min-w-0 flex-1", cards ? "px-4 pt-4" : "basis-full px-2 py-2 sm:basis-auto")}>
+      <CardContent className={cn("flex h-full min-h-0 p-0", cards ? "flex-col" : "flex-row items-center")}>
+        <div className={cn("min-w-0 flex-1", cards ? "px-4 pt-4" : "px-2 py-2")}>
           <div className={cn("flex items-center", cards ? "h-6" : "h-5")}><Skeleton className={cn("h-4", item % 2 ? "w-3/4" : "w-2/3")} /></div>
           {cards && <><Skeleton className="mt-1 h-4 w-28" /><div className="mt-3 space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" /></div></>}
         </div>
-        <div className={cn("flex items-center gap-2", cards ? "min-h-10 px-4 pb-3" : "px-2 pb-2 sm:pb-0 sm:pl-0")}><Skeleton className="h-5 rounded-full" style={{width:48}} /><Skeleton className="h-5 w-16 rounded-full" /></div>
-        {!cards && <div className="ml-auto flex w-28 shrink-0 pb-2 pr-2 sm:ml-0 sm:pb-0" style={{justifyContent:"flex-end"}}><Skeleton className="h-4" style={{width:88}} /></div>}
+        <div className={cn("flex items-center gap-2", cards ? "min-h-10 px-4 pb-3" : "collection-list-meta pr-2")}><Skeleton className="h-5 rounded-full" style={{width:48}} /><Skeleton className="h-5 w-16 rounded-full" /></div>
+        {!cards && <div className="collection-list-meta ml-auto flex w-28 shrink-0 pr-2" style={{justifyContent:"flex-end"}}><Skeleton className="h-4" style={{width:88}} /></div>}
       </CardContent>
     </Card>)}</div>;
 }

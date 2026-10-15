@@ -448,6 +448,9 @@
 :is(.page-content, section.note-editor) > [data-slot="alert"]:has(+ [data-slot="alert"]) { margin-block-end: 8px; }
 
 .page-list-scroll, .note-page-scroll { --page-gutter: 16px; padding-inline: calc(var(--page-gutter) + var(--note-rail, 0px)); }
+@container (width < 768px) {
+  .collection-list-meta { display: none; }
+}
 @container (min-width: 640px) {
   .page-list-scroll, .note-page-scroll { --page-gutter: 24px; }
 }

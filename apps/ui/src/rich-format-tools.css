@@ -1,0 +1,47 @@
+.rich-inline-tools { position: fixed; z-index: 40; max-width: calc(100vw - 24px); display: flex; padding: 3px; border: 1px solid transparent; border-radius: 6px; background: var(--popover); box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
+.rich-inline-tools button { min-width: 32px; min-height: 32px; border-radius: var(--hover-action-radius); }
+.rich-inline-tools button[aria-pressed="true"] { background: var(--accent); }
+.rich-inline-tools button:hover { background: var(--hover-bg); }
+.rich-inline-tools svg { width: 16px; height: 16px; margin: auto; }
+.rich-inline-tools button[aria-pressed="mixed"] { background: var(--muted); box-shadow: inset 0 -2px var(--muted-foreground); }
+.rich-format-menu { z-index: 60; width: 240px; padding: 6px; border: 1px solid transparent; border-radius: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
+.rich-format-item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 34px; padding: 6px 8px; text-align: left; border-radius: var(--hover-action-radius); }
+.rich-format-item > svg, .rich-format-check svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--muted-foreground); }
+.rich-format-check { display: flex; margin-left: auto; width: 16px; }
+.rich-format-item:hover, .rich-format-item:focus-visible { background: var(--hover-bg); }
+.rich-format-item:disabled { opacity: .4; }
+.rich-format-group + .rich-format-group { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }
+.rich-properties { color: var(--popover-foreground); font: 14px/1.5 var(--font-sans); }
+.rich-link-popup { max-height: min(calc(100dvh - 24px), var(--available-height)); overflow-y: auto; overscroll-behavior: contain; width: min(340px, calc(100vw - 24px)); padding: 16px; border: 1px solid transparent; border-radius: 8px; background: var(--popover); box-shadow: var(--overlay-shadow); }
+.rich-format-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.rich-format-header h2 { font-size: 15px; font-weight: 600; line-height: 24px; margin: 0; }
+.rich-format-header button { margin: -4px -4px -4px 0; flex-shrink: 0; }
+.rich-format-form { display: grid; gap: 14px; }
+.rich-format-field { display: grid; gap: 6px; min-width: 0; }
+.rich-format-select { width: 100%; }
+.rich-format-preview { margin: 0; padding: 7px 10px; border-radius: 6px; background: var(--muted); color: var(--muted-foreground); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.rich-format-hint, .rich-format-error { margin: 0; font-size: 12px; line-height: 18px; overflow-wrap: anywhere; }
+.rich-format-hint { color: var(--muted-foreground); }
+.rich-format-hint:empty { display: none; }
+.rich-format-error { color: var(--destructive); }
+.rich-property-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding-top: 4px; }
+.rich-property-remove { margin-right: auto; color: var(--muted-foreground); }
+.rich-link-results { max-height: 180px; overflow: auto; display: grid; gap: 2px; }
+.rich-link-results:empty { display: none; }
+.rich-link-results button { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border-radius: 6px; text-align: left; }
+.rich-link-results button > svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--muted-foreground); }
+.rich-link-results button > span { min-width: 0; display: grid; }
+.rich-link-results button span > span, .rich-link-results small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rich-link-results small { color: var(--muted-foreground); font-size: 11px; }
+.rich-link-results button:hover, .rich-link-results button:focus-visible, .rich-link-results button[aria-selected="true"] { background: var(--hover-bg); }
+.rich-editor-content:not(.ProseMirror-focused) .rich-text-selected { background: var(--accent); }
+.rich-format-sheet { top: auto; left: 16px; right: 16px; width: auto; max-width: none; bottom: max(12px, env(safe-area-inset-bottom)); translate: none; transform: none; max-height: calc(100dvh - 24px); overflow-y: auto; display: block; padding: 20px; }
+@media (max-width: 767px) {
+  .rich-type-options [role="option"] { min-height: 44px; }
+  .rich-inline-tools button { min-width: 44px; min-height: 44px; }
+  .rich-properties button, .rich-properties input, .rich-format-item { min-height: 44px; }
+  .rich-format-header button { min-width: 44px; }
+  .rich-property-actions { gap: 4px; }
+  .rich-property-actions button { padding-inline: 10px; }
+}
+.rich-inline-tools button:focus-visible, .rich-format-menu button:focus-visible, .rich-properties button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }

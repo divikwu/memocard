@@ -14,7 +14,7 @@ import { RichInlineTags } from './rich-inline-tags';
 import { RichHeadingFolding, unfoldRichHeadings } from './rich-heading-fold';
 import { RichTagSuggestions } from './RichTagSuggestions';
 import { RichMath } from './RichMath';
-import { RichFormatTools } from './RichFormatTools';
+const RichFormatTools = lazy(() => import('./RichFormatTools').then(module => ({ default: module.RichFormatTools })));
 import { richTable, RichTableRow, RichTableHeader, alignRichColumn } from './rich-table';
 import { Popover } from "@base-ui/react/popover";
 import { Menu } from '@base-ui/react/menu';
@@ -140,7 +140,6 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   const [calloutIcon, setCalloutIcon] = useState<CalloutIconTarget | null>(null);
   const isMobile = useIsMobile();
   const [toolbar, setToolbar] = useState<{ top: number; pos: number; left?: number }>({ top: 14, pos: 0 });
-  const [inlineTop, setInlineTop] = useState(0);
   const [, setRevision] = useState(0);
   const [dropTop, setDropTop] = useState<number | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
@@ -176,6 +175,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     editorProps: {
       attributes: { class: 'markdown typeset rich-editor-content', role: 'textbox', 'aria-label': '笔记内容', 'aria-multiline': 'true' },
       decorations(state) {
+        if (state.selection instanceof TextSelection && !state.selection.empty) return DecorationSet.create(state.doc, [Decoration.inline(state.selection.from, state.selection.to, { class: 'rich-text-selected' })]);
         if (!(state.selection instanceof AllSelection || state.selection instanceof BlockRangeSelection)) return null;
         const blocks: Decoration[] = [];
         state.doc.nodesBetween(state.selection.from, state.selection.to, (node, pos) => {
@@ -284,7 +284,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         slash.current = { from: selection.$from.start(), to: selection.$from.end() }; setActiveIndex(0); setMenu('insert'); setFilter(text.slice(1));
       } else { slash.current = null; setMenu(null); }
     },
-    onSelectionUpdate({ editor: e }) { positionToolbar(e); positionInlineToolbar(e); setRevision(n => n + 1); },
+    onSelectionUpdate({ editor: e }) { positionToolbar(e); setRevision(n => n + 1); },
   });
   editorRef.current = editor;
   const stopRangeSelection = useCallback((cancel = false) => {
@@ -307,16 +307,6 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       if (restoreSelection && previous && e.state.doc === previous.doc) e.view.dispatch(e.state.tr.setSelection(previous.selection));
     }
   }, []);
-  function positionInlineToolbar(e: TiptapEditor) {
-    if (!root.current || !(e.state.selection instanceof TextSelection) || e.state.selection.empty) return;
-    const rect = e.view.coordsAtPos(e.state.selection.from);
-    let visibleTop = 0;
-    for (let parent = root.current.parentElement; parent; parent = parent.parentElement) {
-      if (/auto|scroll|hidden|clip/.test(getComputedStyle(parent).overflowY)) visibleTop = Math.max(visibleTop, parent.getBoundingClientRect().top);
-    }
-    const top = rect.top - 40 >= visibleTop ? rect.top - 40 : rect.bottom + 6;
-    setInlineTop(top - root.current.getBoundingClientRect().top);
-  }
   function positionToolbar(e: TiptapEditor, pos = e.state.selection.from) {
     if (!root.current) return;
     const image = isLayoutImage(e.state.doc.nodeAt(pos));
@@ -367,7 +357,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
   }, [editor, props.value]);
   useEffect(() => {
     if (!editor) return;
-    const observer = new ResizeObserver(() => { positionToolbar(editor); positionInlineToolbar(editor); });
+    const observer = new ResizeObserver(() => { positionToolbar(editor); });
     if (root.current) observer.observe(root.current); return () => observer.disconnect();
   }, [editor]);
   useEffect(() => {
@@ -642,13 +632,7 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
     {selectionBox && <div className="rich-selection-box" aria-hidden="true" style={selectionBox} />}
     {!props.disabled && <RichTagSuggestions editor={editor} />}
     {dropTop != null && <div className="block-drop-indicator" style={{ top: dropTop }} />}
-    {!props.disabled && editor.state.selection instanceof TextSelection && !editor.state.selection.empty && !menu && <div className="rich-inline-tools" style={{ top: inlineTop }} aria-label="文字格式">
-      <button aria-label="粗体" aria-pressed={editor.isActive('bold')} onClick={() => editor.chain().focus().toggleBold().run()}><strong>B</strong></button>
-      <button aria-label="斜体" aria-pressed={editor.isActive('italic')} onClick={() => editor.chain().focus().toggleItalic().run()}><em>I</em></button>
-      <button aria-label="删除线" aria-pressed={editor.isActive('strike')} onClick={() => editor.chain().focus().toggleStrike().run()}><s>S</s></button>
-      <button aria-label="行内代码" aria-pressed={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}>&lt;/&gt;</button>
-      <RichFormatTools editor={editor} onError={props.onError} />
-    </div>}
+    {!props.disabled && editor.state.selection instanceof TextSelection && !editor.state.selection.empty && !menu && <Suspense fallback={null}><RichFormatTools editor={editor} /></Suspense>}
     {menu === 'insert' && <Popover.Portal><Popover.Positioner anchor={controlsRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Popover.Popup ref={menuRef} initialFocus={() => slash.current ? false : true} finalFocus={false} className="rich-menu block-menu rich-insert-menu" role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Escape') { event.preventDefault(); closeMenu(); return; }
