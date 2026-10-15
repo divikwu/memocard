@@ -1500,12 +1500,14 @@ it('selects individual tasks from the gutter and lifts a cross-container range t
  expect(change).not.toHaveBeenCalled();
 });
 it('extends a gutter selection as its ancestor scrolls and stops scrolling after release',async()=>{
- const {editor,field}=await setup('first\n\nsecond\n\nthird');const root=rangeGeometry(field),scroller=root.parentElement!;
+ // Keep startup focus/scroll RAFs out of this manually stepped scroll test.
+ const {editor,field}=await setup('first\n\nsecond\n\nthird',{autoFocus:false});const root=rangeGeometry(field),scroller=root.parentElement!;
  scroller.style.overflowY='auto';
  Object.defineProperties(scroller,{scrollHeight:{value:600},clientHeight:{value:100}});
  vi.spyOn(scroller,'getBoundingClientRect').mockReturnValue(new DOMRect(0,0,600,100));
  vi.spyOn(root,'getBoundingClientRect').mockImplementation(()=>new DOMRect(0,-scroller.scrollTop,600,400));
  Array.from(field.children).forEach((element,index)=>vi.spyOn(element,'getBoundingClientRect').mockImplementation(()=>new DOMRect(64,index*50-scroller.scrollTop,500,30)));
+ expect(scroller.scrollTop).toBe(0);
  let frame:FrameRequestCallback=()=>{};
  vi.stubGlobal('requestAnimationFrame',(callback:FrameRequestCallback)=>{frame=callback;return 1;});
  fireEvent.pointerDown(root,{button:0,clientX:10,clientY:10});fireEvent.pointerMove(root,{clientX:100,clientY:85});
@@ -1575,13 +1577,15 @@ it('exits an empty list item without absorbing the following paragraph',async()=
  expect(editor.state.doc.lastChild?.textContent).toBe('after');
 });
 it('updates the drop indicator while edge scrolling with a stationary pointer',async()=>{
- const {editor,field}=await setup('first\n\nsecond');
+ const {editor,field}=await setup('first\n\nsecond',{autoFocus:false});
+ act(()=>editor.commands.setTextSelection(1));
  const root=field.closest('.rich-editor') as HTMLElement;
  const scroller=root.parentElement!;scroller.style.overflowY='auto';
  Object.defineProperties(scroller,{scrollHeight:{value:600},clientHeight:{value:200}});
  vi.spyOn(scroller,'getBoundingClientRect').mockReturnValue(new DOMRect(0,0,300,200));
  vi.spyOn(editor.view,'posAtCoords').mockImplementation(()=>scroller.scrollTop ? null : {pos:9,inside:7});
  vi.spyOn(editor.view.nodeDOM(7) as HTMLElement,'getBoundingClientRect').mockImplementation(()=>new DOMRect(60,160-scroller.scrollTop,200,30));
+ expect(scroller.scrollTop).toBe(0);
  let frame: FrameRequestCallback=()=>{};
  vi.stubGlobal('requestAnimationFrame',(callback:FrameRequestCallback)=>{frame=callback;return 1;});
  vi.stubGlobal('cancelAnimationFrame',vi.fn());
