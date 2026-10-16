@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import type { Note } from "@memocard/contracts";
 import { NoteSearchDialog } from "./note-search-dialog";
+import { swipeSheet } from "./ui/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("../bridge", () => ({ request: bridge.request, errorMessage: (cause: unknown) => String(cause) }));
@@ -165,19 +166,36 @@ it('preserves mobile query, pagination, selection and result scroll while visiti
   expect(bridge.request.mock.calls).toHaveLength(calls);
   expect(screen.queryByRole('button',{name:'加载更多结果'})).toBeNull();
   await userEvent.setup().click(screen.getByRole('button',{name:'退出搜索'}));
-  expect(onOpenChange).toHaveBeenCalledWith(false);
+  expect(onOpenChange).toHaveBeenCalledWith(false,expect.objectContaining({reason:'close-press'}));
 });
 
 it('fits mobile search to the visible viewport while the keyboard is open',async()=>{
   vi.stubGlobal('innerWidth',390);
+  vi.stubGlobal('innerHeight',852);
   window.matchMedia=vi.fn().mockReturnValue({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()});
   const viewport=Object.assign(new EventTarget(),{height:360,offsetTop:12});
   vi.stubGlobal('visualViewport',viewport);
   setup();
   const dialog=screen.getByRole('dialog',{name:'搜索笔记'});
-  expect(dialog.style.top).toBe('12px');
-  expect(dialog.style.height).toBe('360px');
+  expect(dialog.style.bottom).toBe('480px');
+  expect(dialog.style.maxHeight).toBe('344px');
   act(()=>{viewport.height=420;viewport.offsetTop=0;viewport.dispatchEvent(new Event('resize'));});
-  expect(dialog.style.top).toBe('0px');
-  expect(dialog.style.height).toBe('420px');
+  expect(dialog.style.bottom).toBe('432px');
+  expect(dialog.style.maxHeight).toBe('404px');
+});
+
+it('allows mobile search dismissal from its title while keeping result gestures separate',async()=>{
+  vi.stubGlobal('innerWidth',390);
+  window.matchMedia=vi.fn().mockReturnValue({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()});
+  const {onOpenChange}=setup();
+  const result=await screen.findByRole('option',{name:'项目计划'});
+  const popup=screen.getByRole('dialog',{name:'搜索笔记'});
+  await waitFor(()=>expect(popup.hasAttribute('data-swipe-ready')).toBe(true));
+  swipeSheet(popup.querySelector('[data-slot="sheet-handle"]')!,20);
+  expect(popup.style.getPropertyValue('--sheet-swipe-y')).toBe('0px');
+  swipeSheet(result,160);
+  swipeSheet(screen.getByRole('combobox',{name:'搜索笔记'}),160);
+  expect(onOpenChange).not.toHaveBeenCalled();
+  swipeSheet(screen.getByRole('heading',{name:'搜索笔记'}),160);
+  expect(onOpenChange).toHaveBeenCalledWith(false,expect.objectContaining({reason:'close-press'}));
 });

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react";
-import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpRight, CornerDownLeft, FileText, LoaderCircle, Search, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpRight, CornerDownLeft, FileText, LoaderCircle, Search, X } from "lucide-react";
 import type { NotePage } from "@memocard/contracts";
 import { request, errorMessage } from "../bridge";
 import { Markdown } from "../markdown";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
+import { SheetClose, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -42,11 +43,11 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
     list.current = node;
     if (node && preserveSession) node.scrollTop = resultScroll.current;
   },[preserveSession]);
-  const [mobileViewport,setMobileViewport] = useState<{top:number; height:number} | null>(null);
+  const [mobileViewport,setMobileViewport] = useState<{bottom:number; maxHeight:number} | null>(null);
   useEffect(()=>{
     const viewport=window.visualViewport;
     if (!isMobile || !open || !viewport) return;
-    const place=()=>setMobileViewport({top:viewport.offsetTop,height:viewport.height});
+    const place=()=>setMobileViewport({bottom:Math.max(0,window.innerHeight-viewport.height-viewport.offsetTop),maxHeight:viewport.height-16});
     place();viewport.addEventListener('resize',place);viewport.addEventListener('scroll',place);
     return ()=>{viewport.removeEventListener('resize',place);viewport.removeEventListener('scroll',place);};
   },[isMobile,open]);
@@ -117,12 +118,13 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
     setSelected(index => Math.max(0, Math.min(notes.length - 1, index + direction)));
   }
 
+  const SearchContent = isMobile ? SheetContent : DialogContent;
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className="note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border-border p-0">
-      <DialogTitle className="sr-only">搜索笔记</DialogTitle>
+    <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className={isMobile ? "note-search-sheet gap-4 overflow-hidden" : "note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border-border p-0"}>
+      {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle>搜索笔记</SheetTitle><SheetClose render={<Button type="button" variant="ghost" size="icon-sm" aria-label="退出搜索" />}><X aria-hidden="true" /></SheetClose></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}
       <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
       <div className="note-search-field flex shrink-0 items-center gap-3 border-b px-4 py-2">
-        {isMobile ? <Button type="button" variant="ghost" size="icon-sm" aria-label="退出搜索" onClick={()=>onOpenChange(false)}><ArrowLeft aria-hidden="true" /></Button> : <Search aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />}
+        <Search aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
         <Input ref={input} role="combobox" name="note-search" autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); moveSelection(event.key === "ArrowDown" ? 1 : -1); }
@@ -171,6 +173,6 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
         <span className="note-search-escape ml-auto shrink-0">Esc 关闭</span>
         <Button variant="ghost" size="sm" className="note-search-dismiss ml-auto" aria-label="关闭搜索" onClick={() => onOpenChange(false)}>取消</Button>
       </div>}
-    </DialogContent>
+    </SearchContent>
   </Dialog>;
 }

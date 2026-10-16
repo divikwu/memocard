@@ -568,6 +568,31 @@ describe('mobile page navigation',()=>{
     expect(bridge.request.mock.calls.some(([operation])=>operation==='saveNote')).toBe(false);
   });
 
+  it('continues quick capture in the page editor without an initial source write or duplicate capture',async()=>{
+    window.history.replaceState(null,'','#/home');
+    const original=bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((op,params)=>op==='saveDraft' ? Promise.resolve({...params,draftKey:params?.draftKey ?? params?.id,revision:'draft-version'}) : original(op,params));
+    const user=userEvent.setup();render(<App />);
+    await waitFor(()=>expect(screen.getByRole('button',{name:'打开快速记录'})).toHaveProperty('disabled',false));
+    await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+    fireEvent.change(await screen.findByRole('textbox',{name:'快速输入内容'}),{target:{value:'从快速记录继续写'}});
+    await user.click(screen.getByRole('button',{name:'切换为页面'}));
+    const editor=await screen.findByRole('textbox',{name:'笔记内容'});
+    await waitFor(()=>expect(document.activeElement).toBe(editor));
+    expect(readEditorText(editor)).toBe('从快速记录继续写');
+    expect(window.location.hash).toBe('#/notes/new');
+    const draft=bridge.request.mock.calls.find(([op,params])=>op==='saveDraft' && params?.body==='从快速记录继续写')![1]!;
+    expect(bridge.request.mock.calls.some(([op])=>op==='saveNote')).toBe(false);
+    await user.click(screen.getByRole('button',{name:'返回主页'}));
+    await waitFor(()=>expect(window.location.hash).toBe('#/home'));
+    const saves=bridge.request.mock.calls.filter(([op])=>op==='saveNote');
+    expect(saves).toHaveLength(1);
+    expect(saves[0][1]).toEqual(expect.objectContaining({id:draft.id,body:'从快速记录继续写',recoveredFrom:{draftKey:draft.draftKey ?? draft.id,revision:'draft-version'}}));
+    await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('button',{name:'打开快速记录'})));
+    await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+    expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','');
+  });
+
   it('hides the bottom entry in settings and disables it when note creation is unavailable',async()=>{
     const original=bridge.request.getMockImplementation()!;
     bridge.request.mockImplementation((operation,params)=>operation==='getStatus' ? Promise.resolve({...status,capabilities:status.capabilities.filter(capability=>capability!=='saveNote')}) : original(operation,params));

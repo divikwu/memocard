@@ -24,8 +24,7 @@ it("searches Chinese names across categories and returns the native emoji", asyn
   expect(palette.className).toContain("bg-accent");
   await user.click(palette);
   expect(onSelect).toHaveBeenCalledExactlyOnceWith("🎨");
-  await user.clear(screen.getByRole("textbox", { name: "搜索 Emoji" }));
-  await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "no-matching-emoji");
+  fireEvent.change(screen.getByRole("textbox", { name: "搜索 Emoji" }), { target: { value: "no-matching-emoji" } });
   expect(screen.getByRole("status").textContent).toBe("没有匹配的 Emoji");
 });
 it("finds a pasted emoji and accepts a custom grapheme without losing skin tones", async () => {
