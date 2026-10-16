@@ -27,6 +27,8 @@ function ScrollableTable({ children }: { children?: ReactNode }) {
 
 // Keep the component type stable across background refreshes so resolved images stay mounted.
 const markdownImage: Components["img"] = ({ src, alt, width, height }) => typeof src === "string" && src ? <NoteImage source={src} alt={alt ?? "笔记图片"} loading="lazy" width={width} height={height} /> : <span className="blocked-image">{alt || "图片"} · 仅显示笔记库中的图片</span>;
+const markdownCallout: Components["aside"] = ({ children, node }) => <aside data-callout={node?.properties.dataCallout as string | undefined} data-callout-text-color={node?.properties.dataCalloutTextColor as string | undefined} data-callout-icon={String(node?.properties.dataCalloutIcon ?? '').slice(0, 32) || undefined} role="note">{children}</aside>;
+const markdownFigure: Components["figure"] = ({ children, node }) => { const columns = imageColumns(node?.properties.dataImageColumns); return <figure data-image-columns={columns?.join(',')} style={columns ? { gridTemplateColumns: columns.map(column => `${column}fr`).join(' ') } : undefined} role={columns ? 'group' : undefined} aria-label={columns ? '图片组' : undefined}>{children}</figure>; };
 
 export function Markdown({ body, notePath, onError }: { body: string; notePath?: string; onError?: (message: string) => void }) {
   const anchorPrefix = `note-${useId()}-`;
@@ -51,8 +53,8 @@ export function Markdown({ body, notePath, onError }: { body: string; notePath?:
         } else void request("openExternal", { url: href }).catch(() => onError?.("无法打开链接，请在 App 中重试。"));
       }}>{children}</a> : <span>{children}</span>,
       img: markdownImage,
-      aside: ({ children, node }) => <aside data-callout={node?.properties.dataCallout as string | undefined} data-callout-text-color={node?.properties.dataCalloutTextColor as string | undefined} data-callout-icon={String(node?.properties.dataCalloutIcon ?? '').slice(0, 32) || undefined} role="note">{children}</aside>,
-      figure: ({ children, node }) => { const columns = imageColumns(node?.properties.dataImageColumns); return <figure data-image-columns={columns?.join(',')} style={columns ? { gridTemplateColumns: columns.map(column => `${column}fr`).join(' ') } : undefined} role={columns ? 'group' : undefined} aria-label={columns ? '图片组' : undefined}>{children}</figure>; },
+      aside: markdownCallout,
+      figure: markdownFigure,
       table: ScrollableTable,
       pre: ({ children }) => {
         const code = children as React.ReactElement<{ className?: string; children?: string }>;

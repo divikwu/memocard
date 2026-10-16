@@ -301,11 +301,11 @@ describe("note workspace", () => {
     await act(async () => { resolveStatus(status); });
     expect(await screen.findByText(note.body)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "搜索笔记" }), { target: { value: "不存在的关键词" } });
+    fireEvent.change(await screen.findByRole("combobox", { name: "搜索笔记" }), { target: { value: "不存在的关键词" } });
 
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在的关键词", tags: [], limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在的关键词", tags: [], sort: "updatedAt", limit: 30 }));
     expect(await screen.findByText("没有找到相关笔记")).toBeTruthy();
-    expect(screen.queryByText(note.body)).toBeNull();
+    expect(within(screen.getByRole("dialog", { name: "搜索笔记" })).queryByText(note.body)).toBeNull();
   });
 
   it("opens a saved note using the latest native content and preserves a pending local draft", async () => {
@@ -470,7 +470,7 @@ describe("note workspace", () => {
     expect(screen.queryByRole("link", { name: "打开本机 Web" })).toBeNull();
     expect(await screen.findByRole("heading", { name: "需要启动 MemoCard 本机服务" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "打开已有笔记库" })).toBeNull();
-    expect(screen.queryByRole("textbox", { name: "搜索笔记" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "搜索笔记" })).toBeNull();
     expect(screen.queryByText(note.body)).toBeNull();
     expect(bridge.request).not.toHaveBeenCalledWith("queryNotes", expect.anything());
   });
@@ -529,9 +529,7 @@ describe("note workspace", () => {
     });
     render(<App />);
     await screen.findByText(note.body);
-    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "搜索笔记" }), { target: { value: "旧库关键词" } });
-    fireEvent.click(screen.getByRole("button", { name: "查看结果" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), { target: { value: "旧库关键词" } });
     fireEvent.click(screen.getByRole("button", { name: "筛选标签 生活" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "旧库关键词", tags: ["生活"], limit: 30 }));
     window.location.hash = "#/settings";

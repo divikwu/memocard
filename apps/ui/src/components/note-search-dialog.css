@@ -1,0 +1,64 @@
+.note-search-dialog {
+  height: min(680px, calc(100dvh - 2rem));
+  max-width: min(60rem, calc(100% - 2rem));
+}
+.note-search-field .note-search-input:focus {
+  background-color: transparent;
+}
+.note-search-input { font-size: 1rem; }
+.note-search-dialog[data-keyboard-focus] .note-search-input:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 4px;
+}
+.note-search-status { padding: 2.5rem .75rem .75rem; }
+.note-search-empty { margin-block: auto; }
+.note-search-mark {
+  background: color-mix(in oklab, var(--primary) 15%, transparent);
+  color: inherit;
+}
+.note-search-preview, .note-search-dismiss { display: none; }
+.note-search-preview-content {
+  overflow: clip;
+  mask-image: linear-gradient(#000 calc(100% - 32px), transparent);
+}
+.note-search-preview-heading { margin-bottom: 16px; }
+.note-search-preview-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.note-search-preview-content .markdown {
+  --typeset-size: 14px;
+  --typeset-leading: 1.5;
+  --typeset-flow: .85em;
+  color: var(--muted-foreground);
+}
+.note-search-preview-content .markdown :is(h1, h2) {
+  font-size: 16px;
+  line-height: 1.45;
+}
+.note-search-preview-content .markdown h3 { font-size: 15px; }
+.note-search-preview-content .markdown hr { margin-block-start: 20px; }
+.note-search-preview-content .markdown figure[data-image-columns] { gap: 8px; align-items: stretch; }
+.note-search-preview-content .markdown figure[data-image-columns] .note-image-trigger { height: 100%; }
+.note-search-preview-content .markdown figure[data-image-columns] img { height: 100%; object-fit: cover; }
+.note-search-preview-content .markdown :is(figure[data-image-columns], p:has(> .note-image-trigger)) { margin-block-start: 8px; }
+.note-search-preview-content .note-image-trigger[data-image-state="loading"]::after { animation: none; }
+@media (min-width: 640px) {
+  .note-search-field { padding-inline: 1.25rem; }
+}
+@media (min-width: 1024px) and (min-height: 480px) {
+  .note-search-preview {
+    display: flex;
+    flex-direction: column;
+    /* Preserve the preview width from the previous 64rem dialog. */
+    width: calc((min(64rem, 100vw - 2rem) - 2px) * .38);
+  }
+}
+
+@media (pointer: coarse) {
+  .note-search-footer { padding-block: 8px; }
+  .note-search-dismiss { display: inline-flex; min-height: 44px; }
+  .note-search-keyboard-hints, .note-search-escape { display: none; }
+}

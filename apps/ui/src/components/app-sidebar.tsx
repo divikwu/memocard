@@ -56,7 +56,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
         {!isMobile && <SidebarTrigger className="shrink-0" />}
       </div>
       <nav aria-label="主要导航"><SidebarMenu>
-        <SidebarMenuItem><SidebarMenuButton disabled={!connected} onClick={onSearch}><Search /><span>搜索</span></SidebarMenuButton></SidebarMenuItem>
+        <SidebarMenuItem><SidebarMenuButton disabled={!connected} onClick={onSearch} title="搜索 (⌘ / Ctrl K)"><Search /><span>搜索</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton disabled={!canCreate || working} onClick={onNewNote}><Plus /><span>新建笔记</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarMenuItem><SidebarMenuButton isActive={view === "home"} aria-current={view === "home" ? "page" : undefined} onClick={() => onNavigate("home")}><House /><span>主页</span></SidebarMenuButton></SidebarMenuItem>
         <SidebarTreeItem label="所有笔记" icon={<Notebook className="size-4" />} buttonProps={{ onClick: () => onNavigate("notes", null) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
