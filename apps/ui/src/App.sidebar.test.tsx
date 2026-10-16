@@ -30,7 +30,7 @@ const status: VaultStatus = {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("./components/note-collection"), import("./Editor")]);
+  await Promise.all([import("./components/note-collection"), import("./components/note-search-dialog"), import("./Editor")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -65,6 +65,59 @@ afterEach(() => {
 });
 
 describe("sidebar workspace actions", () => {
+  it("restores the search trigger after opening a result and returning to the list", async () => {
+    const original = bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation, params) => operation === "getNote" ? Promise.resolve(note) : original(operation, params));
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText(note.body);
+    await waitFor(() => expect((screen.getByRole("button", { name: "搜索" }) as HTMLButtonElement).disabled).toBe(false));
+    const trigger = screen.getByRole("button", { name: "搜索" });
+    await user.click(trigger);
+    const input = await screen.findByRole("combobox", { name: "搜索笔记" });
+    await screen.findByRole("option", { name: "新内容" });
+    await waitFor(() => expect(document.activeElement).toBe(input));
+    await user.keyboard("{Enter}");
+    await screen.findByRole("textbox", { name: "页面标题" });
+    expect(input.isConnected).toBe(false);
+    await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+  });
+
+  it("searches the whole vault without changing the selected tag or page", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText(note.body);
+    await user.click(await screen.findByRole("button", { name: /^生活/ }));
+    await user.click(screen.getByRole("button", { name: "搜索" }));
+    const input = await screen.findByRole("combobox", { name: "搜索笔记" });
+    await user.type(input, "散步");
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: [], sort: "updatedAt", limit: 30 }));
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "搜索笔记" })).toBeNull());
+    expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
+    expect((screen.getByRole("textbox", { name: "搜索当前视图笔记" }) as HTMLInputElement).value).toBe("");
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "搜索" })));
+  });
+
+  it("opens global search with Ctrl K while keeping the editor and unsaved input", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText(note.body);
+    await waitFor(() => expect((screen.getByRole("button", { name: "新建笔记" }) as HTMLButtonElement).disabled).toBe(false));
+    await user.click(screen.getByRole("button", { name: "新建笔记" }));
+    const title = await screen.findByRole("textbox", { name: "页面标题" });
+    await user.type(title, "未保存的标题");
+    const route = window.location.hash;
+    fireEvent.keyDown(title, { key: "k", ctrlKey: true });
+    await screen.findByRole("combobox", { name: "搜索笔记" });
+    expect(window.location.hash).toBe(route);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "搜索笔记" })).toBeNull());
+    expect((screen.getByRole("textbox", { name: "页面标题" }) as HTMLInputElement).value).toBe("未保存的标题");
+    await waitFor(() => expect(document.activeElement).toBe(title));
+  });
+
   it("searches within the selected tag and keeps the field focused through empty results", async () => {
     const original = bridge.request.getMockImplementation()!;
     bridge.request.mockImplementation((operation, params) => {
@@ -133,10 +186,8 @@ describe("sidebar workspace actions", () => {
     expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
     expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes")).toHaveLength(queryCount);
     await user.click(screen.getByRole("tab", { name: "卡片布局" }));
-    await user.click(screen.getByRole("button", { name: "搜索" }));
-    await user.type(screen.getByRole("textbox", { name: "搜索笔记" }), "散步");
+    await user.type(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), "散步");
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({ quickFilter: "images", query: "散步" })));
-    await user.click(screen.getByRole("button", { name: "查看结果" }));
     expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
     await user.click(screen.getByRole("button", { name: "清空当前搜索" }));
     await user.click(screen.getByRole("button", { name: "有链接" }));
@@ -180,8 +231,8 @@ describe("sidebar workspace actions", () => {
     expect(window.location.hash).toBe("#/settings");
     await user.click(screen.getByRole("button", { name: "搜索" }));
 
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "搜索笔记" })));
-    expect(window.location.hash).toBe("#/notes");
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "搜索笔记" })));
+    expect(window.location.hash).toBe("#/settings");
   });
 
   it("preserves the current search and tag when collapsing and expanding the desktop sidebar", async () => {
@@ -192,9 +243,7 @@ describe("sidebar workspace actions", () => {
     expect(collapse.parentElement).toBe(screen.getByRole("button", { name: "MemoCard，返回主页" }).parentElement);
     expect(collapse.closest("main")).toBeNull();
     await user.click(screen.getByRole("button", { name: /^生活/ }));
-    fireEvent.click(screen.getByRole("button", { name: "搜索" }));
-    fireEvent.change(screen.getByRole("textbox", { name: "搜索笔记" }), { target: { value: "散步" } });
-    fireEvent.click(screen.getByRole("button", { name: "查看结果" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), { target: { value: "散步" } });
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: ["生活"], limit: 30 }));
 
     await user.click(screen.getByRole("button", { name: "收起侧栏" }));
@@ -256,8 +305,8 @@ describe("sidebar workspace actions", () => {
     await user.click(within(sheet).getByRole("button", { name: "搜索" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "搜索笔记" })));
-    expect(window.location.hash).toBe("#/notes");
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "搜索笔记" })));
+    expect(window.location.hash).toBe("#/settings");
   });
 
   it("closes mobile navigation and transfers focus to the new note editor", async () => {

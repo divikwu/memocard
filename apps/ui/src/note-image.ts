@@ -19,7 +19,7 @@ export function bindNoteImage(image: HTMLImageElement, source: string, onError?:
     return () => { disposed = true; cleanup?.(); };
   }
   if (!isBrowserVault) {
-    image.src = source;
+    if (image.getAttribute("src") !== source) image.src = source;
     return () => {};
   }
   const prefix = "memocard-asset://vault/";

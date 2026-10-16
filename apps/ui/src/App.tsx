@@ -1,7 +1,7 @@
 import { TagColorProvider } from './TagColorProvider';
 import { renamedTag } from "./rename-tag";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, Trash2, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, ChevronDown, CircleAlert, FolderOpen, Info, Layers2, LoaderCircle, Plus, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { NavActions } from "./components/nav-actions";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbPage } from "@/components/ui/breadcrumb";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { PageNotice } from "@/components/page-notice";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -38,6 +37,7 @@ const HomeMascot = lazy(() => import("./components/home-mascot").then(module => 
 const NoteCollection = lazy(() => import("./components/note-collection").then((module) => ({ default: module.NoteCollection })));
 const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
 const AppSidebar = lazy(() => import("./components/app-sidebar").then(module => ({default:module.AppSidebar})));
+const NoteSearchDialog = lazy(() => import("./components/note-search-dialog").then(module => ({default:module.NoteSearchDialog})));
 import { LoadingCapture, LoadingCollection, LoadingNote, LoadingSidebar, LoadingThemeSettings, LoadingTrash } from "./components/loading-states";
 const TrashPage = lazy(() => import("./components/trash-page"));
 
@@ -64,8 +64,8 @@ export function App() {
       document.querySelector<HTMLButtonElement>(open ? '#desktop-sidebar [data-slot="sidebar-trigger"]' : 'main header [data-slot="sidebar-trigger"]')?.focus();
     });
   }, []);
-  const searchField = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchReturnFocus = useRef<HTMLElement | null>(null);
   const scrollContainer = useRef<HTMLDivElement>(null);
   const returnScroll = useRef(0);
   const refreshAnchor = useRef<{id: string; top: number} | null>(null);
@@ -401,7 +401,7 @@ export function App() {
     if (openingLink.current && openingLink.current !== id && !fromLink) setPendingOpenNote(openingLink.current);
     openingLink.current = fromLink ? id : null;
     const currentRequest = ++editorGeneration.current;
-    if (!wasDetail) { returnView.current = view === 'settings' || view === 'trash' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
+    if (!wasDetail) { returnView.current = view === 'settings' || view === 'trash' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = searchOpen ? searchReturnFocus.current : document.activeElement as HTMLElement; }
     const hash = `#/notes/${id}`;
     editorHash.current = hash; attemptedRoute.current = hash;
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
@@ -424,12 +424,12 @@ export function App() {
     } finally {
       if (currentRequest === editorGeneration.current) { setWorking(false); openingLink.current = null; }
     }
-  }, [drafts, showEditor, environment?.vaultBinding, leaveEditor, view]);
+  }, [drafts, showEditor, environment?.vaultBinding, leaveEditor, view, searchOpen]);
 
   useEffect(() => () => { editorGeneration.current++; }, []);
 
   useEffect(() => {
-    const unsubscribe = subscribeToOpenNotes(window, (id) => { void openNote(id, true); });
+    const unsubscribe = subscribeToOpenNotes(window, (id) => { setSearchOpen(false); void openNote(id, true); });
     if (isNative && !readySent.current) {
       readySent.current = true;
       void request("uiReady").catch((cause: unknown) => setError(cause));
@@ -627,11 +627,23 @@ export function App() {
     if (returningFromDetail && nextView === returnView.current) restoreListPosition();
   };
 
-  const searchNotes = async () => {
-    if (editingRef.current && !(await leaveEditor())) return;
-    void navigate("notes", tag, quickFilter);
+  const searchNotes = () => {
+    searchReturnFocus.current = document.activeElement as HTMLElement;
+    setMenuOpen(false);
     setSearchOpen(true);
   };
+
+  const searchAvailable = Boolean(status?.connected) && !switchingVault && (!isLocalWeb || webConnected) && capabilities.has("queryNotes") && capabilities.has("getNote");
+  useEffect(() => {
+    const onSearchKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !event.altKey && !event.shiftKey && !event.isComposing && searchAvailable) {
+        event.preventDefault();
+        if (!event.repeat && !searchOpen) searchNotes();
+      }
+    };
+    window.addEventListener("keydown", onSearchKey);
+    return () => window.removeEventListener("keydown", onSearchKey);
+  }, [searchAvailable, searchOpen]);
 
   useEffect(() => {
     routeHandler.current = () => {
@@ -800,7 +812,7 @@ export function App() {
             </CardContent></Card></section>}
           </div> : <>
             {view !== "home" && status?.connected && recoveryRecords.length > 0 && (recoveryDismissed || recoveryChoices.length === 0) && <Button variant="ghost" size="sm" onClick={() => setRecoveryOpen(true)}>保留草稿（{recoveryRecords.length}）</Button>}
-            <Dialog open={recoveryOpen} onOpenChange={open => { if (deletingDraft.current) return; setRecoveryOpen(open); setRecoveryError(null); if (!open) setDraftToDelete(null); }}><DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto sm:max-w-md" style={{"--tw-enter-scale":"1","--tw-exit-scale":"1"} as React.CSSProperties}><div className="pr-6"><DialogTitle className="text-balance">草稿</DialogTitle><DialogDescription className="sr-only">可继续编辑保留的草稿。不再提醒不会删除草稿。历史草稿请先确认所属笔记库。</DialogDescription></div>
+            <Dialog open={recoveryOpen} onOpenChange={open => { if (deletingDraft.current) return; setRecoveryOpen(open); setRecoveryError(null); if (!open) setDraftToDelete(null); }}><DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto max-w-md" style={{"--tw-enter-scale":"1","--tw-exit-scale":"1"} as React.CSSProperties}><div className="pr-6"><DialogTitle className="text-balance">草稿</DialogTitle><DialogDescription className="sr-only">可继续编辑保留的草稿。不再提醒不会删除草稿。历史草稿请先确认所属笔记库。</DialogDescription></div>
               {recoveryError != null && <div className="space-y-2"><p role="alert" className="text-sm text-destructive">{errorMessage(recoveryError)}</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void refreshDrafts()}>刷新草稿</Button></div></div>}
               {recoveryRecords.length === 0 && <p className="text-sm text-muted-foreground">暂无草稿。</p>}
               <div className="max-h-64 space-y-3 overflow-auto sm:max-h-80">{recoveryRecords.map(draft => <article className="space-y-3 rounded-lg border p-3" key={`${draft.recoveryScope ?? (draft.unscoped ? 'legacy' : 'current')}:${draft.draftKey ?? draft.id}`}>
@@ -818,7 +830,7 @@ export function App() {
                   {draft.reminderDismissed ? <span className="flex items-center gap-1 text-xs text-muted-foreground"><Check className="size-3.5" aria-hidden="true" />已关闭提醒</span> : draft.unscoped && draft.draftKey && draft.revision && capabilities.has("dismissDraftReminder") && <Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void dismissDraftReminder(draft)}>不再提醒</Button>}
                 </div>
               </article>)}</div>
-            <Dialog open={draftToDelete !== null} onOpenChange={open => { if (!open && !deletingDraft.current) setDraftToDelete(null); }}><DialogContent className="sm:max-w-md" finalFocus={() => draftDeleteFocus.current?.isConnected ? draftDeleteFocus.current : true}><DialogTitle>删除这条草稿？</DialogTitle><DialogDescription>删除后无法恢复，已保存的笔记不受影响。</DialogDescription><p className="line-clamp-2 text-sm">{draftToDelete?.draft.title || draftToDelete?.draft.body.slice(0,100) || "空正文"}</p><div className="flex gap-2" style={{justifyContent:"flex-end"}}><Button variant="outline" size="sm" autoFocus disabled={reminderWorking} onClick={() => setDraftToDelete(null)}>取消</Button><Button variant="destructive" size="sm" disabled={reminderWorking} onClick={() => void deleteDraft()}>{reminderWorking ? "正在删除…" : "确认删除"}</Button></div></DialogContent></Dialog>
+            <Dialog open={draftToDelete !== null} onOpenChange={open => { if (!open && !deletingDraft.current) setDraftToDelete(null); }}><DialogContent className="max-w-md" finalFocus={() => draftDeleteFocus.current?.isConnected ? draftDeleteFocus.current : true}><DialogTitle>删除这条草稿？</DialogTitle><DialogDescription>删除后无法恢复，已保存的笔记不受影响。</DialogDescription><p className="line-clamp-2 text-sm">{draftToDelete?.draft.title || draftToDelete?.draft.body.slice(0,100) || "空正文"}</p><div className="flex gap-2" style={{justifyContent:"flex-end"}}><Button variant="outline" size="sm" autoFocus disabled={reminderWorking} onClick={() => setDraftToDelete(null)}>取消</Button><Button variant="destructive" size="sm" disabled={reminderWorking} onClick={() => void deleteDraft()}>{reminderWorking ? "正在删除…" : "确认删除"}</Button></div></DialogContent></Dialog>
             </DialogContent></Dialog>
 
 
@@ -853,10 +865,7 @@ export function App() {
       finishEditing(undefined,true);
     }} /></Suspense>}
     {notice && <div role="status" className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
-    <Dialog open={searchOpen} onOpenChange={setSearchOpen}><DialogContent initialFocus={searchField}><DialogTitle>搜索笔记</DialogTitle><DialogDescription>输入关键词筛选笔记，关闭后查看结果。</DialogDescription>
-      <div className="relative"><Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground" /><Input ref={searchField} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索笔记内容" aria-label="搜索笔记" disabled={!status?.connected || switchingVault} className="h-9 bg-background pl-9 pr-10 shadow-none" />{query && <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 size-8 -translate-y-1/2" onClick={() => setQuery("")} aria-label="清空搜索"><X className="size-3.5" /></Button>}</div>
-      <Button onClick={() => setSearchOpen(false)}>查看结果</Button>
-    </DialogContent></Dialog>
+    {searchOpen && <Suspense fallback={null}><NoteSearchDialog key={status?.vaultId} open={searchOpen} onOpenChange={setSearchOpen} vaultName={status?.vaultName || "笔记库"} available={searchAvailable} returnFocus={searchReturnFocus} onOpenNote={id => { setSearchOpen(false); void openNote(id); }} /></Suspense>}
 
   </SidebarProvider></TagColorProvider>;
 }
