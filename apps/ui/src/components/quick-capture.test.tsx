@@ -23,7 +23,8 @@ beforeEach(()=>{
 afterEach(()=>{cleanup();vi.restoreAllMocks();vi.unstubAllGlobals();});
 
 it('creates a source only on record and clears content, tags and images only after success',async()=>{
-  const user=userEvent.setup();render(<QuickCapture {...props} />);
+  const user=userEvent.setup();render(<QuickCapture {...props} onContinue={vi.fn()} />);
+  expect(screen.queryByRole('button',{name:'切换为页面'})).toBeNull();
   expect(screen.getByRole('button',{name:'记录'}).hasAttribute('disabled')).toBe(true);
   await user.type(screen.getByRole('textbox',{name:'快速输入内容'}),'一个值得记下的想法');
   await new Promise(resolve=>setTimeout(resolve,400));
@@ -298,6 +299,72 @@ it('keeps the capture sheet within the visible viewport when the mobile keyboard
   act(()=>{viewport.height=360;viewport.offsetTop=10;viewport.dispatchEvent(new Event('resize'));});
   expect(sheet.style.bottom).toBe('430px');
   expect(sheet.style.maxHeight).toBe('344px');
+});
+
+it('hands content, tags and images to a page only after protecting the draft',async()=>{
+  mobile();const user=userEvent.setup(),onContinue=vi.fn();
+  let finish!:()=>void;
+  const original=bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation((op,params)=>op==='saveDraft' ? new Promise(resolve=>{finish=()=>resolve({draftKey:'handoff',revision:'version-1'});}) : original(op,params));
+  render(<QuickCapture {...props} docked onContinue={onContinue} />);
+  await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+  fireEvent.change(screen.getByRole('textbox',{name:'快速输入内容'}),{target:{value:'    继续写这段正文'}});
+  await user.click(screen.getByRole('button',{name:'选择标签'}));
+  await user.click(screen.getByRole('button',{name:'工作'}));
+  await user.keyboard('{Escape}');
+  await user.click(screen.getByRole('button',{name:'添加图片'}));
+  await screen.findByRole('img',{name:'待记录图片 1'});
+  const id=readQuickCaptureDraft('vault-a')!.id;
+  await user.click(screen.getByRole('button',{name:'切换为页面'}));
+  expect(onContinue).not.toHaveBeenCalled();
+  expect(screen.getByRole('button',{name:'切换为页面'})).toHaveProperty('disabled',true);
+  await user.keyboard('{Escape}');
+  expect(screen.getByRole('dialog',{name:'快速记录'})).toBeTruthy();
+  expect(readQuickCaptureDraft('vault-a')?.id).toBe(id);
+  finish();
+  await waitFor(()=>expect(onContinue).toHaveBeenCalledWith(expect.objectContaining({id,title:undefined,body:'    继续写这段正文\n\n![图片](assets/image.png)',inheritedTags:['工作'],baseHash:null,vaultId:'vault-a',vaultBinding:'binding-a',recoveredFrom:{draftKey:'handoff',revision:'version-1'}})));
+  expect(bridge.request.mock.calls.some(([op])=>op==='saveNote')).toBe(false);
+  expect(readQuickCaptureDraft('vault-a')).toBeNull();
+  await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+  expect(screen.getByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','');
+});
+
+it('keeps the capture intact when protecting the page draft fails',async()=>{
+  mobile();const user=userEvent.setup(),onContinue=vi.fn();
+  const original=bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation((op,params)=>op==='saveDraft' ? Promise.reject(new Error('草稿写入失败')) : original(op,params));
+  render(<QuickCapture {...props} docked onContinue={onContinue} />);
+  await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+  fireEvent.change(screen.getByRole('textbox',{name:'快速输入内容'}),{target:{value:'不能丢失的内容'}});
+  await user.click(screen.getByRole('button',{name:'切换为页面'}));
+  expect((await screen.findByRole('alert')).textContent).toBe('草稿写入失败');
+  expect(onContinue).not.toHaveBeenCalled();
+  expect(screen.getByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','不能丢失的内容');
+  expect(readQuickCaptureDraft('vault-a')?.text).toBe('不能丢失的内容');
+});
+
+it('retains the original capture if local cleanup fails after protecting the page draft',async()=>{
+  mobile();const user=userEvent.setup(),onContinue=vi.fn();
+  render(<QuickCapture {...props} docked onContinue={onContinue} />);
+  await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+  fireEvent.change(screen.getByRole('textbox',{name:'快速输入内容'}),{target:{value:'交接失败后保留'}});
+  const remove=vi.spyOn(Storage.prototype,'removeItem').mockImplementation(()=>{throw new Error('storage unavailable');});
+  await user.click(screen.getByRole('button',{name:'切换为页面'}));
+  expect(onContinue).not.toHaveBeenCalled();
+  expect(screen.getByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','交接失败后保留');
+  expect(readQuickCaptureDraft('vault-a')?.text).toBe('交接失败后保留');
+  remove.mockRestore();
+});
+
+it('does not discard an unreadable capture when continuing into a page',async()=>{
+  mobile();const user=userEvent.setup(),onContinue=vi.fn();
+  localStorage.setItem('memocard:quick-capture:v1:vault-a','unreadable');
+  render(<QuickCapture {...props} docked onContinue={onContinue} />);
+  await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+  expect(screen.getByRole('button',{name:'切换为页面'})).toHaveProperty('disabled',true);
+  await user.click(screen.getByRole('button',{name:'切换为页面'}));
+  expect(onContinue).not.toHaveBeenCalled();
+  expect(localStorage.getItem('memocard:quick-capture:v1:vault-a')).toBe('unreadable');
 });
 
 it('leaves docked cleanup failures visible after recording without submitting a duplicate',async()=>{

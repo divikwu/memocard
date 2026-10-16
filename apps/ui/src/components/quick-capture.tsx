@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { Note } from '@memocard/contracts';
-import { ArrowUp, Check, FolderOpen, Hash, ImagePlus, LoaderCircle, Plus, X } from 'lucide-react';
+import { ArrowUp, ArrowUpRight, Check, FolderOpen, Hash, ImagePlus, LoaderCircle, Plus, X } from 'lucide-react';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from './ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
@@ -20,9 +20,10 @@ import '../quick-capture.css';
 export type QuickCaptureHandle = {isBusy:()=>boolean};
 export type QuickCaptureMemory = {vaultId:string; vaultBinding?:string; capture:Capture};
 
-export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, disabled, canImage, onRecorded, handle, draftCount=0, onOpenDrafts, docked=false, active=true, memory}: {
+export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, disabled, canImage, onRecorded, onContinue, handle, draftCount=0, onOpenDrafts, docked=false, active=true, memory}: {
   vaultId:string; vaultBinding?:string; rootNotes:boolean; tags:string[]; disabled:boolean; canImage:boolean;
   onRecorded:(note:Note)=>void; handle:React.RefObject<QuickCaptureHandle | null>;
+  onContinue?:(draft:Draft)=>void;
   draftCount?:number; onOpenDrafts?:()=>void;
   docked?:boolean; active?:boolean;
   memory?:React.RefObject<QuickCaptureMemory | null>;
@@ -54,6 +55,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   const [tagQuery, setTagQuery] = useState('');
   const textarea = useRef<HTMLTextAreaElement>(null);
   const working = useRef(false);
+  const continuing = useRef(false);
   const mounted = useRef(true);
   const recorded = useRef(onRecorded);
   const wasMobile = useRef(isMobile && !restored.cached);
@@ -80,8 +82,8 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   }, [capture,isMobile,protect]);
   useEffect(() => {recorded.current=onRecorded;}, [onRecorded]);
   useEffect(() => {mounted.current=true; return () => {mounted.current=false;};}, []);
-  const params = useCallback((value:Capture):Draft & {vaultId:string} => {
-    const body = [value.text.trim(), ...value.images.map(image => `![图片](${image.markdownPath})`)].filter(Boolean).join('\n\n');
+  const params = useCallback((value:Capture, text=value.text.trim()):Draft & {vaultId:string} => {
+    const body = [text, ...value.images.map(image => `![图片](${image.markdownPath})`)].filter(Boolean).join('\n\n');
     return {id:value.id,title:'',body,tags:inlineTags(body),inheritedTags:value.tags,baseHash:null,relativePath:value.relativePath,vaultId,...(vaultBinding ? {vaultBinding} : {})};
   }, [vaultId,vaultBinding]);
   useImperativeHandle(handle, ()=>({isBusy:()=>working.current}), []);
@@ -101,6 +103,22 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
       recorded.current(saved);
       if (docked) { if(cleaned)setExpanded(false); }
       else requestAnimationFrame(()=>textarea.current?.focus());
+    } catch(cause) {if(mounted.current)setError(errorMessage(cause));}
+    finally {working.current=false; if(mounted.current)setBusy(false);}
+  }
+  async function continueInPage() {
+    if (blocked || working.current || restoreFailed || !onContinue) return;
+    working.current=true; setBusy(true); setError('');
+    const snapshot:Draft & {vaultId:string}={...params(capture,capture.text),title:undefined};
+    try {
+      const saved=await request<Draft>('saveDraft',snapshot);
+      if (saved.revision) snapshot.recoveredFrom={draftKey:saved.draftKey ?? snapshot.id,revision:saved.revision};
+      if (!mounted.current) return;
+      const next=blank();
+      if (!protect(next)) return;
+      continuing.current=true;
+      setCapture(next); setTagQuery(''); setExpanded(false);
+      onContinue(snapshot);
     } catch(cause) {if(mounted.current)setError(errorMessage(cause));}
     finally {working.current=false; if(mounted.current)setBusy(false);}
   }
@@ -148,6 +166,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
       </InputGroupAddon>
     </InputGroup>
     {draftCount>0 && onOpenDrafts && <div className="quick-capture-drafts"><Button type="button" variant="ghost" size="sm" disabled={docked && busy} onClick={()=>{if(docked)setExpanded(false);onOpenDrafts();}}><FolderOpen aria-hidden="true" />保留草稿（{draftCount}）</Button></div>}
+    {docked && isMobile && onContinue && <Button type="button" variant="outline" className="quick-capture-continue" disabled={blocked || restoreFailed} onClick={()=>void continueInPage()}><ArrowUpRight aria-hidden="true" />切换为页面</Button>}
     {error && <p role="alert" className="quick-capture-error">{error}</p>}
     {isMobile && <div className="quick-capture-save-status" role="status" aria-live="polite" aria-atomic="true">
       {draftError ? <><span className="text-destructive">{recordedLocally ? '记录已保存，临时草稿未清除。' : draftError}</span><Button type="button" variant="ghost" size="sm" disabled={blocked} onClick={retryProtection}>{restoreFailed ? '重试恢复草稿' : recordedLocally ? '重试清理草稿' : '重试草稿保护'}</Button></>
@@ -155,11 +174,11 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     </div>}
   </form>;
   if (!docked) return form;
-  return <Sheet open={expanded && active} onOpenChange={(open,details)=>{if(working.current)details.cancel();else setExpanded(open);}}>
+  return <Sheet open={expanded && active} onOpenChange={(open,details)=>{if(working.current)details.cancel();else {if(open)continuing.current=false;setExpanded(open);}}}>
     <SheetTrigger render={<Button type="button" variant="outline" className="mobile-capture-entry" disabled={blocked} aria-label="打开快速记录" />}>
       <Plus aria-hidden="true" className="size-5 shrink-0" /><span className="min-w-0 truncate">{capture.text.trim() || (hasCapture(capture) ? '继续未完成的记录…' : '记下此刻的想法…')}</span>
     </SheetTrigger>
-    <SheetContent side="bottom" className="mobile-capture-sheet" style={sheetViewport ?? undefined} initialFocus={textarea} showCloseButton={false} swipeToClose swipeDisabled={busy}>
+    <SheetContent side="bottom" className="mobile-capture-sheet" style={sheetViewport ?? undefined} initialFocus={textarea} finalFocus={()=>continuing.current ? false : true} showCloseButton={false} swipeToClose swipeDisabled={busy}>
       <SheetHeader className="flex-row items-center justify-between p-0"><SheetTitle>快速记录</SheetTitle><SheetClose render={<Button type="button" variant="ghost" size="icon-sm" disabled={busy} aria-label="收起快速记录" />}><X aria-hidden="true" /></SheetClose></SheetHeader>
       {form}
     </SheetContent>

@@ -27,7 +27,7 @@ export class EditorSession {
   constructor(initial: Draft, private transport: Transport, private canDraft: boolean, private notify: () => void, private committed: (note: Note) => void, private isolateDrafts = false) {
     const inheritedTags = !initial.baseHash ? initial.inheritedTags ?? (!initial.body.trim() ? initial.tags : []) : [];
     this.current = { ...initial, ...(inheritedTags.length ? { inheritedTags } : {}), tags: inlineTags(initial.body), relativePath: initial.relativePath ?? `notes/${initial.id}.md` };
-    if (isolateDrafts) this.current = {...this.current,draftKey:`${this.draftSession}:${initial.id}`,recoveredFrom:initial.updatedAt && initial.revision ? {draftKey:initial.draftKey ?? initial.id,revision:initial.revision,...(initial.unscoped ? {unscoped:true,...(initial.recoveryScope ? {scope:initial.recoveryScope} : {})} : {})} : undefined};
+    if (isolateDrafts) this.current = {...this.current,draftKey:`${this.draftSession}:${initial.id}`,recoveredFrom:initial.updatedAt && initial.revision ? {draftKey:initial.draftKey ?? initial.id,revision:initial.revision,...(initial.unscoped ? {unscoped:true,...(initial.recoveryScope ? {scope:initial.recoveryScope} : {})} : {})} : initial.recoveredFrom};
     this.hadRecovery = Boolean(initial.updatedAt);
     this.propertyRecovery = Boolean(initial.pendingProperties?.length);
     this.persisted = initial.baseHash && !initial.updatedAt ? key(this.current) : '';

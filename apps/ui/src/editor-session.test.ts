@@ -4,6 +4,15 @@ import type { Draft } from './bridge';
 const initial: Draft = { id: 'a', body: '', tags: [], baseHash: null, relativePath: 'notes/a.md' };
 const note = { id: 'a', contentHash: 'new-hash' };
 afterEach(() => vi.useRealTimers());
+it('keeps a quick-capture recovery reference when opening an isolated page draft',async()=>{
+ const recoveredFrom={draftKey:'capture-draft',revision:'capture-revision'};
+ const transport=vi.fn(async(op:string)=>op==='saveNote' ? {...note,body:'Continue writing'} : undefined);
+ const session=new EditorSession({...initial,body:'Continue writing',recoveredFrom},transport as never,true,vi.fn(),vi.fn(),true);
+ expect(transport).not.toHaveBeenCalled();
+ await session.flush();
+ expect(transport).toHaveBeenCalledWith('saveNote',expect.objectContaining({id:initial.id,recoveredFrom}));
+ session.dispose();
+});
 it('forks native recovery per editor and retains the source identity through retries and property cleanup',async()=>{
  const recovered:Draft={...initial,body:'Recovered',baseHash:'hash',updatedAt:'2026-10-12T00:00:00Z',draftKey:'original-key',revision:'original-revision'};
  const transport=vi.fn(async(op:string)=>op==='saveNote' ? {id:'a',body:'Recovered',contentHash:'new'} : op==='updateNoteProperty' ? {id:'a',contentHash:'newer'} : undefined);
