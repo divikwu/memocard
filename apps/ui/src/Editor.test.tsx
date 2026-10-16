@@ -34,6 +34,51 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
+function mobile() {
+  vi.stubGlobal('innerWidth',390);
+  vi.stubGlobal('matchMedia',vi.fn(()=>({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
+}
+
+it('opens an existing mobile note without focusing editable fields and still permits editing',async()=>{
+  mobile();
+  await editor({...initial,title:'已有笔记',body:'正文',baseHash:'original'});
+  expect(document.activeElement).toBe(screen.getByRole('region',{name:'编辑笔记'}));
+  expect(document.activeElement).not.toBe(screen.getByRole('textbox',{name:'页面标题'}));
+  expect(document.activeElement).not.toBe(screen.getByRole('textbox',{name:'笔记内容'}));
+  expect(screen.getByRole('status').textContent).toBe('已保存到本机');
+  act(()=>{screen.getByRole('textbox',{name:'笔记内容'}).focus();});
+  replaceEditorText('手动编辑');
+  await waitFor(()=>expect(native).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'手动编辑'})));
+  expect(screen.getByRole('status').textContent).toBe('已保存到本机');
+});
+
+it('retains title autofocus for a new mobile note and body autofocus without mobile status on desktop',async()=>{
+  mobile();await editor({...initial,title:''});
+  expect(document.activeElement).toBe(screen.getByRole('textbox',{name:'页面标题'}));
+  cleanup();
+  vi.stubGlobal('innerWidth',1024);
+  vi.stubGlobal('matchMedia',vi.fn(()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
+  await editor({...initial,body:'桌面正文',baseHash:'original'});
+  await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('textbox',{name:'笔记内容'})));
+  expect(screen.queryByRole('status')).toBeNull();
+});
+
+it('shows mobile pending, saving and failed states and confirms only successful saves',async()=>{
+  mobile();
+  let rejectSave!:(error:unknown)=>void;
+  native.mockImplementation(async op=>op==='saveNote' ? new Promise((_resolve,reject)=>{rejectSave=reject;}) : undefined);
+  await editor({...initial,body:'原文',baseHash:'original'});
+  replaceEditorText('未完成保存');
+  expect(screen.getByRole('status').textContent).toBe('等待保存…');
+  await waitFor(()=>expect(screen.getByRole('status').textContent).toBe('保存中…'));
+  await act(async()=>{rejectSave(new Error('磁盘只读'));});
+  expect(screen.getByRole('status').textContent).toBe('保存失败，请重试');
+  expect(readEditorText()).toBe('未完成保存');
+  native.mockImplementation(async op=>op==='saveNote' ? saved : undefined);
+  fireEvent.click(screen.getByRole('button',{name:'重试保存'}));
+  await waitFor(()=>expect(screen.getByRole('status').textContent).toBe('已保存到本机'));
+});
+
 async function historyEditor(waitForProperty?: () => Promise<void>) {
  let note: Note = { ...saved, title:'原题', body:'正文', tags:[], createdAt:'', updatedAt:'', sourceUrl:'' };
  let properties: NoteProperties = { contentHash:note.contentHash, writable:true, definitionHash:'definition',

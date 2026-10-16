@@ -9,6 +9,7 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
   --editor-inset-right: var(--note-content-inset);
 }
 @media (max-width: 767px) {
+  section.note-editor > .mobile-save-status { margin-top: 8px; padding-inline: var(--note-content-inset); color: var(--muted-foreground); font-size: 12px; line-height: 20px; }
   .note-page-width .rich-heading-fold-widget { display: none; }
   /* Keep the original draggable hit area inside the 16px gutter + 8px inset. */
   .note-page-width .block-controls { left: calc(var(--editor-gutter) - 24px) !important; }
@@ -132,7 +133,7 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
   color: var(--foreground);
 }
 
-.note-property-backdrop { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / 40%); }
+.note-property-backdrop { position: fixed; inset: 0; z-index: 50; }
 .note-property-confirm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; }
 
 .note-properties .note-property-name { width: 100%; justify-content: flex-start; font-size: inherit; font-weight: 400; }

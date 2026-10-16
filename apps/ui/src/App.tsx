@@ -18,7 +18,7 @@ import type { Note, NoteFilterCounts, NotePage, NotePins, NoteQuickFilter, Vault
 import { errorMessage, isBrowserVault, isConnectedClient, isLocalWeb, isNative, reconnectVault, request, type Draft, type DraftList, type DraftIssue, type Environment, type RegisteredVault, type SelectVaultResult } from "./bridge";
 import type { EditorHandle } from "./Editor";
 import type { NoteDeleteTarget } from "./components/note-delete-dialog";
-import type { QuickCaptureHandle } from "./components/quick-capture";
+import type { QuickCaptureHandle, QuickCaptureMemory } from "./components/quick-capture";
 import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
 import { cn } from "@/lib/utils";
@@ -37,6 +37,7 @@ const HomeMascot = lazy(() => import("./components/home-mascot").then(module => 
 const NoteCollection = lazy(() => import("./components/note-collection").then((module) => ({ default: module.NoteCollection })));
 const ThemeSettings = lazy(() => import("@/features/theme/ThemeSettings").then((module) => ({ default: module.ThemeSettings })));
 const AppSidebar = lazy(() => import("./components/app-sidebar").then(module => ({default:module.AppSidebar})));
+const MobileTagActions = lazy(() => import("./components/mobile-tag-actions").then(module => ({default:module.MobileTagActions})));
 const NoteSearchDialog = lazy(() => import("./components/note-search-dialog").then(module => ({default:module.NoteSearchDialog})));
 import { LoadingCapture, LoadingCollection, LoadingNote, LoadingSidebar, LoadingThemeSettings, LoadingTrash } from "./components/loading-states";
 const TrashPage = lazy(() => import("./components/trash-page"));
@@ -66,11 +67,14 @@ export function App() {
   }, []);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchReturnFocus = useRef<HTMLElement | null>(null);
+  const searchPageScroll = useRef(0);
+  const searchNoteReturn = useRef<string | null>(null);
   const scrollContainer = useRef<HTMLDivElement>(null);
   const returnScroll = useRef(0);
   const refreshAnchor = useRef<{id: string; top: number} | null>(null);
   const editorHandle = useRef<EditorHandle | null>(null);
   const quickCaptureHandle = useRef<QuickCaptureHandle | null>(null);
+  const quickCaptureMemory = useRef<QuickCaptureMemory | null>(null);
   const editorHash = useRef('');
   const routeHandler = useRef<() => void>(() => {});
   const routeLoading = useRef('');
@@ -148,6 +152,11 @@ export function App() {
     return true;
   }, []);
   const restoreListPosition = useCallback(() => {
+    if (isMobile && searchNoteReturn.current && searchNoteReturn.current === status?.vaultId) {
+      searchNoteReturn.current = null;
+      setSearchOpen(true);
+      return;
+    }
     requestAnimationFrame(() => {
       const container = scrollContainer.current;
       if (container) container.scrollTop = returnScroll.current;
@@ -156,7 +165,7 @@ export function App() {
       const row = id && container ? Array.from(container.querySelectorAll<HTMLElement>('[data-note-id]')).find(item => item.dataset.noteId === id) : undefined;
       (previous?.isConnected ? previous : row?.querySelector<HTMLElement>('button'))?.focus({ preventScroll: true });
     });
-  }, []);
+  }, [isMobile,status?.vaultId]);
   const capabilities = useMemo(() => new Set([...(status?.capabilities ?? []), ...(environment?.capabilities ?? [])]), [status, environment]);
 
   useEffect(() => {
@@ -543,6 +552,7 @@ export function App() {
     : !status.coverage.complete ? "部分文件待读取" : "已连接文件夹";
   const openingNote = !editing && pendingRoute !== null && (loading || Boolean(status?.connected));
   const detailView = Boolean(editing) || openingNote;
+  const showMobileRecord = !detailView && (view === "home" || view === "notes");
   const detailReadFailed = openingNote && Boolean(error) && !localWebReconnectRequired;
   const canRetryDetail = retryableError && bridgeErrorCode(error) !== "NOTE_NOT_FOUND";
   const openingTitle = pendingRoute ? notes.find(note => note.id === decodeURIComponent(pendingRoute.slice("#/notes/".length)))?.title?.trim() : undefined;
@@ -609,6 +619,7 @@ export function App() {
   const navigate = async (nextView: View, nextTag: string | null = null, nextFilter: NoteQuickFilter | null = null) => {
     const returningFromDetail = Boolean(editorHash.current);
     if (!(await leaveEditor())) return;
+    if (nextView !== returnView.current) searchNoteReturn.current = null;
     openingLink.current = null;
     setError('');
     setView(nextView);
@@ -629,8 +640,21 @@ export function App() {
 
   const searchNotes = () => {
     searchReturnFocus.current = document.activeElement as HTMLElement;
+    searchPageScroll.current = scrollContainer.current?.scrollTop ?? 0;
+    searchNoteReturn.current = null;
     setMenuOpen(false);
     setSearchOpen(true);
+  };
+  const changeSearchOpen = (open: boolean) => {
+    setSearchOpen(open);
+    if (!open && isMobile) {
+      searchNoteReturn.current = null;
+      requestAnimationFrame(() => {
+        if (scrollContainer.current) scrollContainer.current.scrollTop = searchPageScroll.current;
+        const previous = searchReturnFocus.current;
+        (previous?.isConnected ? previous : document.querySelector<HTMLElement>('main header button'))?.focus({preventScroll:true});
+      });
+    }
   };
 
   const searchAvailable = Boolean(status?.connected) && !switchingVault && (!isLocalWeb || webConnected) && capabilities.has("queryNotes") && capabilities.has("getNote");
@@ -670,14 +694,29 @@ export function App() {
     if (!editingRef.current && routeReady && status?.connected && attemptedRoute.current !== window.location.hash && /^#\/notes\//.test(window.location.hash)) routeHandler.current();
   });
 
+  const mobileCapturePlaceholder = <Button type="button" variant="outline" disabled className="w-full justify-start rounded-full text-muted-foreground" style={{minHeight:48}} aria-label="打开快速记录"><Plus aria-hidden="true" />记下此刻的想法…</Button>;
+  const quickCapture = (captureOpened || isMobile) && status?.vaultId && loadedVaultId.current === status.vaultId ? <Suspense fallback={isMobile ? mobileCapturePlaceholder : <LoadingCapture />}>
+    <QuickCapture key={`${status.vaultId}:${environment?.vaultBinding ?? ''}`} handle={quickCaptureHandle} memory={quickCaptureMemory}
+      vaultId={status.vaultId} vaultBinding={environment?.vaultBinding} rootNotes={folders.includes('')} tags={tags.map(tag=>tag.name)}
+      disabled={!canCreate || (isMobile && working)} canImage={capabilities.has('importAttachment') || capabilities.has('pickImage')}
+      docked={isMobile} active={showMobileRecord}
+      draftCount={status?.connected && (recoveryDismissed || recoveryChoices.length === 0) ? recoveryRecords.length : 0} onOpenDrafts={() => setRecoveryOpen(true)}
+      onRecorded={() => {
+        setNotice('已记录'); loadedPages.current=1;
+        if ((!isMobile || view === 'home') && homeTab !== 'recent') changeHomeTab('recent');
+        else if (refreshCount.current > 0 || loadingMore.current) pendingRefresh.current=true;
+        else void refresh(true);
+      }} />
+  </Suspense> : null;
+  async function renameNavigationTag(from: string, to: string) {
+    if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
+    try {
+      await (await import("./rename-tag-operation")).renameTag(from, to, status.vaultId, request);
+      if (tag) setTag(renamedTag(tag, from, to));
+    } finally { await refresh(); }
+  }
   const navigation = <Suspense fallback={<LoadingSidebar vaultName={status?.vaultName || "记忆卡"} />}><AppSidebar
-    view={view} tag={tag} quickFilter={quickFilter} filterCounts={filterCounts} tags={tags} loadingTags={loading && tags.length === 0} onRenameTag={async (from, to) => {
-      if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
-      try {
-        await (await import("./rename-tag-operation")).renameTag(from, to, status.vaultId, request);
-        if (tag) setTag(renamedTag(tag, from, to));
-      } finally { await refresh(); }
-    }}
+    view={view} tag={tag} quickFilter={quickFilter} filterCounts={filterCounts} tags={tags} loadingTags={loading && tags.length === 0} onRenameTag={renameNavigationTag}
     canTrash={capabilities.has("getTrash") && capabilities.has("restoreNote")} connected={Boolean(status?.connected)}
     vaultId={status?.vaultId} vaultName={status?.vaultName || "记忆卡"} registeredVaults={registeredVaults} vaultStatusText={vaultStatusText}
     hasVaultIssue={Boolean(error || needsPermission || (status?.connected && !status.indexing && !status.coverage.complete))}
@@ -689,19 +728,20 @@ export function App() {
     onReauthorize={() => void reauthorizeVault()}
   /></Suspense>;
 
+  const breadcrumbTitle = <BreadcrumbPage className={cn("line-clamp-1",isMobile && "font-medium")}>{title}</BreadcrumbPage>;
   return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
     {navigation}
     <SidebarInset className="@container min-w-0 min-h-0">
-      <header className="flex h-14 shrink-0 items-center gap-2 bg-background">
-        <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm">
-          {detailView && <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={() => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish()} aria-label={returnView.current === "home" ? "返回主页" : "返回笔记列表"}><ArrowLeft className="size-4" /></Button>}
-          {(isMobile ? !editing : !sidebarOpen) && <>
+      <header className="flex h-14 shrink-0 items-center gap-2 bg-background" style={isMobile ? {display:"grid",gridTemplateColumns:"88px minmax(0,1fr) 88px",gap:4,paddingInline:12} : undefined}>
+        <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm" style={isMobile ? {display:"contents"} : undefined}>
+          {detailView && <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={() => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish()} aria-label={isMobile && searchNoteReturn.current ? "返回搜索结果" : returnView.current === "home" ? "返回主页" : "返回笔记列表"}><ArrowLeft className="size-4" /></Button>}
+          {(isMobile ? !detailView : !sidebarOpen) && <>
             <SidebarTrigger className="shrink-0" />
-            <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+            {!isMobile && <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />}
           </>}
-          <Breadcrumb aria-label="当前位置" className="min-w-0"><BreadcrumbList><BreadcrumbItem className="min-w-0"><BreadcrumbPage className="line-clamp-1">{title}</BreadcrumbPage></BreadcrumbItem></BreadcrumbList></Breadcrumb>
+          <Breadcrumb aria-label="当前位置" className="min-w-0" style={isMobile && detailView ? {visibility:"hidden"} : undefined}><BreadcrumbList className={isMobile ? "justify-center" : undefined}><BreadcrumbItem className="min-w-0">{isMobile && (view === "notes" || view === "home") && !detailView ? <Suspense fallback={breadcrumbTitle}><MobileTagActions key={`${status?.vaultId}:${view}`} tag={view === "notes" ? tag : null} title={title} home={view === "home"} vaultId={status?.vaultId} onRename={renameNavigationTag} /></Suspense> : breadcrumbTitle}</BreadcrumbItem></BreadcrumbList></Breadcrumb>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2 px-3">
+        <div className="ml-auto flex shrink-0 items-center gap-2 px-3" style={isMobile ? {paddingInline:0} : undefined}>
           {!isConnectedClient && <span className="hidden text-xs text-muted-foreground sm:inline">浏览器预览</span>}
           {editing && capabilities.has("setNotePinned") && <Suspense fallback={null}><NotePinButton pinned={isNotePinned} unsaved={!editing.baseHash} disabled={!editing.baseHash || !notePins || notePins.vaultId !== status?.vaultId || pinWorking || switchingVault || !status?.connected || (isLocalWeb && !webConnected)} onClick={() => void togglePinned()} /></Suspense>}
           <NavActions canDeleteNote={canCreate && !pinWorking && !working} onDeleteNote={editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => {setNoteToDelete({id:editing.id,title,vaultId:status.vaultId!,vaultBinding:editing.vaultBinding ?? environment?.vaultBinding});} : undefined} canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={() => {if(view === "trash")setTrashVersion(value=>value+1);void refresh();}} onSettings={() => navigate("settings")} />
@@ -741,24 +781,12 @@ export function App() {
             </Alert>}
 
           {listTimeoutVisible === "refresh" && <PageNotice title="刷新超时" actions={<Button variant="outline" size="sm" disabled={refreshingPages || switchingVault} onClick={() => void refresh(true)}>重试</Button>}>当前显示上次读取的内容。</PageNotice>}
-          {!(view === "trash" && !detailView && status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote")) && <div className={detailView || view === "settings" ? "sr-only" : view === "home" ? "flex justify-center" : "min-w-0 px-2 pb-2"} style={view === "home" && !detailView ? {marginBlockStart:24,marginBlockEnd:8} : undefined}>
+          {!(view === "trash" && !detailView && status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote")) && <div className={detailView || view === "settings" || (isMobile && view === "notes") ? "sr-only" : view === "home" ? "flex justify-center" : "min-w-0 px-2 pb-2"} style={view === "home" && !detailView ? {marginBlockStart:24,marginBlockEnd:8} : undefined}>
             <h1 className={view === "home" && !detailView ? "sr-only" : "truncate text-[32px] font-bold leading-[1.2] tracking-tight"}>{title}</h1>
             {view === "home" && !detailView && <Suspense fallback={<div style={{width:144,height:144}} />}><HomeMascot /></Suspense>}
           </div>}
-          {captureOpened && status?.vaultId && loadedVaultId.current === status.vaultId && <div hidden={detailView || view !== "home"}>
-            <Suspense fallback={<LoadingCapture />}><QuickCapture key={`${status.vaultId}:${environment?.vaultBinding ?? ''}`} handle={quickCaptureHandle}
-              vaultId={status.vaultId} vaultBinding={environment?.vaultBinding} rootNotes={folders.includes('')} tags={tags.map(tag=>tag.name)}
-              disabled={!canCreate} canImage={capabilities.has('importAttachment') || capabilities.has('pickImage')}
-              draftCount={status?.connected && (recoveryDismissed || recoveryChoices.length === 0) ? recoveryRecords.length : 0} onOpenDrafts={() => setRecoveryOpen(true)}
-              onRecorded={() => {
-                setNotice('已记录'); loadedPages.current=1;
-                if (homeTab !== 'recent') changeHomeTab('recent');
-                else if (refreshCount.current > 0 || loadingMore.current) pendingRefresh.current=true;
-                else void refresh(true);
-              }} />
-            </Suspense>
-          </div>}
-          {captureOpened && view === "home" && !detailView && loading && (!status?.vaultId || loadedVaultId.current !== status.vaultId) && <LoadingCapture />}
+          {!isMobile && <div hidden={detailView || view !== "home"}>{quickCapture}</div>}
+          {!isMobile && captureOpened && view === "home" && !detailView && loading && (!status?.vaultId || loadedVaultId.current !== status.vaultId) && <LoadingCapture />}
           {openingNote ? (detailReadFailed ? <EmptyState compact role="alert" icon="connection" title={bridgeErrorCode(error) === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(error)}>
             <div className="flex flex-wrap justify-center gap-2">
               {canRetryDetail && <Button disabled={loading || working || switchingVault} onClick={() => {
@@ -766,7 +794,7 @@ export function App() {
                 routeNoteRequest.current = null;
                 if (pendingRoute) void openNote(decodeURIComponent(pendingRoute.slice("#/notes/".length)));
               }}>重试</Button>}
-              <Button variant={canRetryDetail ? "outline" : "default"} onClick={() => void navigate("notes", tag, quickFilter)}>返回列表</Button>
+              <Button variant={canRetryDetail ? "outline" : "default"} onClick={() => void navigate(searchNoteReturn.current ? returnView.current : "notes", tag, quickFilter)}>{isMobile && searchNoteReturn.current ? "返回搜索结果" : "返回列表"}</Button>
             </div>
           </EmptyState> : error ? null : <LoadingNote />) : editing ? <Suspense fallback={<LoadingNote />}><Editor key={editing.id} initial={editing} initialNote={editing.note} onTagsChanged={() => { void refresh(true); }} handle={editorHandle} capabilities={capabilities} pendingLink={Boolean(pendingOpenNote)} onClose={finishEditing} onSaved={finishEditing} onTitleChange={title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current)} onCommitted={(note) => {
             setNotes(current => current.map(item => item.id === note.id ? note : item));
@@ -855,6 +883,12 @@ export function App() {
           </>}
         </div>
       </div>
+      {isMobile && <footer aria-label="快捷记录" hidden={!showMobileRecord || searchOpen} className="mobile-record-bar shrink-0 bg-background" style={{padding:"8px 16px 12px"}}>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="icon" aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={searchOpen} disabled={!searchAvailable} onClick={searchNotes} style={{width:48,height:48,borderRadius:9999,flexShrink:0}}><Search aria-hidden="true" className="size-5" /></Button>
+          <div className="min-w-0 flex-1">{quickCapture ?? mobileCapturePlaceholder}</div>
+        </div>
+      </footer>}
     </SidebarInset>
     {noteToDelete && <Suspense fallback={null}><NoteDeleteDialog target={noteToDelete} prepareDelete={async()=>loadedVaultId.current===noteToDelete.vaultId ? editorHandle.current?.prepareDelete() ?? null : null} onCancel={()=>setNoteToDelete(null)} onDeleted={()=>{
       const target=noteToDelete;setNoteToDelete(null);
@@ -864,8 +898,8 @@ export function App() {
       if(refreshCount.current>0 || loadingMore.current)pendingRefresh.current=true;
       finishEditing(undefined,true);
     }} /></Suspense>}
-    {notice && <div role="status" className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
-    {searchOpen && <Suspense fallback={null}><NoteSearchDialog key={status?.vaultId} open={searchOpen} onOpenChange={setSearchOpen} vaultName={status?.vaultName || "笔记库"} available={searchAvailable} returnFocus={searchReturnFocus} onOpenNote={id => { setSearchOpen(false); void openNote(id); }} /></Suspense>}
+    {notice && <div role="status" style={isMobile && showMobileRecord ? {bottom:"calc(5.5rem + env(safe-area-inset-bottom))"} : undefined} className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
+    {(searchOpen || (isMobile && searchNoteReturn.current && searchNoteReturn.current === status?.vaultId)) && <Suspense fallback={null}><NoteSearchDialog key={status?.vaultId} open={searchOpen} preserveSession={isMobile} onOpenChange={changeSearchOpen} vaultName={status?.vaultName || "笔记库"} available={searchAvailable} returnFocus={searchReturnFocus} onOpenNote={id => { searchNoteReturn.current = isMobile ? status?.vaultId ?? null : null; setSearchOpen(false); void openNote(id); }} /></Suspense>}
 
   </SidebarProvider></TagColorProvider>;
 }

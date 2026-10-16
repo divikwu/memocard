@@ -1,6 +1,7 @@
 import type { Note, NoteProperties, VaultStatus, PropertyChange, TrashItem } from '@memocard/contracts';
 import type { Draft, DraftList } from '../src/bridge';
 import { noteId } from './catalog';
+import { inlineTags, propertyTags } from '../src/inline-tags';
 
 export class PreviewFailure extends Error {
   constructor(public code:string, message:string, public retryable=false) { super(message); }
@@ -15,8 +16,10 @@ export function createPreviewMock(scenario:string) {
   if (scenario === 'image-loading') note.body = '<img src="../assets/loading-preview.png" width="320" height="320" alt="加载预览图片" />\n\n' + note.body;
   if (scenario === 'image-read-error') note.body += '\n\n![无法读取的模拟图片](../assets/missing.png)';
   if (scenario === 'link-error') note.body += '\n\n[[缺失笔记]]';
+  if (scenario === 'tag-tree') { note.body = note.body.replace('#验收', '#验收/移动端/导航'); note.tags = ['验收/移动端/导航']; }
   let notes = [note];
   if (scenario === 'loading') notes = ['产品验收', '界面布局', '加载反馈', '设计笔记', '移动端记录', '桌面端记录'].map((title, index) => ({...note,id:index === 0 ? noteId : `aaaaaaaa-bbbb-4ccc-8ddd-${String(index).padStart(12,'0')}`,title:`模拟笔记 · ${title}`}));
+  const propertyTagValues = new Map(notes.map(item => [item.id, ['验收']]));
   let trash:TrashItem[] = [{trashKey:'preview-trash',id:note.id,title:'模拟已删除笔记',relativePath:note.relativePath,contentHash:note.contentHash,deletedAt:note.updatedAt,preview:'此记录只存在预览内存中。'}];
   const coverage = {complete:!['partial','partial-reading','combined','index-reading','index-writing'].includes(scenario),indexed:2,pending:['partial','partial-reading','combined'].includes(scenario)?3:0,issues:scenario === 'combined'?1:0,indexedAt:'2026-10-12T08:00:00Z'};
   const status:VaultStatus = {connected:!['permission','folder-cancel','unsupported'].includes(scenario),vaultId:'preview-only-vault',vaultName:'模拟笔记库 · 不连接真实文件',phase:'M1',syncState:'local',coverage,capabilities};
@@ -57,7 +60,7 @@ export function createPreviewMock(scenario:string) {
       case 'queryNotes':
         queries++;
         if ((scenario === 'timeout' || scenario === 'refresh-timeout' && queries > 1) && failureActive) return fail('TIMEOUT','操作暂未完成。内容仍保留在编辑器中，请稍后重试。',true);
-        result={notes:['empty','filter-empty'].includes(scenario) || params.query?[]:notes,nextCursor:null,coverage:currentCoverage};break;
+        result={notes:['empty','filter-empty'].includes(scenario) ? [] : params.query ? scenario === 'loading' ? notes.filter(item=>`${item.title ?? ''}\n${item.body}`.toLocaleLowerCase().includes(String(params.query).trim().toLocaleLowerCase())) : [] : notes,nextCursor:null,coverage:currentCoverage};break;
       case 'getNote':
         if (scenario === 'detail-loading') return new Promise<T>(() => {});
         if (scenario === 'detail-missing') return fail('NOTE_NOT_FOUND','找不到此笔记。');
@@ -78,22 +81,40 @@ export function createPreviewMock(scenario:string) {
         if (editorFailures[scenario] && scenario !== 'draft-save-error' && (params.id === noteId || scenario === 'draft-restore-error') && failureActive) return fail(...editorFailures[scenario]);
         if (status.indexing) return fail('INDEXING','正在完成首次校验，内容已保留在本机草稿，校验后会自动保存。',true);
         const saved={...note,...structuredClone(params),contentHash:`preview-save-${++saves}`} as Note;
+        const values = propertyTagValues.get(saved.id) ?? propertyTags(params.inheritedTags);
+        propertyTagValues.set(saved.id, values);
+        saved.tags = [...new Set([...values, ...inlineTags(saved.body)])];
         notes=[saved,...notes.filter(item=>item.id !== saved.id)];result=saved;break;
       }
       case 'getNoteProperties':
         if(scenario === 'property-loading') return new Promise<T>(() => {});
         if(scenario === 'property-read-error' && failureActive)return fail('INVALID_PROPERTY','属性定义配置无法读取，请检查 .memocard/property-definitions.json。');
-        result={...properties,contentHash:notes.find(item=>item.id === params.id)?.contentHash ?? properties.contentHash};break;
+        result={...properties,tagProperty:{...properties.tagProperty,value:propertyTagValues.get(String(params.id)) ?? []},contentHash:notes.find(item=>item.id === params.id)?.contentHash ?? properties.contentHash};break;
       case 'getPropertyLabels':result={labels:{},contentHash:'preview-labels'};break;
       case 'setPropertyLabels':result={labels:{[String(params.key)]:String(params.label)},contentHash:'preview-labels-updated'};break;
       case 'updateNoteProperty': {
         if(scenario === 'lossy-conversion' && params.definition)return fail('LOSSY_PROPERTY_CONVERSION','「notes/模拟笔记.md」的「摘要」无法无损转换。笔记库未修改，请先保留或调整原值。');
         if(['property-save-error','tag-failure'].includes(scenario))return fail('IO_ERROR','文件操作未完成，请检查目录权限和文件可用性。',true);
         const change=params as PropertyChange;
+        if (change.name === 'tags') {
+          const current = notes.find(item => item.id === params.id) ?? note;
+          const values = propertyTags(change.value);
+          propertyTagValues.set(current.id, values);
+          const saved = {...current,tags:[...new Set([...values,...inlineTags(current.body)])],contentHash:`preview-save-${++saves}`};
+          notes = notes.map(item => item.id === saved.id ? saved : item);
+          result = {...saved,propertyData:{...properties,contentHash:saved.contentHash,tagProperty:{...properties.tagProperty,value:values}}};break;
+        }
         properties.properties=change.remove?properties.properties.filter(item=>item.name !== change.name):properties.properties.map(item=>item.name === change.name?{...item,...change}:item);
         result={...note,contentHash:`preview-save-${++saves}`,propertyData:properties};break;
       }
-      case 'listTags':result={tags:[{name:'验收',count:1},{name:'设计',count:1}]};break;
+      case 'listTags': {
+        const counts = new Map<string, number>();
+        for (const item of notes) if (!item.deletedAt) {
+          const names = new Set(item.tags.flatMap(tag => tag.split('/').map((_, index, parts) => parts.slice(0, index + 1).join('/'))));
+          for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
+        }
+        result={tags:[...counts].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([name,count]) => ({name,count}))};break;
+      }
       case 'listFolders':result={folders:['notes']};break;
       case 'getTrash':result={notes:trash,issues:[]};break;
       case 'getTrashedNote':result={note,trashKey:'preview-trash'};break;

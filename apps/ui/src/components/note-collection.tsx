@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { ArrowDown, Clock3, LayoutGrid, List, LoaderCircle, Pin, Plus, Search, X } from "lucide-react";
 import type { Note } from "@memocard/contracts";
 import { NotePreview } from "../NotePreview";
@@ -9,7 +9,8 @@ import { Input } from "./ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { cn } from "@/lib/utils";
 
-import { collectionClasses, layoutKey, savedLayout, type Layout } from "./note-collection-layout";
+import { collectionClasses, layoutKey } from "./note-collection-layout";
+import { useCollectionLayout } from "@/hooks/use-collection-layout";
 import { LoadingCollectionItems } from "./loading-states";
 
 type NoteCollectionProps = {
@@ -37,13 +38,9 @@ type NoteCollectionProps = {
 
 export function NoteCollection({ home, notes, loading = false, searching = false, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
   const storageKey = home ? "memocard:home-layout" : layoutKey;
-  const [layout, setLayout] = useState<Layout>(() => savedLayout(storageKey, home ? "list" : "cards"));
+  const [layout, changeLayout] = useCollectionLayout(storageKey, home ? "list" : "cards");
   const cards = layout === "cards";
   const { gridClass, cardClass } = collectionClasses(cards);
-  function changeLayout(next: Layout) {
-    setLayout(next);
-    try { localStorage.setItem(storageKey, next); } catch { /* Keep switching available when browser storage is unavailable. */ }
-  }
   const collection = <>
     {loading && <span role="status" aria-label={searching ? "正在搜索笔记" : "正在读取笔记库"} className="sr-only">{searching ? "正在搜索笔记…" : "正在读取笔记库…"}</span>}
     <div className="space-y-4" aria-busy={loading}>{notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={gridClass}>
@@ -71,13 +68,13 @@ export function NoteCollection({ home, notes, loading = false, searching = false
     {hasMore && <div className="flex justify-center pt-3"><Button variant="outline" size="sm" onClick={onLoadMore} disabled={loadMoreDisabled}>{paging ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <ArrowDown className="size-4" />}加载更多</Button></div>}
   </div></>;
   if (home) return <Tabs value={home.tab} onValueChange={value => { if (value === "recent" || value === "pinned") home.onTabChange(value); }} className="gap-4">
-    <div className="flex items-center justify-between gap-3">
+    <div className="home-toolbar flex items-center justify-between gap-3">
       <TabsList variant="line" aria-label="主页内容" className="gap-2">
         <TabsTrigger value="recent" className="px-1"><Clock3 aria-hidden="true" />最近更新</TabsTrigger>
         <TabsTrigger value="pinned"><Pin aria-hidden="true" />已固定<span className="text-xs tabular-nums text-muted-foreground">{home.pinnedCount}</span></TabsTrigger>
       </TabsList>
-      <div role="group" aria-label="主页布局" className="relative flex shrink-0 rounded-lg bg-muted p-[3px]">
-        {loading && notes.length > 0 && <LoaderCircle aria-hidden="true" style={{left:-24}} className="absolute top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground motion-reduce:animate-none" />}
+      <div role="group" aria-label="主页布局" className="collection-layout-switch relative flex shrink-0 rounded-lg bg-muted p-[3px]">
+        {loading && notes.length > 0 && <LoaderCircle aria-hidden="true" className="home-layout-loading absolute -left-6 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground motion-reduce:animate-none" />}
         <Button variant="ghost" size="icon-sm" aria-label="卡片布局" title="卡片布局" aria-pressed={cards} className="text-foreground/60 hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground" onClick={() => changeLayout("cards")}><LayoutGrid /></Button>
         <Button variant="ghost" size="icon-sm" aria-label="列表布局" title="列表布局" aria-pressed={!cards} className="text-foreground/60 hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground" onClick={() => changeLayout("list")}><List /></Button>
       </div>
@@ -85,18 +82,18 @@ export function NoteCollection({ home, notes, loading = false, searching = false
     <TabsContent value={home.tab}>{collection}</TabsContent>
   </Tabs>;
   return <Tabs value={layout} onValueChange={value => { if (value === "cards" || value === "list") changeLayout(value); }} className="@container gap-4">
-    <div className="grid grid-cols-1 items-center gap-3 text-xs text-muted-foreground @xl:grid-cols-[minmax(0,1fr)_auto]">
-      <div className="relative min-w-0 @xl:w-60">
+    <div className="collection-toolbar grid grid-cols-1 items-center gap-3 text-xs text-muted-foreground @xl:grid-cols-[minmax(0,1fr)_auto]">
+      <div className="collection-toolbar-search relative min-w-0 @xl:w-60">
         {loading ? <LoaderCircle aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 animate-spin motion-reduce:animate-none" /> : <Search aria-hidden="true" className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2" />}
         <Input value={query} onChange={event => onQueryChange(event.target.value)} placeholder={searchPlaceholder} aria-label="搜索当前视图笔记" disabled={searchDisabled} className="h-8 bg-background pl-8 pr-8 text-foreground" />
         {query && <Button type="button" variant="ghost" size="icon-xs" className="absolute right-1 top-1/2 -translate-y-1/2" onClick={() => onQueryChange("")} disabled={searchDisabled} aria-label="清空当前搜索"><X className="size-3" /></Button>}
       </div>
-      <div className="ml-auto flex items-center gap-3">
-        <TabsList aria-label="笔记布局" className="group-data-[orientation=horizontal]/tabs:h-auto">
+      <div className="collection-toolbar-actions ml-auto flex items-center gap-3">
+        <TabsList aria-label="笔记布局" className="collection-layout-switch group-data-[orientation=horizontal]/tabs:h-auto">
           <TabsTrigger value="cards" aria-label="卡片布局" title="卡片布局" className="size-8 flex-none p-0 hover:bg-hover"><LayoutGrid aria-hidden="true" className="size-4" /></TabsTrigger>
           <TabsTrigger value="list" aria-label="列表布局" title="列表布局" className="size-8 flex-none p-0 hover:bg-hover"><List aria-hidden="true" className="size-4" /></TabsTrigger>
         </TabsList>
-        <Button type="button" variant="outline" size="sm" className="text-foreground" disabled={!canCreate} onClick={onNewNote}><Plus aria-hidden="true" className="size-4" />新建</Button>
+        <Button type="button" variant="outline" size="sm" className="collection-toolbar-create text-foreground" disabled={!canCreate} onClick={onNewNote}><Plus aria-hidden="true" className="size-4" />新建</Button>
       </div>
     </div>
     <TabsContent value={layout} className="space-y-4">{collection}</TabsContent>

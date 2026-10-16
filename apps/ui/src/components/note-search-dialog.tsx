@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState, type RefObject } from "react";
-import { ArrowDown, ArrowUp, ArrowUpRight, CornerDownLeft, FileText, LoaderCircle, Search, X } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState, type RefObject } from "react";
+import { ArrowDown, ArrowLeft, ArrowUp, ArrowUpRight, CornerDownLeft, FileText, LoaderCircle, Search, X } from "lucide-react";
 import type { NotePage } from "@memocard/contracts";
 import { request, errorMessage } from "../bridge";
 import { Markdown } from "../markdown";
@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "../hooks/use-mobile";
 import "./note-search-dialog.css";
 
 function dateGroup(value: string) {
@@ -29,11 +30,26 @@ type Props = {
   available: boolean;
   returnFocus: RefObject<HTMLElement | null>;
   onOpenNote: (id: string) => void;
+  preserveSession?: boolean;
 };
 
-export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote }: Props) {
+export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession=false }: Props) {
+  const isMobile = useIsMobile();
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  const resultScroll = useRef(0);
+  const attachList = useCallback((node:HTMLDivElement | null) => {
+    list.current = node;
+    if (node && preserveSession) node.scrollTop = resultScroll.current;
+  },[preserveSession]);
+  const [mobileViewport,setMobileViewport] = useState<{top:number; height:number} | null>(null);
+  useEffect(()=>{
+    const viewport=window.visualViewport;
+    if (!isMobile || !open || !viewport) return;
+    const place=()=>setMobileViewport({top:viewport.offsetTop,height:viewport.height});
+    place();viewport.addEventListener('resize',place);viewport.addEventListener('scroll',place);
+    return ()=>{viewport.removeEventListener('resize',place);viewport.removeEventListener('scroll',place);};
+  },[isMobile,open]);
   const listId = useId();
   const [query, setQuery] = useState("");
   const [keyboardFocus, setKeyboardFocus] = useState(false);
@@ -47,6 +63,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   const epoch = useRef(0);
   const pagingLock = useRef(false);
   const searchQuery = query.trim();
+  const searchActive = open || preserveSession;
   const notes = page?.notes ?? [];
   const active = notes[selected];
   const groups = new Map<string, { note: NotePage["notes"][number]; index: number }[]>();
@@ -60,8 +77,10 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   useEffect(() => {
     const current = ++epoch.current;
     setPage(null); setSelected(0); setError(""); setPreviewError(""); setLoading(true); setPaging(false);
+    resultScroll.current = 0;
+    if (list.current) list.current.scrollTop = 0;
     pagingLock.current = false;
-    if (!open || !available) { setLoading(false); return; }
+    if (!searchActive || !available) { setLoading(false); return; }
     const timer = setTimeout(() => {
       void request<NotePage>("queryNotes", { query: searchQuery, tags: [], sort: "updatedAt", limit: 30 }).then(result => {
         if (epoch.current === current) setPage(result);
@@ -70,7 +89,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
       }).finally(() => { if (epoch.current === current) setLoading(false); });
     }, searchQuery ? 200 : 0);
     return () => { clearTimeout(timer); epoch.current = current + 1; };
-  }, [open, available, searchQuery, retry]);
+  }, [searchActive, available, searchQuery, retry]);
 
   useEffect(() => {
     list.current?.querySelector<HTMLElement>(`[data-result-index="${selected}"]`)?.scrollIntoView?.({ block: "nearest" });
@@ -99,11 +118,11 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   }
 
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent initialFocus={input} finalFocus={() => returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className="note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border-border p-0">
+    <DialogContent initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className="note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border-border p-0">
       <DialogTitle className="sr-only">搜索笔记</DialogTitle>
-      <DialogDescription className="sr-only">搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。</DialogDescription>
+      <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
       <div className="note-search-field flex shrink-0 items-center gap-3 border-b px-4 py-2">
-        <Search aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+        {isMobile ? <Button type="button" variant="ghost" size="icon-sm" aria-label="退出搜索" onClick={()=>onOpenChange(false)}><ArrowLeft aria-hidden="true" /></Button> : <Search aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />}
         <Input ref={input} role="combobox" name="note-search" autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); moveSelection(event.key === "ArrowDown" ? 1 : -1); }
@@ -113,7 +132,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
       </div>
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
-          <div ref={list} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
+          <div ref={attachList} onScroll={event=>{resultScroll.current=event.currentTarget.scrollTop;}} className="note-search-results min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
             <p role="status" className={loading || !notes.length ? "note-search-status text-center text-sm text-muted-foreground" : "sr-only"}>
               {!available ? "请先连接笔记库，再搜索内容。" : loading ? <><LoaderCircle aria-hidden="true" className="mx-auto mb-3 size-5 animate-spin motion-reduce:animate-none" />正在搜索笔记…</> : error && !notes.length ? "搜索未完成" : notes.length ? `已显示 ${notes.length} 条${page?.nextCursor ? "，还有更多结果" : "结果"}` : searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记"}
             </p>
@@ -147,11 +166,11 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
           </div> : <div className="note-search-empty text-center text-sm text-muted-foreground"><FileText aria-hidden="true" className="mx-auto mb-3 size-7 opacity-50" />选择笔记以预览</div>}
         </aside>
       </div>
-      <div className="note-search-footer flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3 text-xs text-muted-foreground">
+      {!isMobile && <div className="note-search-footer flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3 text-xs text-muted-foreground">
         <span className="note-search-keyboard-hints flex items-center gap-3"><span className="flex items-center gap-1"><ArrowUp aria-hidden="true" className="size-3" /><ArrowDown aria-hidden="true" className="size-3" />选择</span><span className="flex items-center gap-1"><CornerDownLeft aria-hidden="true" className="size-3" />打开</span></span>
         <span className="note-search-escape ml-auto shrink-0">Esc 关闭</span>
         <Button variant="ghost" size="sm" className="note-search-dismiss ml-auto" aria-label="关闭搜索" onClick={() => onOpenChange(false)}>取消</Button>
-      </div>
+      </div>}
     </DialogContent>
   </Dialog>;
 }

@@ -61,3 +61,26 @@ describe('isolated state preview',()=>{
     for(const operation of ['openExternal','openWeb','deleteNote','importAttachment'])await expect(mock.request(operation)).rejects.toMatchObject({code:'PREVIEW_ONLY'});
   });
 });
+
+it('updates tag ancestors and counts after saving and replacing an inline child tag', async () => {
+  const mock = createPreviewMock('loading');
+  const initial = await mock.request<Note>('getNote', {id:noteId});
+  await mock.request('saveNote', {...initial,body:'记录 #验收/测绘 #验收',tags:['验收/测绘','验收']});
+  const list = await mock.request<{tags:{name:string;count:number}[]}>('listTags');
+  expect(list.tags.find(tag => tag.name === '验收/测绘')).toEqual({name:'验收/测绘',count:1});
+  expect(list.tags.find(tag => tag.name === '验收')?.count).toBe(6);
+  await mock.request('saveNote', {...initial,body:'记录 #验收/设计',tags:['验收/设计']});
+  const updated = await mock.request<{tags:{name:string;count:number}[]}>('listTags');
+  expect(updated.tags.some(tag => tag.name === '验收/测绘')).toBe(false);
+  expect(updated.tags).toContainEqual({name:'验收/设计',count:1});
+});
+
+it('indexes property child tags and preserves them through a later body save', async () => {
+  const mock = createPreviewMock('loading');
+  const initial = await mock.request<Note>('getNote', {id:noteId});
+  const saved = await mock.request<Note>('updateNoteProperty', {id:noteId,baseHash:initial.contentHash,name:'tags',type:'list',value:['验收/测绘']});
+  expect(saved.body).toBe(initial.body);
+  expect((await mock.request<{tags:{name:string;count:number}[]}>('listTags')).tags).toContainEqual({name:'验收/测绘',count:1});
+  await mock.request('saveNote', {...saved,body:'修改正文 #验收',tags:['验收']});
+  expect((await mock.request<{tags:{name:string;count:number}[]}>('listTags')).tags).toContainEqual({name:'验收/测绘',count:1});
+});
