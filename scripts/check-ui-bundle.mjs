@@ -9,7 +9,10 @@ if (!assets.length) throw new Error("UI build does not reference an initial JS o
 
 // Utilities are emitted once in the entry CSS so lazy routes cannot override responsive rules.
 // Reserve 4 KiB gzip for the shared layout-matched loading shells.
-const limits = { js: 600 * 1024, css: 92 * 1024, gzip: 186 * 1024, fonts: 1024 * 1024 };
+// Reserve 1 KiB gzip for the mobile capture sheet and its shared styles.
+// Shared backdrop blur utilities add less than 2 KiB CSS.
+// Mobile home and collection layout controls share full-width responsive styles.
+const limits = { js: 600 * 1024, css: 95 * 1024, gzip: 188 * 1024, fonts: 1024 * 1024 };
 let compressed = 0;
 for (const asset of assets) {
   const bytes = await readFile(resolve(root, asset));
@@ -24,8 +27,14 @@ if (compressed > limits.gzip) throw new Error(`Initial JS and CSS gzip size is $
 const manifest = JSON.parse(await readFile(resolve(root, ".vite/manifest.json"), "utf8"));
 for (const route of [
   { name: "home with quick capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1300 * 1024, gzip: 400 * 1024 },
-  { name: "list", entries: ["src/components/note-collection.tsx"], raw: 1254 * 1024, gzip: 380 * 1024 },
-  { name: "detail", entries: ["src/Editor.tsx"], raw: 1750 * 1024, gzip: 524 * 1024 },
+  { name: "mobile home with title layout menu", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1303 * 1024, gzip: 400 * 1024 },
+  { name: "mobile home with swipe capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx", "src/components/ui/sheet-swipe.tsx"], raw: 1306 * 1024, gzip: 402 * 1024 },
+  // Reserve 9 KiB for mobile navigation, shared saved layout state, optional swipe loading, and overlays.
+  { name: "list", entries: ["src/components/note-collection.tsx"], raw: 1263 * 1024, gzip: 383 * 1024 },
+  { name: "mobile list with quick capture", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx"], raw: 1300 * 1024, gzip: 400 * 1024 },
+  { name: "mobile tag with actions", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1300 * 1024, gzip: 400 * 1024 },
+  // Shared capture sheet styles and optional swipe loading add less than 2 KiB gzip to the detail entry.
+  { name: "detail", entries: ["src/Editor.tsx"], raw: 1750 * 1024, gzip: 527 * 1024 },
   { name: "detail with preserved Markdown", entries: ["src/Editor.tsx", "src/markdown.tsx"], raw: 2100 * 1024, gzip: 630 * 1024 },
 ]) {
   const visited = new Set();

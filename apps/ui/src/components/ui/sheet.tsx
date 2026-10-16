@@ -4,6 +4,7 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 import { XIcon } from "lucide-react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
+const SheetSwipe = React.lazy(() => import("./sheet-swipe"));
 
 function Sheet({ ...props }: (React.ComponentProps<typeof SheetPrimitive.Root> & { className?: string })) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
@@ -36,7 +37,7 @@ function SheetOverlay({
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
+        "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
         className
       )}
       style={state => ({ animationFillMode: "both", ...(typeof style === "function" ? style(state) : style) })}
@@ -51,14 +52,20 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  forceBackdrop = false,
+  swipeToClose = false,
+  swipeDisabled = false,
   ...props
 }: (React.ComponentProps<typeof SheetPrimitive.Popup> & { className?: string }) & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
+  forceBackdrop?: boolean
+  swipeToClose?: boolean
+  swipeDisabled?: boolean
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay forceRender={forceBackdrop} />
       <SheetPrimitive.Popup
         data-slot="sheet-content"
         className={cn(
@@ -77,6 +84,7 @@ function SheetContent({
         {...props}
       >
         {children}
+        {swipeToClose && side === "bottom" && <React.Suspense fallback={null}><SheetSwipe disabled={swipeDisabled} /></React.Suspense>}
         {showCloseButton && (
           <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[open]:bg-secondary">
             <XIcon className="size-4" />

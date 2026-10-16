@@ -62,3 +62,8 @@
   .note-search-dismiss { display: inline-flex; min-height: 44px; }
   .note-search-keyboard-hints, .note-search-escape { display: none; }
 }
+
+@media (max-width: 767px) {
+  .note-search-dialog { inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; translate: none; transform: none; border: 0; border-radius: 0; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); animation: none; }
+  .note-search-field { gap: 8px; padding: 8px 12px; }
+}

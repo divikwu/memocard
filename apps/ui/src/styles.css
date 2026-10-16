@@ -485,3 +485,13 @@
 
 .loading-capture-textarea { min-height: 112px; }
 @media (max-width: 700px) { .loading-capture-textarea { min-height: 104px; } }
+
+main:has(input:focus, textarea:focus, [contenteditable="true"]:focus) > .mobile-record-bar { display: none; }
+.collection-layout-placeholder { width: 70px; }
+@media (max-width: 767px) {
+  ul[data-layout="list"] [data-slot="card-content"] > button { min-height: 44px; justify-content: center; }
+  .collection-toolbar { display: none; }
+  .home-toolbar { flex-direction: column; align-items: stretch; }
+  .home-toolbar > :first-child { width: 100%; }
+  .home-toolbar > :first-child > :is(button, span) { flex: 1; min-width: 0; justify-content: center; padding-inline: 8px; }
+}

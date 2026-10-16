@@ -5,6 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import type { Note, VaultStatus } from "@memocard/contracts";
 import { App } from "./App";
 import { readEditorText } from "./editor-test-utils";
+import { swipeSheet } from "./components/ui/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("./bridge", () => ({
@@ -329,6 +330,272 @@ describe("sidebar workspace actions", () => {
   });
 });
 
+describe('mobile page navigation',()=>{
+  beforeEach(()=>{
+    vi.stubGlobal('innerWidth',390);
+    window.matchMedia=vi.fn().mockImplementation((query:string)=>({matches:query.includes('767px'),media:query,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
+  });
+  afterEach(()=>{
+    localStorage.removeItem('memocard:note-layout');
+    localStorage.removeItem('memocard:quick-capture:v1:test-vault');
+  });
+
+  it('keeps mobile search in the sidebar without adding a header search button',async()=>{
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    expect(screen.queryByRole('button',{name:'搜索笔记'})).toBeNull();
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    const sheet=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    await user.click(within(sheet).getByRole('button',{name:'搜索'}));
+    const input=await screen.findByRole('combobox',{name:'搜索笔记'});
+    await waitFor(()=>expect(document.activeElement).toBe(input));
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+  });
+
+  it('omits the mobile close button and dismisses navigation with the backdrop or Escape',async()=>{
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    const trigger=screen.getByRole('button',{name:'打开导航'});
+    await user.click(trigger);
+    const navigation=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    expect(within(navigation).queryByRole('button',{name:'关闭导航'})).toBeNull();
+    await user.click(document.querySelector('[data-slot="sheet-overlay"]') as HTMLElement);
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await user.click(trigger);
+    await screen.findByRole('dialog',{name:'记忆卡导航'});
+    await user.keyboard('{Escape}');
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('offers tag actions only from the selected mobile tag title',async()=>{
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    expect(screen.queryByRole('button',{name:'标签操作 生活'})).toBeNull();
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await screen.findByRole('button',{name:'笔记库：侧栏测试库'});
+    const navigation=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    expect(within(navigation).queryByRole('button',{name:'标签操作 生活'})).toBeNull();
+    await user.click(await within(navigation).findByRole('button',{name:'生活'}));
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    const title=await screen.findByRole('button',{name:'标签操作 生活'});
+    await user.click(title);
+    const menu=await screen.findByRole('menu',{name:'标签操作 生活'});
+    await user.keyboard('{Escape}');
+    await waitFor(()=>expect(menu.isConnected).toBe(false));
+    await waitFor(()=>expect(document.activeElement).toBe(title));
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(screen.getByRole('button',{name:'展开或收起快捷筛选'}));
+    await user.click(screen.getByRole('button',{name:'无标签'}));
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    expect(screen.queryByRole('button',{name:'标签操作 生活'})).toBeNull();
+  });
+
+  it('shares the title layout choice across all notes, tags and quick filters and remembers it after remount',async()=>{
+    const user=userEvent.setup();
+    const app=render(<App />);
+    await screen.findByText(note.body);
+    await user.click(await screen.findByRole('button',{name:'视图选项 所有笔记'}));
+    await user.click(await screen.findByRole('menuitemradio',{name:'列表'}));
+    await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('list'));
+    expect(localStorage.getItem('memocard:note-layout')).toBe('list');
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(await screen.findByRole('button',{name:'生活'}));
+    await user.click(await screen.findByRole('button',{name:'标签操作 生活'}));
+    expect((await screen.findByRole('menuitemradio',{name:'列表'})).getAttribute('aria-checked')).toBe('true');
+    await user.click(screen.getByRole('menuitemradio',{name:'卡片'}));
+    await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('cards'));
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(screen.getByRole('button',{name:'展开或收起快捷筛选'}));
+    await user.click(screen.getByRole('button',{name:'有图片'}));
+    await user.click(await screen.findByRole('button',{name:'视图选项 有图片'}));
+    expect((await screen.findByRole('menuitemradio',{name:'卡片'})).getAttribute('aria-checked')).toBe('true');
+    await user.click(await screen.findByRole('menuitemradio',{name:'列表'}));
+    app.unmount();
+    render(<App />);
+    await screen.findByRole('button',{name:'打开 新内容'});
+    await user.click(await screen.findByRole('button',{name:'视图选项 所有笔记'}));
+    expect((await screen.findByRole('menuitemradio',{name:'列表'})).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('keeps the mobile home title layout independent from note views',async()=>{
+    window.history.replaceState(null,'','#/home');
+    localStorage.setItem('memocard:home-layout','cards');
+    localStorage.setItem('memocard:note-layout','cards');
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    await user.click(await screen.findByRole('button',{name:'视图选项 主页'}));
+    await user.click(await screen.findByRole('menuitemradio',{name:'列表'}));
+    await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('list'));
+    expect(localStorage.getItem('memocard:home-layout')).toBe('list');
+    expect(localStorage.getItem('memocard:note-layout')).toBe('cards');
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(await screen.findByRole('button',{name:'所有笔记'}));
+    await user.click(await screen.findByRole('button',{name:'视图选项 所有笔记'}));
+    expect((await screen.findByRole('menuitemradio',{name:'卡片'})).getAttribute('aria-checked')).toBe('true');
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(await screen.findByRole('button',{name:'主页'}));
+    await user.click(await screen.findByRole('button',{name:'视图选项 主页'}));
+    expect((await screen.findByRole('menuitemradio',{name:'列表'})).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('dismisses the mobile vault sheet back to the open navigation and restores vault trigger focus',async()=>{
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    const navigation=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    const trigger=within(navigation).getByRole('button',{name:'笔记库：侧栏测试库'});
+    await user.click(trigger);
+    const sheet=await screen.findByRole('dialog',{name:'笔记库'});
+    expect(navigation.isConnected).toBe(true);
+    expect(document.querySelectorAll('[data-slot="sheet-overlay"]')).toHaveLength(2);
+    expect(within(sheet).getByRole('button',{name:'回收站'})).toHaveProperty('disabled',true);
+    expect(within(sheet).getByRole('button',{name:'帮助'})).toHaveProperty('disabled',true);
+    expect(within(sheet).getByRole('button',{name:'关闭笔记库菜单'})).toBeTruthy();
+    await waitFor(()=>expect(sheet.hasAttribute('data-swipe-ready')).toBe(true));
+    swipeSheet(within(sheet).getByRole('heading',{name:'笔记库'}),160);
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记库'})).toBeNull());
+    expect(screen.getByRole('dialog',{name:'记忆卡导航'})).toBe(navigation);
+    expect(document.activeElement).toBe(trigger);
+    await user.click(trigger);
+    await screen.findByRole('dialog',{name:'笔记库'});
+    await user.keyboard('{Escape}');
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记库'})).toBeNull());
+    expect(screen.getByRole('dialog',{name:'记忆卡导航'})).toBe(navigation);
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it.each([['打开已有笔记库',false],['创建新笔记库',true]] as const)('keeps mobile navigation after cancelling %s',async(label,create)=>{
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(within(await screen.findByRole('dialog',{name:'记忆卡导航'})).getByRole('button',{name:'笔记库：侧栏测试库'}));
+    await user.click(within(await screen.findByRole('dialog',{name:'笔记库'})).getByRole('button',{name:label}));
+    await waitFor(()=>expect(bridge.request).toHaveBeenCalledWith('selectVault',{create}));
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记库'})).toBeNull());
+    expect(screen.getByRole('dialog',{name:'记忆卡导航'})).toBeTruthy();
+    expect(screen.getByRole('button',{name:'笔记库：侧栏测试库'})).toBeTruthy();
+  });
+
+  it('closes both mobile sheets when entering vault settings',async()=>{
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(within(await screen.findByRole('dialog',{name:'记忆卡导航'})).getByRole('button',{name:'笔记库：侧栏测试库'}));
+    await user.click(within(await screen.findByRole('dialog',{name:'笔记库'})).getByRole('button',{name:'笔记库设置'}));
+    await screen.findByRole('heading',{name:'设置',level:1});
+    await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
+    expect(window.location.hash).toBe('#/settings');
+  });
+
+  it('expands quick capture and restores entry focus without changing list rows or opening the editor',async()=>{
+    localStorage.setItem('memocard:note-layout','list');
+    const user=userEvent.setup();render(<App />);
+    await waitFor(()=>expect((screen.getByRole('button',{name:'打开快速记录'}) as HTMLButtonElement).disabled).toBe(false));
+    const entry=screen.getByRole('button',{name:'打开快速记录'});
+    const list=await screen.findByRole('list',{name:'笔记列表'});
+    expect(within(list).queryByText(note.body)).toBeNull();
+    expect(list.getAttribute('data-layout')).toBe('list');
+    await user.click(entry);
+    const capture=await screen.findByRole('textbox',{name:'快速输入内容'});
+    await waitFor(()=>expect(document.activeElement).toBe(capture));
+    expect(screen.queryByRole('textbox',{name:'页面标题'})).toBeNull();
+    await user.keyboard('{Escape}');
+    await waitFor(()=>expect(document.activeElement).toBe(entry));
+    expect(bridge.request.mock.calls.some(([operation])=>operation==='saveNote')).toBe(false);
+    expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('list');
+    expect(screen.queryByText(note.body)).toBeNull();
+  });
+
+  it('resumes mobile search after a note visit and restores the original page when exiting',async()=>{
+    const original=bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation,params)=>operation==='getNote' ? Promise.resolve(note) : original(operation,params));
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    const bar=screen.getByRole('contentinfo',{name:'快捷记录'});
+    const search=within(bar).getByRole('button',{name:'搜索全部笔记'});
+    const page=screen.getByRole('main').querySelector<HTMLElement>('.overflow-y-auto')!;
+    page.scrollTop=420;
+    await waitFor(()=>expect((search as HTMLButtonElement).disabled).toBe(false));
+    await user.click(search);
+    const input=await screen.findByRole('combobox',{name:'搜索笔记'});
+    await waitFor(()=>expect(document.activeElement).toBe(input));
+    await user.keyboard('{Escape}');
+    await waitFor(()=>expect(document.activeElement).toBe(search));
+    await user.click(search);
+    await screen.findByRole('option',{name:'新内容'});
+    const query=screen.getByRole('combobox',{name:'搜索笔记'});
+    await waitFor(()=>expect(document.activeElement).toBe(query));
+    await user.type(query,'散步');
+    await waitFor(()=>expect(bridge.request).toHaveBeenCalledWith('queryNotes',{query:'散步',tags:[],sort:'updatedAt',limit:30}));
+    await screen.findByRole('option',{name:'新内容'});
+    const results=screen.getByRole('listbox',{name:'搜索结果'}).parentElement!;
+    fireEvent.scroll(results,{target:{scrollTop:180}});
+    const reads=bridge.request.mock.calls.filter(([operation,params])=>operation==='queryNotes' && params?.query==='散步').length;
+    await user.keyboard('{Enter}');
+    await screen.findByRole('textbox',{name:'页面标题'});
+    expect(screen.queryByRole('button',{name:'搜索全部笔记'})).toBeNull();
+    await user.click(screen.getByRole('button',{name:'返回搜索结果'}));
+    const restored=await screen.findByRole('combobox',{name:'搜索笔记'});
+    expect(restored).toHaveProperty('value','散步');
+    expect(screen.getByRole('listbox',{name:'搜索结果'}).parentElement!.scrollTop).toBe(180);
+    expect(bridge.request.mock.calls.filter(([operation,params])=>operation==='queryNotes' && params?.query==='散步')).toHaveLength(reads);
+    await user.click(screen.getByRole('button',{name:'退出搜索'}));
+    await waitFor(()=>expect(document.activeElement).toBe(search));
+    expect(page.scrollTop).toBe(420);
+    await user.click(search);
+    expect(await screen.findByRole('combobox',{name:'搜索笔记'})).toHaveProperty('value','');
+    expect(bridge.request.mock.calls.some(([operation])=>operation==='saveNote')).toBe(false);
+  });
+
+  it('shares one protected quick capture between mobile home and notes',async()=>{
+    window.history.replaceState(null,'','#/home');
+    const user=userEvent.setup();render(<App />);
+    await waitFor(()=>expect((screen.getByRole('button',{name:'打开快速记录'}) as HTMLButtonElement).disabled).toBe(false));
+    const entry=screen.getByRole('button',{name:'打开快速记录'});
+    expect(screen.queryByRole('textbox',{name:'快速输入内容'})).toBeNull();
+    await user.click(entry);
+    const capture=await screen.findByRole('textbox',{name:'快速输入内容'});
+    await user.type(capture,'尚未提交的首页想法');
+    await user.click(screen.getByRole('button',{name:'收起快速记录'}));
+    await waitFor(()=>expect(document.activeElement).toBe(entry));
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(within(await screen.findByRole('dialog',{name:'记忆卡导航'})).getByRole('button',{name:/^所有笔记$/}));
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await user.click(screen.getByRole('button',{name:'打开快速记录'}));
+    expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','尚未提交的首页想法');
+    expect(bridge.request.mock.calls.some(([operation])=>operation==='saveNote')).toBe(false);
+  });
+
+  it('hides the bottom entry in settings and disables it when note creation is unavailable',async()=>{
+    const original=bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation,params)=>operation==='getStatus' ? Promise.resolve({...status,capabilities:status.capabilities.filter(capability=>capability!=='saveNote')}) : original(operation,params));
+    const user=userEvent.setup();render(<App />);
+    await screen.findByText(note.body);
+    const entry=screen.getByRole('button',{name:'打开快速记录'});
+    expect((entry as HTMLButtonElement).disabled).toBe(true);
+    await user.click(entry);
+    expect(screen.queryByRole('region',{name:'新建笔记'})).toBeNull();
+    await user.click(screen.getByRole('button',{name:'页面操作'}));
+    await user.click(await screen.findByRole('menuitem',{name:'设置'}));
+    await screen.findByRole('heading',{name:'设置',level:1});
+    expect(screen.queryByRole('button',{name:'打开快速记录'})).toBeNull();
+    expect(screen.queryByRole('button',{name:'搜索全部笔记'})).toBeNull();
+  });
+});
+
+it('keeps the desktop header and creation entry unchanged',async()=>{
+  render(<App />);
+  await screen.findByText(note.body);
+  expect(screen.queryByRole('button',{name:'搜索笔记'})).toBeNull();
+  expect(screen.queryByRole('button',{name:'打开快速记录'})).toBeNull();
+  expect(screen.queryByRole('button',{name:'搜索全部笔记'})).toBeNull();
+  expect(screen.queryByRole('button',{name:'关闭导航'})).toBeNull();
+  expect(screen.getByRole('button',{name:'搜索'})).toBeTruthy();
+  expect(screen.getByRole('button',{name:'新建'})).toBeTruthy();
+});
+
 it("creates in the default folder with the selected nested tag and keeps tag filtering global", async () => {
   const original = bridge.request.getMockImplementation()!;
   bridge.request.mockImplementation((operation: string, ...args: unknown[]) => {
@@ -363,6 +630,37 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   });
 });
 
+
+it("preserves quick capture through both responsive layouts", async () => {
+  localStorage.clear();
+  window.history.replaceState(null, "", "#/home");
+  let mobile = false;
+  const listeners = new Set<() => void>();
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    get matches() { return query.includes("767px") && mobile; },
+    media: query,
+    addEventListener: (_: string, listener: () => void) => { if (query.includes("767px")) listeners.add(listener); },
+    removeEventListener: (_: string, listener: () => void) => listeners.delete(listener),
+  }));
+  const user = userEvent.setup();
+  render(<App />);
+  const desktop = await screen.findByRole("textbox", { name: "快速输入内容" });
+  await user.type(desktop, "跨尺寸草稿");
+  act(() => { mobile = true; listeners.forEach(listener => listener()); });
+  await user.click(await screen.findByRole("button", { name: "打开快速记录" }));
+  const phone = await screen.findByRole("textbox", { name: "快速输入内容" });
+  expect(phone).toHaveProperty("value", "跨尺寸草稿");
+  await user.type(phone, "补充");
+  act(() => { mobile = false; listeners.forEach(listener => listener()); });
+  expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("value", "跨尺寸草稿补充");
+  expect(bridge.request.mock.calls.some(([operation]) => operation === "saveNote")).toBe(false);
+  await user.click(screen.getByRole("button", { name: "记录" }));
+  await waitFor(() => expect(screen.getByRole("textbox", { name: "快速输入内容" })).toHaveProperty("value", ""));
+  expect(localStorage.getItem("memocard:quick-capture:v1:test-vault")).toBeNull();
+  act(() => { mobile = true; listeners.forEach(listener => listener()); });
+  await user.click(await screen.findByRole("button", { name: "打开快速记录" }));
+  expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("value", "");
+});
 
 it("dismisses the mobile sheet at the desktop breakpoint without reopening on return", async () => {
   let mobile = true;

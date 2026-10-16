@@ -22,7 +22,7 @@ beforeEach(() => {
   bridge.request.mockResolvedValue({ notes: [note, second], nextCursor: null, coverage });
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
 });
-afterEach(cleanup);
+afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 
 it("queries all notes by update time, previews keyboard selection and opens on Enter", async () => {
   const { onOpenNote } = setup();
@@ -136,4 +136,48 @@ it("groups notes by update time, merges paginated groups and keeps keyboard orde
   for (let index = 0; index < 4; index++) fireEvent.keyDown(input, { key: "ArrowDown" });
   fireEvent.keyDown(input, { key: "Enter" });
   expect(onOpenNote).toHaveBeenCalledWith("更早的笔记");
+});
+
+it('preserves mobile query, pagination, selection and result scroll while visiting a note',async()=>{
+  vi.stubGlobal('innerWidth',390);
+  window.matchMedia=vi.fn().mockReturnValue({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()});
+  bridge.request.mockImplementation((_op,params)=>Promise.resolve({notes:params.cursor ? [second] : [note],nextCursor:params.cursor ? null : 'next',coverage}));
+  const onOpenNote=vi.fn(),onOpenChange=vi.fn();
+  const props={open:true,preserveSession:true,onOpenNote,onOpenChange,vaultName:'测试库',available:true,returnFocus:{current:null}};
+  const page=render(<NoteSearchDialog {...props} />);
+  const input=screen.getByRole('combobox',{name:'搜索笔记'});
+  await waitFor(()=>expect(document.activeElement).toBe(input));
+  fireEvent.change(input,{target:{value:'项目'}});
+  await screen.findByRole('option',{name:'项目计划'});
+  await userEvent.setup().click(screen.getByRole('button',{name:'加载更多结果'}));
+  await screen.findByRole('option',{name:'周末散步'});
+  fireEvent.keyDown(input,{key:'ArrowDown'});
+  fireEvent.scroll(screen.getByRole('listbox',{name:'搜索结果'}).parentElement!,{target:{scrollTop:275}});
+  fireEvent.keyDown(input,{key:'Enter'});
+  expect(onOpenNote).toHaveBeenCalledWith('second');
+  const calls=bridge.request.mock.calls.length;
+  page.rerender(<NoteSearchDialog {...props} open={false} />);
+  await waitFor(()=>expect(screen.queryByRole('dialog',{name:'搜索笔记'})).toBeNull());
+  page.rerender(<NoteSearchDialog {...props} />);
+  expect(await screen.findByRole('combobox',{name:'搜索笔记'})).toHaveProperty('value','项目');
+  expect(screen.getByRole('listbox',{name:'搜索结果'}).parentElement!.scrollTop).toBe(275);
+  expect(screen.getByRole('option',{name:'周末散步'}).getAttribute('aria-selected')).toBe('true');
+  expect(bridge.request.mock.calls).toHaveLength(calls);
+  expect(screen.queryByRole('button',{name:'加载更多结果'})).toBeNull();
+  await userEvent.setup().click(screen.getByRole('button',{name:'退出搜索'}));
+  expect(onOpenChange).toHaveBeenCalledWith(false);
+});
+
+it('fits mobile search to the visible viewport while the keyboard is open',async()=>{
+  vi.stubGlobal('innerWidth',390);
+  window.matchMedia=vi.fn().mockReturnValue({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()});
+  const viewport=Object.assign(new EventTarget(),{height:360,offsetTop:12});
+  vi.stubGlobal('visualViewport',viewport);
+  setup();
+  const dialog=screen.getByRole('dialog',{name:'搜索笔记'});
+  expect(dialog.style.top).toBe('12px');
+  expect(dialog.style.height).toBe('360px');
+  act(()=>{viewport.height=420;viewport.offsetTop=0;viewport.dispatchEvent(new Event('resize'));});
+  expect(dialog.style.top).toBe('0px');
+  expect(dialog.style.height).toBe('420px');
 });
