@@ -701,7 +701,7 @@ export function App() {
       disabled={!canCreate || (isMobile && working)} canImage={capabilities.has('importAttachment') || capabilities.has('pickImage')}
       docked={isMobile} active={showMobileRecord}
       draftCount={status?.connected && (recoveryDismissed || recoveryChoices.length === 0) ? recoveryRecords.length : 0} onOpenDrafts={() => setRecoveryOpen(true)}
-      onContinue={isMobile && capabilities.has('saveDraft') ? showEditor : undefined}
+      onContinue={isMobile && capabilities.has('saveDraft') ? draft => { showEditor(draft); returnFocus.current=document.querySelector<HTMLElement>('button[aria-label="打开快速记录"]'); } : undefined}
       onRecorded={() => {
         setNotice('已记录'); loadedPages.current=1;
         if ((!isMobile || view === 'home') && homeTab !== 'recent') changeHomeTab('recent');

@@ -588,6 +588,7 @@ describe('mobile page navigation',()=>{
     const saves=bridge.request.mock.calls.filter(([op])=>op==='saveNote');
     expect(saves).toHaveLength(1);
     expect(saves[0][1]).toEqual(expect.objectContaining({id:draft.id,body:'从快速记录继续写',recoveredFrom:{draftKey:draft.draftKey ?? draft.id,revision:'draft-version'}}));
+    await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('button',{name:'打开快速记录'})));
     await user.click(screen.getByRole('button',{name:'打开快速记录'}));
     expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','');
   });
