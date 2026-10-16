@@ -5,7 +5,7 @@ import { request, errorMessage } from "../bridge";
 import { Markdown } from "../markdown";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "./ui/sheet";
+import { SheetClose, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -118,13 +118,11 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
     setSelected(index => Math.max(0, Math.min(notes.length - 1, index + direction)));
   }
 
-  const SearchContainer = isMobile ? Sheet : Dialog;
   const SearchContent = isMobile ? SheetContent : DialogContent;
-  const SearchDescription = isMobile ? SheetDescription : DialogDescription;
-  return <SearchContainer open={open} onOpenChange={onOpenChange}>
+  return <Dialog open={open} onOpenChange={onOpenChange}>
     <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className={isMobile ? "note-search-sheet gap-4 overflow-hidden" : "note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border-border p-0"}>
       {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle>搜索笔记</SheetTitle><SheetClose render={<Button type="button" variant="ghost" size="icon-sm" aria-label="退出搜索" />}><X aria-hidden="true" /></SheetClose></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}
-      <SearchDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</SearchDescription>
+      <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
       <div className="note-search-field flex shrink-0 items-center gap-3 border-b px-4 py-2">
         <Search aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
         <Input ref={input} role="combobox" name="note-search" autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
@@ -176,5 +174,5 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
         <Button variant="ghost" size="sm" className="note-search-dismiss ml-auto" aria-label="关闭搜索" onClick={() => onOpenChange(false)}>取消</Button>
       </div>}
     </SearchContent>
-  </SearchContainer>;
+  </Dialog>;
 }
