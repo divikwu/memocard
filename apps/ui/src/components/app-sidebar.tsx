@@ -74,8 +74,8 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
     <SidebarHeader>
       <div className="flex items-center gap-2">
         <button type="button" aria-label="MemoCard，返回主页" className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-(--hover-row-radius) px-1.5 text-left outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("home", null)}>
-          <img src="./favicon.png" alt="" draggable={false} className="size-7 shrink-0 object-contain" />
-          <span className="truncate text-sm font-semibold">MemoCard</span>
+          <img src="./favicon.png" alt="" draggable={false} className="size-9 shrink-0 object-contain" />
+          <span className="truncate text-base font-semibold">MemoCard</span>
         </button>
         {!isMobile && <SidebarTrigger className="shrink-0" />}
       </div>

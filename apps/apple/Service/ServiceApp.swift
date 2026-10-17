@@ -32,6 +32,7 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
         rebuildMenu()
+        run { try await self.host.startWeb() }
     }
 
     func applicationWillTerminate(_ notification: Notification) { host?.shutdown() }

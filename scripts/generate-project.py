@@ -31,6 +31,8 @@ sources=add('Sources','PBXGroup',path='Sources',sourceTree='<group>',children=so
 service_names=['ServiceApp.swift','ServiceHost.swift']
 service_refs=[add('service'+n,'PBXFileReference',lastKnownFileType='sourcecode.swift',path=n,sourceTree='<group>') for n in service_names]
 service_sources=add('ServiceSources','PBXGroup',path='Service',sourceTree='<group>',children=service_refs)
+service_name_refs=[add('ServiceName'+language,'PBXFileReference',lastKnownFileType='text.plist.strings',name=language,path='Service/Resources/'+language+'.lproj/InfoPlist.strings',sourceTree='<group>') for language in ['zh-Hans','en']]
+service_names_resource=add('ServiceNames','PBXVariantGroup',name='InfoPlist.strings',sourceTree='<group>',children=service_name_refs)
 web=add('Web','PBXFileReference',lastKnownFileType='folder',path='Resources/Web',sourceTree='<group>')
 assets=add('Assets','PBXFileReference',lastKnownFileType='folder.assetcatalog',path='Resources/Assets.xcassets',sourceTree='<group>')
 package=add('core-package','XCLocalSwiftPackageReference',relativePath='../../packages/native-core')
@@ -48,10 +50,10 @@ service_builds=[add('Service'+n,'PBXBuildFile',fileRef=r) for n,r in zip(service
 service_core=add('Servicecore','XCSwiftPackageProductDependency',package=package,productName='MemoCardCore')
 service_web=add('Servicelocalweb','XCSwiftPackageProductDependency',package=local_service_package,productName='MemoCardLocalWeb')
 service_links=[add('Servicecorelink','PBXBuildFile',productRef=service_core),add('Serviceweblink','PBXBuildFile',productRef=service_web)]
-service_phases=[add('Servicesources','PBXSourcesBuildPhase',buildActionMask='2147483647',files=service_builds,runOnlyForDeploymentPostprocessing='0'),add('Serviceframeworks','PBXFrameworksBuildPhase',buildActionMask='2147483647',files=service_links,runOnlyForDeploymentPostprocessing='0'),add('Serviceresources','PBXResourcesBuildPhase',buildActionMask='2147483647',files=[add('Servicewebbuild','PBXBuildFile',fileRef=web),add('Serviceassetsbuild','PBXBuildFile',fileRef=assets)],runOnlyForDeploymentPostprocessing='0')]
+service_phases=[add('Servicesources','PBXSourcesBuildPhase',buildActionMask='2147483647',files=service_builds,runOnlyForDeploymentPostprocessing='0'),add('Serviceframeworks','PBXFrameworksBuildPhase',buildActionMask='2147483647',files=service_links,runOnlyForDeploymentPostprocessing='0'),add('Serviceresources','PBXResourcesBuildPhase',buildActionMask='2147483647',files=[add('Servicewebbuild','PBXBuildFile',fileRef=web),add('Serviceassetsbuild','PBXBuildFile',fileRef=assets),add('Servicenamesbuild','PBXBuildFile',fileRef=service_names_resource)],runOnlyForDeploymentPostprocessing='0')]
 service_target=add('targetService','PBXNativeTarget',name='MemoCardService',productName='MemoCardService',productType='com.apple.product-type.application',productReference=service_product,buildConfigurationList=configs('Service','Service'),buildPhases=service_phases,buildRules=[],dependencies=[],packageProductDependencies=[service_core,service_web]); targets.append(service_target)
 products=add('Products','PBXGroup',name='Products',sourceTree='<group>',children=product_refs)
-main=add('Main','PBXGroup',sourceTree='<group>',children=[sources,service_sources,web,assets,products])
+main=add('Main','PBXGroup',sourceTree='<group>',children=[sources,service_sources,service_names_resource,web,assets,products])
 project=add('project','PBXProject',attributes={'BuildIndependentTargetsInParallel':'YES','LastUpgradeCheck':'2700'},buildConfigurationList=configs('project'),compatibilityVersion='Xcode 14.0',developmentRegion='zh-Hans',hasScannedForEncodings='0',knownRegions=['zh-Hans','en','Base'],mainGroup=main,productRefGroup=products,projectDirPath='',projectRoot='',targets=targets,packageReferences=[package,local_service_package])
 def serialize(v,level=0):
     pad='\t'*level

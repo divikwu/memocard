@@ -129,7 +129,7 @@
   --sidebar-foreground: var(--neutral-950);
   --sidebar-primary: var(--neutral-900);
   --sidebar-primary-foreground: var(--neutral-50);
-  --sidebar-accent: var(--neutral-100);
+  --sidebar-accent: var(--hover-bg);
   --sidebar-accent-foreground: var(--neutral-900);
   --sidebar-border: var(--border);
   --sidebar-ring: oklch(0.708 0 0);
@@ -350,7 +350,7 @@
   --sidebar-foreground: var(--neutral-50);
   --sidebar-primary: var(--neutral-50);
   --sidebar-primary-foreground: var(--neutral-900);
-  --sidebar-accent: var(--neutral-800);
+  --sidebar-accent: var(--hover-bg);
   --sidebar-accent-foreground: var(--neutral-50);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.708 0 0);
