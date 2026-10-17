@@ -138,3 +138,5 @@ iOS 构建、`git diff --check` 通过（`/tmp/memocard-ios-sidebar-spacing-mask
 2026-10-17 提交前审查修复两项回归：iOS 不挂载 H5 侧栏后，在原生外壳入口补回共享 `TagColorStyles`（含基础色值与按库覆盖样式），避免笔记列表、编辑器和快速记录丢失标签颜色；回收站预览撤销纯文本原生替换，继续复用原 Markdown 预览与附件路径，恢复仍使用实际预览版本的哈希。新增颜色切换／换库与 iOS 回收站预览恢复回归测试。原生搜索的上下键切换同时滚动至选中结果，保留首次打开及重开时原有滚动锚点；快速记录保留外接键盘 ⌘ Enter 提交入口。新 iOS 路由预算纳入颜色样式实际成本，既有 Web 路由限额不变。验证结果以本轮发布检查为准。
 
 本轮提交前最终 `pnpm verify:release` 通过，包含 UI 1043 项、Swift 核心 126 项、MCP 16 项、原生 TCP 8 项、本机 HTTP 14 项、Swift 服务 8 项测试，以及 Web／Mac／iOS／服务构建和服务 App 严格签名校验。`pnpm audit --prod` 无已知漏洞，所有资源预算通过；Mac 与 iOS 产品中的 Web 资源逐文件哈希与打包源一致。ESLint 仅保留既有编辑器 Hook 依赖警告。日志：`/tmp/memocard-review-release-final.log`、`/tmp/memocard-review-audit.log`。本轮没有重复真机、iPad、旧系统与实际外接键盘验收。
+
+PR CI 补充校验：将原生动作列表的长数组拼接拆为等价的有类型数组与追加操作，避免旧 Swift 类型检查器超时。本地 arm64／x86_64 iOS 通用模拟器构建通过（`/tmp/memocard-review-ios-universal.log`）。CI 在既有 macOS 15 runner 上显式选择预装 Xcode 26.3 并记录编译器版本，避免默认 Xcode 16.4 缺少 iOS 26 玻璃及滚动边缘 SDK；最低部署目标不变。镜像依据：[GitHub macOS 15 runner 软件清单](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md)。

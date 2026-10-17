@@ -25,7 +25,11 @@ final class NativeHost: ObservableObject {
             if value != nil {
                 guard current.sections?.flatMap({ $0.fields ?? [] }).contains(where: { $0.id == action && $0.disabled != true }) == true else { return }
             } else {
-                let controls = (current.sections?.flatMap { $0.actions ?? [] } ?? []) + (current.menu ?? []) + (current.titleMenu ?? []) + (current.bottom ?? []) + [current.primary, current.leading, current.pin].compactMap { $0 }
+                var controls: [NativeAction] = current.sections?.flatMap { $0.actions ?? [] } ?? []
+                controls.append(contentsOf: current.menu ?? [])
+                controls.append(contentsOf: current.titleMenu ?? [])
+                controls.append(contentsOf: current.bottom ?? [])
+                controls.append(contentsOf: [current.primary, current.leading, current.pin].compactMap { $0 })
                 guard controls.contains(where: { $0.id == action && $0.disabled != true }) else { return }
             }
         }

@@ -27,7 +27,7 @@ iOS 主导航使用 UIKit 自定义侧栏容器，展开时保持主页面原宽
 
 ## 开发
 
-本次验证环境：Node 24.18.0、pnpm 10.34.1、Xcode 27.0；最低系统目标 macOS 14 / iOS 17。
+本次验证环境：Node 24.18.0、pnpm 10.34.1、Xcode 27.0；最低系统目标 macOS 14 / iOS 17；编译 iOS 原生玻璃界面需要 Xcode 26 或以上，CI 显式使用 Xcode 26.3。
 
 ```sh
 pnpm install --frozen-lockfile
