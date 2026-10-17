@@ -9,14 +9,24 @@ typealias PlatformWebRepresentable = UIViewRepresentable
 
 struct WebView: PlatformWebRepresentable {
     @ObservedObject var host: NativeHost
+    var scrollInsets = EdgeInsets()
     func makeCoordinator() -> Coordinator { Coordinator(host: host) }
     private func make(_ coordinator: Coordinator) -> WKWebView {
         let configuration = WKWebViewConfiguration()
+        #if os(iOS)
+        configuration.userContentController.addUserScript(WKUserScript(source: "window.__memocardNativeChrome = true;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #endif
         configuration.userContentController.addScriptMessageHandler(coordinator, contentWorld: .page, name: "memocard")
         configuration.setURLSchemeHandler(coordinator, forURLScheme: "memocard-ui")
         configuration.setURLSchemeHandler(coordinator, forURLScheme: "memocard-asset")
         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
         let view = WKWebView(frame: .zero, configuration: configuration)
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            view.scrollView.topEdgeEffect.style = .soft
+            view.scrollView.bottomEdgeEffect.style = .soft
+        }
+        #endif
         view.navigationDelegate = coordinator
         #if DEBUG
         view.isInspectable = true
@@ -30,13 +40,25 @@ struct WebView: PlatformWebRepresentable {
     func updateNSView(_ view: WKWebView, context: Context) {}
     #else
     func makeUIView(context: Context) -> WKWebView { make(context.coordinator) }
-    func updateUIView(_ view: WKWebView, context: Context) {}
+    func updateUIView(_ view: WKWebView, context: Context) {
+        if #available(iOS 26.0, *), context.coordinator.scrollInsets != scrollInsets {
+            context.coordinator.scrollInsets = scrollInsets
+            context.coordinator.applyScrollInsets(view)
+        }
+    }
     #endif
 
     @MainActor
     final class Coordinator: NSObject, WKScriptMessageHandlerWithReply, WKNavigationDelegate, WKURLSchemeHandler {
         let host: NativeHost
         var loading: [ObjectIdentifier: Task<Void, Never>] = [:]
+        #if os(iOS)
+        var scrollInsets = EdgeInsets()
+        func applyScrollInsets(_ webView: WKWebView) {
+            webView.callAsyncJavaScript("document.documentElement.style.setProperty('--ios-top', top + 'px'); document.documentElement.style.setProperty('--ios-bottom', bottom + 'px');", arguments: ["top": scrollInsets.top, "bottom": scrollInsets.bottom], in: nil, in: .page, completionHandler: nil)
+        }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { applyScrollInsets(webView) }
+        #endif
         init(host: NativeHost) { self.host = host }
 
         func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {

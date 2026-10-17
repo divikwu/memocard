@@ -15,7 +15,9 @@ import { assetUrl } from '../urls';
 import { commitQuickCapture } from '../quick-capture-operation';
 import { hasCapture, readQuickCaptureDraft, writeQuickCaptureDraft, type Capture } from '../quick-capture-draft';
 import { useIsMobile } from '../hooks/use-mobile';
+import { isIOSNative, useIOSSurface } from '../ios-native';
 import '../quick-capture.css';
+import { parseTagColors, readTagColors } from '../tag-colors';
 
 export type QuickCaptureHandle = {isBusy:()=>boolean};
 export type QuickCaptureMemory = {vaultId:string; vaultBinding?:string; capture:Capture};
@@ -28,7 +30,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   docked?:boolean; active?:boolean;
   memory?:React.RefObject<QuickCaptureMemory | null>;
 }) {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile() || isIOSNative;
   const [expanded,setExpanded] = useState(false);
   const [sheetViewport,setSheetViewport] = useState<{bottom:number; maxHeight:number} | null>(null);
   useEffect(()=>{if (!active) setExpanded(false);},[active]);
@@ -47,6 +49,8 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     catch { return {capture:null,error:'无法恢复本机草稿，请保持页面打开。',cached:false}; }
   });
   const [capture, setCapture] = useState(() => restored.capture ?? blank());
+  const captureCurrent = useRef(capture);
+  captureCurrent.current = capture;
   const [draftError, setDraftError] = useState(restored.error);
   const [restoreFailed, setRestoreFailed] = useState(Boolean(restored.error));
   const [recordedLocally, setRecordedLocally] = useState(false);
@@ -65,6 +69,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     catch { setDraftError('草稿保护暂不可用，请保持页面打开。'); return false; }
   }, [vaultId]);
   function changeCapture(next:Capture) {
+    captureCurrent.current=next;
     setCapture(next); setRecordedLocally(false); setRestoreFailed(false);
     if (isMobile) protect(next);
   }
@@ -90,9 +95,10 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   const blocked=disabled || busy;
   const canRecord=Boolean(capture.text.trim() || capture.images.length) && !blocked;
   async function record() {
-    if (!canRecord || working.current) return;
+    const current=captureCurrent.current;
+    if (disabled || working.current || (!current.text.trim() && !current.images.length)) return;
     working.current=true; setBusy(true); setError('');
-    const snapshot=params(capture);
+    const snapshot=params(current);
     try {
       const saved=await commitQuickCapture(snapshot,request);
       if (!mounted.current) return;
@@ -109,7 +115,8 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   async function continueInPage() {
     if (blocked || working.current || restoreFailed || !onContinue) return;
     working.current=true; setBusy(true); setError('');
-    const snapshot:Draft & {vaultId:string}={...params(capture,capture.text),title:undefined};
+    const current=captureCurrent.current;
+    const snapshot:Draft & {vaultId:string}={...params(current,current.text),title:undefined};
     try {
       const saved=await request<Draft>('saveDraft',snapshot);
       if (saved.revision) snapshot.recoveredFrom={draftKey:saved.draftKey ?? snapshot.id,revision:saved.revision};
@@ -126,18 +133,58 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     if (blocked || working.current || !canImage) return;
     working.current=true; setBusy(true); setError('');
     try {
-      const image=await request<Attachment | null>('pickImage', {noteId:capture.id,notePath:capture.relativePath,vaultId,...(vaultBinding ? {vaultBinding} : {})});
+      const current=captureCurrent.current;
+      const image=await request<Attachment | null>('pickImage', {noteId:current.id,notePath:current.relativePath,vaultId,...(vaultBinding ? {vaultBinding} : {})});
       if (image && mounted.current) {
-        const next={...capture,relativePath:image.notePath ?? capture.relativePath,images:[...capture.images,image]};
+        const latest=captureCurrent.current;
+        const next={...latest,relativePath:image.notePath ?? latest.relativePath,images:[...latest.images,image]};
         changeCapture(next);
       }
     } catch(cause) {if(mounted.current)setError(errorMessage(cause));}
     finally {working.current=false; if(mounted.current)setBusy(false);}
   }
-  function toggleTag(tag:string) {if(!blocked)changeCapture({...capture,tags:capture.tags.includes(tag) ? capture.tags.filter(value=>value!==tag) : [...capture.tags,tag]});}
+  function toggleTag(tag:string) {const current=captureCurrent.current;if(!blocked)changeCapture({...current,tags:current.tags.includes(tag) ? current.tags.filter(value=>value!==tag) : [...current.tags,tag]});}
   const normalized=normalizePropertyTag(tagQuery);
   const known=[...new Set([...capture.tags,...options])];
   const matches=known.filter(tag=>tag.includes(tagQuery.trim().replace(/^#/,'').toLowerCase()));
+  useEffect(()=>{
+    if(!isIOSNative)return;
+    const open=()=>{if(active && !working.current && !disabled)setExpanded(true);};
+    window.addEventListener('memocard:open-native-capture',open);
+    return()=>window.removeEventListener('memocard:open-native-capture',open);
+  },[active,disabled]);
+  useIOSSurface('capture', () => {
+    const colors=parseTagColors(readTagColors(vaultId));
+    return {
+      kind:'capture',title:'快速记录',presented:expanded && active,busy,error:error || draftError,resetKey:capture.id,
+      summary:hasCapture(capture) ? '继续未完成的记录…' : undefined,
+      primary:{id:'record',title:busy ? '处理中' : '记录',disabled:!canRecord},
+      sections:[
+        {id:'text',fields:[{id:'text',title:'记下此刻的想法…',value:capture.text,kind:'multiline',disabled:blocked}]},
+        {id:'selected-tags',actions:capture.tags.map(tag=>({id:`tag:${tag}`,title:tag,color:colors[tag] ?? 'default',disabled:blocked}))},
+        {id:'tags',fields:[{id:'tag-query',title:'搜索或新建标签',value:tagQuery,disabled:blocked}],actions:[
+          ...matches.map(tag=>({id:`tag:${tag}`,title:tag,selected:capture.tags.includes(tag),disabled:blocked})),
+          ...(normalized && !known.includes(normalized) ? [{id:'new-tag',title:`新建标签 ${normalized}`,disabled:blocked}] : []),
+        ],message:!known.length && !tagQuery ? '输入名称，创建第一个标签。' : undefined},
+        {id:'images',actions:[{id:'image',title:'添加图片',disabled:blocked || !canImage},...capture.images.map((image,index)=>({id:`remove-image:${image.relativePath}`,title:`移除图片 ${index+1}`,imagePath:image.relativePath,disabled:blocked}))]},
+        {id:'more',actions:[...(onContinue ? [{id:'continue',title:'切换为页面',disabled:blocked || restoreFailed}] : []),...(draftCount>0 ? [{id:'drafts',title:`保留草稿（${draftCount}）`,disabled:busy}] : []),...(draftError ? [{id:'retry',title:'重试草稿保护',disabled:blocked}] : [])]},
+      ],
+    };
+  },async(action,value)=>{
+    if(action === 'close'){if(!working.current)setExpanded(false);return;}
+    if(working.current)return;
+    if(action === 'text')changeCapture({...captureCurrent.current,text:value ?? ''});
+    if(action === 'tag-query')setTagQuery(value ?? '');
+    if(action.startsWith('tag:'))toggleTag(action.slice(4));
+    if(action === 'new-tag' && normalized){toggleTag(normalized);setTagQuery('');}
+    if(action === 'record')await record();
+    if(action === 'image')await image();
+    if(action.startsWith('remove-image:')){const current=captureCurrent.current;changeCapture({...current,images:current.images.filter(image=>image.relativePath !== action.slice(13))});}
+    if(action === 'continue')await continueInPage();
+    if(action === 'drafts'){setExpanded(false);onOpenDrafts?.();}
+    if(action === 'retry')retryProtection();
+  });
+  if(isIOSNative)return null;
   const form = <form className="quick-capture" aria-label="快速输入" aria-busy={busy} onSubmit={event=>{event.preventDefault();void record();}}>
     <InputGroup className="quick-capture-group has-disabled:opacity-100 has-disabled:bg-background shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]">
       <InputGroupTextarea ref={textarea} aria-label="快速输入内容" placeholder="记下此刻的想法…" disabled={blocked} value={capture.text} onChange={event=>changeCapture({...capture,text:event.target.value})} onKeyDown={event=>{

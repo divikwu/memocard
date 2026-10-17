@@ -6,6 +6,11 @@ struct MemoCardApp: App {
     @StateObject private var host = NativeHost()
     var body: some Scene {
         WindowGroup {
+            #if os(iOS)
+            NativeChrome(host: host)
+                .onOpenURL { host.openNote($0) }
+                .onReceive(NotificationCenter.default.publisher(for: foregroundNotification)) { _ in host.notify("statusChanged") }
+            #else
             WebView(host: host)
                 .fileImporter(isPresented: $host.showPicker, allowedContentTypes: host.pickerTypes) { result in host.finishPicker(result) }
                 .onOpenURL { host.openNote($0) }
@@ -13,6 +18,7 @@ struct MemoCardApp: App {
                 #if os(macOS)
                 .frame(minWidth: 680, minHeight: 500)
                 #endif
+            #endif
         }
         #if os(macOS)
         .defaultSize(width: 1100, height: 780)

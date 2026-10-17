@@ -7,11 +7,38 @@ import MemoCardCore
 import AppKit
 #else
 import UIKit
+import PhotosUI
 #endif
 
 @MainActor
 final class NativeHost: ObservableObject {
     @Published var showPicker = false
+    #if os(iOS)
+    @Published var nativeSurfaces: [String: NativeSurface] = [:]
+    var nativeSearchPosition: [String: String] = [:]
+    private var photoPickerDelegate: PhotoPickerDelegate?
+
+    func nativeAction(_ surface: NativeSurface, _ action: String, value: String? = nil) {
+        guard let current = nativeSurfaces[surface.id], current.instance == surface.instance else { return }
+        if action != "close" {
+            guard current.kind == "chrome" || current.presented == true else { return }
+            if value != nil {
+                guard current.sections?.flatMap({ $0.fields ?? [] }).contains(where: { $0.id == action && $0.disabled != true }) == true else { return }
+            } else {
+                var controls: [NativeAction] = current.sections?.flatMap { $0.actions ?? [] } ?? []
+                controls.append(contentsOf: current.menu ?? [])
+                controls.append(contentsOf: current.titleMenu ?? [])
+                controls.append(contentsOf: current.bottom ?? [])
+                controls.append(contentsOf: [current.primary, current.leading, current.pin].compactMap { $0 })
+                guard controls.contains(where: { $0.id == action && $0.disabled != true }) else { return }
+            }
+        }
+        var detail = ["surface": surface.id, "instance": surface.instance, "action": action]
+        if surface.kind == "search", action == "query" { nativeSearchPosition.removeValue(forKey: surface.instance) }
+        if let value { detail["value"] = value }
+        webView?.callAsyncJavaScript("window.dispatchEvent(new CustomEvent('memocard:native-action', {detail: detail}))", arguments: ["detail": detail], in: nil, in: .page, completionHandler: nil)
+    }
+    #endif
     var pickerTypes: [UTType] = [.folder]
     private var pickerContinuation: CheckedContinuation<URL, Error>?
     private let core: Result<VaultStore, Error>
@@ -88,6 +115,20 @@ final class NativeHost: ObservableObject {
             guard request["version"] as? Int == 1, request["requestId"] as? String != nil,
                   let operation = request["operation"] as? String,
                   let params = request["params"] as? [String: Any] else { throw fault("INVALID_ARGUMENT", "请求格式不正确") }
+            #if os(iOS)
+            if operation == "updateNativeSurface" {
+                if params["remove"] as? Bool == true {
+                    if let id = params["id"] as? String, let current = nativeSurfaces[id], current.instance == params["instance"] as? String {
+                        nativeSurfaces.removeValue(forKey: id)
+                        nativeSearchPosition.removeValue(forKey: current.instance)
+                    }
+                } else {
+                    let surface = try JSONDecoder().decode(NativeSurface.self, from: JSONSerialization.data(withJSONObject: params))
+                    nativeSurfaces[surface.id] = surface
+                }
+                return ["ok": true, "data": [:]]
+            }
+            #endif
             await startTask?.value
             let data: Any
             switch operation {
@@ -131,7 +172,12 @@ final class NativeHost: ObservableObject {
                 guard vaultURL != nil, !openingVault else { throw fault("STORE_UNAVAILABLE", "请先选择笔记库") }
                 if let binding = params["vaultBinding"] as? String, UUID(uuidString: binding) != vaultGeneration { throw fault("VAULT_CHANGED", "笔记库已切换，请重新选择图片") }
                 let generation = vaultGeneration
+                #if os(iOS)
+                let url = try await pickPhoto()
+                defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+                #else
                 let url = try await pick(types: [.png, .jpeg, .gif, .webP, .heic, .heif], title: "选择图片")
+                #endif
                 guard generation == vaultGeneration, !openingVault else { throw fault("CANCELLED", "笔记库已变化，请重新选择图片") }
                 let scoped = url.startAccessingSecurityScopedResource()
                 defer { if scoped { url.stopAccessingSecurityScopedResource() } }
@@ -173,7 +219,16 @@ final class NativeHost: ObservableObject {
                 if ["saveNote", "updateNoteProperty", "setNotePinned", "importAttachment"].contains(operation) { notify("notesChanged") }
             }
             return ["ok": true, "data": data]
-        } catch { return failure(error) }
+        } catch {
+            #if os(iOS)
+            let cocoa = error as NSError
+            if cocoa.domain == NSCocoaErrorDomain && cocoa.code == NSUserCancelledError {
+                if request["operation"] as? String == "selectVault" { return ["ok": true, "data": ["cancelled": true]] }
+                if request["operation"] as? String == "pickImage" { return ["ok": true, "data": NSNull()] }
+            }
+            #endif
+            return failure(error)
+        }
     }
 
     func invoke(_ operation: String, _ params: [String: Any], expectedBinding: UUID? = nil) async throws -> Any {
@@ -241,7 +296,13 @@ final class NativeHost: ObservableObject {
             await deliverPendingNote()
         }
     }
-    func webContentWillLoad() { uiReady = false }
+    func webContentWillLoad() {
+        uiReady = false
+        #if os(iOS)
+        nativeSurfaces = [:]
+        nativeSearchPosition = [:]
+        #endif
+    }
     private func deliverPendingNote() async {
         guard uiReady, !openingVault, let url = pendingNoteURL, let webView else { return }
         let generation = vaultGeneration
@@ -309,13 +370,39 @@ final class NativeHost: ObservableObject {
             }
         }
         #else
-        guard pickerContinuation == nil else { throw fault("BUSY", "请先完成当前选择") }
+        guard pickerContinuation == nil, photoPickerDelegate == nil else { throw fault("BUSY", "请先完成当前选择") }
         return try await withCheckedThrowingContinuation { continuation in
             pickerTypes = types; pickerContinuation = continuation; showPicker = true
         }
         #endif
     }
-    func finishPicker(_ result: Result<URL, Error>) { pickerContinuation?.resume(with: result); pickerContinuation = nil }
+    func finishPicker(_ result: Result<URL, Error>) {
+        showPicker = false
+        pickerContinuation?.resume(with: result)
+        pickerContinuation = nil
+    }
+
+    #if os(iOS)
+    private func pickPhoto() async throws -> URL {
+        guard pickerContinuation == nil, photoPickerDelegate == nil else { throw fault("BUSY", "请先完成当前选择") }
+        guard var presenter = webView?.window?.rootViewController else { throw fault("STORE_UNAVAILABLE", "无法打开相册，请重试") }
+        while let presented = presenter.presentedViewController { presenter = presented }
+        return try await withCheckedThrowingContinuation { continuation in
+            let delegate = PhotoPickerDelegate { [weak self] result in
+                self?.photoPickerDelegate = nil
+                continuation.resume(with: result)
+            }
+            photoPickerDelegate = delegate
+            var configuration = PHPickerConfiguration()
+            configuration.filter = .images
+            configuration.selectionLimit = 1
+            configuration.preferredAssetRepresentationMode = .compatible
+            let picker = PHPickerViewController(configuration: configuration)
+            picker.delegate = delegate
+            presenter.present(picker, animated: true) { picker.presentationController?.delegate = delegate }
+        }
+    }
+    #endif
 
     private func stopServer() {
         mcpGeneration = UUID()
@@ -484,6 +571,49 @@ final class NativeHost: ObservableObject {
         }.value
     }
 }
+
+#if os(iOS)
+@MainActor
+private final class PhotoPickerDelegate: NSObject, PHPickerViewControllerDelegate, UIAdaptivePresentationControllerDelegate {
+    private var completion: ((Result<URL, Error>) -> Void)?
+    init(completion: @escaping (Result<URL, Error>) -> Void) { self.completion = completion }
+
+    private func finish(_ result: Result<URL, Error>) {
+        guard let completion else {
+            if case .success(let url) = result { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+            return
+        }
+        self.completion = nil
+        completion(result)
+    }
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        finish(.failure(NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError)))
+    }
+    func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        guard let provider = results.first?.itemProvider else {
+            picker.dismiss(animated: true) { self.finish(.failure(NSError(domain: NSCocoaErrorDomain, code: NSUserCancelledError))) }
+            return
+        }
+        picker.isModalInPresentation = true
+        provider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) { url, error in
+            let result = Result<URL, Error> {
+                if let error { throw error }
+                guard let url else { throw NSError(domain: "INVALID_ARGUMENT", code: 1, userInfo: [NSLocalizedDescriptionKey: "无法读取所选照片，请重试"]) }
+                let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                do {
+                    let destination = directory.appendingPathComponent(url.lastPathComponent)
+                    try FileManager.default.copyItem(at: url, to: destination)
+                    return destination
+                } catch { try? FileManager.default.removeItem(at: directory); throw error }
+            }
+            Task { @MainActor in
+                picker.dismiss(animated: true) { self.finish(result) }
+            }
+        }
+    }
+}
+#endif
 
 final class VaultPresenter: NSObject, NSFilePresenter {
     let presentedItemURL: URL?
