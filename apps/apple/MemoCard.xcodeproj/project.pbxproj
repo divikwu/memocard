@@ -29,6 +29,18 @@
 			"path" = "WebView.swift";
 			"sourceTree" = "<group>";
 		};
+		"2F490FE0DBAB1962FB51FC75" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "NativeChrome.swift";
+			"sourceTree" = "<group>";
+		};
+		"8FB6DB52DD84945CE09CCF4C" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "NativeDesignedPanel.swift";
+			"sourceTree" = "<group>";
+		};
 		"CAF85B0888D78F1F83771A07" = {
 			"isa" = "PBXGroup";
 			"path" = "Sources";
@@ -38,6 +50,8 @@
 				"6D48209152F75DF9C0BE4D8E",
 				"344D9DA5ACE44E43D04D08A0",
 				"7E89D7EAE8928C3FA1E09DAC",
+				"2F490FE0DBAB1962FB51FC75",
+				"8FB6DB52DD84945CE09CCF4C",
 			);
 		};
 		"CC6B89C021AA369756BDE9C4" = {
@@ -103,6 +117,14 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "7E89D7EAE8928C3FA1E09DAC";
 		};
+		"B5C30EC1F6720E83FEC4986C" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2F490FE0DBAB1962FB51FC75";
+		};
+		"A0C796B17C011F3D33795F03" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8FB6DB52DD84945CE09CCF4C";
+		};
 		"0ED418E70B7E28EBD49E9F6E" = {
 			"isa" = "XCSwiftPackageProductDependency";
 			"package" = "085827B649F7606E862BCEEB";
@@ -120,6 +142,8 @@
 				"90C9E935A392C92299363762",
 				"6FC3642BC66863FFFF817A41",
 				"AC2AA6B78D68D88940CCFCF0",
+				"B5C30EC1F6720E83FEC4986C",
+				"A0C796B17C011F3D33795F03",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -262,6 +286,14 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "7E89D7EAE8928C3FA1E09DAC";
 		};
+		"CE70ABA6EF0437C1C73798BE" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2F490FE0DBAB1962FB51FC75";
+		};
+		"FA09629AD69C7B35583BF451" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "8FB6DB52DD84945CE09CCF4C";
+		};
 		"98AA8D34EC412A1BDC5055D0" = {
 			"isa" = "XCSwiftPackageProductDependency";
 			"package" = "085827B649F7606E862BCEEB";
@@ -279,6 +311,8 @@
 				"D288BD72D30A6D1238CFC121",
 				"8598EC6952A6164CB0DCAF15",
 				"B5805894F4D8E9918FD7DA37",
+				"CE70ABA6EF0437C1C73798BE",
+				"FA09629AD69C7B35583BF451",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};

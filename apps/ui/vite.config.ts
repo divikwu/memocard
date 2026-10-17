@@ -22,6 +22,9 @@ export default defineConfig({
     manifest: true,
     target: "safari16.4", assetsInlineLimit: 0,
     rolldownOptions: { output: { codeSplitting: { groups: [
+      // Keep already-eager primitives together rather than loading many tiny shared chunks.
+      { name: "ui-primitives", test: /src[\\/]components[\\/]ui[\\/](button|input|sheet|skeleton|sidebar|card|dialog|collapsible|dropdown-menu)\.tsx$/, tags: ["$initial"] },
+      { name: "app-runtime", test: /src[\\/](bridge|client-mode|ios-mode|uuid|error-messages)\.ts$/, tags: ["$initial"] },
       // Share already-eager dependencies; keep the tag picker and editor lazy.
       { name: "vendor", test: /node_modules[\\/]/, tags: ["$initial"] },
     ] } } },

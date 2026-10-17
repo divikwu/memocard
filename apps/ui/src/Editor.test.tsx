@@ -10,6 +10,8 @@ import { TagColorProvider } from './TagColorProvider';
 import * as tagOperations from './rename-tag-operation';
 vi.mock('./bridge', () => ({ request: vi.fn(), errorMessage: (error: unknown) => error instanceof Error ? error.message : '文件冲突' }));
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
+const nativeChrome = vi.hoisted(() => ({enabled:false}));
+vi.mock('./ios-mode', () => ({get isIOSNative(){return nativeChrome.enabled;}}));
 const initial: Draft = { id: 'test-note', body: '', tags: [], baseHash: null };
 const saved = { id: initial.id, contentHash: 'saved-hash', relativePath: 'notes/test-note.md' };
 const native = vi.mocked(request);
@@ -24,6 +26,7 @@ function finishEditor() {
   fireEvent.keyDown(screen.getByRole('textbox', { name: '笔记内容' }), { key: 'Enter', metaKey: true });
 }
 beforeEach(() => {
+  nativeChrome.enabled=false;
   native.mockReset(); native.mockImplementation(async op => op === 'saveNote' ? saved : undefined);
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal('DragEvent', MouseEvent);
@@ -77,6 +80,36 @@ it('shows mobile pending, saving and failed states and confirms only successful 
   native.mockImplementation(async op=>op==='saveNote' ? saved : undefined);
   fireEvent.click(screen.getByRole('button',{name:'重试保存'}));
   await waitFor(()=>expect(screen.getByRole('status').textContent).toBe('已保存到本机'));
+});
+
+it('hides routine save hints on iOS while retaining failure feedback and retry',async()=>{
+  mobile();nativeChrome.enabled=true;
+  let rejectSave!:(error:unknown)=>void;
+  native.mockImplementation(async op=>op==='saveNote' ? new Promise((_resolve,reject)=>{rejectSave=reject;}) : undefined);
+  await editor({...initial,body:'原文',baseHash:'original'});
+  expect(screen.queryByRole('status')).toBeNull();
+  replaceEditorText('保留状态反馈');
+  expect(screen.queryByRole('status')).toBeNull();
+  await waitFor(()=>expect(native).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'保留状态反馈'})));
+  expect(screen.queryByRole('status')).toBeNull();
+  await act(async()=>{rejectSave(new Error('磁盘只读'));});
+  expect(screen.getByRole('status').textContent).toBe('保存失败，请重试');
+  native.mockImplementation(async op=>op==='saveNote' ? saved : undefined);
+  fireEvent.click(screen.getByRole('button',{name:'重试保存'}));
+  await waitFor(()=>expect(screen.queryByRole('status')).toBeNull());
+  expect(readEditorText()).toBe('保留状态反馈');
+});
+
+it('retains iOS conflict feedback and recovery actions without overwriting local content',async()=>{
+  mobile();nativeChrome.enabled=true;
+  native.mockImplementation(async op=>{if(op==='saveNote')throw {code:'REVISION_CONFLICT'};});
+  await editor({...initial,baseHash:'old'});
+  replaceEditorText('本地未保存内容');finishEditor();
+  expect(await screen.findByRole('button',{name:'另存副本'})).toBeTruthy();
+  expect(screen.getByRole('status').textContent).toBe('存在冲突，尚未保存');
+  expect(screen.getByRole('button',{name:'重新加载'})).toBeTruthy();
+  expect(screen.getByRole('button',{name:'继续编辑'})).toBeTruthy();
+  expect(readEditorText()).toBe('本地未保存内容');
 });
 
 async function historyEditor(waitForProperty?: () => Promise<void>) {

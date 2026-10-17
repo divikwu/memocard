@@ -23,6 +23,8 @@ import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { isIOSNative } from "./ios-mode";
+const IOSAppChrome = lazy(() => import("./components/ios-app-chrome").then(module => ({default:module.IOSAppChrome})));
 
 type View = "home" | "notes" | "settings" | "trash";
 type TagCount = { name: string; count: number };
@@ -46,7 +48,7 @@ const NoteDeleteDialog = lazy(() => import("./components/note-delete-dialog"));
 const Switch = lazy(() => import("@/components/ui/switch").then(module => ({ default: module.Switch })));
 
 export function App() {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile() || isIOSNative;
   const [view, setView] = useState<View>(getView);
   const [trashVersion,setTrashVersion] = useState(0);
   const returnView = useRef<View>(getView() === "settings" || getView() === "trash" ? "notes" : getView());
@@ -729,11 +731,15 @@ export function App() {
     onReauthorize={() => void reauthorizeVault()}
   /></Suspense>;
 
+  const changeRecoveryOpen = (open:boolean) => {if(deletingDraft.current)return;setRecoveryOpen(open);setRecoveryError(null);if(!open)setDraftToDelete(null);};
+  const refreshCurrentView = () => { if(view === "trash")setTrashVersion(value=>value+1);void refresh(); };
   const breadcrumbTitle = <BreadcrumbPage className={cn("line-clamp-1",isMobile && "font-medium")}>{title}</BreadcrumbPage>;
-  return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
-    {navigation}
+  return <TagColorProvider vaultId={status?.vaultId}><SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarOpenChange} openMobile={menuOpen} onOpenMobileChange={setMenuOpen} data-native-chrome={isIOSNative || undefined} style={isIOSNative ? {padding:0} : undefined} className="h-dvh min-h-0 overflow-hidden bg-background pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-foreground">
+    {!isIOSNative && navigation}
+    {isIOSNative && <Suspense fallback={null}><IOSAppChrome title={title} view={view} detail={detailView} tag={tag} quickFilter={quickFilter} tags={tags} filterCounts={filterCounts} hasVaultIssue={Boolean(error || needsPermission || (status?.connected && !status.indexing && !status.coverage.complete))} needsPermission={needsPermission} status={status} vaultBinding={environment?.vaultBinding} vaultStatus={vaultStatusText} vaults={registeredVaults} canCreate={canCreate} canSearch={searchAvailable} loading={loading} capabilities={capabilities} editing={editing} pinDisabled={!editing?.baseHash || !notePins || pinWorking || switchingVault} pinned={isNotePinned} pinWorking={pinWorking} showRecord={showMobileRecord} busy={working} error={error ? errorMessage(error) : ""} recoveryOpen={recoveryOpen} recoveryBusy={reminderWorking} recoveryError={recoveryError ? errorMessage(recoveryError) : ""} drafts={recoveryRecords} deleteDraftOpen={draftToDelete !== null}
+      onReauthorize={reauthorizeVault} onNavigate={navigate} editor={editorHandle} openingNote={openingNote} onSearch={searchNotes} onNew={newNote} onRefresh={refreshCurrentView} onPin={()=>void togglePinned()} onDelete={setNoteToDelete} onChoose={()=>selectVault(false)} onActivate={activateVault} onRenameTag={renameNavigationTag} onRecoveryChange={changeRecoveryOpen} onRefreshDrafts={refreshDrafts} onResume={resumeDraft} onDismiss={dismissDraftReminder} onDeleteDraft={setDraftToDelete} onConfirmDeleteDraft={deleteDraft} onCancelDeleteDraft={()=>{if(!deletingDraft.current)setDraftToDelete(null);}} /></Suspense>}
     <SidebarInset className="@container min-w-0 min-h-0">
-      <header className="flex h-14 shrink-0 items-center gap-2 bg-background" style={isMobile ? {display:"grid",gridTemplateColumns:"88px minmax(0,1fr) 88px",gap:4,paddingInline:12} : undefined}>
+      {!isIOSNative && <header className="flex h-14 shrink-0 items-center gap-2 bg-background" style={isMobile ? {display:"grid",gridTemplateColumns:"88px minmax(0,1fr) 88px",gap:4,paddingInline:12} : undefined}>
         <div className="flex min-w-0 flex-1 items-center gap-2 px-3 text-sm" style={isMobile ? {display:"contents"} : undefined}>
           {detailView && <Button variant="ghost" size="icon-sm" className="shrink-0" onClick={() => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish()} aria-label={isMobile && searchNoteReturn.current ? "返回搜索结果" : returnView.current === "home" ? "返回主页" : "返回笔记列表"}><ArrowLeft className="size-4" /></Button>}
           {(isMobile ? !detailView : !sidebarOpen) && <>
@@ -745,9 +751,9 @@ export function App() {
         <div className="ml-auto flex shrink-0 items-center gap-2 px-3" style={isMobile ? {paddingInline:0} : undefined}>
           {!isConnectedClient && <span className="hidden text-xs text-muted-foreground sm:inline">浏览器预览</span>}
           {editing && capabilities.has("setNotePinned") && <Suspense fallback={null}><NotePinButton pinned={isNotePinned} unsaved={!editing.baseHash} disabled={!editing.baseHash || !notePins || notePins.vaultId !== status?.vaultId || pinWorking || switchingVault || !status?.connected || (isLocalWeb && !webConnected)} onClick={() => void togglePinned()} /></Suspense>}
-          <NavActions canDeleteNote={canCreate && !pinWorking && !working} onDeleteNote={editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => {setNoteToDelete({id:editing.id,title,vaultId:status.vaultId!,vaultBinding:editing.vaultBinding ?? environment?.vaultBinding});} : undefined} canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={() => {if(view === "trash")setTrashVersion(value=>value+1);void refresh();}} onSettings={() => navigate("settings")} />
+          <NavActions canDeleteNote={canCreate && !pinWorking && !working} onDeleteNote={editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => {setNoteToDelete({id:editing.id,title,vaultId:status.vaultId!,vaultBinding:editing.vaultBinding ?? environment?.vaultBinding});} : undefined} canCreate={canCreate} canRefresh={isConnectedClient && !loading && !working} refreshing={loading} onNewNote={newNote} onRefresh={refreshCurrentView} onSettings={() => navigate("settings")} />
         </div>
-      </header>
+      </header>}
       <div ref={scrollContainer} className={cn("min-h-0 flex-1 overflow-y-auto", detailView ? "note-page-scroll" : view !== "settings" ? "page-list-scroll px-4" : "px-4 md:px-16")}>
         <div className={cn("page-content mx-auto w-full space-y-4", detailView ? "note-page-width" : view === "notes" ? "max-w-none py-6 md:py-8" : "max-w-3xl py-6 md:py-8")} style={!detailView && view === "notes" ? {maxWidth:1280} : undefined}>
           {switchingVault && <Alert role="status"><LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /><AlertTitle>正在打开笔记库</AlertTitle><AlertDescription>请选择文件夹并允许访问，首次读取可能需要一些时间。</AlertDescription></Alert>}
@@ -841,7 +847,7 @@ export function App() {
             </CardContent></Card></section>}
           </div> : <>
             {view !== "home" && status?.connected && recoveryRecords.length > 0 && (recoveryDismissed || recoveryChoices.length === 0) && <Button variant="ghost" size="sm" onClick={() => setRecoveryOpen(true)}>保留草稿（{recoveryRecords.length}）</Button>}
-            <Dialog open={recoveryOpen} onOpenChange={open => { if (deletingDraft.current) return; setRecoveryOpen(open); setRecoveryError(null); if (!open) setDraftToDelete(null); }}><DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto max-w-md" style={{"--tw-enter-scale":"1","--tw-exit-scale":"1"} as React.CSSProperties}><div className="pr-6"><DialogTitle className="text-balance">草稿</DialogTitle><DialogDescription className="sr-only">可继续编辑保留的草稿。不再提醒不会删除草稿。历史草稿请先确认所属笔记库。</DialogDescription></div>
+            <Dialog open={recoveryOpen && !isIOSNative} onOpenChange={changeRecoveryOpen}><DialogContent className="max-h-[calc(100dvh-2rem)] gap-4 overflow-y-auto max-w-md" style={{"--tw-enter-scale":"1","--tw-exit-scale":"1"} as React.CSSProperties}><div className="pr-6"><DialogTitle className="text-balance">草稿</DialogTitle><DialogDescription className="sr-only">可继续编辑保留的草稿。不再提醒不会删除草稿。历史草稿请先确认所属笔记库。</DialogDescription></div>
               {recoveryError != null && <div className="space-y-2"><p role="alert" className="text-sm text-destructive">{errorMessage(recoveryError)}</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void refreshDrafts()}>刷新草稿</Button></div></div>}
               {recoveryRecords.length === 0 && <p className="text-sm text-muted-foreground">暂无草稿。</p>}
               <div className="max-h-64 space-y-3 overflow-auto sm:max-h-80">{recoveryRecords.map(draft => <article className="space-y-3 rounded-lg border p-3" key={`${draft.recoveryScope ?? (draft.unscoped ? 'legacy' : 'current')}:${draft.draftKey ?? draft.id}`}>
@@ -859,7 +865,7 @@ export function App() {
                   {draft.reminderDismissed ? <span className="flex items-center gap-1 text-xs text-muted-foreground"><Check className="size-3.5" aria-hidden="true" />已关闭提醒</span> : draft.unscoped && draft.draftKey && draft.revision && capabilities.has("dismissDraftReminder") && <Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void dismissDraftReminder(draft)}>不再提醒</Button>}
                 </div>
               </article>)}</div>
-            <Dialog open={draftToDelete !== null} onOpenChange={open => { if (!open && !deletingDraft.current) setDraftToDelete(null); }}><DialogContent className="max-w-md" finalFocus={() => draftDeleteFocus.current?.isConnected ? draftDeleteFocus.current : true}><DialogTitle>删除这条草稿？</DialogTitle><DialogDescription>删除后无法恢复，已保存的笔记不受影响。</DialogDescription><p className="line-clamp-2 text-sm">{draftToDelete?.draft.title || draftToDelete?.draft.body.slice(0,100) || "空正文"}</p><div className="flex gap-2" style={{justifyContent:"flex-end"}}><Button variant="outline" size="sm" autoFocus disabled={reminderWorking} onClick={() => setDraftToDelete(null)}>取消</Button><Button variant="destructive" size="sm" disabled={reminderWorking} onClick={() => void deleteDraft()}>{reminderWorking ? "正在删除…" : "确认删除"}</Button></div></DialogContent></Dialog>
+            <Dialog open={draftToDelete !== null && !isIOSNative} onOpenChange={open => { if (!open && !deletingDraft.current) setDraftToDelete(null); }}><DialogContent className="max-w-md" finalFocus={() => draftDeleteFocus.current?.isConnected ? draftDeleteFocus.current : true}><DialogTitle>删除这条草稿？</DialogTitle><DialogDescription>删除后无法恢复，已保存的笔记不受影响。</DialogDescription><p className="line-clamp-2 text-sm">{draftToDelete?.draft.title || draftToDelete?.draft.body.slice(0,100) || "空正文"}</p><div className="flex gap-2" style={{justifyContent:"flex-end"}}><Button variant="outline" size="sm" autoFocus disabled={reminderWorking} onClick={() => setDraftToDelete(null)}>取消</Button><Button variant="destructive" size="sm" disabled={reminderWorking} onClick={() => void deleteDraft()}>{reminderWorking ? "正在删除…" : "确认删除"}</Button></div></DialogContent></Dialog>
             </DialogContent></Dialog>
 
 
@@ -884,13 +890,14 @@ export function App() {
           </>}
         </div>
       </div>
-      {isMobile && <footer aria-label="快捷记录" hidden={!showMobileRecord || searchOpen} className="mobile-record-bar shrink-0 bg-background" style={{padding:"8px 16px 12px"}}>
+      {isMobile && !isIOSNative && <footer aria-label="快捷记录" hidden={!showMobileRecord || searchOpen} className="mobile-record-bar shrink-0 bg-background" style={{padding:"8px 16px 12px"}}>
         <div className="flex items-center gap-2">
           <Button type="button" variant="outline" size="icon" aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={searchOpen} disabled={!searchAvailable} onClick={searchNotes} style={{width:48,height:48,borderRadius:9999,flexShrink:0}}><Search aria-hidden="true" className="size-5" /></Button>
           <div className="min-w-0 flex-1">{quickCapture ?? mobileCapturePlaceholder}</div>
         </div>
       </footer>}
     </SidebarInset>
+    {isIOSNative && <div hidden>{quickCapture}</div>}
     {noteToDelete && <Suspense fallback={null}><NoteDeleteDialog target={noteToDelete} prepareDelete={async()=>loadedVaultId.current===noteToDelete.vaultId ? editorHandle.current?.prepareDelete() ?? null : null} onCancel={()=>setNoteToDelete(null)} onDeleted={()=>{
       const target=noteToDelete;setNoteToDelete(null);
       if(editingRef.current?.id!==target.id || loadedVaultId.current!==target.vaultId)return;
@@ -899,7 +906,7 @@ export function App() {
       if(refreshCount.current>0 || loadingMore.current)pendingRefresh.current=true;
       finishEditing(undefined,true);
     }} /></Suspense>}
-    {notice && <div role="status" style={isMobile && showMobileRecord ? {bottom:"calc(5.5rem + env(safe-area-inset-bottom))"} : undefined} className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
+    {notice && <div role="status" style={isMobile && showMobileRecord && !isIOSNative ? {bottom:"calc(5.5rem + env(safe-area-inset-bottom))"} : undefined} className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex max-w-[calc(100vw-32px)] -translate-x-1/2 items-center gap-2 rounded-lg border bg-popover px-4 py-3 text-sm text-popover-foreground"><Check className="size-4" />{notice}</div>}
     {(searchOpen || (isMobile && searchNoteReturn.current && searchNoteReturn.current === status?.vaultId)) && <Suspense fallback={null}><NoteSearchDialog key={status?.vaultId} open={searchOpen} preserveSession={isMobile} onOpenChange={changeSearchOpen} vaultName={status?.vaultName || "笔记库"} available={searchAvailable} returnFocus={searchReturnFocus} onOpenNote={id => { searchNoteReturn.current = isMobile ? status?.vaultId ?? null : null; setSearchOpen(false); void openNote(id); }} /></Suspense>}
 
   </SidebarProvider></TagColorProvider>;

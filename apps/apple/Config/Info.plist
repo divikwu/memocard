@@ -5,6 +5,7 @@
 <key>CFBundleURLTypes</key><array><dict><key>CFBundleURLName</key><string>MemoCard note</string><key>CFBundleURLSchemes</key><array><string>memocard</string></array></dict></array>
 <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
 <key>LSSupportsOpeningDocumentsInPlace</key><true/>
+<key>UIFileSharingEnabled</key><true/>
 <key>UISupportedInterfaceOrientations</key><array><string>UIInterfaceOrientationPortrait</string><string>UIInterfaceOrientationLandscapeLeft</string><string>UIInterfaceOrientationLandscapeRight</string></array>
 <key>NSHumanReadableCopyright</key><string>Personal development build</string>
 </dict></plist>

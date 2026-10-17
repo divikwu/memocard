@@ -27,6 +27,8 @@ if (compressed > limits.gzip) throw new Error(`Initial JS and CSS gzip size is $
 const manifest = JSON.parse(await readFile(resolve(root, ".vite/manifest.json"), "utf8"));
 for (const route of [
   { name: "home with quick capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1300 * 1024, gzip: 400 * 1024 },
+  // The new native route includes view models and tag color styles: 16 KiB raw / 2 KiB gzip above Web home.
+  { name: "iOS home with native chrome", entries: ["src/components/ios-app-chrome.tsx", "src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1316 * 1024, gzip: 402 * 1024 },
   { name: "mobile home with title layout menu", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1303 * 1024, gzip: 400 * 1024 },
   { name: "mobile home with swipe capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx", "src/components/ui/sheet-swipe.tsx"], raw: 1306 * 1024, gzip: 402 * 1024 },
   // Reserve 9 KiB for mobile navigation, shared saved layout state, optional swipe loading, and overlays.

@@ -14,6 +14,7 @@ import { changeTagSettings } from './tag-settings';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { changeNoteProperty, changeNoteTitle, endNoteTyping, resetNoteHistory, type NoteEdit } from './rich-note-history';
 import { useIsMobile } from './hooks/use-mobile';
+import { isIOSNative } from './ios-mode';
 
 export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void>; prepareDelete: () => Promise<{id:string; contentHash:string} | null> };
 export function Editor({ initial, initialNote, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, onTagsChanged, handle }: {
@@ -238,6 +239,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
   const saveStatus = session.state === 'conflict' ? '存在冲突，尚未保存' : session.state === 'error' ? conversionRejected ? '属性未更改' : '保存失败，请重试'
     : session.state === 'indexing' ? '等待笔记库就绪后保存' : session.state === 'saving' ? '保存中…'
     : session.dirty ? '等待保存…' : session.current.baseHash ? '已保存到本机' : '填写后自动保存';
+  const showSaveStatus = isMobile && canSave && (!isIOSNative || session.state === 'error' || session.state === 'conflict');
   return <section ref={page} tabIndex={!autoFocus ? -1 : undefined} aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className="note-editor" onKeyDownCapture={undoKey}>
     <NoteProperties saveError={error} renderHeader={(notice, ownsSaveError) => <>
       {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : conversionRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !conversionRejected || session.state === 'conflict') ? <>
@@ -247,7 +249,7 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       {notice}
       {pendingLink && <PageNotice tone="info" title="有待打开的笔记">完成当前记录后，将打开收到的笔记链接。</PageNotice>}
       {heading}
-      {isMobile && canSave && <div className="mobile-save-status" role="status" aria-live="polite" aria-atomic="true">{saveStatus}</div>}
+      {showSaveStatus && <div className="mobile-save-status" role="status" aria-live="polite" aria-atomic="true">{saveStatus}</div>}
     </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} vaultBinding={session.current.vaultBinding} onChangeTag={changeTag} note={metadata} tags={[...tags, ...session.current.inheritedTags ?? []]} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onApplyValue={applyProperty} onLocateTag={tag => {
       const target = Array.from(field.current?.querySelectorAll('.rich-inline-tag') ?? []).find(element => element.getAttribute('data-tag') === encodeURIComponent(tag));
       if (!target) return;

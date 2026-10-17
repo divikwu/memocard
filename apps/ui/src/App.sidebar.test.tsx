@@ -290,7 +290,7 @@ describe("sidebar workspace actions", () => {
     expect(await screen.findByRole("heading", { name: "设置", level: 1 })).toBeTruthy();
   });
 
-  it("closes mobile navigation and transfers focus to search", async () => {
+  it("returns from mobile settings to home before opening bottom search", async () => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query.includes("767px"), media: query, onchange: null,
       addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
@@ -303,14 +303,16 @@ describe("sidebar workspace actions", () => {
     await user.click(screen.getByRole("button", { name: "打开导航" }));
     const sheet = await screen.findByRole("dialog", { name: "记忆卡导航" });
 
-    await user.click(within(sheet).getByRole("button", { name: "搜索" }));
+    expect(within(sheet).queryByRole("button", { name: "搜索" })).toBeNull();
+    await user.click(within(sheet).getByRole("button", { name: "主页" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+    await user.click(screen.getByRole("button", { name: "搜索全部笔记" }));
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "搜索笔记" })));
-    expect(window.location.hash).toBe("#/settings");
+    expect(window.location.hash).toBe("#/home");
   });
 
-  it("closes mobile navigation and transfers focus to the new note editor", async () => {
+  it("opens the new note editor from the mobile page menu", async () => {
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query.includes("767px"), media: query, onchange: null,
       addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
@@ -321,7 +323,11 @@ describe("sidebar workspace actions", () => {
     await user.click(screen.getByRole("button", { name: "打开导航" }));
     const sheet = await screen.findByRole("dialog", { name: "记忆卡导航" });
 
-    await user.click(within(sheet).getByRole("button", { name: "新建笔记" }));
+    expect(within(sheet).queryByRole("button", { name: "新建笔记" })).toBeNull();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+    await user.click(screen.getByRole("button", { name: "页面操作" }));
+    await user.click(await screen.findByRole("menuitem", { name: "新建笔记" }));
 
     const editor = await screen.findByRole("region", { name: "新建笔记" });
     expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
@@ -340,13 +346,20 @@ describe('mobile page navigation',()=>{
     localStorage.removeItem('memocard:quick-capture:v1:test-vault');
   });
 
-  it('keeps mobile search in the sidebar without adding a header search button',async()=>{
+  it('keeps mobile search and capture in the bottom bar without duplicate sidebar entries',async()=>{
     const user=userEvent.setup();render(<App />);
     await screen.findByText(note.body);
     expect(screen.queryByRole('button',{name:'搜索笔记'})).toBeNull();
+    const bar=screen.getByRole('contentinfo',{name:'快捷记录'});
+    const search=within(bar).getByRole('button',{name:'搜索全部笔记'});
+    expect(within(bar).getByRole('button',{name:'打开快速记录'})).toBeTruthy();
     await user.click(screen.getByRole('button',{name:'打开导航'}));
     const sheet=await screen.findByRole('dialog',{name:'记忆卡导航'});
-    await user.click(within(sheet).getByRole('button',{name:'搜索'}));
+    expect(within(sheet).queryByRole('button',{name:'搜索'})).toBeNull();
+    expect(within(sheet).queryByRole('button',{name:'新建笔记'})).toBeNull();
+    await user.keyboard('{Escape}');
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await user.click(search);
     const input=await screen.findByRole('combobox',{name:'搜索笔记'});
     await waitFor(()=>expect(document.activeElement).toBe(input));
     await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());

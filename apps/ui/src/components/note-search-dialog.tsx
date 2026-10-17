@@ -9,6 +9,7 @@ import { SheetClose, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { Input } from "./ui/input";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "../hooks/use-mobile";
+import { isIOSNative, useIOSSurface } from "../ios-native";
 import "./note-search-dialog.css";
 
 function dateGroup(value: string) {
@@ -35,7 +36,7 @@ type Props = {
 };
 
 export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession=false }: Props) {
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile() || isIOSNative;
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const resultScroll = useRef(0);
@@ -119,6 +120,24 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   }
 
   const SearchContent = isMobile ? SheetContent : DialogContent;
+  useIOSSurface("search", () => ({
+    kind:"search",title:"搜索笔记",presented:open,loading:loading || paging,error,
+    message:!available ? "请先连接笔记库，再搜索内容。" : loading ? "正在搜索笔记…" : !notes.length ? searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记" : undefined,
+    sections:[{id:"query",fields:[{id:"query",title:`在 ${vaultName} 中搜索…`,value:query,disabled:!available}]},
+      ...Array.from(groups,([label,items])=>({id:label,title:label,actions:items.map(({note,index})=>({id:`note:${note.id}`,title:note.title?.trim() || "新内容",selected:selected === index,disabled:loading || !available}))})),
+      {id:"more",message:page && !page.coverage.complete ? "部分文件尚未读入，搜索结果可能不完整。" : undefined,actions:[
+        ...(error ? [{id:"retry",title:"重试"}] : page?.nextCursor ? [{id:"more",title:paging ? "正在加载…" : "加载更多结果",disabled:paging}] : []),
+        {id:"up",title:"上一条",disabled:loading || !notes.length},{id:"down",title:"下一条",disabled:loading || !notes.length},
+      ]}],
+  }),async(action,value)=>{
+    if(action === "close")onOpenChange(false);
+    if(action === "query")setQuery(value ?? "");
+    if(action.startsWith("note:") && !loading && available)onOpenNote(action.slice(5));
+    if(action === "more")await loadMore();
+    if(action === "retry"){if(page?.nextCursor)await loadMore();else setRetry(value=>value+1);}
+    if(action === "up" || action === "down")moveSelection(action === "up" ? -1 : 1);
+  });
+  if(isIOSNative)return null;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className={isMobile ? "note-search-sheet gap-4 overflow-hidden" : "note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border-border p-0"}>
       {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle>搜索笔记</SheetTitle><SheetClose render={<Button type="button" variant="ghost" size="icon-sm" aria-label="退出搜索" />}><X aria-hidden="true" /></SheetClose></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}

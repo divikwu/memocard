@@ -26,8 +26,10 @@ xcrun devicectl device process launch --device 你的设备UDID dev.divikwu.memo
 
 也可以运行一次 `pnpm build:ios` 生成界面资源后，打开 `apps/apple/MemoCard.xcodeproj`，选择 MemoCardiOS scheme、自己的 Team 和真实 iPhone，再 Run。Xcode 可能需要用户亲自完成账号或信任操作。
 
+首次开发安装如被 iOS 阻止启动，在手机「设置 → 通用 → VPN 与设备管理 → 开发者 App」按系统提示信任自己的开发者身份，再打开 App。应用已启用 `UIFileSharingEnabled` 与原位打开文档；放入 App `Documents` 的专用体验库可通过「我的 iPhone → 记忆卡」找到。在 App 点击「选择已有文件夹」，选择该体验库并点「打开」。此位置是手机本地目录，与模拟器副本之间没有自动同步。
+
 4. 在 Mac 创建 iCloud Drive 专用测试笔记库，等待 `.memocard/vault.json`、`notes`、`assets` 出现。iPhone 使用“选择已有文件夹”；元文件未下载时不要创建替代库。
-5. iPhone 新建中文笔记并通过文件选择器附加图片，Mac 确认内容与图片后编辑，再在 iPhone 确认更新。记录设备系统、构建版本、实际等待与异常；模拟器不算通过。
+5. iPhone 新建中文笔记并通过系统相册附加图片，Mac 确认内容与图片后编辑，再在 iPhone 确认更新。记录设备系统、构建版本、实际等待与异常；模拟器不算通过。
 
 ## 免费账号到期
 
