@@ -14,6 +14,7 @@ final class ServiceHost {
     private var presenter: ServiceVaultPresenter?
     private var webServer: LocalWebServer?
     private var startingWebServer: LocalWebServer?
+    private var webStartTask: Task<Void, Error>?
     private var webAuthorizationEpoch = 0
     private var selectingVault = false
     private var restoreTask: Task<Void, Never>?
@@ -56,6 +57,7 @@ final class ServiceHost {
         startingWebServer?.stop()
         webServer = nil
         startingWebServer = nil
+        webStartTask = nil
         stateChanged?()
     }
 
@@ -108,31 +110,44 @@ final class ServiceHost {
         }
     }
 
-    private func launchURL() async throws -> URL {
+    func startWeb() async throws {
         await waitUntilRestored()
-        if webServer == nil {
-            guard startingWebServer == nil else { throw fault("BUSY", "正在启动本机 Web，请稍后重试") }
-            guard let root = Bundle.main.resourceURL?.appendingPathComponent("Web", isDirectory: true) else {
-                throw fault("STORE_UNAVAILABLE", "应用内的网页资源不可用，请重新安装")
+        if webServer != nil { return }
+        if let webStartTask { return try await webStartTask.value }
+        guard let root = Bundle.main.resourceURL?.appendingPathComponent("Web", isDirectory: true) else {
+            throw fault("STORE_UNAVAILABLE", "应用内的网页资源不可用，请重新安装")
+        }
+        let candidate = LocalWebServer(resourceRoot: root, authorizationEpoch: webAuthorizationEpoch, handler: { [weak self] request in
+            guard let self else { return Self.failure(Self.fault("APP_NOT_RUNNING", "菜单栏服务已退出")) }
+            return await self.webRequest(request)
+        }, assetHandler: { [weak self] path in
+            guard let self else { throw Self.fault("APP_NOT_RUNNING", "菜单栏服务已退出") }
+            return try await self.webAsset(path)
+        })
+        startingWebServer = candidate
+        let task = Task { @MainActor in
+            defer {
+                if startingWebServer === candidate {
+                    startingWebServer = nil
+                    webStartTask = nil
+                }
             }
-            let candidate = LocalWebServer(resourceRoot: root, authorizationEpoch: webAuthorizationEpoch, handler: { [weak self] request in
-                guard let self else { return Self.failure(Self.fault("APP_NOT_RUNNING", "菜单栏服务已退出")) }
-                return await self.webRequest(request)
-            }, assetHandler: { [weak self] path in
-                guard let self else { throw Self.fault("APP_NOT_RUNNING", "菜单栏服务已退出") }
-                return try await self.webAsset(path)
-            })
-            startingWebServer = candidate
             do {
                 _ = try await candidate.start()
+                guard startingWebServer === candidate else { throw fault("APP_NOT_RUNNING", "本机 Web 已停止") }
                 webServer = candidate
-                startingWebServer = nil
+                stateChanged?()
             } catch {
                 candidate.stop()
-                if startingWebServer === candidate { startingWebServer = nil }
                 throw error
             }
         }
+        webStartTask = task
+        try await task.value
+    }
+
+    private func launchURL() async throws -> URL {
+        try await startWeb()
         guard let webServer else { throw fault("STORE_UNAVAILABLE", "本机 Web 尚未启动") }
         return try await webServer.makeLaunchURL()
     }

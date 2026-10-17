@@ -75,6 +75,29 @@
 				"A71F9581AAF76A6D8EF1AB38",
 			);
 		};
+		"EA90089213DF6ED784B22696" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.strings";
+			"name" = "zh-Hans";
+			"path" = "Service/Resources/zh-Hans.lproj/InfoPlist.strings";
+			"sourceTree" = "<group>";
+		};
+		"C3825DEDA0157A8D849969A0" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.plist.strings";
+			"name" = "en";
+			"path" = "Service/Resources/en.lproj/InfoPlist.strings";
+			"sourceTree" = "<group>";
+		};
+		"829514B2501EEAC27BCE8779" = {
+			"isa" = "PBXVariantGroup";
+			"name" = "InfoPlist.strings";
+			"sourceTree" = "<group>";
+			"children" = (
+				"EA90089213DF6ED784B22696",
+				"C3825DEDA0157A8D849969A0",
+			);
+		};
 		"2975104784A401E3880E2215" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "folder";
@@ -495,12 +518,17 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "BD12731D7BC9B843D8523E65";
 		};
+		"DC804D9DB0A0EC2FDE11AA2A" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "829514B2501EEAC27BCE8779";
+		};
 		"54C1932B5844DCF651B357A4" = {
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
 				"71839B26FDD8A4F7760C27FD",
 				"79B80D08207E119F4FBBF6FF",
+				"DC804D9DB0A0EC2FDE11AA2A",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
@@ -613,6 +641,7 @@
 			"children" = (
 				"CAF85B0888D78F1F83771A07",
 				"A2AA66E733A2082315B9FF64",
+				"829514B2501EEAC27BCE8779",
 				"2975104784A401E3880E2215",
 				"BD12731D7BC9B843D8523E65",
 				"4EDC8BFAFC6BD936B849F38C",

@@ -11,7 +11,7 @@ export function LoadingTags() {
 
 export function LoadingSidebar({ vaultName }: { vaultName: string }) {
   return <Sidebar aria-label="笔记导航" className="border-r-0">
-    <SidebarHeader><div className="flex items-center gap-2"><div className="flex h-10 min-w-0 flex-1 items-center gap-2 px-1.5"><img src="./favicon.png" alt="" className="size-7 shrink-0 object-contain" /><span className="text-sm font-semibold">MemoCard</span></div><SidebarTrigger className="shrink-0" /></div>
+    <SidebarHeader><div className="flex items-center gap-2"><div className="flex h-10 min-w-0 flex-1 items-center gap-2 px-1.5"><img src="./favicon.png" alt="" className="size-9 shrink-0 object-contain" /><span className="text-base font-semibold">MemoCard</span></div><SidebarTrigger className="shrink-0" /></div>
       <SidebarMenu>{([[Search, "搜索"], [Plus, "新建笔记"], [House, "主页"], [Notebook, "所有笔记"], [CalendarDays, "日历"]] as const).map(([Icon, label]) => <SidebarMenuItem key={String(label)}><SidebarMenuButton disabled><Icon /><span>{String(label)}</span></SidebarMenuButton></SidebarMenuItem>)}</SidebarMenu>
     </SidebarHeader>
     <SidebarContent><LoadingTags /></SidebarContent>

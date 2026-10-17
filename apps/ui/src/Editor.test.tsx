@@ -48,16 +48,17 @@ it('opens an existing mobile note without focusing editable fields and still per
   expect(document.activeElement).toBe(screen.getByRole('region',{name:'编辑笔记'}));
   expect(document.activeElement).not.toBe(screen.getByRole('textbox',{name:'页面标题'}));
   expect(document.activeElement).not.toBe(screen.getByRole('textbox',{name:'笔记内容'}));
-  expect(screen.getByRole('status').textContent).toBe('已保存到本机');
+  expect(screen.queryByRole('status')).toBeNull();
   act(()=>{screen.getByRole('textbox',{name:'笔记内容'}).focus();});
   replaceEditorText('手动编辑');
   await waitFor(()=>expect(native).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'手动编辑'})));
-  expect(screen.getByRole('status').textContent).toBe('已保存到本机');
+  expect(screen.queryByRole('status')).toBeNull();
 });
 
 it('retains title autofocus for a new mobile note and body autofocus without mobile status on desktop',async()=>{
   mobile();await editor({...initial,title:''});
   expect(document.activeElement).toBe(screen.getByRole('textbox',{name:'页面标题'}));
+  expect(screen.queryByRole('status')).toBeNull();
   cleanup();
   vi.stubGlobal('innerWidth',1024);
   vi.stubGlobal('matchMedia',vi.fn(()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
@@ -66,20 +67,21 @@ it('retains title autofocus for a new mobile note and body autofocus without mob
   expect(screen.queryByRole('status')).toBeNull();
 });
 
-it('shows mobile pending, saving and failed states and confirms only successful saves',async()=>{
+it('hides routine mobile save hints while retaining failure feedback and retry',async()=>{
   mobile();
   let rejectSave!:(error:unknown)=>void;
   native.mockImplementation(async op=>op==='saveNote' ? new Promise((_resolve,reject)=>{rejectSave=reject;}) : undefined);
   await editor({...initial,body:'原文',baseHash:'original'});
   replaceEditorText('未完成保存');
-  expect(screen.getByRole('status').textContent).toBe('等待保存…');
-  await waitFor(()=>expect(screen.getByRole('status').textContent).toBe('保存中…'));
+  expect(screen.queryByRole('status')).toBeNull();
+  await waitFor(()=>expect(native).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'未完成保存'})));
+  expect(screen.queryByRole('status')).toBeNull();
   await act(async()=>{rejectSave(new Error('磁盘只读'));});
   expect(screen.getByRole('status').textContent).toBe('保存失败，请重试');
   expect(readEditorText()).toBe('未完成保存');
   native.mockImplementation(async op=>op==='saveNote' ? saved : undefined);
   fireEvent.click(screen.getByRole('button',{name:'重试保存'}));
-  await waitFor(()=>expect(screen.getByRole('status').textContent).toBe('已保存到本机'));
+  await waitFor(()=>expect(screen.queryByRole('status')).toBeNull());
 });
 
 it('hides routine save hints on iOS while retaining failure feedback and retry',async()=>{
@@ -100,8 +102,8 @@ it('hides routine save hints on iOS while retaining failure feedback and retry',
   expect(readEditorText()).toBe('保留状态反馈');
 });
 
-it('retains iOS conflict feedback and recovery actions without overwriting local content',async()=>{
-  mobile();nativeChrome.enabled=true;
+it.each([false,true])('retains mobile conflict feedback and recovery actions without overwriting local content (native=%s)',async(isNative)=>{
+  mobile();nativeChrome.enabled=isNative;
   native.mockImplementation(async op=>{if(op==='saveNote')throw {code:'REVISION_CONFLICT'};});
   await editor({...initial,baseHash:'old'});
   replaceEditorText('本地未保存内容');finishEditor();
