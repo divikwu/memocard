@@ -35,8 +35,10 @@ it('replaces the preview after editing and recovers after invalid syntax', async
   expect((await screen.findByRole('alert')).textContent).toContain('源码已保留');
   page.rerender(<MermaidPreview source={'flowchart TD\nA[新文字] --> B'} />);
   await screen.findByRole('button', { name: '放大 Mermaid 图表' });
-  expect(diagram().textContent).toContain('新文字');
-  expect(diagram().textContent).not.toContain('旧文字');
+  await waitFor(() => {
+    expect(diagram()?.textContent).toContain('新文字');
+    expect(diagram()?.textContent).not.toContain('旧文字');
+  });
 });
 it('previews fenced Mermaid in the read renderer without converting ordinary code', async () => {
   render(<Markdown body={'```mermaid\nflowchart TD\nA[阅读预览] --> B\n```\n\n```typescript\nconst n = 1;\n```'} />);

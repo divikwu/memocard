@@ -140,3 +140,5 @@ iOS 构建、`git diff --check` 通过（`/tmp/memocard-ios-sidebar-spacing-mask
 本轮提交前最终 `pnpm verify:release` 通过，包含 UI 1043 项、Swift 核心 126 项、MCP 16 项、原生 TCP 8 项、本机 HTTP 14 项、Swift 服务 8 项测试，以及 Web／Mac／iOS／服务构建和服务 App 严格签名校验。`pnpm audit --prod` 无已知漏洞，所有资源预算通过；Mac 与 iOS 产品中的 Web 资源逐文件哈希与打包源一致。ESLint 仅保留既有编辑器 Hook 依赖警告。日志：`/tmp/memocard-review-release-final.log`、`/tmp/memocard-review-audit.log`。本轮没有重复真机、iPad、旧系统与实际外接键盘验收。
 
 PR CI 补充校验：将原生动作列表的长数组拼接拆为等价的有类型数组与追加操作，避免旧 Swift 类型检查器超时。本地 arm64／x86_64 iOS 通用模拟器构建通过（`/tmp/memocard-review-ios-universal.log`）。CI 在既有 macOS 15 runner 上显式选择预装 Xcode 26.3 并记录编译器版本，避免默认 Xcode 16.4 缺少 iOS 26 玻璃及滚动边缘 SDK；最低部署目标不变。镜像依据：[GitHub macOS 15 runner 软件清单](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md)。
+
+CI 的 UI 测试暴露既有 Mermaid 预览测试的异步等待竞态：按钮出现时，子组件 effect 可能尚未挂载 Shadow DOM。测试改为等待新图表内容并确认旧内容消失，不改 Mermaid 产品实现；本地 11 项 Mermaid 测试与定向 ESLint 通过（`/tmp/memocard-review-mermaid-test.log`）。
