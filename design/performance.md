@@ -58,6 +58,8 @@
 
 大载荷的 JSON 解析、比较与更新总耗时为 **49.743 → 52.927ms / 20 次**，观察差值约 **0.159ms / 次**。这是单组采样，既不推断统计显著性或将差值全部归因于比较，也不把通知减少直接换算为 App 耗时改善。42 个独立字段变化、同值重放、实例替换/移除、reload、稳定订阅对象、picker、主题/palette 和展示投影均有断言。记录与源码指纹见 [sidebar-subscriptions.json](performance/sidebar-subscriptions.json)。
 
+后续真实输入回归发现：Return/失焦可把已确认的同值文本重新写成本地覆盖值，原来依赖全局通知偶然清理。setter 改为只在输入实际变化时写覆盖值，仍发送原有事件。相同 harness 在冻结的未修正优化版复现 `text=A`、`placeholder=Cleared query`；修正后 Return、失焦、在途 B 保留到 ACK 后再接受 C 共 3 个真实 UIKit 场景通过。`finalValidation` 保留最终源码指纹及 42 字段/6 场景复跑，原计时快照及原始指纹不替换；后续复跑不是新的时延对照。
+
 ## Release Simulator 场景
 
 iPhone 18 Pro / iOS 27.0，同一 `MemoCard iOS QA` 库，前后各 5 个 XCTest 场景全部通过、0 跳过。没有编辑笔记；先冻结旧版产物，再分开安排编译、算法基准与 UI 采样。各性能项在 warmup 后测 5 次。

@@ -53,7 +53,11 @@ struct NativeDesignedPanel: View {
         host.nativeAction(surface, action, value: value)
     }
     private func binding(_ field: NativeField) -> Binding<String> {
-        Binding(get: { values[field.id] ?? field.value }, set: { values[field.id] = $0; send(field.id, $0) })
+        Binding(get: { values[field.id] ?? field.value }, set: { value in
+            // Return and end-editing can resend text whose local override was already acknowledged.
+            if value != (values[field.id] ?? field.value) { values[field.id] = value }
+            send(field.id, value)
+        })
     }
     private var query: String { section("query")?.fields?.first.map { binding($0).wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines) } ?? "" }
     private func content(extraTextHeight: CGFloat = 0) -> some View {

@@ -1,5 +1,6 @@
 import Combine
 import SwiftUI
+import UIKit
 
 // This entry point is built with the production app sources in a temporary project.
 // The preview initializer prevents vault access and services; updates still enter
@@ -9,8 +10,8 @@ struct NativeSurfaceSubscriptionHarness: App {
     var body: some Scene {
         WindowGroup {
             Color.clear.task {
-                await NativeSurfaceSubscriptionProbe.run()
-                exit(0)
+                let passed = await NativeSurfaceSubscriptionProbe.run()
+                exit(passed ? 0 : 1)
             }
         }
     }
@@ -18,7 +19,7 @@ struct NativeSurfaceSubscriptionHarness: App {
 
 @MainActor
 enum NativeSurfaceSubscriptionProbe {
-    static func run() async {
+    static func run() async -> Bool {
         var results: [[String: Any]] = []
         for scenario in ["navigation-replay", "navigation-large-replay", "search-update", "chrome-update", "stale-remove", "valid-remove"] {
             var initial: [[String: Any]] = [
@@ -86,11 +87,14 @@ enum NativeSurfaceSubscriptionProbe {
         #if !SURFACE_SUBSCRIPTION_BASELINE
         let fieldChanges = await verifyFieldsAndLifecycle()
         await verifyPresentation()
+        guard let inputInteractions = await verifyNativeInputAcknowledgement() else { return false }
         #else
         let fieldChanges = 0
+        let inputInteractions = 0
         #endif
-        let data = try! JSONSerialization.data(withJSONObject: ["measurement": "native-surface-subscriptions", "results": results, "fieldChangesVerified": fieldChanges], options: [.sortedKeys])
+        let data = try! JSONSerialization.data(withJSONObject: ["measurement": "native-surface-subscriptions", "results": results, "fieldChangesVerified": fieldChanges, "inputInteractionsVerified": inputInteractions], options: [.sortedKeys])
         print("SURFACE_SUBSCRIPTION_RESULT " + String(decoding: data, as: UTF8.self))
+        return true
     }
 
     private static func update(_ host: NativeHost, _ params: [String: Any]) async {
@@ -227,6 +231,98 @@ enum NativeSurfaceSubscriptionProbe {
         precondition(state.value.alert?.message == "Changed warning")
         host.webContentWillLoad()
         precondition(state.value == NativeSurfacePresentation([:]) && appearance.value == NativeSurfaceAppearance(nil))
+    }
+
+    private static func verifyNativeInputAcknowledgement() async -> Int? {
+        var root: UIViewController?
+        guard await waitForUI("probe window", until: {
+            root = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+                .flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController
+            return root?.view.window != nil
+        }), let root else { return nil }
+        for event in ["return", "end-editing", "pending-edit"] {
+            let host = NativeHost(previewSurfaces: [:])
+            func model(_ value: String, title: String = "Tag query") -> [String: Any] {
+                ["id": "search", "instance": "input-\(event)", "kind": "search", "title": "Search", "presented": true,
+                 "resetKey": "unchanged-reset", "sections": [["id": "query", "fields": [["id": "tag-query", "title": title, "value": value]]]]]
+            }
+            await update(host, model("A"))
+            // This production search branch and the capture tag popover share the
+            // actual NativeSearchInput coordinator and NativeDesignedPanel binding.
+            let controller = UIHostingController(rootView: NativeDesignedPanel(host: host, id: "search", instance: "input-\(event)"))
+            root.addChild(controller)
+            controller.view.frame = root.view.bounds
+            controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            root.view.addSubview(controller.view)
+            controller.didMove(toParent: root)
+            defer {
+                controller.view.endEditing(true)
+                controller.willMove(toParent: nil)
+                controller.view.removeFromSuperview()
+                controller.removeFromParent()
+            }
+            var field: UITextField?
+            guard await waitForUI("\(event) initial field", until: {
+                controller.view.layoutIfNeeded()
+                field = textField(in: controller.view)
+                return field?.window != nil && field?.text == "A" && field?.isFirstResponder == true
+            }), let field, let delegate = field.delegate else { return nil }
+
+            if event == "pending-edit" {
+                field.text = "B"
+                field.sendActions(for: .editingChanged)
+            } else if event == "return" {
+                guard delegate.textFieldShouldReturn?(field) != nil else { return nil }
+            } else {
+                delegate.textFieldDidEndEditing?(field)
+            }
+            await update(host, ["id": "navigation", "instance": "nav-\(event)", "kind": "list", "title": "Unrelated update", "presented": false])
+            if event == "pending-edit" {
+                // A changed placeholder proves the SwiftUI update reached the real
+                // UIKit field; checking B immediately after assigning it would not.
+                await update(host, model("A", title: "Unacknowledged A"))
+                guard await waitForUI("pending value survives unrelated update and old echo", until: {
+                    controller.view.layoutIfNeeded()
+                    return field.placeholder == "Unacknowledged A" && field.text == "B"
+                }) else { return nil }
+                await update(host, model("B", title: "Acknowledged B"))
+                guard await waitForUI("native input acknowledgement", until: {
+                    controller.view.layoutIfNeeded()
+                    return field.placeholder == "Acknowledged B" && field.text == "B"
+                }) else { return nil }
+                await update(host, model("C", title: "External C"))
+                guard await waitForUI("acknowledgement releases the native override", until: {
+                    controller.view.layoutIfNeeded()
+                    return field.placeholder == "External C" && field.text == "C"
+                }) else { return nil }
+            } else {
+                await update(host, model("", title: "Cleared query"))
+                guard await waitForUI("\(event) unchanged input accepts same-instance reset", until: {
+                    controller.view.layoutIfNeeded()
+                    return field.placeholder == "Cleared query" && field.text == ""
+                }) else {
+                    print("NATIVE_INPUT_INTERACTION_ACTUAL event=\(event) text=\(field.text ?? "nil") placeholder=\(field.placeholder ?? "nil")")
+                    return nil
+                }
+            }
+            print("NATIVE_INPUT_INTERACTION_PASSED \(event)")
+        }
+        return 3
+    }
+
+    private static func textField(in view: UIView) -> UITextField? {
+        if let field = view as? UITextField, field.accessibilityLabel == "搜索笔记" { return field }
+        return view.subviews.lazy.compactMap { textField(in: $0) }.first
+    }
+
+    private static func waitForUI(_ description: String, until condition: () -> Bool) async -> Bool {
+        let deadline = ContinuousClock.now + .seconds(5)
+        while ContinuousClock.now < deadline {
+            if condition() { return true }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        print("NATIVE_INPUT_INTERACTION_FAILED \(description)")
+        return false
     }
     #endif
 }

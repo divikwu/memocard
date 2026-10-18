@@ -66,6 +66,8 @@ def phase(name, command, timeout, capture=False):
     try:
         output, _ = process.communicate(timeout=timeout)
         if process.returncode:
+            if capture and output:
+                print(output, flush=True)
             raise subprocess.CalledProcessError(process.returncode, command, output=output)
         outcome = "passed"
         return output
@@ -131,7 +133,7 @@ def run(directory):
     phase("bootstatus", ["xcrun", "simctl", "bootstatus", device, "-b"], 180)
     installed = False
     try:
-        phase("install", ["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], 60)
+        phase("install", ["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], 180)
         installed = True
         launch = phase("launch", ["xcrun", "simctl", "launch", "--console", device, "dev.divikwu.memocard.surface-probe"], 60, capture=True)
         print(launch)
@@ -148,7 +150,7 @@ def run(directory):
         if installed:
             had_error = sys.exc_info()[0] is not None
             try:
-                phase("uninstall", ["xcrun", "simctl", "uninstall", device, "dev.divikwu.memocard.surface-probe"], 60)
+                phase("uninstall", ["xcrun", "simctl", "uninstall", device, "dev.divikwu.memocard.surface-probe"], 180)
             except Exception as error:
                 if not had_error:
                     raise
