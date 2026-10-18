@@ -71,9 +71,12 @@ def phase(name, command, timeout, capture=False):
             raise subprocess.CalledProcessError(process.returncode, command, output=output)
         outcome = "passed"
         return output
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as error:
         outcome = "timeout"
         print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "deadline", "outcome": outcome, "seconds": round(time.monotonic() - started, 3)}), flush=True)
+        if capture and error.stdout:
+            output = error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout
+            print(output, flush=True)
         if name == "install":
             # The install deadline has already failed. Sample its live IPC wait
             # before terminating it; diagnosis never extends the success window.

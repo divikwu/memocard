@@ -1,4 +1,5 @@
 import Combine
+import Darwin
 import SwiftUI
 import UIKit
 
@@ -10,7 +11,10 @@ struct NativeSurfaceSubscriptionHarness: App {
     var body: some Scene {
         WindowGroup {
             Color.clear.task {
+                setbuf(stdout, nil)
+                print("NATIVE_SURFACE_PROBE_STAGE app-task-start")
                 let passed = await NativeSurfaceSubscriptionProbe.run()
+                print("NATIVE_SURFACE_PROBE_STAGE app-task-complete passed=\(passed)")
                 exit(passed ? 0 : 1)
             }
         }
@@ -84,9 +88,12 @@ enum NativeSurfaceSubscriptionProbe {
                             "elapsedMilliseconds": Double(elapsed.components.seconds) * 1000 + Double(elapsed.components.attoseconds) / 1e15,
                             "navigationPresent": host.nativeSurfaces["navigation"] != nil])
         }
+        print("NATIVE_SURFACE_PROBE_STAGE publishers-complete")
         #if !SURFACE_SUBSCRIPTION_BASELINE
         let fieldChanges = await verifyFieldsAndLifecycle()
+        print("NATIVE_SURFACE_PROBE_STAGE fields-complete count=\(fieldChanges)")
         await verifyPresentation()
+        print("NATIVE_SURFACE_PROBE_STAGE presentation-complete")
         guard let inputInteractions = await verifyNativeInputAcknowledgement() else { return false }
         #else
         let fieldChanges = 0
@@ -234,13 +241,16 @@ enum NativeSurfaceSubscriptionProbe {
     }
 
     private static func verifyNativeInputAcknowledgement() async -> Int? {
+        print("NATIVE_SURFACE_PROBE_STAGE window-wait-start")
         var root: UIViewController?
         guard await waitForUI("probe window", until: {
             root = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
                 .flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController
             return root?.view.window != nil
         }), let root else { return nil }
+        print("NATIVE_SURFACE_PROBE_STAGE window-ready")
         for event in ["return", "end-editing", "pending-edit"] {
+            print("NATIVE_SURFACE_PROBE_STAGE ui-case-start event=\(event)")
             let host = NativeHost(previewSurfaces: [:])
             func model(_ value: String, title: String = "Tag query") -> [String: Any] {
                 ["id": "search", "instance": "input-\(event)", "kind": "search", "title": "Search", "presented": true,
@@ -255,11 +265,14 @@ enum NativeSurfaceSubscriptionProbe {
             controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             root.view.addSubview(controller.view)
             controller.didMove(toParent: root)
+            print("NATIVE_SURFACE_PROBE_STAGE ui-case-hosted event=\(event)")
             defer {
+                print("NATIVE_SURFACE_PROBE_STAGE ui-case-cleanup-start event=\(event)")
                 controller.view.endEditing(true)
                 controller.willMove(toParent: nil)
                 controller.view.removeFromSuperview()
                 controller.removeFromParent()
+                print("NATIVE_SURFACE_PROBE_STAGE ui-case-cleanup-complete event=\(event)")
             }
             var field: UITextField?
             guard await waitForUI("\(event) initial field", until: {
@@ -267,7 +280,9 @@ enum NativeSurfaceSubscriptionProbe {
                 field = textField(in: controller.view)
                 return field?.window != nil && field?.text == "A" && field?.isFirstResponder == true
             }), let field, let delegate = field.delegate else { return nil }
+            print("NATIVE_SURFACE_PROBE_STAGE ui-case-ready event=\(event)")
 
+            print("NATIVE_SURFACE_PROBE_STAGE ui-case-action-start event=\(event)")
             if event == "pending-edit" {
                 field.text = "B"
                 field.sendActions(for: .editingChanged)
@@ -276,27 +291,35 @@ enum NativeSurfaceSubscriptionProbe {
             } else {
                 delegate.textFieldDidEndEditing?(field)
             }
+            print("NATIVE_SURFACE_PROBE_STAGE ui-case-action-complete event=\(event)")
             await update(host, ["id": "navigation", "instance": "nav-\(event)", "kind": "list", "title": "Unrelated update", "presented": false])
+            print("NATIVE_SURFACE_PROBE_STAGE navigation-update-complete event=\(event)")
             if event == "pending-edit" {
                 // A changed placeholder proves the SwiftUI update reached the real
                 // UIKit field; checking B immediately after assigning it would not.
                 await update(host, model("A", title: "Unacknowledged A"))
+                print("NATIVE_SURFACE_PROBE_STAGE old-echo-update-complete event=\(event)")
                 guard await waitForUI("pending value survives unrelated update and old echo", until: {
                     controller.view.layoutIfNeeded()
                     return field.placeholder == "Unacknowledged A" && field.text == "B"
                 }) else { return nil }
+                print("NATIVE_SURFACE_PROBE_STAGE pending-value-preserved event=\(event)")
                 await update(host, model("B", title: "Acknowledged B"))
+                print("NATIVE_SURFACE_PROBE_STAGE acknowledgement-update-complete event=\(event)")
                 guard await waitForUI("native input acknowledgement", until: {
                     controller.view.layoutIfNeeded()
                     return field.placeholder == "Acknowledged B" && field.text == "B"
                 }) else { return nil }
+                print("NATIVE_SURFACE_PROBE_STAGE acknowledgement-visible event=\(event)")
                 await update(host, model("C", title: "External C"))
+                print("NATIVE_SURFACE_PROBE_STAGE external-update-complete event=\(event)")
                 guard await waitForUI("acknowledgement releases the native override", until: {
                     controller.view.layoutIfNeeded()
                     return field.placeholder == "External C" && field.text == "C"
                 }) else { return nil }
             } else {
                 await update(host, model("", title: "Cleared query"))
+                print("NATIVE_SURFACE_PROBE_STAGE clear-query-update-complete event=\(event)")
                 guard await waitForUI("\(event) unchanged input accepts same-instance reset", until: {
                     controller.view.layoutIfNeeded()
                     return field.placeholder == "Cleared query" && field.text == ""

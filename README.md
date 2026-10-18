@@ -29,7 +29,7 @@ iOS 主导航使用 UIKit 自定义侧栏容器，展开时保持主页面原宽
 
 跨端 UI 的现行规则、token 维护、Storybook 与原生 Preview 入口见[设计规范 v1](design/README.md)。
 
-本次验证环境：Node 24.18.0、pnpm 10.34.1、Xcode 27.0；最低系统目标 macOS 14 / iOS 17；编译 iOS 原生玻璃界面需要 Xcode 26 或以上，CI 显式使用 Xcode 26.3。
+本次验证环境：Node 24.18.0、pnpm 10.34.1、Xcode 27.0；最低系统目标 macOS 14 / iOS 17；编译 iOS 原生玻璃界面需要 Xcode 26 或以上，CI 在 macOS 26 上显式使用 Xcode 26.6。
 
 ```sh
 pnpm install --frozen-lockfile
