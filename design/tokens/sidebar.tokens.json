@@ -1,0 +1,39 @@
+{
+  "$description": "Portable sidebar baselines. CSS uses logical px; native maps the same baselines to points. Runtime colors remain owned by the existing theme CSS.",
+  "spacing": {
+    "$type": "dimension",
+    "xs": { "$value": { "value": 4, "unit": "px" } },
+    "sm": { "$value": { "value": 8, "unit": "px" } },
+    "md": { "$value": { "value": 12, "unit": "px" } },
+    "lg": { "$value": { "value": 16, "unit": "px" } },
+    "xl": { "$value": { "value": 24, "unit": "px" } },
+    "xxl": { "$value": { "value": 32, "unit": "px" } }
+  },
+  "radius": {
+    "$type": "dimension",
+    "none": { "$value": { "value": 0, "unit": "px" } },
+    "xs": { "$value": { "value": 4, "unit": "px" } },
+    "sm": { "$value": { "value": 6, "unit": "px" } },
+    "md": { "$value": { "value": 8, "unit": "px" } },
+    "lg": { "$value": { "value": 10, "unit": "px" } },
+    "xl": { "$value": { "value": 12, "unit": "px" } },
+    "2xl": { "$value": { "value": 16, "unit": "px" } }
+  },
+  "sidebar": {
+    "$type": "dimension",
+    "desktopRowHeight": { "$value": { "value": 32, "unit": "px" }, "$description": "Desktop default density; small/large variants retain their existing sizes." },
+    "mobileRowMinHeight": { "$value": { "value": 48, "unit": "px" }, "$description": "Touch row baseline; native rows may grow with Dynamic Type." },
+    "iconSize": { "$value": { "value": 16, "unit": "px" } },
+    "contentGap": { "$value": "{spacing.sm}" },
+    "rowGap": { "$value": "{spacing.xs}" },
+    "indent": { "$value": "{spacing.xl}", "$description": "Native tree indentation; Web keeps its existing border/padding composition." },
+    "logoSize": { "$value": { "value": 36, "unit": "px" } },
+    "mobileFontSize": { "$value": { "value": 16, "unit": "px" } },
+    "desktopFontSize": { "$value": { "value": 14, "unit": "px" } },
+    "brandFontSize": { "$value": { "value": 14, "unit": "px" }, "$description": "Native brand baseline; Web brand retains its existing 16px style." },
+    "captionFontSize": { "$value": { "value": 12, "unit": "px" } },
+    "toggleVisualSize": { "$value": { "value": 40, "unit": "px" } },
+    "touchTargetSize": { "$value": { "value": 44, "unit": "px" }, "$description": "Product target for custom native controls, distinct from the icon's visual size." },
+    "horizontalPadding": { "$value": "{spacing.sm}" }
+  }
+}

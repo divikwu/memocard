@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [".storybook", "stories", "vite.storybook.config.ts", "vitest.storybook.config.ts"]
+}

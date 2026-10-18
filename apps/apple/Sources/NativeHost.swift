@@ -68,7 +68,21 @@ final class NativeHost: ObservableObject {
         let instanceID: String
     }
 
+    #if DEBUG && os(iOS)
+    // Layout previews use fixed surfaces without opening a vault or starting services.
+    init(previewSurfaces: [String: NativeSurface]) {
+        core = .failure(CocoaError(.featureUnsupported))
+        nativeSurfaces = previewSurfaces
+    }
+    #endif
+
     init() {
+        #if DEBUG && os(iOS)
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            core = .failure(CocoaError(.featureUnsupported))
+            return
+        }
+        #endif
         let local = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("MemoCard", isDirectory: true)
         core = Result { try VaultStore(localDataURL: local) }
         startTask = Task { [weak self] in

@@ -113,7 +113,7 @@ it("aligns hierarchy controls and stretches nested rows", () => {
   const nestedMenu = nestedItem?.parentElement;
 
   expect(nestedButton.className).toContain("w-full");
-  expect(nestedButton.querySelector("span")?.className).toContain("size-4");
+  expect(nestedButton.querySelector("span")?.getAttribute("aria-hidden")).toBe("true");
   expect(nestedRow?.className).toContain("w-full");
   expect(nestedCollapsible?.className).toContain("w-full");
   expect(nestedItem?.className).toContain("w-full");

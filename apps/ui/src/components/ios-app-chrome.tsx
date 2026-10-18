@@ -10,6 +10,8 @@ import { noteFilterLabels } from "../note-filter-labels";
 import "./app-sidebar.css";
 import { useTheme } from "../features/theme/ThemeProvider";
 import TagColorStyles from "../TagColorStyles";
+import { radiusValues } from "../generated/design-tokens";
+import { readIOSPalette } from "../lib/ios-palette";
 
 type View = "home" | "notes" | "settings" | "trash";
 type Props = {
@@ -32,16 +34,8 @@ const draftKey = (draft:Draft) => JSON.stringify([draft.id,draft.draftKey,draft.
 function useIOSPalette() {
   const [palette,setPalette]=useState<Record<string,number[]>>();
   useEffect(()=>{
-    if(typeof CanvasRenderingContext2D === "undefined")return;
-    const read=()=>{
-      const context=document.createElement("canvas").getContext("2d",{willReadFrequently:true});
-      if(!context)return;
-      const style=getComputedStyle(document.documentElement),colors:Record<string,number[]>={};
-      const keys=["background","foreground","muted","muted-foreground","accent","border","primary","primary-foreground","sidebar","sidebar-foreground","sidebar-accent","sidebar-border",...['default','brown','orange','yellow','green','blue','purple','pink','red'].flatMap(color=>[`tag-${color}-bg`,`tag-${color}-fg`])];
-      for(const key of keys){const value=style.getPropertyValue(`--${key}`).trim();if(!value)continue;context.clearRect(0,0,1,1);context.fillStyle=value;context.fillRect(0,0,1,1);colors[key]=Array.from(context.getImageData(0,0,1,1).data);}
-      setPalette(colors);
-    };
-    read();const observer=new MutationObserver(read);observer.observe(document.documentElement,{attributes:true,attributeFilter:['class','style']});
+    const read=()=>setPalette(readIOSPalette());
+    read();const observer=new MutationObserver(read);observer.observe(document.documentElement,{attributes:true,attributeFilter:['class','style','data-palette','data-neutral-palette']});
     return()=>observer.disconnect();
   },[]);
   return palette;
@@ -97,7 +91,7 @@ export function IOSAppChrome(p:Props) {
   const navigationTags=p.tags.map(item=>({id:`tag:${item.name}`,path:item.name,title:item.name.slice(item.name.lastIndexOf("/")+1),icon:"number",emoji:preferences.icons[item.name],selected:p.view === "notes" && p.tag === item.name}));
   useIOSSurface("navigation", {
     kind:"list",title:"MemoCard",presented:navigationOpen,error:tagError,resetKey:vaultId || "disconnected",
-    rowRadius:({none:0,xs:4,sm:6,md:8,lg:10,xl:12,"2xl":16})[radius],
+    rowRadius:radiusValues[radius],
     loading:p.loading && p.tags.length === 0,
     sections:[
       {id:"pages",actions:[{id:"home",title:"主页",icon:"house",selected:p.view === "home"},{id:"notes",title:"所有笔记",icon:"note.text",selected:p.view === "notes" && !p.tag && !p.quickFilter},{id:"calendar",title:"日历",icon:"calendar",disabled:true}]},

@@ -74,7 +74,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
     <SidebarHeader>
       <div className="flex items-center gap-2">
         <button type="button" aria-label="MemoCard，返回主页" className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-(--hover-row-radius) px-1.5 text-left outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("home", null)}>
-          <img src="./favicon.png" alt="" draggable={false} className="size-9 shrink-0 object-contain" />
+          <img src="./favicon.png" alt="" draggable={false} className="shrink-0 object-contain" style={{ width: "var(--sidebar-logo-size)", height: "var(--sidebar-logo-size)" }} />
           <span className="truncate text-base font-semibold">MemoCard</span>
         </button>
         {!isMobile && <SidebarTrigger className="shrink-0" />}
@@ -85,7 +85,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
           <SidebarMenuItem><SidebarMenuButton disabled={!canCreate || working} onClick={onNewNote}><Plus /><span>新建笔记</span></SidebarMenuButton></SidebarMenuItem>
         </>}
         <SidebarMenuItem><SidebarMenuButton isActive={view === "home"} aria-current={view === "home" ? "page" : undefined} onClick={() => onNavigate("home")}><House /><span>主页</span></SidebarMenuButton></SidebarMenuItem>
-        <SidebarTreeItem label="所有笔记" className="sidebar-notes-row" icon={<Notebook className="size-4" />} buttonProps={{ onClick: () => onNavigate("notes", null) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
+        <SidebarTreeItem label="所有笔记" className="sidebar-notes-row" icon={<Notebook />} buttonProps={{ onClick: () => onNavigate("notes", null) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
           <NoteFilterNavigation view={view} quickFilter={quickFilter} filterCounts={filterCounts} connected={connected} onNavigate={onNavigate} />
         </SidebarTreeItem>
         <SidebarMenuItem><SidebarMenuButton aria-disabled="true" className="aria-disabled:opacity-100" title="日历功能暂未开放"><CalendarDays /><span>日历</span></SidebarMenuButton></SidebarMenuItem>

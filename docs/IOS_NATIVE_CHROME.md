@@ -142,3 +142,19 @@ iOS 构建、`git diff --check` 通过（`/tmp/memocard-ios-sidebar-spacing-mask
 PR CI 补充校验：将原生动作列表的长数组拼接拆为等价的有类型数组与追加操作，避免旧 Swift 类型检查器超时。本地 arm64／x86_64 iOS 通用模拟器构建通过（`/tmp/memocard-review-ios-universal.log`）。CI 在既有 macOS 15 runner 上显式选择预装 Xcode 26.3 并记录编译器版本，避免默认 Xcode 16.4 缺少 iOS 26 玻璃及滚动边缘 SDK；最低部署目标不变。镜像依据：[GitHub macOS 15 runner 软件清单](https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md)。
 
 CI 的 UI 测试暴露既有 Mermaid 预览测试的异步等待竞态：按钮出现时，子组件 effect 可能尚未挂载 Shadow DOM。测试改为等待新图表内容并确认旧内容消失，不改 Mermaid 产品实现；本地 11 项 Mermaid 测试与定向 ESLint 通过（`/tmp/memocard-review-mermaid-test.log`）。
+
+2026-10-17 将 iOS 侧栏的 SF Symbols 图形替换为 H5 同源 Lucide 矢量资源：主页 `House`、所有笔记 `Notebook`、日历 `CalendarDays`、标签／无标签 `Hash`、图片筛选 `Image`、链接筛选 `Link`、设置入口 `Settings2`，以及 `Search`、`X`、`ChevronRight`。资源由 `node scripts/generate-sidebar-icons.mjs` 从当前已安装的 `lucide-react` 导出到 `Assets.xcassets/Lucide-*.imageset`，保留默认 24 单位画布、2 单位描边和许可文本；升级 H5 图标依赖后可重新运行。原生按模板图像渲染以继承主题颜色，保留现有布局尺寸、Emoji 自定义图标、点击区域、玻璃效果、折叠状态与动作桥接。
+
+iOS 构建、6 项侧栏桥接测试与 `git diff --check` 通过（`/tmp/memocard-ios-lucide-build.log`、`/tmp/memocard-ios-lucide-tests.log`）。新构建已安装并运行于 iPhone 18 Pro / iOS 27.0 模拟器，实际确认导航、标签和快捷筛选图标显示，以及标签收起、快捷筛选展开／收起、标签搜索打开／关闭、设置菜单打开及取消返回侧栏。首次打开侧栏的窗口操作返回连接状态错误，重连后确认侧栏已展开；失败返回未单独记为交互通过。最终停留在侧栏预览；本轮未重跑 Web 全量测试或验证其他设备、系统版本与深色模式。
+
+侧栏开发预览位于 `apps/apple/Sources/NativeSidebar.swift` 底部。`#Preview("侧栏布局")` 使用 326×874 固定画布和 DEBUG 示例数据，覆盖导航、快捷筛选、选中标签、Emoji 与多层标签；`#Preview("侧栏行")` 聚焦普通行、选中且可展开的行、Emoji 行。预览使用生产组件，不复制布局。`NativeHost(previewSurfaces:)` 直接提供示例 surfaces；普通 `NativeHost()` 在 DEBUG 的 `XCODE_RUNNING_FOR_PREVIEWS=1` 环境下也跳过笔记库恢复，避免 App 入口的 `@StateObject` 打开真实笔记库。Release 路径不变。示例数据显式声明字符串与动作类型，避免 Preview 注入调试表达式后类型推断超时。
+
+2026-10-18 在 Xcode 27.1 中恢复了 Canvas 的逐元素源码定位。最小对照证明：直接传入函数引用的 `Button(action: action)` 无法选择内部文字，改为等价的 `Button { action() } label: { … }` 后恢复；侧栏文件中两个 `send: send` 也改为显式调用闭包后，完整预览恢复定位。保留原视图层次、尺寸、按钮样式、无障碍信息和动作行为。这是当前 Xcode Preview 的兼容处理；没有证据表明由视图层级深度或 App 渲染性能导致。诊断用文件、额外组件拆分与执行模式实验均已撤回，保留默认 JIT。
+
+实际验证：在「侧栏布局」预览开启 Selectable 后，双击「主页」选中 `Text(title ?? item.title)…`，双击主页 Lucide 图标定位 `Image` 的资源表达式，双击品牌文字选中 `MemoCard`；相同生产组件的多个实例会一起出现选中边框。调布局时修改 `NativeSidebarItem` 的 `frame(minHeight: 48)`、`HStack(spacing: 8)`，或 `NativeSidebarIcon` 默认大小 16、子标签缩进 24，Canvas 会重新渲染。已临时验证行高 48→56→48 的联动并恢复原值。Live 模式用于折叠与搜索；真实页面动作在 App 中验证。
+
+当前 Xcode 的检查器仅实际观察到 File／History／Quick Help，源码菜单未出现旧教程中的 Show SwiftUI Inspector，不能承诺通过该面板拖动或修改尺寸。[Apple 当前 Canvas 文档](https://developer.apple.com/documentation/xcode/interacting-with-previews-in-the-canvas)描述的可用流程是 Selectable 后双击元素定位源码，编辑源码并观察预览。
+
+性能基准、复跑命令及指标限制见 `apps/apple/Tests/README.md`。本轮建立 Release 启动、侧栏展开／收起与滚动基线，并检查启动 Time Profiler；尚无测量证据支持侧栏运行时瓶颈，因此没有进行推测性的性能重构，也不宣称 App 已提速。
+
+最终验证：iOS Debug 构建与 Mac Debug 构建通过；两项 Release 展开／收起、滚动回归通过（0 失败、0 跳过），`git diff --check` 通过。最终 Debug App 已安装并运行在 iPhone 18 Pro / iOS 27.0，实际确认侧栏布局与 Lucide 图标、三级标签「产品/体验/反馈」导航、选中状态及主页行返回。截图位于 `build/verification/ios-preview/native-sidebar-source-selection.jpg` 和 `native-sidebar-selection-final-simulator.jpg`。本轮未验证真机、iPad 或其他系统版本，未发布。

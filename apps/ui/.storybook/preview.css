@@ -1,0 +1,4 @@
+@import "../src/styles.css";
+/* Only Storybook scans fixtures; production CSS scans src/. */
+@source "../stories";
+@source "./preview.tsx";

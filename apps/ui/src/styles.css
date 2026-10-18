@@ -1,6 +1,7 @@
 @import "tailwindcss" source("./");
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./generated/design-tokens.css";
 @font-face {
   font-family: "Geist Variable";
   font-style: normal;
@@ -9,6 +10,12 @@
   src: url("@fontsource-variable/geist/files/geist-latin-wght-normal.woff2") format("woff2");
 }
 @custom-variant dark (&:is(.dark *));
+
+@layer components {
+  [data-sidebar$="-button"] { height: var(--sidebar-desktop-row-height); gap: var(--sidebar-content-gap); padding-inline: var(--sidebar-horizontal-padding); font-size: var(--sidebar-desktop-font-size); line-height: 1.25rem; }
+  [data-sidebar$="-button"] svg, .sidebar-tree-row > button > span:first-child { width: var(--sidebar-icon-size); height: var(--sidebar-icon-size); }
+  ul[data-sidebar] { gap: var(--sidebar-row-gap); }
+}
 
 @theme inline {
   --font-heading: var(--app-font-heading);
@@ -124,7 +131,6 @@
   --chart-3: var(--accent-400);
   --chart-4: var(--accent-600);
   --chart-5: var(--accent-300);
-  --radius: 0.625rem;
   --sidebar: var(--neutral-50);
   --sidebar-foreground: var(--neutral-950);
   --sidebar-primary: var(--neutral-900);
@@ -133,34 +139,6 @@
   --sidebar-accent-foreground: var(--neutral-900);
   --sidebar-border: var(--border);
   --sidebar-ring: oklch(0.708 0 0);
-}
-
-:root[data-radius="none"] {
-  --radius: 0rem;
-}
-
-:root[data-radius="xs"] {
-  --radius: 0.25rem;
-}
-
-:root[data-radius="sm"] {
-  --radius: 0.375rem;
-}
-
-:root[data-radius="md"] {
-  --radius: 0.5rem;
-}
-
-:root[data-radius="lg"] {
-  --radius: 0.625rem;
-}
-
-:root[data-radius="xl"] {
-  --radius: 0.75rem;
-}
-
-:root[data-radius="2xl"] {
-  --radius: 1rem;
 }
 
 :root[data-neutral-palette="slate"] {
