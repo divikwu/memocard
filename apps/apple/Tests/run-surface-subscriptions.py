@@ -127,6 +127,7 @@ def run(directory):
     (schemes / "MemoCardiOS.xcscheme").write_text((original / "xcshareddata/xcschemes/MemoCardiOS.xcscheme").read_text())
     command = ["xcodebuild", "-project", str(project), "-scheme", "MemoCardiOS", "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={device}", "-derivedDataPath", str(directory / "build"), "CODE_SIGNING_ALLOWED=NO", "build"]
     phase("build", command, 600)
+    phase("runtime-cache", ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", runtime], 600)
     phase("bootstatus", ["xcrun", "simctl", "bootstatus", device, "-b"], 180)
     installed = False
     try:
@@ -157,6 +158,8 @@ device, created_device = select_device()
 try:
     inventory = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "--json"]))["devices"]
     runtime = next((runtime for runtime, devices in inventory.items() if any(item["udid"] == device for item in devices)), None)
+    if runtime is None:
+        raise RuntimeError(f"Cannot resolve the runtime for Simulator {device}")
     print("SURFACE_PROBE_DEVICE " + json.dumps({"device": device, "runtime": runtime, "created": created_device}), flush=True)
     if args.output_dir:
         directory = args.output_dir.resolve()
