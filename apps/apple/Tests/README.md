@@ -74,4 +74,6 @@ The probe automatically finds an available iPhone Simulator, creating one only w
 python3 apps/apple/Tests/run-surface-subscriptions.py --device auto --output-dir /tmp/memocard-surface-evidence
 ```
 
+The runner prints the selected runtime and each phase's outcome and elapsed time. An installation timeout remains a failure at 60 seconds, with no retry; bounded process sampling and targeted Simulator installation logs run only after that deadline to diagnose the failure.
+
 `pnpm bench:sidebar:native` compares the known pre-index `a53fb0a` implementation with the current production index, including index construction and full traversal. `pnpm bench:sidebar:web` measures the real React tree calculations through SSR with presentation primitives mocked. Neither benchmark runs as a timing threshold in CI. Methods, hardware, raw measurements, Release Simulator comparisons and limitations are recorded in [design/performance.md](../../../design/performance.md).

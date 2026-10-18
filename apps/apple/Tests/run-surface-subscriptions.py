@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
+import time
 
 root = Path(__file__).resolve().parents[3]
 parser = argparse.ArgumentParser()
@@ -36,6 +38,55 @@ def select_device():
             device = subprocess.check_output(["xcrun", "simctl", "create", "MemoCard Surface Tests", phones[0]["identifier"], runtime["identifier"]], text=True).strip()
             return device, True
     raise RuntimeError("Native surface tests require an available iOS Simulator runtime with iPhone support")
+
+def diagnostic(kind, command, timeout):
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=timeout)
+        output = result.stdout
+        status = {"kind": kind, "exitCode": result.returncode}
+    except subprocess.TimeoutExpired as error:
+        output = error.stdout or ""
+        if isinstance(output, bytes):
+            output = output.decode(errors="replace")
+        status = {"kind": kind, "error": str(error), "timeoutSeconds": timeout}
+    except Exception as error:
+        print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": kind, "error": str(error)}), flush=True)
+        return
+    section = "first" if kind == "install-sample" else "last"
+    print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({**status, "truncated": len(output) > 20000, "section": section}), flush=True)
+    if len(output) > 20000:
+        print(f"[diagnostic truncated to {section} 20000 characters]", flush=True)
+    print(output[:20000] if section == "first" else output[-20000:], flush=True)
+
+def phase(name, command, timeout, capture=False):
+    started = time.monotonic()
+    print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "start", "device": device, "timeoutSeconds": timeout}), flush=True)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE if capture else None, stderr=subprocess.STDOUT, text=True)
+    outcome = "failed"
+    try:
+        output, _ = process.communicate(timeout=timeout)
+        if process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, command, output=output)
+        outcome = "passed"
+        return output
+    except subprocess.TimeoutExpired:
+        outcome = "timeout"
+        print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "deadline", "outcome": outcome, "seconds": round(time.monotonic() - started, 3)}), flush=True)
+        if name == "install":
+            # The install deadline has already failed. Sample its live IPC wait
+            # before terminating it; diagnosis never extends the success window.
+            diagnostic("install-sample", ["sample", str(process.pid), "1"], 5)
+        try:
+            process.kill()
+            process.communicate(timeout=5)
+        except Exception as error:
+            print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "process-cleanup", "error": str(error)}), flush=True)
+        if name == "install":
+            diagnostic("host-simulator-log", ["/usr/bin/log", "show", "--last", "2m", "--style", "compact", "--predicate", 'process == "CoreSimulatorService" OR process == "simdiskimaged"'], 10)
+            diagnostic("device-install-log", ["xcrun", "simctl", "spawn", device, "log", "show", "--last", "2m", "--style", "compact", "--predicate", 'process == "installd" OR process == "installcoordinationd"'], 10)
+        raise
+    finally:
+        print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "finish", "outcome": outcome, "seconds": round(time.monotonic() - started, 3), "exitCode": process.returncode}), flush=True)
 
 def run(directory):
     shutil.copytree(args.source_dir, directory / "Sources")
@@ -75,16 +126,16 @@ def run(directory):
     schemes.mkdir(parents=True)
     (schemes / "MemoCardiOS.xcscheme").write_text((original / "xcshareddata/xcschemes/MemoCardiOS.xcscheme").read_text())
     command = ["xcodebuild", "-project", str(project), "-scheme", "MemoCardiOS", "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={device}", "-derivedDataPath", str(directory / "build"), "CODE_SIGNING_ALLOWED=NO", "build"]
-    subprocess.run(command, check=True, timeout=600)
-    subprocess.run(["xcrun", "simctl", "bootstatus", device, "-b"], check=True, timeout=180)
+    phase("build", command, 600)
+    phase("bootstatus", ["xcrun", "simctl", "bootstatus", device, "-b"], 180)
     installed = False
     try:
-        subprocess.run(["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], check=True, timeout=60)
+        phase("install", ["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], 60)
         installed = True
-        launch = subprocess.run(["xcrun", "simctl", "launch", "--console", device, "dev.divikwu.memocard.surface-probe"], check=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=60)
-        print(launch.stdout)
+        launch = phase("launch", ["xcrun", "simctl", "launch", "--console", device, "dev.divikwu.memocard.surface-probe"], 60, capture=True)
+        print(launch)
         marker = "SURFACE_SUBSCRIPTION_RESULT "
-        result = next((json.loads(line.removeprefix(marker)) for line in launch.stdout.splitlines() if line.startswith(marker)), None)
+        result = next((json.loads(line.removeprefix(marker)) for line in launch.splitlines() if line.startswith(marker)), None)
         if result is None:
             raise RuntimeError("Surface probe exited without completing its assertions")
         (directory / "result.json").write_text(json.dumps(result, indent=2) + "\n")
@@ -94,10 +145,19 @@ def run(directory):
             print("Native surface assertions passed")
     finally:
         if installed:
-            subprocess.run(["xcrun", "simctl", "uninstall", device, "dev.divikwu.memocard.surface-probe"], check=True, timeout=60)
+            had_error = sys.exc_info()[0] is not None
+            try:
+                phase("uninstall", ["xcrun", "simctl", "uninstall", device, "dev.divikwu.memocard.surface-probe"], 60)
+            except Exception as error:
+                if not had_error:
+                    raise
+                print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "probe-cleanup", "error": str(error)}), flush=True)
 
 device, created_device = select_device()
 try:
+    inventory = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "--json"]))["devices"]
+    runtime = next((runtime for runtime, devices in inventory.items() if any(item["udid"] == device for item in devices)), None)
+    print("SURFACE_PROBE_DEVICE " + json.dumps({"device": device, "runtime": runtime, "created": created_device}), flush=True)
     if args.output_dir:
         directory = args.output_dir.resolve()
         directory.mkdir(parents=True, exist_ok=False)
@@ -107,5 +167,11 @@ try:
             run(Path(temporary))
 finally:
     if created_device:
-        subprocess.run(["xcrun", "simctl", "shutdown", device], check=False)
-        subprocess.run(["xcrun", "simctl", "delete", device], check=True)
+        had_error = sys.exc_info()[0] is not None
+        try:
+            subprocess.run(["xcrun", "simctl", "shutdown", device], check=False, timeout=30)
+            subprocess.run(["xcrun", "simctl", "delete", device], check=True, timeout=30)
+        except Exception as error:
+            if not had_error:
+                raise
+            print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "device-cleanup", "error": str(error)}), flush=True)
