@@ -13,4 +13,6 @@ connection.json
 *.p12
 verification-artifacts/
 apps/ui/storybook-static/
+apps/ui/.vitest-attachments/
+apps/ui/stories/__screenshots__/
 apps/apple/Resources/Web/

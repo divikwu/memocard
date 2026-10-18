@@ -24,9 +24,11 @@
 1. 修改 token 源或现行组件规格，执行 `pnpm tokens:build`。
 2. Web 执行 `pnpm --filter @memocard/ui storybook`，原生在 Xcode 打开 `NativeSidebar.swift` 的 Canvas。
 3. 修改颜色 CSS 后执行 `pnpm palette:build`；它通过锁定的 Chromium 和生产 `readIOSPalette()` 采样默认浅/深色，生成仅 Debug 使用的 Swift fixture。普通 token 构建不依赖浏览器。
+   采样的强调色、中性色和圆角来自生产 `DEFAULT_APPEARANCE`；无变化时保留 Swift 文件时间戳。
 4. 执行 `pnpm verify:design` 和相关组件/bridge 回归，再在真实 App 验证。生成文件随源文件一起提交。
+5. 升级 Lucide 或修改侧栏图标映射后执行 `pnpm icons:build`；`icons:check` 逐字节检查 SVG 与 Xcode 资源 metadata，并已接入设计 CI。
 
-生成文件禁止手改。`tokens:check`、`palette:check` 只检查，不覆盖现有文件。Storybook Controls 用于预览组件参数；正式设计改动回到源文件，不自动写回生产布局。
+生成文件禁止手改。`tokens:check`、`icons:check`、`palette:check` 只检查，不覆盖现有文件；三个生成命令都在内容相同时保留时间戳。设计 CI 的 `test:palette` 用一次真实采样同时验证 fixture 漂移与只读／mtime 行为。Storybook Controls 用于预览组件参数；正式设计改动回到源文件，不自动写回生产布局。
 
 平台输出只暴露各端实际消费的值。基础 spacing 用于别名解析，原生专用的缩进与字号不额外生成 Web CSS 变量，避免把开发规范和未使用的变量带入生产包。
 

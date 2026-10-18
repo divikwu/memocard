@@ -4,6 +4,7 @@
   import "../src/styles.css";
   import "../src/tag-colors.css";
   import { readIOSPalette, IOS_PALETTE_KEYS } from "../src/lib/ios-palette.ts";
-  window.sidebarPaletteSampler = { readIOSPalette, keys: IOS_PALETTE_KEYS };
+  import { DEFAULT_APPEARANCE } from "../src/features/theme/preferences.ts";
+  window.sidebarPaletteSampler = { readIOSPalette, keys: IOS_PALETTE_KEYS, appearance: DEFAULT_APPEARANCE };
 </script>
 </body></html>

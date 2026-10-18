@@ -3,6 +3,9 @@ import { defineConfig, mergeConfig } from "vitest/config";
 import { playwright } from "@vitest/browser-playwright";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import viteConfig from "./vite.storybook.config.ts";
+import { desktopViewport, mobileViewport } from "./.storybook/viewports.ts";
+
+const viewportSetup = fileURLToPath(new URL("./.storybook/viewport.setup.ts", import.meta.url));
 
 export default mergeConfig(viteConfig, defineConfig({
   test: {
@@ -12,7 +15,9 @@ export default mergeConfig(viteConfig, defineConfig({
         plugins: [storybookTest({ configDir: fileURLToPath(new URL("./.storybook", import.meta.url)), tags: { exclude: ["mobile"] } })],
         test: {
           name: "storybook-desktop",
-          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: { width: 1024, height: 900 } },
+          setupFiles: [viewportSetup],
+          provide: { storybookViewport: desktopViewport },
+          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: desktopViewport },
         },
       },
       {
@@ -20,7 +25,17 @@ export default mergeConfig(viteConfig, defineConfig({
         plugins: [storybookTest({ configDir: fileURLToPath(new URL("./.storybook", import.meta.url)), tags: { include: ["mobile"] } })],
         test: {
           name: "storybook-mobile",
-          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: { width: 390, height: 844 } },
+          setupFiles: [viewportSetup],
+          provide: { storybookViewport: mobileViewport },
+          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: mobileViewport },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "sidebar-breakpoints",
+          include: ["stories/sidebar.breakpoints.browser.tsx"],
+          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: { width: 768, height: 900 }, screenshotDirectory: fileURLToPath(new URL("../../build/verification/design-system/storybook-breakpoints", import.meta.url)) },
         },
       },
     ],

@@ -3,6 +3,7 @@ import { expect, fn, userEvent, within } from "storybook/test";
 import { Hash } from "lucide-react";
 import { SidebarTreeItem } from "../src/components/sidebar-tree-item";
 import { Sidebar, SidebarContent, SidebarMenu, SidebarMenuSub, SidebarProvider } from "../src/components/ui/sidebar";
+import { desktopGlobals } from "../.storybook/viewports";
 
 function RowExample({ label, selected, disabled, emoji, expanded, onSelect }: { label: string; selected: boolean; disabled: boolean; emoji: boolean; expanded: boolean; onSelect: () => void }) {
   return <SidebarProvider className="min-h-0!">
@@ -16,6 +17,7 @@ function RowExample({ label, selected, disabled, emoji, expanded, onSelect }: { 
 const meta = {
   title: "sidebar/row",
   component: RowExample,
+  globals: desktopGlobals,
   args: { label: "产品", selected: false, disabled: false, emoji: false, expanded: true, onSelect: fn() },
   parameters: { layout: "padded" },
 } satisfies Meta<typeof RowExample>;

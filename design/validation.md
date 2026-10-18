@@ -7,7 +7,7 @@
 | 检查 | 状态 | 说明 |
 | --- | --- | --- |
 | token 生成、别名与漂移检查 | 通过 | `tokens:check`、5 项 token 测试；错误类型、别名与只读漂移检查 |
-| Storybook 类型、构建、浏览器故事 | 通过 | 19/19 Chromium 故事；桌面 1024×900、H5 390×844；2 项跨 project 文件过滤不是跳过故事 |
+| Storybook 类型、构建、浏览器故事 | 通过 | 19/19 Chromium 故事逐项断言实际尺寸：18 项桌面 1024×900、1 项 H5 390×844；另加 1 项真实断点回归，共 20/20；2 项跨 project 文件过滤不是跳过故事。初版尺寸记录更正见下文 |
 | 原生 palette fixture | 通过 | 默认 mono/neutral 浅深色真实 CSS 采样；生成物检查一致 |
 | Web/bridge 回归 | 通过 | 最终 60 文件 / 1047 项 UI 测试（单 worker，原超时）；同模式 palette 更新；126 native-core、8 network、14 local-Web、16 MCP 测试 |
 | macOS / iOS 构建 | 通过 | 最终生产 Web 资源、Xcode 27.1 / SDK 27.1，Debug iOS Simulator 与 macOS 构建成功；最低部署目标 iOS 17，仅为编译覆盖 |
@@ -41,3 +41,12 @@ token 无变化的重复构建保留四份生成物时间戳，新增 mtime 回�
 - 修复 Storybook Autodocs 的主题污染：真实 ThemeProvider 会修改 document，故事改为独立 iframe，并为当前场景设置展示高度。真实 Chromium Docs 同时保持浅／深色；LivePalette 切换强调色与中性色不影响其他故事，真实 localStorage/cookie 标记不变，页面错误为 0。类型、静态构建、19/19 故事再次通过。证据为本机 `build/verification/design-system/autodocs-isolation.json` 与 `storybook-docs-isolation.png`。
 - 新增 `testSidebarEdgeGesturesOpenAndCloseNavigation`，从闭合状态的左侧 12pt 拖入打开，再拖动右侧主卡片向左关闭；没有用导航按钮替代手势。最终 Release iPhone 18 Pro / iOS 27.0 用例通过（1/1，0 跳过），结果为本机 `build/verification/design-system/sidebar-edge-final.xcresult`，日志 `/tmp/memocard-sidebar-edge-final.log`。此项是实际模拟器 XCTest 行为验收，尚未由 CUA 再次操作复核；Mac 锁屏时不宣称界面工具已完成可见复核。
 - 9 个 route／初始资源／字体预算及 Base UI 依赖检查再次通过，未提高预算；`pnpm audit --prod` 未发现已知漏洞。交付阶段没有修改生产侧栏布局或手势实现。
+
+## 架构审查第 1–3 项修复（2026-10-18）
+
+- 初版曾将 Vitest 配置的 1024×900 当作实际执行尺寸；审查确认 addon-vitest 10.6.2 会把未绑定故事视口的测试重设为 1200×900，该历史记录在此更正。现通过共享命名视口与故事 globals 明确 desktop / mobile；19 个故事逐项断言真实 innerWidth / innerHeight，新增 768→767→768→767 浏览器回归。全部 20/20 通过，验证桌面折叠状态保留、移动抽屉跨断点关闭，以及行高／字号 32/14 ↔ 48/16。
+- 负向控制将 desktop 视口键临时设为未知值，18 项桌面故事均检测到真实 1200 != 1024；已恢复源码并重新通过 20 项。日志 `/tmp/memocard-review-viewport-negative-control.log`、`/tmp/memocard-review-storybook-tests.log`。
+- 可见验收在 600px 窄 manager 确认桌面故事仍为桌面布局；足够的 Canvas 空间下直接读取到桌面 1024×900、H5 390×844。Storybook 10.6.2 manager 的可见高度会受窗口、附加面板和缩放影响，工具栏标注尺寸不能单独作为验收证据。已恢复浏览器临时尺寸覆盖。截图为本机 `build/verification/design-system/storybook-desktop-viewport-fixed.png` 与 `storybook-mobile-viewport-fixed.png`。
+- 图标检查新增 `icons:check` 与 5 项回归，覆盖 SVG、Xcode metadata、缺失／漂移只读与 no-op mtime；10 组 / 20 份资源当前逐字节一致，资源内容未改变。已接入 `verify:design` 和现有设计 CI。
+- 删除只写不读的 sidebar cookie 与 Storybook cookie accessor 覆盖；42 项 App/sidebar 业务回归通过。palette 采样改用生产 DEFAULT_APPEARANCE；2 项真实 Chromium 回归覆盖已提交 fixture 漂移、缺失／过期检查只读、无变化保留 mtime 与正常更新。Swift fixture 内容未改变。
+- 类型检查、lint（既有 LiveMarkdownEditor Hook 警告保留）、生产 UI 构建、Base UI 检查与全部预算通过；最紧的移动首页为 1,335,202 / 1,335,296 bytes raw，余量 94 bytes。没有改动 iOS 源码、原生资源、生产布局或动作协议。本轮远程 CI 结果以 PR #48 最新 head 为准。

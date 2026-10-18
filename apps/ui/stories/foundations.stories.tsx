@@ -5,6 +5,7 @@ import { radiusValues, sidebarTokens } from "../src/generated/design-tokens";
 import { useTheme } from "../src/features/theme/ThemeProvider";
 import { readIOSPalette } from "../src/lib/ios-palette";
 import { Button } from "../src/components/ui/button";
+import { desktopGlobals } from "../.storybook/viewports";
 
 function Foundations() {
   return <main className="max-w-4xl space-y-8 bg-background p-6 text-foreground">
@@ -16,7 +17,7 @@ function Foundations() {
     <section className="space-y-3"><h2 className="text-balance text-lg font-semibold">侧栏平台映射</h2><pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-xs leading-relaxed tabular-nums">{JSON.stringify(sidebarTokens, null, 2)}</pre></section>
   </main>;
 }
-const meta = { title: "foundations/tokens", component: Foundations, parameters: { docs: { story: { height: "1000px" } } } } satisfies Meta<typeof Foundations>;
+const meta = { title: "foundations/tokens", component: Foundations, globals: desktopGlobals, parameters: { docs: { story: { height: "1000px" } } } } satisfies Meta<typeof Foundations>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
