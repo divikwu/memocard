@@ -1,0 +1,101 @@
+{
+  "date": "2026-10-18",
+  "environment": {
+    "baselineCommit": "a53fb0a1992ca66fcc01d007475c1a05617e3f0a",
+    "machine": "Apple M4",
+    "memoryBytes": 17179869184,
+    "architecture": "arm64",
+    "xcode": "Xcode 27.1\nBuild version 27A9275",
+    "node": "v24.18.0"
+  },
+  "device": "iPhone 18 Pro / iOS 27.0 Simulator",
+  "scope": "Release; same existing MemoCard iOS QA vault and destination; no notes edited. Five measured iterations after XCTest warmup. Presentation baseline RSD 10.728%; no speed/FPS/hitch/energy claim.",
+  "baseline": {
+    "baselineCommit": "a53fb0a1992ca66fcc01d007475c1a05617e3f0a",
+    "testsPassed": 5,
+    "testsSkipped": 0,
+    "scope": "Release Simulator, existing fixed QA vault, XCTest overhead included; not FPS or animation duration",
+    "metrics": [
+      {
+        "metric": "Duration (ApplicationFirstFramePresentationResponsive), s",
+        "meanSeconds": 2.664,
+        "relativeStandardDeviationPercent": 2.572,
+        "samplesSeconds": [
+          2.756973,
+          2.714459,
+          2.669047,
+          2.563301,
+          2.617901
+        ]
+      },
+      {
+        "metric": "Clock Monotonic Time, s",
+        "meanSeconds": 4.288,
+        "relativeStandardDeviationPercent": 10.728,
+        "samplesSeconds": [
+          3.76436,
+          4.578479,
+          4.965897,
+          4.332447,
+          3.80011
+        ]
+      },
+      {
+        "metric": "Duration (Scroll_DraggingAndDeceleration), s",
+        "meanSeconds": 2.574,
+        "relativeStandardDeviationPercent": 0.521,
+        "samplesSeconds": [
+          2.583737,
+          2.583831,
+          2.583912,
+          2.566945,
+          2.550307
+        ]
+      }
+    ]
+  },
+  "current": {
+    "baselineCommit": "a53fb0a1992ca66fcc01d007475c1a05617e3f0a",
+    "testsPassed": 5,
+    "testsSkipped": 0,
+    "scope": "Release Simulator; same QA vault/destination as baseline; XCTest overhead included; not FPS",
+    "metrics": [
+      {
+        "metric": "Duration (ApplicationFirstFramePresentationResponsive), s",
+        "meanSeconds": 2.632,
+        "relativeStandardDeviationPercent": 1.69,
+        "samplesSeconds": [
+          2.577117,
+          2.621685,
+          2.653857,
+          2.704709,
+          2.600262
+        ]
+      },
+      {
+        "metric": "Clock Monotonic Time, s",
+        "meanSeconds": 3.748,
+        "relativeStandardDeviationPercent": 0.369,
+        "samplesSeconds": [
+          3.760141,
+          3.74933,
+          3.764168,
+          3.739983,
+          3.726003
+        ]
+      },
+      {
+        "metric": "Duration (Scroll_DraggingAndDeceleration), s",
+        "meanSeconds": 2.574,
+        "relativeStandardDeviationPercent": 0.507,
+        "samplesSeconds": [
+          2.583181,
+          2.568557,
+          2.583134,
+          2.550683,
+          2.584577
+        ]
+      }
+    ]
+  }
+}

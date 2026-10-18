@@ -1,9 +1,37 @@
+// Positions refer to the current actions, so selection, icons and badges never use cached values.
+struct NativeSidebarTagIndex {
+    let roots: [Int]
+    private let childrenByPath: [String: [Int]]
+
+    init(paths: [String?]) {
+        var roots: [Int] = []
+        var children: [String: [Int]] = [:]
+        for (index, path) in paths.enumerated() {
+            guard let path else { roots.append(index); continue }
+            if let slash = path.lastIndex(of: "/") {
+                children[String(path[..<slash]), default: []].append(index)
+            } else {
+                roots.append(index)
+            }
+        }
+        self.roots = roots
+        childrenByPath = children
+    }
+
+    func children(of path: String?) -> [Int] {
+        guard let path else { return [] }
+        return childrenByPath[path] ?? []
+    }
+}
+
 #if os(iOS)
 import SwiftUI
 import UIKit
 
 struct NativeNavigationSidebar: View {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
+    @ObservedObject private var surfaceState: NativeSurfaceState
+    @ObservedObject private var appearance: NativeSurfaceAppearanceState
     var trailingInset: CGFloat = 16
     @State private var snapshot: NativeSurface?
     @State private var filtersOpen = false
@@ -16,14 +44,20 @@ struct NativeNavigationSidebar: View {
     @ScaledMetric(relativeTo: .subheadline) private var brandFontSize = SidebarTokens.brandFontSize
     @ScaledMetric(relativeTo: .caption) private var captionFontSize = SidebarTokens.captionFontSize
     private static let logo = Bundle.main.resourceURL.flatMap { UIImage(contentsOfFile: $0.appendingPathComponent("Web/favicon.png").path) }
+    init(host: NativeHost, trailingInset: CGFloat = 16) {
+        self.host = host
+        self.trailingInset = trailingInset
+        surfaceState = host.nativeSurfaceStore.state(for: "navigation")
+        appearance = host.nativeSurfaceStore.appearance
+    }
     private var surface: NativeSurface? {
-        host.nativeSurfaces["navigation"].flatMap { $0.presented == true ? $0 : nil } ?? snapshot
+        surfaceState.surface.flatMap { $0.presented == true ? $0 : nil } ?? snapshot
     }
     private var radius: CGFloat { CGFloat(surface?.rowRadius ?? Double(DesignRadius.lg)) }
     private var tags: [NativeAction] { actions("tags") }
     private func actions(_ id: String) -> [NativeAction] { surface?.sections?.first { $0.id == id }?.actions ?? [] }
     private func color(_ key: String) -> Color {
-        if let rgba = host.nativeSurfaces["chrome"]?.palette?[key], rgba.count == 4 {
+        if let rgba = appearance.value.palette?[key], rgba.count == 4 {
             return Color(.sRGB, red: rgba[0] / 255, green: rgba[1] / 255, blue: rgba[2] / 255, opacity: rgba[3] / 255)
         }
         return key == "sidebar" || key == "sidebar-accent" ? Color(uiColor: .secondarySystemBackground) : key == "sidebar-border" ? Color(uiColor: .separator) : .primary
@@ -47,8 +81,8 @@ struct NativeNavigationSidebar: View {
         .background(color("sidebar").ignoresSafeArea())
         .accessibilityAddTraits(.isModal)
         .accessibilityAction(.escape) { send("close") }
-        .onReceive(host.$nativeSurfaces) { surfaces in
-            if let current = surfaces["navigation"], current.presented == true {
+        .onReceive(surfaceState.$surface) { surface in
+            if let current = surface, current.presented == true {
                 if snapshot?.resetKey != current.resetKey {
                     filtersOpen = false; pinnedOpen = true; tagsOpen = true; searchOpen = false; query = ""
                 }
@@ -74,7 +108,9 @@ struct NativeNavigationSidebar: View {
         .padding(.leading, SidebarTokens.horizontalPadding).padding(.trailing, trailingInset).padding(.bottom, 16)
     }
     private var scrollContent: some View {
-        ScrollView {
+        let tags = self.tags
+        let tagIndex = NativeSidebarTagIndex(paths: tags.map(\.path))
+        return ScrollView {
             VStack(spacing: 8) {
                 VStack(spacing: 8) {
                     if let message = surface?.sections?.first(where: { $0.id == "library" })?.message, !message.isEmpty {
@@ -103,7 +139,7 @@ struct NativeNavigationSidebar: View {
                         groupHeader("置顶标签", open: $pinnedOpen)
                         if pinnedOpen {
                             VStack(spacing: SidebarTokens.rowGap) {
-                                ForEach(actions("pinned-tags")) { item in branch(item, fullPath: true) }
+                                ForEach(actions("pinned-tags")) { item in branch(item, tags: tags, tagIndex: tagIndex, fullPath: true) }
                             }
                         }
                     }.padding(8)
@@ -126,9 +162,10 @@ struct NativeNavigationSidebar: View {
                     }
                     if tagsOpen {
                         let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let matches = term.isEmpty ? tags.filter { !($0.path ?? "").contains("/") } : tags.filter { ($0.path ?? "").lowercased().contains(term.lowercased()) }
+                        let normalizedTerm = term.lowercased()
+                        let matches = term.isEmpty ? tagIndex.roots.map { tags[$0] } : tags.filter { ($0.path ?? "").lowercased().contains(normalizedTerm) }
                         VStack(spacing: SidebarTokens.rowGap) {
-                            ForEach(matches) { item in branch(item, fullPath: !term.isEmpty, flat: !term.isEmpty) }
+                            ForEach(matches) { item in branch(item, tags: tags, tagIndex: tagIndex, fullPath: !term.isEmpty, flat: !term.isEmpty) }
                         }
                         if surface?.loading == true { ProgressView("正在加载标签").font(.system(size: captionFontSize)).padding(8) }
                         else if matches.isEmpty { Text(term.isEmpty ? "添加标签后，会显示在这里。" : "没有匹配的标签").font(.system(size: captionFontSize)).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(8) }
@@ -164,8 +201,8 @@ struct NativeNavigationSidebar: View {
             .accessibilityLabel("展开或收起\(title)").accessibilityValue(open.wrappedValue ? "已展开" : "已收起")
     }
     // Explicit calling closures preserve Canvas source selection in Xcode 27.1.
-    private func branch(_ item: NativeAction, fullPath: Bool = false, flat: Bool = false) -> some View {
-        NativeSidebarTagBranch(item: item, tags: tags, fullPath: fullPath, flat: flat,
+    private func branch(_ item: NativeAction, tags: [NativeAction], tagIndex: NativeSidebarTagIndex, fullPath: Bool = false, flat: Bool = false) -> some View {
+        NativeSidebarTagBranch(item: item, tags: tags, tagIndex: tagIndex, fullPath: fullPath, flat: flat,
                                selection: color("sidebar-accent"), border: color("sidebar-border"), radius: radius, send: { send($0) })
     }
 }
@@ -173,6 +210,7 @@ struct NativeNavigationSidebar: View {
 private struct NativeSidebarTagBranch: View {
     let item: NativeAction
     let tags: [NativeAction]
+    let tagIndex: NativeSidebarTagIndex
     var fullPath = false
     var flat = false
     let selection: Color
@@ -181,8 +219,8 @@ private struct NativeSidebarTagBranch: View {
     let send: (String) -> Void
     @State private var expanded = true
     private var children: [NativeAction] {
-        guard !flat, let path = item.path else { return [] }
-        return tags.filter { ($0.path ?? "").hasPrefix(path + "/") && !String(($0.path ?? "").dropFirst(path.count + 1)).contains("/") }
+        guard !flat else { return [] }
+        return tagIndex.children(of: item.path).map { tags[$0] }
     }
     var body: some View {
         VStack(spacing: 0) {
@@ -192,7 +230,7 @@ private struct NativeSidebarTagBranch: View {
             if expanded, !children.isEmpty {
                 VStack(spacing: SidebarTokens.rowGap) {
                     ForEach(children) { child in
-                        NativeSidebarTagBranch(item: child, tags: tags, selection: selection, border: border, radius: radius, send: { send($0) })
+                        NativeSidebarTagBranch(item: child, tags: tags, tagIndex: tagIndex, selection: selection, border: border, radius: radius, send: { send($0) })
                     }
                 }.padding(.vertical, 2).padding(.leading, SidebarTokens.indent)
                     .overlay(alignment: .leading) { Rectangle().fill(border).frame(width: 1).padding(.leading, 14) }

@@ -2,7 +2,7 @@
 import SwiftUI
 import UIKit
 
-struct NativeAction: Decodable, Identifiable {
+struct NativeAction: Decodable, Identifiable, Equatable {
     let id: String
     var title: String
     var icon: String?
@@ -17,7 +17,7 @@ struct NativeAction: Decodable, Identifiable {
     var selected: Bool?
 }
 
-struct NativeField: Decodable, Identifiable {
+struct NativeField: Decodable, Identifiable, Equatable {
     let id: String
     let title: String
     let value: String
@@ -25,7 +25,7 @@ struct NativeField: Decodable, Identifiable {
     var disabled: Bool?
 }
 
-struct NativeSection: Decodable, Identifiable {
+struct NativeSection: Decodable, Identifiable, Equatable {
     let id: String
     var title: String?
     var message: String?
@@ -33,7 +33,7 @@ struct NativeSection: Decodable, Identifiable {
     var fields: [NativeField]?
 }
 
-struct NativeSurface: Decodable, Identifiable {
+struct NativeSurface: Decodable, Identifiable, Equatable {
     let id: String
     let instance: String
     let kind: String
@@ -58,22 +58,37 @@ struct NativeSurface: Decodable, Identifiable {
 }
 
 struct NativeChrome: View {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
+    @ObservedObject private var appearance: NativeSurfaceAppearanceState
+
+    init(host: NativeHost) {
+        self.host = host
+        appearance = host.nativeSurfaceStore.appearance
+    }
+
     var body: some View {
         NativeSidebarContainer(host: host)
             .ignoresSafeArea()
-            .preferredColorScheme(host.nativeSurfaces["chrome"]?.theme == "dark" ? .dark : host.nativeSurfaces["chrome"]?.theme == "light" ? .light : nil)
+            .preferredColorScheme(appearance.value.theme == "dark" ? .dark : appearance.value.theme == "light" ? .light : nil)
     }
 }
 
 private struct NativeSidebarContainer: UIViewControllerRepresentable {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
+    @ObservedObject private var presentation: NativeSurfacePresentationState
+    @ObservedObject private var appearance: NativeSurfaceAppearanceState
+
+    init(host: NativeHost) {
+        self.host = host
+        presentation = host.nativeSurfaceStore.presentation
+        appearance = host.nativeSurfaceStore.appearance
+    }
 
     func makeUIViewController(context: Context) -> SidebarController { SidebarController(host: host) }
     func updateUIViewController(_ controller: SidebarController, context: Context) {
-        controller.update(open: host.nativeSurfaces["navigation"]?.presented == true,
-                          canOpen: host.nativeSurfaces["chrome"]?.leading?.id == "navigation"
-                            && !host.nativeSurfaces.values.contains { $0.presented == true && $0.id != "navigation" })
+        controller.update(open: presentation.value.navigationOpen,
+                          canOpen: presentation.value.canOpenNavigation,
+                          background: appearance.value.palette?["sidebar"])
     }
 
     final class SidebarController: UIViewController, UIGestureRecognizerDelegate {
@@ -149,9 +164,9 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
             applyProgress(progress)
         }
 
-        func update(open: Bool, canOpen: Bool) {
+        func update(open: Bool, canOpen: Bool, background: [Double]?) {
             loadViewIfNeeded()
-            if let rgba = host.nativeSurfaces["chrome"]?.palette?["sidebar"], rgba.count == 4 {
+            if let rgba = background, rgba.count == 4 {
                 view.backgroundColor = UIColor(red: rgba[0] / 255, green: rgba[1] / 255, blue: rgba[2] / 255, alpha: rgba[3] / 255)
             }
             self.canOpen = canOpen
@@ -243,15 +258,24 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
 
 private struct NativeMainChrome: View {
     @ObservedObject var host: NativeHost
-    private var chrome: NativeSurface? { host.nativeSurfaces["chrome"] }
+    @ObservedObject private var chromeState: NativeSurfaceState
+    @ObservedObject private var presentation: NativeSurfacePresentationState
+
+    init(host: NativeHost) {
+        self.host = host
+        chromeState = host.nativeSurfaceStore.state(for: "chrome")
+        presentation = host.nativeSurfaceStore.presentation
+    }
+
+    private var chrome: NativeSurface? { chromeState.surface }
     private var extendsUnderBars: Bool { chrome?.leading?.id == "navigation" }
     private var sheet: NativeSurface? {
-        host.nativeSurfaces.values.filter { $0.presented == true && $0.id != "navigation" && $0.kind != "alert" && $0.kind != "chrome" && $0.kind != "search" && $0.kind != "capture" }.sorted { $0.id < $1.id }.first
+        presentation.value.sheet.flatMap { host.nativeSurfaces[$0.id] }
     }
     private var search: NativeSurface? { host.nativeSurfaces["search"].flatMap { $0.presented == true ? $0 : nil } }
     private var capture: NativeSurface? { host.nativeSurfaces["capture"].flatMap { $0.presented == true ? $0 : nil } }
     private var alert: NativeSurface? {
-        host.nativeSurfaces.values.first { $0.presented == true && $0.kind == "alert" }
+        presentation.value.alert
     }
 
     var body: some View {
@@ -304,7 +328,7 @@ private struct NativeMainChrome: View {
                     }
                 })
         }
-        .accessibilityHidden(search != nil || capture != nil || host.nativeSurfaces["navigation"]?.presented == true)
+        .accessibilityHidden(search != nil || capture != nil || presentation.value.navigationOpen)
         .preferredColorScheme(chrome?.theme == "dark" ? .dark : chrome?.theme == "light" ? .light : nil)
         .overlay { NativeEdgeSearchOverlay(host: host, surface: search) }
         .overlay { NativeFloatingCaptureOverlay(host: host, surface: capture) }
@@ -361,7 +385,7 @@ private struct NativeBottomBar<Bar: View>: ViewModifier {
 }
 
 private struct NativeEdgeSearchOverlay: View {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
     let surface: NativeSurface?
 
     var body: some View {
@@ -388,7 +412,7 @@ private struct NativeEdgeSearchOverlay: View {
 }
 
 private struct NativeFloatingCaptureOverlay: View {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
     let surface: NativeSurface?
 
     var body: some View {
@@ -464,12 +488,20 @@ private struct NativeActionButton: View {
 
 private struct NativePanel: View {
     @ObservedObject var host: NativeHost
+    @ObservedObject private var surfaceState: NativeSurfaceState
+    @ObservedObject private var presentation: NativeSurfacePresentationState
     let id: String
     let instance: String
     @State private var values: [String: String] = [:]
     @FocusState private var focusedField: String?
-    private var surface: NativeSurface? { host.nativeSurfaces[id].flatMap { $0.instance == instance ? $0 : nil } }
-    private var alert: NativeSurface? { host.nativeSurfaces.values.first { $0.presented == true && $0.kind == "alert" } }
+    private var surface: NativeSurface? { surfaceState.surface.flatMap { $0.instance == instance ? $0 : nil } }
+    private var alert: NativeSurface? { presentation.value.alert }
+
+    init(host: NativeHost, id: String, instance: String) {
+        self.host = host; self.id = id; self.instance = instance
+        surfaceState = host.nativeSurfaceStore.state(for: id)
+        presentation = host.nativeSurfaceStore.presentation
+    }
 
     var body: some View {
         NavigationStack {

@@ -50,3 +50,12 @@ token 无变化的重复构建保留四份生成物时间戳，新增 mtime 回�
 - 图标检查新增 `icons:check` 与 5 项回归，覆盖 SVG、Xcode metadata、缺失／漂移只读与 no-op mtime；10 组 / 20 份资源当前逐字节一致，资源内容未改变。已接入 `verify:design` 和现有设计 CI。
 - 删除只写不读的 sidebar cookie 与 Storybook cookie accessor 覆盖；42 项 App/sidebar 业务回归通过。palette 采样改用生产 DEFAULT_APPEARANCE；2 项真实 Chromium 回归覆盖已提交 fixture 漂移、缺失／过期检查只读、无变化保留 mtime 与正常更新。Swift fixture 内容未改变。
 - 类型检查、lint（既有 LiveMarkdownEditor Hook 警告保留）、生产 UI 构建、Base UI 检查与全部预算通过；最紧的移动首页为 1,335,202 / 1,335,296 bytes raw，余量 94 bytes。没有改动 iOS 源码、原生资源、生产布局或动作协议。本轮远程 CI 结果以 PR #48 最新 head 为准。
+
+## 标签树索引与 iOS 状态订阅（2026-10-18）
+
+- 从 `a53fb0a` 保存旧源码及 Release App，分别建立真实组件 SSR、实际 Swift getter、真实 `NativeHost.handle` publisher 和固定 QA 库 Simulator 基线；前后计时范围、源码指纹、样本与限制见 [performance.md](performance.md)。没有把算法计时或通知次数换算为帧率改善。
+- Web 一次建 roots/children/byName 索引与置顶成员 Set；54 项相关回归通过。保留上游顺序、首个同名计数、孤儿/重复路径、平铺搜索、置顶操作和独立展开状态。复杂度回归先在旧实现检测到 80 标签读取 9,800 次，再在新实现通过线性上界，并检查仅选择变化不重读集合。
+- Swift 在同次侧栏计算中复用当前 actions 与路径位置索引，不引入跨更新缓存；6/6 回归通过，包括 1,340 路径与旧谓词等价，以及重排、删除、清空和替换。10k 建表加遍历中位数 15,826.353 → 5.210ms 是算法对照，不含 SwiftUI 布局。
+- 原生全字典 Host 发布改为每 surface 订阅与小型展示/外观投影。同值重放 100 次不再通知；100 次搜索内容更新只通知搜索本身。真实 bridge probe 通过 42 个独立字段变更及生命周期、实例、picker、主题/palette、展示投影断言，含 1k 标签同值大载荷；已加入 macOS `verify:release`。默认清理临时工程和自身 probe，自建 Simulator 才删除，不静默跳过缺失 runtime。
+- 同一 iPhone 18 Pro / iOS 27.0、同一 QA 库，旧/新 Release XCTest 各 5/5 通过、无跳过，包含开合、边缘手势、展开/行操作分离和滚动前置条件。启动/滚动接近，旧开合基线波动较大；不声称真机、功耗或整体 App 提速。结果位于本机 `build/verification/sidebar-performance/{ui-baseline,ui-current}.xcresult`，便携测量记录已提交在 `design/performance/`。
+- `verify:design`（20 项 Chromium 检查）、类型、lint 和生产构建通过；既有编辑器 Hook 警告保留。全部 bundle 预算未增加，最紧移动 route 仍为 1,335,202 / 1,335,296 bytes raw，CSS hash 不变。iOS 控件、布局、手势、资源和动作协议未替换；本次只调整数据索引和订阅来源。完整远程结果以 PR #48 最新 head 为准。

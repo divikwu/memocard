@@ -14,7 +14,8 @@ import PhotosUI
 final class NativeHost: ObservableObject {
     @Published var showPicker = false
     #if os(iOS)
-    @Published var nativeSurfaces: [String: NativeSurface] = [:]
+    let nativeSurfaceStore = NativeSurfaceStore()
+    var nativeSurfaces: [String: NativeSurface] { nativeSurfaceStore.values }
     var nativeSearchPosition: [String: String] = [:]
     private var photoPickerDelegate: PhotoPickerDelegate?
 
@@ -72,7 +73,7 @@ final class NativeHost: ObservableObject {
     // Layout previews use fixed surfaces without opening a vault or starting services.
     init(previewSurfaces: [String: NativeSurface]) {
         core = .failure(CocoaError(.featureUnsupported))
-        nativeSurfaces = previewSurfaces
+        for surface in previewSurfaces.values { nativeSurfaceStore.update(surface) }
     }
     #endif
 
@@ -132,13 +133,13 @@ final class NativeHost: ObservableObject {
             #if os(iOS)
             if operation == "updateNativeSurface" {
                 if params["remove"] as? Bool == true {
-                    if let id = params["id"] as? String, let current = nativeSurfaces[id], current.instance == params["instance"] as? String {
-                        nativeSurfaces.removeValue(forKey: id)
+                    if let id = params["id"] as? String, let instance = params["instance"] as? String,
+                       let current = nativeSurfaceStore.remove(id: id, instance: instance) {
                         nativeSearchPosition.removeValue(forKey: current.instance)
                     }
                 } else {
                     let surface = try JSONDecoder().decode(NativeSurface.self, from: JSONSerialization.data(withJSONObject: params))
-                    nativeSurfaces[surface.id] = surface
+                    nativeSurfaceStore.update(surface)
                 }
                 return ["ok": true, "data": [:]]
             }
@@ -313,7 +314,7 @@ final class NativeHost: ObservableObject {
     func webContentWillLoad() {
         uiReady = false
         #if os(iOS)
-        nativeSurfaces = [:]
+        nativeSurfaceStore.removeAll()
         nativeSearchPosition = [:]
         #endif
     }

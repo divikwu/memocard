@@ -25,7 +25,7 @@ def configs(name, target=None):
         configs.append(add(name+mode,'XCBuildConfiguration',name=mode,buildSettings=settings))
     return add(name+'configlist','XCConfigurationList',buildConfigurations=configs,defaultConfigurationIsVisible='0',defaultConfigurationName='Release')
 
-source_names=['MemoCardApp.swift','NativeHost.swift','LocalReadServer.swift','WebView.swift','NativeChrome.swift','NativeSidebar.swift','NativeDesignedPanel.swift','DesignTokens.generated.swift','SidebarPreviewPalette.generated.swift']
+source_names=['MemoCardApp.swift','NativeHost.swift','LocalReadServer.swift','WebView.swift','NativeChrome.swift','NativeSurfaceState.swift','NativeSidebar.swift','NativeDesignedPanel.swift','DesignTokens.generated.swift','SidebarPreviewPalette.generated.swift']
 source_refs=[add('src'+n,'PBXFileReference',lastKnownFileType='sourcecode.swift',path=n,sourceTree='<group>') for n in source_names]
 sources=add('Sources','PBXGroup',path='Sources',sourceTree='<group>',children=source_refs)
 service_names=['ServiceApp.swift','ServiceHost.swift']

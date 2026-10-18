@@ -8,7 +8,7 @@ typealias PlatformWebRepresentable = UIViewRepresentable
 #endif
 
 struct WebView: PlatformWebRepresentable {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
     var scrollInsets = EdgeInsets()
     func makeCoordinator() -> Coordinator { Coordinator(host: host) }
     private func make(_ coordinator: Coordinator) -> WKWebView {

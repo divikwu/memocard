@@ -38,6 +38,8 @@ Storybook、故事、模拟数据和浏览器测试只用于开发，不进入�
 
 基础 token 与 Web / 原生组件实现分离；不新增跨端组件 DSL 或运行时 token 服务。Figma 同步、全量组件迁移及原生 Debug 目录留待有实际消费需求时推进。token 整理不作为性能改善证据。
 
+侧栏的标签树索引、原生状态订阅及可复现性能基线见 [performance.md](performance.md)。性能计时与行为回归分别记录；CI 检查确定性扫描／通知次数和真实 bridge 行为，不设置依赖机器速度的毫秒门槛。
+
 ## 上游参考
 
 - [DTCG 2025.10 格式](https://www.designtokens.org/tr/2025.10/format/)

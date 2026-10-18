@@ -61,3 +61,17 @@ The non-performance `testSidebarExpansionAndRowActionsRemainIndependent` scenari
 The target's visual center remains unchanged: its 40-point visual frame is centered inside a 44-point hit target. The original full-width primary button remains beneath the independently tappable expansion button; its selected/pressed feedback and surrounding padding remain responsive. This interaction check is required in addition to screenshots, Preview compilation and the existing presentation/scrolling scenarios.
 
 `testSidebarEdgeGesturesOpenAndCloseNavigation` starts from a closed sidebar, drags from 12 points inside the left edge to open it, and drags the translated main card left to close it. It asserts both presentation and dismissal without using the navigation buttons. The fixed starting inset stays inside the production 24-point gesture region on wide iPad layouts too. Run it with the same command and `-only-testing:MemoCardiOSUITests/SidebarPerformanceTests/testSidebarEdgeGesturesOpenAndCloseNavigation`.
+
+## Sidebar index and surface subscriptions
+
+Run `pnpm test:sidebar-native` on macOS to compile the production `NativeSidebarTagIndex` with complete concurrency checking and warnings as errors. Six scenarios cover input order, missing parents, optional/empty/duplicate paths, Unicode semantics and replacing the current action array. The 1,340-path differential test compares against the former direct-child predicate.
+
+`pnpm test:native-surfaces` builds an isolated Simulator app from the real Apple sources, replaces only the entry point, and sends updates through `NativeHost.handle`. The preview initializer prevents vault access. It checks notification counts, all 42 modeled field changes, equal replays, instance replacement/removal, reload, stable subscription objects, picker notifications, theme/palette and presentation selection. This is a bridge/publisher regression, not a SwiftUI render-time or FPS measurement. Both commands are part of the macOS `verify:release` CI path.
+
+The probe automatically finds an available iPhone Simulator, creating one only when needed. Missing runtimes fail explicitly. It uninstalls its own probe bundle and deletes only a device it created. Default temporary projects are cleaned up on success or failure. To retain source hashes, the app and results, specify a new evidence directory:
+
+```sh
+python3 apps/apple/Tests/run-surface-subscriptions.py --device auto --output-dir /tmp/memocard-surface-evidence
+```
+
+`pnpm bench:sidebar:native` compares the known pre-index `a53fb0a` implementation with the current production index, including index construction and full traversal. `pnpm bench:sidebar:web` measures the real React tree calculations through SSR with presentation primitives mocked. Neither benchmark runs as a timing threshold in CI. Methods, hardware, raw measurements, Release Simulator comparisons and limitations are recorded in [design/performance.md](../../../design/performance.md).
