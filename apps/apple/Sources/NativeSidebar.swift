@@ -96,7 +96,7 @@ struct NativeNavigationSidebar: View {
         HStack(spacing: SidebarTokens.contentGap) {
             Button { send("home") } label: {
                 HStack(spacing: SidebarTokens.contentGap) {
-                    if let logo = Self.logo { Image(uiImage: logo).resizable().scaledToFit().frame(width: SidebarTokens.logoSize, height: SidebarTokens.logoSize) }
+                    if let logo = Self.logo { Image(uiImage: logo).resizable().scaledToFit().frame(width: SidebarTokens.nativeLogoSize, height: SidebarTokens.nativeLogoSize) }
                     Text("MemoCard").font(.system(size: brandFontSize, weight: .semibold)).lineLimit(1)
                     Spacer(minLength: 0)
                 }.padding(.horizontal, 6).frame(minHeight: 40).contentShape(Rectangle())

@@ -29,7 +29,8 @@
 | `sidebar.contentGap` | active | styles.css / app-sidebar.css 的 `--sidebar-content-gap` | `SidebarTokens.contentGap` |
 | `sidebar.rowGap` | active | styles.css 的 `--sidebar-row-gap` | `SidebarTokens.rowGap` |
 | `sidebar.indent` | active | 不生成 Web 变量；Web 保留 border/padding 组合 | `SidebarTokens.indent` |
-| `sidebar.logoSize` | active | app-sidebar.tsx 的 `--sidebar-logo-size` | `SidebarTokens.logoSize` |
+| `sidebar.logoSize` | active | app-sidebar.tsx 的 `--sidebar-logo-size` | Web 专用；原生使用 `sidebar.nativeLogoSize` |
+| `sidebar.nativeLogoSize` | active | 不生成 Web 变量；Web 保留 `sidebar.logoSize` | `SidebarTokens.nativeLogoSize`，保留原生平台基准 |
 | `sidebar.mobileFontSize` | active | app-sidebar.css 的 `--sidebar-mobile-font-size` | `SidebarTokens.mobileFontSize`，系统 body 字体缩放 |
 | `sidebar.desktopFontSize` | active | styles.css 的 `--sidebar-desktop-font-size` | Web 专用；生成的 Swift 常量无直接消费者 |
 | `sidebar.brandFontSize` | active | 不生成 Web 变量；Web 保留既有品牌字号 | `SidebarTokens.brandFontSize`，系统 subheadline 字体缩放 |
@@ -39,6 +40,8 @@
 | `sidebar.horizontalPadding` | active | styles.css / app-sidebar.css 的 `--sidebar-horizontal-padding` | `SidebarTokens.horizontalPadding` |
 
 `spacingValues`、`sidebarTokens` 的 TS 对象供开发展示；生产 Web 的尺寸主要消费生成 CSS。Swift 圆角枚举除 `lg` 外暂无直接引用，其他选项走数值 bridge；不能把生成常量数当作已接入组件数。`baseline-only` 的三个间距仅登记现状，新增消费者前重新评估其复用意义。
+
+Logo 保留各平台已有尺寸：Web / H5 / macOS 使用 `sidebar.logoSize`，iOS 使用 `sidebar.nativeLogoSize`，不把 Web 视觉框作为原生尺寸。
 
 圆角选项 `radius.sm` 与 Tailwind 派生角色 `--radius-sm` 含义不同：前者是用户选择的基准，后者在 [styles.css](../apps/ui/src/styles.css) 中从当前 `--radius` 派生。它们不是两处独立维护的相同数值。
 

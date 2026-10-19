@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { checkTokenConsumption } from "./check-token-consumption.mjs";
 
 test("the production consumption map covers all portable tokens and source links", async () => {
-  assert.equal(await checkTokenConsumption(), 27);
+  assert.equal(await checkTokenConsumption(), 28);
 });
 
 test("consumption checks reject missing, duplicate, unknown and undocumented platform entries", async () => {

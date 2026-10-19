@@ -38,7 +38,7 @@ function values(dictionary, group) {
 
 StyleDictionary.registerFormat({ name: "memocard/css", format: ({ dictionary }) => {
   // Base spacing resolves aliases; native-only metrics do not ship as unused Web variables.
-  const nativeOnly = new Set(["indent", "brandFontSize", "captionFontSize"]);
+  const nativeOnly = new Set(["indent", "brandFontSize", "captionFontSize", "nativeLogoSize"]);
   const radii = values(dictionary, "radius");
   if (!Number.isFinite(radii.lg)) throw new Error("radius.lg is required for the default Web radius.");
   const declarations = [`  --radius: ${radii.lg / 16}rem;`, ...Object.entries(values(dictionary, "sidebar"))
