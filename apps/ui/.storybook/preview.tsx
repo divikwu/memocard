@@ -2,7 +2,8 @@ import type { Preview } from "@storybook/react-vite";
 import { ArgTypes, Description, Primary, Stories, Subtitle, Title, useOf, type StoryProps } from "@storybook/addon-docs/blocks";
 import { ThemeProvider } from "../src/features/theme/ThemeProvider";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE } from "../src/features/theme/preferences";
-import { desktopGlobals, viewportOptions } from "./viewports";
+import { desktopGlobals, mobileViewport, viewportOptions } from "./viewports";
+import { resetStorybookBridge } from "./bridge";
 import "./preview.css";
 
 function memoryStorage(): Storage {
@@ -26,9 +27,10 @@ function DocsStoryPreview({ of, height, __primary }: StoryProps) {
   source.searchParams.set("id", story.id);
   source.searchParams.set("viewMode", "story");
   source.searchParams.set("embed", "true");
+  const mobile = story.tags.includes("mobile");
   return <div id={`story--${story.id}${__primary ? "--primary" : ""}`} className="sb-story sb-unstyled" data-story-block="true">
     <iframe id={`iframe--${story.id}`} title={story.name} src={source.href} loading="lazy" allowFullScreen
-      style={{ width: "100%", height: height ?? story.parameters.docs?.story?.height ?? "320px", border: 0 }} />
+      style={{ width: mobile ? `${mobileViewport.width}px` : "100%", maxWidth: "100%", height: height ?? story.parameters.docs?.story?.height ?? "320px", border: 0 }} />
   </div>;
 }
 
@@ -54,15 +56,17 @@ const preview: Preview = {
     docs: { page: StaticDocsPage, canvas: { withToolbar: false }, story: { inline: false, height: "320px", autoplay: false }, components: { Story: DocsStoryPreview } },
     controls: { expanded: true },
     viewport: { options: viewportOptions },
-    options: { storySort: { order: ["foundations", "components", "sidebar"] } },
+    options: { storySort: { order: ["foundations", "components", "sidebar", "business"] } },
   },
   beforeEach: () => {
+    resetStorybookBridge();
     // Each story gets temporary storage. No real preferences are read or written,
     // even when a developer hosts Storybook on an existing origin.
     const original = Object.getOwnPropertyDescriptor(window, "localStorage");
     Object.defineProperty(window, "localStorage", { configurable: true, value: memoryStorage() });
     localStorage.setItem("memocard:tags:storybook-sidebar", JSON.stringify({ pinned: [], icons: { "体验": "🧭" } }));
     return () => {
+      resetStorybookBridge();
       if (original) Object.defineProperty(window, "localStorage", original);
       else Reflect.deleteProperty(window, "localStorage");
     };

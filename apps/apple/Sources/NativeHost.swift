@@ -18,6 +18,11 @@ final class NativeHost: ObservableObject {
     var nativeSurfaces: [String: NativeSurface] { nativeSurfaceStore.values }
     var nativeSearchPosition: [String: String] = [:]
     private var photoPickerDelegate: PhotoPickerDelegate?
+    #if DEBUG
+    private(set) var isPreview = false
+    var previewAction: ((NativeSurface, String, String?) -> Void)?
+    var previewAssets: [String: Data] = [:]
+    #endif
 
     func nativeAction(_ surface: NativeSurface, _ action: String, value: String? = nil) {
         guard let current = nativeSurfaces[surface.id], current.instance == surface.instance else { return }
@@ -37,6 +42,9 @@ final class NativeHost: ObservableObject {
         var detail = ["surface": surface.id, "instance": surface.instance, "action": action]
         if surface.kind == "search", action == "query" { nativeSearchPosition.removeValue(forKey: surface.instance) }
         if let value { detail["value"] = value }
+        #if DEBUG
+        if let previewAction { previewAction(current, action, value); return }
+        #endif
         webView?.callAsyncJavaScript("window.dispatchEvent(new CustomEvent('memocard:native-action', {detail: detail}))", arguments: ["detail": detail], in: nil, in: .page, completionHandler: nil)
     }
     #endif
@@ -73,6 +81,7 @@ final class NativeHost: ObservableObject {
     // Layout previews use fixed surfaces without opening a vault or starting services.
     init(previewSurfaces: [String: NativeSurface]) {
         core = .failure(CocoaError(.featureUnsupported))
+        isPreview = true
         for surface in previewSurfaces.values { nativeSurfaceStore.update(surface) }
     }
     #endif
@@ -81,6 +90,7 @@ final class NativeHost: ObservableObject {
         #if DEBUG && os(iOS)
         if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
             core = .failure(CocoaError(.featureUnsupported))
+            isPreview = true
             return
         }
         #endif

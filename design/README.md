@@ -7,6 +7,7 @@
 - [已使用组件维护表](component-inventory.md)
 - [Token 消费映射](token-consumption.md)
 - [侧栏规格与验收清单](components/sidebar.md)
+- [搜索与快速记录场景及验收边界](components/search-capture.md)
 - [可移植 token 对照表（生成）](TOKENS.generated.md)
 - [本轮验证记录](validation.md)
 
@@ -24,7 +25,7 @@
 ## 日常工作流
 
 1. 修改 token 源或现行组件规格，执行 `pnpm tokens:build`。
-2. Web 执行 `pnpm --filter @memocard/ui storybook`，原生在 Xcode 打开 `NativeSidebar.swift` 的 Canvas。
+2. Web 执行 `pnpm --filter @memocard/ui storybook`，原生在 Xcode 打开 `NativeSidebar.swift` 或 `NativeChrome.swift` 的 Canvas。
 3. 修改颜色 CSS 后执行 `pnpm palette:build`；它通过锁定的 Chromium 和生产 `readIOSPalette()` 采样默认浅/深色，生成仅 Debug 使用的 Swift fixture。普通 token 构建不依赖浏览器。
    采样的强调色、中性色和圆角来自生产 `DEFAULT_APPEARANCE`；无变化时保留 Swift 文件时间戳。
 4. 执行 `pnpm verify:design` 和相关组件/bridge 回归，再在真实 App 验证。生成文件随源文件一起提交。
@@ -39,9 +40,9 @@
 
 Storybook、故事、模拟数据和浏览器测试只用于开发，不进入生产入口或原生 Web 资源。现有 `apps/ui/preview` 保留整页状态与流程验收职责。原生 Preview 使用生产组件及隔离的 `NativeHost(previewSurfaces:)`，不连接真实笔记库或启动服务。
 
-Storybook 的 Foundations 包含尺寸/间距、完整 CSS 语义色与标签色、真实 Provider 驱动的界面/笔记排版、图标/阴影/焦点与动效边界。高频基础组件直接使用生产 Button、Input、Textarea、Select、Switch、Tabs、Dialog、Dropdown Menu、Popover、Tooltip 和 Sheet，分别记录适用状态与键盘/关闭/焦点行为。侧栏仍保留组合故事；其他业务组件继续使用表中登记的现有 fixture/回归，未把它们声明为已完成独立 Story。iOS 搜索/快速记录的独立 Preview 仍列为后续缺口。
+Storybook 的 Foundations 包含尺寸/间距、完整 CSS 语义色与标签色、真实 Provider 驱动的界面/笔记排版、图标/阴影/焦点与动效边界。高频基础组件直接使用生产 Button、Input、Textarea、Select、Switch、Tabs、Dialog、Dropdown Menu、Popover、Tooltip 和 Sheet，分别记录适用状态与键盘/关闭/焦点行为。侧栏仍保留组合故事。搜索与快速记录新增生产组件的业务 Story 和真实原生 overlay 的独立 Preview，使用隔离数据反馈输入、关闭与保存结果；场景操作和边界见对应组件说明。其他业务组件继续使用维护表中登记的现有 fixture/回归，未把它们声明为已完成独立 Story。
 
-Storybook 的 Select/Switch/Tabs 在启动前显式预优化，避免虚拟故事首次发现依赖后刷新浏览器测试页。Storybook 10.6.2 的 iframe Docs 不传递 autoplay 参数；通过公开 Story block 覆盖与 Core embed 模式停止自动 play，手动交互保留，完整交互验收在 Canvas 与 Vitest 执行。相关依赖机制见 [Vite 依赖预构建](https://vite.dev/guide/dep-pre-bundling.html)；冷启动验收与热缓存复跑分开记录。
+Storybook 的 Select/Switch/Tabs 与搜索实际使用的 Markdown 依赖在启动前显式预优化，避免虚拟故事首次发现依赖后刷新浏览器测试页。Storybook 10.6.2 的 iframe Docs 不传递 autoplay 参数；通过公开 Story block 覆盖与 Core embed 模式停止自动 play，手动交互保留，完整交互验收在 Canvas 与 Vitest 执行。相关依赖机制见 [Vite 依赖预构建](https://vite.dev/guide/dep-pre-bundling.html)；冷启动验收与热缓存复跑分开记录。
 
 基础 token 与 Web / 原生组件实现分离；不新增跨端组件 DSL 或运行时 token 服务。Figma 同步、全量组件迁移及原生 Debug 目录留待有实际消费需求时推进。token 整理不作为性能改善证据。
 

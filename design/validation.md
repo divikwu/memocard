@@ -74,3 +74,17 @@ token 无变化的重复构建保留四份生成物时间戳，新增 mtime 回�
 - 本轮前后 `apps/ui/src` 全部 231 份文件和生产 `apps/ui/dist` 全部 164 份文件逐一 SHA256 相同；Swift、token 值、原生资源与动作协议没有改动。此证据说明本轮没有引入生产产物变化；没有把上一轮 Xcode Preview / iPhone / iPad 验收计作本轮重新运行。
 - 本机可见复核确认颜色目录加载、排版按钮使真实正文从 16px 变为 18px 后恢复、Dialog 打开 / Escape / 焦点返回，以及 H5 Sheet 的 390px 宽度；可见窗口会裁剪 Canvas 高度，不以工具栏数字替代真实视口断言。修复后的图标、阴影和焦点截图为 `build/verification/design-maintenance/storybook-foundations-effects.png`。本机辅助日志位于 `/tmp/memocard-design-maintenance-*`；它们未提交，跨机器应重跑命令。
 - 未覆盖所有业务组件的独立故事；缺口逐项保留在维护表。iOS 搜索/快速记录独立 Preview、旧 OS / 真机、完整视觉快照及全组件无障碍审计没有在本轮完成。远程 CI 以 PR #48 最新 head 为准。
+
+## 搜索与快速记录交互预览（2026-10-19）
+
+- 新增 6 个搜索、8 个快速记录故事，直接使用生产组件、CSS 与 Markdown。覆盖输入/清空、旧响应拒绝、键盘选择、关闭/焦点恢复、错误重试、分页、标签、内存附件及图片预览、busy 禁用、保存失败保留/成功重置；H5 另含抽屉、草稿恢复和继续页面回调。后者用示例调用方文本框接收草稿，不冒充完整编辑器。
+- Storybook bridge 默认拒绝数据操作和资产读取；每故事只安装明确的内存响应与精确路径/binding 的 Blob，结束后清理。4 项门禁测试覆盖默认拒绝、参数转发、旧 cleanup 不影响新 fixture、资产绑定与 reset。实际 Markdown 依赖显式预优化后，无 `.vite` 缓存的设计验证通过；初次依赖重优化导致浏览器中途重载的失败日志保留，不以重试代替修复。
+- 最终 `pnpm verify:design` 通过：67 个故事（61 桌面、6 H5）加真实断点回归，共 68/68 Chromium 检查，类型/静态构建、token/icon、组件维护/token 映射和真实 palette 检查通过。Docs 的隔离 iframe 按同一 mobile tag 固定宽度；可见实测快速记录 3 个 H5 iframe 均为 390×844，Docs 不自动运行 play，手动保存失败/保留/重试成功及“切换为页面”传递草稿已复核。
+- 搜索 Loading 故事先挂起旧空查询，再完成新查询和旧响应。冻结删除生产初次查询 epoch guard 后，同一故事以结果数 4 != 3 失败；恢复原始源码后通过。生产搜索文件恢复前后 SHA256 相同；没有弱化断言、延长超时或保留生产改动。
+- `pnpm verify` 通过：UI 1057、native-core 126、MCP 16、network 8、local-Web 14，类型/lint/生产构建与全部资源预算通过。第一次完整 UI run 的 5 个既有用例出现超时/缺失元素，日志保留；相同源码、原 worker 和超时下，4 个相关文件 200/200 及完整 1057/1057 随后通过。未确定首次失败原因，不宣称已消除环境波动。既有编辑器 Hook 和大 chunk 提示保留。
+- 本轮前后 Web 生产源码 231 份、生产构建产物 164 份逐一 SHA256 相同；最紧移动 route 仍为 1,335,202 / 1,335,296 bytes raw。Swift 仅增加 DEBUG 预览接缝和复用生产 overlay 的场景控制，不替换布局、原生组件或动作协议。预览反馈通过真实 Host 的 instance/presented/action/disabled 校验，图片不回落读取真实笔记库。
+- iOS Simulator Release（Xcode / SDK 27.1，arm64 + x86_64）构建成功；产物符号中无 `NativeSurfacePreviewModel` / `NativeSurfacePreviewCanvas`。Xcode 工程重新生成逐字节一致。此项未安装替换现有完整 App，也不把最低部署版本编译覆盖当作旧系统运行验收。
+- `pnpm test:native-surfaces` 的真实 Simulator probe 通过原 42 个字段变更、6 个订阅场景、3 个 UIKit 输入场景，并新增 15 个预览边界/取消检查、2 个挂载生产 overlay 的交互闭环。实际 `UITextView.insertText` 逐字输入 `preview`，7 步文本、model ACK 和末尾 caret 均一致。首次图片尺寸与未变化 Return 反馈的失败已在内存 fixture 中修正并复测；输入准备阶段的独立失败记录保留，最终逐字用例直接从已就绪空编辑器开始，没有改动生产输入 setter、ACK 调度或等待预算。
+- Xcode 27.1 的 Canvas 实际渲染 Search 默认、Capture 默认及 Search 深色大字三个入口；本轮 Canvas 自动化未成功完成直接键入，只将其计为渲染验收。iPhone 18 Pro / iOS 27.0 的独立临时内存 App 复用相同生产 overlay/PreviewModel，已可见验证搜索输入/空态/清空/选择关闭/分页/错误重试，以及记录展开、标签搜索/新建、图片预览/关闭、保存失败保留和再次记录成功后重开空白。未写真实库或触发真实系统照片选择器。
+- 模拟器界面工具逐键输入曾观察到一次 `previewp`；上面的真实 UIKit 逐字回归未复现，原因未归因。中文查询可见输入与直接 delegate ACK 不等于中文 IME 组合输入已通过。旧 OS、真机、iPad、真实 bridge 保存、权限/picker 和完整布局矩阵仍需针对性 App 验证，不将预览或 ASCII 回归升级为这些覆盖。
+- 本机截图位于 `build/verification/search-capture/`；最终设计/生产日志为 `/tmp/memocard-search-capture-design-final.log`、`/tmp/memocard-search-capture-verify-controlled.log`，原生结果为 `/tmp/memocard-native-preview-key-input-ready-20261019/`。这些辅助文件未提交，跨机器应重跑已维护的故事和 harness。

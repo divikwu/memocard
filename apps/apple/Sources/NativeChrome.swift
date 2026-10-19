@@ -587,4 +587,61 @@ private struct NativePanel: View {
     }
 }
 
+#if DEBUG
+struct NativeSurfacePreviewCanvas: View {
+    @ObservedObject var model: NativeSurfacePreviewModel
+    @ObservedObject private var surfaceState: NativeSurfaceState
+    var showControls = true
+
+    init(model: NativeSurfacePreviewModel, showControls: Bool = true) {
+        self.model = model; self.showControls = showControls
+        surfaceState = model.host.nativeSurfaceStore.state(for: model.kind.rawValue)
+    }
+    var body: some View {
+        VStack(spacing: 0) {
+            if showControls {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("预览场景", selection: Binding(get: { model.scenario }, set: { model.select($0) })) {
+                        ForEach(model.scenarios) { Text($0.rawValue).tag($0) }
+                    }
+                    HStack {
+                        Button("重新打开") { model.reopen() }
+                        Button("重置场景") { model.select(model.scenario) }
+                        if model.kind == .capture { Toggle("下次保存失败", isOn: $model.failNextSave) }
+                    }.font(.caption)
+                    Text(model.feedback).font(.caption).accessibilityLabel("预览操作反馈")
+                }.padding(12)
+                Divider()
+            }
+            ZStack {
+                Color(uiColor: .systemBackground)
+                let surface = surfaceState.surface.flatMap { $0.presented == true ? $0 : nil }
+                if model.kind == .search { NativeEdgeSearchOverlay(host: model.host, surface: surface) }
+                else { NativeFloatingCaptureOverlay(host: model.host, surface: surface) }
+            }
+        }
+        .onAppear { model.resume() }
+        .onDisappear { model.dispose() }
+    }
+}
+
+private struct NativeSurfaceInteractivePreview: View {
+    @StateObject private var model: NativeSurfacePreviewModel
+    let dark: Bool
+    init(_ kind: NativeSurfacePreviewModel.Kind, scenario: NativeSurfacePreviewModel.Scenario? = nil, dark: Bool = false) {
+        self.dark = dark
+        _model = StateObject(wrappedValue: NativeSurfacePreviewModel(kind: kind, scenario: scenario, dark: dark))
+    }
+    var body: some View {
+        NativeSurfacePreviewCanvas(model: model).preferredColorScheme(dark ? .dark : .light)
+            .dynamicTypeSize(dark ? .accessibility3 : .large)
+    }
+}
+
+#Preview("Search · Recent") { NativeSurfaceInteractivePreview(.search) }
+#Preview("Search · Results · Dark Large") { NativeSurfaceInteractivePreview(.search, scenario: .results, dark: true) }
+#Preview("Capture · Default") { NativeSurfaceInteractivePreview(.capture) }
+#Preview("Capture · Populated · Dark Large") { NativeSurfaceInteractivePreview(.capture, scenario: .populated, dark: true) }
+#endif
+
 #endif

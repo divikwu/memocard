@@ -452,7 +452,13 @@ private struct NativeAssetImage: View {
         }
         .task(id: path) {
             thumbnail = nil
+            #if DEBUG
+            var bytes = host.previewAssets[path]
+            if bytes == nil && !host.isPreview { bytes = try? await host.store.asset(relativePath: path) }
+            guard let data = bytes else { return }
+            #else
             guard let data = try? await host.store.asset(relativePath: path) else { return }
+            #endif
             let pixels = maxPixels
             let cgImage = await Task.detached(priority: .userInitiated) {
                 guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil as CGImage? }

@@ -95,11 +95,17 @@ enum NativeSurfaceSubscriptionProbe {
         await verifyPresentation()
         print("NATIVE_SURFACE_PROBE_STAGE presentation-complete")
         guard let inputInteractions = await verifyNativeInputAcknowledgement() else { return false }
+        let previewGuards = await verifyPreviewGuardsAndCancellation()
+        guard let previewResults = await verifyInteractivePreviews() else { return false }
+        let (previewInteractions, previewKeystrokes) = previewResults
         #else
         let fieldChanges = 0
         let inputInteractions = 0
+        let previewGuards = 0
+        let previewInteractions = 0
+        let previewKeystrokes = 0
         #endif
-        let data = try! JSONSerialization.data(withJSONObject: ["measurement": "native-surface-subscriptions", "results": results, "fieldChangesVerified": fieldChanges, "inputInteractionsVerified": inputInteractions], options: [.sortedKeys])
+        let data = try! JSONSerialization.data(withJSONObject: ["measurement": "native-surface-subscriptions", "results": results, "fieldChangesVerified": fieldChanges, "inputInteractionsVerified": inputInteractions, "previewGuardChecksVerified": previewGuards, "previewInteractionsVerified": previewInteractions, "previewKeystrokesVerified": previewKeystrokes], options: [.sortedKeys])
         print("SURFACE_SUBSCRIPTION_RESULT " + String(decoding: data, as: UTF8.self))
         return true
     }
@@ -331,6 +337,202 @@ enum NativeSurfaceSubscriptionProbe {
             print("NATIVE_INPUT_INTERACTION_PASSED \(event)")
         }
         return 3
+    }
+
+    private static func verifyPreviewGuardsAndCancellation() async -> Int {
+        print("NATIVE_SURFACE_PROBE_STAGE preview-guards-start")
+        var surface = NativeSurface(id: "guard", instance: "guard-1", kind: "search", title: "Guards", presented: true,
+            sections: [NativeSection(id: "controls", actions: [NativeAction(id: "enabled", title: "Enabled"), NativeAction(id: "disabled", title: "Disabled", disabled: true)],
+                fields: [NativeField(id: "field", title: "Field", value: ""), NativeField(id: "disabled-field", title: "Disabled", value: "", disabled: true)])])
+        let host = NativeHost(previewSurfaces: [surface.id: surface])
+        var actions: [String] = []
+        host.previewAction = { _, action, _ in actions.append(action) }
+        host.nativeAction(surface, "unknown")
+        host.nativeAction(surface, "unknown-field", value: "A")
+        host.nativeAction(surface, "disabled")
+        host.nativeAction(surface, "disabled-field", value: "A")
+        host.nativeAction(NativeSurface(id: "guard", instance: "stale", kind: "search", title: "Stale"), "close")
+        host.nativeAction(NativeSurface(id: "missing", instance: "missing", kind: "search", title: "Missing"), "close")
+        surface.presented = false; host.nativeSurfaceStore.update(surface)
+        host.nativeAction(surface, "enabled")
+        host.nativeAction(surface, "field", value: "A")
+        precondition(actions.isEmpty, "Preview callback bypassed a production nativeAction guard")
+        host.nativeAction(surface, "close")
+        surface.presented = true; host.nativeSurfaceStore.update(surface)
+        host.nativeAction(surface, "field", value: "中文")
+        host.nativeAction(surface, "enabled")
+        precondition(actions == ["close", "field", "enabled"], "Valid preview actions did not reach the guarded feedback path")
+
+        let capture = NativeSurfacePreviewModel(kind: .capture, scenario: .populated)
+        capture.host.nativeAction(capture.surface, "record")
+        let beforeReset = capture.pendingWork
+        capture.select(.defaultState)
+        await beforeReset?.value
+        precondition(capture.surface.presented == true && capture.surface.busy == false && capture.surface.primary?.disabled == true,
+                     "A pending save overwrote the reset preview")
+        capture.select(.populated)
+        capture.host.nativeAction(capture.surface, "record")
+        let beforeDispose = capture.pendingWork, frozen = capture.surface, feedback = capture.feedback
+        capture.dispose()
+        await beforeDispose?.value
+        precondition(capture.surface == frozen && capture.feedback == feedback, "Disposed preview received a stale save completion")
+        capture.select(.populated)
+        capture.host.nativeAction(capture.surface, "record")
+        let beforeReopen = capture.pendingWork
+        capture.reopen()
+        let reopened = capture.surface
+        await beforeReopen?.value
+        precondition(capture.surface == reopened && capture.surface.presented == true && capture.surface.busy == false,
+                     "Pending save closed the reopened preview")
+        capture.host.nativeAction(capture.surface, "tag-query", value: "新标签")
+        capture.host.nativeAction(capture.surface, "new-tag")
+        capture.host.nativeAction(capture.surface, "tag-query", value: "新标签")
+        let beforeDuplicate = capture.acceptedActions
+        capture.host.nativeAction(capture.surface, "new-tag")
+        precondition(capture.acceptedActions == beforeDuplicate && capture.surface.sections?.first(where: { $0.id == "selected-tags" })?.actions?.filter { $0.title == "新标签" }.count == 1,
+                     "The preview offered duplicate new-tag actions")
+
+        let search = NativeSurfacePreviewModel(kind: .search)
+        search.host.nativeAction(search.surface, "query", value: "产品")
+        let beforeSearchReset = search.pendingWork
+        search.select(.recent)
+        await beforeSearchReset?.value
+        precondition(search.surface.loading == false && search.surface.sections?.first?.fields?.first?.value == "",
+                     "Cancelled search overwrote the current scenario")
+        search.select(.errorRetry)
+        let beforeErrorNavigation = search.acceptedActions, searchError = search.surface.error
+        search.host.nativeAction(search.surface, "down")
+        precondition(search.acceptedActions == beforeErrorNavigation && search.surface.error == searchError,
+                     "ErrorRetry exposed keyboard result navigation without displayed results")
+        precondition(host.isPreview && capture.host.previewAssets["unknown.png"] == nil)
+        precondition(capture.host.previewAssets["preview-note.png"].flatMap { UIImage(data: $0) }?.size == CGSize(width: 128, height: 96))
+        print("NATIVE_SURFACE_PROBE_STAGE preview-guards-complete count=15")
+        return 15
+    }
+
+    private static func verifyInteractivePreviews() async -> (Int, Int)? {
+        var keystrokes = 0
+        guard let root = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController else { return nil }
+        for kind in [NativeSurfacePreviewModel.Kind.search, .capture] {
+            print("NATIVE_SURFACE_PROBE_STAGE preview-ui-start kind=\(kind.rawValue)")
+            let model = NativeSurfacePreviewModel(kind: kind, scenario: kind == .search ? .results : .defaultState)
+            let controller = UIHostingController(rootView: NativeSurfacePreviewCanvas(model: model, showControls: false))
+            root.addChild(controller); controller.view.frame = root.view.bounds
+            controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            root.view.addSubview(controller.view); controller.didMove(toParent: root)
+            defer {
+                controller.view.endEditing(true); controller.willMove(toParent: nil)
+                controller.view.removeFromSuperview(); controller.removeFromParent(); model.dispose()
+            }
+            if kind == .search {
+                var field: UITextField?
+                guard await waitForUI("preview search field ready", until: {
+                    controller.view.layoutIfNeeded(); field = textField(in: controller.view)
+                    return field?.text == "产品" && field?.isFirstResponder == true
+                }), let field, let delegate = field.delegate else { return nil }
+                field.text = "侧栏"; field.sendActions(for: .editingChanged)
+                await model.pendingWork?.value
+                guard await waitForUI("preview search setter acknowledgement", until: {
+                    field.text == "侧栏" && model.surface.sections?.first?.fields?.first?.value == "侧栏" && model.surface.loading == false
+                }) else { return nil }
+                guard delegate.textFieldShouldClear?(field) == true else { return nil }
+                await model.pendingWork?.value
+                guard await waitForUI("preview search clear acknowledgement", until: {
+                    field.text == "" && model.surface.sections?.first?.fields?.first?.value == ""
+                }) else { return nil }
+                guard let down = field.keyCommands?.last(where: { $0.input == UIKeyCommand.inputDownArrow }), let action = down.action else { return nil }
+                _ = UIApplication.shared.sendAction(action, to: field, from: down, for: nil)
+                guard await waitForUI("preview second result selected", until: {
+                    model.surface.sections?.flatMap { $0.actions ?? [] }.first(where: { $0.selected == true })?.id == "note:plan"
+                }) else { return nil }
+                guard delegate.textFieldShouldReturn?(field) != nil else { return nil }
+                guard await waitForUI("preview selected note closes actual overlay", until: {
+                    model.surface.presented == false && textField(in: controller.view) == nil && model.feedback.contains("产品计划与标签整理")
+                }) else {
+                    print("NATIVE_PREVIEW_CLOSE_ACTUAL presented=\(model.surface.presented ?? false) field=\(textField(in: controller.view)?.text ?? "nil") feedback=\(model.feedback)")
+                    return nil
+                }
+                model.reopen()
+                guard await waitForUI("preview search reopens", until: { textField(in: controller.view)?.text == "" }) else { return nil }
+                model.select(.errorRetry)
+                model.host.nativeAction(model.surface, "retry")
+                await model.pendingWork?.value
+                guard await waitForUI("preview search retry reaches actual field", until: {
+                    model.surface.error == nil && textField(in: controller.view)?.text == "产品"
+                }) else { return nil }
+                model.select(.pagination)
+                precondition(model.surface.sections?.first(where: { $0.id == "results" })?.actions?.count == 1)
+                model.host.nativeAction(model.surface, "more")
+                await model.pendingWork?.value
+                precondition(model.surface.sections?.first(where: { $0.id == "results" })?.actions?.count == 2)
+                model.select(.empty)
+                guard await waitForUI("preview empty query reaches actual field", until: {
+                    textField(in: controller.view)?.text == "未匹配的词" && model.surface.message == "没有找到相关笔记"
+                }) else { return nil }
+            } else {
+                var editor: UITextView?
+                guard await waitForUI("preview capture editor ready", until: {
+                    controller.view.layoutIfNeeded(); editor = textView(in: controller.view)
+                    return editor?.isFirstResponder == true && editor?.text.isEmpty == true
+                }), let editor, let delegate = editor.delegate else { return nil }
+                var expected = ""
+                for character in "preview" {
+                    expected.append(character)
+                    editor.insertText(String(character))
+                    var stableChecks = 0
+                    guard await waitForUI("capture insertText \(expected)", until: {
+                        controller.view.setNeedsLayout(); controller.view.layoutIfNeeded()
+                        let matches = editor.text == expected && model.surface.sections?.first?.fields?.first?.value == expected
+                            && editor.selectedRange == NSRange(location: expected.utf16.count, length: 0)
+                        // Recheck after another main-loop poll; the synchronous setter's
+                        // immediate value alone does not prove the SwiftUI ACK settled.
+                        stableChecks = matches ? stableChecks + 1 : 0
+                        return stableChecks >= 2
+                    }) else {
+                        print("NATIVE_PREVIEW_KEY_INPUT_FAILED expected=\(expected) actual=\(editor.text ?? "nil") ack=\(model.surface.sections?.first?.fields?.first?.value ?? "nil") selection=\(editor.selectedRange)")
+                        return nil
+                    }
+                    keystrokes += 1
+                    print("NATIVE_PREVIEW_KEY_INPUT_PASSED text=\(expected) selection=\(editor.selectedRange.location)")
+                }
+                editor.text = "中文记录"; delegate.textViewDidChange?(editor)
+                guard await waitForUI("preview capture setter acknowledgement", until: {
+                    model.surface.sections?.first?.fields?.first?.value == "中文记录" && model.surface.primary?.disabled == false
+                }) else { return nil }
+                model.host.nativeAction(model.surface, "tag-query", value: "预览标签")
+                model.host.nativeAction(model.surface, "new-tag")
+                model.host.nativeAction(model.surface, "image")
+                precondition(model.surface.sections?.first(where: { $0.id == "selected-tags" })?.actions?.first?.title == "预览标签")
+                precondition(model.surface.sections?.first(where: { $0.id == "images" })?.actions?.count == 2)
+                model.failNextSave = true
+                model.host.nativeAction(model.surface, "record")
+                model.host.nativeAction(model.surface, "close")
+                precondition(model.surface.presented == true && model.surface.busy == true)
+                await model.pendingWork?.value
+                guard await waitForUI("preview failed save preserves capture and enables actual editor", until: {
+                    model.surface.error != nil && editor.text == "中文记录" && editor.isEditable
+                }) else { return nil }
+                let oldReset = model.surface.resetKey
+                model.host.nativeAction(model.surface, "record")
+                await model.pendingWork?.value
+                guard await waitForUI("preview successful save closes actual overlay", until: {
+                    model.surface.presented == false && textView(in: controller.view) == nil && model.feedback == "记录成功（仅预览）"
+                }) else { return nil }
+                precondition(model.surface.resetKey != oldReset)
+                model.reopen()
+                guard await waitForUI("preview success resets actual editor", until: {
+                    textView(in: controller.view)?.text.isEmpty == true && model.surface.primary?.disabled == true
+                }) else { return nil }
+            }
+            print("NATIVE_SURFACE_PROBE_STAGE preview-ui-complete kind=\(kind.rawValue)")
+        }
+        return (2, keystrokes)
+    }
+
+    private static func textView(in view: UIView) -> UITextView? {
+        if let editor = view as? UITextView { return editor }
+        return view.subviews.lazy.compactMap { textView(in: $0) }.first
     }
 
     private static func textField(in view: UIView) -> UITextField? {

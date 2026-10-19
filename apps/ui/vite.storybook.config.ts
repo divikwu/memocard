@@ -11,7 +11,8 @@ const mock = path.join(root, ".storybook/bridge.ts");
 export default defineConfig({
   resolve: { alias: { "@": path.join(root, "src") } },
   // Story transforms discover these controls late; prebundle before browser tests.
-  optimizeDeps: { include: ["@base-ui/react/select", "@base-ui/react/switch", "@base-ui/react/tabs"] },
+  optimizeDeps: { include: ["@base-ui/react/select", "@base-ui/react/switch", "@base-ui/react/tabs",
+    "react-markdown", "rehype-katex", "rehype-raw", "rehype-sanitize", "remark-gfm", "remark-math"] },
   plugins: [{
     name: "isolated-storybook-data",
     enforce: "pre",
