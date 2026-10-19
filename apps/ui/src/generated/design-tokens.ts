@@ -26,6 +26,7 @@ export const sidebarTokens = {
   "rowGap": 4,
   "indent": 24,
   "logoSize": 36,
+  "nativeLogoSize": 28,
   "mobileFontSize": 16,
   "desktopFontSize": 14,
   "brandFontSize": 14,
