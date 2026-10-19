@@ -11,7 +11,7 @@
 - Storybook 实际 Canvas 手动完成列表切换、产品标签筛选、打开项目计划及返回，列表与标签保留；截图位于本机 `build/verification/note-browser/storybook-collection-*.jpg`。Canvas 仅调整显示缩放为 75%，实际故事视口契约保持。缩放弹层打开时触发的 play 因 iframe body 被 Storybook 设为 inert 而失焦；关闭设置并重置故事后完整 play 成功，不将该次 UI 干扰记录为组件回归。
 - iOS 新 Debug 和 Release Simulator 构建成功，保留现有数据容器安装到 iPhone 18 Pro / iOS 27.0。真实 Release App 连接 MemoCard iOS QA 库，实际完成主页列表→原生菜单切换卡片→卡片标签“体验/使用指南”→真实 Editor→原生返回，过滤条件保留；同一筛选再切换列表、打开和返回。最后恢复主页列表与笔记集合卡片。原生搜索另打开“体验 · 卡片内容的节奏”，可见图片与正文；未编辑或保存笔记。实际 App 截图为本机 `build/verification/note-browser/simulator-{home-cards,tag-filtered,opened-note,tag-list,home-restored}.jpg`。
 - 首轮手机画面点按失效且顶部/正文未暴露可选节点，用户也确认无法打开菜单；系统 Settings 同样无法响应坐标点按。退出 Device Hub 时选择保留模拟器运行，再重新打开窗口后，系统 Settings 与实际 App 点按恢复，随后完成上述可见验收。未确定底层输入机制的根因，不据此修改 App。临时真实 NativeChrome 根容器 probe 的 4 项命中路由检查通过，仅作为容器路由诊断，不能替代真实触控验收；诊断源码已撤销，快照保留在 ignored 验收目录。
-- 验收后 58/58 库文件、bookmark 与数据容器保持原样，449/449 生产文件仍与基线一致，已安装 Release 与当前 Release 构建的 170/170 文件匹配。主页由缺省列表变为显式保存 `list`，笔记集合恢复 `cards`，其他存储项未改；这里只确认布局语义恢复，不声称存储字节完全相同。前后快照为本机 `build/verification/note-browser/iphone-{before,after}.json`。
+- 验收后 58/58 库文件与 bookmark 保持原样，449/449 生产文件仍与基线一致，已安装 Release 与当前 Release 构建的 170/170 文件匹配。App 数据容器路径与基线不同，不将保留安装表述为路径完全相同。主页由缺省列表变为显式保存 `list`，笔记集合恢复 `cards`，其他已检查存储项未改；这里只确认布局语义恢复，不声称存储字节完全相同。前后快照为本机 `build/verification/note-browser/iphone-{before,after}.json`。
 - 首轮 [PR #49 Verify #39236038894](https://github.com/divikwu/memocard/actions/runs/39236038894) 的 design 通过；release 的原生探针在模拟器启动、安装成功后，`simctl launch --console` 超出原 60 秒上限且没有 App 阶段标记，未执行到业务断言。保留失败记录，不将其计为通过；没有延长超时或修改原生探针，最终远程结果以 PR 最新 head 为准。
 - 本机日志为 `/tmp/memocard-note-browser-{design-delivery,verify,ios-build,ios-release-build}.log`；定向测试与截图属于辅助证据，未作为可跨机器依赖提交。旧系统、真机、iCloud 同步、大列表性能及所有 Markdown 组合未在本轮覆盖。
 
