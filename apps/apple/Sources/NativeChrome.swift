@@ -260,11 +260,30 @@ private struct NativeMainChrome: View {
     @ObservedObject var host: NativeHost
     @ObservedObject private var chromeState: NativeSurfaceState
     @ObservedObject private var presentation: NativeSurfacePresentationState
+    #if DEBUG
+    private var previewContent: (() -> AnyView)?
+    #endif
 
     init(host: NativeHost) {
         self.host = host
         chromeState = host.nativeSurfaceStore.state(for: "chrome")
         presentation = host.nativeSurfaceStore.presentation
+    }
+
+    #if DEBUG
+    init(host: NativeHost, previewContent: @escaping () -> AnyView) {
+        self.init(host: host)
+        self.previewContent = previewContent
+    }
+    #endif
+
+    @ViewBuilder private func documentContent(scrollInsets: EdgeInsets) -> some View {
+        #if DEBUG
+        if host.isPreview { previewContent?() ?? AnyView(Color.clear) }
+        else { WebView(host: host, scrollInsets: scrollInsets) }
+        #else
+        WebView(host: host, scrollInsets: scrollInsets)
+        #endif
     }
 
     private var chrome: NativeSurface? { chromeState.surface }
@@ -281,7 +300,7 @@ private struct NativeMainChrome: View {
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                WebView(host: host, scrollInsets: extendsUnderBars ? geometry.safeAreaInsets : EdgeInsets())
+                documentContent(scrollInsets: extendsUnderBars ? geometry.safeAreaInsets : EdgeInsets())
                     .modifier(NativeScrollEdges(enabled: extendsUnderBars))
             }
                 .navigationTitle(chrome?.title ?? "记忆卡")
@@ -588,6 +607,63 @@ private struct NativePanel: View {
 }
 
 #if DEBUG
+struct NativeMainChromePreviewCanvas: View {
+    @ObservedObject var model: NativeMainChromePreviewModel
+    var showControls = true
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if showControls {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("原生外壳场景", selection: Binding(get: { model.scenario }, set: { model.select($0) })) {
+                        ForEach(NativeMainChromePreviewModel.Scenario.allCases) { Text($0.rawValue).tag($0) }
+                    }.pickerStyle(.segmented)
+                    Text("仅预览原生导航与菜单；标题、正文和保存请在 Editor Storybook／实际 App 中验证。")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text(model.feedback).font(.caption).accessibilityLabel("原生外壳预览反馈")
+                }.padding(12)
+                Divider()
+            }
+            NativeMainChrome(host: model.host) { AnyView(document) }
+        }
+    }
+
+    private var document: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(model.isDetail ? "侧栏布局笔记" : "示例笔记集合").font(.title2.bold())
+                Text("隔离示例：不会打开笔记库，也不会加载 WebView。")
+                    .font(.caption).foregroundStyle(.secondary)
+                if model.isDetail {
+                    Text("这里是只读占位正文，用于检查原生返回、固定、页面操作及禁用态。")
+                    Text(model.isPinned ? "已固定到主页" : "尚未固定到主页").font(.caption)
+                } else {
+                    Text("当前布局：\(model.layout == "cards" ? "卡片" : "列表")").font(.caption)
+                    Button("打开示例笔记") { model.openNote() }.buttonStyle(.bordered)
+                }
+            }.frame(maxWidth: .infinity, alignment: .leading).padding()
+        }
+    }
+}
+
+private struct NativeMainChromeInteractivePreview: View {
+    @StateObject private var model: NativeMainChromePreviewModel
+    let dark: Bool
+    init(_ scenario: NativeMainChromePreviewModel.Scenario, dark: Bool = false) {
+        self.dark = dark
+        _model = StateObject(wrappedValue: NativeMainChromePreviewModel(scenario: scenario, dark: dark))
+    }
+    var body: some View {
+        NativeMainChromePreviewCanvas(model: model).preferredColorScheme(dark ? .dark : .light)
+            .dynamicTypeSize(dark ? .accessibility3 : .large)
+    }
+}
+
+#Preview("Main Chrome · Collection") { NativeMainChromeInteractivePreview(.collection) }
+#Preview("Main Chrome · Detail") { NativeMainChromeInteractivePreview(.detail) }
+#Preview("Main Chrome · Busy") { NativeMainChromeInteractivePreview(.busy) }
+#Preview("Main Chrome · Dark Large") { NativeMainChromeInteractivePreview(.detail, dark: true) }
+
 struct NativeSurfacePreviewCanvas: View {
     @ObservedObject var model: NativeSurfacePreviewModel
     @ObservedObject private var surfaceState: NativeSurfaceState

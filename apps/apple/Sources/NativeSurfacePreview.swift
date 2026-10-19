@@ -2,6 +2,72 @@
 import SwiftUI
 import UIKit
 
+/// Exercises the production chrome contract without creating a WebView or vault.
+@MainActor
+final class NativeMainChromePreviewModel: ObservableObject {
+    enum Scenario: String, CaseIterable, Identifiable {
+        case collection = "集合", detail = "笔记", busy = "处理中"
+        var id: String { rawValue }
+    }
+    let host = NativeHost(previewSurfaces: [:])
+    @Published private(set) var scenario: Scenario
+    @Published private(set) var isDetail = false
+    @Published private(set) var isPinned = false
+    @Published private(set) var layout = "list"
+    @Published private(set) var feedback = "隔离示例：不会修改笔记库"
+    private let dark: Bool
+    private var generation = 0
+    private(set) var acceptedActions = 0
+    var surface: NativeSurface { host.nativeSurfaces["chrome"]! }
+
+    init(scenario: Scenario = .collection, dark: Bool = false) {
+        self.scenario = scenario; self.dark = dark
+        host.previewAction = { [weak self] _, action, _ in self?.receive(action) }
+        select(scenario)
+    }
+
+    func select(_ scenario: Scenario) {
+        self.scenario = scenario; generation += 1
+        isDetail = scenario != .collection; isPinned = false; layout = "list"
+        feedback = "场景：\(scenario.rawValue)"
+        publish()
+    }
+
+    func openNote() {
+        isDetail = true; scenario = .detail
+        feedback = "已打开示例笔记（只读占位）"; publish()
+    }
+
+    private func publish() {
+        let busy = scenario == .busy
+        host.nativeSurfaceStore.update(NativeSurface(id: "chrome", instance: "preview-main-chrome-\(generation)", kind: "chrome", title: isDetail ? "笔记" : "主页", busy: busy,
+            theme: dark ? "dark" : "light", palette: dark ? SidebarPreviewPalette.dark : SidebarPreviewPalette.light,
+            leading: NativeAction(id: isDetail ? "back" : "navigation", title: isDetail ? "返回" : "导航", icon: isDetail ? "chevron.left" : "sidebar.left"),
+            pin: isDetail ? NativeAction(id: "pin", title: isPinned ? "取消固定" : "固定到主页", icon: isPinned ? "pin.fill" : "pin", disabled: busy) : nil,
+            menu: [NativeAction(id: "new", title: "新建笔记", icon: "square.and.pencil", disabled: busy),
+                NativeAction(id: "refresh", title: "刷新笔记库", icon: "arrow.clockwise", disabled: busy),
+                NativeAction(id: "vault", title: "笔记库", icon: "folder", disabled: isDetail || busy),
+                NativeAction(id: "drafts", title: "草稿（0）", icon: "doc.badge.clock", disabled: isDetail),
+                NativeAction(id: "settings", title: "设置", icon: "gearshape")] + (isDetail && !busy ? [NativeAction(id: "delete", title: "删除笔记", icon: "trash", destructive: true)] : []),
+            titleMenu: isDetail ? nil : [NativeAction(id: "cards", title: "卡片", icon: "square.grid.2x2", selected: layout == "cards"),
+                NativeAction(id: "list", title: "列表", icon: "list.bullet", selected: layout == "list")],
+            bottom: isDetail ? nil : [NativeAction(id: "search", title: "搜索全部笔记", icon: "magnifyingglass"),
+                NativeAction(id: "capture", title: "记下此刻的想法…", icon: "plus")]))
+    }
+
+    private func receive(_ action: String) {
+        acceptedActions += 1
+        switch action {
+        case "back": isDetail = false; scenario = .collection
+        case "pin": isPinned.toggle()
+        case "cards", "list": layout = action
+        default: break
+        }
+        feedback = "已收到原生操作：\(action)（仅预览）"
+        publish()
+    }
+}
+
 /// A bounded, in-memory producer for the real native surfaces. No vault or WebView.
 @MainActor
 final class NativeSurfacePreviewModel: ObservableObject {

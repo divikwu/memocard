@@ -2,6 +2,7 @@ import Combine
 import Darwin
 import SwiftUI
 import UIKit
+import WebKit
 
 // This entry point is built with the production app sources in a temporary project.
 // The preview initializer prevents vault access and services; updates still enter
@@ -98,14 +99,16 @@ enum NativeSurfaceSubscriptionProbe {
         let previewGuards = await verifyPreviewGuardsAndCancellation()
         guard let previewResults = await verifyInteractivePreviews() else { return false }
         let (previewInteractions, previewKeystrokes) = previewResults
+        guard let chromePreviewChecks = await verifyChromePreviews() else { return false }
         #else
         let fieldChanges = 0
         let inputInteractions = 0
         let previewGuards = 0
         let previewInteractions = 0
         let previewKeystrokes = 0
+        let chromePreviewChecks = 0
         #endif
-        let data = try! JSONSerialization.data(withJSONObject: ["measurement": "native-surface-subscriptions", "results": results, "fieldChangesVerified": fieldChanges, "inputInteractionsVerified": inputInteractions, "previewGuardChecksVerified": previewGuards, "previewInteractionsVerified": previewInteractions, "previewKeystrokesVerified": previewKeystrokes], options: [.sortedKeys])
+        let data = try! JSONSerialization.data(withJSONObject: ["measurement": "native-surface-subscriptions", "results": results, "fieldChangesVerified": fieldChanges, "inputInteractionsVerified": inputInteractions, "previewGuardChecksVerified": previewGuards, "previewInteractionsVerified": previewInteractions, "previewKeystrokesVerified": previewKeystrokes, "chromePreviewChecksVerified": chromePreviewChecks], options: [.sortedKeys])
         print("SURFACE_SUBSCRIPTION_RESULT " + String(decoding: data, as: UTF8.self))
         return true
     }
@@ -545,6 +548,72 @@ enum NativeSurfaceSubscriptionProbe {
             print("NATIVE_SURFACE_PROBE_STAGE preview-ui-complete kind=\(kind.rawValue)")
         }
         return (2, keystrokes)
+    }
+
+    private static func verifyChromePreviews() async -> Int? {
+        var checks = 0
+        let model = NativeMainChromePreviewModel()
+        precondition(model.surface.titleMenu?.first(where: { $0.selected == true })?.id == "list")
+        model.host.nativeAction(model.surface, "cards")
+        precondition(model.layout == "cards" && model.surface.titleMenu?.first(where: { $0.selected == true })?.id == "cards")
+        checks += 1
+        model.openNote()
+        precondition(model.isDetail && model.surface.leading?.id == "back" && model.surface.titleMenu == nil && model.layout == "cards")
+        checks += 1
+        model.host.nativeAction(model.surface, "pin")
+        precondition(model.isPinned && model.surface.pin?.title == "取消固定")
+        model.host.nativeAction(model.surface, "pin")
+        precondition(!model.isPinned && model.surface.pin?.title == "固定到主页")
+        checks += 1
+        let detailActions = model.acceptedActions
+        for action in ["vault", "drafts", "unknown"] { model.host.nativeAction(model.surface, action) }
+        precondition(model.acceptedActions == detailActions, "Detail preview bypassed disabled/unknown native chrome actions")
+        checks += 1
+        model.host.nativeAction(model.surface, "back")
+        precondition(!model.isDetail && model.surface.leading?.id == "navigation" && model.layout == "cards")
+        checks += 1
+        let beforeMenu = model.acceptedActions
+        for action in ["refresh", "settings", "search", "capture", "new"] { model.host.nativeAction(model.surface, action) }
+        precondition(model.acceptedActions == beforeMenu + 5 && !model.isDetail && model.surface.pin == nil && model.surface.menu?.contains(where: { $0.id == "delete" }) == false,
+                     "A callback-only preview menu action fabricated an unsaved editor state")
+        checks += 1
+        let stale = model.surface
+        model.select(.busy)
+        let beforeBlocked = model.acceptedActions
+        model.host.nativeAction(stale, "pin")
+        for action in ["pin", "new", "refresh", "vault", "drafts", "delete"] { model.host.nativeAction(model.surface, action) }
+        precondition(model.acceptedActions == beforeBlocked && model.surface.busy == true, "Busy/stale preview actions reached the callback")
+        checks += 1
+        model.host.nativeAction(model.surface, "back")
+        precondition(!model.isDetail && model.surface.busy == false, "Busy preview changed the production back action contract")
+        checks += 1
+
+        guard let root = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows).first(where: \.isKeyWindow)?.rootViewController else { return nil }
+        // The default preview-host path must also remain isolated without injected content.
+        for scenario in [NativeMainChromePreviewModel.Scenario.collection, .detail, .busy, nil] {
+            let fixture = NativeMainChromePreviewModel(scenario: scenario ?? .collection)
+            let view = scenario == nil ? AnyView(NativeChrome(host: fixture.host)) : AnyView(NativeMainChromePreviewCanvas(model: fixture, showControls: false))
+            let controller = UIHostingController(rootView: view)
+            root.addChild(controller); controller.view.frame = root.view.bounds
+            root.view.addSubview(controller.view); controller.didMove(toParent: root)
+            defer {
+                controller.willMove(toParent: nil); controller.view.removeFromSuperview(); controller.removeFromParent()
+            }
+            guard await waitForUI("native chrome preview navigation", until: {
+                controller.view.layoutIfNeeded()
+                return containsView(UINavigationBar.self, in: controller.view)
+            }) else { return nil }
+            precondition(fixture.host.isPreview && fixture.host.webView == nil && !containsView(WKWebView.self, in: controller.view),
+                         "Native chrome preview constructed the production WebView")
+            checks += 1
+        }
+        print("NATIVE_SURFACE_PROBE_STAGE chrome-previews-complete count=\(checks)")
+        return checks
+    }
+
+    private static func containsView<T: UIView>(_ type: T.Type, in view: UIView) -> Bool {
+        view is T || view.subviews.contains { containsView(type, in: $0) }
     }
 
     private static func textView(in view: UIView) -> UITextView? {
