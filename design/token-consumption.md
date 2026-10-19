@@ -65,15 +65,17 @@ Logo 保留各平台已有尺寸：Web / H5 / macOS 使用 `sidebar.logoSize`，
 
 | 类别 | 唯一维护来源 | 消费与边界 | 开发预览 |
 | --- | --- | --- | --- |
-| 界面语义颜色 | [styles.css](../apps/ui/src/styles.css) 的语义变量与 `@theme` 映射 | Web 使用语义工具类；[readIOSPalette](../apps/ui/src/lib/ios-palette.ts) 只解析原生实际需要的键，经 bridge 传原生，不另建 Swift 主题解析器 | [foundations/colors](../apps/ui/stories/foundation-colors.stories.tsx)，浅/深与 toolbar 强调色 |
+| 界面语义颜色 | [styles.css](../apps/ui/src/styles.css) 的语义变量与 `@theme` 映射 | Web 使用语义工具类；[readIOSPalette](../apps/ui/src/lib/ios-palette.ts) 只解析原生实际需要的键，经 bridge 传原生，不另建 Swift 主题解析器 | [foundations/colors](../apps/ui/stories/foundation-colors.stories.tsx) 的代表浅/深色对诊断与真实 Button/Input/Tabs 状态 |
 | 标签前景/背景 | [tag-colors.css](../apps/ui/src/tag-colors.css)、[tagColors](../apps/ui/src/tag-colors.ts) 的选项 | Web 标签与颜色菜单；原生消费同一组已解析 RGBA。默认灰色是内部别名，不增加新的用户选项 | 同一颜色故事的标签色对 |
 | 外观选项与默认值 | [preferences.ts](../apps/ui/src/features/theme/preferences.ts)、[ThemeProvider](../apps/ui/src/features/theme/ThemeProvider.tsx) | 主题/强调色/中性色/圆角/界面字体的设置和持久化；不是可移植尺寸定义 | foundations/tokens 的 LivePalette；各故事 toolbar |
-| 字体资源与回退 | [font-options.ts](../apps/ui/src/lib/font-options.ts)、[font-loader.ts](../apps/ui/src/features/theme/font-loader.ts) | Web 的界面及笔记字体；原生系统字体不读取 Web 字体文件 | [foundations/typography](../apps/ui/stories/foundation-typography.stories.tsx) |
-| 笔记字号/行高/阅读宽度/段距 | [排版偏好](../apps/ui/src/features/typography/preferences.ts)、[TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx)、[typeset.css](../apps/ui/src/typeset.css) | 笔记内容的既有排版变量，保留用户设置；不强行并入侧栏 token | 同一排版故事，真实 Provider 的字号切换与恢复 |
+| 字体资源与回退 | [font-options.ts](../apps/ui/src/lib/font-options.ts)、[font-loader.ts](../apps/ui/src/features/theme/font-loader.ts) | Web 的界面及笔记字体；原生系统字体不读取 Web 字体文件 | [foundations/typography](../apps/ui/stories/foundation-typography.stories.tsx) 沿用当前默认字体与既有回退，不表示全字体字形验收 |
+| 笔记字号/行高/阅读宽度/段距 | [排版偏好](../apps/ui/src/features/typography/preferences.ts)、[TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx)、[typeset.css](../apps/ui/src/typeset.css) | 笔记内容的既有排版变量，保留用户设置；不强行并入侧栏 token | 同一排版故事，生产 options 的四轴边界、真实 Provider 调整/恢复、H5 阅读宽度与溢出检查 |
 | 浮层阴影 | [styles.css](../apps/ui/src/styles.css) 的 `--overlay-shadow` | Web 的 Popover/Menu 等；原生菜单与材质由系统管理 | [foundations/effects](../apps/ui/stories/foundation-effects.stories.tsx) |
-| 动效与层级 | [全局 Reduce Motion](../apps/ui/src/styles.css)、[sidebar.tsx](../apps/ui/src/components/ui/sidebar.tsx)、[sheet.tsx](../apps/ui/src/components/ui/sheet.tsx) 及各组件 CSS | 时长、z-index 与手势仍由已有组件拥有，不新增全局数字。iOS 系统与 UIKit 容器继续管理原生动效 | effects 的规则说明；独立组件故事验证关闭与焦点 |
+| 动效与层级 | [全局 Reduce Motion](../apps/ui/src/styles.css)、[sidebar.tsx](../apps/ui/src/components/ui/sidebar.tsx)、[sheet.tsx](../apps/ui/src/components/ui/sheet.tsx) 及各组件 CSS | 时长、z-index 与手势仍由已有组件拥有，不新增全局数字。iOS 系统与 UIKit 容器继续管理原生动效 | effects 的浅/深色阴影与焦点；真实浏览器媒体偏好切换下的生产 Sheet 时长、关闭及焦点恢复 |
 | 图标 | [Lucide 导出映射](../scripts/generate-sidebar-icons.mjs) 与锁定依赖 | 自定义侧栏用同源 SVG；系统工具栏、菜单保留 SF Symbols | effects 直接读取已生成的原生 SVG |
 | safe area / 系统控件度量 | [NativeChrome.swift](../apps/apple/Sources/NativeChrome.swift)、[WebView.swift](../apps/apple/Sources/WebView.swift) 与平台 API | 系统菜单、确认、文件选择、键盘、材质与安全区不复制成 Web token | 原生 App；适用场景见[组件清单](component-inventory.md) |
+
+颜色诊断区分样本用途：普通文字前景/背景配对使用 4.5:1，`accent-text` 的当前生产消费者为已固定状态图标，使用非文本 3:1。Tabs 容器的继承色不等同于实际 Tab 文字颜色，必须检查真实 Trigger 的选中/未选中渲染；不能用容器比值认定文字缺陷。透明背景先与实际样本底色合成，判定使用未舍入比值；平面色样测量不是字形截图或整页无障碍审计。代表主题下的既有未达标项见[验证记录](validation.md)，不在故事中修改生产颜色或降低阈值。
 
 ## 变更与验收
 

@@ -1,11 +1,18 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig, mergeConfig } from "vitest/config";
+import type { BrowserCommand } from "vitest/node";
 import { playwright } from "@vitest/browser-playwright";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import viteConfig from "./vite.storybook.config.ts";
 import { desktopViewport, mobileViewport } from "./.storybook/viewports.ts";
 
 const viewportSetup = fileURLToPath(new URL("./.storybook/viewport.setup.ts", import.meta.url));
+
+// Change the actual browser media feature, not window.matchMedia or product CSS.
+const setReducedMotion: BrowserCommand<["reduce" | "no-preference"], void> = async ({ page }, reducedMotion) => {
+  if (reducedMotion !== "reduce" && reducedMotion !== "no-preference") throw new Error("Unsupported motion preference.");
+  await page.emulateMedia({ reducedMotion });
+};
 
 export default mergeConfig(viteConfig, defineConfig({
   test: {
@@ -17,7 +24,7 @@ export default mergeConfig(viteConfig, defineConfig({
           name: "storybook-desktop",
           setupFiles: [viewportSetup],
           provide: { storybookViewport: desktopViewport },
-          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: desktopViewport },
+          browser: { enabled: true, provider: playwright(), commands: { setReducedMotion }, headless: true, instances: [{ browser: "chromium" }], viewport: desktopViewport },
         },
       },
       {
@@ -27,7 +34,7 @@ export default mergeConfig(viteConfig, defineConfig({
           name: "storybook-mobile",
           setupFiles: [viewportSetup],
           provide: { storybookViewport: mobileViewport },
-          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: mobileViewport },
+          browser: { enabled: true, provider: playwright(), commands: { setReducedMotion }, headless: true, instances: [{ browser: "chromium" }], viewport: mobileViewport },
         },
       },
       {
