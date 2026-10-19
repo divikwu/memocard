@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ReactElement } from "react";
 import { expect, fn, userEvent, within } from "storybook/test";
 import { Search } from "lucide-react";
 import { Button } from "../src/components/ui/button";
-import { ComponentDocsPage } from "../.storybook/component-docs";
 import { desktopGlobals } from "../.storybook/viewports";
+import { ButtonDocsPage, ButtonOverview, ButtonProperties } from "./button-docs";
 
 const usage = `import { Button } from "@/components/ui/button"
 
@@ -44,7 +45,7 @@ const meta = {
     layout: "padded",
     docs: {
       description: { component: "触发保存、重试等单次动作的基础按钮；保留生产外观、键盘激活和禁用行为。" },
-      page: () => <ComponentDocsPage usage={usage} anatomy={anatomy} guidelines={guidelines} accessibility={accessibility} platform={platform} api={api} apiArgs={["variant", "size", "children", "disabled", "type", "onClick", "aria-label", "render"]} />,
+      page: (): ReactElement => <ButtonDocsPage overview={Overview} sizes={Sizes} usageStory={Default} properties={Properties} keyboard={KeyboardAndDisabled} usage={usage} anatomy={anatomy} guidelines={guidelines} accessibility={accessibility} platform={platform} api={api} apiArgs={["variant", "size", "children", "disabled", "type", "onClick", "aria-label", "render"]} />,
     },
   },
 } satisfies Meta<typeof Button>;
@@ -76,5 +77,55 @@ export const KeyboardAndDisabled: Story = {
     await expect(canvas.getByRole("button", { name: "不可用" })).toBeDisabled();
     await userEvent.keyboard("{Enter}");
     await expect(args.onClick).toHaveBeenCalledTimes(3);
+  },
+};
+
+export const Overview: Story = {
+  render: () => <ButtonOverview />,
+  parameters: { controls: { disable: true }, docs: { story: { height: "312px" } } },
+};
+export const Properties: Story = {
+  render: () => <ButtonProperties />,
+  parameters: { controls: { disable: true }, docs: { story: { height: "540px", autoHeight: true } } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const preview = within(canvas.getByRole("form", { name: "实时按钮预览" }));
+    const caption = '收藏 "项目" {草稿} <笔记>';
+    await expect(canvasElement.querySelector("details")).not.toHaveAttribute("open");
+    await userEvent.clear(canvas.getByLabelText("children"));
+    await userEvent.type(canvas.getByLabelText("children"), '收藏 "项目" {{草稿} <笔记>');
+    await userEvent.selectOptions(canvas.getByLabelText("variant"), "outline");
+    await userEvent.selectOptions(canvas.getByLabelText("size"), "lg");
+    await userEvent.selectOptions(canvas.getByLabelText("type"), "submit");
+    const button = preview.getByRole("button", { name: caption });
+    await expect(button).toHaveAttribute("data-variant", "outline");
+    await expect(button).toHaveAttribute("data-size", "lg");
+    await expect(button).toHaveAttribute("type", "submit");
+    await userEvent.click(button);
+    await expect(canvas.getByText("演示点击：1 次")).toBeVisible();
+    await userEvent.click(canvas.getByLabelText("disabled"));
+    await expect(button).toBeDisabled();
+    button.click();
+    await expect(canvas.getByText("演示点击：1 次")).toBeVisible();
+    await userEvent.click(canvas.getByText("查看当前代码"));
+    const code = canvasElement.querySelector("details code");
+    await expect(code).toHaveTextContent(`{${JSON.stringify(caption)}}`);
+    await expect(code).toHaveTextContent('variant="outline"');
+    await userEvent.click(canvas.getByRole("button", { name: "Reset" }));
+    const reset = preview.getByRole("button", { name: "保存" });
+    await expect(reset).toBeEnabled();
+    await expect(reset).toHaveAttribute("data-variant", "default");
+    await expect(reset).toHaveAttribute("data-size", "default");
+    await expect(reset).toHaveAttribute("type", "button");
+    await expect(canvas.getByText("演示点击：0 次")).toBeVisible();
+    await userEvent.selectOptions(canvas.getByLabelText("size"), "icon-sm");
+    await userEvent.type(canvas.getByLabelText("aria-label"), '搜索 "标签" <项目>');
+    await expect(preview.getByRole("button", { name: '搜索 "标签" <项目>' })).toHaveAttribute("data-size", "icon-sm");
+    await expect(code).toHaveTextContent(`aria-label={${JSON.stringify('搜索 "标签" <项目>')}}`);
+    await expect(code).toHaveTextContent('import { Search } from "lucide-react"');
+    await userEvent.selectOptions(canvas.getByLabelText("type"), "reset");
+    await userEvent.click(preview.getByRole("button", { name: '搜索 "标签" <项目>' }));
+    await expect(canvas.getByText("演示点击：1 次")).toBeVisible();
+    await expect(preview.getByRole("button", { name: '搜索 "标签" <项目>' })).toHaveAttribute("data-size", "icon-sm");
   },
 };

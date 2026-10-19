@@ -1,0 +1,73 @@
+.button-docs .button-docs-tab-list {
+  display: flex;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.button-docs .button-docs-tab {
+  padding: 0.75rem 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.button-docs .button-docs-tab[data-active] {
+  border-bottom-color: currentColor;
+  font-weight: 600;
+}
+.button-docs .button-docs-tab:focus-visible,
+.button-properties select:focus-visible,
+.button-properties summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+.button-docs .button-docs-panel { outline: none; }
+.button-overview-stage {
+  display: flex;
+  min-height: 280px;
+  flex-wrap: wrap;
+  align-content: center;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+.button-properties { padding: 1rem; color: var(--foreground); }
+.button-properties-main { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.button-properties-stage {
+  display: flex;
+  min-height: 216px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--background);
+}
+.button-properties-feedback { display: block; margin-top: 0.75rem; font-size: 0.875rem; color: var(--muted-foreground); }
+.button-properties-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+.button-properties-controls > label { display: grid; min-width: 0; gap: 0.375rem; font-size: 0.875rem; }
+.button-properties select {
+  width: 100%;
+  min-width: 0;
+  height: 2.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--input);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  background: var(--background);
+  font: inherit;
+}
+.button-properties-controls > .button-properties-checkbox { display: flex; align-items: center; gap: 0.5rem; align-self: end; min-height: 2.25rem; }
+.button-properties-checkbox input { accent-color: var(--primary); }
+.button-properties-reset { grid-column: 1 / -1; }
+.button-properties-note { margin: 1rem 0; color: var(--muted-foreground); font-size: 0.875rem; }
+.button-properties-code { border: 1px solid var(--border); border-radius: var(--radius); }
+.button-properties-code summary { padding: 0.75rem; cursor: pointer; font-size: 0.875rem; }
+.button-properties-code pre { max-height: 250px; overflow: auto; margin: 0; padding: 1rem; border-top: 1px solid var(--border); background: var(--muted); color: var(--foreground); font-size: 0.8125rem; }
+@media (max-width: 640px) {
+  .button-docs .button-docs-tab-list { gap: 1rem; }
+  .button-properties-main { grid-template-columns: 1fr; gap: 1rem; }
+  .button-properties-stage { min-height: 120px; }
+}
