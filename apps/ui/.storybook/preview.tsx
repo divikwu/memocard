@@ -51,7 +51,7 @@ const preview: Preview = {
   parameters: {
     layout: "fullscreen",
     // ThemeProvider owns document-level styles; Docs stories need separate documents too.
-    docs: { page: StaticDocsPage, story: { inline: false, height: "320px", autoplay: false }, components: { Story: DocsStoryPreview } },
+    docs: { page: StaticDocsPage, canvas: { withToolbar: false }, story: { inline: false, height: "320px", autoplay: false }, components: { Story: DocsStoryPreview } },
     controls: { expanded: true },
     viewport: { options: viewportOptions },
     options: { storySort: { order: ["foundations", "components", "sidebar"] } },
