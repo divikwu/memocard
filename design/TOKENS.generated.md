@@ -24,7 +24,8 @@ Baselines map to CSS logical pixels and native points. Radius CSS uses rem with 
 | sidebar.contentGap | 8 |  |
 | sidebar.rowGap | 4 |  |
 | sidebar.indent | 24 | Native tree indentation; Web keeps its existing border/padding composition. |
-| sidebar.logoSize | 36 |  |
+| sidebar.logoSize | 36 | Web logo baseline. |
+| sidebar.nativeLogoSize | 28 | Native logo baseline; preserves the existing platform size. |
 | sidebar.mobileFontSize | 16 |  |
 | sidebar.desktopFontSize | 14 |  |
 | sidebar.brandFontSize | 14 | Native brand baseline; Web brand retains its existing 16px style. |
