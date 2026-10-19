@@ -8,6 +8,7 @@
 - [Token 消费映射](token-consumption.md)
 - [侧栏规格与验收清单](components/sidebar.md)
 - [搜索与快速记录场景及验收边界](components/search-capture.md)
+- [笔记集合与正文预览场景及验收边界](components/note-browser.md)
 - [可移植 token 对照表（生成）](TOKENS.generated.md)
 - [本轮验证记录](validation.md)
 
@@ -40,7 +41,7 @@
 
 Storybook、故事、模拟数据和浏览器测试只用于开发，不进入生产入口或原生 Web 资源。现有 `apps/ui/preview` 保留整页状态与流程验收职责。原生 Preview 使用生产组件及隔离的 `NativeHost(previewSurfaces:)`，不连接真实笔记库或启动服务。
 
-Storybook 的 Foundations 包含尺寸/间距、完整 CSS 语义色与标签色、真实 Provider 驱动的界面/笔记排版、图标/阴影/焦点与动效边界。高频基础组件直接使用生产 Button、Input、Textarea、Select、Switch、Tabs、Dialog、Dropdown Menu、Popover、Tooltip 和 Sheet，分别记录适用状态与键盘/关闭/焦点行为。侧栏仍保留组合故事。搜索与快速记录新增生产组件的业务 Story 和真实原生 overlay 的独立 Preview，使用隔离数据反馈输入、关闭与保存结果；场景操作和边界见对应组件说明。其他业务组件继续使用维护表中登记的现有 fixture/回归，未把它们声明为已完成独立 Story。
+Storybook 的 Foundations 包含尺寸/间距、完整 CSS 语义色与标签色、真实 Provider 驱动的界面/笔记排版、图标/阴影/焦点与动效边界。高频基础组件直接使用生产 Button、Input、Textarea、Select、Switch、Tabs、Dialog、Dropdown Menu、Popover、Tooltip 和 Sheet，分别记录适用状态与键盘/关闭/焦点行为。侧栏仍保留组合故事。搜索与快速记录包含生产组件的业务 Story 和真实原生 overlay 的独立 Preview，使用隔离数据反馈输入、关闭与保存结果。NoteCollection 与 NotePreview 的业务 Story 覆盖集合浏览和内容预览，iOS 复核共用组件的实际 WKWebView 路径；场景操作和边界见对应组件说明。其他业务组件继续使用维护表中登记的现有 fixture/回归，未把它们声明为已完成独立 Story。
 
 Storybook 的 Select/Switch/Tabs 与搜索实际使用的 Markdown 依赖在启动前显式预优化，避免虚拟故事首次发现依赖后刷新浏览器测试页。Storybook 10.6.2 的 iframe Docs 不传递 autoplay 参数；通过公开 Story block 覆盖与 Core embed 模式停止自动 play，手动交互保留，完整交互验收在 Canvas 与 Vitest 执行。相关依赖机制见 [Vite 依赖预构建](https://vite.dev/guide/dep-pre-bundling.html)；冷启动验收与热缓存复跑分开记录。
 

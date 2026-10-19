@@ -2,6 +2,16 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## 笔记集合与正文预览（2026-10-19）
+
+- 新增 NoteCollection 9 个、NotePreview 7 个独立故事，直接使用生产组件、Markdown、CSS 和 ThemeProvider。集合的内存调用方覆盖浏览、键盘布局切换、标签/查询、打开/返回后状态保留、最近/固定、分页、加载/空态/禁用；接收页仅展示真实 NotePreview，不代替 Editor 或真实路由。移动端保留隐藏 Web 工具栏的既有行为，分别验证默认卡片与已保存列表，布局切换仍由 App 外层菜单提供。
+- 正文覆盖默认空态、全文展开/收起、文本与完整表格行裁切、标签行去重、隔离 Blob 图片成功/缺失、大图关闭/焦点恢复，以及 H5 表格方向键横向滚动。没有添加外网资产或真实库 fallback。首轮集合测试误点移动端隐藏工具栏与 `pointer-events: none` 的禁用按钮，已按真实能力契约修正；没有改生产 CSS 或绕过禁用状态强制点击。
+- 最终 `pnpm verify:design` 通过：83 个故事（74 桌面 1024×900、9 H5 390×844）加 1 项真实断点回归，共 84/84；类型/静态构建、维护表/token 映射、token/icon 与真实 palette 检查通过。原生 Preview 没有新增：这两个组件是共用 Web 内容，应复核 iOS 实际 WKWebView。
+- `pnpm verify` 通过：UI 1058、native-core 126、MCP 16、network 8、local-Web 14，类型/lint/生产构建与全部 bundle 预算通过；保留既有编辑器 Hook 警告和大 chunk 提示。移动首页仍为 1,335,281 / 1,335,296 bytes raw，未提高预算。231 份 Web 源文件、164 份生产产物和 54 份原生源码/资源共 449 份文件逐一 SHA256 与本轮基线一致。
+- Storybook 实际 Canvas 手动完成列表切换、产品标签筛选、打开项目计划及返回，列表与标签保留；截图位于本机 `build/verification/note-browser/storybook-collection-*.jpg`。Canvas 仅调整显示缩放为 75%，实际故事视口契约保持。缩放弹层打开时触发的 play 因 iframe body 被 Storybook 设为 inert 而失焦；关闭设置并重置故事后完整 play 成功，不将该次 UI 干扰记录为组件回归。
+- iOS 新 Debug Simulator 构建成功，已保留容器安装到 iPhone 18 Pro / iOS 27.0。真实 App 连接现有 MemoCard iOS QA 库，原生搜索打开“体验 · 卡片内容的节奏”后可见实际编辑页、图片与正文。当前界面工具未能触发手机画面坐标点按，顶部/正文也未暴露可选节点；布局菜单、卡片标签和原生返回的可见复核仍待完成，不以 Storybook 或构建替代。QA 库 58 份文件与安装包指纹已保存为本机基线。
+- 本机日志为 `/tmp/memocard-note-browser-{design-final,verify,ios-build}.log`；定向测试与截图属于辅助证据，未作为可跨机器依赖提交。旧系统、真机、iCloud 同步、大列表性能及所有 Markdown 组合未在本轮覆盖。
+
 实施基线：2026-10-18；工作区原有原生侧栏、Lucide、Preview 与性能用例等未提交变更已保留，快照位于本机 `/tmp/memocard-design-baseline-20261018-122024`。快照和本机截图属于辅助证据，不是可跨机器依赖。
 
 | 检查 | 状态 | 说明 |
