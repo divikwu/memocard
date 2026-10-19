@@ -9,8 +9,11 @@
 - 最终 `pnpm verify:design` 通过：83 个故事（74 桌面 1024×900、9 H5 390×844）加 1 项真实断点回归，共 84/84；类型/静态构建、维护表/token 映射、token/icon 与真实 palette 检查通过。原生 Preview 没有新增：这两个组件是共用 Web 内容，应复核 iOS 实际 WKWebView。
 - `pnpm verify` 通过：UI 1058、native-core 126、MCP 16、network 8、local-Web 14，类型/lint/生产构建与全部 bundle 预算通过；保留既有编辑器 Hook 警告和大 chunk 提示。移动首页仍为 1,335,281 / 1,335,296 bytes raw，未提高预算。231 份 Web 源文件、164 份生产产物和 54 份原生源码/资源共 449 份文件逐一 SHA256 与本轮基线一致。
 - Storybook 实际 Canvas 手动完成列表切换、产品标签筛选、打开项目计划及返回，列表与标签保留；截图位于本机 `build/verification/note-browser/storybook-collection-*.jpg`。Canvas 仅调整显示缩放为 75%，实际故事视口契约保持。缩放弹层打开时触发的 play 因 iframe body 被 Storybook 设为 inert 而失焦；关闭设置并重置故事后完整 play 成功，不将该次 UI 干扰记录为组件回归。
-- iOS 新 Debug Simulator 构建成功，已保留容器安装到 iPhone 18 Pro / iOS 27.0。真实 App 连接现有 MemoCard iOS QA 库，原生搜索打开“体验 · 卡片内容的节奏”后可见实际编辑页、图片与正文。当前界面工具未能触发手机画面坐标点按，顶部/正文也未暴露可选节点；布局菜单、卡片标签和原生返回的可见复核仍待完成，不以 Storybook 或构建替代。QA 库 58 份文件与安装包指纹已保存为本机基线。
-- 本机日志为 `/tmp/memocard-note-browser-{design-final,verify,ios-build}.log`；定向测试与截图属于辅助证据，未作为可跨机器依赖提交。旧系统、真机、iCloud 同步、大列表性能及所有 Markdown 组合未在本轮覆盖。
+- iOS 新 Debug 和 Release Simulator 构建成功，保留现有数据容器安装到 iPhone 18 Pro / iOS 27.0。真实 Release App 连接 MemoCard iOS QA 库，实际完成主页列表→原生菜单切换卡片→卡片标签“体验/使用指南”→真实 Editor→原生返回，过滤条件保留；同一筛选再切换列表、打开和返回。最后恢复主页列表与笔记集合卡片。原生搜索另打开“体验 · 卡片内容的节奏”，可见图片与正文；未编辑或保存笔记。实际 App 截图为本机 `build/verification/note-browser/simulator-{home-cards,tag-filtered,opened-note,tag-list,home-restored}.jpg`。
+- 首轮手机画面点按失效且顶部/正文未暴露可选节点，用户也确认无法打开菜单；系统 Settings 同样无法响应坐标点按。退出 Device Hub 时选择保留模拟器运行，再重新打开窗口后，系统 Settings 与实际 App 点按恢复，随后完成上述可见验收。未确定底层输入机制的根因，不据此修改 App。临时真实 NativeChrome 根容器 probe 的 4 项命中路由检查通过，仅作为容器路由诊断，不能替代真实触控验收；诊断源码已撤销，快照保留在 ignored 验收目录。
+- 验收后 58/58 库文件、bookmark 与数据容器保持原样，449/449 生产文件仍与基线一致，已安装 Release 与当前 Release 构建的 170/170 文件匹配。主页由缺省列表变为显式保存 `list`，笔记集合恢复 `cards`，其他存储项未改；这里只确认布局语义恢复，不声称存储字节完全相同。前后快照为本机 `build/verification/note-browser/iphone-{before,after}.json`。
+- 首轮 [PR #49 Verify #39236038894](https://github.com/divikwu/memocard/actions/runs/39236038894) 的 design 通过；release 的原生探针在模拟器启动、安装成功后，`simctl launch --console` 超出原 60 秒上限且没有 App 阶段标记，未执行到业务断言。保留失败记录，不将其计为通过；没有延长超时或修改原生探针，最终远程结果以 PR 最新 head 为准。
+- 本机日志为 `/tmp/memocard-note-browser-{design-delivery,verify,ios-build,ios-release-build}.log`；定向测试与截图属于辅助证据，未作为可跨机器依赖提交。旧系统、真机、iCloud 同步、大列表性能及所有 Markdown 组合未在本轮覆盖。
 
 实施基线：2026-10-18；工作区原有原生侧栏、Lucide、Preview 与性能用例等未提交变更已保留，快照位于本机 `/tmp/memocard-design-baseline-20261018-122024`。快照和本机截图属于辅助证据，不是可跨机器依赖。
 

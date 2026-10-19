@@ -35,6 +35,8 @@ export const BrowseAndOpen: Story = {
     await expect(args.onOpen).not.toHaveBeenCalled();
     await expect(canvas.getByRole("status")).toHaveTextContent("当前标签：产品");
     await expect(canvas.queryByRole("button", { name: "打开 周末散步" })).not.toBeInTheDocument();
+    await userEvent.type(canvas.getByRole("textbox", { name: "搜索当前视图笔记" }), "项目");
+    await expect(canvas.queryByRole("button", { name: "打开 阅读摘录" })).not.toBeInTheDocument();
     await userEvent.click(canvas.getByRole("button", { name: "打开 项目计划" }));
     await expect(args.onOpen).toHaveBeenCalledOnce();
     await expect(args.onOpen).toHaveBeenCalledWith("collection-plan");
@@ -44,6 +46,11 @@ export const BrowseAndOpen: Story = {
     await userEvent.click(detail.getByRole("button", { name: "返回笔记集合" }));
     await expect(canvas.getByRole("list", { name: "笔记列表" })).toHaveAttribute("data-layout", "list");
     await expect(canvas.getByRole("status")).toHaveTextContent("当前标签：产品");
+    await expect(canvas.getByRole("textbox", { name: "搜索当前视图笔记" })).toHaveValue("项目");
+    await expect(canvas.queryByRole("button", { name: "打开 阅读摘录" })).not.toBeInTheDocument();
+    await userEvent.click(canvas.getByRole("button", { name: "清空当前搜索" }));
+    await expect(canvas.getByRole("button", { name: "打开 项目计划" })).toBeVisible();
+    await expect(canvas.getByRole("button", { name: "打开 阅读摘录" })).toBeVisible();
     await userEvent.click(canvas.getByRole("button", { name: "清除标签筛选" }));
     const search = canvas.getByRole("textbox", { name: "搜索当前视图笔记" });
     await userEvent.type(search, "散步");
