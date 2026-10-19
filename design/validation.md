@@ -2,6 +2,17 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## 编辑器与原生页面外壳（2026-10-19）
+
+- 新增真实 Editor 的 5 个故事：标题/正文编辑与自动保存、保存失败/重试、保存中禁用、只读、H5 失败/重试；调用方通过现有 `EditorHandle.finish()` 返回真实 NoteCollection，再次打开通过 `getNote` 读回。断言同时检查输入保留、恢复草稿与已提交笔记分离、重试载荷一致、提交版本、回调和无重复写入。bridge 只接受指定内存笔记、binding、路径及当前版本，无真实笔记库 fallback。
+- 新增真实 NativeMainChrome 的 Collection / Detail / Busy / Dark Large 四个独立 `#Preview`。仅 DEBUG 预览 host 注入明确标识的只读占位正文；普通 App 仍使用原 WebView，Release 保留原渲染路径。12 项新原生检查覆盖布局、固定、返回、busy/旧 instance/未知动作拒绝，以及真实 hosting view 中有 UINavigationBar、无 WKWebView（含未注入正文的预览 host）。原有 42 个字段、6 个订阅场景、3 个 UIKit 输入、15 个预览 guard、2 个交互闭环和 7 个逐字输入断言仍通过。
+- 首轮 Editor 导入被 Vite 的晚发现依赖重优化打断；仅在独立 Storybook 配置中补齐实际日志列出的 19 个依赖，没有改生产构建配置。定向首轮曾有一次 ResizeObserver loop 提示，保留记录，后续单项及完整运行未复现，未确定其根因。清除生成的依赖缓存后，88 个故事全部通过，既有断点用例在原 15 秒上限超时；原样单独运行 1/1 通过（1.13 秒），最终完整 `pnpm verify:design` 89/89 通过：78 个桌面 1024×900、10 个 H5 390×844 故事和 1 项真实断点回归。未修改断点用例、worker、等待上限或断言；并行构建与超时的因果关系未经确认。类型、静态构建、组件维护/token 映射、token/icon 与真实 palette 检查全部通过。
+- `pnpm verify` 通过：UI 1058、native-core 126、MCP 16、network 8、local-Web 14，类型/lint/生产构建与全部资源预算通过；既有编辑器 Hook 警告和大 chunk 提示保留。移动首页仍为 1,335,281 / 1,335,296 bytes raw，未提高预算。原生 probe 的 Debug 构建与独立 iOS arm64 Simulator Release 构建成功，Release 符号中无 MainChrome/Surface 预览实现；工程文件未改。
+- Storybook 实际 Canvas 手动输入“Storybook 标题验收 / Storybook 正文验收”，观察保存失败时内容保留，点击真实“重试保存”后集合显示新值，再打开读回一致。使用现有 Core embed 模式暂停自动 play 以便手动操作；手动窗口尺寸不代替上述浏览器视口断言。Xcode Canvas 四个入口均实际渲染，Live Preview 通过真实原生固定、系统页面菜单/新建和返回显示对应反馈；Canvas 内层 AX 快照滞后时按新截图坐标操作，没有把失效 AX 点击算作成功。
+- iPhone 18 Pro / iOS 27.0 使用独立 `dev.divikwu.memocard.editor-probe` bundle，复用真实 App、Editor、EditorSession、WKWebView 和原生 Chrome。仅数据响应为严格限定笔记/binding/版本的内存 fixture，原生 uiReady/updateNativeSurface 仍走真实 handler；修改后的保存持续失败，直至实际“重试保存”点击。首轮保存后重开触发了隔离 fixture 未清理已提交草稿造成的旧版本冲突，红审计已保留；按真实 Store 的匹配提交清理语义修正 fixture，5 项草稿匹配自检通过，未放宽版本 guard。最终重新可见完成标题 EditorQA、正文首段 BodyQA 编辑、失败保留、原生返回再次失败仍停留、重试成功返回真实集合及重新打开读回；其余原段落保留。最终审计为失败 3 次、显式重试 1 次、成功保存 1 次、匹配草稿清理 1 次，草稿为空、页面错误/JS 错误/拒绝请求均为 0。真实 App 的 170 份已安装文件、58 份 QA 库文件、bookmark/layout 及 395 份 Web 源码/产物均与基线一致。验收后恢复关闭 Capture Keyboard、卸载独立 probe 并重新打开原 App；不将内存成功视为磁盘持久化验收。
+- 独立验收入口初版试图重新定义 WebKit 的不可配置 `window.webkit`，曾导致空白页；仅修正 ignored 测试入口以包装其可配置 handler，之后真实 App 正常渲染。该问题没有进入生产源码。手机键入期间的候选栏内容不作为输入真值，以真实 DOM 只读审计和画面核对；本轮不声明中文 IME、所有富文本节点、冲突解决、系统选择器、iCloud、旧系统或真机覆盖。
+- 本机日志为 `/tmp/memocard-editor-{design-final,verify,native-chrome-probe-final,release-build}.log`，截图与隔离审计位于 `build/verification/editor-preview/`。这些 ignored 文件只作辅助证据；跨机器重跑维护中的故事和 harness，远程结果以交付 PR 最新 head 为准。
+
 ## 笔记集合与正文预览（2026-10-19）
 
 - 新增 NoteCollection 9 个、NotePreview 7 个独立故事，直接使用生产组件、Markdown、CSS 和 ThemeProvider。集合的内存调用方覆盖浏览、键盘布局切换、标签/查询、打开/返回后状态保留、最近/固定、分页、加载/空态/禁用；接收页仅展示真实 NotePreview，不代替 Editor 或真实路由。移动端保留隐藏 Web 工具栏的既有行为，分别验证默认卡片与已保存列表，布局切换仍由 App 外层菜单提供。

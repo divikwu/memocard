@@ -9,6 +9,7 @@
 - [侧栏规格与验收清单](components/sidebar.md)
 - [搜索与快速记录场景及验收边界](components/search-capture.md)
 - [笔记集合与正文预览场景及验收边界](components/note-browser.md)
+- [编辑器与原生笔记页外壳场景及验收边界](components/editor.md)
 - [可移植 token 对照表（生成）](TOKENS.generated.md)
 - [本轮验证记录](validation.md)
 
