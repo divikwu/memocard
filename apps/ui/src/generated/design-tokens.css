@@ -1,0 +1,22 @@
+/* Generated from design/tokens/sidebar.tokens.json. Run pnpm tokens:build; do not edit. */
+:root {
+  --radius: 0.625rem;
+  --sidebar-desktop-row-height: 32px;
+  --sidebar-mobile-row-min-height: 48px;
+  --sidebar-icon-size: 16px;
+  --sidebar-content-gap: 8px;
+  --sidebar-row-gap: 4px;
+  --sidebar-logo-size: 36px;
+  --sidebar-mobile-font-size: 16px;
+  --sidebar-desktop-font-size: 14px;
+  --sidebar-toggle-visual-size: 40px;
+  --sidebar-touch-target-size: 44px;
+  --sidebar-horizontal-padding: 8px;
+}
+:root[data-radius="none"] { --radius: 0rem; }
+:root[data-radius="xs"] { --radius: 0.25rem; }
+:root[data-radius="sm"] { --radius: 0.375rem; }
+:root[data-radius="md"] { --radius: 0.5rem; }
+:root[data-radius="lg"] { --radius: 0.625rem; }
+:root[data-radius="xl"] { --radius: 0.75rem; }
+:root[data-radius="2xl"] { --radius: 1rem; }

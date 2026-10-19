@@ -14,9 +14,15 @@ import PhotosUI
 final class NativeHost: ObservableObject {
     @Published var showPicker = false
     #if os(iOS)
-    @Published var nativeSurfaces: [String: NativeSurface] = [:]
+    let nativeSurfaceStore = NativeSurfaceStore()
+    var nativeSurfaces: [String: NativeSurface] { nativeSurfaceStore.values }
     var nativeSearchPosition: [String: String] = [:]
     private var photoPickerDelegate: PhotoPickerDelegate?
+    #if DEBUG
+    private(set) var isPreview = false
+    var previewAction: ((NativeSurface, String, String?) -> Void)?
+    var previewAssets: [String: Data] = [:]
+    #endif
 
     func nativeAction(_ surface: NativeSurface, _ action: String, value: String? = nil) {
         guard let current = nativeSurfaces[surface.id], current.instance == surface.instance else { return }
@@ -36,6 +42,9 @@ final class NativeHost: ObservableObject {
         var detail = ["surface": surface.id, "instance": surface.instance, "action": action]
         if surface.kind == "search", action == "query" { nativeSearchPosition.removeValue(forKey: surface.instance) }
         if let value { detail["value"] = value }
+        #if DEBUG
+        if let previewAction { previewAction(current, action, value); return }
+        #endif
         webView?.callAsyncJavaScript("window.dispatchEvent(new CustomEvent('memocard:native-action', {detail: detail}))", arguments: ["detail": detail], in: nil, in: .page, completionHandler: nil)
     }
     #endif
@@ -68,7 +77,23 @@ final class NativeHost: ObservableObject {
         let instanceID: String
     }
 
+    #if DEBUG && os(iOS)
+    // Layout previews use fixed surfaces without opening a vault or starting services.
+    init(previewSurfaces: [String: NativeSurface]) {
+        core = .failure(CocoaError(.featureUnsupported))
+        isPreview = true
+        for surface in previewSurfaces.values { nativeSurfaceStore.update(surface) }
+    }
+    #endif
+
     init() {
+        #if DEBUG && os(iOS)
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            core = .failure(CocoaError(.featureUnsupported))
+            isPreview = true
+            return
+        }
+        #endif
         let local = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("MemoCard", isDirectory: true)
         core = Result { try VaultStore(localDataURL: local) }
         startTask = Task { [weak self] in
@@ -118,13 +143,13 @@ final class NativeHost: ObservableObject {
             #if os(iOS)
             if operation == "updateNativeSurface" {
                 if params["remove"] as? Bool == true {
-                    if let id = params["id"] as? String, let current = nativeSurfaces[id], current.instance == params["instance"] as? String {
-                        nativeSurfaces.removeValue(forKey: id)
+                    if let id = params["id"] as? String, let instance = params["instance"] as? String,
+                       let current = nativeSurfaceStore.remove(id: id, instance: instance) {
                         nativeSearchPosition.removeValue(forKey: current.instance)
                     }
                 } else {
                     let surface = try JSONDecoder().decode(NativeSurface.self, from: JSONSerialization.data(withJSONObject: params))
-                    nativeSurfaces[surface.id] = surface
+                    nativeSurfaceStore.update(surface)
                 }
                 return ["ok": true, "data": [:]]
             }
@@ -299,7 +324,7 @@ final class NativeHost: ObservableObject {
     func webContentWillLoad() {
         uiReady = false
         #if os(iOS)
-        nativeSurfaces = [:]
+        nativeSurfaceStore.removeAll()
         nativeSearchPosition = [:]
         #endif
     }

@@ -10,14 +10,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  design:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium
+      - run: pnpm verify:design
   release:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v7
       - run: xcodebuild -version
+      - name: Check Simulator readiness
+        run: python3 apps/apple/Tests/run-surface-subscriptions.py --device auto --prepare-only
       - uses: pnpm/action-setup@v6
         with:
           version: 10.34.1

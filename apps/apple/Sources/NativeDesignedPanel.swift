@@ -6,6 +6,8 @@ import UIKit
 /// Native presentation with the same content hierarchy as the shared mobile components.
 struct NativeDesignedPanel: View {
     @ObservedObject var host: NativeHost
+    @ObservedObject private var surfaceState: NativeSurfaceState
+    @ObservedObject private var appearance: NativeSurfaceAppearanceState
     let id: String
     let instance: String
     @State private var snapshot: NativeSurface?
@@ -23,16 +25,18 @@ struct NativeDesignedPanel: View {
 
     init(host: NativeHost, id: String, instance: String) {
         self.host = host; self.id = id; self.instance = instance
+        surfaceState = host.nativeSurfaceStore.state(for: id)
+        appearance = host.nativeSurfaceStore.appearance
         _snapshot = State(initialValue: host.nativeSurfaces[id])
         _searchPosition = State(initialValue: host.nativeSearchPosition[instance])
     }
     private var surface: NativeSurface? {
-        if let current = host.nativeSurfaces[id], current.instance == instance, current.presented == true { return current }
+        if let current = surfaceState.surface, current.instance == instance, current.presented == true { return current }
         return snapshot
     }
     private func section(_ id: String) -> NativeSection? { surface?.sections?.first { $0.id == id } }
     private func color(_ key: String) -> Color {
-        if let rgba = host.nativeSurfaces["chrome"]?.palette?[key], rgba.count == 4 {
+        if let rgba = appearance.value.palette?[key], rgba.count == 4 {
             return Color(.sRGB, red: rgba[0] / 255, green: rgba[1] / 255, blue: rgba[2] / 255, opacity: rgba[3] / 255)
         }
         switch key {
@@ -49,7 +53,11 @@ struct NativeDesignedPanel: View {
         host.nativeAction(surface, action, value: value)
     }
     private func binding(_ field: NativeField) -> Binding<String> {
-        Binding(get: { values[field.id] ?? field.value }, set: { values[field.id] = $0; send(field.id, $0) })
+        Binding(get: { values[field.id] ?? field.value }, set: { value in
+            // Return and end-editing can resend text whose local override was already acknowledged.
+            if value != (values[field.id] ?? field.value) { values[field.id] = value }
+            send(field.id, value)
+        })
     }
     private var query: String { section("query")?.fields?.first.map { binding($0).wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines) } ?? "" }
     private func content(extraTextHeight: CGFloat = 0) -> some View {
@@ -151,8 +159,8 @@ struct NativeDesignedPanel: View {
             }
         }
         .onAppear { if id == "search" { searchFocused = true } else { focus = "text" } }
-        .onReceive(host.$nativeSurfaces) { surfaces in
-            guard let current = surfaces[id], current.instance == instance, current.presented == true else { return }
+        .onReceive(surfaceState.$surface) { surface in
+            guard let current = surface, current.instance == instance, current.presented == true else { return }
             snapshot = current
             for field in current.sections?.flatMap({ $0.fields ?? [] }) ?? [] where values[field.id] == field.value { values.removeValue(forKey: field.id) }
         }
@@ -444,7 +452,13 @@ private struct NativeAssetImage: View {
         }
         .task(id: path) {
             thumbnail = nil
+            #if DEBUG
+            var bytes = host.previewAssets[path]
+            if bytes == nil && !host.isPreview { bytes = try? await host.store.asset(relativePath: path) }
+            guard let data = bytes else { return }
+            #else
             guard let data = try? await host.store.asset(relativePath: path) else { return }
+            #endif
             let pixels = maxPixels
             let cgImage = await Task.detached(priority: .userInitiated) {
                 guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil as CGImage? }

@@ -1,0 +1,354 @@
+{
+  "date": "2026-10-18",
+  "environment": {
+    "baselineCommit": "a53fb0a1992ca66fcc01d007475c1a05617e3f0a",
+    "machine": "Apple M4",
+    "memoryBytes": 17179869184,
+    "architecture": "arm64",
+    "xcode": "Xcode 27.1\nBuild version 27A9275",
+    "node": "v24.18.0"
+  },
+  "scope": "Real NativeHost.handle in an isolated Debug Simulator app; publisher notifications and JSON decode/update processing only. No SwiftUI body/frame-rate timing. One elapsed-time sample per scenario, no statistical speed claim.",
+  "baseline": {
+    "fieldChangesVerified": 0,
+    "measurement": "native-surface-subscriptions",
+    "results": [
+      {
+        "elapsedMilliseconds": 1.196,
+        "navigationPresent": true,
+        "notifications": {
+          "chrome": 100,
+          "host": 100,
+          "navigation": 100,
+          "search": 100,
+          "sheet": 100
+        },
+        "scenario": "navigation-replay",
+        "tagCount": 0,
+        "updates": 100
+      },
+      {
+        "elapsedMilliseconds": 49.743333,
+        "navigationPresent": true,
+        "notifications": {
+          "chrome": 20,
+          "host": 20,
+          "navigation": 20,
+          "search": 20,
+          "sheet": 20
+        },
+        "scenario": "navigation-large-replay",
+        "tagCount": 1000,
+        "updates": 20
+      },
+      {
+        "elapsedMilliseconds": 0.806709,
+        "navigationPresent": true,
+        "notifications": {
+          "chrome": 100,
+          "host": 100,
+          "navigation": 100,
+          "search": 100,
+          "sheet": 100
+        },
+        "scenario": "search-update",
+        "tagCount": 0,
+        "updates": 100
+      },
+      {
+        "elapsedMilliseconds": 0.779833,
+        "navigationPresent": true,
+        "notifications": {
+          "chrome": 100,
+          "host": 100,
+          "navigation": 100,
+          "search": 100,
+          "sheet": 100
+        },
+        "scenario": "chrome-update",
+        "tagCount": 0,
+        "updates": 100
+      },
+      {
+        "elapsedMilliseconds": 0.0045,
+        "navigationPresent": true,
+        "notifications": {
+          "chrome": 0,
+          "host": 0,
+          "navigation": 0,
+          "search": 0,
+          "sheet": 0
+        },
+        "scenario": "stale-remove",
+        "tagCount": 0,
+        "updates": 1
+      },
+      {
+        "elapsedMilliseconds": 0.00775,
+        "navigationPresent": false,
+        "notifications": {
+          "chrome": 1,
+          "host": 1,
+          "navigation": 1,
+          "search": 1,
+          "sheet": 1
+        },
+        "scenario": "valid-remove",
+        "tagCount": 0,
+        "updates": 1
+      }
+    ]
+  },
+  "current": {
+    "fieldChangesVerified": 42,
+    "measurement": "native-surface-subscriptions",
+    "results": [
+      {
+        "elapsedMilliseconds": 1.048375,
+        "navigationPresent": true,
+        "notifications": {
+          "appearance": 0,
+          "chrome": 0,
+          "host": 0,
+          "navigation": 0,
+          "presentation": 0,
+          "search": 0,
+          "sheet": 0
+        },
+        "scenario": "navigation-replay",
+        "tagCount": 0,
+        "updates": 100
+      },
+      {
+        "elapsedMilliseconds": 52.926584,
+        "navigationPresent": true,
+        "notifications": {
+          "appearance": 0,
+          "chrome": 0,
+          "host": 0,
+          "navigation": 0,
+          "presentation": 0,
+          "search": 0,
+          "sheet": 0
+        },
+        "scenario": "navigation-large-replay",
+        "tagCount": 1000,
+        "updates": 20
+      },
+      {
+        "elapsedMilliseconds": 1.214792,
+        "navigationPresent": true,
+        "notifications": {
+          "appearance": 0,
+          "chrome": 0,
+          "host": 0,
+          "navigation": 0,
+          "presentation": 0,
+          "search": 100,
+          "sheet": 0
+        },
+        "scenario": "search-update",
+        "tagCount": 0,
+        "updates": 100
+      },
+      {
+        "elapsedMilliseconds": 1.149167,
+        "navigationPresent": true,
+        "notifications": {
+          "appearance": 0,
+          "chrome": 100,
+          "host": 0,
+          "navigation": 0,
+          "presentation": 0,
+          "search": 0,
+          "sheet": 0
+        },
+        "scenario": "chrome-update",
+        "tagCount": 0,
+        "updates": 100
+      },
+      {
+        "elapsedMilliseconds": 0.003833,
+        "navigationPresent": true,
+        "notifications": {
+          "appearance": 0,
+          "chrome": 0,
+          "host": 0,
+          "navigation": 0,
+          "presentation": 0,
+          "search": 0,
+          "sheet": 0
+        },
+        "scenario": "stale-remove",
+        "tagCount": 0,
+        "updates": 1
+      },
+      {
+        "elapsedMilliseconds": 0.012375,
+        "navigationPresent": false,
+        "notifications": {
+          "appearance": 0,
+          "chrome": 0,
+          "host": 0,
+          "navigation": 1,
+          "presentation": 1,
+          "search": 0,
+          "sheet": 0
+        },
+        "scenario": "valid-remove",
+        "tagCount": 0,
+        "updates": 1
+      }
+    ]
+  },
+  "baselineSourceSHA256": {
+    "DesignTokens.generated.swift": "430a550f196c4ef896869e071b29f766111664bf00c5f317f5b9ce86ff41a478",
+    "LocalReadServer.swift": "451a6dfa251672190fd4cac5ea8b21e20b6776d7fe97c2d281959bb6af59b852",
+    "MemoCardApp.swift": "0f2d8ba47e593934be5dd90f343426e5e127b09eec8294d50f655a422fc911da",
+    "NativeChrome.swift": "4544404887f026b2456e211adbbc5bdd57f1fec773b3c84173399c0e4f608097",
+    "NativeDesignedPanel.swift": "19bbeae6c50b642a5457e38d07be1233165715cc2f2eec7871dcb6aa59d4de4b",
+    "NativeHost.swift": "84f14ec36e4922e52207dd06eea32e48e1d3aa5bf3f2cdde8cfa8196afb99574",
+    "NativeSidebar.swift": "a2589e7890065e2d991a1eaea0065205d40b2afafa7a173ef6f9537433c9e61f",
+    "SidebarPreviewPalette.generated.swift": "fb2bb0322eb1173e6d04b3fa799ff43f7115d820d203c1ac4c0102cf9db6fb63",
+    "WebView.swift": "2c96db5df4607e0644bc7849ead2853ab2495aedcdfa8ecbf0179eee665292e7"
+  },
+  "currentSourceSHA256": {
+    "DesignTokens.generated.swift": "430a550f196c4ef896869e071b29f766111664bf00c5f317f5b9ce86ff41a478",
+    "LocalReadServer.swift": "451a6dfa251672190fd4cac5ea8b21e20b6776d7fe97c2d281959bb6af59b852",
+    "MemoCardApp.swift": "0f2d8ba47e593934be5dd90f343426e5e127b09eec8294d50f655a422fc911da",
+    "NativeChrome.swift": "d5810a2f1cc74eacbc14c625f2af37908d90e0bc49d1f745716b41f0df82a5a8",
+    "NativeDesignedPanel.swift": "22f7188a024c5731c00e7a7a947c28ebc0d6cd04493a9a166a7d6f7943ff057f",
+    "NativeHost.swift": "0cd089b91d23cc21f6783db85316e2711a39f474e98f3cb9bf740312633aa8be",
+    "NativeSidebar.swift": "4b6a05301fb7187f9b2dda97aea80e16abaaba3577aa0a4bc0ae47de1b5859b4",
+    "NativeSurfaceState.swift": "40a79abb79899ce915bad09e7d467fbb9420c147ea32781dd4bcc6f91f8cea55",
+    "SidebarPreviewPalette.generated.swift": "fb2bb0322eb1173e6d04b3fa799ff43f7115d820d203c1ac4c0102cf9db6fb63",
+    "WebView.swift": "01b8287ef5a5857c9d8f70ecfde3ca38a46b3b03ddc6230b2f5b5315be144802"
+  },
+  "finalValidation": {
+    "scope": "Behavior and publisher regression after the native no-change input guard. Historical baseline/current timing snapshots above and their source hashes remain unchanged; this final run is not a new timing comparison.",
+    "harnessSHA256": "52bb16e7c5ef73ae53d4e243f52e1496633282a48a125ed6074f97dabc374c4b",
+    "sourceSHA256": {
+      "DesignTokens.generated.swift": "430a550f196c4ef896869e071b29f766111664bf00c5f317f5b9ce86ff41a478",
+      "LocalReadServer.swift": "451a6dfa251672190fd4cac5ea8b21e20b6776d7fe97c2d281959bb6af59b852",
+      "MemoCardApp.swift": "0f2d8ba47e593934be5dd90f343426e5e127b09eec8294d50f655a422fc911da",
+      "NativeChrome.swift": "d5810a2f1cc74eacbc14c625f2af37908d90e0bc49d1f745716b41f0df82a5a8",
+      "NativeDesignedPanel.swift": "2e2884130cd67f0186acb8d7d82a67fb32f5a557ea8679430757d1fd7ed3ea96",
+      "NativeHost.swift": "0cd089b91d23cc21f6783db85316e2711a39f474e98f3cb9bf740312633aa8be",
+      "NativeSidebar.swift": "4b6a05301fb7187f9b2dda97aea80e16abaaba3577aa0a4bc0ae47de1b5859b4",
+      "NativeSurfaceState.swift": "40a79abb79899ce915bad09e7d467fbb9420c147ea32781dd4bcc6f91f8cea55",
+      "SidebarPreviewPalette.generated.swift": "fb2bb0322eb1173e6d04b3fa799ff43f7115d820d203c1ac4c0102cf9db6fb63",
+      "WebView.swift": "01b8287ef5a5857c9d8f70ecfde3ca38a46b3b03ddc6230b2f5b5315be144802"
+    },
+    "negativeControl": {
+      "sourceDifference": "NativeDesignedPanel.swift only; same harness, instance and resetKey",
+      "unfixedSourceSHA256": "22f7188a024c5731c00e7a7a947c28ebc0d6cd04493a9a166a7d6f7943ff057f",
+      "failure": "return unchanged input accepts same-instance reset",
+      "actualText": "A",
+      "actualPlaceholder": "Cleared query",
+      "successMarkerEmitted": false
+    },
+    "result": {
+      "fieldChangesVerified": 42,
+      "inputInteractionsVerified": 3,
+      "measurement": "native-surface-subscriptions",
+      "results": [
+        {
+          "elapsedMilliseconds": 0.754458,
+          "navigationPresent": true,
+          "notifications": {
+            "appearance": 0,
+            "chrome": 0,
+            "host": 0,
+            "navigation": 0,
+            "presentation": 0,
+            "search": 0,
+            "sheet": 0
+          },
+          "scenario": "navigation-replay",
+          "tagCount": 0,
+          "updates": 100
+        },
+        {
+          "elapsedMilliseconds": 53.719708,
+          "navigationPresent": true,
+          "notifications": {
+            "appearance": 0,
+            "chrome": 0,
+            "host": 0,
+            "navigation": 0,
+            "presentation": 0,
+            "search": 0,
+            "sheet": 0
+          },
+          "scenario": "navigation-large-replay",
+          "tagCount": 1000,
+          "updates": 20
+        },
+        {
+          "elapsedMilliseconds": 1.260583,
+          "navigationPresent": true,
+          "notifications": {
+            "appearance": 0,
+            "chrome": 0,
+            "host": 0,
+            "navigation": 0,
+            "presentation": 0,
+            "search": 100,
+            "sheet": 0
+          },
+          "scenario": "search-update",
+          "tagCount": 0,
+          "updates": 100
+        },
+        {
+          "elapsedMilliseconds": 1.168041,
+          "navigationPresent": true,
+          "notifications": {
+            "appearance": 0,
+            "chrome": 100,
+            "host": 0,
+            "navigation": 0,
+            "presentation": 0,
+            "search": 0,
+            "sheet": 0
+          },
+          "scenario": "chrome-update",
+          "tagCount": 0,
+          "updates": 100
+        },
+        {
+          "elapsedMilliseconds": 0.003875,
+          "navigationPresent": true,
+          "notifications": {
+            "appearance": 0,
+            "chrome": 0,
+            "host": 0,
+            "navigation": 0,
+            "presentation": 0,
+            "search": 0,
+            "sheet": 0
+          },
+          "scenario": "stale-remove",
+          "tagCount": 0,
+          "updates": 1
+        },
+        {
+          "elapsedMilliseconds": 0.01225,
+          "navigationPresent": false,
+          "notifications": {
+            "appearance": 0,
+            "chrome": 0,
+            "host": 0,
+            "navigation": 1,
+            "presentation": 1,
+            "search": 0,
+            "sheet": 0
+          },
+          "scenario": "valid-remove",
+          "tagCount": 0,
+          "updates": 1
+        }
+      ]
+    }
+  }
+}

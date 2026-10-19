@@ -2,7 +2,7 @@
 import SwiftUI
 import UIKit
 
-struct NativeAction: Decodable, Identifiable {
+struct NativeAction: Decodable, Identifiable, Equatable {
     let id: String
     var title: String
     var icon: String?
@@ -17,7 +17,7 @@ struct NativeAction: Decodable, Identifiable {
     var selected: Bool?
 }
 
-struct NativeField: Decodable, Identifiable {
+struct NativeField: Decodable, Identifiable, Equatable {
     let id: String
     let title: String
     let value: String
@@ -25,7 +25,7 @@ struct NativeField: Decodable, Identifiable {
     var disabled: Bool?
 }
 
-struct NativeSection: Decodable, Identifiable {
+struct NativeSection: Decodable, Identifiable, Equatable {
     let id: String
     var title: String?
     var message: String?
@@ -33,7 +33,7 @@ struct NativeSection: Decodable, Identifiable {
     var fields: [NativeField]?
 }
 
-struct NativeSurface: Decodable, Identifiable {
+struct NativeSurface: Decodable, Identifiable, Equatable {
     let id: String
     let instance: String
     let kind: String
@@ -58,22 +58,37 @@ struct NativeSurface: Decodable, Identifiable {
 }
 
 struct NativeChrome: View {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
+    @ObservedObject private var appearance: NativeSurfaceAppearanceState
+
+    init(host: NativeHost) {
+        self.host = host
+        appearance = host.nativeSurfaceStore.appearance
+    }
+
     var body: some View {
         NativeSidebarContainer(host: host)
             .ignoresSafeArea()
-            .preferredColorScheme(host.nativeSurfaces["chrome"]?.theme == "dark" ? .dark : host.nativeSurfaces["chrome"]?.theme == "light" ? .light : nil)
+            .preferredColorScheme(appearance.value.theme == "dark" ? .dark : appearance.value.theme == "light" ? .light : nil)
     }
 }
 
 private struct NativeSidebarContainer: UIViewControllerRepresentable {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
+    @ObservedObject private var presentation: NativeSurfacePresentationState
+    @ObservedObject private var appearance: NativeSurfaceAppearanceState
+
+    init(host: NativeHost) {
+        self.host = host
+        presentation = host.nativeSurfaceStore.presentation
+        appearance = host.nativeSurfaceStore.appearance
+    }
 
     func makeUIViewController(context: Context) -> SidebarController { SidebarController(host: host) }
     func updateUIViewController(_ controller: SidebarController, context: Context) {
-        controller.update(open: host.nativeSurfaces["navigation"]?.presented == true,
-                          canOpen: host.nativeSurfaces["chrome"]?.leading?.id == "navigation"
-                            && !host.nativeSurfaces.values.contains { $0.presented == true && $0.id != "navigation" })
+        controller.update(open: presentation.value.navigationOpen,
+                          canOpen: presentation.value.canOpenNavigation,
+                          background: appearance.value.palette?["sidebar"])
     }
 
     final class SidebarController: UIViewController, UIGestureRecognizerDelegate {
@@ -149,9 +164,9 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
             applyProgress(progress)
         }
 
-        func update(open: Bool, canOpen: Bool) {
+        func update(open: Bool, canOpen: Bool, background: [Double]?) {
             loadViewIfNeeded()
-            if let rgba = host.nativeSurfaces["chrome"]?.palette?["sidebar"], rgba.count == 4 {
+            if let rgba = background, rgba.count == 4 {
                 view.backgroundColor = UIColor(red: rgba[0] / 255, green: rgba[1] / 255, blue: rgba[2] / 255, alpha: rgba[3] / 255)
             }
             self.canOpen = canOpen
@@ -241,258 +256,26 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
     }
 }
 
-private struct NativeNavigationSidebar: View {
-    @ObservedObject var host: NativeHost
-    var trailingInset: CGFloat = 16
-    @State private var snapshot: NativeSurface?
-    @State private var filtersOpen = false
-    @State private var pinnedOpen = true
-    @State private var tagsOpen = true
-    @State private var searchOpen = false
-    @State private var query = ""
-    @FocusState private var searchFocused: Bool
-    private static let logo = Bundle.main.resourceURL.flatMap { UIImage(contentsOfFile: $0.appendingPathComponent("Web/favicon.png").path) }
-    private var surface: NativeSurface? {
-        host.nativeSurfaces["navigation"].flatMap { $0.presented == true ? $0 : nil } ?? snapshot
-    }
-    private var radius: CGFloat { CGFloat(surface?.rowRadius ?? 10) }
-    private var tags: [NativeAction] { actions("tags") }
-    private func actions(_ id: String) -> [NativeAction] { surface?.sections?.first { $0.id == id }?.actions ?? [] }
-    private func color(_ key: String) -> Color {
-        if let rgba = host.nativeSurfaces["chrome"]?.palette?[key], rgba.count == 4 {
-            return Color(.sRGB, red: rgba[0] / 255, green: rgba[1] / 255, blue: rgba[2] / 255, opacity: rgba[3] / 255)
-        }
-        return key == "sidebar" || key == "sidebar-accent" ? Color(uiColor: .secondarySystemBackground) : key == "sidebar-border" ? Color(uiColor: .separator) : .primary
-    }
-    private func send(_ id: String) { if let surface { host.nativeAction(surface, id) } }
-    var body: some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                scrollContent
-                    .safeAreaBar(edge: .top, spacing: 0) { header }
-                    .safeAreaBar(edge: .bottom, spacing: 0) {
-                        // A transparent label anchors the native edge effect without painting an opaque strip.
-                        Text(" ").frame(maxWidth: .infinity).frame(height: 8).foregroundStyle(.clear).accessibilityHidden(true)
-                    }
-                    .scrollEdgeEffectStyle(.soft, for: [.top, .bottom])
-            } else {
-                VStack(spacing: 0) { header; scrollContent }
-            }
-        }
-        .font(.system(size: 16)).foregroundStyle(color("sidebar-foreground"))
-        .background(color("sidebar").ignoresSafeArea())
-        .accessibilityAddTraits(.isModal)
-        .accessibilityAction(.escape) { send("close") }
-        .onReceive(host.$nativeSurfaces) { surfaces in
-            if let current = surfaces["navigation"], current.presented == true {
-                if snapshot?.resetKey != current.resetKey {
-                    filtersOpen = false; pinnedOpen = true; tagsOpen = true; searchOpen = false; query = ""
-                }
-                snapshot = current
-            } else {
-                searchFocused = false
-            }
-        }
-    }
-    private var header: some View {
-        HStack(spacing: 8) {
-            Button { send("home") } label: {
-                HStack(spacing: 8) {
-                    if let logo = Self.logo { Image(uiImage: logo).resizable().scaledToFit().frame(width: 28, height: 28) }
-                    Text("MemoCard").font(.system(size: 14, weight: .semibold))
-                    Spacer(minLength: 0)
-                }.padding(.horizontal, 6).frame(height: 40).contentShape(Rectangle())
-            }
-            .buttonStyle(NativeSidebarButtonStyle(selected: false, color: color("sidebar-accent"), radius: radius))
-            .accessibilityLabel("MemoCard，返回主页")
-            settingsButton
-        }
-        .padding(.leading, 8).padding(.trailing, trailingInset).padding(.bottom, 16)
-    }
-    private var scrollContent: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                VStack(spacing: 8) {
-                    if let message = surface?.sections?.first(where: { $0.id == "library" })?.message, !message.isEmpty {
-                        Text(message).font(.system(size: 12)).foregroundStyle(.red).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8)
-                    }
-                    VStack(spacing: 4) {
-                        ForEach(actions("pages")) { item in
-                            VStack(spacing: 0) {
-                                NativeSidebarItem(item: item, selection: color("sidebar-accent"), radius: radius,
-                                                  expanded: item.id == "notes" ? $filtersOpen : nil,
-                                                  expansionLabel: "展开或收起快捷筛选") { send(item.id) }
-                                if item.id == "notes", filtersOpen {
-                                    VStack(spacing: 4) {
-                                        ForEach(actions("filters")) { filter in
-                                            NativeSidebarItem(item: filter, selection: color("sidebar-accent"), radius: radius) { send(filter.id) }
-                                        }
-                                    }.padding(.vertical, 2).padding(.leading, 24)
-                                        .overlay(alignment: .leading) { Rectangle().fill(color("sidebar-border")).frame(width: 1).padding(.leading, 14) }
-                                }
-                            }
-                        }
-                    }
-                }.padding(.horizontal, 8).padding(.bottom, 8)
-                if !actions("pinned-tags").isEmpty {
-                    VStack(spacing: 0) {
-                        groupHeader("置顶标签", open: $pinnedOpen)
-                        if pinnedOpen {
-                            VStack(spacing: 4) {
-                                ForEach(actions("pinned-tags")) { item in branch(item, fullPath: true) }
-                            }
-                        }
-                    }.padding(8)
-                }
-                VStack(spacing: 0) {
-                    HStack(spacing: 0) {
-                        groupHeader("标签", open: $tagsOpen)
-                        Button {
-                            searchOpen.toggle(); query = ""; tagsOpen = true; searchFocused = searchOpen
-                        } label: { Image(systemName: searchOpen ? "xmark" : "magnifyingglass").frame(width: 44, height: 44).contentShape(Rectangle()) }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(searchOpen ? "关闭标签搜索" : "搜索标签")
-                    }
-                    if searchOpen {
-                        TextField("搜索标签…", text: $query).textFieldStyle(.plain)
-                            .font(.system(size: 16)).padding(.horizontal, 12).frame(height: 32)
-                            .background(color("sidebar"), in: RoundedRectangle(cornerRadius: 8))
-                            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(color("sidebar-border")) }
-                            .padding(.bottom, 8).focused($searchFocused).accessibilityLabel("搜索标签")
-                    }
-                    if tagsOpen {
-                        let term = query.trimmingCharacters(in: .whitespacesAndNewlines)
-                        let matches = term.isEmpty ? tags.filter { !($0.path ?? "").contains("/") } : tags.filter { ($0.path ?? "").lowercased().contains(term.lowercased()) }
-                        VStack(spacing: 4) {
-                            ForEach(matches) { item in branch(item, fullPath: !term.isEmpty, flat: !term.isEmpty) }
-                        }
-                        if surface?.loading == true { ProgressView("正在加载标签").font(.system(size: 12)).padding(8) }
-                        else if matches.isEmpty { Text(term.isEmpty ? "添加标签后，会显示在这里。" : "没有匹配的标签").font(.system(size: 12)).foregroundStyle(.secondary).frame(maxWidth: .infinity, alignment: .leading).padding(8) }
-                    }
-                    if let error = surface?.error, !error.isEmpty { Text(error).font(.system(size: 12)).foregroundStyle(.red).padding(8) }
-                }.padding(8)
-            }
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .id(surface?.resetKey)
-    }
-    private var settingsButton: some View {
-        let button = Button { send("vault") } label: {
-            Image(systemName: "gearshape").font(.system(size: 18))
-                .frame(width: 44, height: 44).contentShape(Circle())
-        }.buttonStyle(.plain)
-        return Group {
-            if #available(iOS 26.0, *) { button.glassEffect(.regular.interactive(), in: Circle()) }
-            else { button.background(.regularMaterial, in: Circle()) }
-        }
-        .disabled(actions("library").first?.disabled == true)
-        .accessibilityLabel("设置与笔记库")
-        .accessibilityHint("当前笔记库：\(actions("library").first?.title ?? "未连接")")
-    }
-    private func groupHeader(_ title: String, open: Binding<Bool>) -> some View {
-        Button { open.wrappedValue.toggle() } label: {
-            HStack(spacing: 4) {
-                Text(title).font(.system(size: 12, weight: .medium))
-                Image(systemName: "chevron.right").font(.system(size: 10)).rotationEffect(.degrees(open.wrappedValue ? 90 : 0))
-                Spacer(minLength: 0)
-            }.padding(.horizontal, 8).frame(height: 44).contentShape(Rectangle())
-        }.foregroundStyle(color("sidebar-foreground").opacity(0.7)).buttonStyle(.plain)
-            .accessibilityLabel("展开或收起\(title)").accessibilityValue(open.wrappedValue ? "已展开" : "已收起")
-    }
-    private func branch(_ item: NativeAction, fullPath: Bool = false, flat: Bool = false) -> some View {
-        NativeSidebarTagBranch(item: item, tags: tags, fullPath: fullPath, flat: flat,
-                               selection: color("sidebar-accent"), border: color("sidebar-border"), radius: radius, send: send)
-    }
-}
-
-private struct NativeSidebarTagBranch: View {
-    let item: NativeAction
-    let tags: [NativeAction]
-    var fullPath = false
-    var flat = false
-    let selection: Color
-    let border: Color
-    let radius: CGFloat
-    let send: (String) -> Void
-    @State private var expanded = true
-    private var children: [NativeAction] {
-        guard !flat, let path = item.path else { return [] }
-        return tags.filter { ($0.path ?? "").hasPrefix(path + "/") && !String(($0.path ?? "").dropFirst(path.count + 1)).contains("/") }
-    }
-    var body: some View {
-        VStack(spacing: 0) {
-            NativeSidebarItem(item: item, title: fullPath ? item.path : nil, selection: selection, radius: radius,
-                              expanded: children.isEmpty ? nil : $expanded,
-                              expansionLabel: "展开或收起标签 \(item.path ?? item.title)") { send(item.id) }
-            if expanded, !children.isEmpty {
-                VStack(spacing: 4) {
-                    ForEach(children) { child in
-                        NativeSidebarTagBranch(item: child, tags: tags, selection: selection, border: border, radius: radius, send: send)
-                    }
-                }.padding(.vertical, 2).padding(.leading, 24)
-                    .overlay(alignment: .leading) { Rectangle().fill(border).frame(width: 1).padding(.leading, 14) }
-            }
-        }
-    }
-}
-
-private struct NativeSidebarItem: View {
-    let item: NativeAction
-    var title: String?
-    let selection: Color
-    let radius: CGFloat
-    var expanded: Binding<Bool>?
-    var expansionLabel = ""
-    let action: () -> Void
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            Button(action: action) {
-                HStack(spacing: 8) {
-                    if let emoji = item.emoji, !emoji.isEmpty { Text(emoji).frame(width: 16, height: 16) }
-                    else if let icon = item.icon { Image(systemName: icon).font(.system(size: 16)).frame(width: 16, height: 16) }
-                    Text(title ?? item.title).lineLimit(1).fontWeight(item.selected == true ? .medium : .regular)
-                    Spacer(minLength: 0)
-                    if let badge = item.badge { Text("\(badge)").font(.system(size: 12)).foregroundStyle(.secondary) }
-                }.padding(.leading, 8).padding(.trailing, expanded == nil ? 8 : 48)
-                    .frame(minHeight: 48).contentShape(Rectangle())
-            }
-            .buttonStyle(NativeSidebarButtonStyle(selected: item.selected == true, color: selection, radius: radius))
-            .disabled(item.disabled == true)
-            .opacity(item.disabled == true && item.id != "calendar" ? 0.5 : 1)
-            .accessibilityLabel(item.path ?? item.title)
-            .accessibilityAddTraits(item.selected == true ? .isSelected : [])
-            if let expanded {
-                Button { expanded.wrappedValue.toggle() } label: {
-                    Image(systemName: "chevron.right").font(.system(size: 16)).rotationEffect(.degrees(expanded.wrappedValue ? 90 : 0))
-                        .frame(width: 40, height: 40).contentShape(Rectangle())
-                }.buttonStyle(.plain).padding(.trailing, 4)
-                    .accessibilityLabel(expansionLabel).accessibilityValue(expanded.wrappedValue ? "已展开" : "已收起")
-            }
-        }
-    }
-}
-
-private struct NativeSidebarButtonStyle: ButtonStyle {
-    let selected: Bool
-    let color: Color
-    let radius: CGFloat
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label.background(selected || configuration.isPressed ? color : .clear, in: RoundedRectangle(cornerRadius: radius))
-            .opacity(configuration.isPressed ? 0.8 : 1)
-    }
-}
-
 private struct NativeMainChrome: View {
     @ObservedObject var host: NativeHost
-    private var chrome: NativeSurface? { host.nativeSurfaces["chrome"] }
+    @ObservedObject private var chromeState: NativeSurfaceState
+    @ObservedObject private var presentation: NativeSurfacePresentationState
+
+    init(host: NativeHost) {
+        self.host = host
+        chromeState = host.nativeSurfaceStore.state(for: "chrome")
+        presentation = host.nativeSurfaceStore.presentation
+    }
+
+    private var chrome: NativeSurface? { chromeState.surface }
     private var extendsUnderBars: Bool { chrome?.leading?.id == "navigation" }
     private var sheet: NativeSurface? {
-        host.nativeSurfaces.values.filter { $0.presented == true && $0.id != "navigation" && $0.kind != "alert" && $0.kind != "chrome" && $0.kind != "search" && $0.kind != "capture" }.sorted { $0.id < $1.id }.first
+        presentation.value.sheet.flatMap { host.nativeSurfaces[$0.id] }
     }
     private var search: NativeSurface? { host.nativeSurfaces["search"].flatMap { $0.presented == true ? $0 : nil } }
     private var capture: NativeSurface? { host.nativeSurfaces["capture"].flatMap { $0.presented == true ? $0 : nil } }
     private var alert: NativeSurface? {
-        host.nativeSurfaces.values.first { $0.presented == true && $0.kind == "alert" }
+        presentation.value.alert
     }
 
     var body: some View {
@@ -545,7 +328,7 @@ private struct NativeMainChrome: View {
                     }
                 })
         }
-        .accessibilityHidden(search != nil || capture != nil || host.nativeSurfaces["navigation"]?.presented == true)
+        .accessibilityHidden(search != nil || capture != nil || presentation.value.navigationOpen)
         .preferredColorScheme(chrome?.theme == "dark" ? .dark : chrome?.theme == "light" ? .light : nil)
         .overlay { NativeEdgeSearchOverlay(host: host, surface: search) }
         .overlay { NativeFloatingCaptureOverlay(host: host, surface: capture) }
@@ -602,7 +385,7 @@ private struct NativeBottomBar<Bar: View>: ViewModifier {
 }
 
 private struct NativeEdgeSearchOverlay: View {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
     let surface: NativeSurface?
 
     var body: some View {
@@ -629,7 +412,7 @@ private struct NativeEdgeSearchOverlay: View {
 }
 
 private struct NativeFloatingCaptureOverlay: View {
-    @ObservedObject var host: NativeHost
+    let host: NativeHost
     let surface: NativeSurface?
 
     var body: some View {
@@ -705,12 +488,20 @@ private struct NativeActionButton: View {
 
 private struct NativePanel: View {
     @ObservedObject var host: NativeHost
+    @ObservedObject private var surfaceState: NativeSurfaceState
+    @ObservedObject private var presentation: NativeSurfacePresentationState
     let id: String
     let instance: String
     @State private var values: [String: String] = [:]
     @FocusState private var focusedField: String?
-    private var surface: NativeSurface? { host.nativeSurfaces[id].flatMap { $0.instance == instance ? $0 : nil } }
-    private var alert: NativeSurface? { host.nativeSurfaces.values.first { $0.presented == true && $0.kind == "alert" } }
+    private var surface: NativeSurface? { surfaceState.surface.flatMap { $0.instance == instance ? $0 : nil } }
+    private var alert: NativeSurface? { presentation.value.alert }
+
+    init(host: NativeHost, id: String, instance: String) {
+        self.host = host; self.id = id; self.instance = instance
+        surfaceState = host.nativeSurfaceStore.state(for: id)
+        presentation = host.nativeSurfaceStore.presentation
+    }
 
     var body: some View {
         NavigationStack {
@@ -795,5 +586,62 @@ private struct NativePanel: View {
         })
     }
 }
+
+#if DEBUG
+struct NativeSurfacePreviewCanvas: View {
+    @ObservedObject var model: NativeSurfacePreviewModel
+    @ObservedObject private var surfaceState: NativeSurfaceState
+    var showControls = true
+
+    init(model: NativeSurfacePreviewModel, showControls: Bool = true) {
+        self.model = model; self.showControls = showControls
+        surfaceState = model.host.nativeSurfaceStore.state(for: model.kind.rawValue)
+    }
+    var body: some View {
+        VStack(spacing: 0) {
+            if showControls {
+                VStack(alignment: .leading, spacing: 8) {
+                    Picker("预览场景", selection: Binding(get: { model.scenario }, set: { model.select($0) })) {
+                        ForEach(model.scenarios) { Text($0.rawValue).tag($0) }
+                    }
+                    HStack {
+                        Button("重新打开") { model.reopen() }
+                        Button("重置场景") { model.select(model.scenario) }
+                        if model.kind == .capture { Toggle("下次保存失败", isOn: $model.failNextSave) }
+                    }.font(.caption)
+                    Text(model.feedback).font(.caption).accessibilityLabel("预览操作反馈")
+                }.padding(12)
+                Divider()
+            }
+            ZStack {
+                Color(uiColor: .systemBackground)
+                let surface = surfaceState.surface.flatMap { $0.presented == true ? $0 : nil }
+                if model.kind == .search { NativeEdgeSearchOverlay(host: model.host, surface: surface) }
+                else { NativeFloatingCaptureOverlay(host: model.host, surface: surface) }
+            }
+        }
+        .onAppear { model.resume() }
+        .onDisappear { model.dispose() }
+    }
+}
+
+private struct NativeSurfaceInteractivePreview: View {
+    @StateObject private var model: NativeSurfacePreviewModel
+    let dark: Bool
+    init(_ kind: NativeSurfacePreviewModel.Kind, scenario: NativeSurfacePreviewModel.Scenario? = nil, dark: Bool = false) {
+        self.dark = dark
+        _model = StateObject(wrappedValue: NativeSurfacePreviewModel(kind: kind, scenario: scenario, dark: dark))
+    }
+    var body: some View {
+        NativeSurfacePreviewCanvas(model: model).preferredColorScheme(dark ? .dark : .light)
+            .dynamicTypeSize(dark ? .accessibility3 : .large)
+    }
+}
+
+#Preview("Search · Recent") { NativeSurfaceInteractivePreview(.search) }
+#Preview("Search · Results · Dark Large") { NativeSurfaceInteractivePreview(.search, scenario: .results, dark: true) }
+#Preview("Capture · Default") { NativeSurfaceInteractivePreview(.capture) }
+#Preview("Capture · Populated · Dark Large") { NativeSurfaceInteractivePreview(.capture, scenario: .populated, dark: true) }
+#endif
 
 #endif

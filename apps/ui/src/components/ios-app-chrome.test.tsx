@@ -9,6 +9,7 @@ import { IOSAppChrome } from "./ios-app-chrome";
 import type { NativeSurface } from "../ios-native";
 import { TagColorProvider } from "../TagColorProvider";
 import { setTagColor } from "../tag-colors";
+import { radiusValues } from "../generated/design-tokens";
 
 type Published=NativeSurface & {id:string;instance:string;remove?:boolean};
 const surface=(id:string):Published=>bridge.request.mock.calls.filter(([op,p])=>op === "updateNativeSurface" && p.id === id && !p.remove).at(-1)![1];
@@ -25,7 +26,7 @@ function props():ComponentProps<typeof IOSAppChrome> {
   };
 }
 beforeEach(()=>{localStorage.clear();bridge.request.mockReset();bridge.request.mockResolvedValue({});});
-afterEach(cleanup);
+afterEach(()=>{cleanup();vi.restoreAllMocks();vi.unstubAllGlobals();});
 it("loads tag color styles without the Web sidebar and follows color and vault changes",()=>{
   const p=props();
   const page=render(<TagColorProvider vaultId="qa"><IOSAppChrome {...p}/></TagColorProvider>);
@@ -39,6 +40,7 @@ it("retains tag paths, pinned order and emoji while publishing the H5 mobile nav
   localStorage.setItem("memocard:tags:qa",JSON.stringify({pinned:["开发","设计/界面"],icons:{开发:"💻"}}));
   render(<IOSAppChrome {...props()}/>);send("chrome","navigation");
   const nav=surface("navigation");
+  expect(nav.rowRadius).toBe(radiusValues.lg);
   expect(nav.sections?.find(s=>s.id === "pages")?.actions?.map(a=>a.id)).toEqual(["home","notes","calendar"]);
   expect(nav.sections?.find(s=>s.id === "pinned-tags")?.actions?.map(a=>a.path)).toEqual(["开发","设计/界面"]);
   expect(nav.sections?.find(s=>s.id === "tags")?.actions).toEqual(expect.arrayContaining([
@@ -86,4 +88,32 @@ it("resets the sidebar identity on vault change and preserves unavailable action
   const actions=surface("vault").sections?.find(s=>s.id === "actions")?.actions;
   expect(actions?.find(a=>a.id === "trash")?.disabled).toBe(true);expect(actions?.find(a=>a.id === "help")?.disabled).toBe(true);
   send("vault","reauthorize");expect(p.onReauthorize).toHaveBeenCalledOnce();
+});
+it("refreshes native colors when accent and neutral palettes change within the same theme",async()=>{
+  vi.stubGlobal("CanvasRenderingContext2D",class {});
+  let fillStyle="";
+  const context={
+    clearRect:vi.fn(),fillRect:vi.fn(),
+    set fillStyle(value:string){fillStyle=value;},
+    get fillStyle(){return fillStyle;},
+    getImageData:()=>({data:new Uint8ClampedArray(fillStyle === "blue" ? [0,0,255,255] : fillStyle === "slate" ? [15,23,42,255] : [255,255,255,255])}),
+  };
+  vi.spyOn(HTMLCanvasElement.prototype,"getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
+  vi.spyOn(window,"getComputedStyle").mockImplementation(()=>({getPropertyValue:(key:string)=>key === "--primary" ? document.documentElement.dataset.palette || "white" : document.documentElement.dataset.neutralPalette || "white"}) as CSSStyleDeclaration);
+  const root=document.documentElement;
+  const previous={className:root.className,palette:root.getAttribute("data-palette"),neutral:root.getAttribute("data-neutral-palette")};
+  try{
+    root.className="light";root.dataset.palette="mono";root.dataset.neutralPalette="neutral";
+    render(<IOSAppChrome {...props()}/>);
+    await waitFor(()=>expect(surface("chrome").palette?.primary).toEqual([255,255,255,255]));
+    act(()=>{root.dataset.palette="blue";});
+    await waitFor(()=>expect(surface("chrome").palette?.primary).toEqual([0,0,255,255]));
+    act(()=>{root.dataset.neutralPalette="slate";});
+    await waitFor(()=>expect(surface("chrome").palette?.background).toEqual([15,23,42,255]));
+    expect(root.className).toBe("light");
+  }finally{
+    cleanup();root.className=previous.className;
+    if(previous.palette === null)root.removeAttribute("data-palette");else root.setAttribute("data-palette",previous.palette);
+    if(previous.neutral === null)root.removeAttribute("data-neutral-palette");else root.setAttribute("data-neutral-palette",previous.neutral);
+  }
 });

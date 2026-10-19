@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-18",
+  "metadata": {
+    "baselineRef": "a53fb0a",
+    "childrenGetterSHA256": "bf55cd16a143b6db301753b5038ed291adccd79bcc7a0ba584b111185999e266",
+    "indexSourceSHA256": "014be72f39226a42b74eabb87a088e04635eb4a623d2bbb60d734ad45a61d40d",
+    "environment": {
+      "architecture": "arm64",
+      "cpu": "Apple M4",
+      "osRelease": "27.0.0",
+      "compiler": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0"
+    },
+    "fixture": "10 roots, 10-way breadth-first descendants, original array order, all expanded",
+    "comparison": "same executable and fixture; baseline/indexed order alternates on each iteration",
+    "scope": "optimized Swift CLI, one child lookup per row, includes index construction; excludes SwiftUI layout and bridge decoding"
+  },
+  "fingerprintScope": "indexSourceSHA256 covers the Foundation-only production index before the iOS conditional. Full native source fingerprints are in sidebar-subscriptions.json.",
+  "rawSampleValuesExported": false,
+  "scope": "Production Swift index + current actions mapping + full tree traversal compared with automatically extracted original getter; one binary, alternating variant order, optimized CLI, no SwiftUI layout or bridge decoding. This first run exports per-size statistics; the executable collects 15 samples internally.",
+  "results": [
+    {
+      "baseline": {
+        "medianMs": 159.306583,
+        "p95Ms": 164.931292
+      },
+      "indexed": {
+        "medianMs": 0.458,
+        "p95Ms": 0.508375
+      },
+      "samples": 15,
+      "tags": 1000,
+      "warmups": 3
+    },
+    {
+      "baseline": {
+        "medianMs": 4208.236125,
+        "p95Ms": 4258.991208
+      },
+      "indexed": {
+        "medianMs": 2.55675,
+        "p95Ms": 2.661458
+      },
+      "samples": 15,
+      "tags": 5000,
+      "warmups": 3
+    },
+    {
+      "baseline": {
+        "medianMs": 15826.352833,
+        "p95Ms": 15931.518416
+      },
+      "indexed": {
+        "medianMs": 5.209958,
+        "p95Ms": 5.407375
+      },
+      "samples": 15,
+      "tags": 10000,
+      "warmups": 3
+    }
+  ]
+}

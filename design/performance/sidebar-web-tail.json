@@ -1,0 +1,1418 @@
+{
+  "method": "Ten serial fresh-process baseline/current pairs, sizes=1000 only, 2 warmups and 11 raw samples per shape per process. Each pooled phase has 110 samples; no exclusions. P95 uses nearest rank ceil(N*0.95). SSR excludes DOM/layout and does not measure frame rate.",
+  "limitation": "The original full matrix placed 1k branches after 10k flat. The repeat places 1k branches after 1k flat. This isolates 1k behavior and does not reproduce the larger-case prefix or establish a cause for the original tail.",
+  "originalOneKBranches": {
+    "baseline": {
+      "shape": "branches",
+      "size": 1000,
+      "samples": 11,
+      "medianMs": 30.001,
+      "p95Ms": 30.551,
+      "timingsMs": [
+        29.331,
+        29.688,
+        29.78,
+        29.905,
+        29.915,
+        30.001,
+        30.042,
+        30.139,
+        30.241,
+        30.263,
+        30.551
+      ],
+      "filter": 1002,
+      "find": 1000,
+      "some": 0,
+      "iterations": 0,
+      "visits": 1502500
+    },
+    "current": {
+      "shape": "branches",
+      "size": 1000,
+      "samples": 11,
+      "medianMs": 11.146,
+      "p95Ms": 64.416,
+      "timingsMs": [
+        10.979,
+        11.065,
+        11.074,
+        11.13,
+        11.131,
+        11.146,
+        11.397,
+        11.873,
+        12.012,
+        12.455,
+        64.416
+      ],
+      "filter": 0,
+      "find": 0,
+      "some": 0,
+      "iterations": 1,
+      "visits": 1000
+    }
+  },
+  "baselineCommit": "a53fb0a1992ca66fcc01d007475c1a05617e3f0a",
+  "sourceSHA256": {
+    "apps/ui/src/components/tag-navigation.tsx": "a9c278cff6bba3127302740c756dfd0038f318b296a2f85da41664237358bac4",
+    "apps/ui/src/components/tag-tree-index.ts": "48036edf73e47a7854c2b9c6355b870ba717b9ca6e21e6d77f307fa4c64148e5",
+    "apps/ui/benchmarks/tag-navigation.performance.tsx": "6853242bebb1d97471ff0efdf3b749d900b166f02e3b1926caf4060eb40840ec",
+    "apps/ui/benchmarks/vitest.config.ts": "af87901bcaed7be4a96e0e7b13f61cdd7c7c84971dd6ab3ffefc7b80fc2b390f"
+  },
+  "result": [
+    {
+      "shape": "flat",
+      "size": 1000,
+      "baseline": {
+        "samples": 110,
+        "minMs": 21.112,
+        "medianMs": 21.938,
+        "p95Ms": 22.76,
+        "maxMs": 25.979
+      },
+      "current": {
+        "samples": 110,
+        "minMs": 10.939,
+        "medianMs": 11.705,
+        "p95Ms": 12.366,
+        "maxMs": 12.726
+      },
+      "currentSamplesAboveBaselineP95": [],
+      "runs": [
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-01",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.112,
+            "medianMs": 21.79,
+            "p95Ms": 25.979,
+            "maxMs": 25.979,
+            "timingsMs": [
+              21.112,
+              21.317,
+              21.527,
+              21.713,
+              21.761,
+              21.79,
+              21.876,
+              21.897,
+              21.968,
+              22.248,
+              25.979
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11,
+            "medianMs": 11.721,
+            "p95Ms": 12.405,
+            "maxMs": 12.405,
+            "timingsMs": [
+              11,
+              11.281,
+              11.409,
+              11.417,
+              11.568,
+              11.721,
+              11.743,
+              11.764,
+              11.781,
+              12.325,
+              12.405
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-02",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.321,
+            "medianMs": 21.782,
+            "p95Ms": 23.541,
+            "maxMs": 23.541,
+            "timingsMs": [
+              21.321,
+              21.451,
+              21.587,
+              21.7,
+              21.719,
+              21.782,
+              21.851,
+              21.912,
+              22.319,
+              22.514,
+              23.541
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 10.982,
+            "medianMs": 11.702,
+            "p95Ms": 12.182,
+            "maxMs": 12.182,
+            "timingsMs": [
+              10.982,
+              11.01,
+              11.394,
+              11.574,
+              11.689,
+              11.702,
+              11.747,
+              11.814,
+              11.819,
+              11.881,
+              12.182
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-03",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.289,
+            "medianMs": 22.109,
+            "p95Ms": 22.576,
+            "maxMs": 22.576,
+            "timingsMs": [
+              21.289,
+              21.486,
+              21.516,
+              21.561,
+              21.937,
+              22.109,
+              22.345,
+              22.377,
+              22.4,
+              22.505,
+              22.576
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.207,
+            "medianMs": 11.89,
+            "p95Ms": 12.321,
+            "maxMs": 12.321,
+            "timingsMs": [
+              11.207,
+              11.229,
+              11.338,
+              11.869,
+              11.883,
+              11.89,
+              11.892,
+              11.981,
+              12.081,
+              12.211,
+              12.321
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-04",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.684,
+            "medianMs": 22.315,
+            "p95Ms": 22.835,
+            "maxMs": 22.835,
+            "timingsMs": [
+              21.684,
+              21.948,
+              22.012,
+              22.118,
+              22.26,
+              22.315,
+              22.43,
+              22.474,
+              22.687,
+              22.81,
+              22.835
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.103,
+            "medianMs": 11.772,
+            "p95Ms": 12.494,
+            "maxMs": 12.494,
+            "timingsMs": [
+              11.103,
+              11.191,
+              11.486,
+              11.648,
+              11.656,
+              11.772,
+              11.774,
+              11.917,
+              12.068,
+              12.097,
+              12.494
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-05",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.45,
+            "medianMs": 22.093,
+            "p95Ms": 22.506,
+            "maxMs": 22.506,
+            "timingsMs": [
+              21.45,
+              21.599,
+              21.695,
+              21.951,
+              21.999,
+              22.093,
+              22.197,
+              22.353,
+              22.421,
+              22.455,
+              22.506
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.193,
+            "medianMs": 11.708,
+            "p95Ms": 12.366,
+            "maxMs": 12.366,
+            "timingsMs": [
+              11.193,
+              11.343,
+              11.601,
+              11.614,
+              11.649,
+              11.708,
+              11.775,
+              11.812,
+              11.899,
+              11.944,
+              12.366
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-06",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.351,
+            "medianMs": 21.782,
+            "p95Ms": 22.421,
+            "maxMs": 22.421,
+            "timingsMs": [
+              21.351,
+              21.519,
+              21.67,
+              21.709,
+              21.713,
+              21.782,
+              21.826,
+              21.946,
+              22.003,
+              22.046,
+              22.421
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.283,
+            "medianMs": 11.615,
+            "p95Ms": 12.396,
+            "maxMs": 12.396,
+            "timingsMs": [
+              11.283,
+              11.379,
+              11.422,
+              11.563,
+              11.591,
+              11.615,
+              11.76,
+              11.765,
+              11.903,
+              12.174,
+              12.396
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-07",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.213,
+            "medianMs": 21.649,
+            "p95Ms": 22.164,
+            "maxMs": 22.164,
+            "timingsMs": [
+              21.213,
+              21.361,
+              21.377,
+              21.383,
+              21.539,
+              21.649,
+              21.678,
+              21.979,
+              21.988,
+              22.154,
+              22.164
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.142,
+            "medianMs": 11.526,
+            "p95Ms": 12.318,
+            "maxMs": 12.318,
+            "timingsMs": [
+              11.142,
+              11.217,
+              11.267,
+              11.441,
+              11.515,
+              11.526,
+              11.538,
+              11.626,
+              11.764,
+              12.205,
+              12.318
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-08",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.378,
+            "medianMs": 22.214,
+            "p95Ms": 23.357,
+            "maxMs": 23.357,
+            "timingsMs": [
+              21.378,
+              21.874,
+              21.895,
+              22.075,
+              22.137,
+              22.214,
+              22.24,
+              22.284,
+              22.432,
+              22.76,
+              23.357
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.067,
+            "medianMs": 11.577,
+            "p95Ms": 12.436,
+            "maxMs": 12.436,
+            "timingsMs": [
+              11.067,
+              11.238,
+              11.261,
+              11.335,
+              11.577,
+              11.577,
+              11.661,
+              11.844,
+              11.919,
+              12.054,
+              12.436
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-09",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.303,
+            "medianMs": 21.877,
+            "p95Ms": 22.524,
+            "maxMs": 22.524,
+            "timingsMs": [
+              21.303,
+              21.37,
+              21.651,
+              21.686,
+              21.87,
+              21.877,
+              21.939,
+              21.975,
+              22.025,
+              22.082,
+              22.524
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.163,
+            "medianMs": 11.813,
+            "p95Ms": 12.726,
+            "maxMs": 12.726,
+            "timingsMs": [
+              11.163,
+              11.502,
+              11.648,
+              11.711,
+              11.728,
+              11.813,
+              11.834,
+              11.94,
+              11.953,
+              12.066,
+              12.726
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-10",
+          "baseline": {
+            "samples": 11,
+            "minMs": 21.201,
+            "medianMs": 21.679,
+            "p95Ms": 22.435,
+            "maxMs": 22.435,
+            "timingsMs": [
+              21.201,
+              21.378,
+              21.488,
+              21.596,
+              21.602,
+              21.679,
+              21.761,
+              22.091,
+              22.142,
+              22.33,
+              22.435
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 10.939,
+            "medianMs": 11.45,
+            "p95Ms": 11.998,
+            "maxMs": 11.998,
+            "timingsMs": [
+              10.939,
+              11.071,
+              11.236,
+              11.247,
+              11.419,
+              11.45,
+              11.476,
+              11.755,
+              11.804,
+              11.995,
+              11.998
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "shape": "branches",
+      "size": 1000,
+      "baseline": {
+        "samples": 110,
+        "minMs": 28.443,
+        "medianMs": 29.993,
+        "p95Ms": 31.028,
+        "maxMs": 38.049
+      },
+      "current": {
+        "samples": 110,
+        "minMs": 10.855,
+        "medianMs": 11.704,
+        "p95Ms": 12.802,
+        "maxMs": 13.457
+      },
+      "currentSamplesAboveBaselineP95": [],
+      "runs": [
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-01",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.153,
+            "medianMs": 29.989,
+            "p95Ms": 30.78,
+            "maxMs": 30.78,
+            "timingsMs": [
+              29.153,
+              29.203,
+              29.432,
+              29.61,
+              29.686,
+              29.989,
+              30.09,
+              30.159,
+              30.197,
+              30.764,
+              30.78
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.168,
+            "medianMs": 11.934,
+            "p95Ms": 12.668,
+            "maxMs": 12.668,
+            "timingsMs": [
+              11.168,
+              11.314,
+              11.469,
+              11.632,
+              11.905,
+              11.934,
+              12.096,
+              12.113,
+              12.206,
+              12.664,
+              12.668
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-02",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.262,
+            "medianMs": 29.951,
+            "p95Ms": 31.37,
+            "maxMs": 31.37,
+            "timingsMs": [
+              29.262,
+              29.357,
+              29.627,
+              29.78,
+              29.883,
+              29.951,
+              30.005,
+              30.179,
+              30.265,
+              30.592,
+              31.37
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.149,
+            "medianMs": 11.756,
+            "p95Ms": 13.457,
+            "maxMs": 13.457,
+            "timingsMs": [
+              11.149,
+              11.163,
+              11.169,
+              11.259,
+              11.726,
+              11.756,
+              11.889,
+              12.299,
+              12.67,
+              12.739,
+              13.457
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-03",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.39,
+            "medianMs": 30.007,
+            "p95Ms": 32.667,
+            "maxMs": 32.667,
+            "timingsMs": [
+              29.39,
+              29.789,
+              29.877,
+              29.889,
+              29.99,
+              30.007,
+              30.19,
+              30.203,
+              30.301,
+              30.409,
+              32.667
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.042,
+            "medianMs": 11.436,
+            "p95Ms": 12.854,
+            "maxMs": 12.854,
+            "timingsMs": [
+              11.042,
+              11.055,
+              11.286,
+              11.339,
+              11.384,
+              11.436,
+              11.724,
+              11.745,
+              11.937,
+              12.35,
+              12.854
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-04",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.758,
+            "medianMs": 30.206,
+            "p95Ms": 31.755,
+            "maxMs": 31.755,
+            "timingsMs": [
+              29.758,
+              29.858,
+              30.051,
+              30.06,
+              30.193,
+              30.206,
+              30.222,
+              30.227,
+              30.263,
+              31.02,
+              31.755
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.459,
+            "medianMs": 12.019,
+            "p95Ms": 12.802,
+            "maxMs": 12.802,
+            "timingsMs": [
+              11.459,
+              11.547,
+              11.605,
+              11.652,
+              11.718,
+              12.019,
+              12.292,
+              12.527,
+              12.543,
+              12.641,
+              12.802
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-05",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.662,
+            "medianMs": 30.136,
+            "p95Ms": 30.771,
+            "maxMs": 30.771,
+            "timingsMs": [
+              29.662,
+              29.687,
+              29.771,
+              29.787,
+              29.964,
+              30.136,
+              30.198,
+              30.339,
+              30.416,
+              30.498,
+              30.771
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 10.869,
+            "medianMs": 11.483,
+            "p95Ms": 12.792,
+            "maxMs": 12.792,
+            "timingsMs": [
+              10.869,
+              11.094,
+              11.253,
+              11.421,
+              11.468,
+              11.483,
+              11.854,
+              11.862,
+              11.973,
+              12.441,
+              12.792
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-06",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.281,
+            "medianMs": 29.993,
+            "p95Ms": 38.049,
+            "maxMs": 38.049,
+            "timingsMs": [
+              29.281,
+              29.293,
+              29.702,
+              29.9,
+              29.963,
+              29.993,
+              30.178,
+              30.77,
+              30.782,
+              30.99,
+              38.049
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.179,
+            "medianMs": 11.465,
+            "p95Ms": 12.82,
+            "maxMs": 12.82,
+            "timingsMs": [
+              11.179,
+              11.249,
+              11.264,
+              11.339,
+              11.383,
+              11.465,
+              11.736,
+              12.089,
+              12.277,
+              12.64,
+              12.82
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-07",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.463,
+            "medianMs": 29.926,
+            "p95Ms": 30.817,
+            "maxMs": 30.817,
+            "timingsMs": [
+              29.463,
+              29.524,
+              29.705,
+              29.75,
+              29.843,
+              29.926,
+              29.977,
+              30.064,
+              30.169,
+              30.732,
+              30.817
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.132,
+            "medianMs": 11.545,
+            "p95Ms": 12.736,
+            "maxMs": 12.736,
+            "timingsMs": [
+              11.132,
+              11.234,
+              11.328,
+              11.333,
+              11.414,
+              11.545,
+              11.574,
+              11.921,
+              12.148,
+              12.578,
+              12.736
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-08",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.301,
+            "medianMs": 30.091,
+            "p95Ms": 31.821,
+            "maxMs": 31.821,
+            "timingsMs": [
+              29.301,
+              29.938,
+              29.99,
+              29.994,
+              30.031,
+              30.091,
+              30.146,
+              30.341,
+              30.558,
+              31.028,
+              31.821
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.294,
+            "medianMs": 11.717,
+            "p95Ms": 12.957,
+            "maxMs": 12.957,
+            "timingsMs": [
+              11.294,
+              11.336,
+              11.453,
+              11.541,
+              11.581,
+              11.717,
+              11.816,
+              12.214,
+              12.248,
+              12.596,
+              12.957
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-09",
+          "baseline": {
+            "samples": 11,
+            "minMs": 28.443,
+            "medianMs": 28.911,
+            "p95Ms": 30.319,
+            "maxMs": 30.319,
+            "timingsMs": [
+              28.443,
+              28.725,
+              28.834,
+              28.845,
+              28.894,
+              28.911,
+              29.546,
+              29.647,
+              29.75,
+              29.807,
+              30.319
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 11.433,
+            "medianMs": 11.691,
+            "p95Ms": 13.022,
+            "maxMs": 13.022,
+            "timingsMs": [
+              11.433,
+              11.451,
+              11.479,
+              11.506,
+              11.545,
+              11.691,
+              12.101,
+              12.113,
+              12.128,
+              12.17,
+              13.022
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-10",
+          "baseline": {
+            "samples": 11,
+            "minMs": 29.335,
+            "medianMs": 30.013,
+            "p95Ms": 30.987,
+            "maxMs": 30.987,
+            "timingsMs": [
+              29.335,
+              29.372,
+              29.626,
+              29.905,
+              29.907,
+              30.013,
+              30.026,
+              30.414,
+              30.442,
+              30.783,
+              30.987
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 10.855,
+            "medianMs": 11.448,
+            "p95Ms": 12.769,
+            "maxMs": 12.769,
+            "timingsMs": [
+              10.855,
+              10.966,
+              11.043,
+              11.415,
+              11.415,
+              11.448,
+              11.554,
+              11.805,
+              12.092,
+              12.131,
+              12.769
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "shape": "missing-parents",
+      "size": 1000,
+      "baseline": {
+        "samples": 110,
+        "minMs": 10.267,
+        "medianMs": 10.89,
+        "p95Ms": 33.885,
+        "maxMs": 34.803
+      },
+      "current": {
+        "samples": 110,
+        "minMs": 3.318,
+        "medianMs": 3.529,
+        "p95Ms": 4.396,
+        "maxMs": 4.516
+      },
+      "currentSamplesAboveBaselineP95": [],
+      "runs": [
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-01",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.466,
+            "medianMs": 10.693,
+            "p95Ms": 33.606,
+            "maxMs": 33.606,
+            "timingsMs": [
+              10.466,
+              10.568,
+              10.597,
+              10.608,
+              10.64,
+              10.693,
+              10.722,
+              11.011,
+              22.221,
+              33.395,
+              33.606
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.422,
+            "medianMs": 3.532,
+            "p95Ms": 4.394,
+            "maxMs": 4.394,
+            "timingsMs": [
+              3.422,
+              3.441,
+              3.464,
+              3.482,
+              3.488,
+              3.532,
+              3.559,
+              3.578,
+              3.709,
+              4.367,
+              4.394
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-02",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.728,
+            "medianMs": 11.034,
+            "p95Ms": 34.278,
+            "maxMs": 34.278,
+            "timingsMs": [
+              10.728,
+              10.8,
+              10.841,
+              10.866,
+              10.941,
+              11.034,
+              11.144,
+              11.46,
+              22.363,
+              33.614,
+              34.278
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.404,
+            "medianMs": 3.575,
+            "p95Ms": 4.42,
+            "maxMs": 4.42,
+            "timingsMs": [
+              3.404,
+              3.454,
+              3.463,
+              3.513,
+              3.515,
+              3.575,
+              3.577,
+              3.604,
+              3.681,
+              4.369,
+              4.42
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-03",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.626,
+            "medianMs": 10.988,
+            "p95Ms": 33.988,
+            "maxMs": 33.988,
+            "timingsMs": [
+              10.626,
+              10.636,
+              10.754,
+              10.835,
+              10.871,
+              10.988,
+              10.995,
+              11.037,
+              22.546,
+              33.616,
+              33.988
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.362,
+            "medianMs": 3.542,
+            "p95Ms": 4.396,
+            "maxMs": 4.396,
+            "timingsMs": [
+              3.362,
+              3.402,
+              3.441,
+              3.449,
+              3.498,
+              3.542,
+              3.569,
+              3.582,
+              3.646,
+              4.108,
+              4.396
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-04",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.434,
+            "medianMs": 10.962,
+            "p95Ms": 33.583,
+            "maxMs": 33.583,
+            "timingsMs": [
+              10.434,
+              10.709,
+              10.78,
+              10.825,
+              10.851,
+              10.962,
+              11.019,
+              11.407,
+              22.061,
+              32.931,
+              33.583
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.396,
+            "medianMs": 3.594,
+            "p95Ms": 4.516,
+            "maxMs": 4.516,
+            "timingsMs": [
+              3.396,
+              3.457,
+              3.477,
+              3.514,
+              3.543,
+              3.594,
+              3.615,
+              3.63,
+              3.74,
+              4.472,
+              4.516
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-05",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.341,
+            "medianMs": 10.688,
+            "p95Ms": 33.506,
+            "maxMs": 33.506,
+            "timingsMs": [
+              10.341,
+              10.359,
+              10.393,
+              10.49,
+              10.553,
+              10.688,
+              10.689,
+              11.298,
+              22.17,
+              33.174,
+              33.506
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.331,
+            "medianMs": 3.485,
+            "p95Ms": 4.182,
+            "maxMs": 4.182,
+            "timingsMs": [
+              3.331,
+              3.351,
+              3.412,
+              3.418,
+              3.424,
+              3.485,
+              3.488,
+              3.564,
+              3.584,
+              4.135,
+              4.182
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-06",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.411,
+            "medianMs": 10.779,
+            "p95Ms": 33.252,
+            "maxMs": 33.252,
+            "timingsMs": [
+              10.411,
+              10.435,
+              10.523,
+              10.709,
+              10.722,
+              10.779,
+              10.902,
+              10.911,
+              10.965,
+              22.519,
+              33.252
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.36,
+            "medianMs": 3.518,
+            "p95Ms": 4.354,
+            "maxMs": 4.354,
+            "timingsMs": [
+              3.36,
+              3.383,
+              3.384,
+              3.384,
+              3.399,
+              3.518,
+              3.522,
+              3.527,
+              3.536,
+              3.555,
+              4.354
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-07",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.37,
+            "medianMs": 10.635,
+            "p95Ms": 33.545,
+            "maxMs": 33.545,
+            "timingsMs": [
+              10.37,
+              10.385,
+              10.418,
+              10.426,
+              10.47,
+              10.635,
+              10.693,
+              10.908,
+              21.139,
+              32.939,
+              33.545
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.378,
+            "medianMs": 3.53,
+            "p95Ms": 4.512,
+            "maxMs": 4.512,
+            "timingsMs": [
+              3.378,
+              3.401,
+              3.466,
+              3.477,
+              3.496,
+              3.53,
+              3.534,
+              3.555,
+              3.612,
+              3.723,
+              4.512
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-08",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.313,
+            "medianMs": 10.902,
+            "p95Ms": 33.885,
+            "maxMs": 33.885,
+            "timingsMs": [
+              10.313,
+              10.674,
+              10.711,
+              10.806,
+              10.846,
+              10.902,
+              10.926,
+              10.97,
+              10.984,
+              22.105,
+              33.885
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.318,
+            "medianMs": 3.492,
+            "p95Ms": 4.079,
+            "maxMs": 4.079,
+            "timingsMs": [
+              3.318,
+              3.323,
+              3.387,
+              3.47,
+              3.487,
+              3.492,
+              3.525,
+              3.533,
+              3.558,
+              3.714,
+              4.079
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-09",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.267,
+            "medianMs": 10.761,
+            "p95Ms": 34,
+            "maxMs": 34,
+            "timingsMs": [
+              10.267,
+              10.404,
+              10.513,
+              10.716,
+              10.733,
+              10.761,
+              10.96,
+              11.106,
+              21.797,
+              33.809,
+              34
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.419,
+            "medianMs": 3.57,
+            "p95Ms": 4.418,
+            "maxMs": 4.418,
+            "timingsMs": [
+              3.419,
+              3.467,
+              3.481,
+              3.515,
+              3.515,
+              3.57,
+              3.575,
+              3.582,
+              3.655,
+              4.301,
+              4.418
+            ]
+          }
+        },
+        {
+          "directory": "build/verification/performance/sidebar-tags-tail/run-10",
+          "baseline": {
+            "samples": 11,
+            "minMs": 10.824,
+            "medianMs": 11.003,
+            "p95Ms": 34.803,
+            "maxMs": 34.803,
+            "timingsMs": [
+              10.824,
+              10.875,
+              10.879,
+              10.909,
+              10.931,
+              11.003,
+              11.15,
+              11.186,
+              22.748,
+              34.554,
+              34.803
+            ]
+          },
+          "current": {
+            "samples": 11,
+            "minMs": 3.385,
+            "medianMs": 3.558,
+            "p95Ms": 4.294,
+            "maxMs": 4.294,
+            "timingsMs": [
+              3.385,
+              3.414,
+              3.415,
+              3.474,
+              3.536,
+              3.558,
+              3.584,
+              3.594,
+              3.6,
+              4.221,
+              4.294
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

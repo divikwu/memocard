@@ -1,0 +1,55 @@
+import { useId } from "react";
+import type { ComponentProps } from "react";
+import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, fn, userEvent, within } from "storybook/test";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../src/components/ui/tabs";
+import { desktopGlobals } from "../.storybook/viewports";
+
+function TabsExample({ orientation = "horizontal", variant = "default", onValueChange }: { orientation?: "horizontal" | "vertical"; variant?: "default" | "line"; onValueChange: ComponentProps<typeof Tabs>["onValueChange"] }) {
+  const id = useId();
+  return <Tabs defaultValue="notes" orientation={orientation} onValueChange={onValueChange} className="max-w-lg">
+    <TabsList variant={variant} aria-label="笔记分类">
+      <TabsTrigger value="notes" id={`${id}-notes`}>所有笔记</TabsTrigger>
+      <TabsTrigger value="archived" disabled>归档（暂不可用）</TabsTrigger>
+      <TabsTrigger value="links" id={`${id}-links`}>链接</TabsTrigger>
+    </TabsList>
+    <TabsContent value="notes">这里是全部笔记。</TabsContent>
+    <TabsContent value="archived">这里是归档笔记。</TabsContent>
+    <TabsContent value="links">这里是包含链接的笔记。</TabsContent>
+  </Tabs>;
+}
+const meta = {
+  title: "components/tabs", component: TabsExample, globals: desktopGlobals,
+  args: { orientation: "horizontal", variant: "default", onValueChange: fn() }, parameters: { layout: "padded", docs: { description: { component: "生产 Tabs 的 default/line 和纵向组合；方向键切换，禁用项可聚焦但不激活。" } } },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement), first = canvas.getByRole("tab", { name: "所有笔记" }), last = canvas.getByRole("tab", { name: "链接" });
+    const disabled = canvas.getByRole("tab", { name: "归档（暂不可用）" });
+    const next = args.orientation === "vertical" ? "{ArrowDown}" : "{ArrowRight}";
+    const previous = args.orientation === "vertical" ? "{ArrowUp}" : "{ArrowLeft}";
+    await userEvent.click(first);
+    await expect(first).toHaveFocus();
+    // Disabled tabs remain reachable by arrow keys, but cannot become active.
+    await userEvent.keyboard(next);
+    await expect(disabled).toHaveFocus();
+    await userEvent.keyboard("{Enter} ");
+    await expect(first).toHaveAttribute("aria-selected", "true");
+    await expect(canvas.getByRole("tabpanel", { name: "所有笔记" })).toHaveTextContent("这里是全部笔记。");
+    await expect(args.onValueChange).not.toHaveBeenCalledWith("archived", expect.anything());
+    await userEvent.keyboard(next);
+    await expect(last).toHaveFocus();
+    await expect(last).toHaveAttribute("aria-selected", "true");
+    await expect(canvas.getByRole("tabpanel", { name: "链接" })).toHaveTextContent("这里是包含链接的笔记。");
+    await expect(canvas.getByRole("tabpanel", { name: "链接" })).not.toHaveAttribute("inert");
+    await expect(args.onValueChange).toHaveBeenLastCalledWith("links", expect.anything());
+    await userEvent.keyboard(previous + previous);
+    await expect(first).toHaveFocus();
+    await expect(canvas.getByRole("tabpanel", { name: "所有笔记" })).toHaveTextContent("这里是全部笔记。");
+    await expect(canvas.getByRole("tabpanel", { name: "所有笔记" })).not.toHaveAttribute("inert");
+  },
+} satisfies Meta<typeof TabsExample>;
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+export const Line: Story = { args: { variant: "line" } };
+export const Vertical: Story = { args: { orientation: "vertical" } };

@@ -7,6 +7,10 @@
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
     "test:native": "swift test --package-path packages/native-core",
+    "test:sidebar-native": "node --test apps/apple/Tests/sidebar-tag-index.test.mjs",
+    "test:native-surfaces": "python3 apps/apple/Tests/run-surface-subscriptions.py --device auto",
+    "bench:sidebar:web": "node scripts/benchmark-sidebar-tags.mjs",
+    "bench:sidebar:native": "node apps/apple/Tests/benchmark-sidebar-tags.mjs",
     "test:native-network": "node --test apps/apple/Tests/local-read-server.test.mjs",
     "test:local-web": "node --test apps/apple/Tests/local-web-server.test.mjs",
     "test:service": "swift test --package-path packages/local-service && pnpm test:local-web",
@@ -16,7 +20,20 @@
     "install:service": "bash scripts/install-service.sh",
     "check:bundle": "node scripts/check-ui-bundle.mjs",
     "check:ui-primitives": "node scripts/check-ui-primitives.mjs",
-    "verify": "pnpm check:ui-primitives && pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build && pnpm check:bundle",
-    "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app"
-  }
+    "check:design-inventory": "node scripts/check-design-inventory.mjs && node scripts/check-token-consumption.mjs",
+    "test:design-inventory": "node --test scripts/check-design-inventory.test.mjs scripts/token-consumption.test.mjs",
+    "tokens:build": "node scripts/build-design-tokens.mjs",
+    "tokens:check": "node scripts/build-design-tokens.mjs --check",
+    "test:tokens": "node --test scripts/design-tokens.test.mjs",
+    "icons:build": "node scripts/generate-sidebar-icons.mjs",
+    "icons:check": "node scripts/generate-sidebar-icons.mjs --check",
+    "test:icons": "node --test scripts/sidebar-icons.test.mjs",
+    "palette:build": "node scripts/generate-sidebar-preview-palette.mjs",
+    "palette:check": "node scripts/generate-sidebar-preview-palette.mjs --check",
+    "test:palette": "node --test scripts/sidebar-preview-palette.test.mjs",
+    "verify:design": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm icons:check && pnpm test:icons && pnpm --filter @memocard/ui typecheck:storybook && pnpm --filter @memocard/ui build:storybook && pnpm --filter @memocard/ui test:storybook && pnpm test:palette",
+    "verify": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm check:ui-primitives && pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build && pnpm check:bundle",
+    "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm test:sidebar-native && pnpm test:native-surfaces && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app"
+  },
+  "devDependencies": { "style-dictionary": "5.7.0" }
 }
