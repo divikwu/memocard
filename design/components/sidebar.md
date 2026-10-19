@@ -8,7 +8,7 @@
 | 标准图标 | 16px | 16px | 16pt 基准，随文字缩放 |
 | 正文 | 14px | 16px | 系统字体 16pt 基准 |
 | 品牌文字 | 原有 16px | 沿用既有布局 | 原有 14pt 基准 |
-| Logo | 36px | 36px | 36pt |
+| Logo | 36px | 36px | 28pt |
 | 图文间距 | 8px | 8px | 8pt |
 | 标签缩进 | 保留 margin / border / padding 组合 | 保留现有组合 | 每级 24pt |
 | 圆角 | 用户选择 | 用户选择 | 通过现有 rowRadius 桥接 |

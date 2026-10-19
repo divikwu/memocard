@@ -19,6 +19,7 @@ enum SidebarTokens {
     static let rowGap: CGFloat = 4
     static let indent: CGFloat = 24
     static let logoSize: CGFloat = 36
+    static let nativeLogoSize: CGFloat = 28
     static let mobileFontSize: CGFloat = 16
     static let desktopFontSize: CGFloat = 14
     static let brandFontSize: CGFloat = 14

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, writeFile, rm, stat, utimes } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildTokens, validateTokens } from "./build-design-tokens.mjs";
 
 test("rejects invalid dimensions rather than emitting unusable platform values", () => {
@@ -45,6 +46,25 @@ test("broken token aliases fail the build", async () => {
     const sourcePath = join(directory, "tokens.json");
     await writeFile(sourcePath, JSON.stringify({ sidebar: { $type: "dimension", iconSize: { $value: "{missing.token}" } } }));
     await assert.rejects(buildTokens({ sourcePath, outputRoot: directory }));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test("production logo tokens preserve the Web and native platform sizes", async () => {
+  const sourcePath = fileURLToPath(new URL("../design/tokens/sidebar.tokens.json", import.meta.url));
+  const tokens = JSON.parse(await readFile(sourcePath, "utf8"));
+  assert.equal(tokens.sidebar.logoSize.$value.value, 36);
+  assert.equal(tokens.sidebar.nativeLogoSize?.$value.value, 28);
+  const directory = await mkdtemp(join(tmpdir(), "memocard-logo-token-test-"));
+  try {
+    await buildTokens({ sourcePath, outputRoot: directory });
+    const css = await readFile(join(directory, "apps/ui/src/generated/design-tokens.css"), "utf8");
+    assert.match(css, /--sidebar-logo-size: 36px;/);
+    assert.doesNotMatch(css, /--sidebar-native-logo-size/);
+    assert.equal(css, await readFile(new URL("../apps/ui/src/generated/design-tokens.css", import.meta.url), "utf8"));
+    const swift = await readFile(join(directory, "apps/apple/Sources/DesignTokens.generated.swift"), "utf8");
+    const pointValues = Object.fromEntries([...swift.matchAll(/static let (\w+): CGFloat = ([\d.]+)/g)].map(([, name, value]) => [name, Number(value)]));
+    assert.equal(pointValues.logoSize, 36);
+    assert.equal(pointValues.nativeLogoSize, 28);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
