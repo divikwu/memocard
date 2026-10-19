@@ -48,7 +48,7 @@ The scrolling test additionally requires the last nested tag to extend beyond th
 
 ## Sidebar design-token pilot
 
-`Sources/NativeSidebar.swift` uses the generated `SidebarTokens` and `DesignRadius` for the pilot's shared values. System chrome, materials, safe areas, navigation actions and drawer gestures retain their native implementation. Fonts scale with Dynamic Type without a product-specific cap; row heights remain minimum heights. Decorative Lucide icons and Emoji scale up to 36 points to fit their control frames. At the default text size, the pilot preserves the existing 48-point rows, 16-point icons, 8-point content gap, 24-point indent and 36-point logo.
+`Sources/NativeSidebar.swift` uses the generated `SidebarTokens` and `DesignRadius` for the pilot's shared values. System chrome, materials, safe areas, navigation actions and drawer gestures retain their native implementation. Fonts scale with Dynamic Type without a product-specific cap; row heights remain minimum heights. Decorative Lucide icons and Emoji scale up to 36 points to fit their control frames. At the default text size, the pilot preserves the existing 48-point rows, 16-point icons, 8-point content gap, 24-point indent and 28-point logo.
 
 The Canvas previews render the production components with an isolated `NativeHost(previewSurfaces:)`, without opening a real vault. `SidebarPreviewPalette.generated.swift` supplies browser-sampled default light/dark palette values only in Debug. Preview coverage includes the complete light sidebar, a dark sidebar at AX5 (the largest Dynamic Type size), individual rows (selected, disabled, Emoji, badge, long text and expanded/collapsed affordances), and a data-state picker for populated/loading/empty/error scenarios. Keep explicit `action()` and `send($0)` closures: Canvas source selection depends on them in Xcode 27.1.
 
@@ -77,6 +77,8 @@ python3 apps/apple/Tests/run-surface-subscriptions.py --device auto --output-dir
 ```
 
 The runner prints the selected runtime and each phase's outcome and elapsed time. An installation timeout remains a failure at 180 seconds, with no retry; bounded process sampling and targeted Simulator installation logs run only after that deadline to diagnose the failure.
+
+CI checks Simulator readiness before dependency setup and verification using `--prepare-only`. This actively prepares the selected runtime and boots the selected device; a failure stops the job immediately. The full probe still runs afterward with its original build, readiness, application assertions and cleanup. A temporary device created by the preflight is cleaned up on exit, so reuse is only expected when an existing iPhone is available.
 
 Before booting, the runner prepares the selected runtime's dyld shared cache once with `simctl runtime dyld_shared_cache update <runtime identifier>`. This explicit environment-preparation phase has its own 600-second bound and fails the test if preparation fails; it does not force cache regeneration or prepare unrelated runtimes. [Apple's Xcode 26.1.1 notes](https://developer.apple.com/documentation/Xcode-Release-Notes/xcode-26_1-release-notes) document cache preparation before first Simulator boot. This preparation was added after CI completed boot but installation and diagnostic commands stalled. Those logs do not establish a cache or jetsam defect as the cause.
 
