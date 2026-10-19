@@ -156,6 +156,9 @@ export const MobilePreservedSession: Story = {
     await waitFor(() => expect(search.getByRole("listbox")).toHaveAttribute("aria-busy", "false"));
     await userEvent.click(search.getByRole("button", { name: "加载更多结果" }));
     await search.findByRole("option", { name: "计划复盘" });
+    // Base UI restores the removed paging control's focus to the Popup again next frame.
+    await waitFor(() => expect(body.getByRole("dialog", { name: "搜索笔记" })).toHaveFocus());
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     await userEvent.click(input);
     const selected = search.getByRole("option", { name: "计划清单" });
     try {
