@@ -5,6 +5,7 @@
 - [基础规范与维护边界](foundations.md)
 - [组件归属表](component-ownership.md)
 - [已使用组件维护表](component-inventory.md)
+- [组件使用文档结构与维护方式](component-docs.md)
 - [Token 消费映射](token-consumption.md)
 - [侧栏规格与验收清单](components/sidebar.md)
 - [搜索与快速记录场景及验收边界](components/search-capture.md)

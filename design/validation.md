@@ -2,6 +2,17 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## 组件使用文档试点（2026-10-20）
+
+- Button、Input、Dialog、Note Search 复用一个 Storybook Docs 模板，增加用途、默认实际示例与最小生产代码、组成、使用建议、其他状态、API、无障碍和平台差异。Button 新增单按钮 Default；原有 14 个故事定义（含 args、play 和时限）与 main 逐字一致。未引入 MDX、组件注册表、运行时依赖或第二份组件维护清单。
+- Button 显式列出 8 项常用生产参数，Input 列出 13 项；Dialog 的生产组合契约与示例 onSave 分开，Note Search 完整列出 7 个生产 props，并将 initialOpen 等示例控制项单列。Controls 只开放对当前故事真实生效的参数。独立审查曾发现 Button 的默认 type 文案错误；按已安装 Base UI useRender 的 renderTag 实现修正为默认路径提供 type="button"，提交需显式 submit，修复后独立复核无 P1/P2。未修改生产 Button 行为。
+- `pnpm verify:design` 通过：97 个故事（85 桌面、12 H5）与 1 项断点回归，共 98/98；类型、静态构建、维护表/token/icon 及真实 palette 检查通过。没有修改 worker、断言、超时或预算。13 项跨 project 文件过滤不是跳过故事；报告中的 98 项测试全部执行并通过。4 段完整使用代码通过虚拟 TSX 文件对实际生产导入的类型检查，没有创建临时生产源码；6 个变更 TSX 文件的 ESLint 通过。
+- `pnpm --filter @memocard/ui build` 与 `pnpm check:bundle` 通过。285 份指定 Web/原生源码、资源与 token 文件，以及 164 份生产构建产物，与实施前逐一 SHA256 一致，无修改；生产移动首页仍为 1,335,281 / 1,335,296 bytes raw。生产构建原有大 chunk 提示保留。改动仅在 Storybook 与设计文档中，不将此轮计作 Xcode Preview、模拟器或真机验收。
+- 真实 Storybook Docs 已核对四个试点的说明、生产代码、参数表和单次主示例：Button 的 variant/size/type 可见且默认值正确，Input 手动输入后回显一致；Dialog 实际打开、Escape 关闭，在退出过渡完成后焦点返回触发器；Note Search 输入“计划”、方向键选中“计划清单”、Enter 后回调显示 search-checklist，关闭后焦点返回“返回搜索”。Canvas 将 Button 的 variant 调为 outline、size 调为 lg，控件和实际按钮更新，随后 Reset controls 恢复默认，没有保存故事改动。
+- 全局 Docs 去重仅增加 Stories.includePrimary=false。未迁移的 Select 主故事和 Small 各出现一次；手动将首个选择框改为深色时，另外四个示例仍为浅色。Foundations Effects 的 Default、Dark、Reduced Motion 各出现一次，深色内容保持在独立 iframe 中，外围 Docs 仍为浅色。Docs 仍停止自动 play，手动交互、主题和数据隔离保留。
+- 初次在并行静态构建期间打开开发服务，观察到 4 条 Storybook manager UniversalStoreFollowerTimeoutError；原始日志保留。完整构建后通过新导航完成上述检查，后续错误为 0，保留 1 条 Storybook 11 的 PopoverProvider ariaLabel 升级提示；没有修改产品代码或根据一次后续通过判断初次错误根因。首次 Dialog 关闭读取仍处于退出动画中，最终按过渡完成后的 DOM 和焦点确认关闭，不放宽原有交互测试。
+- 本机日志为 `/tmp/memocard-component-docs-{verify-design,snippets,eslint,production-build,bundle}.log`，可见截图、AX 快照和源码/产物指纹位于 ignored 的 `build/verification/component-docs-pilot/`。这些文件作本机辅助证据，跨机器应重跑维护中的故事与设计门禁；远程 CI 以新 PR 的最终 head 为准。
+
 ## Foundations 颜色状态、排版与动效边界（2026-10-19）
 
 - 本轮只扩展现有 Foundations 故事、独立浏览器测试配置和维护文档。默认外观、生产 CSS/Provider、token、原生组件及交互保持；不新增平行主题或排版规范。

@@ -38,7 +38,7 @@ function StaticDocsPage() {
   return <>
     <Title /><Subtitle /><Description />
     <p>Docs 用于静态对照；切换 Canvas，在 Controls 中调整参数并运行交互。</p>
-    <Primary /><ArgTypes /><Stories />
+    <Primary /><ArgTypes /><Stories includePrimary={false} />
   </>;
 }
 
