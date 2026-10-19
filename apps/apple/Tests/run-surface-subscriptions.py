@@ -115,6 +115,48 @@ def prepare_runtime():
     phase("runtime-cache", ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", runtime], 600)
     phase("bootstatus", ["xcrun", "simctl", "bootstatus", device, "-b"], 180)
 
+def launch_probe(directory):
+    # simctl interprets redirection paths inside the device's data directory.
+    with tempfile.TemporaryDirectory(prefix="memocard-surface-output-", dir=device_data_path / "tmp") as temporary:
+        stdout_path = Path(temporary) / "probe.stdout.log"
+        stderr_path = Path(temporary) / "probe.stderr.log"
+        stdout_path.write_text("")
+        stderr_path.write_text("")
+        stdout_device_path = "/" + str(stdout_path.relative_to(device_data_path))
+        stderr_device_path = "/" + str(stderr_path.relative_to(device_data_path))
+        started = time.monotonic()
+        deadline = started + 60
+        outcome = "failed"
+        print("SURFACE_PROBE_PHASE " + json.dumps({"phase": "launch", "event": "start", "device": device, "timeoutSeconds": 60}), flush=True)
+        try:
+            spawn_output = phase("spawn", ["xcrun", "simctl", "launch", f"--stdout={stdout_device_path}", f"--stderr={stderr_device_path}", device, "dev.divikwu.memocard.surface-probe"], deadline - time.monotonic(), capture=True)
+            while time.monotonic() < deadline:
+                output = stdout_path.read_text(errors="replace")
+                lines = [line.removesuffix("\n").removesuffix("\r") for line in output.splitlines(keepends=True) if line.endswith("\n")]
+                if "NATIVE_SURFACE_PROBE_STAGE app-task-complete passed=false" in lines:
+                    raise RuntimeError("Native surface assertions failed")
+                if "NATIVE_SURFACE_PROBE_STAGE app-task-complete passed=true" in lines:
+                    marker = "SURFACE_SUBSCRIPTION_RESULT "
+                    result_line = next((line for line in lines if line.startswith(marker)), None)
+                    if result_line is None:
+                        raise RuntimeError("Surface probe completed without its assertion result")
+                    json.loads(result_line.removeprefix(marker))
+                    outcome = "passed"
+                    return spawn_output + output + "\n" + stderr_path.read_text(errors="replace")
+                time.sleep(min(0.05, max(0, deadline - time.monotonic())))
+            raise subprocess.TimeoutExpired(["native-probe launch and assertions"], 60)
+        except subprocess.TimeoutExpired:
+            outcome = "timeout"
+            print(stdout_path.read_text(errors="replace") + "\n" + stderr_path.read_text(errors="replace"), flush=True)
+            raise
+        except Exception:
+            print(stdout_path.read_text(errors="replace") + "\n" + stderr_path.read_text(errors="replace"), flush=True)
+            raise
+        finally:
+            shutil.copyfile(stdout_path, directory / "probe.stdout.log")
+            shutil.copyfile(stderr_path, directory / "probe.stderr.log")
+            print("SURFACE_PROBE_PHASE " + json.dumps({"phase": "launch", "event": "finish", "outcome": outcome, "seconds": round(time.monotonic() - started, 3)}), flush=True)
+
 def run(directory):
     shutil.copytree(args.source_dir, directory / "Sources")
     shutil.copy(root / "apps/apple/Tests/NativeSurfaceSubscriptionHarness.swift", directory / "Harness.swift")
@@ -160,7 +202,11 @@ def run(directory):
         phase("install", ["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], 180)
         installed = True
         launch_started = time.time()
-        launch = phase("launch", ["xcrun", "simctl", "launch", "--console", device, "dev.divikwu.memocard.surface-probe"], 60, capture=True)
+        try:
+            launch = launch_probe(directory)
+        except Exception:
+            incomplete_probe_diagnostics(launch_started)
+            raise
         print(launch)
         marker = "SURFACE_SUBSCRIPTION_RESULT "
         result = next((json.loads(line.removeprefix(marker)) for line in launch.splitlines() if line.startswith(marker)), None)
@@ -188,6 +234,7 @@ try:
     runtime = next((runtime for runtime, devices in inventory.items() if any(item["udid"] == device for item in devices)), None)
     if runtime is None:
         raise RuntimeError(f"Cannot resolve the runtime for Simulator {device}")
+    device_data_path = next(Path(item["dataPath"]) for devices in inventory.values() for item in devices if item["udid"] == device)
     print("SURFACE_PROBE_DEVICE " + json.dumps({"device": device, "runtime": runtime, "created": created_device}), flush=True)
     if args.prepare_only:
         prepare_runtime()
