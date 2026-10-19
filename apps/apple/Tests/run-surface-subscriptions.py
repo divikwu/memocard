@@ -191,6 +191,8 @@ try:
     print("SURFACE_PROBE_DEVICE " + json.dumps({"device": device, "runtime": runtime, "created": created_device}), flush=True)
     if args.prepare_only:
         prepare_runtime()
+        if not created_device:
+            phase("preflight-shutdown", ["xcrun", "simctl", "shutdown", device], 180)
     elif args.output_dir:
         directory = args.output_dir.resolve()
         directory.mkdir(parents=True, exist_ok=False)
