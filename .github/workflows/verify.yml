@@ -33,6 +33,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: xcodebuild -version
+      - name: Check Simulator readiness
+        run: python3 apps/apple/Tests/run-surface-subscriptions.py --device auto --prepare-only
       - uses: pnpm/action-setup@v6
         with:
           version: 10.34.1
