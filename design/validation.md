@@ -2,6 +2,15 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Foundations 颜色状态、排版与动效边界（2026-10-19）
+
+- 本轮只扩展现有 Foundations 故事、独立浏览器测试配置和维护文档。默认外观、生产 CSS/Provider、token、原生组件及交互保持；不新增平行主题或排版规范。
+- colors 共 5 个代表故事：默认浅/深、浅色 blue/slate、深色 teal、H5；读取 35 个生产语义色并测量 22 组配对（13 组语义、9 组标签）。其中 20 组普通文字使用未舍入的 4.5:1，`accent-text` 的当前固定图标按非文本 3:1，另 1 组 TabsList 容器色对只作诊断；禁用态不并入普通文字结论。配合真实 Button 的 hover/focus/disabled、Input 的输入/invalid、Tabs 的选中/键盘状态，检查实际渲染。浅色 blue/slate 的 primary 配白字实测约 3.7617777:1，作为既有普通文字 AA 问题保留，不修改默认外观。Tabs 容器约 4.4648:1 不能直接当作真实 Tab 文字缺陷，需以 Trigger 实际绘制颜色为准。颜色诊断故事通过不等于全部颜色 AA 通过。colors 定向 5/5 通过，日志 `/tmp/memocard-foundations-colors-final.log`；初版 synthetic hover 未触发真实 `:hover`，改用 Vitest locator 的实际指针悬停。临时将该动作 no-op 的负向 Default 检查确实失败，恢复后原样通过，日志 `/tmp/memocard-foundations-colors-hover-negative.log`。
+- effects 增加深色图标/阴影/焦点和生产 Sheet，自动测试通过 Playwright 临时切换真实 `prefers-reduced-motion` 媒体偏好，比较常规与 reduce 的实际 computed 动画/过渡时长，验证关闭/Escape/焦点恢复，并恢复媒体偏好；不以更换类名或伪造 CSS 模拟系统设置。Canvas 遵循当前浏览器/系统偏好，故事名称本身不代表浏览器已进入 reduce。effects 定向 3/3 通过；临时将媒体模拟命令改为 no-op 的负向检查在实际 matchMedia 仍为 false 时失败，恢复配置后原样 3/3 通过，未改生产 CSS。日志为 `/tmp/memocard-foundations-motion-negative.log` 与 `/tmp/memocard-foundations-effects-restored.log`。
+- typography 共 4 个故事：保留默认 16px → 18px → 恢复；紧凑边界 14px / 1.6 / 60 / 1em、宽松边界 18px / 1.9 / 90 / 2em 来自生产 options，初始值与交互均经过既有 parseTypography / TypographyProvider。检查实际字号、行高、段落 margin、阅读宽度变量消费与真实文章尺寸，验证调宽确实增宽、调小段距确实缩小，以及恢复默认。长中文/英文段落、列表、长链接与代码使用生产 Typeset；真实 H5 390×844 下紧凑、宽松和恢复三种状态均断言页面/样本不发生水平溢出，长代码沿既有规则在自身横滚。
+- 排版定向 Chromium 4/4 已通过（3 个桌面、1 个 H5）；本机日志 `/tmp/memocard-foundations-typography-targeted-final.log`。初轮 Storybook 类型检查曾被并行动效 command 类型声明拦住，最终 `typecheck:storybook` 已通过，日志 `/tmp/memocard-foundations-typography-typecheck-final.log`；`pnpm verify` 已通过：UI 1058、native-core 126、MCP 16、network 8、local-Web 14，生产移动首页预算仍为 1,335,281 / 1,335,296 bytes raw。完整 `pnpm verify:design` 已通过：97/97（84 个桌面 1024×900、12 个 H5 390×844 故事及 1 项真实断点回归），包括类型、静态构建、维护表/token/icon 检查和真实 palette 回归，日志 `/tmp/memocard-foundations-verify-design.log`。未改 worker、超时或预算；远程 CI 以新 PR 最终 head 为准。可见 IAB 已检查排版紧凑 → 宽松 → 默认 16 / 1.6 / 90 / 1em，及 effects 深色生产 Sheet 打开、Escape 关闭与入口焦点恢复；手动窗口不代替自动视口断言。Storybook manager 的 H5 Canvas 曾因附加面板把可见高度压到 298px，初版高度断言失败；现仅在浏览器测试模式断言完整 844px 高度，manager 仍检查真实 390px 宽度和全部溢出边界。自动项目继续逐项验证真实完整视口，未修改视口配置或溢出断言。修正后真实 manager 重新运行的 Interactions 已显示 PASS，并手动切到 18 / 1.9 / 90 / 2em；H5 可见截图为本机 `build/verification/foundations-state-coverage/typography-h5-visible.png`。
+- 最终生产构建后，614 份 Web 源码/产物、iOS 源码/资源及 token 文件与实施前逐一 SHA256 一致，无新增/删除/修改，证据为本机 `build/verification/foundations-state-coverage/production-parity.json`；可见 colors blue/slate 的诊断、实际输入/Shift+Tab 焦点返回、方向键切到已固定也已完成，截图 `colors-state-visible.png`。这不代替远程 CI。未覆盖全部 palette/neutral 组合、全部字体字形/加载失败、所有组件/色对、整页 WCAG、旧浏览器或 iOS Preview/模拟器，本轮不重用前轮平台验收为新覆盖。
+
 ## 编辑器与原生页面外壳（2026-10-19）
 
 - 新增真实 Editor 的 5 个故事：标题/正文编辑与自动保存、保存失败/重试、保存中禁用、只读、H5 失败/重试；调用方通过现有 `EditorHandle.finish()` 返回真实 NoteCollection，再次打开通过 `getNote` 读回。断言同时检查输入保留、恢复草稿与已提交笔记分离、重试载荷一致、提交版本、回调和无重复写入。bridge 只接受指定内存笔记、binding、路径及当前版本，无真实笔记库 fallback。

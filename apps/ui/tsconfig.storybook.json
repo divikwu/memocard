@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.json",
-  "include": [".storybook", "stories", "vite.storybook.config.ts", "vitest.storybook.config.ts"]
+  "include": [".storybook", ".storybook/browser-commands.d.ts", "stories", "vite.storybook.config.ts", "vitest.storybook.config.ts"]
 }
