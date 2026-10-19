@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--device", default="auto", help="Existing iOS simulator UUID, or auto to discover an available iPhone")
 parser.add_argument("--output-dir", type=Path, help="New directory retaining evidence; omitted temporary builds are cleaned up")
 parser.add_argument("--source-dir", type=Path, default=root / "apps/apple/Sources", help="Production sources, or a retained baseline snapshot")
+parser.add_argument("--prepare-only", action="store_true", help="Check Simulator readiness without building or launching the probe")
 parser.add_argument("--baseline", action="store_true", help="Measure the former Host-wide publisher in a retained old source snapshot")
 args = parser.parse_args()
 
@@ -110,6 +111,10 @@ def phase(name, command, timeout, capture=False):
     finally:
         print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "finish", "outcome": outcome, "seconds": round(time.monotonic() - started, 3), "exitCode": process.returncode}), flush=True)
 
+def prepare_runtime():
+    phase("runtime-cache", ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", runtime], 600)
+    phase("bootstatus", ["xcrun", "simctl", "bootstatus", device, "-b"], 180)
+
 def run(directory):
     shutil.copytree(args.source_dir, directory / "Sources")
     shutil.copy(root / "apps/apple/Tests/NativeSurfaceSubscriptionHarness.swift", directory / "Harness.swift")
@@ -149,8 +154,7 @@ def run(directory):
     (schemes / "MemoCardiOS.xcscheme").write_text((original / "xcshareddata/xcschemes/MemoCardiOS.xcscheme").read_text())
     command = ["xcodebuild", "-project", str(project), "-scheme", "MemoCardiOS", "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={device}", "-derivedDataPath", str(directory / "build"), "CODE_SIGNING_ALLOWED=NO", "build"]
     phase("build", command, 600)
-    phase("runtime-cache", ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", runtime], 600)
-    phase("bootstatus", ["xcrun", "simctl", "bootstatus", device, "-b"], 180)
+    prepare_runtime()
     installed = False
     try:
         phase("install", ["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], 180)
@@ -185,7 +189,9 @@ try:
     if runtime is None:
         raise RuntimeError(f"Cannot resolve the runtime for Simulator {device}")
     print("SURFACE_PROBE_DEVICE " + json.dumps({"device": device, "runtime": runtime, "created": created_device}), flush=True)
-    if args.output_dir:
+    if args.prepare_only:
+        prepare_runtime()
+    elif args.output_dir:
         directory = args.output_dir.resolve()
         directory.mkdir(parents=True, exist_ok=False)
         run(directory)
