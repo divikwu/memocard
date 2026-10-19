@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId } from "react";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import { radiusValues, sidebarTokens } from "../src/generated/design-tokens";
+import { radiusValues, sidebarTokens, spacingValues } from "../src/generated/design-tokens";
 import { useTheme } from "../src/features/theme/ThemeProvider";
 import { readIOSPalette } from "../src/lib/ios-palette";
 import { Button } from "../src/components/ui/button";
@@ -13,6 +13,7 @@ function Foundations() {
     <section className="space-y-3"><h2 className="text-balance text-lg font-semibold">语义颜色</h2><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {["background", "foreground", "muted", "muted-foreground", "accent", "border", "sidebar", "sidebar-accent"].map(name => <div key={name} className="overflow-hidden rounded-lg border"><div className="h-16" style={{ backgroundColor: `var(--${name})` }} /><p className="border-t p-2 text-xs">{name}</p></div>)}
     </div></section>
+    <section className="space-y-3"><h2 className="text-balance text-lg font-semibold">间距基准</h2><p className="text-sm text-muted-foreground">这是已有基准；实际接入和仅展示的值见 design/token-consumption.md。基准不会替换系统控件内部尺寸。</p><div className="space-y-2">{Object.entries(spacingValues).map(([name, value]) => <div key={name} className="flex items-center gap-4 text-sm"><code className="w-24 shrink-0">{name} · {value}px</code><span className="block h-4 bg-primary" style={{ width: value }} /></div>)}</div></section>
     <section className="space-y-3"><h2 className="text-balance text-lg font-semibold">圆角选项</h2><div className="flex flex-wrap gap-3">{Object.entries(radiusValues).map(([name, value]) => <div key={name} className="flex size-20 flex-col items-center justify-center border bg-muted text-xs" style={{ borderRadius: value }}><span>{name}</span><span className="tabular-nums">{value}px / pt</span></div>)}</div></section>
     <section className="space-y-3"><h2 className="text-balance text-lg font-semibold">侧栏平台映射</h2><pre className="overflow-x-auto rounded-lg border bg-muted p-4 text-xs leading-relaxed tabular-nums">{JSON.stringify(sidebarTokens, null, 2)}</pre></section>
   </main>;

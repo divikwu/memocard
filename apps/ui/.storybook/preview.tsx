@@ -1,4 +1,5 @@
 import type { Preview } from "@storybook/react-vite";
+import { ArgTypes, Description, Primary, Stories, Subtitle, Title, useOf, type StoryProps } from "@storybook/addon-docs/blocks";
 import { ThemeProvider } from "../src/features/theme/ThemeProvider";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE } from "../src/features/theme/preferences";
 import { desktopGlobals, viewportOptions } from "./viewports";
@@ -16,6 +17,29 @@ function memoryStorage(): Storage {
   };
 }
 
+// Storybook 10.6.2 ignores docs.story.autoplay for iframe stories.
+// Its supported embed mode suppresses play while retaining document isolation.
+function DocsStoryPreview({ of, height, __primary }: StoryProps) {
+  const { story } = useOf(of ?? "story", ["story"]);
+  if (story.parameters.docs?.disable) return null;
+  const source = new URL("iframe.html", window.location.href);
+  source.searchParams.set("id", story.id);
+  source.searchParams.set("viewMode", "story");
+  source.searchParams.set("embed", "true");
+  return <div id={`story--${story.id}${__primary ? "--primary" : ""}`} className="sb-story sb-unstyled" data-story-block="true">
+    <iframe id={`iframe--${story.id}`} title={story.name} src={source.href} loading="lazy" allowFullScreen
+      style={{ width: "100%", height: height ?? story.parameters.docs?.story?.height ?? "320px", border: 0 }} />
+  </div>;
+}
+
+function StaticDocsPage() {
+  return <>
+    <Title /><Subtitle /><Description />
+    <p>Docs 用于静态对照；切换 Canvas，在 Controls 中调整参数并运行交互。</p>
+    <Primary /><ArgTypes /><Stories />
+  </>;
+}
+
 const preview: Preview = {
   tags: ["autodocs"],
   globalTypes: {
@@ -27,10 +51,10 @@ const preview: Preview = {
   parameters: {
     layout: "fullscreen",
     // ThemeProvider owns document-level styles; Docs stories need separate documents too.
-    docs: { story: { inline: false, height: "320px" } },
+    docs: { page: StaticDocsPage, story: { inline: false, height: "320px", autoplay: false }, components: { Story: DocsStoryPreview } },
     controls: { expanded: true },
     viewport: { options: viewportOptions },
-    options: { storySort: { order: ["foundations", "sidebar"] } },
+    options: { storySort: { order: ["foundations", "components", "sidebar"] } },
   },
   beforeEach: () => {
     // Each story gets temporary storage. No real preferences are read or written,

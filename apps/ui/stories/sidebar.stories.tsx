@@ -22,6 +22,8 @@ const meta = {
   render: SidebarExample,
   globals: desktopGlobals,
   args: sidebarArgs(),
+  // Interactive fixtures start after the production lazy module is available.
+  beforeEach: async () => { await import("../src/components/tag-navigation"); },
   parameters: { docs: { story: { height: "900px" }, description: { component: "Base UI 真实侧栏。iOS 原生侧栏对应 Xcode NativeSidebar Preview；这里展示桌面 Web 和 H5 的平台实现。" } } },
 } satisfies Meta<typeof AppSidebar>;
 export default meta;
@@ -41,7 +43,20 @@ export const Desktop: Story = {
     await expect(args.onNavigate).toHaveBeenLastCalledWith("notes", null, "images");
     await userEvent.click(canvas.getByRole("button", { name: "所有笔记" }));
     await expect(args.onNavigate).toHaveBeenLastCalledWith("notes", null);
-    const nested = await canvas.findByRole("button", { name: "体验/使用指南/快捷操作" });
+    let nested: HTMLElement;
+    try {
+      nested = await canvas.findByRole("button", { name: "体验/使用指南/快捷操作" });
+    } catch (error) {
+      const navigation = canvasElement.querySelector('nav[aria-label="标签"]');
+      console.error("Sidebar Desktop fixture diagnostics", {
+        loadingTags: Boolean(canvas.queryByRole("status", { name: "正在读取标签" })),
+        tagNavigation: Boolean(navigation),
+        sidebarState: canvasElement.querySelector('[data-slot="sidebar"]')?.getAttribute("data-state"),
+        toggles: [...canvasElement.querySelectorAll('button[aria-expanded]')].map(button => ({ label: button.getAttribute("aria-label") || button.textContent, expanded: button.getAttribute("aria-expanded") })),
+        tagDOM: navigation?.outerHTML ?? canvasElement.querySelector('[data-sidebar="content"]')?.outerHTML,
+      });
+      throw error;
+    }
     await userEvent.click(nested);
     await expect(args.onNavigate).toHaveBeenLastCalledWith("notes", "体验/使用指南/快捷操作");
     await userEvent.click(canvas.getByRole("button", { name: "展开或收起标签 体验/使用指南" }));

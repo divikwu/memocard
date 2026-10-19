@@ -60,3 +60,17 @@ token 无变化的重复构建保留四份生成物时间戳，新增 mtime 回�
 - 补验生产 `NativeDesignedPanel` 与真实 `UITextField` 的 3 个输入场景：未变化的 Return/失焦事件不再创建覆盖值；真实 pending B 在无关更新和旧回包下保留，确认 B 后能接受 C。冻结未修正优化版在数据已到 UIKit 后仍显示 A，同一 harness 修正后通过；事件发送保留，未引入新输入协议。最终指纹与复跑结果附于 `sidebar-subscriptions.json` 的 `finalValidation`。
 - 同一 iPhone 18 Pro / iOS 27.0、同一 QA 库，旧/新 Release XCTest 各 5/5 通过、无跳过，包含开合、边缘手势、展开/行操作分离和滚动前置条件。启动/滚动接近，旧开合基线波动较大；不声称真机、功耗或整体 App 提速。结果位于本机 `build/verification/sidebar-performance/{ui-baseline,ui-current}.xcresult`，便携测量记录已提交在 `design/performance/`。
 - `verify:design`（20 项 Chromium 检查）、类型、lint 和生产构建通过；既有编辑器 Hook 警告保留。全部 bundle 预算未增加，最紧移动 route 仍为 1,335,202 / 1,335,296 bytes raw，CSS hash 不变。iOS 控件、布局、手势、资源和动作协议未替换；本次只调整数据索引和订阅来源。完整远程结果以 PR #48 最新 head 为准。
+
+
+## 组件维护与 Foundations 扩展（2026-10-19）
+
+- 新增 [已使用组件维护表](component-inventory.md)：76 个从 Web 生产入口可达的 TSX 模块，加 7 个原生维护家族，共 83 条。自动门禁校验 Web 模块遗漏、失效/重复记录、必填说明和链接；Swift 家族仍需人工登记。模块可达不代表每个导出组件都已渲染，也不代表所有状态都有独立故事。
+- 新增 [token 消费映射](token-consumption.md)：逐一登记全部 27 个可移植 token 的 Web / Swift 消费或不适用原因，并标注别名和仅作基准展示的值；另列动态颜色、字体/排版、图标、阴影/焦点及系统职责。9 个保留的 CSS 颜色角色明确标为尚无生产消费者。校验检查声明与源路径，不冒充运行时消费分析。两组门禁的 10 项正反例测试通过，已接入现有 design / release 验证。
+- Foundations 新增颜色、排版、效果三组：真实 CSS 语义色与标签色、实际 TypographyProvider / Typeset 样本、同源 Lucide SVG、现有阴影和键盘焦点；原 tokens 页面补充 spacing 基准。高频基础组件补齐 Button、Input、Textarea、Select、Switch、Tabs、Dialog、Dropdown Menu、Popover、Tooltip、Sheet 共 11 类 / 30 个新故事，使用生产包装，覆盖适用的编辑/禁用/只读/无效、键盘激活、关闭与焦点恢复。未新增底部 Sheet 滑动验收或替换原生控件。
+- Storybook 总计 53 个故事（51 桌面、2 H5）及 1 项真实断点回归，共 54 项 Chromium 检查全部通过。新增 Select / Switch / Tabs 的依赖预优化，避免转译后的虚拟故事晚发现依赖而刷新测试页。第一次完整冷启动中既有侧栏三级标签查找曾超时；错误 DOM 截断，未证明具体原因。现有 fixture 在 beforeEach 等待真实标签模块就绪，保留原始超时/断言并增加失败诊断；随后无生成缓存的完整冷启动 54/54 通过，没有用重试或延长等待掩盖失败。
+- 可见复核发现新效果故事的 SVG data URL 未加引号，CSS mask 被浏览器丢弃而显示黑块；已修复引用，并增加每个 mask 的 computed style、资源解码及 intrinsic size 断言。实际页面确认 10 个 Lucide 图形正确显示。该问题仅存在于本轮新故事，生产资源未改。最终设计验证另行完整重跑，通过 54/54、类型、静态构建、token/icon 与 palette 检查。
+- 可见 Autodocs 原先会并发运行隔离 iframe 的 play，导致焦点争抢。10.6.2 的 iframe 分支忽略 docs.story.autoplay，现使用公开 Story block 覆盖与 Core embed 模式静态展示，Docs 改为只读 ArgTypes；实际手动 Sheet 打开、Escape、焦点返回正常，480px / 844px 高度保留。Canvas Controls 与测试 play 保持；可见操作将右侧 Sheet 的 side 改为 bottom 后确认实际底部布局，再恢复默认值。新 Select 故事曾在首个方向键后仍聚焦初始选项，未取得完整内部时序；现先等待初始选项真正获焦再操作，保留原等待预算与全部断言。
+- 本机 `pnpm verify` 通过：1053 项 UI、126 项 native-core 及 network/local-Web/MCP 回归，类型、lint、生产构建、Base UI 与全部资源预算通过。既有编辑器 Hook 警告和大 chunk 提示保留。最紧移动 route 仍为 1,335,202 / 1,335,296 bytes raw，未提高预算。
+- 本轮前后 `apps/ui/src` 全部 231 份文件和生产 `apps/ui/dist` 全部 164 份文件逐一 SHA256 相同；Swift、token 值、原生资源与动作协议没有改动。此证据说明本轮没有引入生产产物变化；没有把上一轮 Xcode Preview / iPhone / iPad 验收计作本轮重新运行。
+- 本机可见复核确认颜色目录加载、排版按钮使真实正文从 16px 变为 18px 后恢复、Dialog 打开 / Escape / 焦点返回，以及 H5 Sheet 的 390px 宽度；可见窗口会裁剪 Canvas 高度，不以工具栏数字替代真实视口断言。修复后的图标、阴影和焦点截图为 `build/verification/design-maintenance/storybook-foundations-effects.png`。本机辅助日志位于 `/tmp/memocard-design-maintenance-*`；它们未提交，跨机器应重跑命令。
+- 未覆盖所有业务组件的独立故事；缺口逐项保留在维护表。iOS 搜索/快速记录独立 Preview、旧 OS / 真机、完整视觉快照及全组件无障碍审计没有在本轮完成。远程 CI 以 PR #48 最新 head 为准。

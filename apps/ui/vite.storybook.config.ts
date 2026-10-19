@@ -10,6 +10,8 @@ const mock = path.join(root, ".storybook/bridge.ts");
 // Deliberately independent of the App's native-content-policy build plugin.
 export default defineConfig({
   resolve: { alias: { "@": path.join(root, "src") } },
+  // Story transforms discover these controls late; prebundle before browser tests.
+  optimizeDeps: { include: ["@base-ui/react/select", "@base-ui/react/switch", "@base-ui/react/tabs"] },
   plugins: [{
     name: "isolated-storybook-data",
     enforce: "pre",
