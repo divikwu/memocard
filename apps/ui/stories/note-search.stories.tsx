@@ -152,12 +152,37 @@ export const MobilePreservedSession: Story = {
     await search.findByRole("option", { name: "项目计划" });
     await userEvent.type(input, "计划");
     await search.findByRole("listbox", { name: "搜索结果" });
+    await waitFor(() => expect(fixture.calls.at(-1)?.params).toEqual({ query: "计划", tags: [], sort: "updatedAt", limit: 30 }));
     await waitFor(() => expect(search.getByRole("listbox")).toHaveAttribute("aria-busy", "false"));
     await userEvent.click(search.getByRole("button", { name: "加载更多结果" }));
     await search.findByRole("option", { name: "计划复盘" });
     await userEvent.click(input);
-    await userEvent.keyboard("{ArrowDown}{Enter}");
-    await expect(args.onOpenNote).toHaveBeenCalledOnce();
+    const selected = search.getByRole("option", { name: "计划清单" });
+    try {
+      await waitFor(() => {
+        expect(input).toHaveFocus();
+        expect(search.getByRole("listbox")).toHaveAttribute("aria-busy", "false");
+        expect(search.getAllByRole("option")).toHaveLength(3);
+      });
+      await userEvent.keyboard("{ArrowDown}");
+      await waitFor(() => {
+        expect(selected).toHaveAttribute("aria-selected", "true");
+        expect(input).toHaveAttribute("aria-activedescendant", selected.id);
+        expect(input).toHaveFocus();
+      });
+      await userEvent.keyboard("{Enter}");
+      await expect(args.onOpenNote).toHaveBeenCalledOnce();
+    } catch (cause) {
+      const active = canvasElement.ownerDocument.activeElement;
+      console.error("Search session keyboard state", JSON.stringify({
+        focus: { tag: active?.tagName, label: active?.getAttribute("aria-label") },
+        input: { connected: input.isConnected, value: (input as HTMLInputElement).value, activeDescendant: input.getAttribute("aria-activedescendant") },
+        busy: search.queryByRole("listbox")?.getAttribute("aria-busy"),
+        options: search.queryAllByRole("option").map(option => ({ name: option.getAttribute("aria-label"), selected: option.getAttribute("aria-selected") })),
+        calls: fixture.calls,
+      }));
+      throw cause;
+    }
     await expect(args.onOpenNote).toHaveBeenCalledWith("search-checklist");
     await waitFor(() => expect(body.queryByRole("dialog", { name: "搜索笔记" })).not.toBeInTheDocument());
     const requests = fixture.calls.length;

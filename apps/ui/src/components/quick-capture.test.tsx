@@ -77,6 +77,30 @@ it('blocks duplicate submissions and supports the shortcut',async()=>{
   await waitFor(()=>expect(props.onRecorded).toHaveBeenCalledOnce());
 });
 
+it('restores desktop focus after the saved input is enabled, even when a frame precedes the DOM commit',async()=>{
+  const frames:FrameRequestCallback[]=[];
+  vi.stubGlobal('requestAnimationFrame',(callback:FrameRequestCallback)=>{frames.push(callback);return frames.length;});
+  let finish!:()=>void, delivered!:()=>void;
+  const recorded=new Promise<void>(resolve=>{delivered=resolve;});
+  const onRecorded=vi.fn(()=>delivered());
+  bridge.request.mockImplementation((operation,params)=>operation === 'saveNote' ? new Promise(resolve=>{finish=()=>resolve(note(params));}) : Promise.reject(new Error(`Unexpected operation: ${operation}`)));
+  const user=userEvent.setup();render(<QuickCapture {...props} onRecorded={onRecorded} />);
+  const input=screen.getByRole('textbox',{name:'快速输入内容'}) as HTMLTextAreaElement;
+  await user.type(input,'保存后继续输入');
+  await user.click(screen.getByRole('button',{name:'记录'}));
+  expect(input.disabled).toBe(true);
+  await act(async()=>{
+    finish();await recorded;
+    // A browser frame can run before React commits the pending busy=false update.
+    expect(input.disabled).toBe(true);
+    frames.splice(0).forEach(callback=>callback(performance.now()));
+  });
+  expect(onRecorded).toHaveBeenCalledOnce();
+  expect(input.disabled).toBe(false);
+  expect(input.value).toBe('');
+  expect(document.activeElement).toBe(input);
+});
+
 it('opens retained drafts without submitting or clearing the current capture',async()=>{
   const user=userEvent.setup();const onOpenDrafts=vi.fn();
   render(<QuickCapture {...props} draftCount={2} onOpenDrafts={onOpenDrafts} />);

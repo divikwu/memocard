@@ -422,8 +422,10 @@ enum NativeSurfaceSubscriptionProbe {
             controller.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             root.view.addSubview(controller.view); controller.didMove(toParent: root)
             defer {
+                print("NATIVE_SURFACE_PROBE_STAGE preview-ui-cleanup-start kind=\(kind.rawValue)")
                 controller.view.endEditing(true); controller.willMove(toParent: nil)
                 controller.view.removeFromSuperview(); controller.removeFromParent(); model.dispose()
+                print("NATIVE_SURFACE_PROBE_STAGE preview-ui-cleanup-complete kind=\(kind.rawValue)")
             }
             if kind == .search {
                 var field: UITextField?
@@ -476,6 +478,7 @@ enum NativeSurfaceSubscriptionProbe {
                     controller.view.layoutIfNeeded(); editor = textView(in: controller.view)
                     return editor?.isFirstResponder == true && editor?.text.isEmpty == true
                 }), let editor, let delegate = editor.delegate else { return nil }
+                print("NATIVE_SURFACE_PROBE_STAGE capture-editor-ready")
                 var expected = ""
                 for character in "preview" {
                     expected.append(character)
@@ -496,34 +499,48 @@ enum NativeSurfaceSubscriptionProbe {
                     keystrokes += 1
                     print("NATIVE_PREVIEW_KEY_INPUT_PASSED text=\(expected) selection=\(editor.selectedRange.location)")
                 }
+                print("NATIVE_SURFACE_PROBE_STAGE capture-setter-start")
                 editor.text = "中文记录"; delegate.textViewDidChange?(editor)
+                print("NATIVE_SURFACE_PROBE_STAGE capture-setter-sent")
                 guard await waitForUI("preview capture setter acknowledgement", until: {
                     model.surface.sections?.first?.fields?.first?.value == "中文记录" && model.surface.primary?.disabled == false
                 }) else { return nil }
+                print("NATIVE_SURFACE_PROBE_STAGE capture-setter-acknowledged")
                 model.host.nativeAction(model.surface, "tag-query", value: "预览标签")
+                print("NATIVE_SURFACE_PROBE_STAGE capture-tag-query-sent")
                 model.host.nativeAction(model.surface, "new-tag")
+                print("NATIVE_SURFACE_PROBE_STAGE capture-new-tag-sent")
                 model.host.nativeAction(model.surface, "image")
+                print("NATIVE_SURFACE_PROBE_STAGE capture-image-sent")
                 precondition(model.surface.sections?.first(where: { $0.id == "selected-tags" })?.actions?.first?.title == "预览标签")
                 precondition(model.surface.sections?.first(where: { $0.id == "images" })?.actions?.count == 2)
                 model.failNextSave = true
                 model.host.nativeAction(model.surface, "record")
+                print("NATIVE_SURFACE_PROBE_STAGE capture-failed-save-start")
                 model.host.nativeAction(model.surface, "close")
                 precondition(model.surface.presented == true && model.surface.busy == true)
                 await model.pendingWork?.value
+                print("NATIVE_SURFACE_PROBE_STAGE capture-failed-save-complete")
                 guard await waitForUI("preview failed save preserves capture and enables actual editor", until: {
                     model.surface.error != nil && editor.text == "中文记录" && editor.isEditable
                 }) else { return nil }
+                print("NATIVE_SURFACE_PROBE_STAGE capture-failed-save-preserved")
                 let oldReset = model.surface.resetKey
                 model.host.nativeAction(model.surface, "record")
+                print("NATIVE_SURFACE_PROBE_STAGE capture-retry-save-start")
                 await model.pendingWork?.value
+                print("NATIVE_SURFACE_PROBE_STAGE capture-retry-save-complete")
                 guard await waitForUI("preview successful save closes actual overlay", until: {
                     model.surface.presented == false && textView(in: controller.view) == nil && model.feedback == "记录成功（仅预览）"
                 }) else { return nil }
+                print("NATIVE_SURFACE_PROBE_STAGE capture-retry-save-closed")
                 precondition(model.surface.resetKey != oldReset)
                 model.reopen()
+                print("NATIVE_SURFACE_PROBE_STAGE capture-reopen-sent")
                 guard await waitForUI("preview success resets actual editor", until: {
                     textView(in: controller.view)?.text.isEmpty == true && model.surface.primary?.disabled == true
                 }) else { return nil }
+                print("NATIVE_SURFACE_PROBE_STAGE capture-reopen-empty")
             }
             print("NATIVE_SURFACE_PROBE_STAGE preview-ui-complete kind=\(kind.rawValue)")
         }

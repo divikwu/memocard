@@ -22,6 +22,8 @@ Web / H5 使用生产 `NoteSearchDialog` 与 `QuickCapture`；iOS 继续使用 `
 
 搜索场景包括 Recent / Results / Loading / Empty / ErrorRetry / Pagination；记录包括 Default / Populated / Busy / ErrorRetry / DraftRestored / Attachments。场景名只用于开发，不要求 Web 与 iOS 共享状态引擎或完全相同的控件树。原生保存失败保留原有“记录”按钮用于再次提交，不新增产品重试动作。
 
+Web 非抽屉记录成功后，通过一次性标志在新 capture / busy 状态完成 DOM 提交后恢复输入焦点。浏览器帧可能早于 React 解除 disabled；组件回归固定覆盖这个顺序，原 Story 的保存后焦点断言保持。
+
 ## 验收
 
 `pnpm verify:design` 检查故事真实视口、类型、构建、交互以及 token / icon / palette 漂移；`pnpm verify` 检查生产回归与资源预算。`pnpm test:native-surfaces` 使用真实 Host / 生产控件，检查订阅、输入 ACK 与预览反馈边界。命令通过和可见验收分别记录在 [validation.md](../validation.md)。

@@ -58,6 +58,23 @@ def diagnostic(kind, command, timeout):
         print(f"[diagnostic truncated to {section} 20000 characters]", flush=True)
     print(output[:20000] if section == "first" else output[-20000:], flush=True)
 
+def incomplete_probe_diagnostics(launch_started):
+    diagnostic("app-lifecycle-log", ["xcrun", "simctl", "spawn", device, "log", "show", "--last", "2m", "--style", "compact", "--predicate", 'process == "MemoCard" OR eventMessage CONTAINS "dev.divikwu.memocard.surface-probe"'], 10)
+    try:
+        reports = Path.home() / "Library/Logs/DiagnosticReports"
+        candidates = [path for pattern in ("MemoCard*.ips", "MemoCard*.crash") for path in reports.glob(pattern) if path.stat().st_mtime >= launch_started]
+        candidates.sort(key=lambda path: path.stat().st_mtime, reverse=True)
+        print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "app-crash-reports", "count": len(candidates), "shown": min(2, len(candidates))}), flush=True)
+        for path in candidates[:2]:
+            with path.open(errors="replace") as report:
+                output = report.read(20001)
+            print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "app-crash-report", "file": path.name, "section": "first", "truncated": len(output) > 20000}), flush=True)
+            if len(output) > 20000:
+                print("[diagnostic truncated to first 20000 characters]", flush=True)
+            print(output[:20000], flush=True)
+    except Exception as error:
+        print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "app-crash-reports", "error": str(error)}), flush=True)
+
 def phase(name, command, timeout, capture=False):
     started = time.monotonic()
     print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "start", "device": device, "timeoutSeconds": timeout}), flush=True)
@@ -138,11 +155,13 @@ def run(directory):
     try:
         phase("install", ["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], 180)
         installed = True
+        launch_started = time.time()
         launch = phase("launch", ["xcrun", "simctl", "launch", "--console", device, "dev.divikwu.memocard.surface-probe"], 60, capture=True)
         print(launch)
         marker = "SURFACE_SUBSCRIPTION_RESULT "
         result = next((json.loads(line.removeprefix(marker)) for line in launch.splitlines() if line.startswith(marker)), None)
         if result is None:
+            incomplete_probe_diagnostics(launch_started)
             raise RuntimeError("Surface probe exited without completing its assertions")
         (directory / "result.json").write_text(json.dumps(result, indent=2) + "\n")
         if args.output_dir:

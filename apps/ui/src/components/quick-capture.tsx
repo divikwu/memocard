@@ -58,6 +58,13 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   const [error, setError] = useState('');
   const [tagQuery, setTagQuery] = useState('');
   const textarea = useRef<HTMLTextAreaElement>(null);
+  const focusAfterRecord = useRef(false);
+  useEffect(()=>{
+    if (!busy && focusAfterRecord.current) {
+      focusAfterRecord.current=false;
+      if (!docked) textarea.current?.focus();
+    }
+  },[busy,capture.id,docked]);
   const working = useRef(false);
   const continuing = useRef(false);
   const mounted = useRef(true);
@@ -108,7 +115,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
       if (isMobile) setRecordedLocally(true);
       recorded.current(saved);
       if (docked) { if(cleaned)setExpanded(false); }
-      else requestAnimationFrame(()=>textarea.current?.focus());
+      else focusAfterRecord.current=true;
     } catch(cause) {if(mounted.current)setError(errorMessage(cause));}
     finally {working.current=false; if(mounted.current)setBusy(false);}
   }
