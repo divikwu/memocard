@@ -2,6 +2,12 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Button 文档章节间距（2026-10-20）
+
+- 仅调整 Button Docs 的局部 CSS：列表下边距改为 16px，与现有 Tabs 8px gap 合成到 Panel 的 24px；直接章节标题统一上 32px / 下 16px，覆盖 Storybook 对首个 `h2` 的顶部清零规则。相邻 `h2` / `h3` 保留 16px 层级间距；Panel 首元素不叠加默认顶部 margin。上述均为默认根字号下的 CSS 规则值，不是重新量测的渲染像素。
+- 保留生产 Tabs `line` 的外观与焦点、Properties `keepMounted`、隐藏规则、代码面板、iframe 和 Markdown 内部排版。Button 7 项 + Tabs 3 项既有交互共 10/10、Storybook 静态构建与 diff 空白检查通过，独立静态复核通过。此轮仅改 CSS，未重跑类型检查、完整 101 项或原生验收。
+- 浏览器页面观察仍受此前安全策略限制，本轮未进行调整后的实际可见/布局复核，未绕过限制。日志为 `/tmp/memocard-button-docs-rhythm-{tests,build}.log`；远程 CI 以 PR #52 最新 head 为准。
+
 ## Button 文档复用 Tabs（2026-10-20）
 
 - Button Docs 改为导入项目已有的 `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent`，在 `TabsList` 使用 `variant="line"`。删除文档重复的页签外观、选中态、焦点与响应式间距样式，仅保留列表外边距和隐藏 Panel 规则；其他表单、表格滚动区和代码面板的焦点样式保持。

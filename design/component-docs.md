@@ -15,7 +15,9 @@
 
 ## Button 分页试点
 
-页签复用项目的 `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent`，使用 `TabsList variant="line"`。选中态、下划线及焦点样式由现有组件维护，文档仅设置列表外边距。
+页签复用项目的 `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent`，使用 `TabsList variant="line"`。选中态、下划线及焦点样式由现有组件维护，文档只维护列表外边距与章节间距。
+
+按默认 16px 根字号，列表下边距 16px 与 Tabs 的 8px gap 合成到内容面板的 24px；面板首元素不叠加顶部 margin。直接章节标题使用上 32px、下 16px，紧邻章节标题的子标题取消额外上边距，保留 16px 层级间距。Markdown 内部段落/列表、预览框内部及 iframe 布局保持原规则。
 
 - **Overview**：六种现有变体总览 → 用法 → 组成 → 使用建议 → 示例。示例展示八种现有尺寸、图文按钮、禁用状态和通过 `render` 组合的真实链接。独立按钮预览居中，代码默认收起；每个故事在对应区域展示一次，不新增按钮 API。
 - **Properties**：同一个隔离 iframe 内放置真实生产 Button 和一组参数行。每行列出名称、类型、默认值、说明与可操作控件；`onClick` / `render` 只读。CSF 与参数行共同消费 `apps/ui/stories/button-docs.data.ts`，避免另列重复的 API 表。该故事单独使用 `fullscreen`，预览框和参数表左右与外层说明对齐；组件保留上下 16px、预览框内部及表格单元格留白。点击计数仅用于观察示例回调，图标与文字编辑限制明确标为预览策略。
