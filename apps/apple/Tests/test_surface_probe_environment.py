@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
@@ -15,6 +16,45 @@ spec.loader.exec_module(probe)
 
 
 class EnvironmentTests(unittest.TestCase):
+    def test_single_boot_spans_build_install_assertions_and_cleanup(self):
+        # Exercise the orchestration, without invoking Xcode or a real simulator.
+        for failed_phase in (None, "bootstatus", "build", "install"):
+            with self.subTest(failed_phase=failed_phase), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                sources = root / "input"
+                sources.mkdir()
+                (sources / "App.swift").write_text("// fixture")
+                tests = root / "apps/apple/Tests"
+                tests.mkdir(parents=True)
+                (tests / "NativeSurfaceSubscriptionHarness.swift").write_text("// harness")
+                schemes = root / "apps/apple/MemoCard.xcodeproj/xcshareddata/xcschemes"
+                schemes.mkdir(parents=True)
+                (schemes / "MemoCardiOS.xcscheme").write_text("<Scheme/>")
+                output = root / "output"
+                output.mkdir()
+                calls = []
+
+                def command(name, *args, **kwargs):
+                    calls.append(name)
+                    if name == failed_phase:
+                        raise RuntimeError(name)
+                    return '{"objects": {}}' if name == "project-read" else ""
+
+                def launch(directory):
+                    calls.append("assertions")
+                    return 'SURFACE_SUBSCRIPTION_RESULT {"passed": true}\n'
+
+                with patch.object(probe, "root", root), patch.object(probe, "args", SimpleNamespace(source_dir=sources, baseline=False, output_dir=output)), patch.object(probe, "device", "device"), patch.object(probe, "runtime", "runtime", create=True), patch.object(probe, "phase", side_effect=command), patch.object(probe, "launch_probe", side_effect=launch):
+                    if failed_phase:
+                        with self.assertRaisesRegex(RuntimeError, failed_phase):
+                            probe.run(output)
+                        expected = ["project-read", "runtime-cache", "bootstatus", "build", "install"]
+                        self.assertEqual(calls, expected[:expected.index(failed_phase) + 1])
+                    else:
+                        probe.run(output)
+                        self.assertEqual(calls, ["project-read", "runtime-cache", "bootstatus", "build", "install", "assertions", "uninstall"])
+                        self.assertEqual(json.loads((output / "result.json").read_text()), {"passed": True})
+
     def test_discovery_creation_inventory_and_project_read_have_deadlines(self):
         runtimes = {"runtimes": [{"isAvailable": True, "identifier": "com.apple.iOS-27", "version": "27.0", "supportedDeviceTypes": [{"productFamily": "iPhone", "identifier": "phone"}]}]}
         inventory = {"devices": {"com.apple.iOS-27": [{"udid": "created-device", "dataPath": "/tmp/device"}]}}

@@ -6,7 +6,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
-    "test:ci": "node --test scripts/ci-scope.test.mjs",
+    "test:ci": "node --test scripts/ci-scope.test.mjs scripts/verified-web.test.mjs",
     "test:apple-build": "node --test scripts/apple-build.test.mjs",
     "test:native": "swift test --package-path packages/native-core",
     "test:sidebar-native": "node --test apps/apple/Tests/sidebar-tag-index.test.mjs",
@@ -34,7 +34,9 @@
     "palette:check": "node scripts/generate-sidebar-preview-palette.mjs --check",
     "test:palette": "node --test scripts/sidebar-preview-palette.test.mjs",
     "verify:design": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm icons:check && pnpm test:icons && pnpm --filter @memocard/ui typecheck:storybook && pnpm --filter @memocard/ui exec eslint .storybook stories && pnpm --filter @memocard/ui exec vitest run .storybook/ stories/ --maxWorkers=4 && pnpm --filter @memocard/ui build:storybook && pnpm --filter @memocard/ui test:storybook && pnpm test:palette",
-    "verify": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm check:ui-primitives && pnpm test:ci && pnpm test:apple-build && pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build && pnpm check:bundle",
+    "verify:web": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm check:ui-primitives && pnpm test:ci && pnpm test:apple-build && pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm check:bundle",
+    "verify:native": "pnpm test:native && pnpm test:native-network && pnpm test:local-web",
+    "verify": "pnpm verify:web && pnpm verify:native",
     "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm test:sidebar-native && pnpm test:native-surfaces && export MEMOCARD_USE_PREBUILT_UI=1 && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app"
   },
   "devDependencies": { "style-dictionary": "5.7.0" }

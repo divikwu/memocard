@@ -241,8 +241,10 @@ def run(directory):
     schemes.mkdir(parents=True)
     (schemes / "MemoCardiOS.xcscheme").write_text((original / "xcshareddata/xcschemes/MemoCardiOS.xcscheme").read_text())
     command = ["xcodebuild", "-project", str(project), "-scheme", "MemoCardiOS", "-configuration", "Debug", "-destination", f"platform=iOS Simulator,id={device}", "-derivedDataPath", str(directory / "build"), "CODE_SIGNING_ALLOWED=NO", "build"]
-    phase("build", command, 600)
+    # One readiness check and boot per probe; keep this device running through
+    # compilation, installation and assertions instead of a separate preflight.
     prepare_runtime()
+    phase("build", command, 600)
     installed = False
     try:
         phase("install", ["xcrun", "simctl", "install", device, str(directory / "build/Build/Products/Debug-iphonesimulator/MemoCard.app")], 180)

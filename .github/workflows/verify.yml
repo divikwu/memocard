@@ -24,7 +24,7 @@ jobs:
           node-version: 24
       - name: Test CI routing and environment controller
         run: |
-          node --test scripts/ci-scope.test.mjs
+          node --test scripts/ci-scope.test.mjs scripts/verified-web.test.mjs
           python3 -m unittest discover -s apps/apple/Tests -p 'test_surface_probe_*.py' -b
       - name: Classify complete change range
         id: scope
@@ -44,6 +44,65 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium
       - run: pnpm verify:design
+  release-web:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.34.1
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod
+      - run: pnpm verify:web
+      - name: Bind Web resources to this revision
+        run: node scripts/verified-web.mjs create apps/ui/dist build/verified-web
+      - uses: actions/upload-artifact@v7
+        with:
+          name: verified-web-${{ github.sha }}-${{ github.run_id }}
+          overwrite: true
+          path: build/verified-web/
+          include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
+  native-surfaces:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - run: xcodebuild -version
+      - name: Verify generated Xcode project
+        run: |
+          python3 scripts/generate-project.py
+          git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj
+      - name: Test native surfaces in Simulator
+        run: |
+          mkdir -p build/verification
+          python3 -u apps/apple/Tests/run-surface-subscriptions.py --device auto --output-dir build/verification/native-surfaces 2>&1 | tee build/verification/native-surfaces.log
+      - name: Retain native environment and assertion evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-surface-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            build/verification/*.log
+            build/verification/native-surfaces/*.log
+            build/verification/native-surfaces/*.json
   release-native:
     needs: changes
     if: needs.changes.outputs.full == 'true'
@@ -57,10 +116,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: xcodebuild -version
-      - name: Check Simulator readiness
-        run: |
-          mkdir -p build/verification
-          python3 -u apps/apple/Tests/run-surface-subscriptions.py --device auto --prepare-only 2>&1 | tee build/verification/simulator-preflight.log
       - uses: pnpm/action-setup@v6
         with:
           version: 10.34.1
@@ -69,47 +124,55 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit --prod
-      - name: Verify generated Xcode project
-        run: |
-          python3 scripts/generate-project.py
-          git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj
-      - name: Verify Web, contracts and native core
-        run: pnpm verify
+      - name: Verify native core and bridge contracts
+        run: pnpm verify:native
       - name: Test local service
         run: pnpm test:service
       - name: Test native sidebar index
         run: pnpm test:sidebar-native
-      - name: Test native surfaces in Simulator
-        run: pnpm test:native-surfaces --output-dir build/verification/native-surfaces 2>&1 | tee build/verification/native-surfaces.log
-      - name: Build macOS app
-        run: pnpm build:mac
-        env:
-          MEMOCARD_USE_PREBUILT_UI: '1'
-      - name: Build iOS app
-        run: pnpm build:ios
-        env:
-          MEMOCARD_USE_PREBUILT_UI: '1'
-      - name: Build local service
-        run: pnpm build:service
-        env:
-          MEMOCARD_USE_PREBUILT_UI: '1'
-      - name: Verify service signature
-        run: codesign --verify --deep --strict build/local-service/MemoCardService.app
-      - name: Retain native environment and assertion evidence
-        if: always()
-        uses: actions/upload-artifact@v7
+  # Each matrix entry has its own checkout, Web resources and DerivedData.
+  native-build:
+    needs: [changes, release-web]
+    if: needs.changes.outputs.full == 'true'
+    runs-on: macos-26
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [mac, ios, service]
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      MEMOCARD_USE_PREBUILT_UI: '1'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          name: native-surface-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          retention-days: 7
-          if-no-files-found: warn
-          path: |
-            build/verification/*.log
-            build/verification/native-surfaces/*.log
-            build/verification/native-surfaces/*.json
+          node-version: 24
+      - run: xcodebuild -version
+      - uses: actions/download-artifact@v8
+        with:
+          name: verified-web-${{ github.sha }}-${{ github.run_id }}
+          path: build/verified-web
+      - name: Verify and restore this revision's Web resources
+        run: node scripts/verified-web.mjs restore build/verified-web apps/ui/dist
+      - name: Build app
+        env:
+          MEMOCARD_BUILD_PLATFORM: ${{ matrix.platform }}
+        run: |
+          if [[ "$MEMOCARD_BUILD_PLATFORM" == service ]]; then
+            bash scripts/build-service.sh
+          else
+            bash scripts/build-apple.sh "$MEMOCARD_BUILD_PLATFORM"
+          fi
+      - name: Verify service signature
+        if: matrix.platform == 'service'
+        run: codesign --verify --deep --strict build/local-service/MemoCardService.app
   # Keep the existing required check name; a skipped native job is not a release pass.
   release:
-    needs: [changes, design, release-native]
+    needs: [changes, design, release-web, release-native, native-surfaces, native-build]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3

@@ -45,8 +45,9 @@ export function scopeForEvent(eventName, event, cwd = process.cwd()) {
 export function gatePasses(needs) {
   const full = needs.changes?.outputs?.full;
   return needs.changes?.result === 'success' && needs.design?.result === 'success'
-    && (full === 'true' ? needs['release-native']?.result === 'success'
-      : full === 'false' && needs['release-native']?.result === 'skipped');
+    && ['release-web', 'release-native', 'native-surfaces', 'native-build'].every(job =>
+      full === 'true' ? needs[job]?.result === 'success'
+        : full === 'false' && needs[job]?.result === 'skipped');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
