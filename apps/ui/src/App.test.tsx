@@ -1350,7 +1350,7 @@ it('confirms deletion of one exact draft, retains failures, and updates the draf
 });
 
 
-it('confirms note deletion after flushing edits, retains failures, and returns to the refreshed home',async()=>{
+it.each(['cancel','retry'] as const)('handles note deletion %s after flushing edits without losing content',async flow=>{
   window.history.replaceState(null,'','#/home');
   const implementation=bridge.request.getMockImplementation()!;
   let current={...note},deleted=false,fail=true;
@@ -1371,17 +1371,21 @@ it('confirms note deletion after flushing edits, retains failures, and returns t
   replaceEditorText('删除前的新修改');
   await user.click(screen.getByRole('button',{name:'页面操作'}));
   await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
-  await user.click(await screen.findByRole('button',{name:'取消'}));
-  expect(bridge.request.mock.calls.filter(([op])=>op==='deleteNote')).toHaveLength(0);
-  await user.click(screen.getByRole('button',{name:'页面操作'}));
-  await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
+  if(flow==='cancel'){
+    await user.click(await screen.findByRole('button',{name:'取消'}));
+    expect(bridge.request.mock.calls.filter(([op])=>op==='deleteNote')).toHaveLength(0);
+    await user.click(screen.getByRole('button',{name:'页面操作'}));
+    await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
+  }
   await user.click(await screen.findByRole('button',{name:'确认删除'}));
   expect(await screen.findByRole('alert')).toHaveProperty('textContent','回收目录暂不可写');
-  await user.click(screen.getByRole('button',{name:'取消'}));
-  expect(readEditorText()).toBe('删除前的新修改');
+  expect(deleted).toBe(false);
+  if(flow==='cancel'){
+    await user.click(screen.getByRole('button',{name:'取消'}));
+    expect(readEditorText()).toBe('删除前的新修改');
+    return;
+  }
   fail=false;
-  await user.click(screen.getByRole('button',{name:'页面操作'}));
-  await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
   await user.click(await screen.findByRole('button',{name:'确认删除'}));
   await waitFor(()=>expect(window.location.hash).toBe('#/home'));
   await waitFor(()=>expect(screen.queryByRole('button',{name:'打开 新内容'})).toBeNull());

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render,screen,cleanup,fireEvent,within,waitFor } from '@testing-library/react';
+import { act,render,screen,cleanup,fireEvent,within,waitFor } from '@testing-library/react';
 import { beforeAll,beforeEach,afterEach,it,expect,vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { createPreviewMock, PreviewFailure } from './mock';
@@ -25,6 +25,7 @@ async function show(id:string){
   const mock=createPreviewMock(id);fixture.browser=mock.browser;fixture.request.mockImplementation(mock.request);
   window.history.replaceState(null,'',scenario.detail?`#/notes/${noteId}`:'#/notes');
   render(<App />);
+  await act(async()=>{await vi.dynamicImportSettled();});
   return mock;
 }
 it.each([
