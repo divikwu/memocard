@@ -1,7 +1,7 @@
 .button-docs .button-docs-tab-list {
   margin-block: 1.5rem 1rem;
 }
-.button-docs .button-docs-panel > :is(h2, h3) { margin-block: 2rem 1rem; }
+.button-docs .button-docs-panel > :is(h2, h3) { margin-block: 3rem 1.5rem; }
 .button-docs .button-docs-panel > h2 + h3,
 .button-docs .button-docs-panel > :first-child { margin-top: 0; }
 .button-properties select:focus-visible,
