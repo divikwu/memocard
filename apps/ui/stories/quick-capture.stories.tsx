@@ -91,10 +91,10 @@ async function chooseTag(page: ReturnType<typeof within>, form: HTMLElement, nam
   await userEvent.click(trigger);
   const picker = await page.findByRole("dialog", { name: "选择标签" });
   await userEvent.click(within(picker).getByRole("button", { name }));
-  await expect(within(picker).getByRole("button", { name })).toHaveAttribute("aria-pressed", "true");
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(trigger).toHaveFocus());
-  await expect(within(form).getByRole("button", { name: `移除标签 ${name}` })).toBeVisible();
+  await waitFor(() => expect(page.queryByRole("dialog", { name: "选择标签" })).not.toBeInTheDocument());
+  const input = within(form).getByRole("textbox", { name: "快速输入内容" });
+  await waitFor(() => expect(input).toHaveFocus());
+  await expect(input).toHaveTextContent(`#${name}`);
 }
 
 async function attachPreviewAndRemove(page: ReturnType<typeof within>, form: HTMLElement) {
@@ -123,10 +123,13 @@ export const DesktopCompose: Story = {
     const picker = await page.findByRole("dialog", { name: "选择标签" });
     await userEvent.type(within(picker).getByRole("textbox", { name: "搜索或新建标签" }), "新想法");
     await userEvent.click(within(picker).getByRole("button", { name: "新建标签 新想法" }));
-    await expect(within(picker).getByRole("textbox", { name: "搜索或新建标签" })).toHaveValue("");
+    await waitFor(() => expect(page.queryByRole("dialog", { name: "选择标签" })).not.toBeInTheDocument());
+    await userEvent.click(within(form).getByRole("button", { name: "选择标签" }));
+    const reopened = await page.findByRole("dialog", { name: "选择标签" });
+    await expect(within(reopened).getByRole("textbox", { name: "搜索或新建标签" })).toHaveValue("");
+    await userEvent.click(within(reopened).getByRole("button", { name: "新想法" }));
+    await expect(within(form).getByRole("textbox", { name: "快速输入内容" })).not.toHaveTextContent("#新想法");
     await userEvent.keyboard("{Escape}");
-    await userEvent.click(within(form).getByRole("button", { name: "移除标签 新想法" }));
-    await expect(within(form).queryByRole("button", { name: "移除标签 新想法" })).not.toBeInTheDocument();
     await attachPreviewAndRemove(page, form);
     await expect(args.onRecorded).not.toHaveBeenCalled();
     await expect(fixture.calls.map(call => call.operation)).toEqual(["pickImage"]);
@@ -146,8 +149,8 @@ export const DesktopRetry: Story = {
     await canvas.findByRole("button", { name: "移除图片 1" });
     await userEvent.click(canvas.getByRole("button", { name: "记录" }));
     await expect(await canvas.findByRole("alert")).toHaveTextContent("磁盘只读（内存示例）");
-    await expect(input).toHaveValue("保存失败也保留");
-    await expect(canvas.getByRole("button", { name: "移除标签 生活" })).toBeVisible();
+    await expect(input).toHaveTextContent("保存失败也保留");
+    await expect(input).toHaveTextContent("#生活");
     await expect(canvas.getByRole("button", { name: "移除图片 1" })).toBeVisible();
     await expect(args.onRecorded).not.toHaveBeenCalled();
     await userEvent.click(canvas.getByRole("button", { name: "记录" }));
@@ -155,8 +158,8 @@ export const DesktopRetry: Story = {
     const writes = fixture.calls.filter(call => call.operation === "saveNote");
     await expect(writes).toHaveLength(2);
     await expect(writes[1].params).toEqual(writes[0].params);
-    await expect(writes[1].params).toMatchObject({ body: "保存失败也保留\n\n![图片](../assets/quick-capture.png)", inheritedTags: ["生活"], baseHash: null, vaultId: captureVaultId, vaultBinding: captureVaultBinding });
-    await expect(input).toHaveValue("");
+    await expect(writes[1].params).toMatchObject({ body: "保存失败也保留 #生活\n\n![图片](../assets/quick-capture.png)", inheritedTags: [], baseHash: null, vaultId: captureVaultId, vaultBinding: captureVaultBinding });
+    await expect(input).toHaveTextContent("");
     await expect(canvas.queryByRole("button", { name: "移除标签 生活" })).not.toBeInTheDocument();
     await expect(canvas.queryByRole("button", { name: "移除图片 1" })).not.toBeInTheDocument();
     await expect(canvas.queryByRole("alert")).not.toBeInTheDocument();
@@ -174,15 +177,15 @@ export const DesktopPending: Story = {
     await userEvent.type(input, "只记录一次");
     await userEvent.keyboard("{Control>}{Enter}{/Control}");
     await waitFor(() => expect(canvas.getByRole("form")).toHaveAttribute("aria-busy", "true"));
-    await expect(input).toBeDisabled();
+    await expect(input).toHaveAttribute("contenteditable", "false");
     for (const name of ["选择标签", "添加图片", "处理中"]) await expect(canvas.getByRole("button", { name })).toBeDisabled();
     await userEvent.keyboard("{Control>}{Enter}{/Control}");
     await expect(fixture.calls.filter(call => call.operation === "saveNote")).toHaveLength(1);
     await expect(args.onRecorded).not.toHaveBeenCalled();
     await userEvent.click(canvas.getByRole("button", { name: "完成模拟保存" }));
     await waitFor(() => expect(args.onRecorded).toHaveBeenCalledOnce());
-    await expect(input).toBeEnabled();
-    await expect(input).toHaveValue("");
+    await expect(input).toHaveAttribute("contenteditable", "true");
+    await expect(input).toHaveTextContent("");
     await expect(canvas.getByRole("form")).toHaveAttribute("aria-busy", "false");
   },
 };
@@ -193,9 +196,9 @@ export const DesktopDisabled: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const input = canvas.getByRole("textbox", { name: "快速输入内容" });
-    await expect(input).toHaveValue("笔记库暂不可编辑");
-    await expect(input).toBeDisabled();
-    for (const name of ["选择标签", "添加图片", "记录", "移除标签 工作"]) await expect(canvas.getByRole("button", { name })).toBeDisabled();
+    await expect(input).toHaveTextContent("笔记库暂不可编辑 #工作");
+    await expect(input).toHaveAttribute("contenteditable", "false");
+    for (const name of ["选择标签", "添加图片", "记录"]) await expect(canvas.getByRole("button", { name })).toBeDisabled();
     await expect(fixture.calls).toHaveLength(0);
     await expect(args.onRecorded).not.toHaveBeenCalled();
   },
@@ -212,8 +215,8 @@ export const DesktopMemory: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "保留草稿（2）" }));
     await expect(args.onOpenDrafts).toHaveBeenCalledOnce();
     await userEvent.click(canvas.getByRole("button", { name: "重新挂载快速记录" }));
-    await expect(canvas.getByRole("textbox", { name: "快速输入内容" })).toHaveValue("同一页面继续保留的想法");
-    await expect(canvas.getByRole("button", { name: "移除标签 工作" })).toBeVisible();
+    await expect(canvas.getByRole("textbox", { name: "快速输入内容" })).toHaveTextContent("同一页面继续保留的想法 #工作");
+    await expect(canvas.getByRole("textbox", { name: "快速输入内容" })).toHaveTextContent("#工作");
     await expect(readQuickCaptureDraft(captureVaultId)).toBeNull();
     await expect(fixture.calls).toHaveLength(0);
   },
@@ -228,7 +231,7 @@ export const MobileDocked: Story = {
     await userEvent.type(input, "随手记下的手机想法");
     await chooseTag(page, form, "设计/灵感");
     await attachPreviewAndRemove(page, form);
-    await expect(readQuickCaptureDraft(captureVaultId)).toMatchObject({ text: "随手记下的手机想法", tags: ["设计/灵感"] });
+    await expect(readQuickCaptureDraft(captureVaultId)).toMatchObject({ text: "随手记下的手机想法 #设计/灵感 ", tags: ["设计/灵感"] });
     await expect(readQuickCaptureDraft(captureVaultId)?.images).toEqual([]);
     await userEvent.click(within(sheet).getByRole("button", { name: "收起快速记录" }));
     await waitFor(() => expect(page.queryByRole("dialog", { name: "快速记录" })).not.toBeInTheDocument());
@@ -236,8 +239,8 @@ export const MobileDocked: Story = {
     await waitFor(() => expect(trigger).toHaveFocus());
     await expect(trigger).toHaveTextContent("随手记下的手机想法");
     const reopened = await openCapture(canvasElement);
-    await expect(reopened.input).toHaveValue("随手记下的手机想法");
-    await expect(within(reopened.form).getByRole("button", { name: "移除标签 设计/灵感" })).toBeVisible();
+    await expect(reopened.input).toHaveTextContent("随手记下的手机想法");
+    await expect(reopened.input).toHaveTextContent("#设计/灵感");
     await userEvent.click(within(reopened.form).getByRole("button", { name: "保留草稿（2）" }));
     await waitFor(() => expect(page.queryByRole("dialog", { name: "快速记录" })).not.toBeInTheDocument());
     await expect(args.onOpenDrafts).toHaveBeenCalledOnce();
@@ -252,24 +255,29 @@ export const MobileRestore: Story = {
   tags: ["mobile"], globals: mobileGlobals, parameters: mobileParameters,
   play: async ({ canvasElement, args }) => {
     const { page, sheet, input, form } = await openCapture(canvasElement);
-    await expect(input).toHaveValue(restoredCapture.text);
-    await expect(within(form).getByRole("button", { name: "移除标签 工作" })).toBeVisible();
+    await expect(input).toHaveTextContent(`${restoredCapture.text} #工作`);
+    await expect(input).toHaveTextContent("#工作");
     await waitFor(() => expect(within(form).getByRole("button", { name: "查看大图 待记录图片 1" })).toHaveAttribute("data-image-state", "loaded"));
-    await userEvent.type(input, "，接着补充");
+    // user-event's End emulation treats decorated content as one text node.
+    // Place the DOM caret at the real end before exercising normal typing.
+    const selection = input.ownerDocument.getSelection()!;
+    selection.selectAllChildren(input);
+    selection.collapseToEnd();
+    await userEvent.keyboard("，接着补充");
     await userEvent.click(within(sheet).getByRole("button", { name: "收起快速记录" }));
     await waitFor(() => expect(page.queryByRole("dialog", { name: "快速记录" })).not.toBeInTheDocument());
     await userEvent.click(within(canvasElement).getByRole("button", { name: "重新挂载快速记录" }));
     const reopened = await openCapture(canvasElement);
-    await expect(reopened.input).toHaveValue(`${restoredCapture.text}，接着补充`);
+    await expect(reopened.input).toHaveTextContent(`${restoredCapture.text} #工作 ，接着补充`);
     await expect(readQuickCaptureDraft(captureVaultId)?.id).toBe(restoredCapture.id);
     await userEvent.click(within(reopened.form).getByRole("button", { name: "记录" }));
     await waitFor(() => expect(args.onRecorded).toHaveBeenCalledOnce());
     await waitFor(() => expect(page.queryByRole("dialog", { name: "快速记录" })).not.toBeInTheDocument());
     await expect(readQuickCaptureDraft(captureVaultId)).toBeNull();
     await expect(fixture.calls.map(call => call.operation)).toEqual(["saveNote"]);
-    await expect(fixture.calls[0].params).toMatchObject({ id: restoredCapture.id, body: `${restoredCapture.text}，接着补充\n\n![图片](../assets/quick-capture.png)`, inheritedTags: ["工作"] });
+    await expect(fixture.calls[0].params).toMatchObject({ id: restoredCapture.id, body: `${restoredCapture.text} #工作 ，接着补充\n\n![图片](../assets/quick-capture.png)`, inheritedTags: [] });
     const blank = await openCapture(canvasElement);
-    await expect(blank.input).toHaveValue("");
+    await expect(blank.input).toHaveTextContent("");
     await expect(within(blank.form).queryByRole("button", { name: "移除图片 1" })).not.toBeInTheDocument();
     await expect(within(blank.form).getByRole("button", { name: "记录" })).toBeDisabled();
     await userEvent.keyboard("{Escape}");
@@ -287,7 +295,7 @@ export const MobileContinue: Story = {
     await chooseTag(page, form, "工作");
     await userEvent.click(within(form).getByRole("button", { name: "切换为页面" }));
     await waitFor(() => expect(args.onContinue).toHaveBeenCalledOnce());
-    await expect(args.onContinue).toHaveBeenCalledWith(expect.objectContaining({ body: "  要继续展开的想法  ", inheritedTags: ["工作"], title: undefined, recoveredFrom: { draftKey: "storybook-page-draft", revision: "storybook-revision-1" } }));
+    await expect(args.onContinue).toHaveBeenCalledWith(expect.objectContaining({ body: "  要继续展开的想法  #工作 ", inheritedTags: [], title: undefined, recoveredFrom: { draftKey: "storybook-page-draft", revision: "storybook-revision-1" } }));
     await expect(fixture.calls.map(call => call.operation)).toEqual(["saveDraft"]);
     await expect(args.onRecorded).not.toHaveBeenCalled();
     await expect(readQuickCaptureDraft(captureVaultId)).toBeNull();
@@ -295,6 +303,6 @@ export const MobileContinue: Story = {
     const editor = within(canvasElement).getByRole("textbox", { name: "页面编辑内容" });
     await waitFor(() => expect(editor).toHaveFocus());
     await userEvent.type(editor, "继续编辑");
-    await expect(editor).toHaveValue("  要继续展开的想法  继续编辑");
+    await expect(editor).toHaveValue("  要继续展开的想法  #工作 继续编辑");
   },
 };

@@ -85,7 +85,7 @@ export function IOSAppChrome(p:Props) {
     if(action === "pin")p.onPin();
     if(action === "delete" && p.editing?.baseHash && vaultId)p.onDelete({id:p.editing.id,title:p.editing.title?.trim() || "新内容",vaultId:vaultId,vaultBinding:p.editing.vaultBinding ?? p.vaultBinding});
     if(action === "cards" || action === "list")(p.view === "home" ? changeHomeLayout : changeNoteLayout)(action);
-    if(action === "pin-tag" && p.tag && !togglePinned(p.tag))setNavigationOpen(true);
+    if(action === "pin-tag" && p.tag && !await togglePinned(p.tag))setNavigationOpen(true);
     if(action === "edit-tag" && p.tag)setEditingTag(p.tag);
   });
   const navigationTags=p.tags.map(item=>({id:`tag:${item.name}`,path:item.name,title:item.name.slice(item.name.lastIndexOf("/")+1),icon:"number",emoji:preferences.icons[item.name],selected:p.view === "notes" && p.tag === item.name}));

@@ -1212,6 +1212,36 @@ it('filters slash commands in the document and preserves text on cancellation', 
 function paste(field: HTMLElement, text: string, html = '') {
  fireEvent.paste(field,{clipboardData:{getData:(type: string)=>type==='text/html'?html:type==='text/plain'?text:'',files:[]}});
 }
+it.each(['html','markdown'])('recognizes pasted code-formatted tags from %s while preserving other formatting and one-step undo',async format=>{
+ const original='正文\n\n`#existing`';
+ const {editor,field,change}=await setup(original);
+ act(()=>{editor.commands.setTextSelection(3);});
+ const markdown='引言\n\n## 标题\n\n**重点** 与 `const x = 1`\n\n- `#Project/MemoCard`\n  - *子项*\n\n| 标签 | 内容 |\n| --- | --- |\n| `#领域/设计` | 保留表格 |\n\n`#123` `#bad/` `text #example` [链接](https://example.com)\n\n```\n#fenced\n```';
+ const html='<p>引言</p><h2>标题</h2><p><strong>重点</strong> 与 <code>const x = 1</code></p><ul><li><code>#Project/MemoCard</code><ul><li><em>子项</em></li></ul></li></ul><table><tr><th>标签</th><th>内容</th></tr><tr><td><code>#领域/设计</code></td><td>保留表格</td></tr></table><p><code>#123</code> <code>#bad/</code> <code>text #example</code> <a href="https://example.com">链接</a></p><pre><code>#fenced</code></pre>';
+ paste(field,markdown,format==='html'?html:'');
+ expect([...field.querySelectorAll('.rich-inline-tag')].map(el=>el.textContent)).toEqual(['#project/memocard','#领域/设计']);
+ expect([...field.querySelectorAll('code')].map(el=>el.textContent)).toEqual(['const x = 1','#123','#bad/','text #example','#fenced','#existing']);
+ expect(field.querySelector('h2')?.textContent).toBe('标题');
+ expect(field.querySelector('strong')?.textContent).toBe('重点');
+ expect(field.querySelector('ul ul em')?.textContent).toBe('子项');
+ expect(field.querySelector('td')?.textContent).toBe('#领域/设计');
+ expect(field.querySelector('a')?.getAttribute('href')).toBe('https://example.com');
+ act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith(original);
+ act(()=>{editor.commands.redo();});expect(field.querySelectorAll('.rich-inline-tag')).toHaveLength(2);
+});
+it('keeps pasted tag syntax literal with shift-paste and inside code blocks',async()=>{
+ const {editor,field}=await setup('正文');
+ act(()=>{editor.commands.selectAll();});
+ fireEvent.keyDown(field,{key:'V',metaKey:true,shiftKey:true});
+ paste(field,'`#Project/MemoCard`');
+ fireEvent.keyUp(field,{key:'Shift'});
+ expect(editor.getText()).toBe('`#Project/MemoCard`');
+ expect(field.querySelector('.rich-inline-tag')).toBeNull();
+ act(()=>{editor.commands.setCodeBlock();editor.commands.setTextSelection({from:1,to:editor.state.doc.content.size-1});});
+ paste(field,'#Project/MemoCard');
+ expect(field.querySelector('pre code')?.textContent).toBe('#Project/MemoCard');
+ expect(field.querySelector('.rich-inline-tag')).toBeNull();
+});
 it('preserves rich clipboard formatting, nested lists and tables in one undo step',async()=>{
  const {editor,field,change}=await setup('正文');
  act(()=>{editor.commands.setTextSelection(3);});

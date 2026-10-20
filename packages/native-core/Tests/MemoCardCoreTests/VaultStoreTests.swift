@@ -16,6 +16,48 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertTrue(drafts.isEmpty)
     }
 
+    func testTagPreferencesAreSharedAcrossIndependentClientsAndDetectConflicts() async throws {
+        let core = try await store()
+        let initial = try await call(core, "getTagPreferences")
+        XCTAssertEqual(initial["initialized"] as? Bool, false)
+        let saved = try await call(core, "setTagPreferences", ["pinned":["area/coffee"], "icons":["area/coffee":"☕", "area/ai":"🧑🏽‍💻"], "baseHash":initial["contentHash"]!])
+        let other = try VaultStore(localDataURL: temporary.appendingPathComponent("independent-tag-client"))
+        try await other.open(url: vault, create: false)
+        let loaded = try await call(other, "getTagPreferences")
+        XCTAssertEqual(loaded["pinned"] as? [String], ["area/coffee"])
+        XCTAssertEqual(loaded["icons"] as? [String:String], ["area/coffee":"☕", "area/ai":"🧑🏽‍💻"])
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(other, "setTagPreferences", ["pinned":[], "icons":[:], "baseHash":initial["contentHash"]!]) }
+        _ = try await call(other, "setTagPreferences", ["pinned":[], "icons":[:], "baseHash":saved["contentHash"]!])
+        let empty = try await call(core, "getTagPreferences")
+        XCTAssertEqual(empty["initialized"] as? Bool, true)
+        XCTAssertEqual(empty["pinned"] as? [String], [])
+        await expectCode("VAULT_CHANGED") { _ = try await self.call(core, "getTagPreferences", ["vaultId":"wrong-vault"]) }
+    }
+
+    func testTagPreferencesRejectInvalidAndCorruptSettingsWithoutOverwriting() async throws {
+        let core = try await store()
+        let initial = try await call(core, "getTagPreferences")
+        for input: [String:Any] in [["pinned":["area\ncoffee"], "icons":[:]], ["pinned":["AREA/COFFEE"], "icons":[:]], ["pinned":[], "icons":["area/coffee":String(repeating:"x",count:33)]]] {
+            var params = input; params["baseHash"] = initial["contentHash"]!
+            await expectCode("INVALID_TAG_PREFERENCES") { _ = try await self.call(core,"setTagPreferences",params) }
+        }
+        let path = vault.appendingPathComponent(".memocard/tag-preferences.json")
+        try Data("{broken".utf8).write(to:path)
+        await expectCode("INVALID_TAG_PREFERENCES") { _ = try await self.call(core,"getTagPreferences") }
+        await expectCode("INVALID_TAG_PREFERENCES") { _ = try await self.call(core,"setTagPreferences",["pinned":[],"icons":[:],"baseHash":initial["contentHash"]!]) }
+        XCTAssertEqual(try String(contentsOf:path,encoding:.utf8),"{broken")
+    }
+
+    func testTagPreferencesRecoverAnEmptyFileFromAnInterruptedBrowserWrite() async throws {
+        let core = try await store()
+        try Data().write(to: vault.appendingPathComponent(".memocard/tag-preferences.json"))
+        let initial = try await call(core, "getTagPreferences")
+        XCTAssertEqual(initial["initialized"] as? Bool, false)
+        let saved = try await call(core, "setTagPreferences", ["pinned":["work"], "icons":[:], "baseHash":initial["contentHash"]!])
+        XCTAssertEqual(saved["pinned"] as? [String], ["work"])
+        XCTAssertEqual(saved["initialized"] as? Bool, true)
+    }
+
     func testMarkdownPinsAreSharedAcrossLocalIdentitiesAndFollowTransactionalRenames() async throws {
         let source = vault.appendingPathComponent("Original.md")
         try Data("Body".utf8).write(to: source)

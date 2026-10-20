@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { request } from './bridge';
-import { inlineTags, tagKey } from './inline-tags';
+import { inlineTagMatches, inlineTags, tagKey } from './inline-tags';
 
-export function RichTagSuggestions({ editor }: { editor: Editor }) {
+export function RichTagSuggestions({ editor, names:providedNames }: { editor: Editor; names?:string[] }) {
   const [active, setActive] = useState<{ from: number; to: number; query: string; left: number; top: number } | null>(null);
-  const [names, setNames] = useState<string[]>([]);
+  const [fetchedNames, setNames] = useState<string[]>([]);
+  const names=providedNames ?? fetchedNames;
   const [index, setIndex] = useState(0);
   useEffect(() => {
     const update = () => {
@@ -15,6 +16,10 @@ export function RichTagSuggestions({ editor }: { editor: Editor }) {
       const before = parent.textBetween(0, selection.$from.parentOffset, '\n', '\ufffc');
       const match = /(?:^|\s)#((?:[\p{L}\p{N}_-]+(?:\/[\p{L}\p{N}_-]+)*\/?)?)$/u.exec(before);
       if (!match) { setActive(null); return; }
+      const from=selection.$from.parentOffset-match[1].length-1;
+      const text=parent.textBetween(0,parent.content.size,'\n','\ufffc');
+      const probe=text.slice(0,from)+'#memocard_tag'+text.slice(selection.$from.parentOffset);
+      if(!inlineTagMatches(probe).some(tag=>tag.start===from)){setActive(null);return;}
       const rect = editor.view.coordsAtPos(selection.from);
       const host = editor.view.dom.closest('.rich-editor')!.getBoundingClientRect();
       setIndex(0);
@@ -26,16 +31,17 @@ export function RichTagSuggestions({ editor }: { editor: Editor }) {
   }, [editor]);
   const open = Boolean(active);
   useEffect(() => {
-    if (!open) return;
+    if (!open || providedNames) return;
     let cancelled = false;
     void request<{ tags: { name: string }[] }>('listTags').then(result => { if (!cancelled) setNames([...new Set((result?.tags ?? []).map(tag => tagKey(tag.name)))]); }).catch(() => { if (!cancelled) setNames([]); });
     return () => { cancelled = true; };
-  }, [open]);
+  }, [open,providedNames]);
   const options = active ? names.filter(name => inlineTags(`#${name}`)[0] === name && name.includes(active.query)).slice(0, 7) : [];
   if (active?.query && inlineTags(`#${active.query}`)[0] === active.query && !options.includes(active.query)) options.push(active.query);
   const choose = (name: string) => {
     if (!active) return;
-    editor.chain().focus().insertContentAt({ from: active.from, to: active.to }, { type: 'text', text: `#${name} ` }).run();
+    const next=editor.state.doc.textBetween(active.to,Math.min(active.to+1,editor.state.doc.content.size));
+    editor.chain().focus().insertContentAt({ from: active.from, to: active.to }, { type: 'text', text: `#${name}${/^\s/.test(next) ? '' : ' '}` }).run();
     setActive(null);
   };
   useEffect(() => {

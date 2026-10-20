@@ -28,7 +28,7 @@ type Options = {
   parseCompatible?: typeof parseObsidianNote;
 };
 const propertyOperations = ["getNoteProperties", "updateNoteProperty"];
-const operations = ["getStatus", "queryNotes", "getNote", "saveNote", ...propertyOperations, "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"];
+const operations = ["getStatus", "queryNotes", "getNote", "saveNote", ...propertyOperations, "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"];
 const coverageEmpty = (): Coverage => ({ complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: null });
 const now = () => new Date().toISOString();
 const textBytes = (text: string) => new TextEncoder().encode(text);
@@ -733,6 +733,11 @@ export class BrowserVault {
     }
     if (operation === "deleteNote") return this.deleteNote(selected,params);
     if (operation === "saveNote") return this.save(selected, this.saveParams(params));
+    if (operation === 'getTagPreferences' || operation === 'setTagPreferences') {
+      if (params.vaultId !== undefined && params.vaultId !== selected.vaultId) throw new BrowserVaultError('VAULT_CHANGED', '笔记库已切换，请重新打开标签设置。');
+      const { tagPreferenceOperation } = await import('./browser-tag-preferences');
+      return this.lock(`memocard:browser:vault:${selected.vaultId}`, () => tagPreferenceOperation(operation, params, selected.handle, () => this.active(selected)));
+    }
     if (operation === 'getNotePins') { await this.active(selected); const pins = await readNotePins(selected.handle); const notes = Object.keys(pins.pins).length ? (await this.scan(selected)).parsed.map(item => item.note) : []; await this.active(selected); return resolvedNotePins(pins, notes, this.compatible); }
     if (operation === 'setNotePinned') {
       if (params.vaultId !== undefined && params.vaultId !== selected.vaultId) throw new BrowserVaultError('VAULT_CHANGED', '笔记库已切换，请重新打开笔记。');

@@ -2,9 +2,25 @@ import { Extension } from '@tiptap/react';
 import { Plugin, TextSelection } from '@tiptap/pm/state';
 import { isHistoryTransaction } from '@tiptap/pm/history';
 import { Mapping } from '@tiptap/pm/transform';
-import type { Node } from '@tiptap/pm/model';
+import { Fragment, type Node } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { inlineTags, tagKey } from './inline-tags';
+import { inlineTagMatches, inlineTags, tagKey } from './inline-tags';
+
+// Only complete tag tokens lose their code mark, and only during a normal paste.
+export function pastedInlineTags(content: Fragment): Fragment {
+  const nodes: Node[] = [];
+  content.forEach(node => {
+    if (node.type.spec.code || node.type.name === 'preservedMarkdown') { nodes.push(node); return; }
+    if (node.isText) {
+      if (node.marks.some(mark => mark.type.name === 'code') && !node.marks.some(mark => mark.type.name === 'link')) {
+        const matches = inlineTagMatches(node.text!);
+        if (matches.length === 1 && matches[0].start === 0 && matches[0].end === node.text!.length) node = node.mark(node.marks.filter(mark => mark.type.name !== 'code'));
+      }
+    } else node = node.copy(pastedInlineTags(node.content));
+    nodes.push(node);
+  });
+  return Fragment.fromArray(nodes);
+}
 
 function bodyTags(doc: Node) {
   const tags: { from: number; to: number; text: string; key: string }[] = [];

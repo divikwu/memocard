@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/react';
 import { act, screen } from '@testing-library/react';
+import { closeHistory } from '@tiptap/pm/history';
 
 export function noteEditor(element: HTMLElement = screen.getByRole('textbox', { name: '笔记内容' })) {
   const editor = (element as HTMLElement & { editor?: Editor }).editor;
@@ -14,4 +15,8 @@ export function replaceEditorText(body: string, element?: HTMLElement) {
 export function moveEditorCaretToEnd(element?: HTMLElement) {
   const editor = noteEditor(element);
   act(() => { editor.commands.setTextSelection(editor.state.doc.content.size - 1); });
+}
+export function replaceCaptureText(element:HTMLElement, value:string, caret=value.length, end=caret) {
+  const editor=noteEditor(element);
+  act(()=>{editor.commands.setContent({type:'doc',content:value ? [{type:'text',text:value}] : []});editor.commands.setTextSelection({from:caret,to:end});editor.view.dispatch(closeHistory(editor.state.tr));});
 }

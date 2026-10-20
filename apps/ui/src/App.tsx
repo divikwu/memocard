@@ -1,3 +1,4 @@
+import { connectSharedTagPreferences } from './shared-tag-preferences';
 import { TagColorProvider } from './TagColorProvider';
 import { renamedTag } from "./rename-tag";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -169,6 +170,10 @@ export function App() {
     });
   }, [isMobile,status?.vaultId]);
   const capabilities = useMemo(() => new Set([...(status?.capabilities ?? []), ...(environment?.capabilities ?? [])]), [status, environment]);
+  const sharedTagPreferencesEnabled = capabilities.has('getTagPreferences') && capabilities.has('setTagPreferences');
+  useEffect(() => {
+    if (status?.connected && status.vaultId && sharedTagPreferencesEnabled) return connectSharedTagPreferences(status.vaultId);
+  }, [status?.connected, status?.vaultId, sharedTagPreferencesEnabled]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 240);

@@ -22,7 +22,7 @@ export function SidebarTreeItem({ label, className, icon, buttonProps, isActive,
   return <Item className="w-full min-w-0">
     <Collapsible defaultOpen={defaultOpen} className="w-full min-w-0">
       <div className={`group/tree-row sidebar-tree-row relative w-full min-w-0 ${className ?? ""}`}>
-        <MenuButton isActive={isActive} render={<button type="button" {...buttonProps} className="w-full translate-x-0 pr-8"><span aria-hidden="true" className={`flex shrink-0 items-center justify-center ${children ? "max-md:opacity-0 group-hover/tree-row:opacity-0 group-has-[:focus-visible]/tree-row:opacity-0" : ""}`}>{icon}</span><span>{label}</span></button>} />
+        <MenuButton isActive={isActive} render={<button type="button" {...buttonProps} className="w-full translate-x-0 pr-8"><span aria-hidden="true" className={`flex shrink-0 items-center justify-center ${typeof icon === "string" ? "emoji-icon " : ""}${children ? "max-md:opacity-0 group-hover/tree-row:opacity-0 group-has-[:focus-visible]/tree-row:opacity-0" : ""}`}>{icon}</span><span>{label}</span></button>} />
         {children && <CollapsibleTrigger render={<SidebarMenuAction aria-label={toggleLabel} className={`md:opacity-0 group-hover/tree-row:opacity-100 group-has-[:focus-visible]/tree-row:opacity-100 sidebar-tree-toggle left-1.5 text-sidebar-accent-foreground data-[panel-open]:[&>svg]:rotate-90 ${nested ? " top-1" : ""}`}><ChevronRight aria-hidden="true" /></SidebarMenuAction>} />}
         {accessories}
       </div>

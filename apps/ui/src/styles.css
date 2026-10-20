@@ -11,6 +11,8 @@
 }
 @custom-variant dark (&:is(.dark *));
 
+.emoji-icon { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-variant-emoji: emoji; }
+
 @layer components {
   [data-sidebar$="-button"] { height: var(--sidebar-desktop-row-height); gap: var(--sidebar-content-gap); padding-inline: var(--sidebar-horizontal-padding); font-size: var(--sidebar-desktop-font-size); line-height: 1.25rem; }
   [data-sidebar$="-button"] svg, .sidebar-tree-row > button > span:first-child { width: var(--sidebar-icon-size); height: var(--sidebar-icon-size); }

@@ -2,9 +2,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Note, VaultStatus } from "@memocard/contracts";
+import type { Note, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import { App } from "./App";
-import { readEditorText } from "./editor-test-utils";
+import { noteEditor, readEditorText, replaceCaptureText } from "./editor-test-utils";
 import { swipeSheet } from "./components/ui/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
@@ -604,7 +604,7 @@ describe('mobile page navigation',()=>{
     await user.click(within(await screen.findByRole('dialog',{name:'记忆卡导航'})).getByRole('button',{name:/^所有笔记$/}));
     await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
     await user.click(screen.getByRole('button',{name:'打开快速记录'}));
-    expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','尚未提交的首页想法');
+    expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('textContent','尚未提交的首页想法');
     expect(bridge.request.mock.calls.some(([operation])=>operation==='saveNote')).toBe(false);
   });
 
@@ -615,7 +615,7 @@ describe('mobile page navigation',()=>{
     const user=userEvent.setup();render(<App />);
     await waitFor(()=>expect(screen.getByRole('button',{name:'打开快速记录'})).toHaveProperty('disabled',false));
     await user.click(screen.getByRole('button',{name:'打开快速记录'}));
-    fireEvent.change(await screen.findByRole('textbox',{name:'快速输入内容'}),{target:{value:'从快速记录继续写'}});
+    replaceCaptureText(await screen.findByRole('textbox',{name:'快速输入内容'}),'从快速记录继续写');
     await user.click(screen.getByRole('button',{name:'切换为页面'}));
     const editor=await screen.findByRole('textbox',{name:'笔记内容'});
     await waitFor(()=>expect(document.activeElement).toBe(editor));
@@ -630,7 +630,7 @@ describe('mobile page navigation',()=>{
     expect(saves[0][1]).toEqual(expect.objectContaining({id:draft.id,body:'从快速记录继续写',recoveredFrom:{draftKey:draft.draftKey ?? draft.id,revision:'draft-version'}}));
     await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('button',{name:'打开快速记录'})));
     await user.click(screen.getByRole('button',{name:'打开快速记录'}));
-    expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('value','');
+    expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('textContent','');
   });
 
   it('hides the bottom entry in settings and disables it when note creation is unavailable',async()=>{
@@ -714,17 +714,19 @@ it("preserves quick capture through both responsive layouts", async () => {
   act(() => { mobile = true; listeners.forEach(listener => listener()); });
   await user.click(await screen.findByRole("button", { name: "打开快速记录" }));
   const phone = await screen.findByRole("textbox", { name: "快速输入内容" });
-  expect(phone).toHaveProperty("value", "跨尺寸草稿");
-  await user.type(phone, "补充");
+  expect(phone).toHaveProperty("textContent", "跨尺寸草稿");
+  await waitFor(() => expect(document.activeElement).toBe(phone));
+  act(() => { const editor=noteEditor(phone);editor.commands.setTextSelection(editor.state.doc.content.size); });
+  await user.keyboard("补充");
   act(() => { mobile = false; listeners.forEach(listener => listener()); });
-  expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("value", "跨尺寸草稿补充");
+  expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("textContent", "跨尺寸草稿补充");
   expect(bridge.request.mock.calls.some(([operation]) => operation === "saveNote")).toBe(false);
   await user.click(screen.getByRole("button", { name: "记录" }));
-  await waitFor(() => expect(screen.getByRole("textbox", { name: "快速输入内容" })).toHaveProperty("value", ""));
+  await waitFor(() => expect(screen.getByRole("textbox", { name: "快速输入内容" })).toHaveProperty("textContent", ""));
   expect(localStorage.getItem("memocard:quick-capture:v1:test-vault")).toBeNull();
   act(() => { mobile = true; listeners.forEach(listener => listener()); });
   await user.click(await screen.findByRole("button", { name: "打开快速记录" }));
-  expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("value", "");
+  expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("textContent", "");
 });
 
 it("dismisses the mobile sheet at the desktop breakpoint without reopening on return", async () => {
@@ -747,4 +749,31 @@ it("dismisses the mobile sheet at the desktop breakpoint without reopening on re
   act(() => { mobile = true; listeners.forEach(listener => listener()); });
   expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull();
   expect(screen.getByRole("button", { name: "打开导航" }).getAttribute("aria-expanded")).toBe("false");
+});
+
+it('shares vault-backed tag pins and icons instead of restoring stale browser settings', async () => {
+  localStorage.setItem('memocard:tags:test-vault', JSON.stringify({pinned:['stale'],icons:{stale:'❌'}}));
+  let appearance: TagPreferenceState = {pinned:['生活'],icons:{'生活':'☕'},contentHash:'shared-tags',initialized:true};
+  const original = bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation(async (operation, params) => {
+    if (operation === 'getStatus') return {...status,capabilities:[...status.capabilities,'getTagPreferences','setTagPreferences']};
+    if (operation === 'getTagPreferences') return structuredClone(appearance);
+    if (operation === 'setTagPreferences') {
+      expect(params?.baseHash).toBe(appearance.contentHash);
+      appearance = {pinned:params?.pinned as string[],icons:params?.icons as Record<string,string>,contentHash:'saved-tags',initialized:true};
+      return structuredClone(appearance);
+    }
+    return original(operation,params);
+  });
+  const user = userEvent.setup();
+  render(<App />);
+  await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('getTagPreferences',{vaultId:'test-vault'}),{timeout:5000});
+  const pinned = await screen.findByRole('navigation',{name:'置顶标签'},{timeout:5000});
+  expect(within(pinned).getByRole('button',{name:'生活'}).textContent).toContain('☕');
+  expect(bridge.request.mock.calls.some(([operation]) => operation === 'setTagPreferences')).toBe(false);
+  await user.click(within(pinned).getByRole('button',{name:'标签操作 生活'}));
+  await user.click(await screen.findByRole('menuitem',{name:'取消置顶'}));
+  await waitFor(() => expect(screen.queryByRole('navigation',{name:'置顶标签'})).toBeNull());
+  expect(appearance.pinned).toEqual([]);
+  expect(appearance.icons).toEqual({'生活':'☕'});
 });
