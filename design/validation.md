@@ -2,6 +2,12 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Button 文档复用 Tabs（2026-10-20）
+
+- Button Docs 改为导入项目已有的 `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent`，在 `TabsList` 使用 `variant="line"`。删除文档重复的页签外观、选中态、焦点与响应式间距样式，仅保留列表外边距和隐藏 Panel 规则；其他表单、表格滚动区和代码面板的焦点样式保持。
+- Properties 的 `keepMounted`、页签的 `activateOnFocus` 和现有 iframe 配置保持；生产 Tabs 实现未改。Button 7 项与 Tabs default / line / vertical 3 项既有交互检查共 10/10，通过 Storybook 类型检查、静态构建、变更 TSX 的 ESLint 和 diff 空白检查；独立静态复核无 P1/P2。
+- 本轮未执行真实 Docs 页面可见复核：此前浏览器安全策略拒绝 localhost 页面观察，未通过其他 UI 工具绕过。自动检查不代替实际页签在 Docs 中的布局及跨页签保留状态验收。未重跑完整 101 项检查或原生验收；日志为 `/tmp/memocard-button-local-tabs-{tests,typecheck,build,eslint}.log`，远程 CI 以 PR #52 最新 head 为准。
+
 ## Properties 左右对齐（2026-10-20）
 
 - 仅 Properties 故事改为 `layout: "fullscreen"`，其专属容器保留 `padding-block: 1rem`。真实 Docs 测量 iframe body padding 四边为 0，预览框与参数表左右 inset 均为 0，与外层说明的左右边缘差值均为 0；上下 16px、预览框内部 16px、表格单元格 12px 保持。

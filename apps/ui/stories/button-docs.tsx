@@ -1,9 +1,9 @@
 import { useId, useState, type ComponentProps } from "react";
 import { Description, Markdown, Story, Title } from "@storybook/addon-docs/blocks";
-import { Tabs } from "@base-ui/react/tabs";
 import { Search } from "lucide-react";
 import { Button } from "../src/components/ui/button";
 import { Input } from "../src/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../src/components/ui/tabs";
 import { ButtonCodePanel } from "./button-code-panel";
 import { buttonArgTypes, buttonParameters } from "./button-docs.data";
 import "./button-docs.css";
@@ -132,30 +132,30 @@ export function ButtonExamples() {
 export function ButtonDocsPage({ overview, sizes, usageStory, properties, keyboard, examples, usage, anatomy, guidelines, accessibility, platform, api }: ButtonDocsPageProps) {
   return <div className="button-docs">
     <Title>Button</Title><Description />
-    <Tabs.Root defaultValue="overview">
-      <Tabs.List className="button-docs-tab-list" aria-label="Button 文档" activateOnFocus>
-        <Tabs.Tab className="button-docs-tab" value="overview">Overview</Tabs.Tab>
-        <Tabs.Tab className="button-docs-tab" value="properties">Properties</Tabs.Tab>
-        <Tabs.Tab className="button-docs-tab" value="accessibility">Accessibility</Tabs.Tab>
-      </Tabs.List>
-      <Tabs.Panel className="button-docs-panel" value="overview">
+    <Tabs defaultValue="overview">
+      <TabsList variant="line" className="button-docs-tab-list" aria-label="Button 文档" activateOnFocus>
+        <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="properties">Properties</TabsTrigger>
+        <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
+      </TabsList>
+      <TabsContent className="button-docs-panel" value="overview">
         <ButtonCodePanel code={overviewCode} iframe><Story of={overview} /></ButtonCodePanel>
         <h2 id="button-usage">用法</h2><ButtonCodePanel code={usage} iframe><Story of={usageStory} height="96px" /></ButtonCodePanel>
         <h2>组成</h2><Markdown>{anatomy}</Markdown>
         <h2>使用建议</h2><Markdown>{guidelines}</Markdown>
         <h2>示例</h2><h3>尺寸</h3><ButtonCodePanel code={sizesCode} iframe><Story of={sizes} height="128px" /></ButtonCodePanel>
         <h3>图文、禁用与链接</h3><ButtonCodePanel code={buttonExamplesCode} iframe><Story of={examples} height="112px" /></ButtonCodePanel>
-      </Tabs.Panel>
-      <Tabs.Panel className="button-docs-panel" value="properties" keepMounted>
+      </TabsContent>
+      <TabsContent className="button-docs-panel" value="properties" keepMounted>
         <p>调整参数行，即时查看生产 Button；展开“查看代码”复制对应 JSX。</p>
         <Story of={properties} />
         <Markdown>{api}</Markdown>
-      </Tabs.Panel>
-      <Tabs.Panel className="button-docs-panel" value="accessibility">
+      </TabsContent>
+      <TabsContent className="button-docs-panel" value="accessibility">
         <Markdown>{accessibility}</Markdown>
         <h2>键盘与禁用状态</h2><ButtonCodePanel code={`import { Button } from "@/components/ui/button"\n\nexport function KeyboardExample() {\n  return <div className="flex gap-3"><Button>保存</Button><Button disabled>不可用</Button><Button variant="outline">下一项</Button></div>\n}`} iframe><Story of={keyboard} height="96px" /></ButtonCodePanel>
         <h2>平台差异</h2><Markdown>{platform}</Markdown>
-      </Tabs.Panel>
-    </Tabs.Root>
+      </TabsContent>
+    </Tabs>
   </div>;
 }
