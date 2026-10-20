@@ -44,4 +44,29 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
-      - run: pnpm verify:release
+      - name: Verify generated Xcode project
+        run: |
+          python3 scripts/generate-project.py
+          git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj
+      - name: Verify Web, contracts and native core
+        run: pnpm verify
+      - name: Test local service
+        run: pnpm test:service
+      - name: Test native sidebar index
+        run: pnpm test:sidebar-native
+      - name: Test native surfaces in Simulator
+        run: pnpm test:native-surfaces
+      - name: Build macOS app
+        run: pnpm build:mac
+        env:
+          MEMOCARD_USE_PREBUILT_UI: '1'
+      - name: Build iOS app
+        run: pnpm build:ios
+        env:
+          MEMOCARD_USE_PREBUILT_UI: '1'
+      - name: Build local service
+        run: pnpm build:service
+        env:
+          MEMOCARD_USE_PREBUILT_UI: '1'
+      - name: Verify service signature
+        run: codesign --verify --deep --strict build/local-service/MemoCardService.app

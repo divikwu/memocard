@@ -43,6 +43,8 @@ pnpm build:ios
 
 `build:mac` / `build:ios` 先构建 React 静态资源，再复制进应用并生成 Xcode 工程。页面通过 `memocard-ui://app` 加载，应用运行不依赖 Vite。`scripts/generate-project.py` 只使用 Python 标准库，不依赖 xcodegen；工程变更应编辑该脚本后重新生成。
 
+`pnpm verify:release` 与 CI release 保留相同检查顺序：工程漂移、Web/核心验证、服务测试、侧栏索引、真实模拟器探针、macOS/iOS/服务构建与签名。CI 将这些阶段显示为独立步骤；`pnpm verify` 已成功构建本次 Web 资源，后续三个原生构建用 `MEMOCARD_USE_PREBUILT_UI=1` 复用同一份 `apps/ui/dist`。该模式要求非空入口文件，只用于同一工作区中已成功构建且源码未改变的资源；单独运行构建命令仍默认重新编译 Web。没有按路径跳过原生检查，也没有修改超时、runner 或 Xcode 版本。
+
 ### 独立 Web
 
 桌面 Chrome / Edge 可直接选择、创建、切换本机文件夹，无需 Mac App。Markdown 与图片写入所选目录；草稿和目录授权保存在当前浏览器的 IndexedDB。启动下方开发服务器即可使用，生产构建 `apps/ui/dist` 可部署到 HTTPS 静态托管。本次没有公开发布网站；其他电脑需要同步好自己的本地文件夹后单独授权。详见 [独立 Web](docs/BROWSER_VAULT.md)。
