@@ -2,6 +2,15 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Docs 异步就绪与原生 CI 环境（2026-10-20）
+
+- `76de4e4` 的正式 CI 在 Docs 代码区缺少 `pre`、取消切库场景，以及原生 `simctl launch` 三处失败。原生任务独立运行仍超时，不能将任务隔离标记为修复。探针构建、安装完成，未取得断言结果；原始 [Verify 记录](https://github.com/divikwu/memocard/actions/runs/39364109551) 保留。
+- Docs 混合定向两次为 18/19，真实 Source 停留在 Suspense 空容器；只为展开操作增加 `act` 没有解决。夹具改为在首次渲染之后，显式等待 `vi.dynamicImportSettled()` 并在 `act` 内提交，再执行原来的代码内容与页签状态断言，混合定向为 19/19。没有 mock Source、增加 sleep、提高 timeout 或修改 worker。
+- 取消切库场景先加载真实原列表，再导航设置页发起取消操作，并增加 mock 数据快照不变断言。预览场景 54/54、完整 UI 单测 1058/1058、Storybook 类型检查、静态构建及相关 ESLint 通过。文档中的标题下间距同步为实际 16px，上方仍为 48px。
+- 修复后的本机设计全量为 101/104：Docs 通过，颜色 Default/Mobile 与侧栏断点失败；此前原配置本机全量为 102/104。保留失败，不将本机全量标为通过；最新完整门禁以 PR #52 head 的远程结果为准。没有新增实际 Storybook 页面可见验收。
+- 原版探针入口的有/无 preflight 对照均通过；随后系统临时目录、工作区临时目录及保留证据目录的 [三组 ARM 对照](https://github.com/divikwu/memocard/actions/runs/39364993500) 全部通过，不能将路径、清理或 preflight 单独归因。恢复原有完整 `verify:release` 和 preflight，仅将 CI release 改用同版本 Xcode 26.6 的标准 `macos-26-intel` runner 作为环境规避；探针源码、断言、预算和无重试策略均不变。Apple 内部阻塞原因尚未确认，远程结果另记于 PR；临时诊断 workflow 不进入 main。
+- 本机日志：`/tmp/memocard-button-docs-mixed-{instrumented,act,import-settled}.log`、`/tmp/memocard-button-docs-full-import-settled.log`、`/tmp/memocard-preview-scenarios-regression.log`、`/tmp/memocard-ui-readiness-full-unit.log` 和 `/tmp/memocard-docs-readiness-{storybook-build,eslint}.log`。工作区并行编辑器/标签改动未纳入这次修复。
+
 ## Button Controls、Sizes 与 Docs 状态回归（2026-10-20）
 
 - 仅过滤固定示例的 Controls：Variants 排除 `variant` / `children`，Sizes 排除 `size` / `children` / 仅部分生效的 `aria-label`，固定 KeyboardAndDisabled 夹具关闭 Controls。Default、Properties、共享 API metadata、六变体和八尺寸的 render 及既有 play 不变。
