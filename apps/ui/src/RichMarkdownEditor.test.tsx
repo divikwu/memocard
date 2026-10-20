@@ -1055,7 +1055,8 @@ it('suggests existing tags and confirms them without inserting a paragraph', asy
  const { request } = await import('./bridge');
  vi.mocked(request).mockResolvedValue({ tags: [{ name: '工作/项目' }] });
  const { editor, field, change } = await setup('正文');
- act(() => { editor.chain().setTextSelection(3).insertContent(' #工').run(); });
+ // Settle listTags and its keyboard-listener effect before sending Enter.
+ await act(async () => { editor.chain().setTextSelection(3).insertContent(' #工').run(); });
  await screen.findByRole('button', { name: '#工作/项目' });
  fireEvent.keyDown(field, { key: 'Enter' });
  expect(editor.getText()).toBe('正文 #工作/项目 ');

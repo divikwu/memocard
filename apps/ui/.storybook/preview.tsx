@@ -1,9 +1,11 @@
 import type { Preview } from "@storybook/react-vite";
+import { useEffect, useRef } from "react";
 import { ArgTypes, Description, Primary, Stories, Subtitle, Title, useOf, type StoryProps } from "@storybook/addon-docs/blocks";
 import { ThemeProvider } from "../src/features/theme/ThemeProvider";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE } from "../src/features/theme/preferences";
 import { desktopGlobals, mobileViewport, viewportOptions } from "./viewports";
 import { resetStorybookBridge } from "./bridge";
+import { observeDocsStoryLayout } from "./docs-story-layout";
 import "./preview.css";
 
 function memoryStorage(): Storage {
@@ -22,6 +24,15 @@ function memoryStorage(): Storage {
 // Its supported embed mode suppresses play while retaining document isolation.
 function DocsStoryPreview({ of, height, __primary }: StoryProps) {
   const { story } = useOf(of ?? "story", ["story"]);
+  const iframe = useRef<HTMLIFrameElement>(null);
+  const autoHeight = story.parameters.docs?.story?.autoHeight === true;
+  const centered = story.parameters.docs?.story?.centered === true;
+  const disabled = story.parameters.docs?.disable;
+  useEffect(() => {
+    const frame = iframe.current;
+    if ((!autoHeight && !centered) || disabled || !frame) return;
+    return observeDocsStoryLayout(frame, { autoHeight, centered });
+  }, [autoHeight, centered, disabled, story.id]);
   if (story.parameters.docs?.disable) return null;
   const source = new URL("iframe.html", window.location.href);
   source.searchParams.set("id", story.id);
@@ -29,7 +40,7 @@ function DocsStoryPreview({ of, height, __primary }: StoryProps) {
   source.searchParams.set("embed", "true");
   const mobile = story.tags.includes("mobile");
   return <div id={`story--${story.id}${__primary ? "--primary" : ""}`} className="sb-story sb-unstyled" data-story-block="true">
-    <iframe id={`iframe--${story.id}`} title={story.name} src={source.href} loading="lazy" allowFullScreen
+    <iframe ref={iframe} id={`iframe--${story.id}`} title={story.name} src={source.href} loading="lazy" allowFullScreen
       style={{ width: mobile ? `${mobileViewport.width}px` : "100%", maxWidth: "100%", height: height ?? story.parameters.docs?.story?.height ?? "320px", border: 0 }} />
   </div>;
 }
@@ -38,7 +49,7 @@ function StaticDocsPage() {
   return <>
     <Title /><Subtitle /><Description />
     <p>Docs 用于静态对照；切换 Canvas，在 Controls 中调整参数并运行交互。</p>
-    <Primary /><ArgTypes /><Stories />
+    <Primary /><ArgTypes /><Stories includePrimary={false} />
   </>;
 }
 

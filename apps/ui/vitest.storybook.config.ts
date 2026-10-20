@@ -45,6 +45,14 @@ export default mergeConfig(viteConfig, defineConfig({
           browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: { width: 768, height: 900 }, screenshotDirectory: fileURLToPath(new URL("../../build/verification/design-system/storybook-breakpoints", import.meta.url)) },
         },
       },
+      {
+        extends: true,
+        test: {
+          name: "button-docs",
+          include: ["stories/button-docs.browser.tsx", "stories/docs-story-layout.browser.tsx"],
+          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: desktopViewport },
+        },
+      },
     ],
   },
 }));

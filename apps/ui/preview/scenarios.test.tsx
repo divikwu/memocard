@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render,screen,cleanup,fireEvent,within,waitFor } from '@testing-library/react';
+import { act,render,screen,cleanup,fireEvent,within,waitFor } from '@testing-library/react';
 import { beforeAll,beforeEach,afterEach,it,expect,vi } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { createPreviewMock, PreviewFailure } from './mock';
@@ -25,6 +25,7 @@ async function show(id:string){
   const mock=createPreviewMock(id);fixture.browser=mock.browser;fixture.request.mockImplementation(mock.request);
   window.history.replaceState(null,'',scenario.detail?`#/notes/${noteId}`:'#/notes');
   render(<App />);
+  await act(async()=>{await vi.dynamicImportSettled();});
   return mock;
 }
 it.each([
@@ -336,13 +337,17 @@ it.each(['disconnected','unauthorized','permission'])('%s keeps the already load
 
 it('keeps the original list when selecting another folder is not authorized',async()=>{
   const mock=createPreviewMock('partial');fixture.browser=true;fixture.request.mockImplementation(mock.request);
-  window.history.replaceState(null,'','#/settings');render(<App />);
+  window.history.replaceState(null,'','#/notes');render(<App />);
+  expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
+  const original=mock.snapshot();
+  window.history.replaceState(null,'','#/settings');fireEvent(window,new HashChangeEvent('hashchange'));
   fireEvent.click(await screen.findByRole('button',{name:'切换笔记库'}));
   expect(await screen.findByText('笔记库未切换，请重新选择并允许访问文件夹。')).toBeTruthy();
   fireEvent.click(screen.getByRole('button',{name:'所有笔记'}));
   expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
   expect(screen.queryByRole('heading',{name:'文件夹授权未完成'})).toBeNull();
   expect(mock.calls.filter(op=>op === 'selectVault')).toHaveLength(1);
+  expect(mock.snapshot()).toEqual(original);
 });
 
 

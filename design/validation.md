@@ -2,6 +2,100 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Docs 异步就绪与原生 CI 环境（2026-10-20）
+
+- `76de4e4` 的正式 CI 在 Docs 代码区缺少 `pre`、取消切库场景，以及原生 `simctl launch` 三处失败。原生任务独立运行仍超时，不能将任务隔离标记为修复。探针构建、安装完成，未取得断言结果；原始 [Verify 记录](https://github.com/divikwu/memocard/actions/runs/39364109551) 保留。
+- Docs 混合定向两次为 18/19，真实 Source 停留在 Suspense 空容器；只为展开操作增加 `act` 没有解决。夹具改为在首次渲染之后，显式等待 `vi.dynamicImportSettled()` 并在 `act` 内提交，再执行原来的代码内容与页签状态断言，混合定向为 19/19。没有 mock Source、增加 sleep、提高 timeout 或修改 worker。
+- 取消切库场景先加载真实原列表，再导航设置页发起取消操作，并增加 mock 数据快照不变断言。预览场景 54/54、完整 UI 单测 1058/1058、Storybook 类型检查、静态构建及相关 ESLint 通过。文档中的标题下间距同步为实际 16px，上方仍为 48px。
+- 修复后的本机设计全量为 101/104：Docs 通过，颜色 Default/Mobile 与侧栏断点失败；此前原配置本机全量为 102/104。保留失败，不将本机全量标为通过；最新完整门禁以 PR #52 head 的远程结果为准。没有新增实际 Storybook 页面可见验收。
+- 原版探针入口的有/无 preflight 对照均通过；随后系统临时目录、工作区临时目录及保留证据目录的 [三组 ARM 对照](https://github.com/divikwu/memocard/actions/runs/39364993500) 全部通过，不能将路径、清理或 preflight 单独归因。任务拆分已撤回；Intel 独立探针也失败，更换 runner 尚未证实有效，恢复原 ARM runner、完整 `verify:release` 和 preflight。探针入口补上 App init 阶段标记，启动期限失败后有界采样 simctl、匹配的 Simulator 探针进程和宿主内存状态；原断言、预算和无重试策略不变，晚到结果不能通过。Apple 内部阻塞原因尚未确认，远程结果另记于 PR；临时诊断 workflow 不进入 main。
+- 上述诊断 head `e78f1b7` 的 [完整 Verify](https://github.com/divikwu/memocard/actions/runs/39366377965) design 104/104 与 release 全部通过，包含原生 42 字段、6 订阅场景、3 输入、15 预览 guard、2 预览交互、7 次逐字输入、12 chrome 检查及三项原生构建/签名。日志实际显示 spawn 45.897 秒、整体完成 57.502 秒，共享 60 秒仅余 2.498 秒；不能由一次通过断言内部启动故障已解决。
+- 因此后续明确拆分功能探针预算：启动 RPC 作为有界环境操作为 180 秒，确认启动后的完成等待 60 秒；App task 另输出单调时钟耗时，必须有限、非负且不超过 60 秒，防止启动等待期间发生的慢断言被隐藏。控制器最大 180 + 60 秒，不含失败诊断/清理，无重试。原生断言与结果 JSON 不变；这是功能测试编排修复，不是 App 启动性能改善。导入 main 边界让实际 `launch_probe` 可直接回归：修复前模拟 70 秒启动在共享 60 秒处失败；修复后七项 controller 回归通过，包含超长启动、缺失完成、隐藏的 61 秒断言、无效计时和失败结果。红绿日志为 `/tmp/memocard-native-launch-protocol-{red,green}.log`，真实新 head CI 另记于 PR。
+- `f8a65c6` 的 [正式 Verify](https://github.com/divikwu/memocard/actions/runs/39369218904) design 104/104 通过；release 在 Web 单测阶段失败，尚未运行新原生探针：属性保存失败场景未在默认查询期限内取得“属性”按钮，笔记删除的复合流程超过整项 5 秒。预览 helper 现于 render 后等待实际动态导入及 React 提交；删除回归拆成取消/失败保留与失败后直接重试两条，保留取消、错误、正文、最新 hash、返回主页断言，不提高 timeout 或修改 worker。两文件定向 129/129、完整 Web 单测 62 文件 / 1059 项、类型检查、相关 ESLint 和 7 项原生控制器回归通过；完整新 head 结果另记于 PR，不将此次 CI 记为原生通过。本机日志为 `/tmp/memocard-final-web-readiness-{targeted,full}.log`。
+- `eb4fb8c` 的 [Verify](https://github.com/divikwu/memocard/actions/runs/39370485061) design 104/104 通过，前述两项 Web 回归通过；release 为 1058/1059，新的失败是标签建议 Enter 仍使用 `#工` 而非已显示的 `#工作/项目`。组件异步 listTags 结果会同时更新列表和 effect 中的键盘监听器；测试原先仅同步 act 输入，DOM 查询可能先于监听器 effect。测试现用异步 act 完成该真实更新再发 Enter，正文/onChange/建议关闭原断言保持，未改生产组件或增加等待期限。修改后编辑器完整文件 150/150 和相关 ESLint 通过，日志 `/tmp/memocard-tag-suggestion-effect-readiness.log`；新 head 的完整门禁另记于 PR。源码解释与 CI 现场相符，但未把全部环境波动归因于这一处时序。
+- 本机日志：`/tmp/memocard-button-docs-mixed-{instrumented,act,import-settled}.log`、`/tmp/memocard-button-docs-full-import-settled.log`、`/tmp/memocard-preview-scenarios-regression.log`、`/tmp/memocard-ui-readiness-full-unit.log` 和 `/tmp/memocard-docs-readiness-{storybook-build,eslint}.log`。工作区并行编辑器/标签改动未纳入这次修复。
+
+## Button Controls、Sizes 与 Docs 状态回归（2026-10-20）
+
+- 仅过滤固定示例的 Controls：Variants 排除 `variant` / `children`，Sizes 排除 `size` / `children` / 仅部分生效的 `aria-label`，固定 KeyboardAndDisabled 夹具关闭 Controls。Default、Properties、共享 API metadata、六变体和八尺寸的 render 及既有 play 不变。
+- Sizes 启用现有自然高度模式并移除使用点的固定高度覆盖。将原 iframe 布局观察器移至 Storybook 专用模块供实际渲染与测试复用；`autoHeight` 与 `centered` 组合时保留居中，取消与 iframe 视口高度绑定的 min-height。其他固定高、主题/数据隔离及 observer/listener 清理保持。
+- 新增独立 `button-docs` 浏览器 project 的 3 项持续回归：真实 DocsRenderer/CSF/三页签，六项参数、点击计数、展开代码与 Reset 后再切页的状态保留；同一 iframe/document/控件身份、hidden/inert/display:none 和原生 Tab 跳过；Sizes 在 700→320→700px 下八尺寸完整、自然增高及回缩、保持居中且内部无裁切/横滚。仅 iframe 装载使用 `about:blank` fixture，样式来自实际 Vite/Tailwind 输出；测试适配器绑定现有 Storybook 10.6.2，不访问 Storybook 服务或用户页面。
+- 两项负向控制均检测失败：临时关闭 Properties 的 `keepMounted` 后失去保留面板；自然高度模式跳过居中后测得约 120px 水平偏移（容差仍为 1px）。源码已恢复，公开 `setProjectAnnotations` 初始化后的三项正向回归通过，没有修改 worker、超时或原有断言。
+- Sizes 首轮 240px 测试检测到 320px 横滚。最初怀疑宿主样式污染，限定注入实际 preview/Button CSS 后仍复现，进一步定位为生产 `styles.css` 中 `@apply min-w-80` 的既有 320px body 下限。最终按原有支持边界测试，没有覆盖最小宽度、改动生产 CSS 或放宽溢出/居中检查；原始失败和诊断记录保留。
+- 初次完整设计运行为 99/104：新增三项通过；既有 Button Properties 未及时取得代码 pre、搜索 RetryAndPagination 可见性失败，以及颜色 Default/Mobile、侧栏断点超时。未修改对应 play 或超时；原样定向 Button/搜索/颜色 18/18 与断点 1/1 随后通过，首次根因未确认，不将定向通过写成问题已消除。
+- 第二次原配置全量复跑为 87/104，新增三项仍通过；出现更多既有故事超时与截图超时，不能标记全量门禁通过。基线 `277b9ca` 的远程 [design run](https://github.com/divikwu/memocard/actions/runs/39353522760) 已在 Note Search RetryAndPagination 的同一可见性断言失败（100/101）；这只证明该搜索失败已存在，其他失败的根因仍未确认。
+- 为修正搜索故事明确的就绪缺口，在公共 `searchDialog` helper 增加对同一弹窗的 `toBeVisible()` 等待；此前只等待 DOM 和输入焦点。保留生产动画、原超时及全部业务断言，不宣称已确认动画透明度就是全部失败根因。搜索定向 6/6 通过；一次混合定向为 18/19，新增 Docs 状态测试未及时取得懒加载代码 pre。测试夹具随后为直接调用 DocsRenderer 的渲染/卸载补上 React act 边界，保留对真实代码内容的等待，新增三项定向再次 3/3 通过；这尚不证明混跑问题已消除；最终全量结果以新 head 的 CI 为准。
+- 提交 `7f5501704ceaaa370f387dc27227fbdc32c70998` 的独立 [CI design 门禁](https://github.com/divikwu/memocard/actions/runs/39356228890/job/118411528794) 通过完整 104/104、类型、Storybook 静态构建、维护表/token/icon 与 palette 检查。本机 act 修正后的混跑仍为 18/19；随后将测试就绪等待绑定实际 iframe 容器，并先断言 pre 存在，保持原超时与文本断言，但混跑仍为 18/19。此时诊断明确显示代码区停留在 Storybook Suspense 的空 div，懒加载尚未完成；不能据此断言导入失败、最终原因或本机不稳定已消除。最终 head 的 CI 单独记录在 PR，原始失败继续保留。
+- Storybook 类型检查、生产 UI 构建、变更 TS/TSX 的 ESLint、diff 检查与全部 route/initial JS/CSS/字体预算通过，未提高预算。相对本轮基线 `277b9ca`，407 份 Web 源码与生产产物逐一 SHA256 一致；此前 PR 中已授权的 Tabs 样式修改不包含在这份增量证据内。原生组件与动作协议没有改动。
+- 浏览器安全策略仍限制实际 localhost 页面观察；本轮自动检查不替代真实服务 iframe 启动、可见页面、真实剪贴板读回或原生验收。没有新增 Xcode Preview、模拟器或真机覆盖。完整远程门禁以 PR #52 最新 head 为准。
+- 本机日志为 `/tmp/memocard-button-docs-contract-*`：初次完整失败保留在 `verify-design.log`，定向复现为 `failures-isolated.log` / `breakpoint-isolated.log`，两项负向控制为 `keep-mounted-negative.log` / `centering-negative.log`；生产指纹对照为 `production-parity.json`。这些是本机辅助证据，持续回归已接入 `pnpm verify:design`，跨机器请重跑维护命令。
+
+## Tabs line 列表容器（2026-10-20）
+
+- 按 tablist 标注，仅调整 `TabsList` 的 line 变体：四周 padding 由 3px 变为 0，默认列间距由 4px 变为 8px，行间距保留 4px。使用 `gap-2 gap-y-1 bg-transparent p-0`，默认变体仍有 3px padding，不新增断点；主页调用端及移动布局原有 gap 覆盖继续生效。保留原外部高度规则，内部 Trigger 随 padding 移除自然获得更多高度，不额外补偿高度或下划线位置。
+- 首版 `gap-1 gap-x-2` 新增 CSS，使最紧路由达到 1,335,312 bytes raw，超过 1,335,296 上限；日志保留。最终等价复用已生成的 `gap-2` / `gap-y-1`，共享 CSS hash 与上一版一致，最紧路由为 1,335,267 bytes raw，所有 route / initial JS/CSS / 字体预算通过，没有修改预算。
+- 最终生产构建（含类型）、Storybook 构建、Button / Tabs 10 项交互、NoteCollection 12 项回归、ESLint 与 diff 检查通过，独立静态审查通过。没有重跑完整 101 项或原生验收；实际可见/计算样式复核仍受浏览器安全策略限制。
+- 本机最终日志为 `/tmp/memocard-tabs-line-list-final-{build,storybook-build,stories,collection,eslint,budget}.log`，首版超预算记录为 `/tmp/memocard-tabs-line-list-budget.log`；远程 CI 以 PR #52 最新 head 为准。
+
+## Tabs line 左右内边距（2026-10-20）
+
+- 根据 `components-tabs--line` 的标注，在生产 `TabsTrigger` 的现有 line 条件分支使用 `px-1`：左右各 4px，默认变体维持 `px-2` 的 8px，不添加断点或视口特例。规则适用于所有 line 消费者，包括 Button Docs 和主页页签；主页“最近更新”原已显式 4px，“已固定”同步为 4px。API 类型、上下间距、键盘和禁用行为保持。
+- 仅新增条件类的首版使最紧移动路由从基线 1,335,281 / 1,335,296 bytes raw 增至 1,335,450，预算检查正确失败。最终以新 padding 条件类替换同分支重复的普通态透明背景类：普通态沿用已有 Preflight 透明背景，选中态及深色选中态的显式规则保留。最终路由 1,335,268 bytes raw，比基线少 13 bytes；gzip 增加 4 bytes，所有 route、initial CSS/JS 与字体预算通过，没有调整预算。
+- 最终生产构建（含 TypeScript）、Storybook 静态构建、Button / Tabs 10 项交互、NoteCollection 12 项回归、变更 TSX 的 ESLint 和 diff 空白检查通过，独立静态审查通过。浏览器安全策略仍限制实际页面观察，本轮未完成 4px 的可见/计算样式复核，不把自动交互测试写成样式量测；没有重跑完整 101 项或原生验收。
+- 本机日志为 `/tmp/memocard-tabs-line-padding-{baseline-build,baseline-budget,build,budget,final-build,storybook-build,final-budget,final-stories,final-collection,final-eslint}.log`，首版超预算记录保留在 `budget.log`。基线 CSS、产物指纹及前后体积对照位于 ignored 的 `build/verification/tabs-line-padding/`；远程 CI 以 PR #52 最新 head 为准。
+- 后续按新的 4px → 0px 标注，仅将同一 line 条件类改为 `px-0`，默认变体仍为 8px，不添加断点；条件规则也覆盖主页调用端已有的普通 `px-1`。生产构建（含类型）、Storybook 构建、Button / Tabs 10 项与 NoteCollection 12 项回归、ESLint 和 diff 检查通过，独立静态审查通过。构建结束后重新执行预算检查，全部预算通过，最紧路由为 1,335,255 bytes raw；没有修改预算。实际可见/计算样式复核仍未完成。日志为 `/tmp/memocard-tabs-line-zero-{build,storybook-build,stories,collection,eslint,budget-final}.log`。
+
+## Button 文档章节间距（2026-10-20）
+
+- 仅调整 Button Docs 的局部 CSS：列表下边距改为 16px，与现有 Tabs 8px gap 合成到 Panel 的 24px；直接章节标题统一上 32px / 下 16px，覆盖 Storybook 对首个 `h2` 的顶部清零规则。相邻 `h2` / `h3` 保留 16px 层级间距；Panel 首元素不叠加默认顶部 margin。上述均为默认根字号下的 CSS 规则值，不是重新量测的渲染像素。
+- 保留生产 Tabs `line` 的外观与焦点、Properties `keepMounted`、隐藏规则、代码面板、iframe 和 Markdown 内部排版。Button 7 项 + Tabs 3 项既有交互共 10/10、Storybook 静态构建与 diff 空白检查通过，独立静态复核通过。此轮仅改 CSS，未重跑类型检查、完整 101 项或原生验收。
+- 浏览器页面观察仍受此前安全策略限制，本轮未进行调整后的实际可见/布局复核，未绕过限制。日志为 `/tmp/memocard-button-docs-rhythm-{tests,build}.log`；远程 CI 以 PR #52 最新 head 为准。
+- 后续根据截图反馈，将直接章节标题间距进一步加大为上 48px / 下 24px，相邻章节与子标题间保留 24px。只改 Button Docs 局部 CSS 的两个数值，保留 Tabs 至 Panel 的间距与所有内部排版；静态构建及 diff 检查通过，独立静态审查通过。没有重复上一轮交互检查，仍未完成实际可见复核；日志为 `/tmp/memocard-button-docs-section-spacing-build.log`。
+
+## Button 文档复用 Tabs（2026-10-20）
+
+- Button Docs 改为导入项目已有的 `Tabs` / `TabsList` / `TabsTrigger` / `TabsContent`，在 `TabsList` 使用 `variant="line"`。删除文档重复的页签外观、选中态、焦点与响应式间距样式，仅保留列表外边距和隐藏 Panel 规则；其他表单、表格滚动区和代码面板的焦点样式保持。
+- Properties 的 `keepMounted`、页签的 `activateOnFocus` 和现有 iframe 配置保持；生产 Tabs 实现未改。Button 7 项与 Tabs default / line / vertical 3 项既有交互检查共 10/10，通过 Storybook 类型检查、静态构建、变更 TSX 的 ESLint 和 diff 空白检查；独立静态复核无 P1/P2。
+- 本轮未执行真实 Docs 页面可见复核：此前浏览器安全策略拒绝 localhost 页面观察，未通过其他 UI 工具绕过。自动检查不代替实际页签在 Docs 中的布局及跨页签保留状态验收。未重跑完整 101 项检查或原生验收；日志为 `/tmp/memocard-button-local-tabs-{tests,typecheck,build,eslint}.log`，远程 CI 以 PR #52 最新 head 为准。
+
+## Properties 左右对齐（2026-10-20）
+
+- 仅 Properties 故事改为 `layout: "fullscreen"`，其专属容器保留 `padding-block: 1rem`。真实 Docs 测量 iframe body padding 四边为 0，预览框与参数表左右 inset 均为 0，与外层说明的左右边缘差值均为 0；上下 16px、预览框内部 16px、表格单元格 12px 保持。
+- Button 定向交互 7/7、Storybook 类型检查与静态构建、变更故事 ESLint 及 diff 空白检查通过。实际复核代码展开/收起的自然高度、切页保留参数和 Reset；900×786 manager 下页面宽度/scrollWidth 均为 489px，680px 参数表只在自身区域内横滚，临时视口已恢复，浏览器错误为空。没有重复执行上一轮完整 101 项检查，也未改其他故事、生产或原生组件。
+- 本机日志为 `/tmp/memocard-button-properties-edge-{tests,typecheck,build,eslint}.log`，截图及 DOM 测量为 ignored 的 `build/verification/button-properties-edge/`；远程 CI 以 PR #52 最新 head 为准。
+
+## Button 参数行、代码面板与切页状态（2026-10-20）
+
+- Properties 改为一组八行参数：名称、类型/默认值、说明和当前控件在同一行；六项可编辑，`onClick` / `render` 只读。CSF 与参数行共用 Button 专属 metadata，移除重复 ArgTypes 表。所有 Button Docs 示例与参数预览共用代码面板，默认收起，使用 Storybook Source 的 TSX 高亮和内建 Copy，不增加第二个复制入口。
+- 真实 Docs 已验证复杂文字、variant / size / type、禁用、Reset、图标名称、点击计数和动态代码同步；文字及图标代码分别通过实际 Copy 写入剪贴板并读回，与展示代码逐字相同。代码存在 71 个高亮 span，复制入口只有一个。七段从浏览器提取的完整 TSX 对实际生产导入的类型检查通过。
+- Properties 仅在当前 Docs 会话保留挂载。实际切到 Accessibility 再返回后，参数、点击计数及代码展开状态保留；隐藏面板同时具有 `hidden` / `inert`，计算样式为 `display:none`，参数控件不在无障碍树中。代码展开/收起时 iframe 高度从 1,489px 恢复到 1,202px；最终左右留白各 16px。900×786 manager 下 Properties 文档宽度/scrollWidth 均为 489px，680px 参数表只在其 457px 区域内横滚，页面没有水平溢出；临时视口覆盖已恢复。
+- Overview 按总览 → 用法 → 组成 → 使用建议 → 示例排列，补充图文、禁用与真实 `a href` 组合。实际 Enter 激活链接后，焦点到达同一示例 iframe 的目标段落，父 Docs 未导航；窄布局示例宽度/scrollWidth 均为 487px。无障碍说明明确键盘、命名、禁用/链接责任、4.5:1 / 3:1 的适用范围，以及既有 blue/slate primary 白字约 3.7617777:1 的缺口；未声称所有变体/状态或整页 AA 通过。未迁移 Input 的原布局和手动输入回显正常，两个页面浏览器错误记录均为空。
+- 最终 `pnpm verify:design` 通过 101/101：100 个组件故事（88 桌面、12 H5）加 1 项真实断点回归，含 Button 7/7；类型、静态构建、维护表/token/icon 与真实 palette 检查通过。五个变更 TS/TSX 文件 ESLint、diff 空白检查通过，独立复核无剩余 P1/P2。未修改 worker、超时、断言强度或预算。
+- 首次 Button 定向因新导入 `storybook/theming` 被晚发现而触发优化器 reload，7 个故事发生模块加载失败；显式加入既有 `optimizeDeps.include` 后定向 7/7 通过。后续静态检查发现新增 Copy 测试误用了 Playwright 的 `exact` 选项及未使用参数，已按 Testing Library 查询类型和 lint 修正。完整运行另曾出现未修改 Dropdown Menu 的菜单可见性断言失败（其余 100/101 通过）；原配置单跑 1/1 与完整 101/101 随后通过，初次失败原因未确定，原始日志保留，不将其写成已消除的时序问题。
+- 与本轮基线 `969ce353` 比较，453 份生产源码、资源与 token 的 SHA256 全部一致，原有 Default、Variants、Sizes、KeyboardAndDisabled 四个故事定义逐字一致。没有修改生产 API、六变体、八尺寸、默认外观、原生组件、依赖或交互协议；本轮没有新增 Xcode Preview、模拟器或真机验收。
+- 完整通过日志为 `/tmp/memocard-button-docs-complete-verify-design-accepted.log`，初次加载失败保留在 `/tmp/memocard-button-docs-unified-targeted.log`；静态失败为 `/tmp/memocard-button-docs-complete-verify-design.log` 与 `/tmp/memocard-button-docs-complete-eslint.log`，Dropdown 失败为 `/tmp/memocard-button-docs-complete-verify-design-final.log`。最终 lint / 代码类型检查日志为 `/tmp/memocard-button-docs-complete-{eslint-final,snippets-final}.log`；截图、AX 读回数据、实际复制代码及指纹位于 ignored 的 `build/verification/button-docs-complete/`。这些是本机辅助证据，远程 CI 以 PR #52 最新 head 为准。
+
+## Button 文档分页与参数预览（2026-10-20）
+
+- Button 专属 Docs 按 Astryx 的 Overview、Properties、Accessibility 分页。Overview 居中展示 MemoCard 原有六种变体，随后展示八种尺寸、用法、组成与使用建议；Canvas 代码默认收起。按用户可见复核意见去掉总览灰底和重复的内层圆角边框，只保留 Storybook 的外层预览框，生产按钮外观保持；根据后续可见意见将总览、尺寸、用法与键盘示例统一为 Docs 内水平、垂直居中，保留原 Canvas 布局。Properties 移除组件额外的 16px padding，仅保留 iframe 单层留白；真实 DOM 测量左右均为 16px。三个 Overview 示例的居中偏差为水平 0.25px（clientWidth 的子像素取整）、垂直 0px。其他试点继续使用原来的纵向模板。
+- Properties 的六个带标签控件与真实生产 Button 位于同一隔离 iframe；修改 variant、size、children、type、aria-label、disabled 即时更新预览，Reset 恢复参数和内存点击计数。图标尺寸显示真实 Search，动态 JSX 使用 JSON 字符串表达式保留引号、花括号与尖括号；从真实 Docs 读取的文字、图标两段完整代码对实际生产导入的类型检查通过。新包装器关闭无效的外部 Canvas Controls，生产 API 表维持真实契约。
+- 可见验收发现固定 540px iframe 会在窄布局展开代码时裁切；仅 Properties 开启 `docs.story.autoHeight`，按同源自然内容根的 ResizeObserver 调整高度，加载与切页时清理。实际复核代码展开时 API 下移、收起时高度恢复；其他故事保留固定高度和既有 document、存储与数据隔离。
+- `pnpm verify:design` 最终通过：99 个故事（87 桌面、12 H5）加 1 项断点回归，共 100/100；类型、静态构建、维护表/token/icon 与真实 palette 检查通过。3 个变更 TSX 文件 ESLint 和 diff 空白检查通过，独立审查无 P1/P2。首次完整运行 99 个组件故事通过，既有断点用例在原 15 秒上限超时；未改源码或上限，单跑 1/1（1.04 秒）及完整原配置 100/100 随后通过，未确定初次超时原因。去灰底后静态构建和 Button 定向 6/6 通过；最终移除内层装饰后的静态构建与可见复核通过，后续居中与间距修正后再次完整 `pnpm verify:design` 100/100 通过，不将视觉调整视作新增交互覆盖。
+- 真实 Storybook Docs 已完成 Overview → 方向键 Properties → Accessibility、参数修改/禁用/重置、图标名称与当前代码同步；键盘激活后 Tab 跳过禁用按钮并到达“下一项”。代码默认收起，六种变体和八种尺寸各在对应区域展示一次。未迁移 Input 的原布局及手动输入回显正常；最终导航浏览器错误记录为空。
+- 453 份生产源码、资源与 token 指纹未变化；原有 Default、Variants、Sizes、KeyboardAndDisabled 四个 Button 故事与本轮基线逐字一致。未改生产组件、原生组件、依赖或交互协议。本轮未执行新的 Xcode Preview、模拟器或真机验收。
+- 日志为 `/tmp/memocard-button-tabs-{targeted,verify-design,breakpoint,verify-design-final,no-gray-build,no-gray-tests,final-build,centered-tests,complete-final}.log`，截图、AX、真实代码和指纹位于 ignored 的 `build/verification/button-docs-tabs/`。初次超时保留在 `verify-design.log`，完整通过在 `verify-design-final.log` 与最终 `complete-final.log`；这些是本机辅助证据，远程 CI 以 PR #52 最终 head 为准。
+
+## 组件使用文档试点（2026-10-20）
+
+- Button、Input、Dialog、Note Search 复用一个 Storybook Docs 模板，增加用途、默认实际示例与最小生产代码、组成、使用建议、其他状态、API、无障碍和平台差异。Button 新增单按钮 Default；原有 14 个故事定义（含 args、play 和时限）与 main 逐字一致。未引入 MDX、组件注册表、运行时依赖或第二份组件维护清单。
+- Button 显式列出 8 项常用生产参数，Input 列出 13 项；Dialog 的生产组合契约与示例 onSave 分开，Note Search 完整列出 7 个生产 props，并将 initialOpen 等示例控制项单列。Controls 只开放对当前故事真实生效的参数。独立审查曾发现 Button 的默认 type 文案错误；按已安装 Base UI useRender 的 renderTag 实现修正为默认路径提供 type="button"，提交需显式 submit，修复后独立复核无 P1/P2。未修改生产 Button 行为。
+- `pnpm verify:design` 通过：97 个故事（85 桌面、12 H5）与 1 项断点回归，共 98/98；类型、静态构建、维护表/token/icon 及真实 palette 检查通过。没有修改 worker、断言、超时或预算。13 项跨 project 文件过滤不是跳过故事；报告中的 98 项测试全部执行并通过。4 段完整使用代码通过虚拟 TSX 文件对实际生产导入的类型检查，没有创建临时生产源码；6 个变更 TSX 文件的 ESLint 通过。
+- `pnpm --filter @memocard/ui build` 与 `pnpm check:bundle` 通过。285 份指定 Web/原生源码、资源与 token 文件，以及 164 份生产构建产物，与实施前逐一 SHA256 一致，无修改；生产移动首页仍为 1,335,281 / 1,335,296 bytes raw。生产构建原有大 chunk 提示保留。改动仅在 Storybook 与设计文档中，不将此轮计作 Xcode Preview、模拟器或真机验收。
+- 真实 Storybook Docs 已核对四个试点的说明、生产代码、参数表和单次主示例：Button 的 variant/size/type 可见且默认值正确，Input 手动输入后回显一致；Dialog 实际打开、Escape 关闭，在退出过渡完成后焦点返回触发器；Note Search 输入“计划”、方向键选中“计划清单”、Enter 后回调显示 search-checklist，关闭后焦点返回“返回搜索”。Canvas 将 Button 的 variant 调为 outline、size 调为 lg，控件和实际按钮更新，随后 Reset controls 恢复默认，没有保存故事改动。
+- 全局 Docs 去重仅增加 Stories.includePrimary=false。未迁移的 Select 主故事和 Small 各出现一次；手动将首个选择框改为深色时，另外四个示例仍为浅色。Foundations Effects 的 Default、Dark、Reduced Motion 各出现一次，深色内容保持在独立 iframe 中，外围 Docs 仍为浅色。Docs 仍停止自动 play，手动交互、主题和数据隔离保留。
+- 初次在并行静态构建期间打开开发服务，观察到 4 条 Storybook manager UniversalStoreFollowerTimeoutError；原始日志保留。完整构建后通过新导航完成上述检查，后续错误为 0，保留 1 条 Storybook 11 的 PopoverProvider ariaLabel 升级提示；没有修改产品代码或根据一次后续通过判断初次错误根因。首次 Dialog 关闭读取仍处于退出动画中，最终按过渡完成后的 DOM 和焦点确认关闭，不放宽原有交互测试。
+- 本机日志为 `/tmp/memocard-component-docs-{verify-design,snippets,eslint,production-build,bundle}.log`，可见截图、AX 快照和源码/产物指纹位于 ignored 的 `build/verification/component-docs-pilot/`。这些文件作本机辅助证据，跨机器应重跑维护中的故事与设计门禁；远程 CI 以新 PR 的最终 head 为准。
+
 ## Foundations 颜色状态、排版与动效边界（2026-10-19）
 
 - 本轮只扩展现有 Foundations 故事、独立浏览器测试配置和维护文档。默认外观、生产 CSS/Provider、token、原生组件及交互保持；不新增平行主题或排版规范。
