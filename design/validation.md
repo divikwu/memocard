@@ -2,6 +2,13 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Tabs line 列表容器（2026-10-20）
+
+- 按 tablist 标注，仅调整 `TabsList` 的 line 变体：四周 padding 由 3px 变为 0，默认列间距由 4px 变为 8px，行间距保留 4px。使用 `gap-2 gap-y-1 bg-transparent p-0`，默认变体仍有 3px padding，不新增断点；主页调用端及移动布局原有 gap 覆盖继续生效。保留原外部高度规则，内部 Trigger 随 padding 移除自然获得更多高度，不额外补偿高度或下划线位置。
+- 首版 `gap-1 gap-x-2` 新增 CSS，使最紧路由达到 1,335,312 bytes raw，超过 1,335,296 上限；日志保留。最终等价复用已生成的 `gap-2` / `gap-y-1`，共享 CSS hash 与上一版一致，最紧路由为 1,335,267 bytes raw，所有 route / initial JS/CSS / 字体预算通过，没有修改预算。
+- 最终生产构建（含类型）、Storybook 构建、Button / Tabs 10 项交互、NoteCollection 12 项回归、ESLint 与 diff 检查通过，独立静态审查通过。没有重跑完整 101 项或原生验收；实际可见/计算样式复核仍受浏览器安全策略限制。
+- 本机最终日志为 `/tmp/memocard-tabs-line-list-final-{build,storybook-build,stories,collection,eslint,budget}.log`，首版超预算记录为 `/tmp/memocard-tabs-line-list-budget.log`；远程 CI 以 PR #52 最新 head 为准。
+
 ## Tabs line 左右内边距（2026-10-20）
 
 - 根据 `components-tabs--line` 的标注，在生产 `TabsTrigger` 的现有 line 条件分支使用 `px-1`：左右各 4px，默认变体维持 `px-2` 的 8px，不添加断点或视口特例。规则适用于所有 line 消费者，包括 Button Docs 和主页页签；主页“最近更新”原已显式 4px，“已固定”同步为 4px。API 类型、上下间距、键盘和禁用行为保持。
