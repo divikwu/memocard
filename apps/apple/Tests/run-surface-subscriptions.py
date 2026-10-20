@@ -99,8 +99,10 @@ def phase(name, command, timeout, capture=False):
     process = None
     outcome = "failed"
     try:
-        process = subprocess.Popen(command, stdout=subprocess.PIPE if capture else None, stderr=subprocess.STDOUT, text=True)
-        output, _ = process.communicate(timeout=timeout)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE if capture else None, stderr=subprocess.PIPE if capture else subprocess.STDOUT, text=True)
+        output, errors = process.communicate(timeout=timeout)
+        if errors:
+            print(errors, flush=True)
         if process.returncode:
             if capture and output:
                 print(output, flush=True)
@@ -113,6 +115,9 @@ def phase(name, command, timeout, capture=False):
         if capture and error.stdout:
             output = error.stdout.decode(errors="replace") if isinstance(error.stdout, bytes) else error.stdout
             print(output, flush=True)
+        if capture and error.stderr:
+            errors = error.stderr.decode(errors="replace") if isinstance(error.stderr, bytes) else error.stderr
+            print(errors, flush=True)
         if name == "install":
             # The install deadline has already failed. Sample its live IPC wait
             # before terminating it; diagnosis never extends the success window.

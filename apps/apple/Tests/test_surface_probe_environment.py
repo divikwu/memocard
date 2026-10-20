@@ -60,6 +60,13 @@ class EnvironmentTests(unittest.TestCase):
         self.assertIn('"outcome": "timeout"', output.getvalue())
         self.assertIn('"event": "finish"', output.getvalue())
 
+    def test_metadata_json_is_not_polluted_by_stderr_warnings(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            result = probe.phase("project-read", [sys.executable, "-c", '''import sys; print('{"objects": {}}'); print("metadata warning", file=sys.stderr)'''], 30, capture=True)
+        self.assertEqual(json.loads(result), {"objects": {}})
+        self.assertIn("metadata warning", output.getvalue())
+
     def test_nonzero_exit_and_missing_executable_fail_with_context(self):
         for error in (None, FileNotFoundError("xcrun absent")):
             process = Mock(returncode=2)
