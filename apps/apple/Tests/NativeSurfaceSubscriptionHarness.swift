@@ -17,8 +17,10 @@ struct NativeSurfaceSubscriptionHarness: App {
     var body: some Scene {
         WindowGroup {
             Color.clear.task {
+                let started = ProcessInfo.processInfo.systemUptime
                 print("NATIVE_SURFACE_PROBE_STAGE app-task-start")
                 let passed = await NativeSurfaceSubscriptionProbe.run()
+                print("NATIVE_SURFACE_PROBE_TIMING assertionSeconds=\(ProcessInfo.processInfo.systemUptime - started)")
                 print("NATIVE_SURFACE_PROBE_STAGE app-task-complete passed=\(passed)")
                 exit(passed ? 0 : 1)
             }

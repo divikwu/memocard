@@ -9,6 +9,8 @@
 - 取消切库场景先加载真实原列表，再导航设置页发起取消操作，并增加 mock 数据快照不变断言。预览场景 54/54、完整 UI 单测 1058/1058、Storybook 类型检查、静态构建及相关 ESLint 通过。文档中的标题下间距同步为实际 16px，上方仍为 48px。
 - 修复后的本机设计全量为 101/104：Docs 通过，颜色 Default/Mobile 与侧栏断点失败；此前原配置本机全量为 102/104。保留失败，不将本机全量标为通过；最新完整门禁以 PR #52 head 的远程结果为准。没有新增实际 Storybook 页面可见验收。
 - 原版探针入口的有/无 preflight 对照均通过；随后系统临时目录、工作区临时目录及保留证据目录的 [三组 ARM 对照](https://github.com/divikwu/memocard/actions/runs/39364993500) 全部通过，不能将路径、清理或 preflight 单独归因。任务拆分已撤回；Intel 独立探针也失败，更换 runner 尚未证实有效，恢复原 ARM runner、完整 `verify:release` 和 preflight。探针入口补上 App init 阶段标记，启动期限失败后有界采样 simctl、匹配的 Simulator 探针进程和宿主内存状态；原断言、预算和无重试策略不变，晚到结果不能通过。Apple 内部阻塞原因尚未确认，远程结果另记于 PR；临时诊断 workflow 不进入 main。
+- 上述诊断 head `e78f1b7` 的 [完整 Verify](https://github.com/divikwu/memocard/actions/runs/39366377965) design 104/104 与 release 全部通过，包含原生 42 字段、6 订阅场景、3 输入、15 预览 guard、2 预览交互、7 次逐字输入、12 chrome 检查及三项原生构建/签名。日志实际显示 spawn 45.897 秒、整体完成 57.502 秒，共享 60 秒仅余 2.498 秒；不能由一次通过断言内部启动故障已解决。
+- 因此后续明确拆分功能探针预算：启动 RPC 作为有界环境操作为 180 秒，确认启动后的完成等待 60 秒；App task 另输出单调时钟耗时，必须有限、非负且不超过 60 秒，防止启动等待期间发生的慢断言被隐藏。控制器最大 180 + 60 秒，不含失败诊断/清理，无重试。原生断言与结果 JSON 不变；这是功能测试编排修复，不是 App 启动性能改善。导入 main 边界让实际 `launch_probe` 可直接回归：修复前模拟 70 秒启动在共享 60 秒处失败；修复后七项 controller 回归通过，包含超长启动、缺失完成、隐藏的 61 秒断言、无效计时和失败结果。红绿日志为 `/tmp/memocard-native-launch-protocol-{red,green}.log`，真实新 head CI 另记于 PR。
 - 本机日志：`/tmp/memocard-button-docs-mixed-{instrumented,act,import-settled}.log`、`/tmp/memocard-button-docs-full-import-settled.log`、`/tmp/memocard-preview-scenarios-regression.log`、`/tmp/memocard-ui-readiness-full-unit.log` 和 `/tmp/memocard-docs-readiness-{storybook-build,eslint}.log`。工作区并行编辑器/标签改动未纳入这次修复。
 
 ## Button Controls、Sizes 与 Docs 状态回归（2026-10-20）

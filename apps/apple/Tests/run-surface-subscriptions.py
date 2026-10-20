@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import shutil
 import subprocess
@@ -17,7 +18,6 @@ parser.add_argument("--output-dir", type=Path, help="New directory retaining evi
 parser.add_argument("--source-dir", type=Path, default=root / "apps/apple/Sources", help="Production sources, or a retained baseline snapshot")
 parser.add_argument("--prepare-only", action="store_true", help="Check Simulator readiness without building or launching the probe")
 parser.add_argument("--baseline", action="store_true", help="Measure the former Host-wide publisher in a retained old source snapshot")
-args = parser.parse_args()
 
 def select_device():
     if args.device != "auto":
@@ -66,7 +66,7 @@ def launch_timeout_diagnostics(process):
     diagnostic("host-memory-pressure", ["memory_pressure", "-Q"], 5)
     try:
         processes = subprocess.check_output(["ps", "-ax", "-o", "pid=,comm="], text=True, timeout=5)
-        probes = [line.split(None, 1)[0] for line in processes.splitlines() if "CoreSimulator/Devices/" in line and line.rstrip().endswith("/MemoCard.app/MemoCard")]
+        probes = [line.split(None, 1)[0] for line in processes.splitlines() if str(device_data_path) + "/" in line and line.rstrip().endswith("/MemoCard.app/MemoCard")]
         print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "probe-processes", "count": len(probes), "shown": min(2, len(probes))}), flush=True)
         for pid in probes[:2]:
             diagnostic("probe-sample", ["sample", pid, "1"], 5)
@@ -142,11 +142,11 @@ def launch_probe(directory):
         stdout_device_path = "/" + str(stdout_path.relative_to(device_data_path))
         stderr_device_path = "/" + str(stderr_path.relative_to(device_data_path))
         started = time.monotonic()
-        deadline = started + 60
         outcome = "failed"
-        print("SURFACE_PROBE_PHASE " + json.dumps({"phase": "launch", "event": "start", "device": device, "timeoutSeconds": 60}), flush=True)
+        print("SURFACE_PROBE_PHASE " + json.dumps({"phase": "launch", "event": "start", "device": device, "spawnTimeoutSeconds": 180, "assertionTimeoutSeconds": 60}), flush=True)
         try:
-            spawn_output = phase("spawn", ["xcrun", "simctl", "launch", f"--stdout={stdout_device_path}", f"--stderr={stderr_device_path}", device, "dev.divikwu.memocard.surface-probe"], deadline - time.monotonic(), capture=True)
+            spawn_output = phase("spawn", ["xcrun", "simctl", "launch", f"--stdout={stdout_device_path}", f"--stderr={stderr_device_path}", device, "dev.divikwu.memocard.surface-probe"], 180, capture=True)
+            deadline = time.monotonic() + 60
             while time.monotonic() < deadline:
                 output = stdout_path.read_text(errors="replace")
                 lines = [line.removesuffix("\n").removesuffix("\r") for line in output.splitlines(keepends=True) if line.endswith("\n")]
@@ -158,10 +158,24 @@ def launch_probe(directory):
                     if result_line is None:
                         raise RuntimeError("Surface probe completed without its assertion result")
                     json.loads(result_line.removeprefix(marker))
+                    # The task may run while simctl still waits for its launch
+                    # acknowledgement; that overlap must not hide slow assertions.
+                    timing_marker = "NATIVE_SURFACE_PROBE_TIMING assertionSeconds="
+                    timing_line = next((line for line in lines if line.startswith(timing_marker)), None)
+                    if timing_line is None:
+                        raise RuntimeError("Surface probe completed without its assertion timing")
+                    try:
+                        assertion_seconds = float(timing_line.removeprefix(timing_marker))
+                    except ValueError as error:
+                        raise RuntimeError("Invalid native assertion timing") from error
+                    if not math.isfinite(assertion_seconds) or assertion_seconds < 0:
+                        raise RuntimeError("Invalid native assertion timing")
+                    if assertion_seconds > 60:
+                        raise RuntimeError("Native surface assertions exceeded the 60-second budget")
                     outcome = "passed"
                     return spawn_output + output + "\n" + stderr_path.read_text(errors="replace")
                 time.sleep(min(0.05, max(0, deadline - time.monotonic())))
-            raise subprocess.TimeoutExpired(["native-probe launch and assertions"], 60)
+            raise subprocess.TimeoutExpired(["native-probe assertion completion"], 60)
         except subprocess.TimeoutExpired:
             outcome = "timeout"
             print(stdout_path.read_text(errors="replace") + "\n" + stderr_path.read_text(errors="replace"), flush=True)
@@ -245,32 +259,38 @@ def run(directory):
                     raise
                 print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "probe-cleanup", "error": str(error)}), flush=True)
 
-device, created_device = select_device()
-try:
-    inventory = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "--json"]))["devices"]
-    runtime = next((runtime for runtime, devices in inventory.items() if any(item["udid"] == device for item in devices)), None)
-    if runtime is None:
-        raise RuntimeError(f"Cannot resolve the runtime for Simulator {device}")
-    device_data_path = next(Path(item["dataPath"]) for devices in inventory.values() for item in devices if item["udid"] == device)
-    print("SURFACE_PROBE_DEVICE " + json.dumps({"device": device, "runtime": runtime, "created": created_device}), flush=True)
-    if args.prepare_only:
-        prepare_runtime()
-        if not created_device:
-            phase("preflight-shutdown", ["xcrun", "simctl", "shutdown", device], 180)
-    elif args.output_dir:
-        directory = args.output_dir.resolve()
-        directory.mkdir(parents=True, exist_ok=False)
-        run(directory)
-    else:
-        with tempfile.TemporaryDirectory(prefix="memocard-surfaces-") as temporary:
-            run(Path(temporary))
-finally:
-    if created_device:
-        had_error = sys.exc_info()[0] is not None
-        try:
-            subprocess.run(["xcrun", "simctl", "shutdown", device], check=False, timeout=30)
-            subprocess.run(["xcrun", "simctl", "delete", device], check=True, timeout=30)
-        except Exception as error:
-            if not had_error:
-                raise
-            print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "device-cleanup", "error": str(error)}), flush=True)
+def main():
+    global args, device, runtime, device_data_path
+    args = parser.parse_args()
+    device, created_device = select_device()
+    try:
+        inventory = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "--json"]))["devices"]
+        runtime = next((runtime for runtime, devices in inventory.items() if any(item["udid"] == device for item in devices)), None)
+        if runtime is None:
+            raise RuntimeError(f"Cannot resolve the runtime for Simulator {device}")
+        device_data_path = next(Path(item["dataPath"]) for devices in inventory.values() for item in devices if item["udid"] == device)
+        print("SURFACE_PROBE_DEVICE " + json.dumps({"device": device, "runtime": runtime, "created": created_device}), flush=True)
+        if args.prepare_only:
+            prepare_runtime()
+            if not created_device:
+                phase("preflight-shutdown", ["xcrun", "simctl", "shutdown", device], 180)
+        elif args.output_dir:
+            directory = args.output_dir.resolve()
+            directory.mkdir(parents=True, exist_ok=False)
+            run(directory)
+        else:
+            with tempfile.TemporaryDirectory(prefix="memocard-surfaces-") as temporary:
+                run(Path(temporary))
+    finally:
+        if created_device:
+            had_error = sys.exc_info()[0] is not None
+            try:
+                subprocess.run(["xcrun", "simctl", "shutdown", device], check=False, timeout=30)
+                subprocess.run(["xcrun", "simctl", "delete", device], check=True, timeout=30)
+            except Exception as error:
+                if not had_error:
+                    raise
+                print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "device-cleanup", "error": str(error)}), flush=True)
+
+if __name__ == "__main__":
+    main()

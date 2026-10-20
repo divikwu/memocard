@@ -8,7 +8,7 @@
     "test": "pnpm -r --if-present test",
     "test:native": "swift test --package-path packages/native-core",
     "test:sidebar-native": "node --test apps/apple/Tests/sidebar-tag-index.test.mjs",
-    "test:native-surfaces": "python3 apps/apple/Tests/run-surface-subscriptions.py --device auto",
+    "test:native-surfaces": "python3 -m unittest discover -s apps/apple/Tests -p test_surface_probe_launch.py -b && python3 apps/apple/Tests/run-surface-subscriptions.py --device auto",
     "bench:sidebar:web": "node scripts/benchmark-sidebar-tags.mjs",
     "bench:sidebar:native": "node apps/apple/Tests/benchmark-sidebar-tags.mjs",
     "test:native-network": "node --test apps/apple/Tests/local-read-server.test.mjs",
