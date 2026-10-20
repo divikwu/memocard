@@ -404,14 +404,26 @@ describe('mobile page navigation',()=>{
     expect(screen.queryByRole('button',{name:'标签操作 生活'})).toBeNull();
   });
 
-  it('shares the title layout choice across all notes, tags and quick filters and remembers it after remount',async()=>{
-    const user=userEvent.setup();
-    const app=render(<App />);
+  it('shares the all-notes title layout choice with the tag view',async()=>{
+    const user=userEvent.setup();render(<App />);
     await screen.findByText(note.body);
     await user.click(await screen.findByRole('button',{name:'视图选项 所有笔记'}));
     await user.click(await screen.findByRole('menuitemradio',{name:'列表'}));
     await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('list'));
     expect(localStorage.getItem('memocard:note-layout')).toBe('list');
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(await screen.findByRole('button',{name:'生活'}));
+    await user.click(await screen.findByRole('button',{name:'标签操作 生活'}));
+    expect((await screen.findByRole('menuitemradio',{name:'列表'})).getAttribute('aria-checked')).toBe('true');
+    await user.click(screen.getByRole('menuitemradio',{name:'卡片'}));
+    await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('cards'));
+    expect(localStorage.getItem('memocard:note-layout')).toBe('cards');
+  });
+
+  it('shares a changed tag layout with the quick-filter title menu',async()=>{
+    localStorage.setItem('memocard:note-layout','list');
+    const user=userEvent.setup();render(<App />);
+    await screen.findByRole('button',{name:'打开 新内容'});
     await user.click(screen.getByRole('button',{name:'打开导航'}));
     await user.click(await screen.findByRole('button',{name:'生活'}));
     await user.click(await screen.findByRole('button',{name:'标签操作 生活'}));
@@ -424,6 +436,21 @@ describe('mobile page navigation',()=>{
     await user.click(await screen.findByRole('button',{name:'视图选项 有图片'}));
     expect((await screen.findByRole('menuitemradio',{name:'卡片'})).getAttribute('aria-checked')).toBe('true');
     await user.click(await screen.findByRole('menuitemradio',{name:'列表'}));
+    await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('list'));
+    expect(localStorage.getItem('memocard:note-layout')).toBe('list');
+  });
+
+  it('restores a quick-filter layout choice in all notes after remount',async()=>{
+    const user=userEvent.setup();
+    const app=render(<App />);
+    await screen.findByText(note.body);
+    await user.click(screen.getByRole('button',{name:'打开导航'}));
+    await user.click(screen.getByRole('button',{name:'展开或收起快捷筛选'}));
+    await user.click(screen.getByRole('button',{name:'有图片'}));
+    await user.click(await screen.findByRole('button',{name:'视图选项 有图片'}));
+    await user.click(await screen.findByRole('menuitemradio',{name:'列表'}));
+    await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('list'));
+    expect(localStorage.getItem('memocard:note-layout')).toBe('list');
     app.unmount();
     render(<App />);
     await screen.findByRole('button',{name:'打开 新内容'});
