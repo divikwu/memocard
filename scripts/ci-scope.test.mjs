@@ -40,7 +40,7 @@ test('gate requires real successful applicable checks and rejects missing/cancel
     assert.equal(gatePasses(needs), false);
   }
 });
-test('real Git ranges include PR history, both sides of renames, missing refs and push diffs', t => {
+test('real PR ranges include history and renames; main pushes cannot skip superseded production checks', t => {
   const cwd = mkdtempSync(join(tmpdir(), 'memocard-ci-scope-'));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const git = (...args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -58,7 +58,7 @@ test('real Git ranges include PR history, both sides of renames, missing refs an
   const docs = commit('docs/guide.md', 'docs');
   const pr = (base, head) => ({ pull_request: { base: { sha: base }, head: { sha: head } } });
   assert.equal(scopeForEvent('pull_request', pr(base, docs), cwd).full, false);
-  assert.equal(scopeForEvent('push', { before: base, after: docs }, cwd).full, false);
+  assert.equal(scopeForEvent('push', { before: base, after: docs }, cwd).full, true);
   const eventPath = join(cwd, 'event.json'), outputPath = join(cwd, 'output');
   writeFileSync(eventPath, JSON.stringify(pr(base, docs)));
   const script = fileURLToPath(new URL('./ci-scope.mjs', import.meta.url));
@@ -72,7 +72,7 @@ test('real Git ranges include PR history, both sides of renames, missing refs an
   const production = commit('apps/ui/src/app.tsx', 'production');
   const latestDocs = commit('README.md', 'latest docs');
   assert.equal(scopeForEvent('pull_request', pr(base, latestDocs), cwd).full, true);
-  assert.equal(scopeForEvent('push', { before: production, after: latestDocs }, cwd).full, false);
+  assert.equal(scopeForEvent('push', { before: production, after: latestDocs }, cwd).full, true);
   git('mv', 'apps/ui/src/app.tsx', 'docs/renamed.md');
   git('commit', '-qm', 'rename');
   const rename = git('rev-parse', 'HEAD');
