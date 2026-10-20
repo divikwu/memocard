@@ -19,11 +19,13 @@
 }
 .button-docs .button-docs-tab:focus-visible,
 .button-properties select:focus-visible,
-.button-properties summary:focus-visible {
+.button-properties-table-wrap:focus-visible,
+.button-code-panel summary:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
 .button-docs .button-docs-panel { outline: none; }
+.button-docs .button-docs-panel[hidden] { display: none; }
 .button-overview-stage {
   display: flex;
   min-height: 280px;
@@ -34,20 +36,24 @@
   gap: 1rem;
   padding: 1.5rem;
 }
+.button-examples-stage { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+.button-examples-stage > p { flex-basis: 100%; margin: 0; text-align: center; font-size: 0.875rem; color: var(--muted-foreground); }
 .button-properties { color: var(--foreground); }
-.button-properties-main { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.button-properties-stage {
-  display: flex;
-  min-height: 216px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--background);
-}
-.button-properties-feedback { display: block; margin-top: 0.75rem; font-size: 0.875rem; color: var(--muted-foreground); }
-.button-properties-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-.button-properties-controls > label { display: grid; min-width: 0; gap: 0.375rem; font-size: 0.875rem; }
+.button-properties-stage { display: flex; min-height: 160px; align-items: center; justify-content: center; }
+.button-properties-feedback { display: block; font-size: 0.875rem; color: var(--muted-foreground); }
+.button-properties-note { margin: 1rem 0; color: var(--muted-foreground); font-size: 0.875rem; }
+.button-properties-table-wrap { max-width: 100%; overflow-x: auto; margin-bottom: 1rem; }
+.button-properties-table { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+.button-properties-table caption { padding: 0.75rem 0; text-align: left; font-weight: 600; }
+.button-properties-table th,
+.button-properties-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.button-properties-table thead th { font-weight: 600; color: var(--muted-foreground); }
+.button-properties-table th:first-child { width: 12%; }
+.button-properties-table td:nth-child(2) { width: 26%; overflow-wrap: anywhere; }
+.button-properties-table td:last-child { width: 26%; min-width: 160px; }
+.button-properties-table code { font-size: 0.8125rem; }
+.button-properties-table small { display: block; margin-top: 0.375rem; color: var(--muted-foreground); }
+.button-properties-table input[type="checkbox"] { accent-color: var(--primary); }
 .button-properties select {
   width: 100%;
   min-width: 0;
@@ -59,15 +65,14 @@
   background: var(--background);
   font: inherit;
 }
-.button-properties-controls > .button-properties-checkbox { display: flex; align-items: center; gap: 0.5rem; align-self: end; min-height: 2.25rem; }
-.button-properties-checkbox input { accent-color: var(--primary); }
-.button-properties-reset { grid-column: 1 / -1; }
-.button-properties-note { margin: 1rem 0; color: var(--muted-foreground); font-size: 0.875rem; }
-.button-properties-code { border: 1px solid var(--border); border-radius: var(--radius); }
-.button-properties-code summary { padding: 0.75rem; cursor: pointer; font-size: 0.875rem; }
-.button-properties-code pre { max-height: 250px; overflow: auto; margin: 0; padding: 1rem; border-top: 1px solid var(--border); background: var(--muted); color: var(--foreground); font-size: 0.8125rem; }
+.button-code-panel { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); }
+.button-code-preview { padding: 1rem; }
+.button-code-panel-iframe > .button-code-preview { padding: 0; }
+.button-code-details { border-top: 1px solid var(--border); }
+.button-code-details > summary { padding: 0.75rem 1rem; cursor: pointer; font-size: 0.875rem; }
+.button-code-details .docblock-source { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
+.button-code-details pre { max-height: 350px; overflow: auto; margin: 0; border: 0; border-radius: 0; }
 @media (max-width: 640px) {
   .button-docs .button-docs-tab-list { gap: 1rem; }
-  .button-properties-main { grid-template-columns: 1fr; gap: 1rem; }
   .button-properties-stage { min-height: 120px; }
 }

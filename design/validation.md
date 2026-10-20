@@ -2,6 +2,17 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Button 参数行、代码面板与切页状态（2026-10-20）
+
+- Properties 改为一组八行参数：名称、类型/默认值、说明和当前控件在同一行；六项可编辑，`onClick` / `render` 只读。CSF 与参数行共用 Button 专属 metadata，移除重复 ArgTypes 表。所有 Button Docs 示例与参数预览共用代码面板，默认收起，使用 Storybook Source 的 TSX 高亮和内建 Copy，不增加第二个复制入口。
+- 真实 Docs 已验证复杂文字、variant / size / type、禁用、Reset、图标名称、点击计数和动态代码同步；文字及图标代码分别通过实际 Copy 写入剪贴板并读回，与展示代码逐字相同。代码存在 71 个高亮 span，复制入口只有一个。七段从浏览器提取的完整 TSX 对实际生产导入的类型检查通过。
+- Properties 仅在当前 Docs 会话保留挂载。实际切到 Accessibility 再返回后，参数、点击计数及代码展开状态保留；隐藏面板同时具有 `hidden` / `inert`，计算样式为 `display:none`，参数控件不在无障碍树中。代码展开/收起时 iframe 高度从 1,489px 恢复到 1,202px；最终左右留白各 16px。900×786 manager 下 Properties 文档宽度/scrollWidth 均为 489px，680px 参数表只在其 457px 区域内横滚，页面没有水平溢出；临时视口覆盖已恢复。
+- Overview 按总览 → 用法 → 组成 → 使用建议 → 示例排列，补充图文、禁用与真实 `a href` 组合。实际 Enter 激活链接后，焦点到达同一示例 iframe 的目标段落，父 Docs 未导航；窄布局示例宽度/scrollWidth 均为 487px。无障碍说明明确键盘、命名、禁用/链接责任、4.5:1 / 3:1 的适用范围，以及既有 blue/slate primary 白字约 3.7617777:1 的缺口；未声称所有变体/状态或整页 AA 通过。未迁移 Input 的原布局和手动输入回显正常，两个页面浏览器错误记录均为空。
+- 最终 `pnpm verify:design` 通过 101/101：100 个组件故事（88 桌面、12 H5）加 1 项真实断点回归，含 Button 7/7；类型、静态构建、维护表/token/icon 与真实 palette 检查通过。五个变更 TS/TSX 文件 ESLint、diff 空白检查通过，独立复核无剩余 P1/P2。未修改 worker、超时、断言强度或预算。
+- 首次 Button 定向因新导入 `storybook/theming` 被晚发现而触发优化器 reload，7 个故事发生模块加载失败；显式加入既有 `optimizeDeps.include` 后定向 7/7 通过。后续静态检查发现新增 Copy 测试误用了 Playwright 的 `exact` 选项及未使用参数，已按 Testing Library 查询类型和 lint 修正。完整运行另曾出现未修改 Dropdown Menu 的菜单可见性断言失败（其余 100/101 通过）；原配置单跑 1/1 与完整 101/101 随后通过，初次失败原因未确定，原始日志保留，不将其写成已消除的时序问题。
+- 与本轮基线 `969ce353` 比较，453 份生产源码、资源与 token 的 SHA256 全部一致，原有 Default、Variants、Sizes、KeyboardAndDisabled 四个故事定义逐字一致。没有修改生产 API、六变体、八尺寸、默认外观、原生组件、依赖或交互协议；本轮没有新增 Xcode Preview、模拟器或真机验收。
+- 完整通过日志为 `/tmp/memocard-button-docs-complete-verify-design-accepted.log`，初次加载失败保留在 `/tmp/memocard-button-docs-unified-targeted.log`；静态失败为 `/tmp/memocard-button-docs-complete-verify-design.log` 与 `/tmp/memocard-button-docs-complete-eslint.log`，Dropdown 失败为 `/tmp/memocard-button-docs-complete-verify-design-final.log`。最终 lint / 代码类型检查日志为 `/tmp/memocard-button-docs-complete-{eslint-final,snippets-final}.log`；截图、AX 读回数据、实际复制代码及指纹位于 ignored 的 `build/verification/button-docs-complete/`。这些是本机辅助证据，远程 CI 以 PR #52 最新 head 为准。
+
 ## Button 文档分页与参数预览（2026-10-20）
 
 - Button 专属 Docs 按 Astryx 的 Overview、Properties、Accessibility 分页。Overview 居中展示 MemoCard 原有六种变体，随后展示八种尺寸、用法、组成与使用建议；Canvas 代码默认收起。按用户可见复核意见去掉总览灰底和重复的内层圆角边框，只保留 Storybook 的外层预览框，生产按钮外观保持；根据后续可见意见将总览、尺寸、用法与键盘示例统一为 Docs 内水平、垂直居中，保留原 Canvas 布局。Properties 移除组件额外的 16px padding，仅保留 iframe 单层留白；真实 DOM 测量左右均为 16px。三个 Overview 示例的居中偏差为水平 0.25px（clientWidth 的子像素取整）、垂直 0px。其他试点继续使用原来的纵向模板。
