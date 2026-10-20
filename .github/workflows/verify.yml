@@ -10,6 +10,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Test CI routing and environment controller
+        run: |
+          node --test scripts/ci-scope.test.mjs
+          python3 -m unittest discover -s apps/apple/Tests -p 'test_surface_probe_*.py' -b
+      - name: Classify complete change range
+        id: scope
+        run: node scripts/ci-scope.mjs
   design:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -25,16 +44,23 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium
       - run: pnpm verify:design
-  release:
+  release-native:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
     runs-on: macos-26
     timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v7
       - run: xcodebuild -version
       - name: Check Simulator readiness
-        run: python3 apps/apple/Tests/run-surface-subscriptions.py --device auto --prepare-only
+        run: |
+          mkdir -p build/verification
+          python3 -u apps/apple/Tests/run-surface-subscriptions.py --device auto --prepare-only 2>&1 | tee build/verification/simulator-preflight.log
       - uses: pnpm/action-setup@v6
         with:
           version: 10.34.1
@@ -55,7 +81,7 @@ jobs:
       - name: Test native sidebar index
         run: pnpm test:sidebar-native
       - name: Test native surfaces in Simulator
-        run: pnpm test:native-surfaces
+        run: pnpm test:native-surfaces --output-dir build/verification/native-surfaces 2>&1 | tee build/verification/native-surfaces.log
       - name: Build macOS app
         run: pnpm build:mac
         env:
@@ -70,3 +96,29 @@ jobs:
           MEMOCARD_USE_PREBUILT_UI: '1'
       - name: Verify service signature
         run: codesign --verify --deep --strict build/local-service/MemoCardService.app
+      - name: Retain native environment and assertion evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-surface-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            build/verification/*.log
+            build/verification/native-surfaces/*.log
+            build/verification/native-surfaces/*.json
+  # Keep the existing required check name; a skipped native job is not a release pass.
+  release:
+    needs: [changes, design, release-native]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Require all applicable verification
+        run: node scripts/ci-scope.mjs --gate
+        env:
+          CI_NEEDS: ${{ toJSON(needs) }}

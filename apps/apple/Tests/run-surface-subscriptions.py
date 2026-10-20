@@ -12,6 +12,7 @@ import tempfile
 import time
 
 root = Path(__file__).resolve().parents[3]
+device = None
 parser = argparse.ArgumentParser()
 parser.add_argument("--device", default="auto", help="Existing iOS simulator UUID, or auto to discover an available iPhone")
 parser.add_argument("--output-dir", type=Path, help="New directory retaining evidence; omitted temporary builds are cleaned up")
@@ -22,8 +23,8 @@ parser.add_argument("--baseline", action="store_true", help="Measure the former 
 def select_device():
     if args.device != "auto":
         return args.device, False
-    runtimes = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "runtimes", "--json"]))["runtimes"]
-    devices = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "--json"]))["devices"]
+    runtimes = json.loads(phase("list-runtimes", ["xcrun", "simctl", "list", "runtimes", "--json"], 30, capture=True))["runtimes"]
+    devices = json.loads(phase("list-devices", ["xcrun", "simctl", "list", "devices", "available", "--json"], 30, capture=True))["devices"]
     runtimes = sorted((runtime for runtime in runtimes if runtime.get("isAvailable") and ".iOS-" in runtime["identifier"]), key=lambda runtime: tuple(map(int, runtime["version"].split("."))), reverse=True)
     for runtime in runtimes:
         booted = next((device for device in devices.get(runtime["identifier"], []) if device["name"].startswith("iPhone") and device["state"] == "Booted"), None)
@@ -36,7 +37,7 @@ def select_device():
             existing.sort(key=lambda device: device["state"] != "Booted")
             return existing[0]["udid"], False
         if phones:
-            device = subprocess.check_output(["xcrun", "simctl", "create", "MemoCard Surface Tests", phones[0]["identifier"], runtime["identifier"]], text=True).strip()
+            device = phase("create-device", ["xcrun", "simctl", "create", "MemoCard Surface Tests", phones[0]["identifier"], runtime["identifier"]], 60, capture=True).strip()
             return device, True
     raise RuntimeError("Native surface tests require an available iOS Simulator runtime with iPhone support")
 
@@ -92,10 +93,11 @@ def incomplete_probe_diagnostics(launch_started):
 
 def phase(name, command, timeout, capture=False):
     started = time.monotonic()
-    print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "start", "device": device, "timeoutSeconds": timeout}), flush=True)
-    process = subprocess.Popen(command, stdout=subprocess.PIPE if capture else None, stderr=subprocess.STDOUT, text=True)
+    print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "start", "device": device, "timeoutSeconds": timeout, "command": command}), flush=True)
+    process = None
     outcome = "failed"
     try:
+        process = subprocess.Popen(command, stdout=subprocess.PIPE if capture else None, stderr=subprocess.STDOUT, text=True)
         output, _ = process.communicate(timeout=timeout)
         if process.returncode:
             if capture and output:
@@ -126,7 +128,11 @@ def phase(name, command, timeout, capture=False):
             diagnostic("device-install-log", ["xcrun", "simctl", "spawn", device, "log", "show", "--last", "2m", "--style", "compact", "--predicate", 'process == "installd" OR process == "installcoordinationd"'], 10)
         raise
     finally:
-        print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "finish", "outcome": outcome, "seconds": round(time.monotonic() - started, 3), "exitCode": process.returncode}), flush=True)
+        print("SURFACE_PROBE_PHASE " + json.dumps({"phase": name, "event": "finish", "outcome": outcome, "seconds": round(time.monotonic() - started, 3), "exitCode": process.returncode if process else None}), flush=True)
+        if outcome != "passed" and name not in ("spawn", "install", "build"):
+            # Diagnostic commands are bounded and never turn a failed phase into success.
+            diagnostic("simulator-processes", ["ps", "-ax", "-o", "pid=,stat=,etime=,comm="], 5)
+            diagnostic("host-simulator-log", ["/usr/bin/log", "show", "--last", "2m", "--style", "compact", "--predicate", 'process == "CoreSimulatorService" OR process == "simdiskimaged"'], 10)
 
 def prepare_runtime():
     phase("runtime-cache", ["xcrun", "simctl", "runtime", "dyld_shared_cache", "update", runtime], 600)
@@ -196,7 +202,7 @@ def run(directory):
     original = root / "apps/apple/MemoCard.xcodeproj"
     project = directory / "MemoCard.xcodeproj"
     project.mkdir()
-    data = json.loads(subprocess.check_output(["plutil", "-convert", "json", "-o", "-", str(original / "project.pbxproj")]))
+    data = json.loads(phase("project-read", ["plutil", "-convert", "json", "-o", "-", str(original / "project.pbxproj")], 30, capture=True))
     objects = data["objects"]
     missing = [key for key, item in objects.items() if item["isa"] == "PBXFileReference" and item.get("path", "").endswith(".swift") and item.get("path") not in ["SidebarPerformanceTests.swift", "ServiceApp.swift", "ServiceHost.swift"] and not (directory / "Sources" / item["path"]).exists()]
     for item in objects.values():
@@ -262,9 +268,10 @@ def run(directory):
 def main():
     global args, device, runtime, device_data_path
     args = parser.parse_args()
+    device = None
     device, created_device = select_device()
     try:
-        inventory = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "--json"]))["devices"]
+        inventory = json.loads(phase("device-inventory", ["xcrun", "simctl", "list", "devices", "--json"], 30, capture=True))["devices"]
         runtime = next((runtime for runtime, devices in inventory.items() if any(item["udid"] == device for item in devices)), None)
         if runtime is None:
             raise RuntimeError(f"Cannot resolve the runtime for Simulator {device}")
@@ -284,13 +291,14 @@ def main():
     finally:
         if created_device:
             had_error = sys.exc_info()[0] is not None
-            try:
-                subprocess.run(["xcrun", "simctl", "shutdown", device], check=False, timeout=30)
-                subprocess.run(["xcrun", "simctl", "delete", device], check=True, timeout=30)
-            except Exception as error:
-                if not had_error:
-                    raise
-                print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "device-cleanup", "error": str(error)}), flush=True)
+            # A shutdown error must not prevent deletion or mask the original failure.
+            for name, operation in (("cleanup-shutdown", "shutdown"), ("cleanup-delete", "delete")):
+                try:
+                    phase(name, ["xcrun", "simctl", operation, device], 30)
+                except Exception as error:
+                    if operation == "delete" and not had_error:
+                        raise
+                    print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": name, "error": str(error)}), flush=True)
 
 if __name__ == "__main__":
     main()

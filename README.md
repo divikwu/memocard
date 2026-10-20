@@ -43,7 +43,9 @@ pnpm build:ios
 
 `build:mac` / `build:ios` 先构建 React 静态资源，再复制进应用并生成 Xcode 工程。页面通过 `memocard-ui://app` 加载，应用运行不依赖 Vite。`scripts/generate-project.py` 只使用 Python 标准库，不依赖 xcodegen；工程变更应编辑该脚本后重新生成。
 
-`pnpm verify:release` 与 CI release 保留相同检查顺序：工程漂移、Web/核心验证、服务测试、侧栏索引、真实模拟器探针、macOS/iOS/服务构建与签名。CI 将这些阶段显示为独立步骤；`pnpm verify` 已成功构建本次 Web 资源，后续三个原生构建用 `MEMOCARD_USE_PREBUILT_UI=1` 复用同一份 `apps/ui/dist`。该模式要求非空入口文件，只用于同一工作区中已成功构建且源码未改变的资源；单独运行构建命令仍默认重新编译 Web。没有按路径跳过原生检查，也没有修改超时、runner 或 Xcode 版本。
+`pnpm verify:release` 与 CI release 保留相同检查顺序：工程漂移、Web/核心验证、服务测试、侧栏索引、真实模拟器探针、macOS/iOS/服务构建与签名。CI 将这些阶段显示为独立步骤；`pnpm verify` 已成功构建本次 Web 资源，后续三个原生构建用 `MEMOCARD_USE_PREBUILT_UI=1` 复用同一份 `apps/ui/dist`。该模式要求非空入口文件，只用于同一工作区中已成功构建且源码未改变的资源；单独运行构建命令仍默认重新编译 Web。CI 用完整 Git 差异分类（PR 累计差异，main push 前后差异）：只有 `README.md`、`docs/` 下的 Markdown/PNG/JPEG/WebP、`design/README.md` / `component-inventory.md` / `token-consumption.md`，以及 `apps/ui/stories/`、`apps/ui/.storybook/` 下的 TS/TSX/CSS/HTML/Markdown/MDX 允许快速通道。它仍执行完整 `verify:design`；只跳过原生 release。生产代码、token（含生成文件）、依赖、构建/测试配置与脚本、工作流、未知或混合改动保持完整验证；空差异、缺少提交、超大/无法读取差异也按完整验证处理。重命名按删除和新增两端检查，符号链接不走快速通道。`release` 汇总检查始终运行，要求 design 成功，并核对原生任务确实按分类成功或跳过；本地 `verify:release` 始终完整运行。
+
+Simulator 环境查询/工程读取限时 30 秒，创建设备 60 秒；既有 runtime cache / boot / install / spawn 与业务断言预算不变，不重试。每条命令记录阶段、命令、期限、耗时和退出状态，环境失败后执行有界诊断。CI 上传预检日志、探针标准输出/错误、源文件 SHA256 与断言结果，保留 7 天（失败阶段尚未产生的文件可能缺失），不上传整个 App/DerivedData。
 
 ### 独立 Web
 
