@@ -15,7 +15,7 @@ design (Ubuntu: Storybook 全部验证)
 - 三种原生构建分别使用独立 runner，每个 checkout 仅准备一次 Web 资源和工程。Debug macOS、Debug iOS Simulator、Release Service/CLI 的配置及签名检查保持不变；不在共享资源目录或 DerivedData 上并发写入。
 - Web job 成功后发布当前 run 和提交 SHA 专属产物，包含完整文件列表及 SHA256。每个构建在恢复资源前验证 checkout、提交和全部文件；缺失、增加、损坏、符号链接或错提交均失败，不能回退到未经验证的本机旧 bundle。
 - 产物名称不包含 run attempt，以支持仅重跑失败的原生任务；重跑全部任务会覆盖同一 run 的产物。Web 产物保留 1 天，过期后需要重新运行 Web job，不能跳过校验。
-- 原生 job 不再单独启动、关闭预检设备；探针内部在编译前检查 runtime 并启动一次，持续使用同一设备至安装和断言结束。独立 `--prepare-only` 仍保留本地清理；命令期限、失败诊断、60 秒断言预算和探针卸载/自建设备清理不变。
+- 原生 job 在工程漂移检查后立即运行探针，先于 Node 依赖安装及 Swift 单测，尽早暴露冷启动失败。不再单独启动、关闭预检设备；探针内部在编译前检查 runtime 并启动一次，持续使用同一设备至安装和断言结束。独立 `--prepare-only` 仍保留本地清理；命令期限、失败诊断、60 秒断言预算和探针卸载/自建设备清理不变。
 - `changes` 始终执行 CI 路由、Web 产物和环境控制脚本单测。main push 始终完整验证；PR 只对完整累计差异内的 Storybook/文档允许快速通道，适用范围见 README。快速通道要求 Web、原生测试和全部原生构建均明确跳过，design 仍须成功。
 
 ## 改造前基线

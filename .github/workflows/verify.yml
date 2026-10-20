@@ -84,6 +84,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: xcodebuild -version
+      - name: Verify generated Xcode project
+        run: |
+          python3 scripts/generate-project.py
+          git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj
+      - name: Test native surfaces in Simulator
+        run: |
+          mkdir -p build/verification
+          python3 -u apps/apple/Tests/run-surface-subscriptions.py --device auto --output-dir build/verification/native-surfaces 2>&1 | tee build/verification/native-surfaces.log
       - uses: pnpm/action-setup@v6
         with:
           version: 10.34.1
@@ -92,20 +100,12 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Verify generated Xcode project
-        run: |
-          python3 scripts/generate-project.py
-          git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj
       - name: Verify native core and bridge contracts
         run: pnpm verify:native
       - name: Test local service
         run: pnpm test:service
       - name: Test native sidebar index
         run: pnpm test:sidebar-native
-      - name: Test native surfaces in Simulator
-        run: |
-          mkdir -p build/verification
-          python3 -u apps/apple/Tests/run-surface-subscriptions.py --device auto --output-dir build/verification/native-surfaces 2>&1 | tee build/verification/native-surfaces.log
       - name: Retain native environment and assertion evidence
         if: always()
         uses: actions/upload-artifact@v7
