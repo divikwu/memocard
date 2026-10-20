@@ -44,6 +44,7 @@ const meta = {
   parameters: {
     layout: "padded",
     docs: {
+      story: { centered: true },
       description: { component: "触发保存、重试等单次动作的基础按钮；保留生产外观、键盘激活和禁用行为。" },
       page: (): ReactElement => <ButtonDocsPage overview={Overview} sizes={Sizes} usageStory={Default} properties={Properties} keyboard={KeyboardAndDisabled} usage={usage} anatomy={anatomy} guidelines={guidelines} accessibility={accessibility} platform={platform} api={api} apiArgs={["variant", "size", "children", "disabled", "type", "onClick", "aria-label", "render"]} />,
     },
@@ -86,7 +87,7 @@ export const Overview: Story = {
 };
 export const Properties: Story = {
   render: () => <ButtonProperties />,
-  parameters: { controls: { disable: true }, docs: { story: { height: "540px", autoHeight: true } } },
+  parameters: { controls: { disable: true }, docs: { story: { height: "540px", autoHeight: true, centered: false } } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const preview = within(canvas.getByRole("form", { name: "实时按钮预览" }));

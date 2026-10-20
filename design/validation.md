@@ -4,13 +4,13 @@
 
 ## Button 文档分页与参数预览（2026-10-20）
 
-- Button 专属 Docs 按 Astryx 的 Overview、Properties、Accessibility 分页。Overview 居中展示 MemoCard 原有六种变体，随后展示八种尺寸、用法、组成与使用建议；Canvas 代码默认收起。按用户可见复核意见去掉总览灰底和重复的内层圆角边框，只保留 Storybook 的外层预览框，保持按钮布局与生产外观。其他试点继续使用原来的纵向模板。
+- Button 专属 Docs 按 Astryx 的 Overview、Properties、Accessibility 分页。Overview 居中展示 MemoCard 原有六种变体，随后展示八种尺寸、用法、组成与使用建议；Canvas 代码默认收起。按用户可见复核意见去掉总览灰底和重复的内层圆角边框，只保留 Storybook 的外层预览框，生产按钮外观保持；根据后续可见意见将总览、尺寸、用法与键盘示例统一为 Docs 内水平、垂直居中，保留原 Canvas 布局。Properties 移除组件额外的 16px padding，仅保留 iframe 单层留白；真实 DOM 测量左右均为 16px。三个 Overview 示例的居中偏差为水平 0.25px（clientWidth 的子像素取整）、垂直 0px。其他试点继续使用原来的纵向模板。
 - Properties 的六个带标签控件与真实生产 Button 位于同一隔离 iframe；修改 variant、size、children、type、aria-label、disabled 即时更新预览，Reset 恢复参数和内存点击计数。图标尺寸显示真实 Search，动态 JSX 使用 JSON 字符串表达式保留引号、花括号与尖括号；从真实 Docs 读取的文字、图标两段完整代码对实际生产导入的类型检查通过。新包装器关闭无效的外部 Canvas Controls，生产 API 表维持真实契约。
 - 可见验收发现固定 540px iframe 会在窄布局展开代码时裁切；仅 Properties 开启 `docs.story.autoHeight`，按同源自然内容根的 ResizeObserver 调整高度，加载与切页时清理。实际复核代码展开时 API 下移、收起时高度恢复；其他故事保留固定高度和既有 document、存储与数据隔离。
-- `pnpm verify:design` 最终通过：99 个故事（87 桌面、12 H5）加 1 项断点回归，共 100/100；类型、静态构建、维护表/token/icon 与真实 palette 检查通过。3 个变更 TSX 文件 ESLint 和 diff 空白检查通过，独立审查无 P1/P2。首次完整运行 99 个组件故事通过，既有断点用例在原 15 秒上限超时；未改源码或上限，单跑 1/1（1.04 秒）及完整原配置 100/100 随后通过，未确定初次超时原因。去灰底后静态构建和 Button 定向 6/6 通过；最终移除内层装饰后的静态构建与可见复核通过，不将视觉调整视作新增交互覆盖。
+- `pnpm verify:design` 最终通过：99 个故事（87 桌面、12 H5）加 1 项断点回归，共 100/100；类型、静态构建、维护表/token/icon 与真实 palette 检查通过。3 个变更 TSX 文件 ESLint 和 diff 空白检查通过，独立审查无 P1/P2。首次完整运行 99 个组件故事通过，既有断点用例在原 15 秒上限超时；未改源码或上限，单跑 1/1（1.04 秒）及完整原配置 100/100 随后通过，未确定初次超时原因。去灰底后静态构建和 Button 定向 6/6 通过；最终移除内层装饰后的静态构建与可见复核通过，后续居中与间距修正后再次完整 `pnpm verify:design` 100/100 通过，不将视觉调整视作新增交互覆盖。
 - 真实 Storybook Docs 已完成 Overview → 方向键 Properties → Accessibility、参数修改/禁用/重置、图标名称与当前代码同步；键盘激活后 Tab 跳过禁用按钮并到达“下一项”。代码默认收起，六种变体和八种尺寸各在对应区域展示一次。未迁移 Input 的原布局及手动输入回显正常；最终导航浏览器错误记录为空。
 - 453 份生产源码、资源与 token 指纹未变化；原有 Default、Variants、Sizes、KeyboardAndDisabled 四个 Button 故事与本轮基线逐字一致。未改生产组件、原生组件、依赖或交互协议。本轮未执行新的 Xcode Preview、模拟器或真机验收。
-- 日志为 `/tmp/memocard-button-tabs-{targeted,verify-design,breakpoint,verify-design-final,no-gray-build,no-gray-tests,final-build}.log`，截图、AX、真实代码和指纹位于 ignored 的 `build/verification/button-docs-tabs/`。初次超时保留在 `verify-design.log`，完整通过在 `verify-design-final.log`；这些是本机辅助证据，远程 CI 以 PR #52 最终 head 为准。
+- 日志为 `/tmp/memocard-button-tabs-{targeted,verify-design,breakpoint,verify-design-final,no-gray-build,no-gray-tests,final-build,centered-tests,complete-final}.log`，截图、AX、真实代码和指纹位于 ignored 的 `build/verification/button-docs-tabs/`。初次超时保留在 `verify-design.log`，完整通过在 `verify-design-final.log` 与最终 `complete-final.log`；这些是本机辅助证据，远程 CI 以 PR #52 最终 head 为准。
 
 ## 组件使用文档试点（2026-10-20）
 

@@ -34,7 +34,7 @@
   gap: 1rem;
   padding: 1.5rem;
 }
-.button-properties { padding: 1rem; color: var(--foreground); }
+.button-properties { color: var(--foreground); }
 .button-properties-main { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 .button-properties-stage {
   display: flex;

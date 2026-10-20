@@ -25,18 +25,37 @@ function DocsStoryPreview({ of, height, __primary }: StoryProps) {
   const { story } = useOf(of ?? "story", ["story"]);
   const iframe = useRef<HTMLIFrameElement>(null);
   const autoHeight = story.parameters.docs?.story?.autoHeight === true;
+  const centered = story.parameters.docs?.story?.centered === true && !autoHeight;
   const disabled = story.parameters.docs?.disable;
   useEffect(() => {
     const frame = iframe.current;
-    if (!autoHeight || disabled || !frame) return;
+    if ((!autoHeight && !centered) || disabled || !frame) return;
     let observer: ResizeObserver | undefined;
+    let restoreLayout: (() => void) | undefined;
     const observeContent = () => {
       observer?.disconnect();
+      restoreLayout?.();
+      restoreLayout = undefined;
       const content = frame.contentDocument;
       if (!content) return;
       const root = content.getElementById("storybook-root");
       const view = content.defaultView;
       if (!root || !view) return;
+      if (centered) {
+        const originalStyle = root.style.cssText;
+        Object.assign(root.style, {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexWrap: "wrap",
+          width: "100%",
+          maxWidth: "100%",
+          // Storybook's padded layout adds 1rem on each side after story loading.
+          minHeight: "calc(100vh - 2rem)",
+        });
+        restoreLayout = () => { root.style.cssText = originalStyle; };
+        return;
+      }
       const resize = () => {
         const body = view.getComputedStyle(content.body);
         const pixels = Math.ceil(root.getBoundingClientRect().height + parseFloat(body.paddingTop) + parseFloat(body.paddingBottom));
@@ -51,9 +70,10 @@ function DocsStoryPreview({ of, height, __primary }: StoryProps) {
     observeContent();
     return () => {
       observer?.disconnect();
+      restoreLayout?.();
       frame.removeEventListener("load", observeContent);
     };
-  }, [autoHeight, disabled, story.id]);
+  }, [autoHeight, centered, disabled, story.id]);
   if (story.parameters.docs?.disable) return null;
   const source = new URL("iframe.html", window.location.href);
   source.searchParams.set("id", story.id);
