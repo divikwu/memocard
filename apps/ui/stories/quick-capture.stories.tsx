@@ -130,6 +130,8 @@ export const DesktopCompose: Story = {
     await userEvent.click(within(reopened).getByRole("button", { name: "新想法" }));
     await expect(within(form).getByRole("textbox", { name: "快速输入内容" })).not.toHaveTextContent("#新想法");
     await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(page.queryByRole("dialog", { name: "选择标签" })).not.toBeInTheDocument());
+    await waitFor(() => expect(within(form).getByRole("textbox", { name: "快速输入内容" })).toHaveFocus());
     await attachPreviewAndRemove(page, form);
     await expect(args.onRecorded).not.toHaveBeenCalled();
     await expect(fixture.calls.map(call => call.operation)).toEqual(["pickImage"]);

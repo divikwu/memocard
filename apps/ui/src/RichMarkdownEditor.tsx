@@ -334,7 +334,11 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       editor.chain().setMeta('addToHistory', false).setContent(source.current.parse(editor, latest.current.value), { emitUpdate: false }).setMeta('noteHistorySeed', true).command(({ tr }) => { tr.setDocAttribute('noteEdit', { title: latest.current.title, properties: {} }); return true; }).run();
       initialized.current = true;
       setRevision(n => n + 1);
-      if (latest.current.autoFocus !== false) { editor.commands.focus('start'); editor.view.focus(); }
+      if (latest.current.autoFocus !== false) {
+        // This already runs after React commits; a second deferred focus can steal user focus.
+        editor.view.dispatch(editor.state.tr.setSelection(TextSelection.atStart(editor.state.doc)).scrollIntoView());
+        editor.view.focus();
+      }
     });
   }, [editor]);
   useEffect(() => {

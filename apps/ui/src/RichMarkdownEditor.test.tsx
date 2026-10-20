@@ -49,6 +49,19 @@ it('opens without a write, renders heading syntax invisibly and edits semantic t
  expect(change).toHaveBeenLastCalledWith('# 标新题\n\n正文');
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith('# 标题\n\n正文');
 });
+it('does not steal focus from another control after the initial editor focus',async()=>{
+ const frames:FrameRequestCallback[]=[];
+ vi.stubGlobal('requestAnimationFrame',(callback:FrameRequestCallback)=>frames.push(callback));
+ vi.stubGlobal('cancelAnimationFrame',vi.fn());
+ render(<><RichMarkdownEditor value="正文" disabled={false} notePath="a.md" onChange={vi.fn()} onSave={vi.fn()} onError={vi.fn()}/><button>属性</button></>);
+ const field=await screen.findByRole('textbox',{name:'笔记内容'});
+ await waitFor(()=>expect(field.textContent).toBe('正文'));
+ expect(document.activeElement).toBe(field);
+ const button=screen.getByRole('button',{name:'属性'});
+ act(()=>button.focus());
+ act(()=>frames.splice(0).forEach(callback=>callback(performance.now())));
+ expect(document.activeElement).toBe(button);
+});
 it('restores the exact blank Markdown source after undoing body input',async()=>{
  const original=' \r\n\t';
  const {editor,change}=await setup('',{value:original,title:'空白页面'});
@@ -200,8 +213,6 @@ it('shows current colors and resets them without changing the emoji or body',asy
 });
 it('opens the icon picker with the keyboard and exposes the expanded state',async()=>{
  const {field}=await setup('开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p></aside>');
- // Tiptap finishes its initial focus on the next animation frame.
- await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
  expect(document.activeElement).toBe(field);
  const trigger=screen.getByRole('button',{name:'更改标注图标'});
  act(()=>trigger.focus());await userEvent.setup().keyboard('{Enter}');
