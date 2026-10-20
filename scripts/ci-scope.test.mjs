@@ -22,9 +22,9 @@ test('additions and deletions support NUL-delimited paths', () => {
   assert.equal(classifyDiff(entry('docs/first\nsecond.md', 'A', '000000') + entry('docs/old.md', 'D', '100644', '000000')).full, false);
 });
 test('gate requires real successful applicable checks and rejects missing/cancelled/failed routing', () => {
-  const needs = { changes: { result: 'success', outputs: { full: 'false' } }, design: { result: 'success' }, 'release-web': { result: 'skipped' }, 'release-native': { result: 'skipped' }, 'native-build': { result: 'skipped' } };
+  const needs = { changes: { result: 'success', outputs: { full: 'false' } }, design: { result: 'success' }, 'release-web': { result: 'skipped' }, 'release-native': { result: 'skipped' }, 'native-surfaces': { result: 'skipped' }, 'native-build': { result: 'skipped' } };
   assert.equal(gatePasses(needs), true);
-  for (const job of ['release-web', 'release-native', 'native-build']) {
+  for (const job of ['release-web', 'release-native', 'native-surfaces', 'native-build']) {
     const changed = structuredClone(needs);
     changed[job].result = 'success';
     assert.equal(gatePasses(changed), false);
@@ -38,6 +38,8 @@ test('gate requires real successful applicable checks and rejects missing/cancel
   needs['release-web'].result = 'success';
   assert.equal(gatePasses(needs), false);
   needs['native-build'].result = 'success';
+  assert.equal(gatePasses(needs), false);
+  needs['native-surfaces'].result = 'success';
   assert.equal(gatePasses(needs), true);
   for (const job of Object.keys(needs)) {
     for (const result of ['failure', 'cancelled', 'skipped', undefined]) {
@@ -76,7 +78,7 @@ test('real PR ranges include history and renames; main pushes cannot skip supers
   execFileSync(process.execPath, [script], { cwd, env: { ...process.env, GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: eventPath, GITHUB_OUTPUT: outputPath, GITHUB_STEP_SUMMARY: join(cwd, 'summary') } });
   assert.equal(readFileSync(outputPath, 'utf8'), 'full=false\n');
   assert.match(readFileSync(join(cwd, 'summary'), 'utf8'), /fast path/);
-  const gate = { changes: { result: 'success', outputs: { full: 'false' } }, design: { result: 'success' }, 'release-web': { result: 'skipped' }, 'release-native': { result: 'skipped' }, 'native-build': { result: 'skipped' } };
+  const gate = { changes: { result: 'success', outputs: { full: 'false' } }, design: { result: 'success' }, 'release-web': { result: 'skipped' }, 'release-native': { result: 'skipped' }, 'native-surfaces': { result: 'skipped' }, 'native-build': { result: 'skipped' } };
   execFileSync(process.execPath, [script, '--gate'], { env: { ...process.env, CI_NEEDS: JSON.stringify(gate) } });
   gate.design.result = 'failure';
   assert.throws(() => execFileSync(process.execPath, [script, '--gate'], { env: { ...process.env, CI_NEEDS: JSON.stringify(gate) }, stdio: 'pipe' }), error => error.status === 1);

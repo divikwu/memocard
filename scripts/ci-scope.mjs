@@ -45,7 +45,7 @@ export function scopeForEvent(eventName, event, cwd = process.cwd()) {
 export function gatePasses(needs) {
   const full = needs.changes?.outputs?.full;
   return needs.changes?.result === 'success' && needs.design?.result === 'success'
-    && ['release-web', 'release-native', 'native-build'].every(job =>
+    && ['release-web', 'release-native', 'native-surfaces', 'native-build'].every(job =>
       full === 'true' ? needs[job]?.result === 'success'
         : full === 'false' && needs[job]?.result === 'skipped');
 }

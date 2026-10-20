@@ -71,7 +71,7 @@ jobs:
           include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
-  release-native:
+  native-surfaces:
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: macos-26
@@ -92,6 +92,30 @@ jobs:
         run: |
           mkdir -p build/verification
           python3 -u apps/apple/Tests/run-surface-subscriptions.py --device auto --output-dir build/verification/native-surfaces 2>&1 | tee build/verification/native-surfaces.log
+      - name: Retain native environment and assertion evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-surface-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            build/verification/*.log
+            build/verification/native-surfaces/*.log
+            build/verification/native-surfaces/*.json
+  release-native:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - run: xcodebuild -version
       - uses: pnpm/action-setup@v6
         with:
           version: 10.34.1
@@ -106,17 +130,6 @@ jobs:
         run: pnpm test:service
       - name: Test native sidebar index
         run: pnpm test:sidebar-native
-      - name: Retain native environment and assertion evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: native-surface-evidence-${{ github.run_id }}-${{ github.run_attempt }}
-          retention-days: 7
-          if-no-files-found: warn
-          path: |
-            build/verification/*.log
-            build/verification/native-surfaces/*.log
-            build/verification/native-surfaces/*.json
   # Each matrix entry has its own checkout, Web resources and DerivedData.
   native-build:
     needs: [changes, release-web]
@@ -159,7 +172,7 @@ jobs:
         run: codesign --verify --deep --strict build/local-service/MemoCardService.app
   # Keep the existing required check name; a skipped native job is not a release pass.
   release:
-    needs: [changes, design, release-web, release-native, native-build]
+    needs: [changes, design, release-web, release-native, native-surfaces, native-build]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 3
