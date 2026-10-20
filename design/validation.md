@@ -2,6 +2,12 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Properties 左右对齐（2026-10-20）
+
+- 仅 Properties 故事改为 `layout: "fullscreen"`，其专属容器保留 `padding-block: 1rem`。真实 Docs 测量 iframe body padding 四边为 0，预览框与参数表左右 inset 均为 0，与外层说明的左右边缘差值均为 0；上下 16px、预览框内部 16px、表格单元格 12px 保持。
+- Button 定向交互 7/7、Storybook 类型检查与静态构建、变更故事 ESLint 及 diff 空白检查通过。实际复核代码展开/收起的自然高度、切页保留参数和 Reset；900×786 manager 下页面宽度/scrollWidth 均为 489px，680px 参数表只在自身区域内横滚，临时视口已恢复，浏览器错误为空。没有重复执行上一轮完整 101 项检查，也未改其他故事、生产或原生组件。
+- 本机日志为 `/tmp/memocard-button-properties-edge-{tests,typecheck,build,eslint}.log`，截图及 DOM 测量为 ignored 的 `build/verification/button-properties-edge/`；远程 CI 以 PR #52 最新 head 为准。
+
 ## Button 参数行、代码面板与切页状态（2026-10-20）
 
 - Properties 改为一组八行参数：名称、类型/默认值、说明和当前控件在同一行；六项可编辑，`onClick` / `render` 只读。CSF 与参数行共用 Button 专属 metadata，移除重复 ArgTypes 表。所有 Button Docs 示例与参数预览共用代码面板，默认收起，使用 Storybook Source 的 TSX 高亮和内建 Copy，不增加第二个复制入口。

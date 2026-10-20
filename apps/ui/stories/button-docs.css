@@ -38,7 +38,7 @@
 }
 .button-examples-stage { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
 .button-examples-stage > p { flex-basis: 100%; margin: 0; text-align: center; font-size: 0.875rem; color: var(--muted-foreground); }
-.button-properties { color: var(--foreground); }
+.button-properties { padding-block: 1rem; color: var(--foreground); }
 .button-properties-stage { display: flex; min-height: 160px; align-items: center; justify-content: center; }
 .button-properties-feedback { display: block; font-size: 0.875rem; color: var(--muted-foreground); }
 .button-properties-note { margin: 1rem 0; color: var(--muted-foreground); font-size: 0.875rem; }

@@ -114,7 +114,7 @@ export const Examples: Story = {
 };
 export const Properties: Story = {
   render: () => <ButtonProperties />,
-  parameters: { controls: { disable: true }, docs: { story: { height: "540px", autoHeight: true, centered: false } } },
+  parameters: { layout: "fullscreen", controls: { disable: true }, docs: { story: { height: "540px", autoHeight: true, centered: false } } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const preview = within(canvas.getByRole("form", { name: "实时按钮预览" }));
