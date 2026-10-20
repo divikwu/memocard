@@ -25,6 +25,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium
       - run: pnpm verify:design
+  native-surfaces:
+    runs-on: macos-26
+    timeout-minutes: 20
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v7
+      - run: xcodebuild -version
+      - run: python3 apps/apple/Tests/run-surface-subscriptions.py --device auto
   release:
     runs-on: macos-26
     timeout-minutes: 45
@@ -33,8 +42,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: xcodebuild -version
-      - name: Check Simulator readiness
-        run: python3 apps/apple/Tests/run-surface-subscriptions.py --device auto --prepare-only
       - uses: pnpm/action-setup@v6
         with:
           version: 10.34.1
@@ -44,4 +51,4 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
-      - run: pnpm verify:release
+      - run: pnpm verify:release:host

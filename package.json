@@ -33,7 +33,8 @@
     "test:palette": "node --test scripts/sidebar-preview-palette.test.mjs",
     "verify:design": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm icons:check && pnpm test:icons && pnpm --filter @memocard/ui typecheck:storybook && pnpm --filter @memocard/ui build:storybook && pnpm --filter @memocard/ui test:storybook && pnpm test:palette",
     "verify": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm check:ui-primitives && pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build && pnpm check:bundle",
-    "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm test:sidebar-native && pnpm test:native-surfaces && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app"
+    "verify:release:host": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm test:sidebar-native && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app",
+    "verify:release": "pnpm verify:release:host && pnpm test:native-surfaces"
   },
   "devDependencies": { "style-dictionary": "5.7.0" }
 }
