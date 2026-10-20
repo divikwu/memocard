@@ -2,7 +2,12 @@
 set -euo pipefail
 memocard_root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$memocard_root"
-pnpm --filter @memocard/ui build
+if [[ "${MEMOCARD_USE_PREBUILT_UI:-0}" != 1 ]]; then
+  pnpm --filter @memocard/ui build
+elif [[ ! -s apps/ui/dist/index.html ]]; then
+  echo 'MEMOCARD_USE_PREBUILT_UI=1 requires a successful Web build in apps/ui/dist.' >&2
+  exit 1
+fi
 mkdir -p apps/apple/Resources/Web
 rsync -a --delete apps/ui/dist/ apps/apple/Resources/Web/
 python3 scripts/generate-project.py

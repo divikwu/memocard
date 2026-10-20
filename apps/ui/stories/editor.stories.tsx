@@ -27,9 +27,15 @@ type Story = StoryObj<typeof meta>;
 
 const title = "修改后的标题";
 const body = "修改后的正文。";
-async function edit(canvas: ReturnType<typeof within>) {
+async function edit(canvas: ReturnType<typeof within>, mobile = false) {
   const heading = canvas.getByRole("textbox", { name: "页面标题" });
   const content = canvas.getByRole("textbox", { name: "笔记内容" });
+  await waitFor(() => {
+    expect(content).toHaveTextContent(editorNote.body);
+    if (!mobile) expect(content).toHaveFocus();
+  });
+  // Let the editor's queued initial focus finish before typing in the title.
+  await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
   await userEvent.clear(heading);
   await userEvent.type(heading, title);
   await userEvent.clear(content);
@@ -57,7 +63,7 @@ async function retryAndReturn(canvasElement: HTMLElement, args: Omit<EditorExamp
     await waitFor(() => expect(canvas.getByRole("region", { name: "编辑笔记" })).toHaveFocus());
     await expect(canvas.getByRole("textbox", { name: "页面标题" })).not.toHaveFocus();
   }
-  const { heading, content } = await edit(canvas);
+  const { heading, content } = await edit(canvas, mobile);
   await userEvent.click(canvas.getByRole("button", { name: "返回笔记集合" }));
   await expect(await canvas.findByRole("alert")).toHaveTextContent("磁盘只读（内存示例）");
   await expect(heading).toHaveValue(title);

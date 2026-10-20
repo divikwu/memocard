@@ -6,9 +6,11 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
+    "test:ci": "node --test scripts/ci-scope.test.mjs",
+    "test:apple-build": "node --test scripts/apple-build.test.mjs",
     "test:native": "swift test --package-path packages/native-core",
     "test:sidebar-native": "node --test apps/apple/Tests/sidebar-tag-index.test.mjs",
-    "test:native-surfaces": "python3 -m unittest discover -s apps/apple/Tests -p test_surface_probe_launch.py -b && python3 apps/apple/Tests/run-surface-subscriptions.py --device auto",
+    "test:native-surfaces": "python3 -m unittest discover -s apps/apple/Tests -p 'test_surface_probe_*.py' -b && python3 apps/apple/Tests/run-surface-subscriptions.py --device auto",
     "bench:sidebar:web": "node scripts/benchmark-sidebar-tags.mjs",
     "bench:sidebar:native": "node apps/apple/Tests/benchmark-sidebar-tags.mjs",
     "test:native-network": "node --test apps/apple/Tests/local-read-server.test.mjs",
@@ -31,9 +33,9 @@
     "palette:build": "node scripts/generate-sidebar-preview-palette.mjs",
     "palette:check": "node scripts/generate-sidebar-preview-palette.mjs --check",
     "test:palette": "node --test scripts/sidebar-preview-palette.test.mjs",
-    "verify:design": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm icons:check && pnpm test:icons && pnpm --filter @memocard/ui typecheck:storybook && pnpm --filter @memocard/ui build:storybook && pnpm --filter @memocard/ui test:storybook && pnpm test:palette",
-    "verify": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm check:ui-primitives && pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build && pnpm check:bundle",
-    "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm test:sidebar-native && pnpm test:native-surfaces && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app"
+    "verify:design": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm icons:check && pnpm test:icons && pnpm --filter @memocard/ui typecheck:storybook && pnpm --filter @memocard/ui exec eslint .storybook stories && pnpm --filter @memocard/ui exec vitest run .storybook/ stories/ --maxWorkers=4 && pnpm --filter @memocard/ui build:storybook && pnpm --filter @memocard/ui test:storybook && pnpm test:palette",
+    "verify": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm check:ui-primitives && pnpm test:ci && pnpm test:apple-build && pnpm typecheck && pnpm lint && pnpm test && pnpm test:native && pnpm test:native-network && pnpm test:local-web && pnpm build && pnpm check:bundle",
+    "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm test:sidebar-native && pnpm test:native-surfaces && export MEMOCARD_USE_PREBUILT_UI=1 && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app"
   },
   "devDependencies": { "style-dictionary": "5.7.0" }
 }
