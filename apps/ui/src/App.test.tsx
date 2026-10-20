@@ -87,7 +87,9 @@ describe("note workspace", () => {
       if(operation==='saveNote')return saved={...note,id:params?.id as string,title:'新内容',body:params?.body as string,tags:[],contentHash:'new-source',relativePath:'新内容.md'};
       return implementation(operation,params);
     });
-    const user=userEvent.setup();render(<App />);
+    const user=userEvent.setup();
+    // Finish the initial lazy/editor React commits before timing user interactions.
+    await act(async()=>{render(<App />);});
     await screen.findByRole('textbox',{name:'快速输入内容'});
     await user.click(screen.getByRole('tab',{name:/已固定/}));
     await screen.findByRole('button',{name:'打开 新内容'});
