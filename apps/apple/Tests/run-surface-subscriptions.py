@@ -23,7 +23,9 @@ parser.add_argument("--baseline", action="store_true", help="Measure the former 
 def select_device():
     if args.device != "auto":
         return args.device, False
-    runtimes = json.loads(phase("list-runtimes", ["xcrun", "simctl", "list", "runtimes", "--json"], 30, capture=True))["runtimes"]
+    # The first simctl request also initializes CoreSimulator and mounts runtimes.
+    # Give cold discovery the existing boot budget; later metadata reads stay short.
+    runtimes = json.loads(phase("list-runtimes", ["xcrun", "simctl", "list", "runtimes", "--json"], 180, capture=True))["runtimes"]
     devices = json.loads(phase("list-devices", ["xcrun", "simctl", "list", "devices", "available", "--json"], 30, capture=True))["devices"]
     runtimes = sorted((runtime for runtime in runtimes if runtime.get("isAvailable") and ".iOS-" in runtime["identifier"]), key=lambda runtime: tuple(map(int, runtime["version"].split("."))), reverse=True)
     for runtime in runtimes:
@@ -118,6 +120,8 @@ def phase(name, command, timeout, capture=False):
         elif name == "spawn":
             # The launch deadline has already failed; late output cannot pass.
             launch_timeout_diagnostics(process)
+        elif name != "build":
+            diagnostic(f"{name}-sample", ["sample", str(process.pid), "1"], 5)
         try:
             process.kill()
             process.communicate(timeout=5)

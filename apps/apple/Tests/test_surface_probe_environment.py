@@ -34,7 +34,7 @@ class EnvironmentTests(unittest.TestCase):
 
         with patch.object(sys, "argv", ["probe", "--prepare-only"]), patch.object(probe, "phase", side_effect=command), patch.object(probe.subprocess, "check_output", side_effect=AssertionError("unbounded check_output")), patch.object(probe.subprocess, "run", side_effect=AssertionError("unlogged run")):
             probe.main()
-        self.assertEqual(calls, [("list-runtimes", 30, True), ("list-devices", 30, True), ("create-device", 60, True), ("device-inventory", 30, True), ("runtime-cache", 600, False), ("bootstatus", 180, False), ("cleanup-shutdown", 30, False), ("cleanup-delete", 30, False)])
+        self.assertEqual(calls, [("list-runtimes", 180, True), ("list-devices", 30, True), ("create-device", 60, True), ("device-inventory", 30, True), ("runtime-cache", 600, False), ("bootstatus", 180, False), ("cleanup-shutdown", 30, False), ("cleanup-delete", 30, False)])
         # Exercise the real project reader call site, without building an App.
         import tempfile
         with tempfile.TemporaryDirectory() as temporary, patch.object(probe, "args", SimpleNamespace(source_dir=Path(temporary) / "input", baseline=False)), patch.object(probe, "phase", side_effect=RuntimeError("project-read reached")) as phase:
@@ -54,7 +54,7 @@ class EnvironmentTests(unittest.TestCase):
                 probe.phase("list-runtimes", ["xcrun"], 30, capture=True)
         process.kill.assert_called_once()
         self.assertEqual(process.communicate.call_count, 2)
-        self.assertTrue(diagnostic.called)
+        self.assertEqual(diagnostic.call_args_list[0].args, ("list-runtimes-sample", ["sample", "42", "1"], 5))
         self.assertTrue(all(call.args[2] <= 10 for call in diagnostic.call_args_list))
         self.assertIn("partial inventory", output.getvalue())
         self.assertIn('"outcome": "timeout"', output.getvalue())
