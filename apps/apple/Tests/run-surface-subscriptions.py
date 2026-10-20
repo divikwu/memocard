@@ -53,11 +53,25 @@ def diagnostic(kind, command, timeout):
     except Exception as error:
         print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": kind, "error": str(error)}), flush=True)
         return
-    section = "first" if kind == "install-sample" else "last"
+    section = "first" if kind.endswith("-sample") else "last"
     print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({**status, "truncated": len(output) > 20000, "section": section}), flush=True)
     if len(output) > 20000:
         print(f"[diagnostic truncated to {section} 20000 characters]", flush=True)
     print(output[:20000] if section == "first" else output[-20000:], flush=True)
+
+def launch_timeout_diagnostics(process):
+    print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "spawn-process", "pid": process.pid, "exitCode": process.poll()}), flush=True)
+    diagnostic("spawn-sample", ["sample", str(process.pid), "1"], 5)
+    diagnostic("host-memory", ["vm_stat"], 5)
+    diagnostic("host-memory-pressure", ["memory_pressure", "-Q"], 5)
+    try:
+        processes = subprocess.check_output(["ps", "-ax", "-o", "pid=,comm="], text=True, timeout=5)
+        probes = [line.split(None, 1)[0] for line in processes.splitlines() if "CoreSimulator/Devices/" in line and line.rstrip().endswith("/MemoCard.app/MemoCard")]
+        print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "probe-processes", "count": len(probes), "shown": min(2, len(probes))}), flush=True)
+        for pid in probes[:2]:
+            diagnostic("probe-sample", ["sample", pid, "1"], 5)
+    except Exception as error:
+        print("SURFACE_PROBE_DIAGNOSTIC " + json.dumps({"kind": "probe-processes", "error": str(error)}), flush=True)
 
 def incomplete_probe_diagnostics(launch_started):
     diagnostic("app-lifecycle-log", ["xcrun", "simctl", "spawn", device, "log", "show", "--last", "2m", "--style", "compact", "--predicate", 'process == "MemoCard" OR eventMessage CONTAINS "dev.divikwu.memocard.surface-probe"'], 10)
@@ -99,6 +113,9 @@ def phase(name, command, timeout, capture=False):
             # The install deadline has already failed. Sample its live IPC wait
             # before terminating it; diagnosis never extends the success window.
             diagnostic("install-sample", ["sample", str(process.pid), "1"], 5)
+        elif name == "spawn":
+            # The launch deadline has already failed; late output cannot pass.
+            launch_timeout_diagnostics(process)
         try:
             process.kill()
             process.communicate(timeout=5)

@@ -9,10 +9,14 @@ import WebKit
 // through NativeHost.handle, the same bridge seam used by WebView.
 @main
 struct NativeSurfaceSubscriptionHarness: App {
+    init() {
+        setbuf(stdout, nil)
+        print("NATIVE_SURFACE_PROBE_STAGE app-init")
+    }
+
     var body: some Scene {
         WindowGroup {
             Color.clear.task {
-                setbuf(stdout, nil)
                 print("NATIVE_SURFACE_PROBE_STAGE app-task-start")
                 let passed = await NativeSurfaceSubscriptionProbe.run()
                 print("NATIVE_SURFACE_PROBE_STAGE app-task-complete passed=\(passed)")
