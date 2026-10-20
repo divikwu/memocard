@@ -8,6 +8,7 @@
 - 仅新增条件类的首版使最紧移动路由从基线 1,335,281 / 1,335,296 bytes raw 增至 1,335,450，预算检查正确失败。最终以新 padding 条件类替换同分支重复的普通态透明背景类：普通态沿用已有 Preflight 透明背景，选中态及深色选中态的显式规则保留。最终路由 1,335,268 bytes raw，比基线少 13 bytes；gzip 增加 4 bytes，所有 route、initial CSS/JS 与字体预算通过，没有调整预算。
 - 最终生产构建（含 TypeScript）、Storybook 静态构建、Button / Tabs 10 项交互、NoteCollection 12 项回归、变更 TSX 的 ESLint 和 diff 空白检查通过，独立静态审查通过。浏览器安全策略仍限制实际页面观察，本轮未完成 4px 的可见/计算样式复核，不把自动交互测试写成样式量测；没有重跑完整 101 项或原生验收。
 - 本机日志为 `/tmp/memocard-tabs-line-padding-{baseline-build,baseline-budget,build,budget,final-build,storybook-build,final-budget,final-stories,final-collection,final-eslint}.log`，首版超预算记录保留在 `budget.log`。基线 CSS、产物指纹及前后体积对照位于 ignored 的 `build/verification/tabs-line-padding/`；远程 CI 以 PR #52 最新 head 为准。
+- 后续按新的 4px → 0px 标注，仅将同一 line 条件类改为 `px-0`，默认变体仍为 8px，不添加断点；条件规则也覆盖主页调用端已有的普通 `px-1`。生产构建（含类型）、Storybook 构建、Button / Tabs 10 项与 NoteCollection 12 项回归、ESLint 和 diff 检查通过，独立静态审查通过。构建结束后重新执行预算检查，全部预算通过，最紧路由为 1,335,255 bytes raw；没有修改预算。实际可见/计算样式复核仍未完成。日志为 `/tmp/memocard-tabs-line-zero-{build,storybook-build,stories,collection,eslint,budget-final}.log`。
 
 ## Button 文档章节间距（2026-10-20）
 
