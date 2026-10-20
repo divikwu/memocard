@@ -11,6 +11,8 @@ function fixture(t) {
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const source = join(root, 'source'), artifact = join(root, 'artifact'), destination = join(root, 'destination');
   mkdirSync(join(source, 'assets'), { recursive: true });
+  mkdirSync(join(source, '.vite'));
+  writeFileSync(join(source, '.vite/manifest.json'), '{"entry": "assets/app.js"}');
   writeFileSync(join(source, 'index.html'), '<script src="assets/app.js"></script>');
   writeFileSync(join(source, 'assets/app.js'), 'verified app');
   mkdirSync(destination);
@@ -23,16 +25,18 @@ test('restores a complete verified build and removes stale destination files', t
   createArtifact(f.source, f.artifact, commit);
   restoreArtifact(f.artifact, f.destination, commit);
   assert.equal(readFileSync(join(f.destination, 'assets/app.js'), 'utf8'), 'verified app');
+  assert.equal(readFileSync(join(f.destination, '.vite/manifest.json'), 'utf8'), '{"entry": "assets/app.js"}');
   assert.throws(() => readFileSync(join(f.destination, 'old.js')), { code: 'ENOENT' });
 });
 
-for (const corruption of ['commit', 'content', 'missing', 'extra', 'manifest', 'symlink']) {
+for (const corruption of ['commit', 'content', 'missing', 'hidden-file', 'extra', 'manifest', 'symlink']) {
   test(`rejects ${corruption} before touching the previous destination`, t => {
     const f = fixture(t);
     createArtifact(f.source, f.artifact, commit);
     const asset = join(f.artifact, 'dist/assets/app.js');
     if (corruption === 'content') writeFileSync(asset, 'changed');
     if (corruption === 'missing') rmSync(asset);
+    if (corruption === 'hidden-file') rmSync(join(f.artifact, 'dist/.vite/manifest.json'));
     if (corruption === 'extra') writeFileSync(join(f.artifact, 'dist/extra.js'), 'unexpected');
     if (corruption === 'manifest') rmSync(join(f.artifact, 'manifest.json'));
     if (corruption === 'symlink') {

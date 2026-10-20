@@ -68,6 +68,7 @@ jobs:
           name: verified-web-${{ github.sha }}-${{ github.run_id }}
           overwrite: true
           path: build/verified-web/
+          include-hidden-files: true
           retention-days: 1
           if-no-files-found: error
   release-native:
