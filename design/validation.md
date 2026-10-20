@@ -2,6 +2,20 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Button Controls、Sizes 与 Docs 状态回归（2026-10-20）
+
+- 仅过滤固定示例的 Controls：Variants 排除 `variant` / `children`，Sizes 排除 `size` / `children` / 仅部分生效的 `aria-label`，固定 KeyboardAndDisabled 夹具关闭 Controls。Default、Properties、共享 API metadata、六变体和八尺寸的 render 及既有 play 不变。
+- Sizes 启用现有自然高度模式并移除使用点的固定高度覆盖。将原 iframe 布局观察器移至 Storybook 专用模块供实际渲染与测试复用；`autoHeight` 与 `centered` 组合时保留居中，取消与 iframe 视口高度绑定的 min-height。其他固定高、主题/数据隔离及 observer/listener 清理保持。
+- 新增独立 `button-docs` 浏览器 project 的 3 项持续回归：真实 DocsRenderer/CSF/三页签，六项参数、点击计数、展开代码与 Reset 后再切页的状态保留；同一 iframe/document/控件身份、hidden/inert/display:none 和原生 Tab 跳过；Sizes 在 700→320→700px 下八尺寸完整、自然增高及回缩、保持居中且内部无裁切/横滚。仅 iframe 装载使用 `about:blank` fixture，样式来自实际 Vite/Tailwind 输出；测试适配器绑定现有 Storybook 10.6.2，不访问 Storybook 服务或用户页面。
+- 两项负向控制均检测失败：临时关闭 Properties 的 `keepMounted` 后失去保留面板；自然高度模式跳过居中后测得约 120px 水平偏移（容差仍为 1px）。源码已恢复，公开 `setProjectAnnotations` 初始化后的三项正向回归通过，没有修改 worker、超时或原有断言。
+- Sizes 首轮 240px 测试检测到 320px 横滚。最初怀疑宿主样式污染，限定注入实际 preview/Button CSS 后仍复现，进一步定位为生产 `styles.css` 中 `@apply min-w-80` 的既有 320px body 下限。最终按原有支持边界测试，没有覆盖最小宽度、改动生产 CSS 或放宽溢出/居中检查；原始失败和诊断记录保留。
+- 初次完整设计运行为 99/104：新增三项通过；既有 Button Properties 未及时取得代码 pre、搜索 RetryAndPagination 可见性失败，以及颜色 Default/Mobile、侧栏断点超时。未修改对应 play 或超时；原样定向 Button/搜索/颜色 18/18 与断点 1/1 随后通过，首次根因未确认，不将定向通过写成问题已消除。
+- 第二次原配置全量复跑为 87/104，新增三项仍通过；出现更多既有故事超时与截图超时，不能标记全量门禁通过。基线 `277b9ca` 的远程 [design run](https://github.com/divikwu/memocard/actions/runs/39353522760) 已在 Note Search RetryAndPagination 的同一可见性断言失败（100/101）；这只证明该搜索失败已存在，其他失败的根因仍未确认。
+- 为修正搜索故事明确的就绪缺口，在公共 `searchDialog` helper 增加对同一弹窗的 `toBeVisible()` 等待；此前只等待 DOM 和输入焦点。保留生产动画、原超时及全部业务断言，不宣称已确认动画透明度就是全部失败根因。搜索定向 6/6 通过；一次混合定向为 18/19，新增 Docs 状态测试未及时取得懒加载代码 pre。测试夹具随后为直接调用 DocsRenderer 的渲染/卸载补上 React act 边界，保留对真实代码内容的等待，新增三项定向再次 3/3 通过；这尚不证明混跑问题已消除；最终全量结果以新 head 的 CI 为准。
+- Storybook 类型检查、生产 UI 构建、变更 TS/TSX 的 ESLint、diff 检查与全部 route/initial JS/CSS/字体预算通过，未提高预算。相对本轮基线 `277b9ca`，407 份 Web 源码与生产产物逐一 SHA256 一致；此前 PR 中已授权的 Tabs 样式修改不包含在这份增量证据内。原生组件与动作协议没有改动。
+- 浏览器安全策略仍限制实际 localhost 页面观察；本轮自动检查不替代真实服务 iframe 启动、可见页面、真实剪贴板读回或原生验收。没有新增 Xcode Preview、模拟器或真机覆盖。完整远程门禁以 PR #52 最新 head 为准。
+- 本机日志为 `/tmp/memocard-button-docs-contract-*`：初次完整失败保留在 `verify-design.log`，定向复现为 `failures-isolated.log` / `breakpoint-isolated.log`，两项负向控制为 `keep-mounted-negative.log` / `centering-negative.log`；生产指纹对照为 `production-parity.json`。这些是本机辅助证据，持续回归已接入 `pnpm verify:design`，跨机器请重跑维护命令。
+
 ## Tabs line 列表容器（2026-10-20）
 
 - 按 tablist 标注，仅调整 `TabsList` 的 line 变体：四周 padding 由 3px 变为 0，默认列间距由 4px 变为 8px，行间距保留 4px。使用 `gap-2 gap-y-1 bg-transparent p-0`，默认变体仍有 3px padding，不新增断点；主页调用端及移动布局原有 gap 覆盖继续生效。保留原外部高度规则，内部 Trigger 随 padding 移除自然获得更多高度，不额外补偿高度或下划线位置。

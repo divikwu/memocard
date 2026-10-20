@@ -5,6 +5,7 @@ import { ThemeProvider } from "../src/features/theme/ThemeProvider";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE } from "../src/features/theme/preferences";
 import { desktopGlobals, mobileViewport, viewportOptions } from "./viewports";
 import { resetStorybookBridge } from "./bridge";
+import { observeDocsStoryLayout } from "./docs-story-layout";
 import "./preview.css";
 
 function memoryStorage(): Storage {
@@ -25,54 +26,12 @@ function DocsStoryPreview({ of, height, __primary }: StoryProps) {
   const { story } = useOf(of ?? "story", ["story"]);
   const iframe = useRef<HTMLIFrameElement>(null);
   const autoHeight = story.parameters.docs?.story?.autoHeight === true;
-  const centered = story.parameters.docs?.story?.centered === true && !autoHeight;
+  const centered = story.parameters.docs?.story?.centered === true;
   const disabled = story.parameters.docs?.disable;
   useEffect(() => {
     const frame = iframe.current;
     if ((!autoHeight && !centered) || disabled || !frame) return;
-    let observer: ResizeObserver | undefined;
-    let restoreLayout: (() => void) | undefined;
-    const observeContent = () => {
-      observer?.disconnect();
-      restoreLayout?.();
-      restoreLayout = undefined;
-      const content = frame.contentDocument;
-      if (!content) return;
-      const root = content.getElementById("storybook-root");
-      const view = content.defaultView;
-      if (!root || !view) return;
-      if (centered) {
-        const originalStyle = root.style.cssText;
-        Object.assign(root.style, {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexWrap: "wrap",
-          width: "100%",
-          maxWidth: "100%",
-          // Storybook's padded layout adds 1rem on each side after story loading.
-          minHeight: "calc(100vh - 2rem)",
-        });
-        restoreLayout = () => { root.style.cssText = originalStyle; };
-        return;
-      }
-      const resize = () => {
-        const body = view.getComputedStyle(content.body);
-        const pixels = Math.ceil(root.getBoundingClientRect().height + parseFloat(body.paddingTop) + parseFloat(body.paddingBottom));
-        frame.style.height = `${pixels}px`;
-      };
-      // The content root has natural height; body/html can grow to fill the iframe.
-      observer = new ResizeObserver(resize);
-      observer.observe(root);
-      resize();
-    };
-    frame.addEventListener("load", observeContent);
-    observeContent();
-    return () => {
-      observer?.disconnect();
-      restoreLayout?.();
-      frame.removeEventListener("load", observeContent);
-    };
+    return observeDocsStoryLayout(frame, { autoHeight, centered });
   }, [autoHeight, centered, disabled, story.id]);
   if (story.parameters.docs?.disable) return null;
   const source = new URL("iframe.html", window.location.href);

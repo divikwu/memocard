@@ -27,6 +27,10 @@
 
 Properties 面板在当前 Docs 会话中保留挂载，切到其他页签再返回时保留参数、点击反馈和代码开合状态；隐藏面板仍退出键盘与无障碍导航。Reset 重置参数和计数，页面刷新重新开始会话；不使用真实 localStorage 持久化演示状态。
 
+Canvas 的 Variants 隐藏被固定示例覆盖的 `variant` / `children`，Sizes 隐藏 `size` / `children` / 部分生效的 `aria-label`；固定键盘与禁用场景关闭 Controls，Default 和 Properties 保持可编辑。生产参数表及 Button API 不受这些示例配置影响。
+
+Sizes 在 Docs 中沿用现有自然高度观察器，窄容器换行时增高，变宽后回缩；居中展示不再要求固定 iframe 高度。其他固定高度示例及主题、数据隔离保持原规则。
+
 只对齐文档的信息结构和展示方式。Button 继续使用 MemoCard 已有六种变体、八种尺寸及生产样式，不照搬 Astryx 的属性命名、组件外观或额外功能。
 
 ## 其他试点页面顺序
@@ -53,5 +57,7 @@ Properties 面板在当前 Docs 会话中保留挂载，切到其他页签再返
 Docs 复用现有隔离 iframe，不自动执行 `play`，开发者可手动操作；Canvas 和 Vitest 继续执行完整交互检查。Button 的参数控件在故事内部维护临时状态，无需跨 iframe 同步。需要适应内容的故事显式启用 `docs.story.autoHeight`，按同源自然内容根尺寸调整 iframe 高度；Properties 隐藏后再显示也应恢复内容高度，文档卸载时清理观察器，其他故事继续使用既有固定高度。业务故事保留实际桌面/H5 视口及原有数据隔离。
 
 执行 `pnpm verify:design` 验证类型、静态构建、故事交互与设计维护门禁，再在真实 Docs 检查：说明与代码可按需查看、首故事只展示一次、参数表准确、示例手动交互与回调有效。Button 额外检查一组参数行、跨页签保留参数及同一 iframe、隐藏面板语义、代码初始收起/高亮/真实复制读回、Reset、图文/禁用/真实链接，以及内容展开和窄布局下的高度与溢出。自动测试的 clipboard spy 仅证明调用；不能代替真实浏览器复制读回。对照检查未迁移的 Docs，确认其内容与隔离行为保持。
+
+`pnpm --filter @memocard/ui test:storybook --project button-docs` 持续验证真实 Docs 页签、参数/计数/代码开合状态保留、隐藏语义、键盘跳过及 Sizes 的实际换行高度。测试复用公开的 Storybook DocsRenderer 与真实 CSF，仅将 iframe 装载边界换为隔离的 `about:blank` fixture，不访问 Storybook 服务；它不替代生产 iframe 启动或实际 Docs 页面可见验收。
 
 本次文档试点不改变生产样式、token、组件实现、原生组件或交互协议。可见验收、自动回归和 CI 结果分别记录在[验证记录](validation.md)中。

@@ -143,7 +143,7 @@ export function ButtonDocsPage({ overview, sizes, usageStory, properties, keyboa
         <h2 id="button-usage">用法</h2><ButtonCodePanel code={usage} iframe><Story of={usageStory} height="96px" /></ButtonCodePanel>
         <h2>组成</h2><Markdown>{anatomy}</Markdown>
         <h2>使用建议</h2><Markdown>{guidelines}</Markdown>
-        <h2>示例</h2><h3>尺寸</h3><ButtonCodePanel code={sizesCode} iframe><Story of={sizes} height="128px" /></ButtonCodePanel>
+        <h2>示例</h2><h3>尺寸</h3><ButtonCodePanel code={sizesCode} iframe><Story of={sizes} /></ButtonCodePanel>
         <h3>图文、禁用与链接</h3><ButtonCodePanel code={buttonExamplesCode} iframe><Story of={examples} height="112px" /></ButtonCodePanel>
       </TabsContent>
       <TabsContent className="button-docs-panel" value="properties" keepMounted>

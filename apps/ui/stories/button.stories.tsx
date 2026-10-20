@@ -66,15 +66,18 @@ export const Default: Story = {
   args: { type: "button" },
 };
 export const Variants: Story = {
+  parameters: { controls: { exclude: ["variant", "children"] } },
   render: args => <div className="flex flex-wrap items-center gap-3">{(["default", "secondary", "outline", "ghost", "destructive", "link"] as const).map(variant => <Button {...args} key={variant} variant={variant}>{variant}</Button>)}</div>,
 };
 export const Sizes: Story = {
+  parameters: { controls: { exclude: ["size", "children", "aria-label"] }, docs: { story: { autoHeight: true } } },
   render: args => <div className="flex flex-wrap items-center gap-3">
     {(["xs", "sm", "default", "lg"] as const).map(size => <Button {...args} key={size} size={size}>{size}</Button>)}
     {(["icon-xs", "icon-sm", "icon", "icon-lg"] as const).map(size => <Button {...args} key={size} size={size} aria-label={`搜索 ${size}`}><Search aria-hidden="true" /></Button>)}
   </div>,
 };
 export const KeyboardAndDisabled: Story = {
+  parameters: { controls: { disable: true } },
   render: args => <div className="flex gap-3"><Button {...args}>保存</Button><Button {...args} disabled>不可用</Button><Button variant="outline">下一项</Button></div>,
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);

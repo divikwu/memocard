@@ -10,6 +10,7 @@ let fixture: ReturnType<typeof createSearchFixture>;
 async function searchDialog(canvasElement: HTMLElement) {
   const body = within(canvasElement.ownerDocument.body);
   const dialog = await body.findByRole("dialog", { name: "搜索笔记" });
+  await waitFor(() => expect(dialog).toBeVisible());
   const search = within(dialog);
   const input = search.getByRole("combobox", { name: "搜索笔记" });
   if (!(input as HTMLInputElement).disabled) await waitFor(() => expect(input).toHaveFocus());
