@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { act } from "@testing-library/react";
+import { vi } from "vitest";
 import { composeStories, setProjectAnnotations, type ReactRenderer } from "@storybook/react-vite";
 import { DocsRenderer } from "@storybook/addon-docs";
 import { useOf, type StoryProps } from "@storybook/addon-docs/blocks";
@@ -61,5 +62,8 @@ export async function renderButtonDocs(element: HTMLElement) {
   await act(async () => {
     await renderer.render(context, { ...buttonStories.default.parameters.docs, components: { Story: FixtureStory } }, element);
   });
+  // DocsRenderer's first commit can still contain Source's lazy highlighter.
+  // Settle that real import and its React commit before testing tab state.
+  await act(async () => { await vi.dynamicImportSettled(); });
   return () => { act(() => renderer.unmount(element)); };
 }
