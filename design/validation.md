@@ -2,6 +2,13 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## Tabs line 左右内边距（2026-10-20）
+
+- 根据 `components-tabs--line` 的标注，在生产 `TabsTrigger` 的现有 line 条件分支使用 `px-1`：左右各 4px，默认变体维持 `px-2` 的 8px，不添加断点或视口特例。规则适用于所有 line 消费者，包括 Button Docs 和主页页签；主页“最近更新”原已显式 4px，“已固定”同步为 4px。API 类型、上下间距、键盘和禁用行为保持。
+- 仅新增条件类的首版使最紧移动路由从基线 1,335,281 / 1,335,296 bytes raw 增至 1,335,450，预算检查正确失败。最终以新 padding 条件类替换同分支重复的普通态透明背景类：普通态沿用已有 Preflight 透明背景，选中态及深色选中态的显式规则保留。最终路由 1,335,268 bytes raw，比基线少 13 bytes；gzip 增加 4 bytes，所有 route、initial CSS/JS 与字体预算通过，没有调整预算。
+- 最终生产构建（含 TypeScript）、Storybook 静态构建、Button / Tabs 10 项交互、NoteCollection 12 项回归、变更 TSX 的 ESLint 和 diff 空白检查通过，独立静态审查通过。浏览器安全策略仍限制实际页面观察，本轮未完成 4px 的可见/计算样式复核，不把自动交互测试写成样式量测；没有重跑完整 101 项或原生验收。
+- 本机日志为 `/tmp/memocard-tabs-line-padding-{baseline-build,baseline-budget,build,budget,final-build,storybook-build,final-budget,final-stories,final-collection,final-eslint}.log`，首版超预算记录保留在 `budget.log`。基线 CSS、产物指纹及前后体积对照位于 ignored 的 `build/verification/tabs-line-padding/`；远程 CI 以 PR #52 最新 head 为准。
+
 ## Button 文档章节间距（2026-10-20）
 
 - 仅调整 Button Docs 的局部 CSS：列表下边距改为 16px，与现有 Tabs 8px gap 合成到 Panel 的 24px；直接章节标题统一上 32px / 下 16px，覆盖 Storybook 对首个 `h2` 的顶部清零规则。相邻 `h2` / `h3` 保留 16px 层级间距；Panel 首元素不叠加默认顶部 margin。上述均为默认根字号下的 CSS 规则值，不是重新量测的渲染像素。
