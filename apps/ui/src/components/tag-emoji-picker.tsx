@@ -21,9 +21,9 @@ export default function TagEmojiPicker({ selected = "", disabled = false, onSele
   const items = (needle ? Object.values(emojis).flat() : emojis[category]).filter(item => !needle || nativeEmoji(item.u) === custom || item.n.some(name => name.toLocaleLowerCase().includes(needle)));
   return <div>
     <Input autoFocus aria-label="搜索 Emoji" placeholder="搜索 Emoji" disabled={disabled} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing && customEmoji && !disabled) { event.preventDefault(); onSelect(custom); } }} className="mb-2" />
-    {customEmoji && !items.length && <Button type="button" variant="ghost" disabled={disabled} className="mb-2 w-full" onClick={() => onSelect(custom)}>使用 {custom}</Button>}
+    {customEmoji && !items.length && <Button type="button" variant="ghost" disabled={disabled} className="mb-2 w-full" onClick={() => onSelect(custom)}>使用 <span className="emoji-icon">{custom}</span></Button>}
     <div aria-label="Emoji" className="-mx-1 grid max-h-56 grid-cols-[repeat(auto-fill,minmax(2rem,1fr))] gap-1 overflow-y-auto overscroll-contain px-1">
-      {items.map(item => { const emoji = nativeEmoji(item.u); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" disabled={disabled} className={cn("text-xl", selected === emoji && "bg-accent text-accent-foreground")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}>{emoji}</Button>; })}
+      {items.map(item => { const emoji = nativeEmoji(item.u); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" disabled={disabled} className={cn("text-xl", selected === emoji && "bg-accent text-accent-foreground")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}><span className="emoji-icon">{emoji}</span></Button>; })}
     </div>
     {!items.length && !customEmoji && <p role="status" className="pb-2 text-sm text-muted-foreground">没有匹配的 Emoji</p>}
     <TooltipProvider>

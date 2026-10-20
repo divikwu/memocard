@@ -154,7 +154,7 @@ final class ServiceHost {
 
     private let webOperations: Set<String> = [
         "getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "listTags", "listFolders",
-        "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "getNotePins", "setNotePinned", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "importAttachment",
+        "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "importAttachment",
     ]
 
     private func webRequest(_ request: [String: Any]) async -> [String: Any] {

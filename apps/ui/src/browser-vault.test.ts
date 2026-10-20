@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import type { BridgeRequest, Note, NotePage, NotePins, VaultStatus, PropertyLabels } from "@memocard/contracts";
+import type { BridgeRequest, Note, NotePage, NotePins, TagPreferenceState, VaultStatus, PropertyLabels } from "@memocard/contracts";
 import { BrowserVault } from "./browser-vault";
 import { parseBrowserNote } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserWritable } from "./browser-files";
@@ -21,6 +21,38 @@ it('rejects capture operations from a different vault before reading or writing 
   for(const operation of ['getNote','saveNote','saveDraft','getTrash','getTrashedNote','restoreNote','permanentlyDeleteNote','importAttachment']) await expect(call(h.core,operation,{vaultId:'other-vault'})).rejects.toMatchObject({code:'VAULT_CHANGED'});
   expect((await call<NotePage>(h.core,'queryNotes')).notes).toHaveLength(1);
   expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts).toHaveLength(0);
+});
+
+it('shares tag pins and emoji across independent clients, guards conflicts and preserves corrupt metadata', async () => {
+  const root = await fixture(), h = harness(root); await call(h.core,'selectVault');
+  const initial = await call<TagPreferenceState>(h.core,'getTagPreferences');
+  expect(initial.initialized).toBe(false);
+  const value = {pinned:['area/coffee'],icons:{'area/coffee':'☕','area/ai':'🧑🏽‍💻'}};
+  const saved = await call<TagPreferenceState>(h.core,'setTagPreferences',{...value,baseHash:initial.contentHash});
+  const other = harness(root); await call(other.core,'selectVault');
+  expect(await call(other.core,'getTagPreferences')).toEqual(saved);
+  await expect(call(other.core,'setTagPreferences',{pinned:[],icons:{},baseHash:initial.contentHash})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+  await expect(call(other.core,'getTagPreferences',{vaultId:'other'})).rejects.toMatchObject({code:'VAULT_CHANGED'});
+  await expect(call(other.core,'setTagPreferences',{pinned:['bad\ntag'],icons:{},baseHash:saved.contentHash})).rejects.toMatchObject({code:'INVALID_TAG_PREFERENCES'});
+  const empty = await call<TagPreferenceState>(other.core,'setTagPreferences',{pinned:[],icons:{},baseHash:saved.contentHash});
+  expect(empty.initialized).toBe(true);
+  expect((await call<TagPreferenceState>(h.core,'getTagPreferences')).pinned).toEqual([]);
+  const file = await (await root.getDirectoryHandle('.memocard')).getFileHandle('tag-preferences.json');
+  file.bytes = bytes('{broken');
+  await expect(call(h.core,'setTagPreferences',{...value,baseHash:empty.contentHash})).rejects.toMatchObject({code:'INVALID_TAG_PREFERENCES'});
+  expect(file.text).toBe('{broken');
+});
+
+it('can retry a tag preference write after the first file creation is interrupted', async () => {
+  const root=await fixture(),h=harness(root);await call(h.core,'selectVault');
+  const initial=await call<TagPreferenceState>(h.core,'getTagPreferences');
+  const directory=await root.getDirectoryHandle('.memocard');
+  directory.createdFile=file=>{if(file.name==='tag-preferences.json')file.closeError=true;};
+  const input={pinned:['work'],icons:{work:'☕'},baseHash:initial.contentHash};
+  await expect(call(h.core,'setTagPreferences',input)).rejects.toThrow();
+  const file=await directory.getFileHandle('tag-preferences.json');file.closeError=false;
+  expect((await call<TagPreferenceState>(h.core,'getTagPreferences')).initialized).toBe(false);
+  expect(await call(h.core,'setTagPreferences',input)).toMatchObject({pinned:['work'],initialized:true});
 });
 
 it.each([false, true])('persists pins independently of Markdown, edits and vault selection (shared=%s)', async shared => {

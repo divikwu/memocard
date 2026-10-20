@@ -221,7 +221,7 @@ public actor VaultStore {
     public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) async throws -> Data {
         do {
             try requireBinding(expectedBinding)
-            if ["getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
+            if ["getTagPreferences", "setTagPreferences", "getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
                 struct Scope: Decodable { var vaultId: String?; var vaultBinding: UUID? }
                 let scope = try decode(Scope.self, params)
                 try requireBinding(scope.vaultBinding)
@@ -276,6 +276,11 @@ public actor VaultStore {
                 let data = try coordinateRead(root.appendingPathComponent(note.relativePath), inside: root) { try self.readSource($0) }
                 return try encode(effectiveNoteProperties(data, snapshot: snapshot, config: readPropertyDefinitions(root)))
             case "getPropertyLabels": return try encode(readPropertyLabels())
+            case "getTagPreferences": return try encode(readTagPreferences())
+            case "setTagPreferences":
+                struct Request: Decodable { let pinned: [String]; let icons: [String: String]; let baseHash: String }
+                let request = try decode(Request.self, params)
+                return try encode(setTagPreferences(TagPreferences(pinned: request.pinned, icons: request.icons), baseHash: request.baseHash))
             case "getNotePins": return try encode(readNotePins())
             case "setNotePinned":
                 struct Request: Decodable { let id: String; let pinned: Bool; let baseHash: String; let vaultId: String? }
@@ -773,7 +778,7 @@ public actor VaultStore {
                 try values.encode(capabilities, forKey: .capabilities)
             }
         }
-        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"]
+        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"]
         guard let root, let metadata else {
             return try encode(Status(connected: false, vaultId: nil, vaultName: nil,
                 coverage: Coverage(complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: nil),
@@ -989,6 +994,50 @@ public actor VaultStore {
         // A changed or unreadable draft must survive, never be discarded as "already saved".
         try? removeCommittedDraft(request, id: id, tags: tags)
         return saved
+    }
+
+    private struct TagPreferences: Codable, Equatable { var pinned: [String]; var icons: [String: String] }
+    private struct TagPreferenceState: Encodable {
+        let pinned: [String]; let icons: [String: String]; let contentHash: String; let initialized: Bool
+    }
+    private func validTagPreferences(_ value: TagPreferences) -> Bool {
+        let tags = value.pinned + Array(value.icons.keys)
+        return Set(value.pinned).count == value.pinned.count && tags.allSatisfy {
+            !$0.isEmpty && $0 == tagKey($0) && $0 == $0.trimmingCharacters(in: .whitespacesAndNewlines)
+                && !$0.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 })
+        } && value.icons.values.allSatisfy { $0.utf16.count <= 32 && !$0.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) }
+    }
+    private func decodedTagPreferences(_ data: Data?) throws -> TagPreferenceState {
+        do {
+            let initialized = data?.isEmpty == false
+            let value = initialized ? try JSONDecoder().decode(TagPreferences.self, from: data!) : TagPreferences(pinned: [], icons: [:])
+            guard validTagPreferences(value) else { throw VaultError(code: "INVALID_TAG_PREFERENCES", message: "标签设置无效。") }
+            return TagPreferenceState(pinned: value.pinned, icons: value.icons, contentHash: sha256(data ?? Data()), initialized: initialized)
+        } catch { throw VaultError(code: "INVALID_TAG_PREFERENCES", message: "标签设置无法读取，请检查 .memocard/tag-preferences.json。") }
+    }
+    private func tagPreferenceData(_ url: URL) throws -> Data? {
+        fm.fileExists(atPath: url.path) ? try readSource(url) : nil
+    }
+    private func readTagPreferences() throws -> TagPreferenceState {
+        let (root, _) = try active()
+        let path = root.appendingPathComponent(".memocard/tag-preferences.json")
+        try validate(path, inside: root)
+        if !fm.fileExists(atPath: path.path) { return try decodedTagPreferences(nil) }
+        return try coordinateRead(path, inside: root) { try self.decodedTagPreferences(self.tagPreferenceData($0)) }
+    }
+    private func setTagPreferences(_ value: TagPreferences, baseHash: String) throws -> TagPreferenceState {
+        guard validTagPreferences(value) else { throw VaultError(code: "INVALID_TAG_PREFERENCES", message: "标签设置无效。") }
+        let (root, _) = try active()
+        let path = root.appendingPathComponent(".memocard/tag-preferences.json")
+        return try coordinateWrite(path, inside: root) { url in
+            try self.requireNoConflict(url)
+            let current = try self.decodedTagPreferences(self.tagPreferenceData(url))
+            guard current.contentHash == baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "标签设置已在其他位置修改，请重试。", retryable: true) }
+            if current.initialized && current.pinned == value.pinned && current.icons == value.icons { return current }
+            let data = try encode(value)
+            try data.write(to: url, options: .atomic)
+            return try self.decodedTagPreferences(data)
+        }
     }
 
     private struct PropertyLabels: Encodable { let labels: [String: String]; let contentHash: String }

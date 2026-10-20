@@ -171,11 +171,11 @@ test('requires authentication for draft reminder review before dispatch', async 
 
 test('authenticates pin metadata reads and writes before dispatch', async t => {
   const host = await webHost(t);
-  for (const operation of ['getNotePins', 'setNotePinned']) {
+  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences']) {
     assert.equal((await call(host.config, {body:envelope({}, {operation})})).status, 401);
   }
   const cookie = await authenticate(host);
-  for (const operation of ['getNotePins', 'setNotePinned']) {
+  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences']) {
     const reply = await call(host.config, {body:envelope({}, {operation}), headers:{Cookie:cookie}});
     assert.equal(reply.status, 200);
     assert.equal(JSON.parse(reply.body).data.operation, operation);

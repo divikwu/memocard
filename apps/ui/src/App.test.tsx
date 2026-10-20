@@ -37,6 +37,7 @@ beforeAll(async () => {
 }, 30_000);
 
 beforeEach(() => {
+  document.elementFromPoint = () => null;
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
   Range.prototype.getBoundingClientRect = () => new DOMRect();
   window.history.replaceState(null, "", "#/notes");
@@ -92,7 +93,7 @@ describe("note workspace", () => {
     await screen.findByRole('button',{name:'打开 新内容'});
     await user.type(screen.getByRole('textbox',{name:'快速输入内容'}),'从主页记录的新想法');
     await user.click(screen.getByRole('button',{name:'记录'}));
-    await waitFor(()=>expect((screen.getByRole('textbox',{name:'快速输入内容'}) as HTMLTextAreaElement).value).toBe(''));
+    await waitFor(()=>expect((screen.getByRole('textbox',{name:'快速输入内容'}) as HTMLDivElement).textContent).toBe(''));
     await waitFor(()=>expect(screen.getByRole('tab',{name:'最近更新'}).getAttribute('aria-selected')).toBe('true'));
     await waitFor(()=>expect(document.querySelector(`[data-note-id="${saved?.id}"]`)).not.toBeNull());
     const last=bridge.request.mock.calls.filter(([op])=>op==='queryNotes').at(-1)?.[1];

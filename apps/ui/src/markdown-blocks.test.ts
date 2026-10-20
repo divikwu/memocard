@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import * as language from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import { history, undo, redo } from '@codemirror/commands';
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
@@ -31,8 +32,20 @@ it('indents after a preceding sibling and outdents a nested final item', () => {
   list = blocks(view.state).filter(b => b.kind === 'ListItem'); expect(blockAction(view, list[1], 'outdent')).toBe(true); expect(view.state.doc.toString()).toBe('- one\n- two');
 });
 it('finds and moves blocks past 10000 characters', () => {
-  const view = editor('a'.repeat(12000) + '\n\nlast\n\nend'); const list = blocks(view.state);
+  const view = editor('a'.repeat(12000) + '\n\nlast\n\nend');
+  // This verifies block boundaries, not parser speed under runner contention.
+  // Prepare the real syntax tree before exercising the bounded production read.
+  expect(language.ensureSyntaxTree(view.state, view.state.doc.length, Infinity)).not.toBeNull();
+  const list = blocks(view.state);
   expect(blockAction(view, list.at(-1)!, 'up')).toBe(true); expect(view.state.doc.toString().endsWith('\n\nend\n\nlast')).toBe(true);
+});
+it('leaves the document unchanged without an available syntax tree', () => {
+  const text='first\n\nsecond',view=editor(text),block=blocks(view.state)[1];
+  // An unconfigured parser produces the same unavailable-tree result.
+  const unavailable={...view,state:EditorState.create({doc:text})} as EditorView;
+  expect(blocks(unavailable.state)).toEqual([]);
+  expect(blockAction(unavailable,block,'up')).toBe(false);
+  expect(unavailable.state.doc.toString()).toBe(text);
 });
 it('converts list markers while retaining children and does not convert code', () => {
   const view = editor('- parent\n  - child\n\n```\ncode\n```');

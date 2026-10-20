@@ -8,9 +8,10 @@ import Image, { type ImageOptions } from '@tiptap/extension-image';
 import { InlineMath, BlockMath } from '@tiptap/extension-mathematics';
 import { AllSelection, EditorState, NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { Slice } from '@tiptap/pm/model';
 import { richBlock, richBlockAt, richSectionEnd, selectedRichBlocks, richBlockMoveSources, richBlockMoveTarget, selectRichBlocks, selectRichBlockRange, extendRichBlocksTo, blockMoveTransaction, moveRichBlocks, duplicateRichBlocks, editRichStructure, type RichBlock } from './rich-blocks';
 import { BlockRangeSelection } from './rich-block-selection';
-import { RichInlineTags } from './rich-inline-tags';
+import { pastedInlineTags, RichInlineTags } from './rich-inline-tags';
 import { RichHeadingFolding, unfoldRichHeadings } from './rich-heading-fold';
 import { RichTagSuggestions } from './RichTagSuggestions';
 import { RichMath } from './RichMath';
@@ -263,12 +264,14 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
         // Use the schema-validated slice for rich/internal and literal clipboard content.
         if (pastePlain.current || view.state.selection.$from.parent.type.spec.code || event.clipboardData?.getData('text/html')) {
           if (!slice.size) return false;
+          if (!pastePlain.current && !view.state.selection.$from.parent.type.spec.code) slice = new Slice(pastedInlineTags(slice.content), slice.openStart, slice.openEnd);
           editRichStructure(e, () => view.dispatch(view.state.tr.replaceSelection(slice).scrollIntoView().setMeta('paste', true).setMeta('uiEvent', 'paste')));
           return true;
         }
         const text = event.clipboardData?.getData('text/plain');
         if (!text) return false;
-        editRichStructure(e, () => { e.commands.insertContent(new MarkdownSource().parse(e, text)); }); return true;
+        const parsed = e.schema.nodeFromJSON(new MarkdownSource().parse(e, text));
+        editRichStructure(e, () => { e.commands.insertContent(parsed.copy(pastedInlineTags(parsed.content)).toJSON()); }); return true;
       },
     },
     onTransaction({ editor: e, transaction }) {
@@ -331,7 +334,11 @@ export const RichMarkdownEditor = forwardRef<HTMLDivElement, RichEditorProps>(fu
       editor.chain().setMeta('addToHistory', false).setContent(source.current.parse(editor, latest.current.value), { emitUpdate: false }).setMeta('noteHistorySeed', true).command(({ tr }) => { tr.setDocAttribute('noteEdit', { title: latest.current.title, properties: {} }); return true; }).run();
       initialized.current = true;
       setRevision(n => n + 1);
-      if (latest.current.autoFocus !== false) { editor.commands.focus('start'); editor.view.focus(); }
+      if (latest.current.autoFocus !== false) {
+        // This already runs after React commits; a second deferred focus can steal user focus.
+        editor.view.dispatch(editor.state.tr.setSelection(TextSelection.atStart(editor.state.doc)).scrollIntoView());
+        editor.view.focus();
+      }
     });
   }, [editor]);
   useEffect(() => {

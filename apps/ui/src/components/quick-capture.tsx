@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
+import type { Editor } from '@tiptap/react';
 import type { Note } from '@memocard/contracts';
 import { ArrowUp, ArrowUpRight, Check, FolderOpen, Hash, ImagePlus, LoaderCircle, Plus, X } from 'lucide-react';
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from './ui/input-group';
+import { InputGroup, InputGroupAddon, InputGroupButton } from './ui/input-group';
+import { QuickCaptureEditor } from './quick-capture-editor';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from './ui/sheet';
-import TagPill from '../TagPill';
 import { NoteImage } from '../NoteImage';
 import { errorMessage, request, type Attachment, type Draft } from '../bridge';
 import { createId } from '../uuid';
@@ -14,6 +15,7 @@ import { inlineTags, normalizePropertyTag } from '../inline-tags';
 import { assetUrl } from '../urls';
 import { commitQuickCapture } from '../quick-capture-operation';
 import { hasCapture, readQuickCaptureDraft, writeQuickCaptureDraft, type Capture } from '../quick-capture-draft';
+import { insertCaptureTag, removeCaptureTags, restoreCaptureTags } from '../quick-capture-tags';
 import { useIsMobile } from '../hooks/use-mobile';
 import { isIOSNative, useIOSSurface } from '../ios-native';
 import '../quick-capture.css';
@@ -48,7 +50,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     try { return {capture:isMobile ? readQuickCaptureDraft(vaultId) : null,error:'',cached:false}; }
     catch { return {capture:null,error:'无法恢复本机草稿，请保持页面打开。',cached:false}; }
   });
-  const [capture, setCapture] = useState(() => restored.capture ?? blank());
+  const [capture, setCapture] = useState(() => restoreCaptureTags(restored.capture ?? blank()));
   const captureCurrent = useRef(capture);
   captureCurrent.current = capture;
   const [draftError, setDraftError] = useState(restored.error);
@@ -57,7 +59,15 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [tagQuery, setTagQuery] = useState('');
-  const textarea = useRef<HTMLTextAreaElement>(null);
+  const [tagPickerOpen,setTagPickerOpen] = useState(false);
+  const textarea = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<Editor | null>(null);
+  const pendingCaret = useRef<number | null>(null);
+  useLayoutEffect(()=>{
+    if(pendingCaret.current===null || !textarea.current)return;
+    textarea.current.focus();editorRef.current?.commands.setTextSelection(pendingCaret.current);
+    pendingCaret.current=null;
+  },[capture.text]);
   const focusAfterRecord = useRef(false);
   useEffect(()=>{
     if (!busy && focusAfterRecord.current) {
@@ -76,6 +86,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     catch { setDraftError('草稿保护暂不可用，请保持页面打开。'); return false; }
   }, [vaultId]);
   function changeCapture(next:Capture) {
+    next={...next,tags:inlineTags(next.text)};
     captureCurrent.current=next;
     setCapture(next); setRecordedLocally(false); setRestoreFailed(false);
     if (isMobile) protect(next);
@@ -84,7 +95,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     if (!restoreFailed) { protect(capture); return; }
     try {
       const draft=readQuickCaptureDraft(vaultId);
-      if (draft) setCapture(draft);
+      if (draft) setCapture(restoreCaptureTags(draft));
       setRestoreFailed(false); setDraftError('');
     } catch { /* Keep the unreadable draft for another recovery attempt. */ }
   }
@@ -96,14 +107,14 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   useEffect(() => {mounted.current=true; return () => {mounted.current=false;};}, []);
   const params = useCallback((value:Capture, text=value.text.trim()):Draft & {vaultId:string} => {
     const body = [text, ...value.images.map(image => `![图片](${image.markdownPath})`)].filter(Boolean).join('\n\n');
-    return {id:value.id,title:'',body,tags:inlineTags(body),inheritedTags:value.tags,baseHash:null,relativePath:value.relativePath,vaultId,...(vaultBinding ? {vaultBinding} : {})};
+    return {id:value.id,title:'',body,tags:inlineTags(body),inheritedTags:[],baseHash:null,relativePath:value.relativePath,vaultId,...(vaultBinding ? {vaultBinding} : {})};
   }, [vaultId,vaultBinding]);
   useImperativeHandle(handle, ()=>({isBusy:()=>working.current}), []);
   const blocked=disabled || busy;
-  const canRecord=Boolean(capture.text.trim() || capture.images.length) && !blocked;
+  const canRecord=Boolean(removeCaptureTags(capture.text).trim() || capture.images.length) && !blocked;
   async function record() {
     const current=captureCurrent.current;
-    if (disabled || working.current || (!current.text.trim() && !current.images.length)) return;
+    if (disabled || working.current || (!removeCaptureTags(current.text).trim() && !current.images.length)) return;
     working.current=true; setBusy(true); setError('');
     const snapshot=params(current);
     try {
@@ -150,9 +161,21 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
     } catch(cause) {if(mounted.current)setError(errorMessage(cause));}
     finally {working.current=false; if(mounted.current)setBusy(false);}
   }
-  function toggleTag(tag:string) {const current=captureCurrent.current;if(!blocked)changeCapture({...current,tags:current.tags.includes(tag) ? current.tags.filter(value=>value!==tag) : [...current.tags,tag]});}
+  function chooseTag(tag:string) {
+    if(blocked)return;
+    const current=captureCurrent.current;
+    const inserted=insertCaptureTag(current.text,tag,editorRef.current?.state.selection.from ?? current.text.length,editorRef.current?.state.selection.to ?? current.text.length);
+    pendingCaret.current=inserted.caret;
+    changeCapture({...current,text:inserted.text});setTagPickerOpen(false);
+  }
+  function toggleTag(tag:string) {
+    if(blocked)return;
+    const current=captureCurrent.current;
+    if(current.tags.includes(tag))changeCapture({...current,text:removeCaptureTags(current.text,tag)});
+    else chooseTag(tag);
+  }
   const normalized=normalizePropertyTag(tagQuery);
-  const known=[...new Set([...capture.tags,...options])];
+  const known=[...new Set([...options,...capture.tags])];
   const matches=known.filter(tag=>tag.includes(tagQuery.trim().replace(/^#/,'').toLowerCase()));
   useEffect(()=>{
     if(!isIOSNative)return;
@@ -194,19 +217,16 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   if(isIOSNative)return null;
   const form = <form className="quick-capture" aria-label="快速输入" aria-busy={busy} onSubmit={event=>{event.preventDefault();void record();}}>
     <InputGroup className="quick-capture-group has-disabled:opacity-100 has-disabled:bg-background shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]">
-      <InputGroupTextarea ref={textarea} aria-label="快速输入内容" placeholder="记下此刻的想法…" disabled={blocked} value={capture.text} onChange={event=>changeCapture({...capture,text:event.target.value})} onKeyDown={event=>{
-        if(!event.nativeEvent.isComposing && !event.repeat && (event.metaKey || event.ctrlKey) && event.key==='Enter') {event.preventDefault();void record();}
-      }} className="quick-capture-textarea" />
+      <QuickCaptureEditor value={capture.text} tags={options} resetKey={capture.id} disabled={blocked} field={textarea} editorRef={editorRef} onChange={text=>changeCapture({...captureCurrent.current,text})} onSave={()=>void record()}/>
       {capture.images.length>0 && <div className="quick-capture-images" aria-label="待记录的图片">{capture.images.map((image,index)=>{
         const source=assetUrl(image.markdownPath,capture.relativePath);
         return <div className="quick-capture-image" key={image.relativePath}>{source && <NoteImage source={source} alt={`待记录图片 ${index+1}`} />}
           <Button type="button" variant="secondary" size="icon-xs" disabled={blocked} aria-label={`移除图片 ${index+1}`} onClick={()=>changeCapture({...capture,images:capture.images.filter((_,i)=>i!==index)})}><X /></Button>
         </div>;
       })}</div>}
-      {capture.tags.length>0 && <div className="quick-capture-tags" aria-label="已选标签">{capture.tags.map(tag=><TagPill key={tag} name={tag} render={<button type="button" disabled={blocked} aria-label={`移除标签 ${tag}`} onClick={()=>toggleTag(tag)} />}><span>{tag}</span><X className="size-3" /></TagPill>)}</div>}
       <InputGroupAddon align="block-end" className="quick-capture-footer">
-        <Popover><PopoverTrigger render={<InputGroupButton size="sm" disabled={blocked} aria-label="选择标签" title="选择标签"><Hash />标签</InputGroupButton>} />
-          <PopoverContent align="start" className="quick-capture-tag-picker" aria-label="选择标签">
+        <Popover open={tagPickerOpen} onOpenChange={setTagPickerOpen}><PopoverTrigger render={<InputGroupButton size="sm" disabled={blocked} aria-label="选择标签" title="选择标签"><Hash />标签</InputGroupButton>} />
+          <PopoverContent align="start" className="quick-capture-tag-picker" aria-label="选择标签" finalFocus={textarea}>
             <Input aria-label="搜索或新建标签" placeholder="搜索或新建标签" value={tagQuery} disabled={blocked} onChange={event=>setTagQuery(event.target.value)} />
             <div className="quick-capture-tag-options">{matches.map(tag=><Button type="button" key={tag} variant="ghost" size="sm" disabled={blocked} aria-pressed={capture.tags.includes(tag)} onClick={()=>toggleTag(tag)}><Hash className="size-3.5" /><span>{tag}</span>{capture.tags.includes(tag) && <Check className="size-3.5" />}</Button>)}
               {normalized && !known.includes(normalized) && <Button type="button" variant="ghost" size="sm" disabled={blocked} onClick={()=>{toggleTag(normalized);setTagQuery('');}}>新建标签 {normalized}</Button>}

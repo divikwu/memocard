@@ -73,7 +73,7 @@
 .rich-editor-content tr[data-footer] { font-weight: 600; }
 .rich-editor-content .rich-footnote > p:first-child { display: inline; }
 
-.rich-tag-suggestions { position: absolute; z-index: 30; width: 240px; max-width: 100%; padding: 4px; border: 1px solid transparent; border-radius: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: var(--overlay-shadow); font: 14px/20px var(--font-sans); }
+.rich-tag-suggestions { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 2px; width: 240px; max-width: 100%; padding: 4px; border: 1px solid transparent; border-radius: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: var(--overlay-shadow); font: 14px/20px var(--font-sans); }
 .rich-tag-suggestions button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 32px; padding: 6px 8px; text-align: left; border-radius: 4px; }
 .rich-tag-suggestions button:hover { background: var(--hover-bg); }
 .rich-tag-suggestions button:focus-visible { outline: 2px solid var(--ring); }

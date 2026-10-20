@@ -147,8 +147,8 @@ export function Editor({ initial, initialNote, capabilities, pendingLink = false
       const operations = await import('./rename-tag-operation');
       if (to === null) await operations.deleteTag(from, vaultId, request);
       else await operations.renameTag(from, to, vaultId, request);
-      try { changeTagSettings(vaultId, from, to); }
-      catch { throw new Error('标签内容已更新，但外观设置未能保存，请检查浏览器存储权限。'); }
+      try { await changeTagSettings(vaultId, from, to); }
+      catch { throw new Error('标签内容已更新，但外观设置未能保存，请重试。'); }
     } finally {
       try {
         // Refresh even after a partial operation, so a later edit uses the current hash.

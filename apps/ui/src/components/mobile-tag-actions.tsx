@@ -28,7 +28,7 @@ export function MobileTagActions({ tag, title, home = false, vaultId, onRename }
           <DropdownMenuRadioItem value="list" closeOnClick className="mobile-tag-menu-item"><List aria-hidden="true" />列表</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         {tag && <><DropdownMenuSeparator />
-          <DropdownMenuItem closeOnClick={false} className="mobile-tag-menu-item" onClick={() => { if (togglePinned(tag)) setOpen(false); }}>{pinned ? <PinOff aria-hidden="true" /> : <Pin aria-hidden="true" />}{pinned ? "取消置顶" : "置顶标签"}</DropdownMenuItem>
+          <DropdownMenuItem closeOnClick={false} className="mobile-tag-menu-item" onClick={async () => { if (await togglePinned(tag)) setOpen(false); }}>{pinned ? <PinOff aria-hidden="true" /> : <Pin aria-hidden="true" />}{pinned ? "取消置顶" : "置顶标签"}</DropdownMenuItem>
           <DropdownMenuItem className="mobile-tag-menu-item" onClick={() => { openingEditor.current = tag; }}><Pencil aria-hidden="true" />编辑名称／图标</DropdownMenuItem>
         </>}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

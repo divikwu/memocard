@@ -85,7 +85,7 @@ it("protects native capture text, tags and attachments across dismissal and retr
   send("capture","close");expect(surface("capture").presented).toBe(false);
   page.unmount();render(<QuickCapture {...props}/>);
   act(()=>window.dispatchEvent(new Event("memocard:open-native-capture")));
-  expect(surface("capture").sections?.[0].fields?.[0].value).toBe("保留原来的快速记录");
+  expect(surface("capture").sections?.[0].fields?.[0].value).toBe("保留原来的快速记录 #设计 ");
   expect(surface("capture").sections?.find(section=>section.id === "selected-tags")?.actions?.[0].title).toBe("设计");
   send("capture","record");await waitFor(()=>expect(surface("capture").error).toBe("磁盘只读"));
   expect(readQuickCaptureDraft(captureProps.vaultId)?.images).toHaveLength(1);
@@ -94,7 +94,7 @@ it("protects native capture text, tags and attachments across dismissal and retr
   expect(readQuickCaptureDraft(captureProps.vaultId)).toBeNull();
   const writes=bridge.request.mock.calls.filter(([op])=>op === "saveNote");
   expect(writes[0][1].id).toBe(writes[1][1].id);
-  expect(writes[1][1]).toMatchObject({inheritedTags:["设计"],body:"保留原来的快速记录\n\n![图片](assets/one.png)"});
+  expect(writes[1][1]).toMatchObject({inheritedTags:[],body:"保留原来的快速记录 #设计\n\n![图片](assets/one.png)"});
 });
 
 it("keeps immediate native input and blocks duplicate submissions",async()=>{
@@ -104,7 +104,7 @@ it("keeps immediate native input and blocks duplicate submissions",async()=>{
   act(()=>window.dispatchEvent(new Event("memocard:open-native-capture")));
   act(()=>{send("capture","text","最后一次输入也要保存");send("capture","tag:设计");send("capture","record");send("capture","record");});
   expect(bridge.request.mock.calls.filter(([op])=>op === "saveNote")).toHaveLength(1);
-  expect(bridge.request.mock.calls.find(([op])=>op === "saveNote")?.[1]).toMatchObject({body:"最后一次输入也要保存",inheritedTags:["设计"]});
+  expect(bridge.request.mock.calls.find(([op])=>op === "saveNote")?.[1]).toMatchObject({body:"最后一次输入也要保存 #设计",inheritedTags:[]});
   await act(async()=>finish({id:"saved"}));expect(onRecorded).toHaveBeenCalledOnce();
 });
 
@@ -115,7 +115,7 @@ it("removes only the native attachment while preserving immediate text and tag c
   send("capture","image");
   await waitFor(()=>expect(readQuickCaptureDraft(captureProps.vaultId)?.images).toHaveLength(1));
   act(()=>{send("capture","text","移除图片时保留最后输入");send("capture","tag:设计");send("capture","remove-image:assets/one.png");});
-  expect(readQuickCaptureDraft(captureProps.vaultId)).toMatchObject({text:"移除图片时保留最后输入",tags:["设计"],images:[]});
+  expect(readQuickCaptureDraft(captureProps.vaultId)).toMatchObject({text:"移除图片时保留最后输入 #设计 ",tags:["设计"],images:[]});
 });
 
 it("preserves the native search session and rejects an older query reply",async()=>{

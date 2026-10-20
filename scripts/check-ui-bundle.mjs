@@ -26,16 +26,17 @@ if (compressed > limits.gzip) throw new Error(`Initial JS and CSS gzip size is $
 // Include static dependencies of lazy routes; index.html alone misses editor and preview cost.
 const manifest = JSON.parse(await readFile(resolve(root, ".vite/manifest.json"), "utf8"));
 for (const route of [
-  { name: "home with quick capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1300 * 1024, gzip: 400 * 1024 },
+  // Editable page-style tags share Tiptap's caret/history engine: 340 KiB raw / 110 KiB gzip above plain capture.
+  { name: "home with quick capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1640 * 1024, gzip: 510 * 1024 },
   // The new native route includes view models and tag color styles: 16 KiB raw / 2 KiB gzip above Web home.
-  { name: "iOS home with native chrome", entries: ["src/components/ios-app-chrome.tsx", "src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1316 * 1024, gzip: 402 * 1024 },
-  // Reserve 1 KiB raw for the shared mobile header and sidebar refinements; gzip budgets stay unchanged.
-  { name: "mobile home with title layout menu", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1304 * 1024, gzip: 400 * 1024 },
-  { name: "mobile home with swipe capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx", "src/components/ui/sheet-swipe.tsx"], raw: 1307 * 1024, gzip: 402 * 1024 },
+  { name: "iOS home with native chrome", entries: ["src/components/ios-app-chrome.tsx", "src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1656 * 1024, gzip: 512 * 1024 },
+  // Reserve 2 KiB raw for the shared mobile header and vault-backed tag preferences; gzip budgets stay unchanged.
+  { name: "mobile home with title layout menu", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1645 * 1024, gzip: 510 * 1024 },
+  { name: "mobile home with swipe capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx", "src/components/ui/sheet-swipe.tsx"], raw: 1648 * 1024, gzip: 512 * 1024 },
   // Reserve 9 KiB for mobile navigation, shared saved layout state, optional swipe loading, and overlays.
   { name: "list", entries: ["src/components/note-collection.tsx"], raw: 1263 * 1024, gzip: 383 * 1024 },
-  { name: "mobile list with quick capture", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx"], raw: 1300 * 1024, gzip: 400 * 1024 },
-  { name: "mobile tag with actions", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1301 * 1024, gzip: 400 * 1024 },
+  { name: "mobile list with quick capture", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx"], raw: 1640 * 1024, gzip: 510 * 1024 },
+  { name: "mobile tag with actions", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1642 * 1024, gzip: 510 * 1024 },
   // Shared capture sheet styles and optional swipe loading add less than 2 KiB gzip to the detail entry.
   { name: "detail", entries: ["src/Editor.tsx"], raw: 1750 * 1024, gzip: 527 * 1024 },
   { name: "detail with preserved Markdown", entries: ["src/Editor.tsx", "src/markdown.tsx"], raw: 2100 * 1024, gzip: 630 * 1024 },
