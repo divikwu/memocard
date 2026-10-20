@@ -26,20 +26,17 @@ export function classifyDiff(raw) {
 
 export function scopeForEvent(eventName, event, cwd = process.cwd()) {
   try {
-    let base, head;
-    if (eventName === 'pull_request') {
-      base = event.pull_request?.base?.sha;
-      head = event.pull_request?.head?.sha;
-    } else if (eventName === 'push') {
-      base = event.before;
-      head = event.after;
-    }
+    // A docs push can supersede an unfinished production run in the main concurrency group.
+    // Every push must verify its whole tree; only cumulative PR diffs may use the fast path.
+    if (eventName === 'push') return { full: true, reason: 'Main pushes always require full verification, including superseded production changes' };
+    if (eventName !== 'pull_request') throw new Error('Unsupported event');
+    const base = event.pull_request?.base?.sha;
+    const head = event.pull_request?.head?.sha;
     if (![base, head].every(sha => /^[0-9a-f]{40}$/.test(sha ?? '') && !/^0+$/.test(sha))) throw new Error('Missing event revisions');
     const git = args => execFileSync('git', args, { cwd, encoding: 'utf8', timeout: 30_000, maxBuffer: 32 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
     git(['merge-base', '--is-ancestor', head, 'HEAD']);
     // PR scope is cumulative, even when the latest commit changes only docs.
-    const range = eventName === 'pull_request' ? [`${base}...${head}`] : [base, head];
-    return classifyDiff(git(['diff', '--raw', '--no-abbrev', '--no-renames', '-z', ...range, '--']));
+    return classifyDiff(git(['diff', '--raw', '--no-abbrev', '--no-renames', '-z', `${base}...${head}`, '--']));
   } catch {
     return { full: true, reason: 'Unavailable, oversized or invalid diff; full verification required' };
   }
