@@ -24,7 +24,7 @@ test("real Button Docs tabs preserve the Properties iframe, controls, feedback a
   const frame = panel.querySelector<HTMLIFrameElement>("iframe");
   expect(frame).not.toBeNull();
   const content = frame!.contentDocument!;
-  await waitFor(() => expect(within(content.body).getByLabelText("children")).toBeVisible());
+  await waitFor(() => expect(within(content.body).getByLabelText("children")).toBeVisible(), { container: content.body });
   const controls = within(content.body);
   const children = controls.getByLabelText("children");
   const code = content.querySelector("details")!;
@@ -38,7 +38,11 @@ test("real Button Docs tabs preserve the Properties iframe, controls, feedback a
   await userEvent.click(controls.getByRole("button", { name: "保留参数（详情）" }));
   await userEvent.click(controls.getByLabelText("disabled"));
   await userEvent.click(controls.getByText("查看代码"));
-  await waitFor(() => expect(code.querySelector("pre")).toHaveTextContent('variant="outline"'));
+  await waitFor(() => {
+    const source = code.querySelector("pre");
+    expect(source).not.toBeNull();
+    expect(source).toHaveTextContent('variant="outline"');
+  }, { container: code });
   await userEvent.click(accessibility);
   await waitFor(() => expect(panel).toHaveAttribute("hidden"));
   expect(panel).toHaveAttribute("inert");
