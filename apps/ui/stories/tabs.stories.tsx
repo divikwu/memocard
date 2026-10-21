@@ -1,14 +1,14 @@
 import { useId } from "react";
 import type { ComponentProps } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect, fn, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, waitFor, within } from "storybook/test";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../src/components/ui/tabs";
 import { desktopGlobals } from "../.storybook/viewports";
 
 function TabsExample({ orientation = "horizontal", variant = "default", onValueChange }: { orientation?: "horizontal" | "vertical"; variant?: "default" | "line"; onValueChange: ComponentProps<typeof Tabs>["onValueChange"] }) {
   const id = useId();
   return <Tabs defaultValue="notes" orientation={orientation} onValueChange={onValueChange} className="max-w-lg">
-    <TabsList variant={variant} aria-label="笔记分类">
+    <TabsList variant={variant} aria-label="笔记分类" className={variant === "default" ? "max-w-full overflow-x-auto" : undefined}>
       <TabsTrigger value="notes" id={`${id}-notes`}>所有笔记</TabsTrigger>
       <TabsTrigger value="archived" disabled>归档（暂不可用）</TabsTrigger>
       <TabsTrigger value="links" id={`${id}-links`}>链接</TabsTrigger>
@@ -45,6 +45,24 @@ const meta = {
     await expect(first).toHaveFocus();
     await expect(canvas.getByRole("tabpanel", { name: "所有笔记" })).toHaveTextContent("这里是全部笔记。");
     await expect(canvas.getByRole("tabpanel", { name: "所有笔记" })).not.toHaveAttribute("inert");
+    if (args.variant === "line") {
+      const list = canvas.getByRole("tablist", { name: "笔记分类" });
+      await expect(getComputedStyle(list).columnGap).toBe("12px");
+      await expect(getComputedStyle(list).rowGap).toBe("4px");
+      await expect(getComputedStyle(list).padding).toBe("3px");
+      await expect(getComputedStyle(list).height).toBe("32px");
+      for (const tab of [first, last]) {
+        await expect(getComputedStyle(tab).paddingInlineStart).toBe("2px");
+        await expect(getComputedStyle(tab).paddingInlineEnd).toBe("2px");
+        await expect(getComputedStyle(tab).paddingBlockStart).toBe("2px");
+        await expect(getComputedStyle(tab).fontWeight).toBe("500");
+        await expect(getComputedStyle(tab, "::after").bottom).toBe("-5px");
+      }
+      await waitFor(async () => {
+        await expect(getComputedStyle(first, "::after").opacity).toBe("1");
+        await expect(getComputedStyle(last, "::after").opacity).toBe("0");
+      });
+    }
   },
 } satisfies Meta<typeof TabsExample>;
 export default meta;

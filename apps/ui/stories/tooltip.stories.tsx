@@ -8,7 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../src
 function TooltipExample() {
   const descriptionId = useId();
   return <TooltipProvider>
-    <div className="flex items-center gap-4">
+    <div className="flex max-w-full flex-wrap items-center justify-center gap-4">
       <Button variant="outline">上一个控件</Button>
       <Tooltip>
         <TooltipTrigger aria-describedby={descriptionId} render={<Button variant="outline">记录快捷键</Button>} />
