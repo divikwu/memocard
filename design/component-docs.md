@@ -41,7 +41,7 @@ Storybook 在 `.storybook/preview.tsx` 的 `parameters.appearance` 统一将标�
 
 Storybook 的 `body.sb-show-main` 使用 `min-width: 0`，允许 Docs 中小于 320px 的内嵌画布跟随容器；生产页面的最小宽度保持原配置。Tabs 默认变体的示例列表在空间不足时局部横向滚动，Line 变体不增加滚动裁切，保留其下划线。
 
-浏览器回归关闭文件并行，并按 `sequence.groupOrder` 顺序运行各项目：现有组件交互先运行，Docs 布局及两个窄屏宽度随后运行，字体矩阵最后运行，避免字体隔离会话与首次渲染、截图测试同时争用浏览器资源；保留现有超时边界。
+浏览器回归关闭文件并行，并通过 `sequence.groupOrder` 将移动端交互、Docs 布局、两个窄屏宽度及字体矩阵分组串行执行，桌面交互另行串行执行，避免字体隔离会话与首次渲染、截图测试同时争用浏览器资源；保留现有超时边界。
 
 Button 的 `ButtonProperties` 和模板展示页的 Properties 都接入 `ComponentDocsProperties`。Button 保留原参数、图标策略、预览与点击反馈；模板页保留标题编辑、“恢复默认标题”和四项真实 API 说明。`name` 行通过 `control` 插槽展示现有 Select，可选择默认标题、Button、Input；上方 Input 支持自由编辑，选择器以“自定义标题”表示其他值。两种控件共享同一个标题状态，并同步到页面标题和接入代码，不增加模板 API。共享样式使用 `component-docs-properties-*`，不再维护 Button 专属的 Properties 布局样式。
 

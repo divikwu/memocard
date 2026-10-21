@@ -123,6 +123,7 @@ export const verifyDocsFont: BrowserCommand<[DocsFontCase], { states: number; su
           const code = await source.locator("pre").innerText();
           assert.match(code, /secondary/);
           await source.getByRole("button", { name: "Copy", exact: true }).click();
+          await source.getByRole("button", { name: "Copied!", exact: true }).waitFor();
           assert.equal(await page.evaluate(() => navigator.clipboard.readText()), code);
           await frame.getByRole("button", { name: "Reset", exact: true }).click();
           await frame.getByRole("button", { name: "切换预览与代码" }).click();
@@ -138,6 +139,7 @@ export const verifyDocsFont: BrowserCommand<[DocsFontCase], { states: number; su
           const code = await source.locator("pre").innerText();
           assert.match(code, /Button/);
           await source.getByRole("button", { name: "Copy", exact: true }).click();
+          await source.getByRole("button", { name: "Copied!", exact: true }).waitFor();
           assert.equal(await page.evaluate(() => navigator.clipboard.readText()), code);
           await page.getByRole("button", { name: "恢复默认标题" }).click();
           await page.getByRole("button", { name: "切换预览与代码", exact: true }).click();
