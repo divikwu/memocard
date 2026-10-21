@@ -1,12 +1,12 @@
-import { FONT_GROUPS, type FontChoice } from '@/lib/font-options';
+import { FONT_VALUES, type FontChoice } from '@/lib/font-options';
 
 export const STORAGE_KEY = 'memocard.typography.v1';
-export const fonts = FONT_GROUPS.flatMap(group => group.options).filter(font => !['playfair-display', 'eb-garamond', 'pingfang', 'songti'].includes(font.value));
+const fonts = FONT_VALUES.filter(font => !['playfair-display', 'eb-garamond', 'pingfang', 'songti'].includes(font));
 export const options = {
   measure: ['60', '70', '80', '90'],
-  heading: ['inherit', ...fonts.map(font => font.value)],
-  body: fonts.map(font => font.value),
-  mono: fonts.map(font => font.value),
+  heading: ['inherit', ...fonts],
+  body: fonts,
+  mono: fonts,
   size: ['14', '15', '16', '18'],
   leading: ['1.6', '1.75', '1.9'],
   flow: ['1em', '1.25em', '2em'],

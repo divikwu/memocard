@@ -1,7 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { TypographyProvider } from "@/features/typography/TypographyProvider";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { FONT_FAMILIES, type FontChoice } from "@/lib/font-options";
+import type { FontChoice } from "@/lib/font-options";
+import { applyAppearance } from "./apply-appearance";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE, parseAppearance, type Appearance, type NeutralPalette, type Palette, type RadiusChoice, type Theme } from "./preferences";
 import { loadFonts } from "./font-loader";
 
@@ -12,6 +13,7 @@ type ThemeContextValue = Appearance & {
   setHeadingFont: (value: FontChoice) => void;
   setBodyFont: (value: FontChoice) => void;
   setRadius: (value: RadiusChoice) => void;
+  setAppearance: (value: Appearance) => void;
   resetAppearance: () => void;
   persistenceError: boolean;
 };
@@ -50,16 +52,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.head.appendChild(transitionStyle);
     const root = document.documentElement;
     const resolved = appearance.theme === "system" ? (systemDark ? "dark" : "light") : appearance.theme;
-    root.classList.remove("light", "dark");
-    root.classList.add(resolved);
-    root.style.colorScheme = resolved;
-    root.dataset.palette = appearance.palette;
-    root.dataset.neutralPalette = appearance.neutralPalette;
-    root.dataset.headingFont = appearance.headingFont;
-    root.dataset.bodyFont = appearance.bodyFont;
-    root.dataset.radius = appearance.radius;
-    root.style.setProperty("--app-font-heading", FONT_FAMILIES[appearance.headingFont]);
-    root.style.setProperty("--app-font-body", FONT_FAMILIES[appearance.bodyFont]);
+    applyAppearance(root, appearance, resolved);
     // Settle the new colors before restoring component transitions, as in Becoming.
     void window.getComputedStyle(document.body).color;
     let frame = window.requestAnimationFrame(() => {
@@ -98,6 +91,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setHeadingFont: (headingFont) => save({ ...appearance, headingFont }),
     setBodyFont: (bodyFont) => save({ ...appearance, bodyFont }),
     setRadius: (radius) => save({ ...appearance, radius }),
+    setAppearance: save,
     resetAppearance: () => save({ ...DEFAULT_APPEARANCE }),
     persistenceError,
   };

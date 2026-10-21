@@ -5,6 +5,8 @@ import { playwright } from "@vitest/browser-playwright";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import viteConfig from "./vite.storybook.config.ts";
 import { desktopViewport, mobileViewport } from "./.storybook/viewports.ts";
+import { verifyDocsFont } from "./.storybook/docs-font-regression.ts";
+import { verifyComponentFont } from "./.storybook/component-font-regression.ts";
 
 const viewportSetup = fileURLToPath(new URL("./.storybook/viewport.setup.ts", import.meta.url));
 
@@ -16,7 +18,18 @@ const setReducedMotion: BrowserCommand<["reduce" | "no-preference"], void> = asy
 
 export default mergeConfig(viteConfig, defineConfig({
   test: {
+    fileParallelism: false,
     projects: [
+      {
+        extends: true,
+        test: {
+          name: "docs-fonts",
+          globalSetup: [fileURLToPath(new URL("./.storybook/font-test-server.ts", import.meta.url))],
+          sequence: { groupOrder: 8 },
+          include: ["stories/docs-fonts.browser.ts"],
+          browser: { enabled: true, provider: playwright(), commands: { verifyDocsFont, verifyComponentFont }, headless: true, instances: [{ browser: "chromium" }] },
+        },
+      },
       {
         extends: true,
         plugins: [storybookTest({ configDir: fileURLToPath(new URL("./.storybook", import.meta.url)), tags: { exclude: ["mobile"] } })],
@@ -32,6 +45,7 @@ export default mergeConfig(viteConfig, defineConfig({
         plugins: [storybookTest({ configDir: fileURLToPath(new URL("./.storybook", import.meta.url)), tags: { include: ["mobile"] } })],
         test: {
           name: "storybook-mobile",
+          sequence: { groupOrder: 1 },
           setupFiles: [viewportSetup],
           provide: { storybookViewport: mobileViewport },
           browser: { enabled: true, provider: playwright(), commands: { setReducedMotion }, headless: true, instances: [{ browser: "chromium" }], viewport: mobileViewport },
@@ -41,6 +55,7 @@ export default mergeConfig(viteConfig, defineConfig({
         extends: true,
         test: {
           name: "sidebar-breakpoints",
+          sequence: { groupOrder: 2 },
           include: ["stories/sidebar.breakpoints.browser.tsx"],
           browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: { width: 768, height: 900 }, screenshotDirectory: fileURLToPath(new URL("../../build/verification/design-system/storybook-breakpoints", import.meta.url)) },
         },
@@ -49,10 +64,33 @@ export default mergeConfig(viteConfig, defineConfig({
         extends: true,
         test: {
           name: "button-docs",
+          sequence: { groupOrder: 3 },
           include: ["stories/button-docs.browser.tsx", "stories/docs-story-layout.browser.tsx"],
           browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: desktopViewport },
         },
       },
+      ...[320, 390].map((width, index) => ({
+        extends: true as const,
+        test: {
+          name: `button-docs-${width}`,
+          sequence: { groupOrder: 4 + index },
+          include: ["stories/button-docs-responsive.browser.tsx"],
+          setupFiles: [viewportSetup],
+          provide: { storybookViewport: { width, height: 844 } },
+          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" as const }], viewport: { width, height: 844 } },
+        },
+      })),
+      ...[320, 390].map((width, index) => ({
+        extends: true as const,
+        test: {
+          name: `component-docs-template-${width}`,
+          sequence: { groupOrder: 6 + index },
+          include: ["stories/component-docs-template-responsive.browser.tsx"],
+          setupFiles: [viewportSetup],
+          provide: { storybookViewport: { width, height: 844 } },
+          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" as const }], viewport: { width, height: 844 } },
+        },
+      })),
     ],
   },
 }));

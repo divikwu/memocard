@@ -88,6 +88,21 @@ describe("device appearance", () => {
     expect(JSON.parse(localStorage.getItem(APPEARANCE_STORAGE_KEY)!)).toEqual(DEFAULT_APPEARANCE);
   });
 
+  it("offers Noto Sans SC separately and preserves saved heading and body choices", async () => {
+    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ ...DEFAULT_APPEARANCE, headingFont: "inter", bodyFont: "noto-sans" }));
+    const user = userEvent.setup();
+    const view = mountSettings();
+    expect(document.documentElement.dataset.headingFont).toBe("inter");
+    expect(document.documentElement.dataset.bodyFont).toBe("noto-sans");
+    await user.click(screen.getByRole("button", { name: "高级外观" }));
+    await chooseSetting(user, "正文字体", "Noto Sans SC");
+    view.unmount();
+    mountSettings();
+    expect(document.documentElement.dataset.headingFont).toBe("inter");
+    expect(document.documentElement.dataset.bodyFont).toBe("noto-sans-sc");
+    expect(document.documentElement.style.getPropertyValue("--app-font-body")).toContain("Noto Sans SC Variable");
+  });
+
   it("recovers damaged stored preferences without applying unknown values", () => {
     localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ palette: "unknown", radius: "-1", bodyFont: "missing", theme: "dark" }));
     mountSettings();

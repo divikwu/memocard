@@ -4,7 +4,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FONT_FAMILIES, FONT_GROUPS, type FontChoice } from "@/lib/font-options";
+import { FONT_FAMILIES, type FontChoice } from "@/lib/font-options";
+import { FONT_GROUPS } from "@/lib/font-groups";
 import { useTheme } from "./ThemeProvider";
 import { NEUTRAL_VALUES, PALETTE_VALUES, type RadiusChoice, type Theme } from "./preferences";
 

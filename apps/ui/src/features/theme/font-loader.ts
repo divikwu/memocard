@@ -40,10 +40,12 @@ async function loadFont(asset: FontAsset): Promise<void> {
 export function loadFonts(fonts: FontChoice[]): Promise<unknown[]> {
   return Promise.all([...new Set(fonts)].map((font) => {
     const asset = assets[font];
-    if (!asset) return Promise.resolve();
+    if (!asset && font !== "noto-sans-sc") return Promise.resolve();
     let request = pending.get(font);
     if (!request) {
-      request = loadFont(asset).catch((error) => {
+      // CSS keeps the CJK unicode-range subsets demand-loaded by the browser;
+      // FontFace.load() here would eagerly fetch every registered subset.
+      request = (font === "noto-sans-sc" ? import("@fontsource-variable/noto-sans-sc/wght.css") : loadFont(asset!)).catch((error) => {
         pending.delete(font);
         throw error;
       });

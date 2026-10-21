@@ -1,62 +1,34 @@
-.button-docs .button-docs-tab-list {
-  margin-block: 1.5rem 1rem;
-}
-.button-docs .button-docs-panel > :is(h2, h3) { margin-block: 3rem 1rem; }
-.button-docs .button-docs-panel > h2 + h3,
-.button-docs .button-docs-panel > :first-child { margin-top: 0; }
-.button-properties select:focus-visible,
-.button-properties-table-wrap:focus-visible,
-.button-code-panel summary:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 3px;
-}
-.button-docs .button-docs-panel[hidden] { display: none; }
 .button-overview-stage {
   display: flex;
-  min-height: 280px;
+  width: 100%;
+  min-height: 100vh;
   flex-wrap: wrap;
   align-content: center;
   align-items: center;
   justify-content: center;
   gap: 1rem;
   padding: 1.5rem;
+  background: var(--muted);
 }
-.button-examples-stage { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
-.button-examples-stage > p { flex-basis: 100%; margin: 0; text-align: center; font-size: 0.875rem; color: var(--muted-foreground); }
-.button-properties { padding-block: 1rem; color: var(--foreground); }
-.button-properties-stage { display: flex; min-height: 160px; align-items: center; justify-content: center; }
-.button-properties-feedback { display: block; font-size: 0.875rem; color: var(--muted-foreground); }
-.button-properties-note { margin: 1rem 0; color: var(--muted-foreground); font-size: 0.875rem; }
-.button-properties-table-wrap { max-width: 100%; overflow-x: auto; margin-bottom: 1rem; }
-.button-properties-table { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
-.button-properties-table caption { padding: 0.75rem 0; text-align: left; font-weight: 600; }
-.button-properties-table th,
-.button-properties-table td { padding: 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-.button-properties-table thead th { font-weight: 600; color: var(--muted-foreground); }
-.button-properties-table th:first-child { width: 12%; }
-.button-properties-table td:nth-child(2) { width: 26%; overflow-wrap: anywhere; }
-.button-properties-table td:last-child { width: 26%; min-width: 160px; }
-.button-properties-table code { font-size: 0.8125rem; }
-.button-properties-table small { display: block; margin-top: 0.375rem; color: var(--muted-foreground); }
-.button-properties-table input[type="checkbox"] { accent-color: var(--primary); }
-.button-properties select {
-  width: 100%;
-  min-width: 0;
-  height: 2.25rem;
-  padding: 0 0.5rem;
-  border: 1px solid var(--input);
-  border-radius: var(--radius);
-  color: var(--foreground);
-  background: var(--background);
-  font: inherit;
-}
-.button-code-panel { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); }
-.button-code-preview { padding: 1rem; }
-.button-code-panel-iframe > .button-code-preview { padding: 0; }
-.button-code-details { border-top: 1px solid var(--border); }
-.button-code-details > summary { padding: 0.75rem 1rem; cursor: pointer; font-size: 0.875rem; }
-.button-code-details .docblock-source { margin: 0; border: 0; border-radius: 0; box-shadow: none; }
-.button-code-details pre { max-height: 350px; overflow: auto; margin: 0; border: 0; border-radius: 0; }
+.button-example-stage { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem; min-height: calc(var(--spacing) * 50); padding: 1rem; }
+.button-example-stage > p { flex-basis: 100%; margin: 0; text-align: center; font-size: 0.875rem; color: var(--muted-foreground); }
+.button-examples { width: 100%; display: grid; gap: calc(var(--spacing) * 8); padding-block: calc(var(--spacing) * 8); }
+.button-anatomy { width: 100%; margin: 0; border: 1px solid var(--border); border-radius: var(--radius); }
+.button-anatomy figcaption { border-top: 1px solid var(--border); }
+.button-size-gallery { width: 100%; display: grid; gap: 1.5rem; padding: 1rem; }
+.button-example-label { margin: 0 0 1rem; font-size: 0.875rem; font-weight: 600; }
+.button-size-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.button-size-item { min-width: 0; display: grid; justify-items: center; gap: 0.5rem; text-align: center; }
+.button-size-item > div { height: 48px; display: flex; align-items: center; justify-content: center; }
+.button-size-item code { font-size: 0.8125rem; }
+.button-size-item small { font-size: var(--text-sm); color: var(--muted-foreground); }
+.button-loading-example { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem; padding: 1rem; }
+.button-loading-example output { font-size: 0.875rem; color: var(--muted-foreground); }
 @media (max-width: 640px) {
-  .button-properties-stage { min-height: 120px; }
+  .button-size-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.button-actions-stage { min-height: calc(var(--spacing) * 80); }
+
+.component-docs-example-preview > .button-example-stage { min-height: 0; padding: 0; }
+.button-examples > .component-docs-example { margin-top: 0; }

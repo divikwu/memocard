@@ -65,7 +65,15 @@ for (const route of [
 const fontFiles = (await readdir(resolve(root, "assets"), { withFileTypes: true }))
   .filter((entry) => entry.isFile() && /\.woff2?$/.test(entry.name));
 let fonts = 0;
-for (const entry of fontFiles) fonts += (await readFile(resolve(root, "assets", entry.name))).length;
+let cjkFonts = 0;
+for (const entry of fontFiles) {
+  const size = (await readFile(resolve(root, "assets", entry.name))).length;
+  if (entry.name.startsWith("noto-sans-sc-")) cjkFonts += size;
+  else fonts += size;
+}
+// Optional, locally packaged SC subsets have their own budget. The existing
+// Latin budget stays fixed; unicode-range keeps unused subsets off the network.
+if (cjkFonts > 5 * 1024 * 1024) throw new Error(`Optional Noto Sans SC fonts exceed 5 MiB: ${cjkFonts} bytes.`);
 if (fonts > limits.fonts) throw new Error(`Packaged fonts are ${fonts} bytes; the font budget is ${limits.fonts} bytes.`);
 for (const entry of await readdir(resolve(root, "assets"))) {
   if (entry.endsWith(".css") && !assets.includes(`assets/${entry}`)
@@ -76,4 +84,4 @@ for (const entry of await readdir(resolve(root, "assets"))) {
     throw new Error(`Radix reference in shipped UI asset: ${entry}`);
   }
 }
-console.log(`UI bundle budget passed: ${assets.join(", ")} (${compressed} initial gzip bytes, ${fonts} font bytes).`);
+console.log(`UI bundle budget passed: ${assets.join(", ")} (${compressed} initial gzip bytes, ${fonts} Latin font bytes, ${cjkFonts} optional SC font bytes).`);

@@ -4,3 +4,4 @@ packages:
   - packages/contracts
 overrides:
   katex@<0.18.2: 0.18.9
+  hono@<4.13.11: 4.13.13

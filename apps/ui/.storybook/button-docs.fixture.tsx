@@ -3,13 +3,16 @@ import { createPortal } from "react-dom";
 import { act } from "@testing-library/react";
 import { vi } from "vitest";
 import { composeStories, setProjectAnnotations, type ReactRenderer } from "@storybook/react-vite";
-import { DocsRenderer } from "@storybook/addon-docs";
 import { useOf, type StoryProps } from "@storybook/addon-docs/blocks";
 import { DocsContext, StoryStore, mockChannel } from "storybook/preview-api";
+import { GLOBALS_UPDATED } from "storybook/internal/core-events";
 import * as buttonStories from "../stories/button.stories";
 import { observeDocsStoryLayout } from "./docs-story-layout";
 import previewCss from "./preview.css?inline";
+import notoSansScCss from "@fontsource-variable/noto-sans-sc/wght.css?inline";
 import buttonDocsCss from "../stories/button-docs.css?inline";
+import preview from "./preview";
+import { componentDocsRenderer } from "./component-docs-renderer";
 
 const projectAnnotations = setProjectAnnotations({});
 export const buttonDocsStories = composeStories(buttonStories);
@@ -25,14 +28,27 @@ export function ButtonStoryFrame({ children, layout = "padded", autoHeight = fal
     const content = frame?.contentDocument;
     if (!content) return;
     const style = content.createElement("style");
-    style.textContent = `${previewCss}\n${buttonDocsCss}`;
+    style.textContent = `${previewCss}\n${buttonDocsCss}\n${notoSansScCss}`;
     content.head.append(style);
+    // Portaled stories use the outer document's ThemeProvider. Mirror its
+    // appearance on this iframe, as the production iframe bootstrap does.
+    const appearanceAttributes = ["class", "style", "data-palette", "data-neutral-palette", "data-radius", "data-heading-font", "data-body-font"];
+    const syncAppearance = () => {
+      for (const attribute of appearanceAttributes) {
+        const value = document.documentElement.getAttribute(attribute);
+        if (value === null) content.documentElement.removeAttribute(attribute);
+        else content.documentElement.setAttribute(attribute, value);
+      }
+    };
+    syncAppearance();
+    const appearanceObserver = new MutationObserver(syncAppearance);
+    appearanceObserver.observe(document.documentElement, { attributes: true, attributeFilter: appearanceAttributes });
     Object.assign(content.body.style, { margin: "0", padding: layout === "padded" ? "1rem" : "0", boxSizing: "border-box" });
     const target = content.createElement("div");
     target.id = "storybook-root";
     content.body.append(target);
     setRoot(target);
-    return () => { target.remove(); style.remove(); };
+    return () => { appearanceObserver.disconnect(); target.remove(); style.remove(); };
   }, [frame, layout]);
   useLayoutEffect(() => {
     if (frame && root && (autoHeight || centered)) return observeDocsStoryLayout(frame, { autoHeight, centered });
@@ -56,14 +72,17 @@ export async function renderButtonDocs(element: HTMLElement) {
   // This test-only DocsContext adapter follows the pinned Storybook 10.6.2 API.
   const store = new StoryStore<ReactRenderer>({ v: 5, entries }, async () => buttonStories, projectAnnotations);
   const csf = store.processCSFFileWithCache(buttonStories, importPath, buttonStories.default.title);
-  const context = new DocsContext(mockChannel(), store, () => { throw new Error("The fixture must not load Storybook iframes."); }, [csf]);
+  const channel = mockChannel();
+  const context = new DocsContext(channel, store, () => { throw new Error("The fixture must not load Storybook iframes."); }, [csf]);
   context.attachCSFFile(csf);
-  const renderer = new DocsRenderer<ReactRenderer>();
-  await act(async () => {
-    await renderer.render(context, { ...buttonStories.default.parameters.docs, components: { Story: FixtureStory } }, element);
-  });
+  const renderer = await componentDocsRenderer();
+  const parameters = { ...buttonStories.default.parameters.docs, container: preview.parameters!.docs.container, components: { Story: FixtureStory } };
+  await act(async () => { await renderer.render(context, parameters, element); });
   // DocsRenderer's first commit can still contain Source's lazy highlighter.
   // Settle that real import and its React commit before testing tab state.
   await act(async () => { await vi.dynamicImportSettled(); });
-  return () => { act(() => renderer.unmount(element)); };
+  return Object.assign(() => { act(() => renderer.unmount(element)); }, {
+    rerender: () => act(async () => { await renderer.render(context, parameters, element); }),
+    updateGlobals: (globals: Record<string, unknown>) => act(() => channel.emit(GLOBALS_UPDATED, { globals, initialGlobals: {} })),
+  });
 }

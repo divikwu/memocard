@@ -1,4 +1,21 @@
 @import "../src/styles.css";
+@import "./component-docs-template.css";
 /* Only Storybook scans fixtures; production CSS scans src/. */
 @source "../stories";
 @source "./preview.tsx";
+
+/* Docs canvases can be narrower than the production page's 320px minimum. */
+body.sb-show-main { min-width: 0; }
+.sbdocs.sbdocs-wrapper { background: var(--background); color: var(--foreground); }
+.sbdocs .sbdocs-content { font-family: var(--font-sans); }
+.sbdocs .sbdocs-content :is(h1, h2, h3, h4, h5, h6) { font-family: var(--font-heading); }
+.sbdocs .sbdocs-content :is(h1, h2, h3, p, li, td, th) { color: var(--foreground); }
+.sbdocs .sbdocs-content a:not([data-slot]) { color: var(--accent-text); }
+.sbdocs .sbdocs-content table :is(th, td), .sbdocs .sbdocs-content tr { border-color: var(--border); background: var(--background); }
+.sbdocs .sbdocs-content code { color: var(--foreground); background: var(--muted); border-color: var(--border); }
+.sbdocs .sbdocs-content :is(p, li, td, th) > code { white-space: normal; overflow-wrap: anywhere; }
+.sbdocs .sbdocs-content div:has(> table) { max-width: 100%; overflow-x: auto; }
+
+@media (max-width: 640px) {
+  .sbdocs.sbdocs-wrapper { padding-inline: calc(var(--spacing) * 4); }
+}

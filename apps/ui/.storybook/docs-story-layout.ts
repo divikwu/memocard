@@ -10,8 +10,16 @@ export function observeDocsStoryLayout(frame: HTMLIFrameElement, { autoHeight, c
     const root = content?.getElementById("storybook-root");
     const view = content?.defaultView;
     if (!root || !view) return;
+    const originalMinWidth = content.body.style.minWidth;
+    const originalStyle = root.style.cssText;
+    // Docs can embed a story in a column narrower than the production page.
+    // Allow that isolated document to follow its iframe without changing app CSS.
+    content.body.style.minWidth = "0";
+    restoreLayout = () => {
+      content.body.style.minWidth = originalMinWidth;
+      root.style.cssText = originalStyle;
+    };
     if (centered) {
-      const originalStyle = root.style.cssText;
       Object.assign(root.style, {
         display: "flex",
         alignItems: "center",
@@ -22,7 +30,6 @@ export function observeDocsStoryLayout(frame: HTMLIFrameElement, { autoHeight, c
         // Storybook's padded layout adds 1rem on each side after story loading.
         minHeight: autoHeight ? "" : "calc(100vh - 2rem)",
       });
-      restoreLayout = () => { root.style.cssText = originalStyle; };
       if (!autoHeight) return;
     }
     const resize = () => {

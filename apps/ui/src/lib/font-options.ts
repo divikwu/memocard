@@ -2,6 +2,7 @@ export const FONT_VALUES = [
   "geist",
   "inter",
   "noto-sans",
+  "noto-sans-sc",
   "nunito-sans",
   "figtree",
   "roboto",
@@ -30,61 +31,6 @@ export const FONT_VALUES = [
 
 export type FontChoice = (typeof FONT_VALUES)[number]
 
-type FontOption = {
-  value: FontChoice
-  label: string
-}
-
-type FontGroup = {
-  label: "Sans" | "Mono" | "Serif"
-  options: FontOption[]
-}
-
-export const FONT_GROUPS: FontGroup[] = [
-  {
-    label: "Sans",
-    options: [
-      { value: "geist", label: "Geist" },
-      { value: "inter", label: "Inter" },
-      { value: "noto-sans", label: "Noto Sans" },
-      { value: "nunito-sans", label: "Nunito Sans" },
-      { value: "figtree", label: "Figtree" },
-      { value: "roboto", label: "Roboto" },
-      { value: "raleway", label: "Raleway" },
-      { value: "dm-sans", label: "DM Sans" },
-      { value: "public-sans", label: "Public Sans" },
-      { value: "outfit", label: "Outfit" },
-      { value: "oxanium", label: "Oxanium" },
-      { value: "manrope", label: "Manrope" },
-      { value: "space-grotesk", label: "Space Grotesk" },
-      { value: "montserrat", label: "Montserrat" },
-      { value: "ibm-plex-sans", label: "IBM Plex Sans" },
-      { value: "source-sans-3", label: "Source Sans 3" },
-      { value: "instrument-sans", label: "Instrument Sans" },
-      { value: "pingfang", label: "苹方" },
-    ],
-  },
-  {
-    label: "Mono",
-    options: [
-      { value: "geist-mono", label: "Geist Mono" },
-      { value: "jetbrains-mono", label: "JetBrains Mono" },
-    ],
-  },
-  {
-    label: "Serif",
-    options: [
-      { value: "noto-serif", label: "Noto Serif" },
-      { value: "roboto-slab", label: "Roboto Slab" },
-      { value: "merriweather", label: "Merriweather" },
-      { value: "lora", label: "Lora" },
-      { value: "playfair-display", label: "Playfair Display" },
-      { value: "eb-garamond", label: "EB Garamond" },
-      { value: "songti", label: "宋体" },
-    ],
-  },
-]
-
 const sansFallback = '"PingFang SC", "Noto Sans SC", system-ui, sans-serif'
 const monoFallback =
   '"SFMono-Regular", "SF Mono", "PingFang SC", ui-monospace, monospace'
@@ -94,6 +40,7 @@ export const FONT_FAMILIES: Record<FontChoice, string> = {
   geist: `"Geist Variable", ${sansFallback}`,
   inter: `"Inter Variable", ${sansFallback}`,
   "noto-sans": `"Noto Sans Variable", ${sansFallback}`,
+  "noto-sans-sc": `"Noto Sans SC Variable", ${sansFallback}`,
   "nunito-sans": `"Nunito Sans Variable", ${sansFallback}`,
   figtree: `"Figtree Variable", ${sansFallback}`,
   roboto: `"Roboto Variable", ${sansFallback}`,
