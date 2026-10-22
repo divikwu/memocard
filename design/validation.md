@@ -8,6 +8,7 @@
 - 补回原 `foundations-tokens--live-palette` 隐藏兼容入口，复用 Color 的原夹具与交互测试，避免旧链接失效。原有 19 个 Foundations Story / Docs ID 均保留；当前共有 38 个 Foundations 条目、152 个 Storybook 条目。原主题源抽取的 277 个作用域 / 名称 / 值组合逐项与提交基线一致，未改变颜色默认值或主题规则。
 - 首次全量 Web 检查发现历史体积预算未纳入共享角色、兼容变量与真实 italic 资源；按实际增量设置原始 CSS 和路由预留，并为按需 italic 单独设 1 MiB 上限。首屏 gzip、普通字体、中文分片和 JS 单文件原有上限保留；详见排版工程文档的体积边界。最终产物首屏 gzip 为 192447 字节，普通字体 908432 字节、可选 italic 836504 字节、可选中文分片 4500544 字节，全部体积检查通过。
 - `pnpm verify:web`、`pnpm verify:design`、`pnpm verify:native`、`pnpm test:service`、`pnpm test:sidebar-native`、`pnpm audit --prod` 通过。包含 1101 项 UI 单元测试、311 项完整 Storybook 浏览器检查、129 项 native-core XCTest、8 项服务 XCTest及相关 Node 测试。设计检查同时验证所有目录生成漂移、类型、ESLint、静态构建、原生预览 palette 与使用清单；本机未运行 Firefox，GitHub CI 会运行三种浏览器。
+- GitHub 首轮 Linux CI 检出 registry 两处消费者路径写成 `Markdown.tsx`（实际为 `markdown.tsx`）。修正 registry 并重新生成覆盖清单，生成器增加文件名大小写校验；17 项 token 测试和漂移检查通过，避免本机默认大小写不敏感文件系统再次漏检。
 - 最终静态构建后，补验原 All tokens 四项场景与六组 Docs，10 项全部通过，包含恢复旧 Live Palette ID 后的真实交互与隐藏导航验证。
 - 完整审查及修复证据在 `build/verification/premerge-review/`。未修改 Apple / native-core / local-service 的生产源码，不将本机纯逻辑检查视为原生真机行为验收。蓝色 primary 的既有对比度问题继续如实保留在断言和工程记录中，没有通过降低门槛将其标成 AA 通过。
 

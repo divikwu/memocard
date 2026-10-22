@@ -1,5 +1,5 @@
 import { access, readFile, readdir, writeFile } from 'node:fs/promises';
-import { dirname, relative, resolve } from 'node:path';
+import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import postcss from 'postcss';
 import { createRequire } from 'node:module';
@@ -16,6 +16,12 @@ const axes = ['mode', 'palette', 'neutral', 'radius', 'font', 'typography', 'sta
 const references = value => [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map(match => match[1]);
 const properties = css => { const names = new Set(); postcss.parse(css).walkDecls(declaration => { if (declaration.prop.startsWith('--')) names.add(declaration.prop); }); return names; };
 const context = declaration => { const parts = []; for (let node = declaration.parent; node?.type !== 'root'; node = node.parent) parts.unshift(node.selector ?? `@${node.name} ${node.params}`); return parts.join(' / '); };
+
+export async function checkSourcePath(path) {
+  // access() alone accepts incorrect filename casing on default macOS volumes.
+  await access(path);
+  if (!(await readdir(dirname(path))).includes(basename(path))) throw new Error(`Missing source or filename case mismatch: ${path}`);
+}
 
 function validateEntry(entry) {
   if (typeof entry.id !== 'string' || !entry.id || typeof entry.description !== 'string' || !entry.description
@@ -132,7 +138,7 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
     ids.add(entry.id); covered.add(entry.category);
     if (entry.source && (typeof entry.source !== 'string' || typeof entry.pattern !== 'string' || !entry.pattern.startsWith('^--') || !entry.pattern.endsWith('$'))) throw new Error(`Unbounded token pattern: ${entry.id}`);
     if (!entry.source && (!Array.isArray(entry.sources) || !entry.sources.length || entry.sources.some(path => typeof path !== 'string' || !path.trim()))) throw new Error(`Missing owning sources: ${entry.id}`);
-    for (const path of [...(entry.source ? [entry.source] : entry.sources), ...entry.consumers]) await access(resolve(root, path));
+    for (const path of [...(entry.source ? [entry.source] : entry.sources), ...entry.consumers]) await checkSourcePath(resolve(root, path));
   }
   const runtime = [], runtimeNames = new Set();
   for (const entry of registry.runtimeSources) {

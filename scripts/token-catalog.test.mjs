@@ -3,12 +3,21 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, stat, utimes, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { buildTokenCatalog, inspectCSSTokens, inspectRuntimeTokens, checkPublicPlacement } from './build-token-catalog.mjs';
+import { buildTokenCatalog, inspectCSSTokens, inspectRuntimeTokens, checkPublicPlacement, checkSourcePath } from './build-token-catalog.mjs';
 import { inspectConsumerText, checkConsumerReferences } from './token-consumers.mjs';
 import { IOS_PALETTE_KEYS } from '../apps/ui/src/lib/ios-palette.ts';
 
 const family = { id: 'color.test', source: 'tokens.css', pattern: '^--(surface|text)$', category: 'color', layer: 'semantic', type: 'color', status: 'active', axes: ['mode'], description: 'Theme colors', consumers: ['button.tsx'] };
 const inspect = (css, families = [family], upstream = []) => inspectCSSTokens(families, new Map([['tokens.css', css]]), upstream);
+
+test('rejects filename casing errors even on case-insensitive development filesystems', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'token-path-case-'));
+  try {
+    await writeFile(join(directory, 'markdown.tsx'), 'export {};');
+    await checkSourcePath(join(directory, 'markdown.tsx'));
+    await assert.rejects(checkSourcePath(join(directory, 'Markdown.tsx')), /filename case mismatch|ENOENT/);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
 
 test('collects declarations, preserves mode overrides, and resolves registered or upstream aliases', () => {
   const records = inspect('/* --fake: red; */ :root { --surface: var(--color-white); --text: #111; } .dark { --surface: #111; --text: var(--color-white); }', [family], ['--color-white']);

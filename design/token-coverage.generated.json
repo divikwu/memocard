@@ -8714,7 +8714,7 @@
         "apps/ui/src/MermaidPreview.tsx"
       ],
       "consumers": [
-        "apps/ui/src/Markdown.tsx",
+        "apps/ui/src/markdown.tsx",
         "apps/ui/src/RichMarkdownEditor.tsx",
         "apps/ui/src/MermaidBlock.tsx"
       ]
@@ -8750,7 +8750,7 @@
         "apps/ui/src/components/ui/sheet-swipe.css"
       ],
       "consumers": [
-        "apps/ui/src/Markdown.tsx",
+        "apps/ui/src/markdown.tsx",
         "apps/ui/src/Editor.tsx",
         "apps/ui/src/RichMarkdownEditor.tsx",
         "apps/ui/src/components/quick-capture.tsx",
