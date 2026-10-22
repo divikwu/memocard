@@ -5,8 +5,9 @@ import MemoCardLocalWeb
 
 @MainActor
 final class ServiceHost {
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
     private let localDataURL: URL
+    private let mcpDirectoryPicker: @MainActor () async throws -> URL
     private var store: VaultStore
     private var vaultURL: URL?
     private var vaultID: String?
@@ -19,12 +20,21 @@ final class ServiceHost {
     private var selectingVault = false
     private var restoreTask: Task<Void, Never>?
     private var vaultRegistry: VaultRegistry
+    private lazy var mcp = ServiceMCPServer(defaults: defaults)
+    private var mcpDirectory: URL?
+    private var mcpAttempt = UUID()
+    private var mcpSelection = UUID()
+    // Tests can suspend a host start without depending on actor or listener timing.
+    var mcpStartCheckpoint: (@MainActor () async -> Void)?
     var stateChanged: (() -> Void)?
 
-    init() throws {
-        localDataURL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    init(defaults: UserDefaults = .standard, localDataURL: URL? = nil,
+         mcpDirectoryPicker: (@MainActor () async throws -> URL)? = nil) throws {
+        self.defaults = defaults
+        self.mcpDirectoryPicker = mcpDirectoryPicker ?? Self.pickMCPDirectory
+        self.localDataURL = localDataURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("MemoCard", isDirectory: true)
-        store = try VaultStore(localDataURL: localDataURL)
+        store = try VaultStore(localDataURL: self.localDataURL)
         let records = (defaults.data(forKey: "vaultBookmarks").flatMap { try? JSONDecoder().decode([StoredVaultRecord].self, from: $0) }) ?? []
         vaultRegistry = VaultRegistry(records: records, activeID: defaults.string(forKey: "activeVaultID"))
         restoreTask = Task { [weak self] in await self?.restoreVault() }
@@ -32,6 +42,9 @@ final class ServiceHost {
 
     var currentVaultName: String { vaultURL?.lastPathComponent ?? "未选择笔记库" }
     var webRunning: Bool { webServer != nil }
+    var mcpRunning: Bool { mcp.running }
+    var mcpWritesEnabled: Bool { mcp.writesEnabled }
+    var mcpEnabled: Bool { defaults.bool(forKey: "mcpEnabled") }
     var registeredVaults: [(id: String, name: String, active: Bool)] { vaultRegistry.listed }
 
     func waitUntilRestored() async { await restoreTask?.value }
@@ -62,6 +75,7 @@ final class ServiceHost {
     }
 
     func shutdown() {
+        stopMCP()
         stopWeb()
         if let presenter { NSFileCoordinator.removeFilePresenter(presenter) }
         presenter = nil
@@ -101,6 +115,7 @@ final class ServiceHost {
             watch(url)
             await previous.close()
             stateChanged?()
+            await restoreMCP()
         } catch {
             restored?.stopAccessingSecurityScopedResource()
             defaults.removeObject(forKey: "vaultBookmark")
@@ -179,7 +194,7 @@ final class ServiceHost {
             }
             if operation == "getEnvironment" {
                 return ["ok": true, "data": [
-                    "platform": "web", "phase": "M1", "storage": "local-web", "mcpEnabled": false,
+                    "platform": "web", "phase": "M1", "storage": "local-web", "mcpEnabled": mcp.running, "mcpWritesEnabled": mcp.writesEnabled,
                     "webEnabled": true, "vaultBinding": vaultGeneration.uuidString.lowercased(), "capabilities": ["selectVault", "createVault", "listVaults", "activateVault", "pickImage", "openExternal"],
                 ]]
             }
@@ -237,6 +252,7 @@ final class ServiceHost {
             let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
             let previousStore = store
             let previousURL = vaultURL
+            stopMCP()
             store = candidate
             vaultGeneration = candidateGeneration
             vaultURL = selected
@@ -246,6 +262,7 @@ final class ServiceHost {
             await previousStore.close()
             previousURL?.stopAccessingSecurityScopedResource()
             stateChanged?()
+            await restoreMCP()
             if let reconnectURL { return ["reconnectUrl": reconnectURL.absoluteString] }
             return ["vaultId": id]
         } catch {
@@ -274,6 +291,7 @@ final class ServiceHost {
             let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
             let previousStore = store
             let previousURL = vaultURL
+            stopMCP()
             store = candidate
             vaultGeneration = candidateGeneration
             vaultURL = selected
@@ -284,6 +302,7 @@ final class ServiceHost {
             await previousStore.close()
             previousURL?.stopAccessingSecurityScopedResource()
             stateChanged?()
+            await restoreMCP()
             if let reconnectURL { return ["reconnectUrl": reconnectURL.absoluteString] }
             return ["vaultId": id]
         } catch {
@@ -307,6 +326,111 @@ final class ServiceHost {
         if let data = try? JSONEncoder().encode(vaultRegistry.records) { defaults.set(data, forKey: "vaultBookmarks") }
         defaults.set(id, forKey: "activeVaultID")
         defaults.removeObject(forKey: "vaultBookmark")
+    }
+
+    func enableMCP() async throws {
+        await waitUntilRestored()
+        guard vaultURL != nil else { throw fault("STORE_UNAVAILABLE", "请先选择笔记库") }
+        mcpSelection = UUID()
+        let selection = mcpSelection, selectedGeneration = vaultGeneration
+        let directory = try await mcpDirectoryPicker()
+        guard selection == mcpSelection, selectedGeneration == vaultGeneration else {
+            throw fault("CANCELLED", "笔记库或 MCP 设置已变化，请重新启用")
+        }
+        let bookmark = try authorize(directory)
+        try await startMCP(directory: directory, bookmark: bookmark, authorizeWrites: true)
+        stateChanged?()
+    }
+
+    private static func pickMCPDirectory() async throws -> URL {
+        NSApp.activate(ignoringOtherApps: true)
+        return try await withCheckedThrowingContinuation { continuation in
+            let panel = NSOpenPanel()
+            panel.title = "选择 MCP 配置目录（笔记库和代码仓库之外）"
+            panel.canChooseDirectories = true
+            panel.canChooseFiles = false
+            panel.canCreateDirectories = true
+            panel.allowsMultipleSelection = false
+            panel.begin { response in
+                if response == .OK, let url = panel.url { continuation.resume(returning: url) }
+                else { continuation.resume(throwing: Self.fault("CANCELLED", "已取消选择")) }
+            }
+        }
+    }
+
+    func disableMCP() {
+        defaults.set(false, forKey: "mcpEnabled")
+        MCPAuthorization.revokeWrites(in: defaults)
+        stopMCP()
+        stateChanged?()
+    }
+
+    func copyMCPConfigurationPath() {
+        guard mcp.running, let mcpDirectory else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(mcpDirectory.appendingPathComponent(ServiceMCPServer.fileName).path, forType: .string)
+    }
+
+    private func stopMCP() {
+        mcpSelection = UUID()
+        mcpAttempt = UUID()
+        mcp.stop()
+        mcpDirectory?.stopAccessingSecurityScopedResource()
+        mcpDirectory = nil
+    }
+
+    private func restoreMCP() async {
+        guard defaults.bool(forKey: "mcpEnabled"),
+              let bookmark = defaults.data(forKey: "mcpDirectoryBookmark") else { return }
+        do {
+            let directory = try restore(bookmark)
+            try await startMCP(directory: directory)
+        } catch {
+            // A failed restore never grants consent or stops a newer attempt.
+            stateChanged?()
+        }
+    }
+
+    private func startMCP(directory: URL, bookmark: Data? = nil, authorizeWrites: Bool = false) async throws {
+        // Each invocation owns its cleanup, including automatic restores that can
+        // overlap a manual enable while the previous store is closing.
+        mcpAttempt = UUID()
+        let attempt = mcpAttempt, selectedGeneration = vaultGeneration, selectedStore = store
+        mcp.stop()
+        mcpDirectory?.stopAccessingSecurityScopedResource()
+        mcpDirectory = nil
+        do {
+            guard let selectedID = vaultID, let selectedURL = vaultURL else { throw fault("STORE_UNAVAILABLE", "请先选择笔记库") }
+            await mcpStartCheckpoint?()
+            let info = try await status(of: selectedStore, binding: selectedGeneration)
+            guard attempt == mcpAttempt, selectedGeneration == vaultGeneration, selectedStore === store,
+                  info["vaultId"] as? String == selectedID else { throw fault("UNAUTHORIZED", "笔记库已变化") }
+            try await mcp.start(vaultID: selectedID, vaultURL: selectedURL, directory: directory,
+                                authorizeWrites: authorizeWrites) { [weak self] operation, params in
+                guard let self else { return Self.failure(Self.fault("APP_NOT_RUNNING", "后台服务已退出")) }
+                do {
+                    guard selectedGeneration == self.vaultGeneration, selectedStore === self.store,
+                          self.vaultID == selectedID else { throw self.fault("UNAUTHORIZED", "笔记库已切换") }
+                    let encoded = try JSONSerialization.data(withJSONObject: params)
+                    let data = try JSONSerialization.jsonObject(with: await selectedStore.perform(operation: operation, params: encoded, expectedBinding: selectedGeneration))
+                    guard selectedGeneration == self.vaultGeneration, selectedStore === self.store,
+                          self.vaultID == selectedID else { throw self.fault("UNAUTHORIZED", "笔记库已切换") }
+                    return ["ok": true, "data": data]
+                } catch { return Self.failure(error) }
+            }
+            guard attempt == mcpAttempt, selectedGeneration == vaultGeneration, selectedStore === store else {
+                throw fault("UNAUTHORIZED", "MCP 启用期间笔记库已变化")
+            }
+            mcpDirectory = directory
+            if let bookmark { defaults.set(bookmark, forKey: "mcpDirectoryBookmark") }
+            stateChanged?()
+        } catch {
+            if attempt == mcpAttempt {
+                mcp.stop()
+            }
+            directory.stopAccessingSecurityScopedResource()
+            throw error
+        }
     }
 
     private func pickVault(create: Bool) async throws -> URL {

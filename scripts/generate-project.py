@@ -25,10 +25,10 @@ def configs(name, target=None):
         configs.append(add(name+mode,'XCBuildConfiguration',name=mode,buildSettings=settings))
     return add(name+'configlist','XCConfigurationList',buildConfigurations=configs,defaultConfigurationIsVisible='0',defaultConfigurationName='Release')
 
-source_names=['MemoCardApp.swift','NativeHost.swift','LocalReadServer.swift','WebView.swift','NativeChrome.swift','NativeSurfaceState.swift','NativeSidebar.swift','NativeDesignedPanel.swift','NativeSurfacePreview.swift','DesignTokens.generated.swift','SidebarPreviewPalette.generated.swift']
+source_names=['MemoCardApp.swift','NativeHost.swift','MCPAuthorization.swift','LocalReadServer.swift','WebView.swift','NativeChrome.swift','NativeSurfaceState.swift','NativeSidebar.swift','NativeDesignedPanel.swift','NativeSurfacePreview.swift','DesignTokens.generated.swift','SidebarPreviewPalette.generated.swift']
 source_refs=[add('src'+n,'PBXFileReference',lastKnownFileType='sourcecode.swift',path=n,sourceTree='<group>') for n in source_names]
 sources=add('Sources','PBXGroup',path='Sources',sourceTree='<group>',children=source_refs)
-service_names=['ServiceApp.swift','ServiceHost.swift']
+service_names=['ServiceApp.swift','ServiceHost.swift','ServiceMCPServer.swift']
 service_refs=[add('service'+n,'PBXFileReference',lastKnownFileType='sourcecode.swift',path=n,sourceTree='<group>') for n in service_names]
 service_sources=add('ServiceSources','PBXGroup',path='Service',sourceTree='<group>',children=service_refs)
 service_name_refs=[add('ServiceName'+language,'PBXFileReference',lastKnownFileType='text.plist.strings',name=language,path='Service/Resources/'+language+'.lproj/InfoPlist.strings',sourceTree='<group>') for language in ['zh-Hans','en']]
@@ -47,6 +47,7 @@ for platform in ['Mac','iOS']:
     target=add('target'+platform,'PBXNativeTarget',name='MemoCard'+platform,productName='MemoCard',productType='com.apple.product-type.application',productReference=product,buildConfigurationList=configs(platform,platform),buildPhases=phases,buildRules=[],dependencies=[],packageProductDependencies=dependencies); targets.append(target)
 service_product=add('Serviceproduct','PBXFileReference',explicitFileType='wrapper.application',path='MemoCardService.app',sourceTree='BUILT_PRODUCTS_DIR'); product_refs.append(service_product)
 service_builds=[add('Service'+n,'PBXBuildFile',fileRef=r) for n,r in zip(service_names,service_refs)]
+service_builds += [add('ServiceShared'+n,'PBXBuildFile',fileRef=source_refs[source_names.index(n)]) for n in ['LocalReadServer.swift','MCPAuthorization.swift']]
 service_core=add('Servicecore','XCSwiftPackageProductDependency',package=package,productName='MemoCardCore')
 service_web=add('Servicelocalweb','XCSwiftPackageProductDependency',package=local_service_package,productName='MemoCardLocalWeb')
 service_links=[add('Servicecorelink','PBXBuildFile',productRef=service_core),add('Serviceweblink','PBXBuildFile',productRef=service_web)]

@@ -149,7 +149,7 @@ export { errorMessage } from "./error-messages";
 export type StorageMode = "native" | "local-web" | "browser";
 export type SelectVaultResult = { cancelled: true; diagnostic?: string } | { reconnectUrl: string } | { vaultId: string; vaultBinding?: string };
 export type RegisteredVault = { vaultId: string; name: string; active: boolean };
-export type Environment = { platform: "mac" | "ios" | "web"; phase: string; storage: StorageMode; mcpEnabled: boolean; webEnabled?: boolean; capabilities: string[]; vaultBinding?: string };
+export type Environment = { platform: "mac" | "ios" | "web"; phase: string; storage: StorageMode; mcpEnabled: boolean; mcpWritesEnabled?: boolean; webEnabled?: boolean; capabilities: string[]; vaultBinding?: string };
 export function reconnectVault(url: string, location: Pick<Location, "replace" | "reload"> = window.location): void {
   location.replace(url);
   // A same-origin reconnect only changes the hash, so force a document reload to

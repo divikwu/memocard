@@ -4,9 +4,34 @@ import Foundation
 @main
 struct LocalReadServerHarness {
     static func main() async throws {
-        guard CommandLine.arguments.count == 2 else { exit(2) }
+        if CommandLine.arguments.last == "--authorization-test" {
+            let suite = "dev.memocard.mcp-authorization-test.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suite)!
+            defer { defaults.removePersistentDomain(forName: suite) }
+            defaults.set(true, forKey: "mcpEnabled")
+            precondition(!MCPAuthorization.allowsWrites(in: defaults), "Legacy read consent must not grant writes")
+            defaults.set(999, forKey: MCPAuthorization.writeVersionKey)
+            precondition(!MCPAuthorization.allowsWrites(in: defaults), "Unknown consent versions must fail closed")
+            MCPAuthorization.grantWrites(in: defaults)
+            precondition(MCPAuthorization.allowsWrites(in: defaults))
+            precondition(MCPAuthorization.allowsWrites(in: UserDefaults(suiteName: suite)!))
+            defaults.set(false, forKey: "mcpEnabled")
+            precondition(!MCPAuthorization.allowsWrites(in: defaults))
+            MCPAuthorization.revokeWrites(in: defaults)
+            defaults.set(true, forKey: "mcpEnabled")
+            precondition(!MCPAuthorization.allowsWrites(in: defaults), "Revoked consent must not return on re-enable")
+            FileHandle.standardOutput.write(Data("AUTHORIZATION PASSED\n".utf8))
+            return
+        }
+        guard (2...3).contains(CommandLine.arguments.count) else { exit(2) }
         let configurationURL = URL(fileURLWithPath: CommandLine.arguments[1])
-        let server = LocalReadServer(vaultId: "native-network-test") { operation, params in
+        let suite = "dev.memocard.mcp-network-test.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.set(true, forKey: "mcpEnabled")
+        if CommandLine.arguments.last == "--allow-writes" { MCPAuthorization.grantWrites(in: defaults) }
+        let allowsWrites = MCPAuthorization.allowsWrites(in: defaults)
+        defaults.removePersistentDomain(forName: suite)
+        let server = LocalReadServer(vaultId: "native-network-test", allowsWrites: allowsWrites) { operation, params in
             if let delay = params["delayMilliseconds"] as? Int {
                 try? await Task.sleep(for: .milliseconds(delay))
             }

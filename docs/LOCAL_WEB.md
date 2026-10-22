@@ -1,6 +1,6 @@
 # 本机 Web
 
-本机 Web 是 MemoCard Swift 文件核心的浏览器界面，只由独立菜单栏服务在随机 loopback 端口提供，支持 Safari、Codex、Chrome 和 Edge。Mac App 设置中的浏览器入口和 `memocard://web` 仅把安全的 `memocard-service://open-web` 命令交给已安装服务，不再创建 listener。原生 App 与浏览器复用 React 界面和文件核心，不需要 Node 写入服务，也不扩大 MCP 的只读权限。
+本机 Web 是 MemoCard Swift 文件核心的浏览器界面，只由独立菜单栏服务在随机 loopback 端口提供，支持 Safari、Codex、Chrome 和 Edge。Mac App 设置中的浏览器入口和 `memocard://web` 仅把安全的 `memocard-service://open-web` 命令交给已安装服务，不再创建 listener。原生 App 与浏览器复用 React 界面和文件核心，不需要 Node 写入服务，与 MCP 的读写授权独立。
 
 ## 使用
 

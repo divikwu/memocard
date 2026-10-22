@@ -18,6 +18,7 @@ final class LocalReadServer: @unchecked Sendable {
     private let instanceId = UUID().uuidString
     private let token: String
     private let handler: Handler
+    private let allowsWrites: Bool
     private let queue = DispatchQueue(label: "dev.memocard.local-read")
     private var listener: NWListener?
     private var startResumed = false
@@ -26,8 +27,8 @@ final class LocalReadServer: @unchecked Sendable {
     // JSON escaping can expand a supported 8 MiB Markdown note up to sixfold.
     private let maxResponseBytes = 64 * 1024 * 1024
 
-    init(vaultId: String, handler: @escaping Handler) {
-        self.vaultId = vaultId; self.handler = handler
+    init(vaultId: String, allowsWrites: Bool = false, handler: @escaping Handler) {
+        self.vaultId = vaultId; self.handler = handler; self.allowsWrites = allowsWrites
         var random = [UInt8](repeating: 0, count: 32)
         precondition(SecRandomCopyBytes(kSecRandomDefault, random.count, &random) == errSecSuccess)
         token = random.map { String(format: "%02x", $0) }.joined()
@@ -108,8 +109,16 @@ final class LocalReadServer: @unchecked Sendable {
               secureEquals(request["token"] as? String ?? "", token),
               request["instanceId"] as? String == instanceId,
               request["vaultId"] as? String == vaultId else { return error("UNAUTHORIZED", "Connection authorization expired", id: requestId) }
-        guard let operation = request["operation"] as? String, ["getStatus", "queryNotes", "getNote", "listTags"].contains(operation),
-              let params = request["params"] as? [String: Any] else { return error("INVALID_ARGUMENT", "Read-only operation required", id: requestId) }
+        let operations = ["getStatus", "queryNotes", "getNote", "listTags", "getTrash", "getTrashedNote", "createNote", "updateNote", "deleteNote", "restoreNote"]
+        guard let operation = request["operation"] as? String, operations.contains(operation),
+              let params = request["params"] as? [String: Any] else { return error("INVALID_ARGUMENT", "Operation not allowed", id: requestId) }
+        if ["createNote", "updateNote", "deleteNote", "restoreNote"].contains(operation) {
+            guard allowsWrites else { return error("WRITE_DISABLED", "Explicit MCP write authorization required", id: requestId) }
+            guard let binding = params["binding"] as? [String: Any],
+                  binding["vaultId"] as? String == vaultId, binding["instanceId"] as? String == instanceId else {
+                return error("VAULT_CHANGED", "Read the current vault instance before writing", id: requestId)
+            }
+        }
         var reply = await handler(operation, params); reply["requestId"] = requestId; return reply
     }
     private func error(_ code: String, _ message: String, id: String) -> [String: Any] {

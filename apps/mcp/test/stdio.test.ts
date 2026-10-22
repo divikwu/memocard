@@ -6,7 +6,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { fixture, reply, status, coverage, note, sharedFixture } from './fixture.ts';
 
-test('official SDK stdio client exercises exactly four read-only tools against mocked TCP host', async t => {
+test('official SDK stdio client discovers six read tools and four write tools against mocked TCP host', async t => {
   let includeDeleted = false;
   let returnError = false;
   const f = await fixture(t, (request, socket) => {
@@ -37,21 +37,22 @@ test('official SDK stdio client exercises exactly four read-only tools against m
   t.after(() => client.close());
   await client.connect(transport);
   const tools = await client.listTools();
-  assert.deepEqual(tools.tools.map(tool => tool.name).sort(), ['get_note', 'get_status', 'list_tags', 'search_notes']);
+  assert.deepEqual(tools.tools.map(tool => tool.name).sort(), ['create_note', 'delete_note', 'get_note', 'get_status', 'get_trashed_note', 'list_tags', 'list_trash', 'restore_note', 'search_notes', 'update_note']);
   for (const tool of tools.tools) {
-    assert.equal(tool.annotations?.readOnlyHint, true);
-    assert.equal(tool.annotations?.destructiveHint, false);
+    assert.equal(tool.annotations?.readOnlyHint, !['create_note', 'update_note', 'delete_note', 'restore_note'].includes(tool.name));
+    assert.equal(tool.annotations?.destructiveHint, ['update_note', 'delete_note'].includes(tool.name));
   }
   const searchProperties = tools.tools.find(tool => tool.name === 'search_notes')?.inputSchema.properties;
   assert.match(JSON.stringify(searchProperties?.from), /Inclusive creation time/);
   assert.match(JSON.stringify(searchProperties?.to), /Exclusive creation time/);
+  const binding = { vaultId: f.config.vaultId, instanceId: f.config.instanceId };
   const call = async (name: string, args = {}): Promise<CallToolResult> => await client.callTool({ name, arguments: args }) as CallToolResult;
-  assert.deepEqual((await call('get_status')).structuredContent, status);
+  assert.deepEqual((await call('get_status')).structuredContent, { ...status, binding });
   const page = await call('search_notes', { query: '中文', tags: ['日常'], limit: 10 });
-  assert.deepEqual(page.structuredContent, { notes: [note], nextCursor: null, coverage });
+  assert.deepEqual(page.structuredContent, { notes: [note], nextCursor: null, coverage, binding });
   assert.equal(f.requests.at(-1)?.params.deleted, false);
-  assert.deepEqual((await call('get_note', { id: note.id })).structuredContent, note);
-  assert.deepEqual((await call('list_tags')).structuredContent, { tags: [{ name: '日常', count: 1 }], coverage });
+  assert.deepEqual((await call('get_note', { id: note.id })).structuredContent, { ...note, binding });
+  assert.deepEqual((await call('list_tags')).structuredContent, { tags: [{ name: '日常', count: 1 }], coverage, binding });
   const requestCount = f.requests.length;
   for (const args of [{ deleted: true }, { limit: 0 }, { from: '2026-09-29T00:00:00Z', to: '2026-09-28T00:00:00Z' }]) {
     assert.equal((await call('search_notes', args)).isError, true);
@@ -92,7 +93,7 @@ test('official SDK preserves recovery codes without exposing native messages or 
   await client.connect(transport);
   for (const [nativeCode, canRetry] of [
     ['STALE_CURSOR', true], ['CURSOR_QUERY_MISMATCH', false], ['INVALID_CURSOR', false],
-    ['NOTE_NOT_FOUND', false], ['UNAUTHORIZED', false], ['FILE_PENDING', true],
+    ['NOTE_NOT_FOUND', false], ['UNAUTHORIZED', false], ['WRITE_DISABLED', false], ['VAULT_CHANGED', false], ['FILE_PENDING', true],
     ['SOURCE_CONFLICT', false], ['SCAN_INCOMPLETE', true], ['RESPONSE_TOO_LARGE', false],
     ['UNKNOWN-private-note-body', true], ['constructor', false],
   ] as const) {
@@ -131,7 +132,7 @@ test('default SDK client receives large-result errors and bounded escaped result
   assert.equal(oversized.isError, true);
   assert.match(JSON.stringify(oversized), /RESPONSE_TOO_LARGE/);
   assert.ok(Buffer.byteLength(JSON.stringify(oversized)) < 1024);
-  assert.deepEqual((await client.callTool({ name: 'get_status', arguments: {} })).structuredContent, status);
+  assert.deepEqual((await client.callTool({ name: 'get_status', arguments: {} })).structuredContent, { ...status, binding: { vaultId: f.config.vaultId, instanceId: f.config.instanceId } });
 
   // Control characters use six bytes each in native JSON and are escaped again in text content.
   body = '\u0001'.repeat(Math.floor((2 * 1024 * 1024 - 1024) / 6));

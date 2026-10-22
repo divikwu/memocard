@@ -46,7 +46,7 @@ pnpm --filter @memocard/ui preview --port 4179 --strictPort
 
 `apps/ui/dist` 是可部署到 HTTPS 静态托管的产物，不依赖 Node 笔记服务器。开发服务器只提供应用代码。当前交付没有公开发布网站，localhost 地址只能在运行它的电脑上使用；没有 Service Worker / PWA 离线安装保证。浏览器不支持目录读写时会显示明确说明，不用导入上传伪装为直接保存。
 
-MCP 继续由 Mac App 提供只读访问；浏览器不会在后台启动本机 MCP 服务。Becoming 的长期数据不由 Web 自动修改。
+MCP 由独立 MemoCardService 或 Mac App 提供读取、新建、带版本检查的修改、移入回收站与恢复；使用服务连接时主客户端可以退出。浏览器不会在后台启动本机 MCP 服务。Becoming 的长期数据不由 Web 自动修改。
 
 ## 检查
 

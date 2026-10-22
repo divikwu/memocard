@@ -221,7 +221,7 @@ public actor VaultStore {
     public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) async throws -> Data {
         do {
             try requireBinding(expectedBinding)
-            if ["getTagPreferences", "setTagPreferences", "getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
+            if ["getTagPreferences", "setTagPreferences", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
                 struct Scope: Decodable { var vaultId: String?; var vaultBinding: UUID? }
                 let scope = try decode(Scope.self, params)
                 try requireBinding(scope.vaultBinding)
@@ -229,7 +229,7 @@ public actor VaultStore {
             }
             let operationBinding = binding
             if let task = sourceIndexTask {
-                var wait = ["saveNote", "updateNoteProperty", "getNoteProperties", "resolveLink", "deleteNote", "restoreNote", "importAttachment"].contains(operation)
+                var wait = ["createNote", "updateNote", "saveNote", "updateNoteProperty", "getNoteProperties", "resolveLink", "deleteNote", "restoreNote", "importAttachment"].contains(operation)
                 if operation == "getNote", let id = (try? JSONSerialization.jsonObject(with: params)) as? [String: Any] {
                     let requestedID = id["id"] as? String
                     wait = initialScan?.result.notes.contains(where: { $0.note.id == requestedID }) != true
@@ -260,6 +260,17 @@ public actor VaultStore {
             case "getNote":
                 struct Request: Decodable { let id: String }
                 return try encode(getNote(id: try decode(Request.self, params).id))
+            case "createNote":
+                struct Request: Decodable { let id: String?; let title: String?; let body: String }
+                let request = try decode(Request.self, params)
+                clearRefreshSnapshot()
+                return try encode(saveNote(SaveRequest(title: request.title, id: request.id ?? UUID().uuidString.lowercased(), body: request.body, tags: [], inheritedTags: nil, baseHash: nil, relativePath: nil)))
+            case "updateNote":
+                struct Request: Decodable { let id: String; let title: String?; let body: String; let baseHash: String }
+                let request = try decode(Request.self, params)
+                guard !request.baseHash.isEmpty else { throw VaultError(code: "INVALID_ARGUMENT", message: "修改笔记必须提供读取时的内容版本。") }
+                clearRefreshSnapshot()
+                return try encode(saveNote(SaveRequest(title: request.title, id: request.id, body: request.body, tags: [], inheritedTags: nil, baseHash: request.baseHash, relativePath: nil)))
             case "saveNote":
                 clearRefreshSnapshot()
                 return try encode(saveNote(try decode(SaveRequest.self, params)))
@@ -1348,6 +1359,7 @@ public actor VaultStore {
                 guard current == change.before || current == change.after else { throw VaultError(code: "RENAME_RECOVERY_REQUIRED", message: "保存事务期间文件被外部修改，事务记录和草稿已保留，请先处理恢复记录。") }
             }
             for change in journal.changes.reversed() {
+                if try self.renameBytes(change.path, root: root) == change.before { continue }
                 let url = root.appendingPathComponent(change.path)
                 if let data = change.before { try data.write(to: url, options: .atomic) }
                 else if self.fm.fileExists(atPath: url.path) { try self.fm.removeItem(at: url) }
@@ -1634,6 +1646,7 @@ public actor VaultStore {
         var restored:Note?
         do { try coordinateWrite(root,inside:root,options:.forMerging) { _ in
             try self.validate(location.url,inside:root)
+            try self.requireNoConflict(location.url)
             let original = try self.readSource(location.url)
             guard archived.note.contentHash == baseHash, sha256(original) == baseHash else { throw VaultError(code:"HASH_CONFLICT",message:"回收笔记已变化，请刷新后重试。") }
             var path = location.path, count = 2
@@ -1646,7 +1659,10 @@ public actor VaultStore {
             try self.validate(target,inside:root);try self.fm.createDirectory(at:target.deletingLastPathComponent(),withIntermediateDirectories:true);try self.validate(target,inside:root)
             let journal = RenameJournal(root:root.path,scope:self.localScope,changes:[RenameChange(path:path,before:nil,after:original),RenameChange(path:".memocard/trash/" + key,before:original,after:nil)],identities:self.identities)
             try encode(journal).write(to:self.renameJournalURL,options:.atomic)
-            try self.fm.moveItem(at:location.url,to:target)
+            // Publish fresh active-file metadata: providers can retain hidden
+            // archive state when moving an inode out of .memocard/trash.
+            try original.write(to: target, options: .withoutOverwriting)
+            try self.fm.removeItem(at: location.url)
             let identity=FileIdentity(id:archived.note.id,path:path,hash:baseHash,createdAt:archived.note.createdAt)
             if self.compatible { try self.persistIdentities(self.identities.filter{$0.id != identity.id && $0.path != path} + [identity]) }
             try self.fm.removeItem(at:self.renameJournalURL)
@@ -1683,8 +1699,9 @@ public actor VaultStore {
             try self.fm.removeItem(at:self.renameJournalURL)
         }} catch { try recoverRename();throw error }
         parsedCache.removeAll(); invalidateSnapshot()
-        struct Deleted: Encodable { let id: String; let relativePath: String; let trashPath: String }
-        return try encode(Deleted(id: id, relativePath: note.relativePath, trashPath: trashPath))
+        struct Deleted: Encodable { let id: String; let relativePath: String; let trashPath: String; let trashKey: String; let contentHash: String }
+        return try encode(Deleted(id: id, relativePath: note.relativePath, trashPath: trashPath,
+                                  trashKey: String(trashPath.dropFirst(".memocard/trash/".count)), contentHash: baseHash))
     }
 
     private func deleteDraft(id: String, source: RecoverySource) throws -> Data {

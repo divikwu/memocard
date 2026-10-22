@@ -4,9 +4,59 @@ import UniformTypeIdentifiers
 @testable import MemoCardCore
 
 final class VaultStoreTests: XCTestCase {
+    func testMCPCreateAndUpdatePreserveMetadataAndRejectStaleOrMissingVersions() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let created = try await call(core, "createNote", ["id": id, "title": "MCP 新笔记", "body": "初稿 #work"])
+        XCTAssertEqual(created["id"] as? String, id)
+        XCTAssertEqual(created["body"] as? String, "初稿 #work")
+        let path = vault.appendingPathComponent(created["relativePath"] as! String)
+        var source = try String(contentsOf: path, encoding: .utf8)
+        source = source.replacingOccurrences(of: "---\n", with: "---\ncustom: preserve-me\ntags: [frontmatter]\n", range: source.range(of: "---\n"))
+        try Data(source.utf8).write(to: path)
+        let current = try await call(core, "getNote", ["id": id])
+        let updated = try await call(core, "updateNote", ["id": id, "body": "修改后 #ideas", "baseHash": current["contentHash"]!])
+        XCTAssertEqual(updated["body"] as? String, "修改后 #ideas")
+        XCTAssertEqual(updated["createdAt"] as? String, created["createdAt"] as? String)
+        XCTAssertEqual(updated["relativePath"] as? String, created["relativePath"] as? String)
+        XCTAssertTrue(try String(contentsOf: path, encoding: .utf8).contains("custom: preserve-me"))
+        XCTAssertEqual(Set(updated["tags"] as! [String]), Set(["frontmatter", "ideas"]))
+        let before = try Data(contentsOf: path)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNote", ["id": id, "title": "Stale rename", "body": "stale", "baseHash": current["contentHash"]!]) }
+        await expectCode("INVALID_PARAMS") { _ = try await self.call(core, "updateNote", ["id": id, "body": "missing hash"]) }
+        await expectCode("INVALID_ARGUMENT") { _ = try await self.call(core, "updateNote", ["id": id, "body": "empty hash", "baseHash": ""]) }
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "createNote", ["id": id, "body": "must not overwrite"]) }
+        XCTAssertEqual(try Data(contentsOf: path), before)
+        let renamed = try await call(core, "updateNote", ["id": id, "title": "MCP 改名", "body": "新正文", "baseHash": updated["contentHash"]!])
+        XCTAssertNotEqual(renamed["relativePath"] as? String, created["relativePath"] as? String)
+        let missing = UUID().uuidString.lowercased()
+        await expectCode("NOTE_NOT_FOUND") { _ = try await self.call(core, "updateNote", ["id": missing, "body": "no resurrection", "baseHash": updated["contentHash"]!]) }
+        _ = try await call(core, "deleteNote", ["id": id, "baseHash": renamed["contentHash"]!])
+        await expectCode("NOTE_NOT_FOUND") { _ = try await self.call(core, "updateNote", ["id": id, "body": "deleted", "baseHash": renamed["contentHash"]!]) }
+        let generated = try await call(core, "createNote", ["body": "Generated ID"])
+        XCTAssertNotNil(UUID(uuidString: generated["id"] as! String))
+    }
+
+    func testMCPWritesUseTheObsidianSavePathAndPreserveFrontmatter() async throws {
+        let path = vault.appendingPathComponent("Existing.md")
+        try Data("---\ncustom: keep\ntags: [existing]\n---\nOriginal".utf8).write(to: path)
+        let core = try await store(create: false)
+        let original = (try await call(core, "queryNotes")["notes"] as! [[String: Any]])[0]
+        let saved = try await call(core, "updateNote", ["id": original["id"]!, "body": "Edited #inline", "baseHash": original["contentHash"]!])
+        XCTAssertEqual(saved["relativePath"] as? String, "Existing.md")
+        XCTAssertEqual(Set(saved["tags"] as! [String]), Set(["existing", "inline"]))
+        XCTAssertTrue(try String(contentsOf: path, encoding: .utf8).contains("custom: keep"))
+        let id = UUID().uuidString.lowercased()
+        let created = try await call(core, "createNote", ["id": id, "title": "New Markdown", "body": "Created"])
+        XCTAssertEqual(created["relativePath"] as? String, "New Markdown.md")
+        let read = try await call(core, "getNote", ["id": id])
+        XCTAssertEqual(read["contentHash"] as? String, created["contentHash"] as? String)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "createNote", ["id": id, "body": "duplicate"]) }
+    }
+
     func testCaptureOperationsRejectAnotherVaultOrDirectoryBindingBeforeMutation() async throws {
         let core = try await store()
-        for operation in ["getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"] {
+        for operation in ["getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"] {
             await expectCode("VAULT_CHANGED") { _ = try await self.call(core, operation, ["vaultId": "other-vault"]) }
             await expectCode("UNAUTHORIZED") { _ = try await self.call(core, operation, ["vaultBinding": UUID().uuidString.lowercased()]) }
         }
@@ -604,7 +654,9 @@ final class VaultStoreTests: XCTestCase {
         let path=folder.appendingPathComponent("Raw.md"), bytes=Data("\u{feff}---\r\ntags: [work]\r\n---\r\nBody ![image](../assets/keep.png)\r\n".utf8)
         try bytes.write(to:path)
         let core=try await store(create:false), note=(try await call(core,"queryNotes")["notes"] as! [[String:Any]])[0]
-        _ = try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!])
+        let receipt = try await call(core,"deleteNote",["id":note["id"]!,"baseHash":note["contentHash"]!])
+        XCTAssertEqual(receipt["contentHash"] as? String, note["contentHash"] as? String)
+        XCTAssertEqual(receipt["trashPath"] as? String, ".memocard/trash/" + (receipt["trashKey"] as! String))
         try FileManager.default.removeItem(at:folder)
         await core.close()
         let reopened=try await store(create:false), items=try await call(reopened,"getTrash")["notes"] as! [[String:Any]]
@@ -631,6 +683,52 @@ final class VaultStoreTests: XCTestCase {
         let notes=try await call(core,"queryNotes")["notes"] as! [[String:Any]]
         XCTAssertEqual(Set(notes.compactMap{$0["id"] as? String}),Set([note["id"] as! String,other["id"] as! String]))
         await expectCode("PATH_NOT_ALLOWED") { _ = try await self.call(core,"getTrashedNote",["trashKey":UUID().uuidString.lowercased()+"/../outside.md"]) }
+    }
+
+    func testMCPCompatibleNoteKeepsIDAfterDeleteReopenAndRestore() async throws {
+        let core = try await store(create: false)
+        _ = try await call(core, "createNote", ["id": UUID().uuidString.lowercased(), "title": "保留原笔记", "body": "untouched"])
+        let id = UUID().uuidString.lowercased()
+        let first = try await call(core, "createNote", ["id": id, "title": "临时测试 · MCP 删除与恢复", "body": "first"])
+        let updated = try await call(core, "updateNote", ["id": id, "baseHash": first["contentHash"]!, "body": "latest"])
+        let receipt = try await call(core, "deleteNote", ["id": id, "baseHash": updated["contentHash"]!])
+        // A file provider can retain hidden metadata on an archived source.
+        // Restoring must publish a visible active file without losing its note ID.
+        var archiveURL = vault.appendingPathComponent(receipt["trashPath"] as! String)
+        var attributes = URLResourceValues(); attributes.isHidden = true
+        try archiveURL.setResourceValues(attributes)
+        _ = try await call(core, "queryNotes")
+        await core.close()
+        let reopened = try await store(create: false)
+        _ = try await call(reopened, "getStatus", ["background": true])
+        let archived = try await call(reopened, "getTrashedNote", ["trashKey": receipt["trashKey"]!])
+        let note = archived["note"] as! [String: Any]
+        let restored = try await call(reopened, "restoreNote", ["trashKey": receipt["trashKey"]!, "baseHash": note["contentHash"]!])
+        XCTAssertEqual(restored["id"] as? String, id)
+        let loaded = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(loaded["body"] as? String, "latest")
+        XCTAssertEqual(loaded["contentHash"] as? String, restored["contentHash"] as? String)
+    }
+
+    func testRestoreRollsBackPublishedFileWhenArchiveRemovalFails() async throws {
+        let core = try await store(create: false)
+        let note = try await call(core, "createNote", ["id": UUID().uuidString.lowercased(), "body": "Keep exact archived bytes"])
+        let receipt = try await call(core, "deleteNote", ["id": note["id"]!, "baseHash": note["contentHash"]!])
+        let archive = vault.appendingPathComponent(receipt["trashPath"] as! String)
+        let original = try Data(contentsOf: archive)
+        let directory = archive.deletingLastPathComponent()
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: directory.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path) }
+        do {
+            _ = try await call(core, "restoreNote", ["trashKey": receipt["trashKey"]!, "baseHash": note["contentHash"]!])
+            XCTFail("A failed archive removal must not report restoration")
+        } catch {}
+        XCTAssertFalse(FileManager.default.fileExists(atPath: vault.appendingPathComponent(note["relativePath"] as! String).path))
+        XCTAssertEqual(try Data(contentsOf: archive), original)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path)
+        let restored = try await call(core, "restoreNote", ["trashKey": receipt["trashKey"]!, "baseHash": note["contentHash"]!])
+        XCTAssertEqual(restored["id"] as? String, note["id"] as? String)
+        XCTAssertEqual(restored["contentHash"] as? String, note["contentHash"] as? String)
     }
 
     func testTrashReadsOldArchiveWithoutMetadataAndRetainsUnreadableEntries() async throws {
@@ -2510,7 +2608,7 @@ final class VaultStoreTests: XCTestCase {
         let noteURL = restored.appendingPathComponent(saved["relativePath"] as! String)
         let before = try Data(contentsOf: noteURL)
         let input = try JSONSerialization.data(withJSONObject: ["id": id, "body": "Must not write", "tags": [], "baseHash": saved["contentHash"]!])
-        for operation in ["saveNote", "saveDraft", "importAttachment", "getStatus"] {
+        for operation in ["createNote", "updateNote", "saveNote", "saveDraft", "importAttachment", "getStatus"] {
             await expectCode("UNAUTHORIZED") {
                 _ = try await store.perform(operation: operation, params: input, expectedBinding: oldBinding)
             }

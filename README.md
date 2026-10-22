@@ -1,11 +1,11 @@
 # 记忆卡 · MemoCard
 
-个人使用的 Mac / iPhone / 独立 Web Markdown 笔记应用，并提供独立菜单栏服务支持 Safari、Codex、Chrome 和 Edge 访问本机笔记库。正文与图片保存在用户授权的文件夹，目标是用 iCloud Drive 同步；Mac App 提供本机只读 MCP。
+个人使用的 Mac / iPhone / 独立 Web Markdown 笔记应用，并提供独立菜单栏服务支持 Safari、Codex、Chrome 和 Edge 访问本机笔记库。正文与图片保存在用户授权的文件夹，目标是用 iCloud Drive 同步；菜单栏服务和 Mac App 均可独立提供本机 MCP 读写。
 
 
 现已支持直接打开 Obsidian / 普通 Markdown 文件夹：无 YAML 的笔记、原目录、库内图片、正文标签和基础 Wikilink。仅改正文时保留原属性与注释。兼容范围和验收边界见 [Obsidian 共用说明](docs/OBSIDIAN_COMPATIBILITY.md)。新建库采用普通 Markdown，旧 MemoCard 库继续兼容。
 
-**当前是 M0/M1 平台验证版，不是已完成的首版。** 真实 iPhone 安装和双端 iCloud 同步关卡通过前，不启动依赖它的数据功能阶段。用户另行授权的 UI 重设计与本机外观设置已落地。当前能创建/打开笔记库、输入 Markdown、导入图片、保存草稿、搜索和通过 MCP 读取。SQLite、冲突解决、统计、笔记库备份恢复和 Becoming 项目脚本尚未交付。
+**当前是 M0/M1 平台验证版，不是已完成的首版。** 真实 iPhone 安装和双端 iCloud 同步关卡通过前，不启动依赖它的数据功能阶段。用户另行授权的 UI 重设计与本机外观设置已落地。当前能创建/打开笔记库、输入 Markdown、导入图片、保存草稿、搜索和通过 MCP 读取、新建、带版本检查的修改、移入回收站与恢复。SQLite、冲突解决、统计、笔记库备份恢复和 Becoming 项目脚本尚未交付。
 
 iOS 主导航使用 UIKit 自定义侧栏容器，展开时保持主页面原宽度并整体右移，内部使用与 H5 对齐的 SwiftUI 自定义布局（固定品牌栏、导航与折叠标签树统一滚动）；笔记库与设置入口按最新反馈移至 Logo 右侧的设置齿轮。App 与 H5 移动端侧栏不再重复显示搜索和新建笔记，继续使用底部入口及页面操作菜单；桌面端保留原侧栏入口。顶部导航、底部操作栏、页面菜单，以及笔记库、草稿和标签编辑弹层继续使用 SwiftUI 原生控件。搜索使用始终贴边的 SwiftUI 底部弹层，快速记录使用键盘上方的浮动输入卡片与系统模糊背景；两者按确认的移动端 UI 定制内容，复用共享查询、草稿和保存逻辑。系统工具栏与玻璃按钮在支持的系统上采用 Liquid Glass；最低目标仍为 iOS 17。列表内容、设置正文和笔记编辑器继续复用共享 Web 实现。原生替换以保持既有样式和交互为约束，无合适组件时保留原实现或自定义。范围、桥接机制与验证记录见 [iOS 原生外壳](docs/IOS_NATIVE_CHROME.md)。
 
@@ -61,7 +61,7 @@ Safari、Codex、Chrome 和 Edge 的推荐本机入口是独立菜单栏应用 `
 
 ### 本机 Web
 
-推荐通过 `MemoCardService.app` 或 `memocard serve` 打开本机 Web。浏览器只连接菜单栏服务提供的 listener，并使用服务维护的多 Vault 列表；Mac App 设置中的“在浏览器中打开”和兼容 URL `memocard://web` 会转交给该服务，不再创建另一套网页会话或端口。浏览器复用同一套界面和笔记文件，可以查看、新建、编辑、保存草稿和导入图片。Mac App 仍在原生界面中管理自己的目录授权和只读 MCP。
+推荐通过 `MemoCardService.app` 或 `memocard serve` 打开本机 Web。浏览器只连接菜单栏服务提供的 listener，并使用服务维护的多 Vault 列表；Mac App 设置中的“在浏览器中打开”和兼容 URL `memocard://web` 会转交给该服务，不再创建另一套网页会话或端口。浏览器复用同一套界面和笔记文件，可以查看、新建、编辑、保存草稿和导入图片。Mac App 仍在原生界面中管理自己的目录授权和 MCP 读写。
 
 网页资源随宿主打包，不依赖 Vite 或 Node 后端。地址使用系统分配的本机端口；宿主重启后必须重新打开，旧页面不能通过“重试”发现新端口。不要保存或分享带一次性授权参数的链接。详细边界与验证见 [本机 Web](docs/LOCAL_WEB.md)。
 
@@ -96,17 +96,17 @@ M1 扫描文件生成内存视图，没有伪装成已完成的 SQLite 索引。
 
 先在 Mac 应用点击“创建笔记库”，选择专用空目录。真机验证时在 iCloud Drive 中新建专用测试目录，再由 iPhone 选择同一库；不要导入真实个人笔记。
 
-Mac 设置中开启读取，选择笔记库、Git 和 iCloud 之外的本机配置目录。配置包含敏感令牌，不提交、不分享。
+推荐在 MemoCardService 菜单中选择目标笔记库，点击“启用 MCP 读写…”，导出到笔记库、Git 和 iCloud 之外的本机目录。Codex 使用 `service-connection.json`，只需保持菜单栏服务运行，主客户端可以退出。兼容的 Mac 设置仍可导出独立的 `connection.json`，两者授权不共享。配置包含敏感令牌，不提交、不分享。
 
 ```sh
 pnpm --filter @memocard/mcp build
-pnpm --filter @memocard/mcp smoke --connection-file /绝对路径/connection.json
+pnpm --filter @memocard/mcp smoke --connection-file /绝对路径/service-connection.json
 ```
 
 详细接口见 [MCP 接入](docs/mcp.md)。这里的 smoke 是 M1 本机平台验证，不代替计划要求的 M4 `pnpm memocard:read` Becoming 实际脚本验收。
 
 ## 数据与安全边界
 
-原生与本机 Web 文件操作在 Swift 中协调执行；独立 Web 使用浏览器目录授权直接写文件，Node 不直接写笔记。Mac 启用 App Sandbox，目录经系统选择器授权；MCP 连接配置为 `0600`，TCP 只绑定 `127.0.0.1`。本机 Web 使用独立 HTTP 服务和授权，不复用 MCP 令牌或扩大其只读权限。WKWebView 与独立 Web 生产页面 CSP 禁止数据网络请求；本机 Web 只允许同源接口。页面禁止 frame 和表单提交，Markdown 原始 HTML 不执行。
+原生与本机 Web 文件操作在 Swift 中协调执行；独立 Web 使用浏览器目录授权直接写文件，Node 不直接写笔记。Mac 启用 App Sandbox，目录经系统选择器授权；MCP 连接配置为 `0600`，TCP 只绑定 `127.0.0.1`。本机 Web 使用独立 HTTP 服务和授权，不复用 MCP 令牌；MCP 仅开放读取、新建、带版本检查的修改、移入回收站与恢复，不开放永久删除。WKWebView 与独立 Web 生产页面 CSP 禁止数据网络请求；本机 Web 只允许同源接口。页面禁止 frame 和表单提交，Markdown 原始 HTML 不执行。
 
 笔记文件是事实来源。当前版本对不完整扫描采取保守处理：保留本机草稿，拒绝正式覆盖保存。笔记库备份/恢复尚未实现，请勿将此验证版作为唯一笔记副本。

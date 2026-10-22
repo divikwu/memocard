@@ -4,7 +4,7 @@ import { chmod, readFile, symlink, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { BridgeFailure, REQUEST_TIMEOUT_MS, readConnectionFile, requestNative } from '../src/native-client.ts';
+import { BridgeFailure, REQUEST_TIMEOUT_MS, readConnectionFile, requestNative, requestNativeWithBinding } from '../src/native-client.ts';
 import { fixture, reply, note, status, sharedFixture } from './fixture.ts';
 
 test('shared bridge fixture matches the real Markdown source bytes and vault identity', async () => {
@@ -121,4 +121,16 @@ test('enforces a total 15 second deadline even while bytes arrive', { timeout: 1
   await assert.rejects(requestNative(f.path, 'getNote'), { code: 'TIMEOUT' });
   assert.ok(Date.now() - started >= 14_900);
   await delay(10);
+});
+
+
+test('read bindings describe the configuration actually used even if it rotates during the reply', async t => {
+  const f = await fixture(t, (request, socket) => {
+    void f.write({ ...f.config, instanceId: 'rotated-during-read' }).then(() => reply(socket, request, note));
+  });
+  const result = await requestNativeWithBinding(f.path, 'getNote', { id: note.id });
+  assert.deepEqual(result.data, note);
+  assert.deepEqual(result.binding, { vaultId: f.config.vaultId, instanceId: f.config.instanceId });
+  await assert.rejects(requestNative(f.path, 'updateNote', { id: note.id, body: 'stale', baseHash: note.contentHash, binding: result.binding }), { code: 'VAULT_CHANGED' });
+  assert.equal(f.requests.length, 1);
 });
