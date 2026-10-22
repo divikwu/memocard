@@ -1,0 +1,702 @@
+{
+  "version": 1,
+  "icons": [
+    {
+      "name": "ArrowDown",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-down\" aria-hidden=\"true\"><path d=\"M12 5v14\"></path><path d=\"m19 12-7 7-7-7\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/note-collection.tsx",
+        "apps/ui/src/components/note-search-dialog.tsx"
+      ]
+    },
+    {
+      "name": "ArrowLeft",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-left\" aria-hidden=\"true\"><path d=\"m12 19-7-7 7-7\"></path><path d=\"M19 12H5\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/RichImageTools.tsx"
+      ]
+    },
+    {
+      "name": "ArrowRight",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-right\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichImageTools.tsx"
+      ]
+    },
+    {
+      "name": "ArrowUp",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"></path><path d=\"M12 19V5\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/note-search-dialog.tsx",
+        "apps/ui/src/components/quick-capture.tsx"
+      ]
+    },
+    {
+      "name": "ArrowUpRight",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-up-right\" aria-hidden=\"true\"><path d=\"M7 7h10v10\"></path><path d=\"M7 17 17 7\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/components/note-search-dialog.tsx",
+        "apps/ui/src/components/quick-capture.tsx"
+      ]
+    },
+    {
+      "name": "CalendarDays",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-calendar-days\" aria-hidden=\"true\"><path d=\"M8 2v3\"></path><path d=\"M16 2v3\"></path><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"></rect><path d=\"M3 9h18\"></path><path d=\"M8 13h.01\"></path><path d=\"M12 13h.01\"></path><path d=\"M16 13h.01\"></path><path d=\"M8 17h.01\"></path><path d=\"M12 17h.01\"></path><path d=\"M16 17h.01\"></path></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/loading-states.tsx"
+      ]
+    },
+    {
+      "name": "Check",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/CalloutColorsMenu.tsx",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/quick-capture.tsx",
+        "apps/ui/src/components/ui/dropdown-menu.tsx",
+        "apps/ui/src/components/ui/select.tsx"
+      ]
+    },
+    {
+      "name": "ChevronDown",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-down\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/mobile-tag-actions.tsx",
+        "apps/ui/src/components/ui/select.tsx",
+        "apps/ui/src/features/theme/ThemeSettings.tsx"
+      ]
+    },
+    {
+      "name": "ChevronRight",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-right\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/CalloutColorsMenu.tsx",
+        "apps/ui/src/RichHeadingFoldButton.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/sidebar-tree-item.tsx",
+        "apps/ui/src/components/tag-navigation.tsx",
+        "apps/ui/src/components/ui/breadcrumb.tsx",
+        "apps/ui/src/components/ui/dropdown-menu.tsx"
+      ]
+    },
+    {
+      "name": "ChevronUp",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-up\" aria-hidden=\"true\"><path d=\"m18 15-6-6-6 6\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/components/ui/select.tsx"
+      ]
+    },
+    {
+      "name": "CircleAlert",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-alert lucide-alert-circle\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><line x1=\"12\" x2=\"12\" y1=\"8\" y2=\"12\"></line><line x1=\"12\" x2=\"12.01\" y1=\"16\" y2=\"16\"></line></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/components/page-notice.tsx"
+      ]
+    },
+    {
+      "name": "CircleChevronDown",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-chevron-down lucide-chevron-down-circle\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"m16 10-4 4-4-4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx"
+      ]
+    },
+    {
+      "name": "CircleQuestionMark",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-question-mark lucide-help-circle lucide-circle-help\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"></path><path d=\"M12 17h.01\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/app-sidebar.tsx"
+      ]
+    },
+    {
+      "name": "Clock",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clock\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 6v6l4 2\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx"
+      ]
+    },
+    {
+      "name": "Clock3",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clock-3\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 6v6h4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/note-collection.tsx"
+      ]
+    },
+    {
+      "name": "Code",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-code\" aria-hidden=\"true\"><path d=\"m16 18 6-6-6-6\"></path><path d=\"m8 6-6 6 6 6\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/MermaidBlock.tsx",
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "Columns2",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-columns-2 lucide-columns\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"></rect><path d=\"M12 3v18\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichImageTools.tsx"
+      ]
+    },
+    {
+      "name": "Copy",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-copy\" aria-hidden=\"true\"><rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\"></rect><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "CornerDownLeft",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-corner-down-left\" aria-hidden=\"true\"><path d=\"M20 4v7a4 4 0 0 1-4 4H4\"></path><path d=\"m9 10-5 5 5 5\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/note-search-dialog.tsx"
+      ]
+    },
+    {
+      "name": "Ellipsis",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-ellipsis lucide-more-horizontal\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"1\"></circle><circle cx=\"19\" cy=\"12\" r=\"1\"></circle><circle cx=\"5\" cy=\"12\" r=\"1\"></circle></svg>",
+      "consumers": [
+        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/RichImageTools.tsx",
+        "apps/ui/src/components/nav-actions.tsx",
+        "apps/ui/src/components/tag-navigation.tsx",
+        "apps/ui/src/components/ui/breadcrumb.tsx"
+      ]
+    },
+    {
+      "name": "FaceSlightlySmiling",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-face-slightly-smiling lucide-smile\" aria-hidden=\"true\"><path d=\"M15 10V9\"></path><path d=\"M16.472 15a6 6 0 01-8.943 0\"></path><path d=\"M9 10V9\"></path><circle cx=\"12\" cy=\"12\" r=\"10\"></circle></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "FileText",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-file-text\" aria-hidden=\"true\"><path d=\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\"></path><path d=\"M14 2v5a1 1 0 0 0 1 1h5\"></path><path d=\"M10 9H8\"></path><path d=\"M16 13H8\"></path><path d=\"M16 17H8\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/components/note-search-dialog.tsx"
+      ]
+    },
+    {
+      "name": "Flag",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-flag\" aria-hidden=\"true\"><path d=\"M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "FolderOpen",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-folder-open\" aria-hidden=\"true\"><path d=\"m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/quick-capture.tsx"
+      ]
+    },
+    {
+      "name": "FolderPlus",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-folder-plus\" aria-hidden=\"true\"><path d=\"M12 10v6\"></path><path d=\"M9 13h6\"></path><path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/app-sidebar.tsx"
+      ]
+    },
+    {
+      "name": "GitBranch",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-git-branch\" aria-hidden=\"true\"><path d=\"M15 6a9 9 0 0 0-9 9V3\"></path><circle cx=\"18\" cy=\"6\" r=\"3\"></circle><circle cx=\"6\" cy=\"18\" r=\"3\"></circle></svg>",
+      "consumers": [
+        "apps/ui/src/MermaidBlock.tsx"
+      ]
+    },
+    {
+      "name": "GripVertical",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-grip-vertical\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"12\" r=\"1\"></circle><circle cx=\"9\" cy=\"5\" r=\"1\"></circle><circle cx=\"9\" cy=\"19\" r=\"1\"></circle><circle cx=\"15\" cy=\"12\" r=\"1\"></circle><circle cx=\"15\" cy=\"5\" r=\"1\"></circle><circle cx=\"15\" cy=\"19\" r=\"1\"></circle></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "Hash",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-hash\" aria-hidden=\"true\"><line x1=\"4\" x2=\"20\" y1=\"9\" y2=\"9\"></line><line x1=\"4\" x2=\"20\" y1=\"15\" y2=\"15\"></line><line x1=\"10\" x2=\"8\" y1=\"3\" y2=\"21\"></line><line x1=\"16\" x2=\"14\" y1=\"3\" y2=\"21\"></line></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/note-filter-navigation.tsx",
+        "apps/ui/src/components/quick-capture.tsx",
+        "apps/ui/src/components/tag-editor.tsx",
+        "apps/ui/src/components/tag-navigation.tsx"
+      ]
+    },
+    {
+      "name": "Heading",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-heading\" aria-hidden=\"true\"><path d=\"M6 12h12\"></path><path d=\"M6 20V4\"></path><path d=\"M18 20V4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "Highlighter",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-highlighter\" aria-hidden=\"true\"><path d=\"m9 11-6 6v3h9l3-3\"></path><path d=\"m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx"
+      ]
+    },
+    {
+      "name": "House",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-house lucide-home\" aria-hidden=\"true\"><path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\"></path><path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"></path></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/loading-states.tsx"
+      ]
+    },
+    {
+      "name": "Image",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-image\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"></rect><circle cx=\"9\" cy=\"9\" r=\"2\"></circle><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"></path></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/note-filter-navigation.tsx"
+      ]
+    },
+    {
+      "name": "ImagePlus",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-image-plus\" aria-hidden=\"true\"><path d=\"M16 5h6\"></path><path d=\"M19 2v6\"></path><path d=\"M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5\"></path><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"></path><circle cx=\"9\" cy=\"9\" r=\"2\"></circle></svg>",
+      "consumers": [
+        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/components/quick-capture.tsx"
+      ]
+    },
+    {
+      "name": "Info",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-info\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 16v-4\"></path><path d=\"M12 8h.01\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/components/page-notice.tsx"
+      ]
+    },
+    {
+      "name": "Keyboard",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-keyboard\" aria-hidden=\"true\"><path d=\"M10 8h.01\"></path><path d=\"M12 12h.01\"></path><path d=\"M14 8h.01\"></path><path d=\"M16 12h.01\"></path><path d=\"M18 8h.01\"></path><path d=\"M6 8h.01\"></path><path d=\"M7 16h10\"></path><path d=\"M8 12h.01\"></path><rect width=\"20\" height=\"16\" x=\"2\" y=\"4\" rx=\"2\"></rect></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx"
+      ]
+    },
+    {
+      "name": "Layers",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-layers lucide-layers-3\" aria-hidden=\"true\"><path d=\"M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z\"></path><path d=\"M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12\"></path><path d=\"M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/loading-states.tsx"
+      ]
+    },
+    {
+      "name": "Layers2",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-layers-2\" aria-hidden=\"true\"><path d=\"M13 13.74a2 2 0 0 1-2 0L2.5 8.87a1 1 0 0 1 0-1.74L11 2.26a2 2 0 0 1 2 0l8.5 4.87a1 1 0 0 1 0 1.74z\"></path><path d=\"m20 14.285 1.5.845a1 1 0 0 1 0 1.74L13 21.74a2 2 0 0 1-2 0l-8.5-4.87a1 1 0 0 1 0-1.74l1.5-.845\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx"
+      ]
+    },
+    {
+      "name": "LayoutGrid",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-layout-grid\" aria-hidden=\"true\"><rect width=\"7\" height=\"7\" x=\"3\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"7\" x=\"14\" y=\"3\" rx=\"1\"></rect><rect width=\"7\" height=\"7\" x=\"14\" y=\"14\" rx=\"1\"></rect><rect width=\"7\" height=\"7\" x=\"3\" y=\"14\" rx=\"1\"></rect></svg>",
+      "consumers": [
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/mobile-tag-actions.tsx",
+        "apps/ui/src/components/note-collection.tsx"
+      ]
+    },
+    {
+      "name": "Lightbulb",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-lightbulb\" aria-hidden=\"true\"><path d=\"M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5\"></path><path d=\"M9 18h6\"></path><path d=\"M10 22h4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "Link",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-link\" aria-hidden=\"true\"><path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"></path><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"></path></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/components/note-filter-navigation.tsx"
+      ]
+    },
+    {
+      "name": "List",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list\" aria-hidden=\"true\"><path d=\"M3 5h.01\"></path><path d=\"M3 12h.01\"></path><path d=\"M3 19h.01\"></path><path d=\"M8 5h13\"></path><path d=\"M8 12h13\"></path><path d=\"M8 19h13\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/mobile-tag-actions.tsx",
+        "apps/ui/src/components/note-collection.tsx"
+      ]
+    },
+    {
+      "name": "ListChecks",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-checks\" aria-hidden=\"true\"><path d=\"M13 5h8\"></path><path d=\"M13 12h8\"></path><path d=\"M13 19h8\"></path><path d=\"m3 17 2 2 4-4\"></path><path d=\"m3 7 2 2 4-4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx"
+      ]
+    },
+    {
+      "name": "ListOrdered",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-ordered\" aria-hidden=\"true\"><path d=\"M11 5h10\"></path><path d=\"M11 12h10\"></path><path d=\"M11 19h10\"></path><path d=\"M4 4h1v5\"></path><path d=\"M4 9h2\"></path><path d=\"M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "ListTodo",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-list-todo\" aria-hidden=\"true\"><path d=\"M13 5h8\"></path><path d=\"M13 12h8\"></path><path d=\"M13 19h8\"></path><path d=\"m3 17 2 2 4-4\"></path><rect x=\"3\" y=\"4\" width=\"6\" height=\"6\" rx=\"1\"></rect></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "LoaderCircle",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-loader-circle lucide-loader-2\" aria-hidden=\"true\"><path d=\"M21 12a9 9 0 1 1-6.219-8.56\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/components/note-collection.tsx",
+        "apps/ui/src/components/note-search-dialog.tsx",
+        "apps/ui/src/components/quick-capture.tsx",
+        "apps/ui/src/components/trash-page.tsx"
+      ]
+    },
+    {
+      "name": "Maximize",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-maximize\" aria-hidden=\"true\"><path d=\"M8 3H5a2 2 0 0 0-2 2v3\"></path><path d=\"M21 8V5a2 2 0 0 0-2-2h-3\"></path><path d=\"M3 16v3a2 2 0 0 0 2 2h3\"></path><path d=\"M16 21h3a2 2 0 0 0 2-2v-3\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/ImagePropertyEditor.tsx"
+      ]
+    },
+    {
+      "name": "MessageSquareQuote",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-message-square-quote\" aria-hidden=\"true\"><path d=\"M14 14a2 2 0 0 0 2-2V8h-2\"></path><path d=\"M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z\"></path><path d=\"M8 14a2 2 0 0 0 2-2V8H8\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "Minus",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-minus\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "Notebook",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-notebook\" aria-hidden=\"true\"><path d=\"M2 6h4\"></path><path d=\"M2 10h4\"></path><path d=\"M2 14h4\"></path><path d=\"M2 18h4\"></path><rect width=\"16\" height=\"20\" x=\"4\" y=\"2\" rx=\"2\"></rect><path d=\"M16 2v20\"></path></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/loading-states.tsx"
+      ]
+    },
+    {
+      "name": "Paintbrush",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-paintbrush\" aria-hidden=\"true\"><path d=\"m14.622 17.897-10.68-2.913\"></path><path d=\"M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z\"></path><path d=\"M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/CalloutColorsMenu.tsx"
+      ]
+    },
+    {
+      "name": "PanelLeft",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-panel-left lucide-sidebar\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"></rect><path d=\"M9 3v18\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/ui/sidebar.tsx"
+      ]
+    },
+    {
+      "name": "PanelsTopLeft",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-panels-top-left lucide-layout\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"></rect><path d=\"M3 9h18\"></path><path d=\"M9 21V9\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/MermaidBlock.tsx"
+      ]
+    },
+    {
+      "name": "PawPrint",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-paw-print\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"4\" r=\"2\"></circle><circle cx=\"18\" cy=\"8\" r=\"2\"></circle><circle cx=\"20\" cy=\"16\" r=\"2\"></circle><path d=\"M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "Pencil",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-pencil\" aria-hidden=\"true\"><path d=\"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z\"></path><path d=\"m15 5 4 4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/components/mobile-tag-actions.tsx"
+      ]
+    },
+    {
+      "name": "Pin",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-pin\" aria-hidden=\"true\"><path d=\"M12 17v5\"></path><path d=\"M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/mobile-tag-actions.tsx",
+        "apps/ui/src/components/note-collection.tsx",
+        "apps/ui/src/components/note-pin-button.tsx"
+      ]
+    },
+    {
+      "name": "PinOff",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-pin-off\" aria-hidden=\"true\"><path d=\"M12 17v5\"></path><path d=\"M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89\"></path><path d=\"m2 2 20 20\"></path><path d=\"M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/mobile-tag-actions.tsx"
+      ]
+    },
+    {
+      "name": "Plane",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plane\" aria-hidden=\"true\"><path d=\"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "Plus",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/nav-actions.tsx",
+        "apps/ui/src/components/note-collection.tsx",
+        "apps/ui/src/components/quick-capture.tsx"
+      ]
+    },
+    {
+      "name": "Quote",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-quote\" aria-hidden=\"true\"><path d=\"M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z\"></path><path d=\"M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "RefreshCw",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-refresh-cw\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\"></path><path d=\"M21 3v5h-5\"></path><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\"></path><path d=\"M8 16H3v5\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/nav-actions.tsx"
+      ]
+    },
+    {
+      "name": "RemoveFormatting",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-remove-formatting\" aria-hidden=\"true\"><path d=\"M4 7V4h16v3\"></path><path d=\"M5 20h6\"></path><path d=\"M13 4 8 20\"></path><path d=\"m15 15 5 5\"></path><path d=\"m20 15-5 5\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx"
+      ]
+    },
+    {
+      "name": "RotateCcw",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rotate-ccw\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path><path d=\"M3 3v5h5\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/trash-page.tsx",
+        "apps/ui/src/features/theme/ThemeSettings.tsx",
+        "apps/ui/src/features/typography/TypographySettings.tsx"
+      ]
+    },
+    {
+      "name": "Rows2",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rows-2 lucide-rows\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"></rect><path d=\"M3 12h18\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichImageTools.tsx"
+      ]
+    },
+    {
+      "name": "Search",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\"></path><circle cx=\"11\" cy=\"11\" r=\"8\"></circle></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/loading-states.tsx",
+        "apps/ui/src/components/note-collection.tsx",
+        "apps/ui/src/components/note-search-dialog.tsx",
+        "apps/ui/src/components/tag-navigation.tsx"
+      ]
+    },
+    {
+      "name": "Settings2",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-settings-2\" aria-hidden=\"true\"><path d=\"M14 17H5\"></path><path d=\"M19 7h-9\"></path><circle cx=\"17\" cy=\"17\" r=\"3\"></circle><circle cx=\"7\" cy=\"7\" r=\"3\"></circle></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/nav-actions.tsx"
+      ]
+    },
+    {
+      "name": "Shapes",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shapes\" aria-hidden=\"true\"><path d=\"M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z\"></path><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1\"></rect><circle cx=\"17.5\" cy=\"17.5\" r=\"3.5\"></circle></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "ShieldCheck",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shield-check\" aria-hidden=\"true\"><path d=\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\"></path><path d=\"m9 12 2 2 4-4\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/components/app-sidebar.tsx"
+      ]
+    },
+    {
+      "name": "Shuffle",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-shuffle\" aria-hidden=\"true\"><path d=\"m18 14 4 4-4 4\"></path><path d=\"m18 2 4 4-4 4\"></path><path d=\"M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22\"></path><path d=\"M2 6h1.972a4 4 0 0 1 3.6 2.2\"></path><path d=\"M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/features/typography/TypographySettings.tsx"
+      ]
+    },
+    {
+      "name": "Sigma",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sigma\" aria-hidden=\"true\"><path d=\"M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "SlidersHorizontal",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-sliders-horizontal\" aria-hidden=\"true\"><path d=\"M10 5H3\"></path><path d=\"M12 19H3\"></path><path d=\"M14 3v4\"></path><path d=\"M16 17v4\"></path><path d=\"M21 12h-9\"></path><path d=\"M21 19h-5\"></path><path d=\"M21 5h-7\"></path><path d=\"M8 10v4\"></path><path d=\"M8 12H3\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx"
+      ]
+    },
+    {
+      "name": "SquareCheck",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-square-check lucide-check-square-2\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"></rect><path d=\"m16 9-5.5 5.5L8 12\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx"
+      ]
+    },
+    {
+      "name": "Strikethrough",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-strikethrough\" aria-hidden=\"true\"><path d=\"M16 4H9a3 3 0 0 0-2.83 4\"></path><path d=\"M14 12a4 4 0 0 1 0 8H6\"></path><line x1=\"4\" x2=\"20\" y1=\"12\" y2=\"12\"></line></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx"
+      ]
+    },
+    {
+      "name": "Subscript",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-subscript\" aria-hidden=\"true\"><path d=\"m4 5 8 8\"></path><path d=\"m12 5-8 8\"></path><path d=\"M20 19h-4c0-1.5.44-2 1.5-2.5S20 15.33 20 14c0-.47-.17-.93-.48-1.29a2.11 2.11 0 0 0-2.62-.44c-.42.24-.74.62-.9 1.07\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx"
+      ]
+    },
+    {
+      "name": "Superscript",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-superscript\" aria-hidden=\"true\"><path d=\"m4 19 8-8\"></path><path d=\"m12 19-8-8\"></path><path d=\"M20 12h-4c0-1.5.442-2 1.5-2.5S20 8.334 20 7.002c0-.472-.17-.93-.484-1.29a2.105 2.105 0 0 0-2.617-.436c-.42.239-.738.614-.899 1.06\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx"
+      ]
+    },
+    {
+      "name": "Table",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-table\" aria-hidden=\"true\"><path d=\"M12 3v18\"></path><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\"></rect><path d=\"M3 9h18\"></path><path d=\"M3 15h18\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "TextAlignStart",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-text-align-start lucide-text lucide-align-left\" aria-hidden=\"true\"><path d=\"M21 5H3\"></path><path d=\"M15 12H3\"></path><path d=\"M17 19H3\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/NoteProperties.tsx"
+      ]
+    },
+    {
+      "name": "Trash",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash lucide-trash-2\" aria-hidden=\"true\"><path d=\"M10 11v6\"></path><path d=\"M14 11v6\"></path><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6\"></path><path d=\"M3 6h18\"></path><path d=\"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/App.tsx",
+        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/nav-actions.tsx",
+        "apps/ui/src/components/trash-page.tsx"
+      ]
+    },
+    {
+      "name": "Trophy",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trophy\" aria-hidden=\"true\"><path d=\"M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2\"></path><path d=\"M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2\"></path><path d=\"M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3\"></path><path d=\"M4 22h16\"></path><path d=\"M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z\"></path><path d=\"M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "Type",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-type\" aria-hidden=\"true\"><path d=\"M12 4v16\"></path><path d=\"M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2\"></path><path d=\"M9 20h6\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/RichMarkdownEditor.tsx"
+      ]
+    },
+    {
+      "name": "Unlink",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-unlink\" aria-hidden=\"true\"><path d=\"m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71\"></path><path d=\"m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71\"></path><line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"5\"></line><line x1=\"2\" x2=\"5\" y1=\"8\" y2=\"8\"></line><line x1=\"16\" x2=\"16\" y1=\"19\" y2=\"22\"></line><line x1=\"19\" x2=\"22\" y1=\"16\" y2=\"16\"></line></svg>",
+      "consumers": [
+        "apps/ui/src/RichFormatTools.tsx"
+      ]
+    },
+    {
+      "name": "Utensils",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-utensils lucide-fork-knife\" aria-hidden=\"true\"><path d=\"M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2\"></path><path d=\"M7 2v20\"></path><path d=\"M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7\"></path></svg>",
+      "consumers": [
+        "apps/ui/src/components/tag-emoji-picker.tsx"
+      ]
+    },
+    {
+      "name": "X",
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#000000\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg>",
+      "consumers": [
+        "apps/apple/Sources/NativeSidebar.swift",
+        "apps/ui/src/ChoicePropertyEditor.tsx",
+        "apps/ui/src/ImageViewer.tsx",
+        "apps/ui/src/MermaidPreview.tsx",
+        "apps/ui/src/RichFormatTools.tsx",
+        "apps/ui/src/TagPropertyEditor.tsx",
+        "apps/ui/src/components/app-sidebar.tsx",
+        "apps/ui/src/components/name-editor.tsx",
+        "apps/ui/src/components/note-collection.tsx",
+        "apps/ui/src/components/note-search-dialog.tsx",
+        "apps/ui/src/components/quick-capture.tsx",
+        "apps/ui/src/components/tag-navigation.tsx",
+        "apps/ui/src/components/ui/dialog.tsx",
+        "apps/ui/src/components/ui/sheet.tsx"
+      ]
+    }
+  ]
+}

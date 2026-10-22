@@ -794,7 +794,7 @@ export function App() {
 
           {listTimeoutVisible === "refresh" && <PageNotice title="刷新超时" actions={<Button variant="outline" size="sm" disabled={refreshingPages || switchingVault} onClick={() => void refresh(true)}>重试</Button>}>当前显示上次读取的内容。</PageNotice>}
           {!(view === "trash" && !detailView && status?.connected && capabilities.has("getTrash") && capabilities.has("restoreNote")) && <div className={detailView || view === "settings" || (isMobile && view === "notes") ? "sr-only" : view === "home" ? "flex justify-center" : "min-w-0 px-2 pb-2"} style={view === "home" && !detailView ? {marginBlockStart:24,marginBlockEnd:8} : undefined}>
-            <h1 className={view === "home" && !detailView ? "sr-only" : "truncate text-[32px] font-bold leading-[1.2] tracking-tight"}>{title}</h1>
+            <h1 className={view === "home" && !detailView ? "sr-only" : "truncate type-title tracking-tight"}>{title}</h1>
             {view === "home" && !detailView && <Suspense fallback={<div style={{width:144,height:144}} />}><HomeMascot /></Suspense>}
           </div>}
           {!isMobile && <div hidden={detailView || view !== "home"}>{quickCapture}</div>}
@@ -843,12 +843,12 @@ export function App() {
             </section>
             <Suspense fallback={<LoadingThemeSettings />}><ThemeSettings /></Suspense>
             {capabilities.has("openWeb") && <section aria-labelledby="web-settings-heading" className="space-y-3"><h2 id="web-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">本机 Web</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
-              <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-6 text-muted-foreground">通过 MemoCard 菜单栏服务，在浏览器中打开统一的多笔记库界面。</p></div>
+              <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-relaxed text-muted-foreground">通过 MemoCard 菜单栏服务，在浏览器中打开统一的多笔记库界面。</p></div>
               <div className="flex flex-wrap gap-2"><Button onClick={() => void openLocalWeb()} disabled={working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button></div>
             </CardContent></Card></section>}
             {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">MCP 本机读取</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
-              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-6 text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Suspense fallback={<span role="status" aria-label="正在读取开关"><Skeleton className="w-8 rounded-full" style={{height:"1.15rem"}} /></span>}><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></Suspense></div>
-              <p className="text-pretty text-sm leading-6 text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
+              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-relaxed text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Suspense fallback={<span role="status" aria-label="正在读取开关"><Skeleton className="w-8 rounded-full" style={{height:"1.15rem"}} /></span>}><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></Suspense></div>
+              <p className="text-pretty text-sm leading-relaxed text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}
           </div> : <>
             {view !== "home" && status?.connected && recoveryRecords.length > 0 && (recoveryDismissed || recoveryChoices.length === 0) && <Button variant="ghost" size="sm" onClick={() => setRecoveryOpen(true)}>保留草稿（{recoveryRecords.length}）</Button>}
@@ -856,8 +856,8 @@ export function App() {
               {recoveryError != null && <div className="space-y-2"><p role="alert" className="text-sm text-destructive">{errorMessage(recoveryError)}</p><div className="flex flex-wrap items-center gap-2"><Button variant="outline" size="sm" disabled={reminderWorking} onClick={() => void refreshDrafts()}>刷新草稿</Button></div></div>}
               {recoveryRecords.length === 0 && <p className="text-sm text-muted-foreground">暂无草稿。</p>}
               <div className="max-h-64 space-y-3 overflow-auto sm:max-h-80">{recoveryRecords.map(draft => <article className="space-y-3 rounded-lg border p-3" key={`${draft.recoveryScope ?? (draft.unscoped ? 'legacy' : 'current')}:${draft.draftKey ?? draft.id}`}>
-                <div className="space-y-1.5"><p className="line-clamp-2 text-pretty text-sm font-medium leading-6">{draft.title || draft.body.slice(0, 100) || "空正文"}</p>
-                  {draft.title && draft.body && <p className="line-clamp-2 text-pretty text-sm leading-6 text-muted-foreground">{draft.body.slice(0,100)}</p>}
+                <div className="space-y-1.5"><p className="line-clamp-2 text-pretty text-sm font-medium leading-relaxed">{draft.title || draft.body.slice(0, 100) || "空正文"}</p>
+                  {draft.title && draft.body && <p className="line-clamp-2 text-pretty text-sm leading-relaxed text-muted-foreground">{draft.body.slice(0,100)}</p>}
                   {(draft.updatedAt || draft.unscoped) && <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     {draft.updatedAt && <time className="tabular-nums" dateTime={draft.updatedAt}>{new Date(draft.updatedAt).toLocaleString('zh-CN', {year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'})}</time>}
                     {draft.unscoped && <span>所属库待确认</span>}
@@ -883,7 +883,7 @@ export function App() {
               <CardContent className="flex flex-col items-center px-6 py-12 text-center sm:py-16">
                 <span className="mb-5 flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground"><FolderOpen className="size-6" strokeWidth={1.5} /></span>
                 <h2 className="text-lg font-semibold">{unsupportedBrowser ? "需要启动 MemoCard 本机服务" : isBrowserVault ? "打开你的笔记文件夹" : "连接你的笔记文件夹"}</h2>
-                <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或运行 memocard serve。" : isBrowserVault ? "选择这台电脑上的 Obsidian / Markdown 笔记文件夹，或在空文件夹中创建一个。笔记与图片直接保存在文件夹里。" : isLocalWeb ? "使用本机文件夹选择器打开已有笔记库，或在空文件夹中创建一个。" : "选择 iCloud Drive 中的笔记库，在 Mac 和 iPhone 上继续记录。首次使用可在 Mac 上创建。"}</p>
+                <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">{unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或运行 memocard serve。" : isBrowserVault ? "选择这台电脑上的 Obsidian / Markdown 笔记文件夹，或在空文件夹中创建一个。笔记与图片直接保存在文件夹里。" : isLocalWeb ? "使用本机文件夹选择器打开已有笔记库，或在空文件夹中创建一个。" : "选择 iCloud Drive 中的笔记库，在 Mac 和 iPhone 上继续记录。首次使用可在 Mac 上创建。"}</p>
                 {!unsupportedBrowser && <div className="mt-6 flex flex-wrap justify-center gap-2">
                   {createAllowed && <Button onClick={() => void selectVault(true)} disabled={working || Boolean(editing)}>{working ? <LoaderCircle className="size-4 animate-spin motion-reduce:animate-none" /> : <Plus className="size-4" />}创建笔记库</Button>}
                   <Button variant={createAllowed ? "outline" : "default"} onClick={() => void selectVault(false)} disabled={!chooseAllowed || working || Boolean(editing)}><FolderOpen className="size-4" />{isBrowserVault ? "打开已有笔记库" : "选择已有文件夹"}</Button>
@@ -923,7 +923,7 @@ function StatusRow({ label, value }: { label: string; value: string | number }) 
 
 function EmptyState({ icon, title, description, children, compact = false, role }: { icon: "note" | "search" | "folder" | "connection"; title: string; description: string; children?: React.ReactNode; compact?: boolean; role?: "alert" | "status" }) {
   const Icon = icon === "search" ? Search : icon === "folder" ? FolderOpen : icon === "connection" ? CircleAlert : Layers2;
-  return <Card role={role ?? (compact ? "status" : undefined)} className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none"><CardContent className={cn("flex flex-col items-center px-6 text-center", compact ? "py-10" : "py-14")}><span className={cn("flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground", compact ? "mb-4" : "mb-5")}><Icon className="size-6" strokeWidth={1.5} /></span><h2 className="text-balance text-lg font-semibold">{title}</h2><p className="mt-2 max-w-sm text-pretty text-sm leading-6 text-muted-foreground">{description}</p>{children && <div className={compact ? "mt-4" : "mt-6"}>{children}</div>}</CardContent></Card>;
+  return <Card role={role ?? (compact ? "status" : undefined)} className="gap-0 rounded-xl border-0 bg-sidebar py-0 shadow-none"><CardContent className={cn("flex flex-col items-center px-6 text-center", compact ? "py-10" : "py-14")}><span className={cn("flex size-12 items-center justify-center rounded-xl bg-muted text-muted-foreground", compact ? "mb-4" : "mb-5")}><Icon className="size-6" strokeWidth={1.5} /></span><h2 className="text-balance text-lg font-semibold">{title}</h2><p className="mt-2 max-w-sm text-pretty text-sm leading-relaxed text-muted-foreground">{description}</p>{children && <div className={compact ? "mt-4" : "mt-6"}>{children}</div>}</CardContent></Card>;
 }
 
 function formatDate(value: string) {

@@ -216,7 +216,7 @@ export function QuickCapture({vaultId, vaultBinding, rootNotes, tags:options, di
   });
   if(isIOSNative)return null;
   const form = <form className="quick-capture" aria-label="快速输入" aria-busy={busy} onSubmit={event=>{event.preventDefault();void record();}}>
-    <InputGroup className="quick-capture-group has-disabled:opacity-100 has-disabled:bg-background shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]">
+    <InputGroup className="quick-capture-group has-disabled:opacity-100 has-disabled:bg-background shadow-(--surface-shadow)">
       <QuickCaptureEditor value={capture.text} tags={options} resetKey={capture.id} disabled={blocked} field={textarea} editorRef={editorRef} onChange={text=>changeCapture({...captureCurrent.current,text})} onSave={()=>void record()}/>
       {capture.images.length>0 && <div className="quick-capture-images" aria-label="待记录的图片">{capture.images.map((image,index)=>{
         const source=assetUrl(image.markdownPath,capture.relativePath);

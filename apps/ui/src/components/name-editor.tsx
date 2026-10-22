@@ -37,7 +37,7 @@ export function NameEditor({ initialName, anchor, title, inputLabel, description
           <Input ref={nameInput} aria-label={inputLabel} maxLength={maxLength} value={name} onFocus={event => { if (selectOnFocus) event.currentTarget.select(); }} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && event.nativeEvent.isComposing) event.preventDefault(); }} disabled={disabled} />
           <Button type="submit" className="px-3" disabled={disabled || !name.trim()}>{saving ? "保存中…" : "保存"}</Button>
         </div>
-        {description && <p className="px-1 text-pretty text-xs leading-5 text-muted-foreground">{description}</p>}
+        {description && <p className="px-1 text-pretty text-xs leading-normal text-muted-foreground">{description}</p>}
         {error && <p role="alert" className="px-1 text-sm text-destructive">{error}</p>}
       </form>
       {children?.(disabled)}

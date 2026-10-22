@@ -20,7 +20,7 @@ function TabsExample({ orientation = "horizontal", variant = "default", onValueC
 }
 const meta = {
   title: "components/tabs", component: TabsExample, globals: desktopGlobals,
-  args: { orientation: "horizontal", variant: "default", onValueChange: fn() }, parameters: { layout: "padded", docs: { description: { component: "生产 Tabs 的 default/line 和纵向组合；方向键切换，禁用项可聚焦但不激活。" } } },
+  args: { orientation: "horizontal", variant: "default", onValueChange: fn() }, parameters: { layout: "padded", docs: { description: { component: "生产 Tabs 的 default/line 和纵向组合。横向 default 列表使用 h-9、line 使用 h-8，16px 根字号下分别为 36px / 32px，随根字号缩放；纵向列表使用内容高度。方向键切换，禁用项可聚焦但不激活。" } } },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement), first = canvas.getByRole("tab", { name: "所有笔记" }), last = canvas.getByRole("tab", { name: "链接" });
     const disabled = canvas.getByRole("tab", { name: "归档（暂不可用）" });

@@ -7,15 +7,15 @@
 .rich-editor-content > :first-child { margin-top: 0; }
 .rich-editor-content > :last-child { margin-bottom: 0; }
 .rich-editor-content aside:has(> .rich-callout-icon:not([hidden]))::before { content: none; }
-.rich-callout-icon { position: absolute; inset-inline-start: 12px; top: calc(var(--callout-padding-block) + var(--callout-text-size) * var(--typeset-leading) / 2 - 14px); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 4px; font-size: 20px; line-height: 1; cursor: pointer; }
+.rich-callout-icon { position: absolute; inset-inline-start: 12px; top: calc(var(--callout-padding-block) + var(--callout-text-size) * var(--typeset-leading) / 2 - 14px); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 4px; font-size: var(--font-size-xl); line-height: 1; cursor: pointer; }
 .rich-callout-icon:hover { background: var(--hover-bg); }
 .rich-callout-icon[hidden] { display: none; }
 .rich-editor-content aside:not([data-callout-icon]) > .rich-callout-icon { inset-inline-start: -32px; opacity: 0; }
 .rich-editor-content aside:hover > .rich-callout-icon, .rich-editor-content aside > .rich-callout-icon:focus-visible { opacity: 1; }
 .rich-callout-content > :first-child { margin-block-start: 0; }
 .rich-callout-content > p + p { margin-block-start: 8px; }
-.rich-callout-color-label { padding: 5px 10px; color: var(--muted-foreground); font-size: 12px; }
-.rich-callout-swatch { display: grid; place-items: center; flex-shrink: 0; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 5px; font-weight: 600; }
+.rich-callout-color-label { padding: 5px 10px; color: var(--muted-foreground); font-size: var(--font-size-xs); }
+.rich-callout-swatch { display: grid; place-items: center; flex-shrink: 0; width: 22px; height: 22px; border: 1px solid var(--border); border-radius: 5px; font-weight: var(--font-weight-semibold); }
 @media (hover: none) { .rich-editor-content aside:not([data-callout-icon]) > .rich-callout-icon { opacity: 1; } }
 .rich-foldable-heading { position: relative; }
 .rich-heading-fold-widget { position: absolute; left: -28px; top: 0; display: inline-flex; align-items: center; height: 1lh; user-select: none; }
@@ -40,17 +40,17 @@
 .rich-editor-content .rich-image { margin-block: var(--typeset-flow); }
 .rich-image img { max-width: 100%; }
 .rich-preserved { position: relative; }
-.rich-preserved-label { display: block; color: var(--muted-foreground); font: 11px/1.5 var(--font-sans); }
+.rich-preserved-label { display: block; color: var(--muted-foreground); font-family: var(--font-sans); font-size: var(--text-supporting-size); font-weight: var(--font-weight-normal); font-style: normal; line-height: var(--text-supporting-leading); }
 .rich-menu { max-height: min(420px, 65dvh, var(--available-height)); overflow-y: auto; padding: 6px; }
 .rich-menu input { padding: 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
-.rich-table-tools { position: sticky; bottom: 12px; display: flex; flex-wrap: wrap; gap: 4px; width: fit-content; padding: 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--popover); font: 13px/1.5 var(--font-sans); }
+.rich-table-tools { position: sticky; bottom: 12px; display: flex; flex-wrap: wrap; gap: 4px; width: fit-content; padding: 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--popover); font-family: var(--font-sans); font-size: var(--text-label-size); font-weight: var(--font-weight-normal); font-style: normal; line-height: var(--text-label-leading); }
 .rich-table-tools button, .rich-formula button { padding: 6px 10px; border-radius: 4px; }
 .rich-table-tools button:hover, .rich-formula button:hover { background: var(--hover-bg); }
 .rich-formula { position: fixed; z-index: 60; top: 20%; left: 50%; transform: translateX(-50%); width: min(440px, calc(100vw - 32px)); padding: 16px; border: 1px solid transparent; border-radius: 10px; background: var(--popover); box-shadow: var(--overlay-shadow); }
 .rich-formula input { display: block; width: 100%; margin-block: 8px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; font-family: var(--note-mono-font); }
 .rich-formula .markdown { min-height: 48px; }
 .rich-editor button:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
-.rich-footnote { font-size: .875em; color: var(--muted-foreground); }
+.rich-footnote { font-size: var(--text-label-size); line-height: var(--text-label-leading); color: var(--muted-foreground); }
 .rich-footnote::before { content: attr(data-footnote-definition) '. '; user-select: none; }
 .rich-editor-content a[data-wiki-target] { cursor: text; text-decoration: underline; }
 /* ProseMirror stores the editable header row in tbody rather than a separate thead. */
@@ -67,19 +67,19 @@
 .rich-math { position: relative; }
 .rich-math-block { display: block; margin-block-start: var(--typeset-flow); text-align: center; }
 .rich-math > button { color: inherit; cursor: text; }
-.rich-math-input { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--background); font: 13px/1.5 var(--font-sans); max-width: 100%; }
+.rich-math-input { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--background); font-family: var(--font-sans); font-size: var(--text-label-size); font-weight: var(--font-weight-normal); font-style: normal; line-height: var(--text-label-leading); max-width: 100%; }
 .rich-math-input input { min-width: 6em; max-width: 100%; width: 16em; padding: 4px; font-family: var(--note-mono-font); }
 .rich-math-input button { padding: 4px; }
-.rich-editor-content tr[data-footer] { font-weight: 600; }
+.rich-editor-content tr[data-footer] { font-weight: var(--font-weight-semibold); }
 .rich-editor-content .rich-footnote > p:first-child { display: inline; }
 
-.rich-tag-suggestions { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 2px; width: 240px; max-width: 100%; padding: 4px; border: 1px solid transparent; border-radius: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: var(--overlay-shadow); font: 14px/20px var(--font-sans); }
+.rich-tag-suggestions { position: absolute; z-index: 30; display: flex; flex-direction: column; gap: 2px; width: 240px; max-width: 100%; padding: 4px; border: 1px solid transparent; border-radius: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: var(--overlay-shadow); font-family: var(--font-sans); font-size: var(--text-label-size); font-weight: var(--font-weight-normal); font-style: normal; line-height: var(--text-label-leading); }
 .rich-tag-suggestions button { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; height: 32px; padding: 6px 8px; text-align: left; border-radius: 4px; }
 .rich-tag-suggestions button:hover { background: var(--hover-bg); }
 .rich-tag-suggestions button:focus-visible { outline: 2px solid var(--ring); }
 .rich-tag-suggestion-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rich-tag-suggestion-hint { flex-shrink: 0; color: var(--muted-foreground); font-size: 12px; }
-.rich-tag-suggestion-empty { display: block; padding: 6px 8px; color: var(--muted-foreground); font-size: 14px; }
+.rich-tag-suggestion-hint { flex-shrink: 0; color: var(--muted-foreground); font-size: var(--font-size-xs); }
+.rich-tag-suggestion-empty { display: block; padding: 6px 8px; color: var(--muted-foreground); font-size: var(--font-size-sm); }
 .rich-editor-content > p:only-child:has(> br:only-child)::before { content: '输入内容，或输入 / 插入块'; float: left; height: 0; color: var(--muted-foreground); pointer-events: none; }
 
 .rich-inline-tag { display: inline-block; width: max-content; vertical-align: baseline; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
@@ -93,7 +93,7 @@
 .rich-insert-empty { padding: 20px 10px; color: var(--muted-foreground); text-align: center; }
 .rich-insert-search input:focus-visible { outline: none; }
 
-.rich-menu.rich-insert-menu, .rich-block-menu { z-index: 50; border: 1px solid transparent; background: var(--popover); color: var(--popover-foreground); border-radius: calc(var(--radius) - 2px); box-shadow: var(--overlay-shadow); font: 14px/1.5 var(--font-sans); }
+.rich-menu.rich-insert-menu, .rich-block-menu { z-index: 50; border: 1px solid transparent; background: var(--popover); color: var(--popover-foreground); border-radius: calc(var(--radius) - 2px); box-shadow: var(--overlay-shadow); font-family: var(--font-sans); font-size: var(--text-label-size); font-weight: var(--font-weight-normal); font-style: normal; line-height: var(--text-label-leading); }
 .rich-block-menu { overflow-y: auto; width: min(260px, calc(100vw - 24px)); max-height: var(--available-height); padding: 4px; animation: none; }
 .rich-insert-menu [role="menuitem"], .rich-block-menu :is([role="menuitem"], [role="menuitemradio"]) { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 5px 8px; border-radius: var(--hover-action-radius); cursor: default; outline: none; }
 .rich-block-menu :is([role="menuitem"], [role="menuitemradio"])[data-highlighted], .rich-block-menu [role="menuitem"][data-popup-open] { background: var(--hover-bg); color: var(--accent-foreground); }
@@ -103,7 +103,7 @@
 .rich-insert-menu [role="menuitem"] > svg, .rich-block-menu svg { width: 16px; height: 16px; flex-shrink: 0; }
 .rich-block-menu .rich-menu-check { margin-left: auto; color: var(--muted-foreground); }
 .rich-convert-menu { width: min(220px, calc(100vw - 24px)); overflow-y: auto; }
-.rich-block-menu-note { padding: 6px 10px; color: var(--muted-foreground); font-size: 12px; }
+.rich-block-menu-note { padding: 6px 10px; color: var(--muted-foreground); font-size: var(--font-size-xs); }
 
 .rich-insert-menu [role="menuitem"] > svg, .rich-block-menu [role="menuitem"] > svg { color: var(--muted-foreground); }
 .rich-block-menu [data-variant="destructive"] > svg { color: inherit; }

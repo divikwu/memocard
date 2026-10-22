@@ -10,7 +10,7 @@ const { createElement } = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
 const lucide = require("lucide-react");
 const license = await readFile(join(dirname(require.resolve("lucide-react/package.json")), "LICENSE"), "utf8");
-const icons = {
+export const sidebarIconComponents = {
   house: "House", "note.text": "Notebook", calendar: "CalendarDays",
   number: "Hash", photo: "Image", link: "Link", gearshape: "Settings2",
   "chevron.right": "ChevronRight", magnifyingglass: "Search", xmark: "X",
@@ -18,7 +18,7 @@ const icons = {
 
 export async function buildSidebarIcons({ check = false, outputRoot = root } = {}) {
   const stale = [];
-  for (const [symbol, component] of Object.entries(icons)) {
+  for (const [symbol, component] of Object.entries(sidebarIconComponents)) {
     // Keep bridge symbol names; only the sidebar replaces their artwork.
     const directory = `apps/apple/Resources/Assets.xcassets/Lucide-${symbol}.imageset`;
     const svg = renderToStaticMarkup(createElement(lucide[component], { color: "#000000" }));

@@ -1,0 +1,3449 @@
+{
+  "version": 1,
+  "upstream": {
+    "source": "tailwindcss/theme.css",
+    "version": "4.3.3",
+    "definitions": {
+      "--font-sans": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial,\n    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+      "--font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',\n    monospace",
+      "--font-weight-normal": "400",
+      "--font-weight-medium": "500",
+      "--font-weight-semibold": "600",
+      "--leading-normal": "1.5",
+      "--leading-relaxed": "1.625"
+    }
+  },
+  "entries": [
+    {
+      "property": "font-family",
+      "value": "\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".emoji-icon",
+          "value": "\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "\"Geist Mono Variable\", ui-monospace, monospace",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/tokens.css",
+          "scope": ":root",
+          "value": "\"Geist Mono Variable\", ui-monospace, monospace",
+          "variable": "--note-mono-font"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "\"Geist Variable\", \"PingFang SC\", \"Noto Sans SC\", sans-serif",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/theme/tokens.css",
+          "scope": ":root",
+          "value": "\"Geist Variable\", \"PingFang SC\", \"Noto Sans SC\", sans-serif",
+          "variable": "--app-font-heading"
+        },
+        {
+          "source": "apps/ui/src/features/theme/tokens.css",
+          "scope": ":root",
+          "value": "\"Geist Variable\", \"PingFang SC\", \"Noto Sans SC\", sans-serif",
+          "variable": "--app-font-body"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "\"Noto Sans Variable\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/tokens.css",
+          "scope": ":root",
+          "value": "\"Noto Sans Variable\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+          "variable": "--note-body-font"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "inherit",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-drag-preview",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu kbd",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu-filter",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-inline textarea",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-insert-search input",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview .markdown :is(h1, h2, h3, h4, h5, h6)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "inherit",
+          "variable": "--typeset-font-body"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(kbd)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(pre code)",
+          "value": "inherit"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "system-ui",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/MermaidPreview.tsx",
+          "scope": "line 31",
+          "value": "system-ui"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--app-font-body)",
+      "utilities": [
+        "font-sans"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/theme/tokens.css",
+          "scope": "@theme inline",
+          "value": "var(--app-font-body)",
+          "variable": "--font-sans"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": "font-sans",
+          "value": "var(--app-font-body)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--app-font-heading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/theme/tokens.css",
+          "scope": "@theme inline",
+          "value": "var(--app-font-heading)",
+          "variable": "--font-heading"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": "@layer base → h1,\n  h2,\n  h3",
+          "value": "var(--app-font-heading)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--font-heading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "var(--font-heading)",
+          "variable": "--typeset-font-heading"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--font-mono)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "var(--font-mono)",
+          "variable": "--typeset-font-mono"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--font-sans)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/import-layout.css",
+          "scope": ".typeset :is(.typeset-scroll, .tableWrapper)[data-overflow=\"true\"]::after",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-math-input",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-menu.rich-insert-menu, .rich-block-menu",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-preserved-label",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-table-tools",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-tag-suggestions",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-menu",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-inline-tools",
+          "value": "var(--font-sans)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-properties",
+          "value": "var(--font-sans)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--note-body-font)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/tokens.css",
+          "scope": ":root",
+          "value": "var(--note-body-font)",
+          "variable": "--note-heading-font"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--note-body-font)",
+          "variable": "--typeset-font-body"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview .markdown",
+          "value": "var(--note-body-font)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--note-heading-font, inherit)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-page-title",
+          "value": "var(--note-heading-font, inherit)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--note-heading-font)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--note-heading-font)",
+          "variable": "--typeset-font-heading"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--note-mono-font)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-formula input",
+          "value": "var(--note-mono-font)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-math-input input",
+          "value": "var(--note-mono-font)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--note-mono-font)",
+          "variable": "--typeset-font-mono"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--typeset-font-body)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "var(--typeset-font-body)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--typeset-font-heading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h1, h2, h3, h4, h5, h6)",
+          "value": "var(--typeset-font-heading)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--typeset-font-mono)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:not(pre) > code)",
+          "value": "var(--typeset-font-mono)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(pre)",
+          "value": "var(--typeset-font-mono)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "1",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "1",
+          "variable": "--note-scale"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview",
+          "value": "1",
+          "variable": "--note-scale"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "1em",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview .markdown :is(h1, h2, h3, h4, h5, h6)",
+          "value": "1em"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "1em",
+          "variable": "--typeset-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "0.75rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "0.75rem",
+          "variable": "--font-size-xs"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "0.875rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "0.875rem",
+          "variable": "--font-size-sm"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "1rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1rem",
+          "variable": "--font-size-base"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "1.125rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.125rem",
+          "variable": "--font-size-lg"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "1.25rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.25rem",
+          "variable": "--font-size-xl"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "1.5rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.5rem",
+          "variable": "--font-size-2xl"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "2rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "2rem",
+          "variable": "--font-size-3xl"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "calc(var(--font-size-2xl) * var(--note-scale, 1))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "calc(var(--font-size-2xl) * var(--note-scale, 1))",
+          "variable": "--text-heading-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "calc(var(--font-size-lg) * var(--note-scale, 1))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "calc(var(--font-size-lg) * var(--note-scale, 1))",
+          "variable": "--text-large-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "calc(var(--font-size-sm) * var(--note-scale, 1))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "calc(var(--font-size-sm) * var(--note-scale, 1))",
+          "variable": "--text-label-size"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "calc(var(--font-size-sm) * var(--note-scale, 1))",
+          "variable": "--text-code-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "calc(var(--font-size-xl) * var(--note-scale, 1))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "calc(var(--font-size-xl) * var(--note-scale, 1))",
+          "variable": "--text-subheading-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "calc(var(--font-size-xs) * var(--note-scale, 1))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "calc(var(--font-size-xs) * var(--note-scale, 1))",
+          "variable": "--text-supporting-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "calc(var(--typeset-size) * 1.125)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "calc(var(--typeset-size) * 1.125)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "inherit",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-drag-preview",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu kbd",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu-filter",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties .note-property-name",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-inline textarea",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-insert-search input",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(pre code)",
+          "value": "inherit"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--callout-text-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/import-layout.css",
+          "scope": ".typeset aside[data-callout]",
+          "value": "var(--callout-text-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-2xl)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-2xl)",
+          "variable": "--text-heading-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-3xl)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-3xl)",
+          "variable": "--text-title-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-base)",
+      "utilities": [
+        "text-base",
+        "text-(length:--font-size-base)"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-base",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/components/app-sidebar.css",
+          "scope": "@media (max-width: 767px) → .mobile-vault-menu-item, [data-mobile] [data-sidebar$=\"-button\"]",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/components/app-sidebar.tsx",
+          "scope": "text-base",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "text-base",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "text-base",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--font-size-base)",
+          "variable": "--text-heading-size"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--font-size-base)",
+          "variable": "--text-subheading-size"
+        },
+        {
+          "source": "apps/ui/src/features/theme/ThemeSettings.tsx",
+          "scope": "text-base",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-base)",
+          "variable": "--text-body-size"
+        },
+        {
+          "source": "apps/ui/src/features/typography/TypographySettings.tsx",
+          "scope": "text-base",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "text-(length:--font-size-base)",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".mobile-capture-sheet .quick-capture-textarea",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-header h2",
+          "value": "var(--font-size-base)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-lg)",
+      "utilities": [
+        "text-lg"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-lg",
+          "value": "var(--font-size-lg)"
+        },
+        {
+          "source": "apps/ui/src/components/tag-editor.tsx",
+          "scope": "text-lg",
+          "value": "var(--font-size-lg)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-lg)",
+          "variable": "--text-large-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-sm)",
+      "utilities": [
+        "text-sm",
+        "file:text-sm"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/emoji-picker-panel.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/mobile-tag-actions.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/name-editor.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/nav-actions.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/note-delete-dialog.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--font-size-sm)",
+          "variable": "--text-large-size"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--font-size-sm)",
+          "variable": "--text-body-size"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/tag-emoji-picker.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/trash-page.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/input.tsx",
+          "scope": "file:text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sidebar.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-picker .rdp-root",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-time-option",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties .note-property-action",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties .note-property-edit",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-create",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-tag-option",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-tag-search",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/features/theme/ThemeSettings.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-sm)",
+          "variable": "--text-label-size"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-sm)",
+          "variable": "--text-code-size"
+        },
+        {
+          "source": "apps/ui/src/features/typography/TypographySettings.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/MermaidPreview.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/NoteProperties.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-error",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-textarea",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-tag-suggestion-empty",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview",
+          "value": "var(--font-size-sm)",
+          "variable": "--note-size"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".rich-inline-tag, .note-tag-pill",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": "@layer components → [data-sidebar$=\"-button\"]",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/tag-colors.css",
+          "scope": ".note-tag-color-option",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-xl)",
+      "utilities": [
+        "text-xl"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/tag-emoji-picker.tsx",
+          "scope": "text-xl",
+          "value": "var(--font-size-xl)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-xl)",
+          "variable": "--text-subheading-size"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "text-xl",
+          "value": "var(--font-size-xl)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-callout-icon",
+          "value": "var(--font-size-xl)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-xs)",
+      "utilities": [
+        "text-xs"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu kbd",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu-label",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/app-sidebar.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/emoji-picker-panel.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/name-editor.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/tag-navigation.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/trash-page.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/badge.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/button.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sidebar.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-picker .rdp-weekday",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/DatePropertyPicker.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-type-label",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": "@media (max-width: 767px) → section.note-editor > .mobile-save-status",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-size-xs)",
+          "variable": "--text-supporting-size"
+        },
+        {
+          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/NoteImage.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/NoteProperties.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-shortcut",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-tag-options > p",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": "@media (max-width: 767px) → .quick-capture-save-status",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-block-menu-note",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-callout-color-label",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-tag-suggestion-hint",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-hint, .rich-format-error",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-preview",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-link-results small",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".blocked-image",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--note-size, 1rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--note-size, 1rem)",
+          "variable": "--text-body-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--note-summary-size, var(--font-size-sm))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".typeset-summary",
+          "value": "var(--note-summary-size, var(--font-size-sm))",
+          "variable": "--note-size"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-body-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-input",
+          "value": "var(--text-body-size)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-body",
+          "value": "var(--text-body-size)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--text-body-size)",
+          "variable": "--typeset-size"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h4)",
+          "value": "var(--text-body-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-code-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-code",
+          "value": "var(--text-code-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4) :is(code))",
+          "value": "var(--text-code-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:not(pre) > code)",
+          "value": "var(--text-code-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(kbd)",
+          "value": "var(--text-code-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-heading-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-heading",
+          "value": "var(--text-heading-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h1)",
+          "value": "var(--text-heading-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-label-size)",
+      "utilities": [
+        "md:text-(length:--text-label-size)"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/ui/input.tsx",
+          "scope": "md:text-(length:--text-label-size)",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/textarea.tsx",
+          "scope": "md:text-(length:--text-label-size)",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-label",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/import-layout.css",
+          "scope": ".typeset aside[data-callout]",
+          "value": "var(--text-label-size)",
+          "variable": "--callout-text-size"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-footnote",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-math-input",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-menu.rich-insert-menu, .rich-block-menu",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-table-tools",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-tag-suggestions",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-menu",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-inline-tools",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-properties",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(.footnotes, [data-footnotes])",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(figcaption, caption)",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h5)",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(pre)",
+          "value": "var(--text-label-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(table)",
+          "value": "var(--text-label-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-large-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-large",
+          "value": "var(--text-large-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h3)",
+          "value": "var(--text-large-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-subheading-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-title",
+          "value": "var(--text-subheading-size)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-subheading",
+          "value": "var(--text-subheading-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h2)",
+          "value": "var(--text-subheading-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-supporting-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-supporting",
+          "value": "var(--text-supporting-size)"
+        },
+        {
+          "source": "apps/ui/src/import-layout.css",
+          "scope": ".typeset :is(.typeset-scroll, .tableWrapper)[data-overflow=\"true\"]::after",
+          "value": "var(--text-supporting-size)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-preserved-label",
+          "value": "var(--text-supporting-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h6)",
+          "value": "var(--text-supporting-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(sup, sub)",
+          "value": "var(--text-supporting-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--text-title-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-title",
+          "value": "var(--text-title-size)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-page-title",
+          "value": "var(--text-title-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--typeset-size)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--typeset-size)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset → @media (min-width: 48rem), print",
+          "value": "var(--typeset-size)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "400",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@theme static",
+          "value": "400",
+          "variable": "--font-weight-normal"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--font-weight-normal)",
+      "utilities": [
+        "font-normal"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/app-sidebar.css",
+          "scope": ".mobile-vault-menu-item",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/alert.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/breadcrumb.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/card.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/dialog.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/dropdown-menu.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/input-group.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/popover.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/select.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sheet.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-picker .note-date-today",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-picker .rdp-weekday",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties .note-property-action",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties .note-property-name",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-create .note-property-type-option",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-normal)",
+          "variable": "--text-body-weight"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-normal)",
+          "variable": "--text-supporting-weight"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-normal)",
+          "variable": "--text-code-weight"
+        },
+        {
+          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/import-layout.css",
+          "scope": ".typeset :is(.typeset-scroll, .tableWrapper)[data-overflow=\"true\"]::after",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/NoteProperties.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".mobile-capture-entry",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-continue",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-drafts > button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-footer > button, .quick-capture-footer > [data-slot=\"popover-trigger\"]",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-shortcut",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-tag-options > button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-math-input",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-menu.rich-insert-menu, .rich-block-menu",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-preserved-label",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-table-tools",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-tag-suggestions",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-menu",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-inline-tools",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-properties",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".rich-inline-tag, .note-tag-pill",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "500",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@theme static",
+          "value": "500",
+          "variable": "--font-weight-medium"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--font-weight-medium)",
+      "utilities": [
+        "font-medium",
+        "file:font-medium",
+        "data-[active=true]:font-medium"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/app-sidebar.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/emoji-picker-panel.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/mobile-tag-actions.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/trash-page.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/input.tsx",
+          "scope": "file:font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sidebar.tsx",
+          "scope": "data-[active=true]:font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sidebar.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-picker .rdp-month_caption",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/features/theme/ThemeSettings.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-medium)",
+          "variable": "--text-label-weight"
+        },
+        {
+          "source": "apps/ui/src/features/typography/TypographySettings.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-footer .quick-capture-submit",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(a)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(dt)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h6)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(kbd)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(summary)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(sup a)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(tbody th, tfoot th)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(thead th)",
+          "value": "var(--font-weight-medium)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "600",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@theme static",
+          "value": "600",
+          "variable": "--font-weight-semibold"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--font-weight-semibold)",
+      "utilities": [
+        "font-semibold"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu-label",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/components/app-sidebar.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/card.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sheet.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-picker .rdp-today:not(.rdp-selected) .rdp-day_button",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-semibold)",
+          "variable": "--text-title-weight"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-semibold)",
+          "variable": "--text-heading-weight"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-semibold)",
+          "variable": "--text-subheading-weight"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "var(--font-weight-semibold)",
+          "variable": "--text-large-weight"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/NoteProperties.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "scope": "font-semibold",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-callout-swatch",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-editor-content tr[data-footer]",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-header h2",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4) :is(strong, b))",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h1, h2, h3, h4, h5, h6)",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h4)",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(strong, b)",
+          "value": "var(--font-weight-semibold)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "inherit",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-drag-preview",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu kbd",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu-filter",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-inline textarea",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-insert-search input",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4, h5, h6) :is(a))",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:is(strong, b, h1, h2, h3, h4, h5, h6) code)",
+          "value": "inherit"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "initial",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "initial",
+          "variable": "--text-body-weight"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-body-weight, inherit)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--text-body-weight, inherit)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-body-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-body",
+          "value": "var(--text-body-weight)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-code-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-code",
+          "value": "var(--text-code-weight)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:not(pre) > code)",
+          "value": "var(--text-code-weight)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(pre)",
+          "value": "var(--text-code-weight)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-heading-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-heading",
+          "value": "var(--text-heading-weight)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h1)",
+          "value": "var(--text-heading-weight)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-label-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-label",
+          "value": "var(--text-label-weight)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview .markdown :is(h1, h2, h3, h4, h5, h6)",
+          "value": "var(--text-label-weight)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview .markdown :is(strong, b)",
+          "value": "var(--text-label-weight)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h5)",
+          "value": "var(--text-label-weight)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-large-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-large",
+          "value": "var(--text-large-weight)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h3)",
+          "value": "var(--text-large-weight)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-subheading-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-title",
+          "value": "var(--text-subheading-weight)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-subheading",
+          "value": "var(--text-subheading-weight)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h2)",
+          "value": "var(--text-subheading-weight)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-supporting-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-supporting",
+          "value": "var(--text-supporting-weight)"
+        }
+      ]
+    },
+    {
+      "property": "font-weight",
+      "value": "var(--text-title-weight)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-title",
+          "value": "var(--text-title-weight)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-page-title",
+          "value": "var(--text-title-weight)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "0",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(sup, sub)",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1",
+      "utilities": [
+        "leading-none"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/ui/card.tsx",
+          "scope": "leading-none",
+          "value": "1"
+        },
+        {
+          "source": "apps/ui/src/components/ui/dialog.tsx",
+          "scope": "leading-none",
+          "value": "1"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-checkbox",
+          "value": "1"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-callout-icon",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.2",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.2",
+          "variable": "--text-subheading-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.25",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.25",
+          "variable": "--text-title-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.3333",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.3333",
+          "variable": "--text-heading-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.4286",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.4286",
+          "variable": "--line-height-sm"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.4286",
+          "variable": "--text-label-leading"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.4286",
+          "variable": "--text-code-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.5",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.5",
+          "variable": "--line-height-base"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.5",
+          "variable": "--text-body-leading"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@theme static",
+          "value": "1.5",
+          "variable": "--leading-normal"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--leading-normal)",
+      "utilities": [
+        "leading-normal"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu",
+          "value": "var(--leading-normal)"
+        },
+        {
+          "source": "apps/ui/src/components/name-editor.tsx",
+          "scope": "leading-normal",
+          "value": "var(--leading-normal)"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "leading-normal",
+          "value": "var(--leading-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-error",
+          "value": "var(--leading-normal)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": "@media (max-width: 767px) → .quick-capture-save-status",
+          "value": "var(--leading-normal)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-hint, .rich-format-error",
+          "value": "var(--leading-normal)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(table)",
+          "value": "var(--leading-normal)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.5556",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.5556",
+          "variable": "--line-height-lg"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.5556",
+          "variable": "--text-large-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.6",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.6",
+          "variable": "--line-height-xl"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.6667",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.6667",
+          "variable": "--line-height-xs"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": ":root",
+          "value": "1.6667",
+          "variable": "--text-supporting-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.75",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@theme static",
+          "value": "1.75",
+          "variable": "--leading-relaxed"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--leading-relaxed)",
+      "utilities": [
+        "leading-relaxed",
+        "[&_p]:leading-relaxed"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "leading-relaxed",
+          "value": "var(--leading-relaxed)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/alert.tsx",
+          "scope": "[&_p]:leading-relaxed",
+          "value": "var(--leading-relaxed)"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "leading-relaxed",
+          "value": "var(--leading-relaxed)"
+        },
+        {
+          "source": "apps/ui/src/quick-capture.css",
+          "scope": ".quick-capture-textarea",
+          "value": "var(--leading-relaxed)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "var(--leading-relaxed)",
+          "variable": "--typeset-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "inherit",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-drag-preview",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu kbd",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/block-controls.css",
+          "scope": ".block-menu-filter",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-inline textarea",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-insert-search input",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview .markdown :is(h1, h2, h3, h4, h5, h6)",
+          "value": "inherit"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--line-height-base)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/app-sidebar.css",
+          "scope": "@media (max-width: 767px) → .mobile-vault-menu-item, [data-mobile] [data-sidebar$=\"-button\"]",
+          "value": "var(--line-height-base)"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--line-height-base)",
+          "variable": "--text-heading-leading"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--line-height-base)",
+          "variable": "--text-subheading-leading"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-header h2",
+          "value": "var(--line-height-base)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--line-height-sm)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--line-height-sm)",
+          "variable": "--text-large-leading"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-content .markdown",
+          "value": "var(--line-height-sm)",
+          "variable": "--text-body-leading"
+        },
+        {
+          "source": "apps/ui/src/date-property-picker.css",
+          "scope": ".note-date-picker .rdp-root",
+          "value": "var(--line-height-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties",
+          "value": "var(--line-height-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties .note-property-action",
+          "value": "var(--line-height-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-properties .note-property-edit",
+          "value": "var(--line-height-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": ".note-property-create",
+          "value": "var(--line-height-sm)"
+        },
+        {
+          "source": "apps/ui/src/Editor.css",
+          "scope": "@media (max-width: 767px) → section.note-editor > .mobile-save-status",
+          "value": "var(--line-height-sm)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-card-preview",
+          "value": "var(--line-height-sm)",
+          "variable": "--note-leading"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".rich-inline-tag, .note-tag-pill",
+          "value": "var(--line-height-sm)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": "@layer components → [data-sidebar$=\"-button\"]",
+          "value": "var(--line-height-sm)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--note-leading, 1.6)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--note-leading, 1.6)",
+          "variable": "--text-body-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-body-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-body",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".markdown.typeset",
+          "value": "var(--text-body-leading)",
+          "variable": "--typeset-leading"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h4)",
+          "value": "var(--text-body-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-code-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-code",
+          "value": "var(--text-code-leading)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(:not(pre) > code)",
+          "value": "var(--text-code-leading)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(pre)",
+          "value": "var(--text-code-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-heading-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-heading",
+          "value": "var(--text-heading-leading)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h1)",
+          "value": "var(--text-heading-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-label-leading)",
+      "utilities": [
+        "md:leading-(--text-label-leading)"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/ui/input.tsx",
+          "scope": "md:leading-(--text-label-leading)",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/components/ui/textarea.tsx",
+          "scope": "md:leading-(--text-label-leading)",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-label",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-footnote",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-math-input",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-menu.rich-insert-menu, .rich-block-menu",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-table-tools",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-tag-suggestions",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-format-menu",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-inline-tools",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-format-tools.css",
+          "scope": ".rich-properties",
+          "value": "var(--text-label-leading)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h5)",
+          "value": "var(--text-label-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-large-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-large",
+          "value": "var(--text-large-leading)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h3)",
+          "value": "var(--text-large-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-subheading-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/note-search-dialog.css",
+          "scope": ".note-search-preview-title",
+          "value": "var(--text-subheading-leading)"
+        },
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-subheading",
+          "value": "var(--text-subheading-leading)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h2)",
+          "value": "var(--text-subheading-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-supporting-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-supporting",
+          "value": "var(--text-supporting-leading)"
+        },
+        {
+          "source": "apps/ui/src/import-layout.css",
+          "scope": ".typeset :is(.typeset-scroll, .tableWrapper)[data-overflow=\"true\"]::after",
+          "value": "var(--text-supporting-leading)"
+        },
+        {
+          "source": "apps/ui/src/rich-editor.css",
+          "scope": ".rich-preserved-label",
+          "value": "var(--text-supporting-leading)"
+        },
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *\n      )\n    ) → &:where(h6)",
+          "value": "var(--text-supporting-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--text-title-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/typography/scale.generated.css",
+          "scope": "@layer components → .type-title",
+          "value": "var(--text-title-leading)"
+        },
+        {
+          "source": "apps/ui/src/styles.css",
+          "scope": ".note-page-title",
+          "value": "var(--text-title-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--tw-leading, var(--line-height-base))",
+      "utilities": [
+        "text-base"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-base",
+          "value": "var(--tw-leading, var(--line-height-base))"
+        },
+        {
+          "source": "apps/ui/src/components/app-sidebar.tsx",
+          "scope": "text-base",
+          "value": "var(--tw-leading, var(--line-height-base))"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "text-base",
+          "value": "var(--tw-leading, var(--line-height-base))"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "text-base",
+          "value": "var(--tw-leading, var(--line-height-base))"
+        },
+        {
+          "source": "apps/ui/src/features/theme/ThemeSettings.tsx",
+          "scope": "text-base",
+          "value": "var(--tw-leading, var(--line-height-base))"
+        },
+        {
+          "source": "apps/ui/src/features/typography/TypographySettings.tsx",
+          "scope": "text-base",
+          "value": "var(--tw-leading, var(--line-height-base))"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--tw-leading, var(--line-height-lg))",
+      "utilities": [
+        "text-lg"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-lg",
+          "value": "var(--tw-leading, var(--line-height-lg))"
+        },
+        {
+          "source": "apps/ui/src/components/tag-editor.tsx",
+          "scope": "text-lg",
+          "value": "var(--tw-leading, var(--line-height-lg))"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--tw-leading, var(--line-height-sm))",
+      "utilities": [
+        "text-sm",
+        "file:text-sm"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/emoji-picker-panel.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/mobile-tag-actions.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/name-editor.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/nav-actions.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/note-delete-dialog.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/tag-emoji-picker.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/trash-page.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/ui/input.tsx",
+          "scope": "file:text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sidebar.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/features/theme/ThemeSettings.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/features/typography/TypographySettings.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/MermaidPreview.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/NoteProperties.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        },
+        {
+          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--line-height-sm))"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--tw-leading, var(--line-height-xl))",
+      "utilities": [
+        "text-xl"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/components/tag-emoji-picker.tsx",
+          "scope": "text-xl",
+          "value": "var(--tw-leading, var(--line-height-xl))"
+        },
+        {
+          "source": "apps/ui/src/NotePreview.tsx",
+          "scope": "text-xl",
+          "value": "var(--tw-leading, var(--line-height-xl))"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--tw-leading, var(--line-height-xs))",
+      "utilities": [
+        "text-xs"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/src/App.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/app-sidebar.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/emoji-picker-panel.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/loading-states.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/name-editor.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/note-collection.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/note-search-dialog.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/tag-navigation.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/trash-page.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/ui/badge.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/ui/button.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/components/ui/sidebar.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/DatePropertyPicker.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/NoteImage.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/NoteProperties.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        },
+        {
+          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--line-height-xs))"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--typeset-leading)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/typeset.css",
+          "scope": "@layer components → .typeset",
+          "value": "var(--typeset-leading)"
+        }
+      ]
+    }
+  ],
+  "dynamic": [
+    {
+      "property": "font-family",
+      "expression": "FONT_FAMILIES[value]",
+      "source": "apps/ui/src/features/theme/ThemeSettings.tsx",
+      "scope": "line 36"
+    },
+    {
+      "property": "font-family",
+      "expression": "FONT_FAMILIES[font.value]",
+      "source": "apps/ui/src/features/theme/ThemeSettings.tsx",
+      "scope": "line 43"
+    }
+  ],
+  "native": [
+    {
+      "property": "font",
+      "value": ".caption",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeChrome.swift",
+          "line": 496
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".caption2",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeChrome.swift",
+          "line": 318
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".footnote",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeChrome.swift",
+          "line": 587
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".headline",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeChrome.swift",
+          "line": 318
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".subheadline",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeChrome.swift",
+          "line": 562
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 10)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 274
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 12, weight: .medium)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 196
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 12)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 192
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 216
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 261
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 345
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 13)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 316
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 14, weight: .medium)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 199
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 307
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 14)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 191
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 210
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 214
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 275
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 342
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 16)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 242
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 245
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: 20)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 283
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 287
+        },
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 297
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: bodyFontSize)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 80
+        },
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 158
+        },
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 295
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: brandFontSize, weight: .semibold)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 100
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: captionFontSize, weight: .medium)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 196
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: captionFontSize)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 117
+        },
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 170
+        },
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 171
+        },
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 173
+        },
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 277
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: size == 44 ? 20 : 16)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeChrome.swift",
+          "line": 475
+        }
+      ]
+    },
+    {
+      "property": "font",
+      "value": ".system(size: visualIconSize)",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 273
+        }
+      ]
+    },
+    {
+      "property": "fontWeight",
+      "value": "item.selected == true ? .medium : .regular",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 275
+        }
+      ]
+    },
+    {
+      "property": "lineSpacing",
+      "value": "6",
+      "locations": [
+        {
+          "source": "apps/apple/Sources/NativeDesignedPanel.swift",
+          "line": 242
+        }
+      ]
+    }
+  ]
+}

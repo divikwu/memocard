@@ -5,7 +5,6 @@ import { calloutColors } from './import-layout';
 import { updateCallout } from './rich-callout';
 
 const labels = ['默认', '灰色', '棕色', '橙色', '黄色', '绿色', '蓝色', '紫色', '粉色', '红色'];
-const swatches = ['var(--foreground)', '#737373', '#9a6b4a', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7', '#ec4899', '#ef4444'];
 
 export function CalloutColorsMenu({ editor, pos, onClose }: { editor: Editor; pos: number; onClose: () => void }) {
   const node = editor.state.doc.nodeAt(pos);
@@ -16,7 +15,7 @@ export function CalloutColorsMenu({ editor, pos, onClose }: { editor: Editor; po
         <Menu.GroupLabel className="rich-callout-color-label">{attr === 'color' ? '背景颜色' : '文字颜色'}</Menu.GroupLabel>
         <Menu.RadioGroup value={node?.attrs[attr] ?? 'default'} onValueChange={value => { updateCallout(editor, pos, { [attr]: attr === 'textColor' && value === 'default' ? null : value }); onClose(); }}>
           {calloutColors.map((value, index) => <Menu.RadioItem key={value} value={value}>
-            <span className="rich-callout-swatch" aria-hidden="true" style={{ color: swatches[index], background: attr === 'textColor' || value === 'default' ? 'var(--background)' : `var(--callout-background-${value})` }}>{attr === 'textColor' ? 'A' : null}</span>
+            <span className="rich-callout-swatch" aria-hidden="true" style={{ color: value === 'default' ? 'var(--foreground)' : `var(--callout-swatch-${value})`, background: attr === 'textColor' || value === 'default' ? 'var(--background)' : `var(--callout-background-${value})` }}>{attr === 'textColor' ? 'A' : null}</span>
             <span>{labels[index]}{attr === 'color' ? '背景' : '文字'}</span><Menu.RadioItemIndicator className="rich-menu-check"><Check aria-hidden="true" /></Menu.RadioItemIndicator>
           </Menu.RadioItem>)}
         </Menu.RadioGroup>

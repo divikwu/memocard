@@ -19,7 +19,7 @@ function TextareaExample({ defaultValue, ...args }: ComponentProps<typeof Textar
 const meta = {
   title: "components/textarea", component: Textarea, globals: desktopGlobals,
   render: args => <TextareaExample {...args} />,
-  args: { placeholder: "输入多行说明", onChange: fn() }, parameters: { layout: "padded", docs: { description: { component: "生产多行输入，展示真实输入、只读、禁用与校验；软件键盘和 IME 仍需 App 验收。" } } },
+  args: { placeholder: "输入多行说明", onChange: fn() }, parameters: { layout: "padded", docs: { description: { component: "生产多行输入，展示真实输入、只读、禁用与校验。最小高度为 min-h-16：16px 根字号下为 64px，随根字号缩放，并按现有 field-sizing: content 规则容纳内容；软件键盘和 IME 仍需 App 验收。" } } },
 } satisfies Meta<typeof Textarea>;
 export default meta;
 type Story = StoryObj<typeof meta>;

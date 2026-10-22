@@ -1,11 +1,26 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
+import { REFERENCE_ROOT_SIZE } from './scale';
 import { FONT_FAMILIES } from '@/lib/font-options';
 import { loadFonts } from '@/features/theme/font-loader';
-import { defaults, parseTypography, STORAGE_KEY, type Typography } from './preferences';
+import { defaults, measurePresets, parseTypography, STORAGE_KEY, type Typography } from './preferences';
 
 const Context = createContext<{ value: Typography; save: (next: Typography) => void; error: string }>({ value: defaults, save: () => {}, error: '' });
 export const useTypography = () => useContext(Context);
+// Keep the persisted choices and emitted CSS contract separate from React lifecycle work.
+export function resolveTypography(value: Typography) {
+  return {
+    '--note-body-font': FONT_FAMILIES[value.body],
+    '--note-heading-font': FONT_FAMILIES[value.heading === 'inherit' ? value.body : value.heading],
+    '--note-mono-font': FONT_FAMILIES[value.mono],
+    '--note-size': value.size === '15' ? '0.9375rem' : value.size === '14' ? 'var(--font-size-sm)' : value.size === '18' ? 'var(--font-size-lg)' : 'var(--font-size-base)',
+    '--note-scale': `${Number(value.size) / REFERENCE_ROOT_SIZE}`,
+    '--note-summary-size': Number(value.size) > 16 ? 'var(--font-size-base)' : 'var(--font-size-sm)',
+    '--note-leading': value.leading,
+    '--note-flow': value.flow,
+    '--note-measure': `${measurePresets[value.measure].factor * Number(value.size)}px`,
+  };
+}
 export function TypographyProvider({ children }: { children: ReactNode }) {
   const [value, setValue] = useState(() => { try { return parseTypography(localStorage.getItem(STORAGE_KEY)); } catch { return { ...defaults }; } });
   const [error, setError] = useState('');
@@ -16,7 +31,7 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
   }, []);
   useLayoutEffect(() => {
     const style = document.documentElement.style;
-    const vars = { '--note-body-font': FONT_FAMILIES[value.body], '--note-heading-font': FONT_FAMILIES[value.heading === 'inherit' ? value.body : value.heading], '--note-mono-font': FONT_FAMILIES[value.mono], '--note-size': `${value.size}px`, '--note-summary-size': `${Math.max(14, Number(value.size) - 1)}px`, '--note-leading': value.leading, '--note-flow': value.flow, '--note-measure': `${({ "60": 28, "70": 33, "80": 37, "90": 45 } as Record<string, number>)[value.measure] * Number(value.size)}px` };
+    const vars = resolveTypography(value);
     for (const [key, val] of Object.entries(vars)) style.setProperty(key, val);
     return () => { for (const key of Object.keys(vars)) style.removeProperty(key); };
   }, [value]);

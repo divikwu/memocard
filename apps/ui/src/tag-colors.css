@@ -1,43 +1,7 @@
-:root {
-  --tag-bg-opacity: 8%;
-  --tag-default-fg: var(--tag-gray-fg);
-  --tag-gray-fg: var(--color-zinc-800);
-  --tag-brown-fg: #64473a;
-  --tag-orange-fg: var(--color-orange-800);
-  --tag-yellow-fg: color-mix(in oklab, var(--color-yellow-700) 92%, var(--color-black));
-  --tag-green-fg: var(--color-emerald-800);
-  --tag-blue-fg: var(--color-blue-800);
-  --tag-purple-fg: var(--color-violet-800);
-  --tag-pink-fg: var(--color-pink-800);
-  --tag-red-fg: var(--color-red-800);
-}
-.dark {
-  --tag-bg-opacity: 16%;
-  --tag-default-fg: var(--tag-gray-fg);
-  --tag-gray-fg: var(--color-zinc-200);
-  --tag-brown-fg: #d7b5a0;
-  --tag-orange-fg: var(--color-orange-200);
-  --tag-yellow-fg: var(--color-yellow-200);
-  --tag-green-fg: var(--color-emerald-200);
-  --tag-blue-fg: var(--color-blue-200);
-  --tag-purple-fg: var(--color-violet-200);
-  --tag-pink-fg: var(--color-pink-200);
-  --tag-red-fg: var(--color-red-200);
-}
-:root, .dark {
-  --tag-default-bg: var(--tag-gray-bg);
-  --tag-gray-bg: color-mix(in oklab, var(--tag-gray-fg) var(--tag-bg-opacity), transparent);
-  --tag-brown-bg: color-mix(in oklab, var(--tag-brown-fg) var(--tag-bg-opacity), transparent);
-  --tag-orange-bg: color-mix(in oklab, var(--tag-orange-fg) var(--tag-bg-opacity), transparent);
-  --tag-yellow-bg: color-mix(in oklab, var(--tag-yellow-fg) var(--tag-bg-opacity), transparent);
-  --tag-green-bg: color-mix(in oklab, var(--tag-green-fg) var(--tag-bg-opacity), transparent);
-  --tag-blue-bg: color-mix(in oklab, var(--tag-blue-fg) var(--tag-bg-opacity), transparent);
-  --tag-purple-bg: color-mix(in oklab, var(--tag-purple-fg) var(--tag-bg-opacity), transparent);
-  --tag-pink-bg: color-mix(in oklab, var(--tag-pink-fg) var(--tag-bg-opacity), transparent);
-  --tag-red-bg: color-mix(in oklab, var(--tag-red-fg) var(--tag-bg-opacity), transparent);
-}
+@import "./tag-colors.tokens.css";
+
 .note-tag-color-swatch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 4px; background: var(--tag-bg); color: var(--tag-fg); border: 1px solid color-mix(in oklab, var(--tag-fg) 20%, transparent); }
-.note-tag-color-option { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 8px; border-radius: 4px; font-size: 14px; outline: none; }
+.note-tag-color-option { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 8px; border-radius: 4px; font-size: var(--font-size-sm); outline: none; }
 .note-tag-color-option[data-checked] { background: color-mix(in oklab, var(--muted) 60%, transparent); }
 .note-tag-color-option[data-highlighted] { background: var(--hover-bg); }
 .note-tag-color-option[data-disabled] { pointer-events: none; opacity: 0.5; }

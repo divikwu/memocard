@@ -3,6 +3,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import { desktopGlobals } from "../.storybook/viewports";
 import { Button } from "../src/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "../src/components/ui/sheet";
+import { DrawerCheck, inspectDrawer } from "./sheet-check.example";
 
 function SheetExample({ side }: { side: "right" | "bottom" }) {
   return <Sheet>
@@ -59,3 +60,5 @@ export const MobileBottom: Story = {
   parameters: { docs: { story: { height: "844px" } } },
   play: Right.play,
 };
+
+export const Interaction: Story = { render: () => <DrawerCheck />, play: inspectDrawer };
