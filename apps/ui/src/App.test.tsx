@@ -267,7 +267,7 @@ describe("note workspace", () => {
   it("renders notes as an equal-height card grid", async () => {
     render(<App />);
     const pageTitle = await screen.findByRole("heading", { name: "所有笔记", level: 1 });
-    expect(pageTitle.className).toContain("text-[32px]");
+    expect(pageTitle.className).toContain("type-title");
     expect(pageTitle.closest(".sr-only")).toBeNull();
     const contentScroll = pageTitle.parentElement?.parentElement?.parentElement;
     expect(contentScroll?.className).toContain("px-4");
@@ -283,7 +283,7 @@ describe("note workspace", () => {
     expect(card?.className).toContain("bg-card");
     expect(card?.className).not.toContain("bg-[#fbfbfb]");
     expect(card?.className).not.toContain("bg-muted/50");
-    expect(card?.className).toContain("shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]");
+    expect(card?.className).toContain("shadow-(--surface-shadow)");
     expect(card?.className).not.toContain("shadow-none");
     expect(screen.getByText("新内容").className).toContain("text-base");
     expect(card?.querySelector("time")?.className).toContain("text-xs");

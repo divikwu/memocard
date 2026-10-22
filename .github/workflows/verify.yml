@@ -42,7 +42,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium
+      - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium firefox webkit
       - run: pnpm verify:design
   release-web:
     needs: changes

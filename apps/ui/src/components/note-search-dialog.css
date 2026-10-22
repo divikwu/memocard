@@ -5,7 +5,7 @@
 .note-search-field .note-search-input:focus {
   background-color: transparent;
 }
-.note-search-input { font-size: 1rem; }
+.note-search-input { font-size: var(--text-body-size); }
 :is(.note-search-dialog, .note-search-sheet)[data-keyboard-focus] .note-search-input:focus {
   outline: 2px solid var(--ring);
   outline-offset: 4px;
@@ -24,21 +24,23 @@
 .note-search-preview-heading { margin-bottom: 16px; }
 .note-search-preview-title {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  line-height: 1.4;
+  font-size: var(--text-subheading-size);
+  font-weight: var(--text-subheading-weight);
+  line-height: var(--text-subheading-leading);
 }
 .note-search-preview-content .markdown {
-  --typeset-size: 14px;
-  --typeset-leading: 1.5;
+  --text-body-size: var(--font-size-sm);
+  --text-body-leading: var(--line-height-sm);
+  --note-scale: 1;
+  --text-heading-size: var(--font-size-base);
+  --text-subheading-size: var(--font-size-base);
+  --text-large-size: var(--font-size-sm);
+  --text-large-leading: var(--line-height-sm);
+  --text-heading-leading: var(--line-height-base);
+  --text-subheading-leading: var(--line-height-base);
   --typeset-flow: .85em;
   color: var(--muted-foreground);
 }
-.note-search-preview-content .markdown :is(h1, h2) {
-  font-size: 16px;
-  line-height: 1.45;
-}
-.note-search-preview-content .markdown h3 { font-size: 15px; }
 .note-search-preview-content .markdown hr { margin-block-start: 20px; }
 .note-search-preview-content .markdown figure[data-image-columns] { gap: 8px; align-items: stretch; }
 .note-search-preview-content .markdown figure[data-image-columns] .note-image-trigger { height: 100%; }

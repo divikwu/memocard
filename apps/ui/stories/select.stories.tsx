@@ -21,7 +21,7 @@ function SelectExample({ size = "default", disabled = false, readOnly = false, i
 }
 const meta = {
   title: "components/select", component: SelectExample, globals: desktopGlobals,
-  args: { size: "default", disabled: false, readOnly: false, invalid: false, onChange: fn() }, parameters: { layout: "padded", docs: { description: { component: "生产 Base UI Select。禁用选项仍可由方向键聚焦以读取名称，但不能提交；选择与 Escape 关闭后返回 trigger。" } } },
+  args: { size: "default", disabled: false, readOnly: false, invalid: false, onChange: fn() }, parameters: { layout: "padded", docs: { description: { component: "生产 Base UI Select。default 使用 h-9、sm 使用 h-8，16px 根字号下分别为 36px / 32px，随根字号缩放。禁用选项仍可由方向键聚焦以读取名称，但不能提交；选择与 Escape 关闭后返回 trigger。" } } },
 } satisfies Meta<typeof SelectExample>;
 export default meta;
 type Story = StoryObj<typeof meta>;

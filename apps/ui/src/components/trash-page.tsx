@@ -64,7 +64,7 @@ export default function TrashPage({vaultId,vaultBinding,refreshVersion,onRestore
     sections:[{id:'confirm',actions:[{id:'delete',title:'确认永久删除',destructive:true,disabled:deleting}]}],
   }), async action=>{if(action === 'delete')await permanentlyDelete();else if(!pending.current)setDeleteTarget(null);});
   return <section aria-label="回收站" className="trash-page">
-    <div className="trash-toolbar"><h1 className="truncate text-[32px] font-bold leading-[1.2] tracking-tight">回收站</h1><Button ref={refreshButton} aria-busy={loading} variant="outline" size="sm" disabled={loading || busy} onClick={()=>void load()}>{loading && data.notes.length > 0 && <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />}刷新回收站</Button></div>
+    <div className="trash-toolbar"><h1 className="truncate type-title tracking-tight">回收站</h1><Button ref={refreshButton} aria-busy={loading} variant="outline" size="sm" disabled={loading || busy} onClick={()=>void load()}>{loading && data.notes.length > 0 && <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />}刷新回收站</Button></div>
     {error!=null && <PageNotice title="回收站操作未完成">{errorMessage(error)}</PageNotice>}
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {data.issues.length>0 && <PageNotice tone="info" title="部分回收记录无法读取">{data.issues.length} 条记录已保留，请检查回收目录后刷新。</PageNotice>}

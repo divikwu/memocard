@@ -12,7 +12,9 @@ if (!assets.length) throw new Error("UI build does not reference an initial JS o
 // Reserve 1 KiB gzip for the mobile capture sheet and its shared styles.
 // Shared backdrop blur utilities add less than 2 KiB CSS.
 // Mobile home and collection layout controls share full-width responsive styles.
-const limits = { js: 600 * 1024, css: 95 * 1024, gzip: 188 * 1024, fonts: 1024 * 1024 };
+// Shared typography roles, scale and compatibility aliases reserve 7 KiB raw CSS;
+// keep the combined initial gzip budget unchanged.
+const limits = { js: 600 * 1024, css: 102 * 1024, gzip: 188 * 1024, fonts: 1024 * 1024 };
 let compressed = 0;
 for (const asset of assets) {
   const bytes = await readFile(resolve(root, asset));
@@ -59,21 +61,27 @@ for (const route of [
     const bytes = await readFile(resolve(root, file));
     raw += bytes.length; gzip += gzipSync(bytes).length;
   }
-  if (raw > route.raw || gzip > route.gzip) throw new Error(`${route.name} exceeds its route budget: ${raw} raw / ${gzip} gzip bytes.`);
+  // Shared scale/compatibility CSS and the real-italic font loader add at most
+  // 12 KiB raw / 2 KiB gzip to the existing route budgets; initial gzip stays fixed.
+  if (raw > route.raw + 12 * 1024 || gzip > route.gzip + 2 * 1024) throw new Error(`${route.name} exceeds its route budget: ${raw} raw / ${gzip} gzip bytes.`);
   console.log(`${route.name}: ${raw} raw / ${gzip} gzip bytes.`);
 }
 const fontFiles = (await readdir(resolve(root, "assets"), { withFileTypes: true }))
   .filter((entry) => entry.isFile() && /\.woff2?$/.test(entry.name));
 let fonts = 0;
 let cjkFonts = 0;
+let italicFonts = 0;
 for (const entry of fontFiles) {
   const size = (await readFile(resolve(root, "assets", entry.name))).length;
   if (entry.name.startsWith("noto-sans-sc-")) cjkFonts += size;
+  else if (entry.name.includes("-italic-")) italicFonts += size;
   else fonts += size;
 }
 // Optional, locally packaged SC subsets have their own budget. The existing
 // Latin budget stays fixed; unicode-range keeps unused subsets off the network.
 if (cjkFonts > 5 * 1024 * 1024) throw new Error(`Optional Noto Sans SC fonts exceed 5 MiB: ${cjkFonts} bytes.`);
+// Italic faces are optional and downloaded only when rendered. Keep normal-font limits fixed.
+if (italicFonts > 1024 * 1024) throw new Error(`Optional italic fonts exceed 1 MiB: ${italicFonts} bytes.`);
 if (fonts > limits.fonts) throw new Error(`Packaged fonts are ${fonts} bytes; the font budget is ${limits.fonts} bytes.`);
 for (const entry of await readdir(resolve(root, "assets"))) {
   if (entry.endsWith(".css") && !assets.includes(`assets/${entry}`)
@@ -84,4 +92,4 @@ for (const entry of await readdir(resolve(root, "assets"))) {
     throw new Error(`Radix reference in shipped UI asset: ${entry}`);
   }
 }
-console.log(`UI bundle budget passed: ${assets.join(", ")} (${compressed} initial gzip bytes, ${fonts} Latin font bytes, ${cjkFonts} optional SC font bytes).`);
+console.log(`UI bundle budget passed: ${assets.join(", ")} (${compressed} initial gzip bytes, ${fonts} normal Latin font bytes, ${italicFonts} optional italic font bytes, ${cjkFonts} optional SC font bytes).`);

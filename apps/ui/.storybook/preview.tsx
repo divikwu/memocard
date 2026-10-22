@@ -127,7 +127,7 @@ const preview: Preview = {
     docs: { container: ProductDocsContainer, page: StaticDocsPage, canvas: { withToolbar: false }, story: { inline: false, height: "320px", autoplay: false }, components: { Story: DocsStoryPreview } },
     controls: { expanded: true },
     viewport: { options: viewportOptions },
-    options: { storySort: { order: ["foundations", "components", "sidebar", "business"] } },
+    options: { storySort: { order: ["foundations", ["all tokens", "colors", "elevation", "icons", "motion", "shape", "spacing", "typography", "sizing"], "components", "sidebar", "business"] } },
   },
   beforeEach: () => {
     resetStorybookBridge();

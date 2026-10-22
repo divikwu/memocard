@@ -7,6 +7,12 @@ import viteConfig from "./vite.storybook.config.ts";
 import { desktopViewport, mobileViewport } from "./.storybook/viewports.ts";
 import { verifyDocsFont } from "./.storybook/docs-font-regression.ts";
 import { verifyComponentFont } from "./.storybook/component-font-regression.ts";
+import { verifyFoundationReference } from "./.storybook/foundation-reference-regression.ts";
+
+// CI runs the full matrix; local Firefox can be opted in (macOS 27 may fail before page startup).
+const typographyBrowsers = process.env.CI || process.env.STORYBOOK_FIREFOX === "1"
+  ? ["chromium", "firefox", "webkit"] as const
+  : ["chromium", "webkit"] as const;
 
 const viewportSetup = fileURLToPath(new URL("./.storybook/viewport.setup.ts", import.meta.url));
 
@@ -20,14 +26,22 @@ export default mergeConfig(viteConfig, defineConfig({
   test: {
     fileParallelism: false,
     projects: [
+      ...typographyBrowsers.map(browser => ({
+        extends: true as const,
+        test: {
+          name: `typography-${browser}`,
+          include: ["stories/typography-system.browser.tsx", "stories/density.browser.tsx"],
+          browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser }], viewport: desktopViewport },
+        },
+      })),
       {
         extends: true,
         test: {
           name: "docs-fonts",
           globalSetup: [fileURLToPath(new URL("./.storybook/font-test-server.ts", import.meta.url))],
           sequence: { groupOrder: 8 },
-          include: ["stories/docs-fonts.browser.ts"],
-          browser: { enabled: true, provider: playwright(), commands: { verifyDocsFont, verifyComponentFont }, headless: true, instances: [{ browser: "chromium" }] },
+          include: ["stories/docs-fonts.browser.ts", "stories/foundation-reference.browser.ts"],
+          browser: { enabled: true, provider: playwright(), commands: { verifyDocsFont, verifyComponentFont, verifyFoundationReference }, headless: true, instances: [{ browser: "chromium" }] },
         },
       },
       {

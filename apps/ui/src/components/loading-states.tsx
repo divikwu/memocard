@@ -39,7 +39,7 @@ export function LoadingNote() {
 export function LoadingCapture() {
   return <div role="status" aria-label="正在准备快速输入" style={{marginBottom:28}}>
     <span className="sr-only">正在准备快速输入…</span>
-    <div aria-hidden="true" style={{borderRadius:24}} className="overflow-hidden border shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)]">
+    <div aria-hidden="true" style={{borderRadius:24}} className="overflow-hidden border shadow-(--surface-shadow)">
       <div className="loading-capture-textarea p-4"><Skeleton className="h-5" style={{width:144}} /></div>
       <div className="flex h-12 items-center gap-4 px-4" style={{paddingBottom:4}}><Skeleton className="h-5" style={{width:48}} /><Skeleton className="h-5" style={{width:48}} /><Skeleton className="ml-auto h-9 rounded-full" style={{width:72}} /></div>
     </div>
@@ -49,7 +49,7 @@ export function LoadingCapture() {
 export function LoadingTrash({ canPermanentlyDelete = false, toolbar = true }: { canPermanentlyDelete?: boolean; toolbar?: boolean }) {
   return <div role="status" aria-label="正在读取回收站" className="grid gap-4">
     <span className="sr-only">正在读取回收站…</span>
-    {toolbar && <div aria-hidden="true" className="flex items-center justify-between gap-3 pb-2 pl-2"><h1 className="text-[32px] font-bold leading-[1.2] tracking-tight">回收站</h1><Skeleton className="h-8" style={{width:96}} /></div>}
+    {toolbar && <div aria-hidden="true" className="flex items-center justify-between gap-3 pb-2 pl-2"><h1 className="type-title tracking-tight">回收站</h1><Skeleton className="h-8" style={{width:96}} /></div>}
     <div aria-hidden="true" className="grid gap-2">{[0, 1, 2].map(item => <Card key={item} className="gap-0 px-4 py-3 shadow-none"><CardContent className="flex flex-col items-start justify-between gap-3 px-0 sm:flex-row sm:items-center">
       <div className="min-w-0 flex-1 space-y-2"><Skeleton className="h-5" style={{width:160,maxWidth:"100%"}} /><Skeleton className="h-4" style={{width:192,maxWidth:"100%"}} /><Skeleton className="h-4" style={{width:144,maxWidth:"100%"}} /><Skeleton className="h-5 w-4/5" /></div>
       <div className="flex shrink-0 gap-3"><Skeleton className="h-8" style={{width:72}} />{canPermanentlyDelete && <Skeleton className="h-8" style={{width:96}} />}</div>

@@ -2,6 +2,336 @@
 
 本文件随实际检查更新。尚未执行的检查不得标记通过。
 
+## 全部本地修改提交前审查（2026-10-22）
+
+- 审查 Foundations、公共 token 源及生成器、生产消费、Typography 设置兼容与字体加载、Storybook 隐藏入口和 CI。修复编辑器工具栏、表格工具、公式输入、标签建议、插入菜单和提示中的固定字号简写，将其接入 label / supporting；补上 Chromium / WebKit 的实际 CSS 角色覆盖与 100% / 125% / 200% 根字号缩放检查（共 20 项 Typography 浏览器测试通过）。
+- 补回原 `foundations-tokens--live-palette` 隐藏兼容入口，复用 Color 的原夹具与交互测试，避免旧链接失效。原有 19 个 Foundations Story / Docs ID 均保留；当前共有 38 个 Foundations 条目、152 个 Storybook 条目。原主题源抽取的 277 个作用域 / 名称 / 值组合逐项与提交基线一致，未改变颜色默认值或主题规则。
+- 首次全量 Web 检查发现历史体积预算未纳入共享角色、兼容变量与真实 italic 资源；按实际增量设置原始 CSS 和路由预留，并为按需 italic 单独设 1 MiB 上限。首屏 gzip、普通字体、中文分片和 JS 单文件原有上限保留；详见排版工程文档的体积边界。最终产物首屏 gzip 为 192447 字节，普通字体 908432 字节、可选 italic 836504 字节、可选中文分片 4500544 字节，全部体积检查通过。
+- `pnpm verify:web`、`pnpm verify:design`、`pnpm verify:native`、`pnpm test:service`、`pnpm test:sidebar-native`、`pnpm audit --prod` 通过。包含 1101 项 UI 单元测试、311 项完整 Storybook 浏览器检查、129 项 native-core XCTest、8 项服务 XCTest及相关 Node 测试。设计检查同时验证所有目录生成漂移、类型、ESLint、静态构建、原生预览 palette 与使用清单；本机未运行 Firefox，GitHub CI 会运行三种浏览器。
+- GitHub 首轮 Linux CI 检出 registry 两处消费者路径写成 `Markdown.tsx`（实际为 `markdown.tsx`）。修正 registry 并重新生成覆盖清单，生成器增加文件名大小写校验；17 项 token 测试和漂移检查通过，避免本机默认大小写不敏感文件系统再次漏检。
+- 最终静态构建后，补验原 All tokens 四项场景与六组 Docs，10 项全部通过，包含恢复旧 Live Palette ID 后的真实交互与隐藏导航验证。
+- 完整审查及修复证据在 `build/verification/premerge-review/`。未修改 Apple / native-core / local-service 的生产源码，不将本机纯逻辑检查视为原生真机行为验收。蓝色 primary 的既有对比度问题继续如实保留在断言和工程记录中，没有通过降低门槛将其标成 AA 通过。
+
+## Color 语义色独立分区（2026-10-22）
+
+- Color Docs 将原 35 项语义色按用途拆为基础表面与文字（8）、操作与状态（10）、边界与反馈（4）、侧栏（8）、图表（5）五个独立分区和表格，背景与对应前景相邻排列。Tag、Callout、Palette 保持独立，目录共八项；预留角色继续明确标注。所有值仍由生产 CSS 解析。
+- 原 `foundation-colors` / `foundation-title-colors` ID 保留在首组，其余原锚点不变。All tokens 保留原总览表和分区；没有修改全局排版样式、页面宽度或颜色规则。
+- 静态 Foundation Docs 六组（320 / 390 / 1368px × 浅深色）通过，新增五组归属和顺序、独立表格、八项目录及分组锚点跳转验证；原完整性、无重复、主题值、统一排版与 Diagnostics 检查继续通过。Storybook 构建、类型、相关 ESLint、tokens:check 与 diff 检查通过。
+- 全部 151 个 Storybook 条目及元数据保持一致；267 份受保护文件哈希一致，包含生产与原生源码、原颜色故事及诊断配对定义、token 定义和覆盖清单。原颜色测试未修改，本轮未重复执行 Canvas 测试。证据在 `build/verification/color-sections/`，实际浏览器截图为 `color-docs-live.png`。未提交或发布。
+
+## Color 仅保留 Docs 导航（2026-10-22）
+
+- Color 的 Default（展示名 Diagnostics）移除 dev 标签，导航只保留 Docs。原 `foundations-colors--default` ID、直达路由、22 组配对结果及所有隐藏场景和交互测试继续保留。README 和颜色诊断工程说明同步导航归属；没有修改色值、组件消费或对比度判定。
+- 原颜色 Canvas 11 项测试通过；静态 Foundation Docs 六组（320 / 390 / 1368px × 浅深色）通过，新增导航只显示 Docs、诊断原 URL 可加载且不重新出现在导航中的断言，保留原配对测量检查。Storybook 构建、类型、相关 ESLint、tokens:check 与 diff 检查通过。
+- 全部 151 个 Storybook ID 保留，元数据仅 Color Default 与派生 Docs 移除 dev 标签，test 标签保持。266 份受保护文件哈希一致，包含 UI 生产源码及测试、Apple Sources、原配对定义、token 定义与覆盖清单。结构化清单仍为 282 项 CSS、13 项运行时、28 项可移植基准、17 项所有权、4 项外部变量。
+- 现有浏览器页面确认 Color 只有 Docs 入口。证据在 `build/verification/color-docs-only/`，截图为 `sidebar-live.png`。未提交或发布。
+
+## Size & density 入口隐藏与内容归属整理（2026-10-22）
+
+- 新增 Storybook manager 的 sidebar filter，仅隐藏 foundations/sizing 分组及条目。原 Docs / Reference 索引、ID、test 标签、直接 URL 和全部验收夹具不变；All tokens 继续展示完整十五项侧栏尺寸。已重启本地 6006 Storybook 以加载 manager 配置，并刷新用户已有页面，实际导航中不再出现 sizing。
+- Button Docs 保留已有八种尺寸示例；Input 文档补充默认高度、移动/桌面字号和 InputGroup 组合尺寸，Textarea / Select / Tabs 文档说明最小高度或大小变体。Sidebar Docs 从生成常量读取行高、图标、视觉框与命中区，Sidebar 规格补充文字放大规则；跨端映射与隐藏验收夹具的维护说明归工程文档。没有创建全局密度档位或改动组件规则。
+- 新增页面回归检查侧栏无 sizing、原 Docs 直达仍可加载、相关组件及 Sidebar 文档包含尺寸说明。原 Chromium / WebKit 尺寸与 Typography 34 项、组件 / 侧栏交互和断点 46 项、静态 Foundation Docs 六组（320 / 390 / 1368px × 浅深色）通过；Storybook 构建、类型、相关 ESLint、tokens:check 与 diff 检查通过。Firefox 未在本轮重新验证。
+- 全部 151 个 Storybook 索引条目及元数据与本轮基线一致，其中 Foundations 37 项。268 份受保护文件哈希一致，包含 UI 生产源码及测试、Apple Sources、DTCG / registry / 完整覆盖清单、原 Sizing Docs / Reference 源和实测 / 200% 文字放大测试。结构化清单仍为 282 项 CSS、13 项运行时、28 项可移植基准、17 项所有权、4 项外部变量。
+- 证据在 `build/verification/sizing-ownership/`，用户现有标签页刷新后的截图为 `sidebar-live.png`。本轮只调整 Storybook 导航、文档与页面验证，未改变生产或原生行为，未提交或发布。
+
+## 原生排版表移至工程文档（2026-10-22）
+
+- Typography Docs 只展示通用文字样式、字体、基础字号、基础字重、基础行高五个分区。原生字号基准和原生文字用法表移至 `design/native-typography.md`，保留四个逻辑基准、21 项原表达式、38 处源码位置，并明确 desktopFontSize 只有生成的 Swift 常量、没有原生直接消费者。README、通用 Typography 与工程维护说明补充原生文档入口。
+- 保留 `foundation-typography-notes` 和 `foundation-title-typography-notes`，作为通用文字样式标题内的兼容定位点；导航中不再出现原生分区，页面不保留空分区或迁移提示。浏览器回归检查五个可见分区、旧锚点唯一且定位到通用标题、两表不再展示，以及工程文档逐项保留基准、表达式与来源。
+- 原设置/兼容与字体样本单元测试 13 项、Typography Canvas 交互 4 项、静态 Foundation Docs 六组（320 / 390 / 1368px × 浅深色）通过；Storybook 构建、类型、相关 ESLint、tokens:check、typography:check 与 diff 检查通过。只调整页面与工程文档，没有改动原生代码或行为，不将 Web 检查视为原生真机验收。
+- 266 份受保护文件哈希一致，包含 UI 生产源码及测试、Apple Sources、原 Typography 故事、registry、可移植定义、两份完整覆盖清单与排版使用目录。清单仍为 282 项 CSS、13 项运行时、28 项可移植基准、17 项所有权、4 项外部变量；37 个 Foundations 索引条目与元数据一致。证据在 `build/verification/native-typography-docs/`。未提交或发布。
+
+## 阅读偏好与宽度计算表移至工程文档（2026-10-22）
+
+- Typography Docs 移除阅读偏好配置表和阅读宽度计算表，完整选项、默认值、四档宽度映射与来源链接保留在 `design/typography.md`。宽度公式明确使用保存的 px 基准字号，而非浏览器根字号缩放后的实际字号。`foundation-typography-notes` 和对应标题 ID 保留，分区名称调整为“跨端文字基准”，继续展示原生 pt 基准与原生文字规则。
+- 页面回归改为检查两表不再出现在 Docs、工程文档完整保留四项配置及四档宽度；原有设置和隐藏诊断故事未改。设置、Provider 兼容与字体样本单元测试 13 项、原 Typography Canvas 交互 4 项、静态 Foundation Docs 六组（320 / 390 / 1368px × 浅深色）通过；Storybook 构建、类型、相关 ESLint、tokens:check 与 diff 检查通过。
+- 264 份受保护文件哈希一致，包含 UI 生产源码及其测试、Apple Sources、原 Typography 故事、registry 与两份完整覆盖清单。结构化清单仍为 282 项 CSS、13 项运行时、28 项可移植基准、17 项所有权、4 项外部变量；37 个 Foundations 索引条目与元数据一致。证据保存在 `build/verification/typography-preferences-docs/`。本轮仅调整文档与页面验证，未改设置功能、缩放或宽度规则，未提交或发布。
+
+## Size & density 整理与放大文字回归（2026-10-22）
+
+- Docs 保留 `foundation-sizing` 锚点和十五项跨端侧栏基准。Web 控件与跨端基准分开说明，表格统一为两列；横条与基准数值并排。直接渲染并测量十五项生产控件样本，覆盖八种 Button 尺寸、Input、InputGroup、Select 两档、Tabs 两档与 Textarea；图标按钮显示宽高与图标尺寸。根字号变化后自动更新数值，Select 保留真实选择交互。All tokens 不重复分类页的控件样本，Reference 继续隐藏。
+- 浏览器回归复现侧栏放大后行盒不足：默认桌面 32px、移动最小 48px 保留，行高与 `1lh + .75rem` 取最大值，垂直内边距同步匹配。200% 文字下桌面行 64px、移动行 72px；原 768px 断点、横向单行截断、侧栏宽度、展开控件视觉框和 44px 命中区不变。
+- 修复 InputGroup 行内输入原 36px 超出 32px 外框的问题；输入填满边框内部、文字垂直居中。仅调整行内 addon 内边距，分块 addon 保留原值；分块输入保留独立 36px 高度，避免 flex 收缩。快速记录使用的分块 footer、组件 API、事件和焦点交互保留。
+- Chromium / WebKit 共 34 项通过：原 Typography 18 项与新增密度 16 项；覆盖 320 / 390 / 1368px、根字号 16 / 20 / 32px、侧栏默认尺寸和文字容纳、嵌套行展开、移动展开按钮命中区、输入组边界、点击 addon 聚焦、Tabs、Docs 实测值和 Select 选择。此处是文字放大，不等同于全部浏览器缩放 / WCAG 或原生 Dynamic Type 真机验收。
+- 原有组件与侧栏 Canvas / 断点 46 项、UI 单元测试 1,101 项、静态 Foundation Docs 六组（320 / 390 / 1368px × 浅深色）、token 16 项通过。生产与 Storybook 构建、类型、相关 ESLint、定义漂移、设计清单与 diff 检查通过；构建仍有既有大 chunk 提示。Firefox 沿用已配置的 CI 矩阵，本机 macOS 启动问题仍未解除，本轮未声称其通过。
+- 完整结构化覆盖清单与本轮基线一致：282 项 CSS、13 项运行时、28 项可移植基准、17 项所有权、4 项外部变量；37 个 Foundations 索引条目及元数据一致，356 份 Apple 文件哈希一致。Markdown 消费索引随实际工具类更新，未删除定义或测试。证据位于 `build/verification/density/`，截图位于 `build/verification/foundation-reference/sizing-docs-*.png`。未提交、推送或发布。
+
+## Typography 审阅问题修复与缩放回归（2026-10-21）
+
+- 修复四项审阅问题：标题、strong / b 内的行内代码继承强调字重，普通行内代码和代码块继续为 400；Tabs、菜单、Select、输入组、辅助文字等接入共享文字角色，普通字重、xs 尺寸与控件密度保留显式覆盖；字重的 400 / 500 / 600 从 scale.ts 唯一生成到 @theme，文档与生产共享来源；设置、Docs 和隐藏诊断故事将保存字号标为“px 基准”，保留原选项 ID、存储键和 15px 兼容。
+- 新增回归发现原 body 的 20rem 最小宽度随根字号增长，在 320 / 390px 窗口放大文字会产生水平滚动。改为同默认尺寸的固定 320px 最小宽度；默认正文仍为 16px，默认阅读宽度仍为 720px。宽度公式、字号档位、默认行高、段距、字体和原生规则不变。
+- 全部 UI 单元测试 1,101 项通过；16 项 token 与 6 项排版目录测试通过。原 Typography、Button、Tabs、Select、菜单、Input、Textarea、Dialog、Sheet、Popover、Tooltip 场景共 39 项交互测试通过，项目标签导致的不适用场景保持跳过。
+- Chromium / WebKit 新增矩阵共 18 项通过，使用真实组件与真实 Provider：修改 label 角色同时检查按钮、Tabs、输入组、Select 和 portaled 菜单的实际级联；检查常规/小号局部覆盖、行内代码强调、旧偏好保存及默认 720px 宽度。320 / 390 / 1368px × 浅深色，按 16 / 20 / 32px 根字号验证 100% / 125% / 200% 文字缩放，再同时覆写行高 1.5、段后距 2em、字距 .12em、词距 .16em，核对文字边界、换行、无整页横向溢出及操作可用。此处是文字缩放，不声明真实整页浏览器 zoom、OS 设置或全面 WCAG 验收。
+- Firefox 已安装，当前 Playwright Firefox 157.0 在 macOS 27.0.1 页面启动前即报 “Could not find profile folder.”，未执行产品测试；结果与 Mozilla 2060476 所述直接启动问题相符。没有修改系统隐私权限或把启动失败改为通过。本地默认运行 Chromium / WebKit，可用 STORYBOOK_FIREFOX=1 显式重试；CI 已配置安装并运行三引擎矩阵，但本轮没有执行或宣称 CI 成功。
+- 静态 Docs 六组回归、生产/Storybook 构建、Storybook 类型、相关 ESLint、目录/覆盖漂移、设计清单和 diff 检查通过。桌面字重表和 WebKit 的 390px / 200% 文字样本已查看。原 37 个 Foundations ID 及元数据保留，原 279 项 CSS 名称/声明值、13 项运行时、28 项跨端、17 项所有权和 4 项上游输出保留；新增 3 项受控字重定义，完整清单为 282 项 CSS（171 项非 adapter）。356 份 Apple 文件哈希一致，未执行原生构建或真机验收。
+- 证据：`build/verification/typography-optimization/` 中最终 UI / Canvas / 多浏览器 / Docs / token / 目录 / 类型 / lint / 构建 / 漂移 / inventory 日志、`preservation.json`、`firefox-status.json` 及两引擎截图。200% 截图为应用默认契约值的生产 CSS 夹具，Provider 的真实默认宽度与设置行为由新增浏览器测试独立验证。
+
+## Typography 统一标尺与角色重构（2026-10-21）
+
+- 按用户后续确认，将生产字号统一为七档 rem（12 / 14 / 16 / 18 / 20 / 24 / 32px 基准），接受零散字号归档的小幅变化，替代本文件较早记录中的固定 px / rem 并行方案。字重只保留 400 / 500 / 600；行高只提供紧凑 1.25、标准 1.5、宽松 1.75 三种策略，文字角色按字号和 4px 基准网格生成实际行盒。八种通用角色消费同一 manifest；原组件变量、fixed 尺寸、数字行高和旧标题角色转为兼容 adapter，不再作为新规范入口。
+- 默认正文仍为 16px、阅读宽度仍为 720px；字号统一随根字号缩放，阅读宽度仍按设置字号 × 原系数计算。全部旧字体与四轴设置兼容，包括旧 15px 个人字号及 1.6 / 1.75 / 1.9 阅读行高；默认行高仍为 1.6。原生 pt、系统文字样式和 Dynamic Type 规则未改。
+- 全部 UI 单元测试 1,100 项通过（含 Typography 偏好的 144 组组合、字体加载、搜索及预览测试）；16 项 token 测试、6 项排版目录测试通过。Typography 四个原故事与 Button 交互合计 15 项 Canvas 测试通过，另一个不适用项目按既有标签跳过。App 原网格测试保留布局断言，将 32px 字面量类断言改为共享 title 角色。
+- 开发与静态 Docs 各六组浏览器回归通过（320 / 390 / 1368px × 浅深色），覆盖完整定义、原分区、ID、统一布局、无溢出、字体按需加载、三档字重和三种策略的实际计算值。隔离生产样式夹具核对页面标题、正文/标题/代码、卡片、摘要、搜索与按钮；改变阅读参数和角色字重，并在根字号 20px 下验证缩放与固定的宽度公式。现有 reduced-motion 全局规则仍产生 0.01ms 过渡，测试等待计算字号稳定后采样，未为测试修改生产动效。
+- 生产与 Storybook 构建、Storybook 类型、相关 ESLint、tokens:check / typography:check 和 diff 检查通过。构建保留既有大 chunk 提示。桌面字号表、角色表和 390px 行高表已查看，计算行高的显示格式去掉浮点尾数，原始定义仍保留。
+- 37 个 Foundations 索引条目及元数据一致；原 172 项 CSS token 的名称与声明值、28 项跨端基准、17 项所有权契约及 4 项上游输出保留，356 份 Apple 文件哈希一致。当前完整覆盖清单登记 279 项 CSS（其中 168 项非 adapter）、13 项运行时输出，新增 note-scale 用于统一阅读倍率。工程排版目录保留原 21 项原生表达式。
+- 证据：`build/verification/typography-layers/` 的最终测试、构建、漂移检查日志、`final-preservation.json`、`final-ids.json` 和 `final-*.png`。此前同目录的 before/after metrics 只记录中间方案，不作为最终视觉完全一致的证据。本轮浏览器为 Chromium，未执行原生构建或真机 Dynamic Type 验收。
+
+## Typography 文档字号单位展示（2026-10-21）
+
+- 仅调整文档展示：Web 字号主值为浏览器在预览上下文中计算的 px，保留全部 33 项原始表达式及上游别名定义。基准同时显示当前根字号和 defaults.size 父级字号；组件局部绑定或缺少上下文的变量显示“随组件变化”，不以默认回退冒充真实组件值。笔记 size 选项及默认值补上 px，原四项跨端字号在独立原生表中显示 pt 基准，21 项原生规则表达式保留。
+- 开发与静态 Docs 各六组回归通过（320 / 390 / 1368px × light / dark），核对原分区/锚点、全量定义、px 主值与实际样本字号一致、原始表达式、统一布局和无溢出。额外将根字号临时改为 20px：text-sm 显示 17.5px；父级仍为 16px 的 1.75em 保持 28px、0.85em 为 13.6px，11px 字面量保持 11px；局部变量不借用临时写入的全局 note-size。检查后恢复原值。
+- 原四项 Typography Canvas 交互及四项字体样本单元测试通过；Storybook 类型、相关 ESLint、静态构建、typography:check、tokens:check 和 diff 检查通过。未修改生产源码、缩放规则或宽度公式；未执行生产/原生全量测试，也未将本轮文档验收等同于原生 Dynamic Type 真机验收。
+- 293 份受保护文件哈希一致，包括全部 UI/Apple 生产源码、原故事、token 定义/registry/结构化及 Markdown 覆盖清单、使用目录和消费清单。37 个 Foundations 索引条目及元数据一致。已查看桌面字号表和 390px 原生基准表截图。
+- 证据：`build/verification/typography-units/` 中的开发/静态、交互、单元、类型、lint、构建、目录/覆盖检查日志，保护哈希、前后索引及桌面/窄屏字号和原生表格截图。
+
+## Typography 修复与字体样本按需加载（2026-10-21）
+
+- 修复四项一致性问题：为提供真实斜体的字体注册 italic face，由浏览器在斜体文字出现时下载 WOFF2；缺少斜体的字体允许 style 合成，继续禁止 weight 合成。普通字形资源、默认字体/字号/字重、Typeset 层级与 Provider 宽度公式未改。等宽新选项和随机搭配只使用 Geist Mono / JetBrains Mono，读取和展示兼容旧的比例代码字体。行宽改用窄 / 适中 / 宽 / 宽松，保留旧存储档位、默认 720px 和全部原宽度映射。
+- 使用目录递归追踪 CSS 和静态 CSS-in-JS 自定义属性绑定，保留变量名、原始表达式和作用域并防止循环；补上卡片 13px / 1.55、摘要及搜索预览等局部值。当前 88 项 Web 定义（18 字体栈、33 字号、10 字重、27 行高），原 21 项原生表达式和四项跨端字号保持完整。不把局部定义提升成新的全局 token。
+- 字体样本在接近视口 160px 时逐行加载，屏幕外不绑定目标 font-family；每行等待对应样本文字的 FontFaceSet.load，字体文件或中文分片失败仅该行回退。取消聚合失败状态，卸载后断开观察并停止后续样本文字加载。冷启动实测 28 行中 27 行仍 idle，只有靠近视口的 Geist 行启动；本次首屏字体请求 16 次、响应体共 855268 字节（包含 Docs 自身所需的中文分片），未用整页滚动后的数据冒充首屏指标。
+- 13 项设置/加载器/样本单元测试、6 项目录生成测试和原 15 项 token 测试通过。覆盖旧偏好兼容、新选择及随机搭配、四档宽度、正常/斜体去重、正常字体失败后重试、屏幕外不加载、单行失败隔离、中文分片失败不误报 ready、卸载清理和局部变量/别名/循环。原 Typography 四项 Canvas 交互测试通过。
+- 开发与静态 Docs 各六组回归通过（320 / 390 / 1368px × light / dark），核对目录完整性、按需加载、两列排版、无横向溢出、锚点与 ID。真实浏览器截图验证默认 Noto Sans 的强调文字使用已加载的真实 italic face，普通字形切回后逐像素一致；两款 Mono 的 iiii / WWWW 宽度一致。卡片生产 CSS 夹具仍计算为 13px / 20.15px。
+- 另选择运行六项现有字体回归：Button 390px 浅深色的延迟字体/离线回退，以及两项显式 Geist 字体选择，均通过；同文件另外 92 项本轮未执行。类型、相关 ESLint、生产构建、Storybook 静态构建、typography:check、tokens:check、设计清单与 diff 检查通过。构建仍有既存的大 chunk 提示，未扩展本轮范围进行拆包。
+- 37 个 Foundations 索引条目及元数据完全一致。249 份保护文件中 248 份哈希一致，包括原故事、Provider、token 定义/registry/结构化覆盖清单及原生源码；Markdown 覆盖清单仅重新生成 Settings 去掉 ch 模板后不再误匹配的可能样式类依赖。172 静态 CSS 名称、12 运行时输出、28 可移植尺寸、17 所有权契约、105 个消费文件与两个原生消费文件均保留。
+- 证据：`build/verification/typography-fixes/` 的单元、目录、交互、构建、字体、开发/静态回归日志，前后索引、保护哈希、冷加载测量和首屏截图；实际普通/斜体及全页截图由 `build/verification/foundation-reference/` 保留。本轮浏览器验证为 Chromium，未声明全平台字体字形、原生真机或生产/原生全量回归已验收。
+
+## Typography 实际使用目录与展示整理（2026-10-21）
+
+- Typography 仍只显示 Docs，原 Default / Compact Boundary / Spacious Boundary / Mobile Responsive 的 ID、test / mobile 标签和完整交互夹具未修改。保留 `#foundation-typography`，页面分为字体角色、可用字体、字号、字重、行高、笔记与跨端基准；原五个角色的定义与样本合并到两列表格。All tokens 仍为九个分区、134 项基础 CSS 定义与 28 项尺寸基准，没有加入重复的分类展示。
+- 自动目录读取生产依赖图、实际 CSS 和锁定的 Tailwind 编译结果，当前 76 项 Web 定义（12 字体栈、30 字号、10 字重、24 行高），保留工具类/别名、媒体上下文和来源；`.875em` / `0.875em` 合并显示并保留原表达式记录。包含字重继承、字号附带行高、font 简写、arbitrary / slash / variant 工具类和 Mermaid 的 system-ui 字体参数；不纳入不可达的 LiveMarkdownEditor 或测试/故事。现有 28 个字体选项、笔记的 24 个字体可用范围、五个字体角色和四项排版偏好直接读取生产定义。
+- 字体选项复用生产加载器；样本按实际字体栈渲染，系统字体和中文回退保持平台职责。字号样本消费原声明，em 和行高按 defaults.size 的同一基准对照；不将相对单位或局部变量提升成全局固定值。缺少局部绑定的变量明确标记上下文，零行盒不绘制误导性普通文字样本。字体、字号、字重及行高表共用两列、字号、边框与间距规则，现有三列偏好选项继续完整展示。
+- 四项跨端字体尺寸保留原 px / pt 基准，另直接读取 21 项 SwiftUI font / fontWeight / lineSpacing 表达式，排除注释、字符串及现有 DEBUG-only 分支，保留生产 #else 和系统/条件表达式。未把系统文字角色或附加 pt 行距伪装成 CSS 字号/行高倍数；未修改 Swift 源码或 Dynamic Type。
+- 生成器五项 Node 测试通过，覆盖工具类展开、字号/行高组合与变体、字重、局部声明、简写、静态内联/CSS-in-JS、动态字体引用登记、字面量排除、十进制排序与去重、原生嵌套表达式/DEBUG 分支、源文件可达性、稳定性和只读漂移。typography:check、tokens:check、十五项原 token 测试、设计清单、类型、相关 ESLint、静态构建和 diff 检查通过。
+- 原 Typography 四项保存/恢复/边界/H5 测试，以及 All tokens / Spacing / Sizing 原场景共九项 Canvas 通过。最终开发与静态 Docs 各六组回归通过，覆盖 320 / 390 / 1368px × light / dark，核对六个分区、28 个字体选项与真实 CSS 栈、每项定义/样本的消费一致性、默认字号、四项跨端基准、21 项原生规则、无溢出、统一表格、旧锚点和隐藏 ID。已人工查看桌面浅色、字号/行高分区及窄屏字体/字号/原生表格截图。
+- 254 份受保护文件哈希一致，包括 UI 生产源码、原 Typography / Spacing 故事、token 规范/定义/registry/覆盖清单、Spacing 使用目录及隔离解析器；37 个 Foundations 索引条目及元数据一致，Swift 源码 diff 为空。未改变生产外观、偏好、交互或排版规则。本轮未执行生产/原生全量验收或全平台字体字形验收，未提交或发布。证据为 `build/verification/typography-catalog/`，包含生成、构建、类型、lint、Node / Canvas / 开发 / 静态测试、前后索引、保护哈希与六张最终 Typography 页面截图。
+
+## Spacing 横向标尺展示（2026-10-21）
+
+- 参考用户提供的 Astryx 截图，将 Spacing 的 Web 与跨端分区统一为 Token / Value 两列；Value 内并排展示灰色横条和既有数值。横条左端一致，条与文字垂直居中，宽度对应实际间距；零档保留 0px 宽度，以 1px 伪元素标记原点。只借鉴展示样式，仍使用项目 muted-foreground 和圆角设置，没有引入 Astryx token 或更改单位、上游表达式及六项跨端基准。
+- 既有预览测量改为检查横条宽度，并增加两列结构、共同起点、8px 条高、8px 文本间隔与垂直居中检查；原有根字号 20px / 恢复 16px 的 rem 响应、跨端固定尺寸、九页定义完整性、隐藏故事 ID、锚点和无溢出断言继续通过。开发与静态 Docs 各六组回归通过，覆盖 320 / 390 / 1368px × light / dark，已人工查看窄屏浅色及桌面深色截图。
+- 原有 Spacing / All tokens / Sizing Canvas 共五项、新间距生成器三项、spacing:check、tokens:check、类型、相关 ESLint、静态构建与 diff 检查通过。252 份受保护文件（生产源码、原 Spacing 故事、token 规范/定义、完整覆盖清单及间距使用目录）哈希不变，37 个 Foundations 索引条目及元数据不变。未改生产外观、交互及规则，未执行生产/原生全量验收，未提交或发布。证据与六张页面截图位于 `build/verification/spacing-bars/`。
+
+## Spacing 上游标尺与跨端基准（2026-10-21）
+
+- Spacing Docs 分为 Web 间距标尺、跨端间距基准。保留原 `#foundation-spacing`，新增 `#foundation-spacing-web`；只在分类页展示上游使用档位，All tokens 的 9 个分区、134 项基础 CSS 定义和 28 项尺寸基准保持不变。导航仍仅有 Docs，旧 `foundations-spacing--reference` ID、隐藏标签及测试保留。
+- 使用生产依赖图与锁定的 Tailwind 4.3.3 编译器生成使用清单，当前 16 个标尺档位、128 条间距工具类。上游 `--spacing: 0.25rem` 和每档表达式均直接读取或编译，包含半档，排除尺寸/定位类；auto、局部任意值和安全区记录消费者但不提升为标尺。负边距沿用对应标尺幅度，原工具类保留负号。六项跨端基准仍读原生成 token，保持 4 / 8 / 12 / 16 / 24 / 32px 或 pt。
+- 预览改为两个元素之间的真实空隙，列内竖向起点对齐；Web 数值随实际 rem 计算及 ResizeObserver 更新。回归额外将根字号改为 20px，确认 Web 16 档变为 80px、恢复后回到 64px，而跨端 px 基准不变。320px 下调整基准表列宽，token 名称保持完整，页面及表格无横向溢出；截图已人工查看。
+- 新生成器三项 Node 测试通过，覆盖有效候选、变体/负边距/important、模板静态部分、CSS @apply、注释/类型/导入与不完整拼接排除、非标尺值登记、动态档位、稳定性及只读漂移检查。spacing:check、原 token 检查与十五项测试、设计清单、类型、相关 ESLint、静态构建和 diff 检查通过。原有 Spacing / All tokens / Sizing Canvas 共五项通过；最终开发与静态 Docs 各六项回归通过，覆盖 320 / 390 / 1368px × light / dark，并继续执行九页排版、定义、锚点及隐藏旧 ID 检查。
+- 本轮前后 251 份生产源码、原 Spacing 故事、token 定义、规范、registry 和完整覆盖清单哈希一致；37 个 Foundations 索引条目及元数据完全一致。未改变生产样式、交互或跨端规则。本次未执行生产/原生全量验收，未提交或发布。证据为 `build/verification/spacing-scale/`，包含构建、测试、保护哈希、前后索引和六张 Spacing 页面截图；维护范围见 token-engineering.md。
+
+## Foundations 全面审查（2026-10-21）
+
+九个 Docs 页面与 Color Diagnostics 已检查。总览与分类共用同一份定义是正常引用；按名称检查单页唯一性，不将相同色值、跨层别名或总览/分类引用判为重复定义。分类定义合计完整覆盖总览的 134 项非适配层 CSS 定义与 28 项尺寸基准。
+
+| 页面 | 核对的展示范围 |
+| --- | --- |
+| All tokens | 134 项基础 CSS 定义、28 项尺寸基准，每个名称恰好一次 |
+| Color | 114 项颜色角色，含标签、标注与配色标尺 |
+| Elevation | 6 项项目定义、16 档上游阴影标尺 |
+| Shape | 9 项 CSS 角色、7 档固定圆角及原派生表达式 |
+| Spacing | 6 项基准与原尺寸预览 |
+| Typography | 5 项字体角色、对应的 5 个真实变量样本、4 项原有尺寸/排版偏好 |
+| Size & density | 15 项侧栏尺寸、4 个生产按钮尺寸 |
+| Icons | 82 个生产代码使用的标准图标名称与可解码 SVG |
+| Motion | 7 组现有场景的时长/缓动、4 组减少动态效果规则、1 处手动演示 |
+| Color Diagnostics | 22 组配对、既有判定结果与可键盘访问的内部横滚表格 |
+
+- 修复 Icons / Motion 的正文标题与页标题重复，改为「项目图标」「动效规范」；补齐 Typography 缺少的笔记标题字体样本，并逐个验证五个样本确实消费所标记的字体变量。Elevation 页与总览移除已不再展示的焦点示例文案，名称和说明与当前阴影/透明度内容一致；既有 ring 颜色和组件焦点契约仍保留在原归属。
+- 九个 Docs 共用同一模板。页面回归新增 h1/h2/h3 唯一性、单页定义唯一性、目录与标题锚点均指向本页且目标存在、分区标签有效、表格无嵌套、表头/单元格字体与边距/垂直对齐一致、各页主标题样式一致、表格内部无裁切与页面无横向溢出检查。原 ID、测试、分类入口和已隐藏场景全部保留；没有重新加入工程维护表、重复交互示例或测试跳转。Diagnostics 保留其诊断专用四列表格及原测量逻辑。
+- All tokens 与分类逐名对照生成目录，当前展示范围没有重复定义或遗漏。完整 registry / 覆盖清单仍包含全部 172 项静态 CSS 定义、12 项运行时输出、28 项可移植尺寸、17 项所有权契约和 4 项上游输出；38 项适配层及运行时/所有权信息继续在工程文档与完整清单中，不为缩短页面裁剪定义，也不重新混入总览主表。16 档 Tailwind 上游阴影、图标目录与只读动效场景不伪装成新的项目 token。
+- 先新增逐页审查断言并复现标题重复失败，再完成修复。最终开发与静态页面各六项回归全部通过，覆盖 320 / 390 / 1368px × light / dark（含 mono / blue）、所有九个 Docs 与 Diagnostics、七档圆角切换、真实 Sheet 动效及减少动态效果。原有 Foundations 与相关 Callout / 项目阴影故事共 32 项通过；token 测试 15 项、图标测试 8 项通过。类型、相关 ESLint、构建、tokens:check、icons:check、设计清单、消费映射与 diff 检查通过。
+- Foundations 的 37 个索引项（含 ID、名称、测试/设备/隐藏标签等元数据）前后完全一致；261 份生产源码、规范、定义、registry、覆盖清单、生成值和旧故事/夹具文件哈希一致。仅修改共享 Storybook 展示、只读说明和新增审查断言，生产圆角、颜色、字体、尺寸、交互与动效规则均未改。既有蓝色 primary 对比度与容器配对诊断结果继续保留；本轮不是全字体/全配色无障碍认证或原生全量验收。
+- 证据在 `build/verification/foundations-audit/`；页面截图在 `build/verification/foundation-reference/`。Storybook 保持运行，未提交或发布。
+
+## Spacing / Typography / Size & density 整理与加载恢复（2026-10-21）
+
+- 三个分类侧栏均只显示 Docs。Spacing / Sizing 的 Reference，以及 Typography 的 Default / Compact Boundary / Spacious Boundary / Mobile Responsive 使用 !dev 隐藏；全部六个原 ID、test 标签和原 mobile 标签保留，没有重命名故事或删除夹具。Typography 文件剔除新增隐藏标签后与本轮基线逐字一致，原保存、边界选择、恢复默认、390×844 和代码内部横滚断言未改。
+- 间距六项、侧栏尺寸十五项均保留，统一为 Token / Value / Preview 三列；按钮四个尺寸从并排示例改为同列对齐的生产 Button 表格。Typography 保留四行字体样本、全部五个静态角色和四项现有尺寸/排版偏好，移除指向隐藏测试故事的跳转及其孤立样式，使用简短分区标题。px / pt、按钮高度、字体回退和运行时偏好规则不变。
+- 原相关故事测试六项全部通过，包括三个桌面 Typography 场景、一个移动 Typography 场景和两个 Reference。开发与静态页面各六项回归通过，覆盖 320 / 390 / 1368px × light / dark：检查 Docs 单入口、六个旧 ID 测试资格、旧 Reference 直接加载、完整名称清单、全部基准的原尺寸、四个按钮真实高度 24 / 32 / 36 / 40px、字体角色及默认偏好、无隐藏测试跳转和无页面横向溢出。
+- 用户反馈动态模块加载失败时，当前 6006 已无服务监听，HTTP 请求返回 000；未确认此前进程退出原因。恢复 Storybook 后，原带时间戳的 spacing 模块 URL 返回 200，用户当前浏览器重新加载并切换 Spacing Docs 后正常显示；原 Reference ID 也经浏览器回归和 Canvas 检查可加载。服务保持运行，没有加入吞错或自动重试逻辑。
+- 类型、相关 ESLint、静态构建、tokens:check 和 diff 检查通过；十六份定义、规范、registry、覆盖清单、生成值、采样器、Typography 偏好/Provider/Typeset 与 Button 源码/尺寸数据哈希保持一致。证据在 `build/verification/foundation-docs-cleanup/`，三页截图为 `build/verification/foundation-reference/{spacing,typography,sizing}-docs-{width}-{theme}.png`，用户浏览器恢复截图为 spacing-recovered.png。本轮未重跑生产或原生全量验收，未提交或发布。
+
+## Shape 分区、公式与预览整理（2026-10-21）
+
+- Shape 仅保留 Docs，`foundations-shape--reference` 使用 !dev 隐藏，原 ID 和 test 标签保留；原 Reference Canvas 测试一项通过。页面分为「圆角选项」和「当前主题圆角」，保留原 foundation-shape 锚点并增加当前主题分区锚点，删除重复的 Shape tokens 标题。
+- 七个固定档位和九个 CSS 角色均完整展示，两表统一为 Token / Value / Preview。主题角色按 sm 到 4xl 排序，交互区域角色在第二表内单独分组。当前 --radius 基准与源码声明中的表达式一起展示；公式直接读生成目录，不复制平行规则。预览桌面为 64×56px，窄屏为 56×48px；预览列、表头与两表纵向位置保持一致。
+- 最终开发页面六项回归、静态页面六项回归均通过，覆盖 320 / 390 / 1368px × light / dark。检查仅 Docs 可见、旧 ID 测试资格、两个分区锚点、三列表头、全部七档和九个角色、公式与权威声明一致、放大预览尺寸、列对齐及无横向溢出。实际工具栏逐一切换七档，验证固定基准不变、七个主题角色的原始计算规则和预览一致；none 下 --radius-xl 仍为 4px，交互区域默认值仍为 8px / 4px。
+- 首轮切换断言曾在已有极短样式过渡完成前读取预览，已等待实际计算值稳定，不改生产过渡。开发服务与构建并行期间出现导航中断；最终在构建完成后验证，开发与静态全部通过。类型、相关 ESLint、静态构建、tokens:check 和 diff 检查通过；十一份规范、定义、registry、覆盖清单、生成尺寸与采样器文件哈希保持一致。
+- 证据在 `build/verification/shape-docs/`，截图为 `build/verification/foundation-reference/shape-docs-{width}-{theme}.png` 和 shape-sidebar.png。仅调整文档与 Storybook 展示、导航和页面回归；未改生产圆角、交互，未重跑生产或原生全量验收，未提交或发布。
+
+## Motion Docs 规范与嵌入演示（2026-10-21）
+
+- Motion 侧栏仅保留 Docs，Reference / Reduced Motion 的原 ID、test 标签和旧回归保留并隐藏。删除仅说明与跳转的展示方式，统一表格列出默认过渡、快速记录、抽屉进入/退出、侧栏展开/收起、手势回弹、图片加载共七组时长/缓动及来源，直接读取当前生产源码与已安装 Tailwind；缺少定义会明确失败，不复制成新的全局 token。
+- 补充四组减少动态效果规则，直接读取全局 0.01ms / auto 和组件的 none 策略。Docs 嵌入一处真实 Sheet 演示，只显示系统偏好和「播放动效」按钮；沿用 MotionExample 的默认完整夹具，通过 compact 变体去掉工程说明与开关状态。旧 inspectSheet / inspectReducedMotion 测试辅助函数逐字保持一致，具体抽屉交互展示仍在 Sheet。
+- 原相关 Canvas 九项全部通过。开发与静态页面各六项回归通过，覆盖 320 / 390 / 1368px × light / dark：检查单入口、旧 ID 测试资格、七组时长与表格来源、四组规则、无旧跳转链接、一处嵌入演示及无溢出。每种宽度/主题都真实切换浏览器 no-preference / reduce，生产 Sheet 的动画与过渡分别为 200ms / 0.01ms，并核对缓动与规范表一致；未模拟 CSS 或修改生产媒体规则。
+- 首轮 Docs 检查在模态打开后通过无障碍角色定位读取背景表格，背景被正确隐藏导致等待；已将表格读取前移，单项冒烟及最终全部回归通过。类型、相关 ESLint、静态构建、token 生成物和 diff 检查通过；十份 token 定义、规范、registry 与覆盖清单哈希保持一致，未改生产样式或交互。
+- 日志与基线在 `build/verification/motion-docs/`，截图为 `build/verification/foundation-reference/motion-docs-{width}-{theme}.png` 和 motion-sidebar.png。本轮仅调整 Storybook 与维护说明，未重跑生产或原生全量验收，未提交或发布。
+
+## Icons 生产使用目录与导航精简（2026-10-21）
+
+- Icons 侧栏仅保留 Docs，`foundations-icons--reference` 保留原 ID 和测试并隐藏导航。原来的十个原生侧栏资产预览改为自动生成的项目 Lucide 使用目录，目前 82 个标准名称，网格仅显示图形与名称；原生桥接、16 / 44px 侧栏基准和导出流程移到 token-engineering.md。
+- 新生成器复用生产依赖图与 TypeScript 符号绑定，排除测试/故事/不可达文件、未使用导入、类型、注释/字符串及局部同名遮蔽，合并 XIcon / X、MoreHorizontal / Ellipsis 等别名；原生侧栏复用原生成器的十项映射，并与 Web 目录去重。生成 JSON 包含标准名称、SVG 与消费者，不导入完整 Lucide 图标库到页面。清单是生产可达模块的静态运行时引用范围，不模拟全部局部死代码裁剪或单一页面渲染状态。
+- icons:build / icons:check 同时维护原生资产与新目录；Storybook 启动和构建自动生成，开发中变更生产导入后可重新运行生成刷新。旧原生导出函数及资源逻辑不变，仅共享映射。生成器在内容不变时保留 mtime，检查漂移时不覆盖源文件；遇到不支持的 Lucide namespace / 动态导入 / 直接再导出会明确失败。
+- 原生与新目录 Node 测试八项通过，覆盖导出元数据、稳定性、漂移、符号绑定、别名、排除范围和消费者可达性；保留的 Reference 与 effects Canvas 共五项通过，原十项 SVG 资源加载/几何检查仍执行。开发与静态页面各六项回归通过，覆盖三档宽度 × light / dark，检查 82 个名称完整且有序、每个 SVG 可解码为 24px、currentColor 前景继承、维护信息缺席、无溢出和 Docs 单入口。
+- 类型、相关 ESLint、静态构建、icons:check、token 检查、设计清单与 diff 检查通过；十份 token 定义、规范、registry 和完整覆盖清单哈希与本轮开始一致。类型检查曾发现共享尺寸表仍需 sidebarTokens 导入，已恢复该引用后通过；只改变 Storybook 展示与生成流程，未改生产界面及原生资产。证据在 `build/verification/project-icons/`，截图为 `build/verification/foundation-reference/project-icons-{width}-{theme}.png` 和 icons-sidebar.png。未重跑生产或原生全量验收，未提交或发布。
+
+## Elevation 仅保留 Docs，检查归入 Sheet / Motion（2026-10-21）
+
+- Elevation 的 default / dark / reduced-motion / regression 均隐藏导航，Docs 成为唯一可见入口；原四个 ID 和 test 标签保留。抽屉交互的可见入口为 `components-sheet--interaction`，动效媒体偏好为 `foundations-motion--reduced-motion`，Motion Docs 链接改指向本分类入口。
+- 抽屉夹具与完整键盘/遮罩/关闭断言提取到 sheet-check.example.tsx；MotionExample、Sheet 时长/焦点检查与媒体模拟断言提取到 foundation-motion.example.tsx。旧 ID 与新分类共用实现，未裁剪原断言；旧 Regression / Dark 的图标、静态阴影、独立焦点检查保留。对比提取前源码，原夹具及 play 主体除缩进外一致。
+- 相关 Canvas 九项全部通过，包括四个保留的 Elevation 场景、原 Sheet 右侧/H5 底部场景、新 Sheet 交互入口、Motion Reference 与新动效入口。开发与静态页面各六项回归通过，核对 Elevation 仅一个 Docs 链接、所有旧 ID 隐藏且可测试、新入口的分类/可见标签、Motion 文档链接，以及 Sheet 交互在三档宽度、浅深模式下的键盘可达、边界、两种关闭方式与焦点返回。
+- 类型、相关 ESLint、静态构建、生成物及 diff 检查通过；十份 token 定义、registry、规范和完整覆盖清单的哈希与本轮开始一致，未改生产组件、样式与消费者。证据在 `build/verification/elevation-ownership/`：definition-hashes-before.json、effects.before.tsx、preservation.json 及 canvas / dev / static / types / lint / build / tokens-check 日志。更新侧栏截图为 `build/verification/foundation-reference/elevation-sidebar.png`。未重跑生产或原生全量验收，未提交或发布。
+
+## Elevation Diagnostics 仅保留真实抽屉（2026-10-21）
+
+- 可见 Diagnostics 仅保留「浮层检查」标题与「打开抽屉」按钮，使用生产 Sheet；抽屉内仅有标题、必要的操作提示和原关闭按钮。移除该页的图标网格、静态阴影、独立焦点按钮、媒体偏好/开关状态与工程说明，侧栏仍只有 Docs / Diagnostics，原 default / dark / reduced-motion ID 保留。
+- 原 Effects / MotionExample 夹具与原默认、减少动态效果的 play 主体逐字比较保持一致；原默认断言转入隐藏 Regression，Dark 沿用完整夹具和断言，Reduced Motion 显式渲染原夹具。四项 Canvas 测试通过：保留原三组完整资源、阴影、焦点、Sheet 与媒体偏好检查，新增精简页面的键盘进入、遮罩、Esc / 按钮关闭及焦点返回检查。初次断言在动画初始帧检查遮罩过早，改为等待真实可见状态，未改生产过渡或样式。
+- 开发服务和静态页面各六项回归通过，覆盖 320 / 390 / 1368px × light / dark（390px 使用 none 圆角），确认页面仅一个标题和一个按钮、无重复内容、抽屉进入后的边界、两种关闭方式及焦点恢复；同时检查隐藏 Regression 保留测试资格、原 token 全量展示和侧栏入口。边界断言等待真实进入动画完成，不使用固定延时或改变系统媒体设置来规避检查。
+- 类型、相关 ESLint、静态 Storybook 构建、token 生成物检查与 diff 检查通过。十份定义、registry、规范和覆盖清单的哈希与本轮开始完全一致，未修改生产消费者。证据为 `build/verification/elevation-diagnostics/` 中的 before 源码、preservation.json、definition-hashes-before.json 和 canvas / dev / static / types / lint / build / tokens-check 日志；截图为 `build/verification/foundation-reference/elevation-diagnostics-{width}-{theme}.png`。本轮仅修改 Storybook、相应回归及展示维护说明，未重跑生产或原生全量验收，未提交或发布。
+
+## Elevation 侧栏入口精简（2026-10-21）
+
+- 侧栏仅保留 Docs 与 Diagnostics；原 Default 只修改展示名，保留 `foundations-effects--default`。Dark 与 Reduced Motion 使用 `!dev` 隐藏，原主题参数、ID、测试资格和全部 play 断言不变。明暗模式继续使用工具栏；Motion Docs 的 Reduced Motion 直达链接仍保留。
+- 原有三个 Canvas 测试全部通过，覆盖资源、阴影、Tab 焦点、生产 Sheet 打开/关闭、焦点恢复与真实减少动态效果媒体偏好。开发服务和静态页面各六项 Docs 回归通过，新增索引及真实侧栏检查，确认两个可见入口和三个原有测试 ID；既有 token 值、布局与导航检查继续通过。类型、相关 ESLint、静态构建与 diff 检查通过。
+- 日志为 `build/verification/elevation-navigation/{canvas,dev,static,types,lint,build}.log`，侧栏截图为 `build/verification/foundation-reference/elevation-sidebar.png`。仅修改 Storybook 导航元数据、回归和维护文档，生产定义、消费者及交互未改；未重新执行生产或原生全量验收，未提交或发布。
+
+## 项目阴影 token 提取与消费（2026-10-21）
+
+- 对比已安装 Tailwind 标尺与既有 overlay-shadow 后，四组局部阴影没有数值完全相同的现成档位；保留原值，新增 surface-shadow、surface-focus-shadow、control-shadow、floating-control-shadow。快速记录、加载占位与笔记卡片共享表面角色，继续页面与移动导航/关闭按钮共享轻量控件角色。已有 shadow-lg、shadow-none 和浮层角色不变，混合状态下划线不归入 Elevation。
+- 共享的两个固定角色放在 theme/tokens.css；快速记录专用的两个模式角色放在 theme/capture.tokens.css，随 quick-capture.css 加载。删除迁移后冗余的暗色阴影规则，保留暗色描边、原焦点条件、Ring 组合、过渡与 Reduce Motion。更新 App 既有卡片 class 断言，避免测试中的旧类继续生成闲置 CSS。未修改打包预算。
+- registry、规范、逐项消费映射与自动清单同步：172 项静态 CSS、134 项非适配层定义、12 项运行时输出、28 项尺寸、17 项契约；索引覆盖 105 个 Web 源文件（含新增定义文件）与两个原生文件。All tokens 和 Elevation 自动纳入四个角色，沿用统一表头、64×40 预览和当前模式取值。
+- 提取前浅深色基线两项通过；提取后浏览器 13 项通过，包括两个隐藏阴影场景、原 QuickCapture 八项及 effects 三项。阴影场景使用独立旧值核对快速记录、六张加载卡片、输入占位、导航按钮、悬浮入口、聚焦表面、Sheet 继续/关闭按钮，并覆盖四个变量证明实际消费。保留 Sheet 关闭和焦点交互。
+- App / QuickCapture / NoteCollection 共 117 项测试、token 15 项测试、类型、相关 ESLint、设计清单和生成物检查通过。静态 Docs 与开发服务各六项通过，覆盖 320 / 390 / 1368px × light / dark；核对全部 21 个阴影预览的取值、布局和无溢出。静态页面的项目值按实际构建后 CSS 比较，兼容构建器将颜色规范化为十六进制；生产原值另由独立基线验证。
+- 首次将所有角色加入主题入口后触发首屏 CSS 预算，已通过移除旧测试类并按组件加载专用定义解决。最终初始 CSS 97,197 bytes（上限 97,280），首屏 190,721 bytes gzip，所有原有路由预算通过。证据保存在 `build/verification/project-shadows/`，含提取前源码、before-browser / after-browser、component-tests、token-tests、docs-static / docs-dev、production-build / bundle 日志。仅验证上述范围，未重跑全部 Web / 原生设备验收，未提交或发布。
+
+## Elevation 补齐内阴影与轮廓投影（2026-10-21）
+
+- 直接从安装的 Tailwind theme.css 读取三档 inset-shadow 和六档 drop-shadow，与既有七档外阴影分组展示。统一使用相同表头、列宽、字号、间距和 64×40 预览框；内阴影使用真实 box-shadow，轮廓投影使用透明 SVG 的 filter: drop-shadow，未额外添加矩形底色或模拟描边。项目定义、生产消费者及 All tokens 范围不变。
+- 开发服务与最终静态页面各六项 Docs 回归通过，覆盖 320 / 390 / 1368px × light / dark；核对全部 16 个上游名称与原值、box-shadow / filter 的真实计算结果、六个透明 SVG、全部 17 个预览的列位置和尺寸，以及无溢出。类型、相关 ESLint、静态构建及 diff 检查通过。
+- 日志为 `build/verification/foundation-reference/shadow-families-{dev,build,static}.log`；截图为同目录 `inset-shadow-scale-{width}-{theme}.png`、`drop-shadow-scale-{width}-{theme}.png` 与更新的完整 Elevation 截图。仅修改 Storybook 和文档，未重跑生产或原生业务验收，未发布。
+
+## Elevation 移除焦点示例与跳转链接（2026-10-21）
+
+- 仅从 Elevation Docs 移除焦点按钮、说明与“查看生产浮层与焦点检查”链接，并清理相应文档样式。基础阴影、项目定义与预览保留；生产定义、组件及原 Default / Dark / Reduced Motion 场景和断言未修改。
+- 原有三项 Canvas 回归通过，保留图标资源、浮层阴影、Tab 焦点、Sheet 关闭/焦点恢复及减少动态效果检查。静态 Docs 六项通过，新增焦点区和链接缺席检查，原阴影值、表格对齐及无溢出检查继续保留。类型、相关 ESLint、静态构建与 diff 检查通过。
+- 日志为 `build/verification/foundation-reference/remove-focus-{canvas,build,static}.log`。仅修改 Storybook 与文档，未重跑生产或原生业务验收，未发布。
+
+## Elevation 阴影表排版统一（2026-10-21）
+
+- 基础阴影和项目阴影共用 ShadowValue，统一表头为当前模式的 `Value · light / dark`，沿用同一列宽、字号、间距与 64×40 预览。桌面数值换行时预览仍在同列，窄屏统一将预览放在值下方；All tokens 的项目阴影也使用相同展示组件。上游数值、项目定义和生产消费者不变。
+- 最终静态页面和开发服务各六项回归通过，覆盖三档宽度与亮暗模式；核对两表表头、八个预览的列位置和尺寸、原有七档真实计算阴影与无溢出。类型、相关 ESLint、静态构建和 diff 检查通过。首轮开发检查有一次 All tokens 空白页面计数失败，未修改断言，重新执行六项通过；未认定瞬时空白的原因已查明。
+- 证据为 `build/verification/foundation-reference/elevation-layout-{dev,dev-final,build,static}.log` 及 `elevation-layout-{width}-{theme}.png`。仅修改 Storybook 展示与验证记录，未重新运行生产或原生业务验收，未发布。
+
+## Elevation 增加七档上游阴影（2026-10-21）
+
+- Elevation 分类页新增基础阴影表，按 2xs / xs / sm / md / lg / xl / 2xl 顺序展示 token 名称、原始值及预览。数据直接来自安装的 Tailwind `theme.css`，不复制数值或增加生产定义；项目原有定义、示例和组件用法保留。桌面预览纵向对齐，窄屏预览在值下方排列。
+- 开发服务与最终静态页面各六项 Docs 回归通过，覆盖 320 / 390 / 1368px × light / dark；逐项核对七个名称、与上游文件一致的值、预览真实计算阴影和无横向溢出。类型、相关 ESLint、静态构建与 diff 检查通过。
+- 证据为 `build/verification/foundation-reference/shadow-scale-{dev,build,static}.log` 和同目录 `shadow-scale-{width}-{theme}.png`。本轮仅修改 Storybook 和文档，未重跑生产或原生业务验收，未发布。
+
+## 标注文字与菜单色样 token 化（2026-10-21）
+
+- 在 `import-layout.tokens.css` 新增九个 `--callout-text-*` 和九个 `--callout-swatch-*`，原浅深色文字与菜单固定色相分别原样提取；默认文字/样本仍使用 foreground，默认背景仍透明。正文与标题继承、菜单文字/背景两组样本分别消费对应角色，选项值、数据属性和保存格式不变。九条暗色文字规则在提取后与基础规则完全相同，合并为通过 token 覆盖模式的基础规则。
+- 补齐两个 registry 族、语义定义与消费者说明，更新完整 Markdown/JSON 清单和 Storybook Callout colors 展示。现为 168 项静态公开 CSS 名称（149 项颜色相关）、12 项运行时输出、28 项可移植尺寸、17 项所有权契约；生产消费索引仍覆盖 104 个 Web 文件、两个原生文件。旧标注背景的 18 条浅深色声明逐项保持一致。
+- 生产修改前新增真实 RichMarkdownEditor / CalloutColorsMenu 浏览器基线，浅深色两项通过；修改后仍逐项核对 10 种文字状态及标题继承、20 个菜单样本的原始色值和背景。另覆盖全部 18 个新变量，确认正文与菜单实际响应各自 token，并在 finally 恢复。选色、独立背景、恢复默认、菜单关闭、图标与正文保留继续检查；隐藏场景不增加导航或 Docs 入口。
+- `tokens:check` 与 15 项 token 测试通过，包含两组完整九色定义、浅深色声明数与生产消费者索引检查。最终颜色/标注浏览器场景 13 项通过（一个文件按原 mobile 筛选跳过），RichMarkdownEditor 与 Markdown 既有回归 184 项通过，覆盖选择、重置、撤销、序列化和重开。静态 Docs 六项通过，检查新定义展示、侧栏入口与测试隐藏状态；类型、相关 ESLint、设计清单、静态构建及 diff 检查通过。
+- 首次生产包预算检查的一条移动端路由超出 raw 上限 589 字节；合并重复暗色规则后所有原预算通过，未放宽门槛。最终首屏为 190,785 bytes gzip。保留既有大 chunk 与 jsdom scrollBy 提示。本轮未执行 Web 全量、Safari / 原生设备或全页无障碍验收，未提交或发布。
+- 日志和提取前源码保存在 `build/verification/callout-tokens/`：`before-browser.log`、`final-browser.log`、`editor-tests.log`、`final-token-check.log`、`final-docs-static.log`、`final-storybook-build.log` 与 `production-build.log`。色值检查是浏览器 CSS 解析结果，未将其表述为全页像素比对或全部配色的对比度合规。
+
+## Diagnostics 移除交互状态展示（2026-10-21）
+
+- Diagnostics 删除整个交互状态区，仅保留主题摘要和 22 组配对结果。生产 Button / Input / Tabs 夹具及原交互断言完整迁至五个隐藏 State Regression 场景，沿用默认、Dark、Blue Slate、Dark Teal、Mobile 组合；原有六个颜色场景 ID 和测试资格保留。
+- 颜色 Canvas 11 项全部通过，包含六个原有颜色场景与五个迁出的交互场景。静态页面六项回归通过，覆盖 320 / 390 / 1368px × light / dark，检查交互区及控件缺席、颜色结果仍完整、五个新场景可测试且无导航入口，侧栏仍仅 Docs / Diagnostics。索引检查发现展开对象不会自动继承隐藏标签，已在每个导出显式声明 `!dev` 后通过检查。
+- 类型、相关 ESLint、静态构建与 diff 检查通过；八份定义、registry、完整清单的哈希与原基线一致。日志为 `build/verification/foundation-reference/remove-states-{canvas,build,static}.log`。未重跑 Web / 原生全量业务验收，未发布。
+
+## Diagnostics 交互状态布局（2026-10-21）
+
+- 「真实组件状态」改为「交互状态」，删除说明段落、外层边框与内边距；按钮、输入、Tabs 三组在桌面并排、窄屏纵向排列。按钮文案缩短为「可操作」「不可用」，生产控件、状态、受控输入、错误描述关联与 Tab 顺序保持一致。
+- 原有六个颜色场景全部通过，保留真实悬停、键盘焦点、禁用样式、输入编辑、错误边框及 Tabs 键盘切换断言，仅更新标题和按钮文案定位。开发服务与最终静态页面各六项检查通过，覆盖 320 / 390 / 1368px × light / dark，并检查三组布局和页面无横向溢出。类型、相关 ESLint、静态构建与 diff 检查通过。
+- 日志为 `build/verification/foundation-reference/interaction-states-{canvas,dev,build,static}.log`；分组截图为同目录 `interaction-states-{width}-{theme}.png`。本轮仅调整 Storybook 展示和对应文档，未重新运行完整 Web / 原生业务验收，未发布。
+
+## Color Diagnostics 内容精简（2026-10-21）
+
+- 页面收敛为主题摘要、配对结果表、真实组件状态三部分。22 组配对统一为配对 / 样本 / 对比度 / 结论四列，九组标签合并展示；移除重复色板、长篇测量说明和源码路径。工程信息移到 [颜色诊断方法与维护](token-engineering.md#颜色诊断方法与维护)，两项特殊判定范围仍随结果说明。
+- 35 个颜色角色改为隐藏测试夹具，逐项检查变量和浏览器实际解析色，并在测试后清理；原有 22 组比值、已知问题、原生 palette 和 Button / Input / Tabs 交互检查继续保留。六个颜色场景的 ID、导航隐藏规则与测试资格均不变。
+- 新增深色蓝色组合复核，确认 primary 的既有文字对比度问题在浅、深两种模式下均约为 3.76:1；修正原来仅列浅色的测试预期，同时断言实际主题、配色和原始比值，未改变生产颜色。浅色 muted 容器约为 4.46:1，继续单列诊断，未作为文字 AA 失败或通过。
+- 开发服务与静态构建各六项真实页面检查通过，覆盖 320 / 390 / 1368px × light / dark，含蓝色配色、22 行四列、已知未达标项、真实组件区和页面无横向溢出；窄屏表格保留局部横向滚动与键盘焦点。全部 Foundations Canvas 21 项通过（12 个文件通过、六个按原配置跳过），类型、相关 ESLint、静态构建与 diff 检查通过。
+- 八份生产定义、registry 与完整生成清单的 SHA-256 与精简前基线逐项相同，新增文档的本地链接检查通过。证据为 `build/verification/foundation-reference/diagnostics-{dev,build,static,foundations}.log` 和同目录 `diagnostics-*.png`。本轮仅修改 Storybook 和文档，未重跑完整 Web / 原生业务验收，未触发远程 CI、安装或发布。
+
+## Color 侧栏保留 Docs 与 Diagnostics（2026-10-21）
+
+- Default 仅修改展示名称为 Diagnostics，保留 `foundations-colors--default`。Dark / Blue Slate / Dark Teal / Mobile / Live Palette 使用 `!dev` 隐藏导航；原导出、story ID、场景参数、移动端标签及 play 断言均保留。隐藏变体显式保留各自名称，避免继承 Diagnostics 展示名。
+- 索引回归检查原有六个 story ID 均保留测试资格，隐藏的五个场景无 dev 标签；真实 Color 侧栏严格只有 Docs 和 Diagnostics 两个入口。开发服务与最终静态页面各六项 Docs 检查通过，原 Foundations Canvas 21 项全部通过；类型、相关 ESLint、静态构建与 diff 检查通过。
+- 定义、registry 与覆盖清单八份文件哈希未变。日志为 `build/verification/foundation-reference/colors-nav-{dev,build,static,canvas}.log`，截图为同目录 `sidebar-foundations.png`。本轮未重跑完整设计门禁或 Web / 原生业务验收。
+
+## All tokens 侧栏入口精简（2026-10-21）
+
+- All tokens 仅显示直接打开 Docs 的入口；Default / Dark / Mobile 以既有 `!dev` 标签隐藏导航，保留原 story ID、`test` 标签及全部断言。LiveThemeExample 与 LivePalette 的真实 Provider 交互和 palette 同步断言原样移入 Color 分类，入口为 `foundations-colors--live-palette`，消费映射同步更新。
+- 真实 manager 回归检查三个隐藏故事仍在索引且可测试、侧栏无重复入口、All tokens Docs 可见；Color 分类中 Live Palette 可见且 Color Docs 正常打开。开发服务与最终静态页面各六项 Docs 回归通过，全部 Foundations Canvas 仍为 21/21，通过的场景数量未因隐藏入口减少；类型、相关 ESLint、静态构建和 diff 检查通过。
+- 八份定义、registry 和完整覆盖清单的哈希保持不变。日志在 `build/verification/foundation-reference/sidebar-{dev,build,static,canvas}.log`，截图为同目录 `sidebar-foundations.png`。本轮未重跑完整设计门禁或 Web / 原生业务验收。
+
+## Foundations 展示圆角跟随主题（2026-10-21）
+
+- 将表格、色块、字体/焦点展示容器的固定圆角改为现有 `--radius`；移动端色块不再单独覆盖 7px。链接焦点与尺寸条的圆角随同一基准派生，`none` 时均为直角。固定 radius 基准样本继续展示各自定义，未改动生产圆角公式。
+- 派生 `--radius-*` 可能被 Tailwind 内联而不输出同名 CSS 变量；文档取样改为在隔离节点上应用其原始表达式，再读取浏览器计算的圆角，避免显示“读取中”或失去当前基准。仍保留浏览器对负结果的既有边界处理。
+- 新增真实工具栏七档切换检查，表格和色块的实际圆角逐项匹配生成基准；检查当前派生值同步更新、固定 radius.md 样本保持 8px。三个宽度的浅/深模式同时检查展示圆角与无未解析值。修复前定向用例失败，修复后开发与最终静态页面各六项 Docs 检查通过，Foundations Canvas 21 项通过；类型、相关 ESLint、构建与 diff 检查通过。
+- 八份定义、registry 与完整覆盖清单哈希保持不变。日志为 `build/verification/foundation-reference/radius-{red,dev,build,static,canvas}.log`，截图为同目录 `radius-{none,2xl}.png`。本轮未重跑完整设计门禁或 Web / 原生业务验收。
+
+## Foundations 静态 token 表格（2026-10-21）
+
+- 移除 CSS 和尺寸名称下的 details / summary 展开交互、重复的族说明、类型/层级/状态/主题轴、源码路径及原始声明；分类页共用表格同步精简。表格只保留名称、当前模式值和预览，删除无引用的状态标签映射与展开样式。完整元数据继续保留在工程文档和生成覆盖清单中。
+- 更新既有回归以检查表格没有折叠控件，同时保留定义名称集合、尺寸数量、主题切换、真实 manager 页内导航和分类示例检查。开发服务与最终静态页面各六项 Docs 检查通过，Foundations Canvas 21 项通过；类型、相关 ESLint、静态构建与 diff 格式检查通过。
+- 八份定义、registry 和覆盖清单文件的哈希仍与精简前一致。日志在 `build/verification/foundation-reference/remove-details-{dev,build,static,canvas}.log`；仅调整 Storybook 与文档，未重跑完整设计或 Web / 原生业务验收。
+
+## Foundations 目录保留 Storybook 外壳（2026-10-21）
+
+- 复现用户点击右侧目录后整个页面跳到 `iframe.html#foundation-*` 的问题。Storybook 生成的 iframe 文档包含 `<base target="_parent">`，未指定 target 的目录和标题锚点继承父页面导航；先前独立 Docs 页的锚点检查无法发现 manager 被替换的问题。
+- 目录和分区标题的原生锚点显式使用 `target="_self"`，保留浏览器 hash、滚动和焦点行为，定位限定于当前 preview 文档；不修改 Storybook 全局 base 或其他页面的链接策略。
+- 新回归从真实 Storybook manager 点击目录与分区标题，检查导航发生在子 frame、父 URL 不变、spacing 定位和侧栏/工具栏继续可用。修复前定向测试明确失败于“A section link must not navigate the Storybook manager”，修复后开发服务和最终静态页面各六项 Docs 回归通过；目录高亮、类型、相关 ESLint 与静态构建检查通过。证据在 `build/verification/foundation-reference/section-navigation-{red,green,build,static}.log`，代表截图为同目录 `manager-section-navigation.png`。
+
+## Foundations 当前模式展示（2026-10-21）
+
+- 根据工具栏当前亮／暗模式显示一个色样和值，表头同步显示 `Value · light` 或 `Value · dark`，移除并排双色样。隐藏文档只解析当前模式与外观；监听根节点模式 class 及已有外观属性，签名去重，卸载时断开 observer 并移除取样文档。展开详情仍可查阅全部原始声明。
+- 阴影、圆角与字体也读取当前模式和外观下的 CSS 计算值，预览不再固定使用第一条浅色声明。生产定义、registry 和完整生成清单与精简前八份文件的 SHA-256 逐项一致；仅修改文档展示。
+- 真实 Docs 回归覆盖 320 / 390 / 1368px × light / dark，核对每个颜色仅展示当前模式、背景值和 primary 与生产一致、阴影与当前 root 计算值一致。实际 manager 工具栏完成 light → dark → light 切换，检查模式与值同步及取样 iframe 保持一个；分类示例、详情、导航和溢出检查继续通过。
+- 类型与相关 ESLint 检查通过，静态 Storybook 构建通过；全部 Foundations Canvas 定向回归 21 项通过（12 个文件通过、6 个按标签配置跳过），最终静态 Docs 六项通过。日志为 `build/verification/foundation-reference/current-mode-{canvas,build,docs}.log`，模式切换截图为同目录 `toolbar-{light,dark}.png`。未重跑上一轮已通过的完整设计门禁或 Web / 原生业务验收。
+
+## Foundations 展示精简（2026-10-21）
+
+- All tokens 聚焦 112 项非适配层 CSS 定义与全部 28 项尺寸基准，共九个分区；38 项工具类映射、12 项运行时输出、4 项上游定位输出、17 项维护契约及 Usage 移到 [Token 工程维护与集成](token-engineering.md) 和完整生成清单。分类页也移除维护表格，原来仅包含工程信息的 Layering / Responsive 页面撤下，Motion 分类保留真实抽屉验收入口。
+- 按钮密度、字体角色/排版偏好、焦点检查与验收链接只在分类页展示。尺寸表的状态、别名表达式、用途和消费说明收进原生 details；浅/深色样继续按等宽双列对齐，窄屏上下排列。
+- 精简前保存八份定义、registry 和生成清单的 SHA-256；检查结果逐字节一致。`tokens:check` 仍覆盖 150 CSS / 12 runtime / 28 portable / 17 owned / 九类与 104 个 Web 消费文件、两个原生消费文件，未裁剪定义或生产源码。哈希基线在 `build/verification/foundation-reference/definition-hashes-before-simplify.json`，新增文档的本地链接检查通过。
+- 更新真实 Docs 回归，核对全部非适配层 CSS 的名称集合、全部尺寸、工程表格与重复示例的缺席、尺寸状态展开/收起、真实 manager 分类导航，以及 Size / Typography / Elevation / Motion 分类示例继续可用。开发服务上的 320 / 390 / 1368px × light / dark 六项检查通过，类型检查通过。
+- `pnpm verify:design` 通过：262/262 浏览器测试、47 个文件通过、18 个按既有标签配置跳过；token 15 项、设计清单 10 项、图标 5 项、Storybook 配置 4 项和 palette 两项检查通过。类型、lint 与静态构建通过；既有 chunk 体积提示、MaxListeners 警告未在此轮修改。日志为 `build/verification/foundation-reference/simplify-verify-design.log`，截图与最后的静态构建/六项 Docs 复核日志同目录保存。本轮只修改 Storybook 与文档，未重跑 Web 业务全量或原生真机验收。
+
+## Foundations 文档展示更新（2026-10-21）
+
+- 参考 Astryx Foundations 的分类、标题/说明、分区表格和侧目录布局，统一 Storybook Foundations 的 Docs 展示。增加 All tokens 总览及 Color、Elevation、Icons、Motion、Shape、Spacing、Typography、Sizing、Layering、Responsive 分类；旧 tokens / effects 的稳定 story ID 保留。原颜色诊断、排版调整、动效与实时 palette 场景继续在 Canvas 验收，Docs 通过入口访问，不自动运行全部诊断。
+- 覆盖清单生成器同时输出 `design/token-coverage.generated.json`，与 Markdown 共用 CSS、运行时、便携尺寸和所有权解析结果；150 个静态 CSS、12 项运行时、28 个便携尺寸、17 个契约及四项上游输出逐项进入总览，未手工重抄定义。新增 JSON 漂移、只读和 mtime 回归，最终 token 测试 15/15 通过。数据、CSS 与样本解析仅用于 Storybook，未加入生产依赖图或改动产品 token 数值。
+- 浅/深双色样在一个隔离、无脚本的文档中加载生产 CSS，使用当前配色采样 sRGB；外层主题和真实偏好不会因取样被切换或保存。宽屏使用固定侧目录，窄屏自然换行；修复返回顶部后目录仍高亮旧分区的问题，滚动更新按浏览器帧合并并清理监听器。隐藏 Storybook onboarding 清单以保留分类阅读空间；本地 6006 服务已按原 localhost 配置重启。
+- 新增真实 Docs 启动与 manager 导航回归，覆盖 320 / 390 / 1368px × light / dark，其中 390px 使用 blue 配色；检查定义计数、来源展开、双色样与生产颜色一致、外层主题不被取样修改、页内锚点/高亮、返回顶部和页面不横向溢出。旧总览测试中直接导航锚点曾导致 Vitest tester frame 的 URL 被改写而断线；锚点行为已转到真实 Docs 回归验证，Canvas 保留结构和内容检查，未禁用真实导航或降低断言。代表截图保存在 `build/verification/foundation-reference/`。
+- `pnpm verify:design` 通过：264/264 浏览器测试、49 个文件通过、20 个按既有 mobile/desktop 分类配置跳过；原颜色/排版/动效、组件 Docs、字体/离线回退与两项 palette 检查保留。类型、lint、静态 Storybook 构建通过。
+- 首次与设计门禁并行的 Web 全量为 1084/1087：Mermaid flowchart、编辑器撤销后弹窗与草稿列表场景均超过原 5 秒期限。保留原源码、断言、worker 与 timeout；待设计浏览器测试完成后，单独执行完整 `pnpm verify:web`，1087/1087 UI、16/16 MCP、类型/lint、构建和原资源预算全部通过。首屏仍为 190,783 bytes gzip，产物入口/路由哈希与此次展示修改前相同。未据一次复跑通过断言原环境波动已消除，也未修改三个业务测试。
+- 日志：`build/verification/systematic-tokens/storybook-reference-{verify-design.log,verify-web.log,verify-web-standalone.log,docs.log,canvas.log,token-tests.log}`。未运行远程 CI、安装或发布 App；本项可见与交互证据来自本机 Chromium。
+
+## 系统性 token 全面复审（2026-10-21）
+
+- **修复消费清单缺口**：原清单只有代表入口，无法据此排除消费者遗漏。现从生产入口扫描 150 个模块、23 份可达 CSS，生成 104 份有直接/工具类/样式类变量依赖、局部覆盖或 TS 尺寸引用的文件索引；另扫描全部 Apple Sources，列出 NativeSidebar 的尺寸消费与 WebView 的 CSS 输出。覆盖动态标签/标注/配色、Mermaid、危险动作局部覆盖、原生 palette 和圆角 bridge；Tailwind 原始标尺的实际变量依赖也纳入索引，已内联的断点/度量保留上游及组件所有权。样式类与模板展开是可能集合，生产依赖图和 DEBUG 引用不等于所有运行分支已执行。
+- **修复定义与归属缺口**：补登 WebView 基于 scrollInsets 写入的 `--ios-top` / `--ios-bottom`，以及 Base UI 局部输出的 `--available-height` / `--available-width` / `--anchor-width` / `--transform-origin`。补齐内容颜色/布局、快速记录动效、主题切换过渡和其余内容浮层/响应式规则的拥有者；派生圆角与标签内部灰色输入明确为 alias。复审后为九类、150 个静态公开 CSS 名称、12 项 Web/原生运行时输出、28 个可移植尺寸、17 项所有权契约及四项上游定位变量。没有新增这些变量的运行时写入或修改现有值。
+- **防止再次遗漏**：所有生产 CSS 必须登记所有者；消费者中的普通 var()/工具类简写引用必须存在于公开、局部、生成或上游契约；无界动态读取必须登记，palette 契约与真实 IOS_PALETTE_KEYS 一致；reserved 角色被生产消费时必须更新状态。公开定义位置检查补覆盖 html/body、主题复合选择器、:where(:root) 与 @property。最终 `tokens:build` / `tokens:check`、15/15 token 回归通过，包含删除原生/上游契约、丢失 CSS 归属和未登记动态读取等反例。测试与生成器不执行任意产品代码，palette 名称一致性测试只导入无顶层副作用的键定义模块。
+- **外观与交互保持**：重新确认原基线 CSS 文件与 HEAD 一致。比较拆分前后全部声明（不只 token），styles.css 432 项、tag-colors.css 80 项、import-layout.css 108 项的选择器、外层 at-rule、属性/值与 important 多重集合相同；移动的连续 token 块内部顺序保持。224 组外观 × 180 个变量、代表生产控件计算样式与原生 palette 再次一致，默认浅/深色截图逐字节相同，Dialog/Sheet 打开与 Escape 关闭检查通过。生产 TS/TSX、偏好/存储/交互、便携 JSON 与 CSS/TS/Swift 尺寸输出均未改变。
+- **完整门禁**：`pnpm verify:web` 通过（1087/1087 UI、16/16 MCP、类型/lint、构建和预算；首屏仍为 190,783 bytes gzip）。`pnpm verify:design` 通过（250/250 浏览器故事、40 个文件通过、14 个按既有配置跳过，2/2 palette 检查）。保留既有编辑器 Hook lint warning、Storybook 大 chunk 提示和 Vitest MaxListeners warning，未降低阈值或修改生产行为。之后对最终索引与 alias 元数据再次执行 token 生成、只读检查及 15 项回归，全部通过。
+- 本机证据：`build/verification/systematic-tokens/audit-{source-preservation.json,preservation.log,verify-web.log,verify-design.log,token-tests-final.log}`，以及原 before/after JSON、浅/深色 PNG；这些辅助产物未提交。没有重新验收 Safari、真机/模拟器、VoiceOver 或全部字体字形，也没有触发远程 CI、安装或发布。
+
+## 系统性 token 定义与源码整理（2026-10-21）
+
+- 保留 shadcn/ui + Base UI + Tailwind 和现有系统支持范围。新增 [定义规范](token-system.md)、[registry](tokens/registry.json) 与 [生成覆盖清单](token-coverage.generated.md)，覆盖九类：150 个静态公开 CSS 名称、10 项运行时偏好输出（含对五个已有字体默认名称的覆盖）、28 个可移植尺寸与 14 项组件/平台/上游契约。保留 reserved、alias、baseline-only 和组件/平台所有权，登记完整不等于全部数值已提升为全局变量。
+- 完成主题定义、标签/标注领域颜色、笔记默认字体三批源码整理。原加载入口导入新 token 文件，组件和平台相关数值继续在已登记来源维护。AST 比较确认原 styles.css 的 296 项、tag-colors.css 的 50 项、import-layout.css 的 20 项自定义属性声明，其选择器、值与 important 标记的多重集合一致；搬移的连续定义块内部顺序保留。未改生产 TS/TSX、偏好解析/存储、便携 JSON 或生成 CSS/TS/Swift 数值。
+- 修改前后以同一 Chromium、1024×900 视口采集 2 个模式 × 8 个强调色 × 2 个中性色 × 7 档圆角，共 224 组。逐组比较 180 个 CSS 变量、真实 Button/Input/Switch/Tabs/标签的代表计算样式和生产 readIOSPalette 输出，全部一致。代表默认浅/深色的生产控件夹具截图逐字节一致；实际 Dialog 和 Sheet 打开、Escape 关闭检查通过。不是整个产品页面或全部组件状态的截图对比。本机证据在 `build/verification/systematic-tokens/preservation.json`、`before.json`、`after.json` 和 PNG 中。
+- `tokens:build` / `tokens:check` 接入覆盖清单生成与只读检查；PostCSS 仅为根开发依赖。检查名称唯一归属、类型/主题轴/状态元数据、CSS 引用、默认/单个声明 scope 的别名环、公开定义位置、生产 CSS 导入可达性、运行时字面量输出及文档漂移。复用生产依赖图，不执行产品 JavaScript 或访问用户笔记库。新增反例和原有 token 测试最终 13/13 通过；完整 CSS cascade 和任意动态 JavaScript 不由静态检查模拟。
+- `pnpm verify:web` 通过：1087/1087 UI 测试、16/16 MCP 测试、类型/lint、现有 CI/Apple 编排测试、生产构建和原有首屏/路由预算。初始 JS+CSS 为 190,783 bytes gzip，现有上限 192,512 bytes，未放宽预算。保留既有 RichMarkdownEditor Hook lint warning；本轮未改变该组件。
+- 首次设计门禁有两项颜色故事导入失败：示例仍从旧 styles.css 的 raw 文本提取 @theme。已将其改为读取新的权威主题文件，同步来源说明，未修改故事行为断言或阈值。最终 `pnpm verify:design` 通过：13 项 token、10 项维护表、5 项图标、4 项 Storybook 配置测试、类型/lint、静态构建、250/250 浏览器回归，以及 2 项真实 palette/只读生成检查；14 个测试文件按原配置跳过。日志为本机 `verify-web.log`、`verify-design-final.log`、`token-tests-final.log`。后续补齐加载可达性检查的最终 token 回归亦为 13/13。
+- 未重新进行 Safari、iOS/macOS 真机、模拟器或 VoiceOver 验收，未触发远程 CI、构建/安装 App 或发布。颜色诊断中的既有对比度问题保持原记录，不借 token 整理改变当前外观。
+
 ## Docs 异步就绪与原生 CI 环境（2026-10-20）
 
 - `76de4e4` 的正式 CI 在 Docs 代码区缺少 `pre`、取消切库场景，以及原生 `simctl launch` 三处失败。原生任务独立运行仍超时，不能将任务隔离标记为修复。探针构建、安装完成，未取得断言结果；原始 [Verify 记录](https://github.com/divikwu/memocard/actions/runs/39364109551) 保留。

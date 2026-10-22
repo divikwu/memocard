@@ -10,5 +10,6 @@ const config: StorybookConfig = {
   },
   staticDirs: ["../public"],
   core: { disableTelemetry: true },
+  features: { sidebarOnboardingChecklist: false },
 };
 export default config;

@@ -1,0 +1,61 @@
+/* Static note font fallbacks; TypographyProvider owns preference overrides. */
+:root {
+  --note-body-font: "Noto Sans Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --note-heading-font: var(--note-body-font);
+  --note-mono-font: "Geist Mono Variable", ui-monospace, monospace;
+}
+
+/* Read-compatible names from previous drafts; production uses the shared scale. */
+:root {
+  --font-size-fixed-11: var(--font-size-xs);
+  --font-size-fixed-12: var(--font-size-xs);
+  --font-size-fixed-13: var(--font-size-sm);
+  --font-size-fixed-14: var(--font-size-sm);
+  --font-size-fixed-15: var(--font-size-base);
+  --font-size-fixed-16: var(--font-size-base);
+  --font-size-fixed-20: var(--font-size-xl);
+  --font-size-fixed-32: var(--font-size-3xl);
+  --line-height-120: var(--line-height-3xl);
+  --line-height-130: var(--line-height-2xl);
+  --line-height-140: var(--line-height-xl);
+  --line-height-145: var(--line-height-sm);
+  --line-height-155: var(--line-height-lg);
+  --note-card-size: var(--font-size-sm);
+  --note-card-leading: var(--line-height-lg);
+  --note-card-flow: .4em;
+  --note-card-weight: var(--font-weight-medium);
+  --note-title-size: var(--text-title-size);
+  --note-title-weight: var(--text-title-weight);
+  --note-title-leading: var(--text-title-leading);
+  --note-summary-flow: .75em;
+  --note-search-body-size: var(--font-size-sm);
+  --note-search-body-leading: var(--leading-normal);
+  --note-search-flow: .85em;
+  --note-search-title-size: var(--text-subheading-size);
+  --note-search-title-weight: var(--text-subheading-weight);
+  --note-search-title-leading: var(--text-subheading-leading);
+  --note-search-heading-size: var(--font-size-base);
+  --note-search-heading-leading: var(--line-height-sm);
+  --note-search-subheading-size: var(--font-size-base);
+  --text-subtitle-size: var(--text-subheading-size);
+  --text-subtitle-weight: var(--text-subheading-weight);
+  --text-subtitle-leading: var(--text-subheading-leading);
+  --text-heading-1-size: var(--text-heading-size);
+  --text-heading-1-weight: var(--text-heading-weight);
+  --text-heading-1-leading: var(--text-heading-leading);
+  --text-heading-2-size: var(--text-subheading-size);
+  --text-heading-2-weight: var(--text-subheading-weight);
+  --text-heading-2-leading: var(--text-subheading-leading);
+  --text-heading-3-size: var(--text-large-size);
+  --text-heading-3-weight: var(--text-large-weight);
+  --text-heading-3-leading: var(--text-large-leading);
+  --text-heading-4-size: var(--text-body-size);
+  --text-heading-4-weight: var(--text-body-weight);
+  --text-heading-4-leading: var(--text-body-leading);
+  --text-heading-5-size: var(--text-label-size);
+  --text-heading-5-weight: var(--text-label-weight);
+  --text-heading-5-leading: var(--text-label-leading);
+  --text-heading-6-size: var(--text-supporting-size);
+  --text-heading-6-weight: var(--text-supporting-weight);
+  --text-heading-6-leading: var(--text-supporting-leading);
+}

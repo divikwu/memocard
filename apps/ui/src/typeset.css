@@ -9,7 +9,7 @@
     --typeset-font-heading: var(--font-heading);
     --typeset-font-mono: var(--font-mono);
     --typeset-size: 1em;
-    --typeset-leading: 1.75;
+    --typeset-leading: var(--leading-relaxed);
     --typeset-flow: 1.25em;
   }
 }
@@ -56,40 +56,44 @@
     &:where(h1, h2, h3, h4, h5, h6) {
       color: var(--color-foreground, currentColor);
       font-family: var(--typeset-font-heading);
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
       margin-block-end: 0;
     }
     &:where(h1) {
-      font-size: 1.75em;
-      line-height: 1.3;
+      font-weight: var(--text-heading-weight);
+      font-size: var(--text-heading-size);
+      line-height: var(--text-heading-leading);
       margin-block-start: var(--typeset-flow);
     }
     &:where(h2) {
-      font-size: 1.25em;
-      line-height: 1.4;
+      font-weight: var(--text-subheading-weight);
+      font-size: var(--text-subheading-size);
+      line-height: var(--text-subheading-leading);
       margin-block-start: calc(var(--typeset-flow) * 1.4);
     }
     &:where(h3) {
-      font-size: 1.125em;
-      line-height: 1.45;
+      font-weight: var(--text-large-weight);
+      font-size: var(--text-large-size);
+      line-height: var(--text-large-leading);
       margin-block-start: var(--typeset-flow);
     }
     &:where(h4) {
-      font-size: 1em;
-      line-height: 1.5;
+      font-weight: var(--font-weight-semibold);
+      font-size: var(--text-body-size);
+      line-height: var(--text-body-leading);
       margin-block-start: var(--typeset-flow);
     }
     &:where(h5) {
-      font-size: 0.875em;
-      line-height: 1.5;
-      font-weight: 500;
+      font-size: var(--text-label-size);
+      line-height: var(--text-label-leading);
+      font-weight: var(--text-label-weight);
       color: var(--typeset-muted);
       margin-block-start: calc(var(--typeset-flow) / 0.875);
     }
     &:where(h6) {
-      font-size: 0.8125em;
-      line-height: 1.5;
-      font-weight: 500;
+      font-size: var(--text-supporting-size);
+      line-height: var(--text-supporting-leading);
+      font-weight: var(--font-weight-medium);
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--typeset-muted);
@@ -105,13 +109,13 @@
       margin-block-start: 1em;
     }
     &:where(:is(h1, h2, h3, h4) :is(code)) {
-      font-size: 0.9em;
+      font-size: var(--text-code-size);
     }
 
     /* Links. */
     &:where(a) {
       color: inherit;
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
       text-decoration-line: underline;
       text-decoration-color: color-mix(in oklab, currentColor 30%, transparent);
     }
@@ -129,10 +133,10 @@
 
     /* Inline semantics. */
     &:where(strong, b) {
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
     &:where(:is(h1, h2, h3, h4) :is(strong, b)) {
-      font-weight: 600;
+      font-weight: var(--font-weight-semibold);
     }
     &:where(mark) {
       background-color: color-mix(
@@ -155,7 +159,7 @@
       text-decoration-line: line-through;
     }
     &:where(sup, sub) {
-      font-size: 0.75em;
+      font-size: var(--text-supporting-size);
       line-height: 0;
       position: relative;
       vertical-align: baseline;
@@ -168,7 +172,7 @@
     }
     &:where(sup a) {
       text-decoration-line: none;
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
     }
 
     /* Lists. */
@@ -263,7 +267,7 @@
     }
     &:where(summary) {
       cursor: pointer;
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
     }
     &:where(summary)::marker {
       color: var(--typeset-muted);
@@ -272,8 +276,8 @@
     /* Keyboard keys. */
     &:where(kbd) {
       font-family: inherit;
-      font-size: 0.85em;
-      font-weight: 500;
+      font-size: var(--text-code-size);
+      font-weight: var(--font-weight-medium);
       border: 1px solid var(--typeset-rule);
       border-block-end-width: 2px;
       border-radius: min(calc(var(--radius, 0.5em) * 0.6), 0.35em);
@@ -286,7 +290,7 @@
       margin-block-end: 0;
     }
     &:where(dt) {
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
       margin-block-start: 1em;
     }
     &:where(dt + dt) {
@@ -306,9 +310,16 @@
         color-mix(in oklab, currentColor 8%, transparent)
       );
       font-family: var(--typeset-font-mono);
-      font-size: 0.85em;
+      font-size: var(--text-code-size);
+      font-weight: var(--text-code-weight);
+      line-height: var(--text-code-leading);
       border-radius: min(calc(var(--radius, 0.5em) * 0.6), 0.35em);
       padding: 0.125em 0.3em;
+    }
+
+    /* Inline code keeps the emphasis of its surrounding content. */
+    &:where(:is(strong, b, h1, h2, h3, h4, h5, h6) code) {
+      font-weight: inherit;
     }
 
     /* Code blocks. */
@@ -318,8 +329,9 @@
         color-mix(in oklab, currentColor 8%, transparent)
       );
       font-family: var(--typeset-font-mono);
-      font-size: 0.875em;
-      line-height: 1.5;
+      font-size: var(--text-label-size);
+      line-height: var(--text-code-leading);
+      font-weight: var(--text-code-weight);
       tab-size: 2;
       direction: ltr;
       border-radius: var(--radius, 0.5em);
@@ -361,7 +373,7 @@
       margin-block-start: calc(var(--typeset-flow) * 2);
       border-block-start: 1px solid var(--typeset-rule);
       padding-block-start: var(--typeset-flow);
-      font-size: 0.875em;
+      font-size: var(--text-label-size);
       color: var(--typeset-muted);
     }
 
@@ -392,7 +404,7 @@
     }
     &:where(figcaption, caption) {
       color: var(--typeset-muted);
-      font-size: 0.875em;
+      font-size: var(--text-label-size);
       text-align: center;
       margin-block-start: calc(0.75em / 0.875);
     }
@@ -405,8 +417,8 @@
     &:where(table) {
       width: 100%;
       max-width: 100%;
-      font-size: 0.875em;
-      line-height: 1.5;
+      font-size: var(--text-label-size);
+      line-height: var(--leading-normal);
       font-variant-numeric: tabular-nums;
       border-collapse: separate;
       border-spacing: 0;
@@ -436,7 +448,7 @@
       max-width: none;
     }
     &:where(thead th) {
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
       text-align: start;
       white-space: normal;
       padding: 0.65em 1em;
@@ -448,7 +460,7 @@
       border-block-start: 1px solid var(--border);
     }
     &:where(tbody th, tfoot th) {
-      font-weight: 500;
+      font-weight: var(--font-weight-medium);
     }
     &:where(th[align="center"], td[align="center"]) {
       text-align: center;

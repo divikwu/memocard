@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { AppSidebar } from "../src/components/app-sidebar";
+import { sidebarTokens } from "../src/generated/design-tokens";
 import { desktopGlobals } from "../.storybook/viewports";
 import { SidebarExample } from "./sidebar.example";
 import { sidebarArgs, sidebarTags } from "./sidebar.fixtures";
@@ -24,7 +25,7 @@ const meta = {
   args: sidebarArgs(),
   // Interactive fixtures start after the production lazy module is available.
   beforeEach: async () => { await import("../src/components/tag-navigation"); },
-  parameters: { docs: { story: { height: "900px" }, description: { component: "Base UI 真实侧栏。iOS 原生侧栏对应 Xcode NativeSidebar Preview；这里展示桌面 Web 和 H5 的平台实现。" } } },
+  parameters: { docs: { story: { height: "900px" }, description: { component: `Base UI 真实侧栏。桌面默认行高 ${sidebarTokens.desktopRowHeight}px，H5 最小行高 ${sidebarTokens.mobileRowMinHeight}px；文字放大时行高增长。图标视觉基准 ${sidebarTokens.iconSize}px；移动展开控件的视觉框 ${sidebarTokens.toggleVisualSize}px、命中区 ${sidebarTokens.touchTargetSize}px 分别维护。iOS 原生侧栏对应 Xcode NativeSidebar Preview，原生布局与系统文字缩放沿用平台实现。` } } },
 } satisfies Meta<typeof AppSidebar>;
 export default meta;
 type Story = StoryObj<typeof meta>;
