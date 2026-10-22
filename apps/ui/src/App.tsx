@@ -497,9 +497,9 @@ export function App() {
     }
   }
 
-  async function toggleMCP() {
+  async function toggleMCP(enabled = !environment?.mcpWritesEnabled) {
     setWorking(true); setError("");
-    try { await request("setMCPEnabled", { enabled: !environment?.mcpEnabled }); await refresh(); }
+    try { await request("setMCPEnabled", { enabled }); await refresh(); }
     catch (cause) { setError(cause); }
     finally { setWorking(false); }
   }
@@ -846,9 +846,10 @@ export function App() {
               <div className="space-y-1"><p className="text-sm font-medium">浏览器访问</p><p className="text-pretty text-sm leading-relaxed text-muted-foreground">通过 MemoCard 菜单栏服务，在浏览器中打开统一的多笔记库界面。</p></div>
               <div className="flex flex-wrap gap-2"><Button onClick={() => void openLocalWeb()} disabled={working}>在浏览器中打开<ArrowUpRight className="size-4" /></Button></div>
             </CardContent></Card></section>}
-            {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">MCP 本机读取</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
-              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读取</label></p><p className="text-pretty text-sm leading-relaxed text-muted-foreground">{environment.mcpEnabled ? "已开启，只允许本机工具读取。" : "允许本机工具搜索和读取笔记。"}</p></div><Suspense fallback={<span role="status" aria-label="正在读取开关"><Skeleton className="w-8 rounded-full" style={{height:"1.15rem"}} /></span>}><Switch id="mcp-enabled" checked={environment.mcpEnabled} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读取" /></Suspense></div>
-              <p className="text-pretty text-sm leading-relaxed text-muted-foreground">开启时选择连接配置的保存位置。读取期间请保持记忆卡运行，工具不会修改你的笔记。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
+            {environment?.platform === "mac" && capabilities.has("setMCPEnabled") && <section aria-labelledby="mcp-settings-heading" className="space-y-3"><h2 id="mcp-settings-heading" className="flex min-h-8 items-center text-balance text-base font-medium">MCP 本机读写</h2><Card className="gap-0 py-0 shadow-none"><CardContent className="space-y-4 px-4 py-4">
+              <div className="flex items-start justify-between gap-4"><div className="space-y-1"><p className="text-sm font-medium"><label htmlFor="mcp-enabled">允许本机工具读写</label></p><p className="text-pretty text-sm leading-relaxed text-muted-foreground">{environment.mcpEnabled && !environment.mcpWritesEnabled ? "当前仅读取。" : "写入时检查内容版本。"}</p></div><Suspense fallback={<span role="status" aria-label="正在读取开关"><Skeleton className="w-8 rounded-full" style={{height:"1.15rem"}} /></span>}><Switch id="mcp-enabled" checked={environment.mcpWritesEnabled === true} onCheckedChange={() => void toggleMCP()} disabled={!status?.connected || working} aria-label="MCP 本机读写" /></Suspense></div>
+              {environment.mcpEnabled && !environment.mcpWritesEnabled && <Button variant="outline" size="sm" onClick={() => void toggleMCP(false)} disabled={working}>关闭旧版读取</Button>}
+              <p className="text-pretty text-sm leading-relaxed text-muted-foreground">保持主客户端运行。可新建、修改、移入回收站和恢复笔记，不开放永久删除。</p>{working && <p role="status" className="flex items-center gap-2 text-xs text-muted-foreground"><LoaderCircle className="size-3.5 animate-spin motion-reduce:animate-none" />正在更新连接…</p>}
             </CardContent></Card></section>}
           </div> : <>
             {view !== "home" && status?.connected && recoveryRecords.length > 0 && (recoveryDismissed || recoveryChoices.length === 0) && <Button variant="ghost" size="sm" onClick={() => setRecoveryOpen(true)}>保留草稿（{recoveryRecords.length}）</Button>}

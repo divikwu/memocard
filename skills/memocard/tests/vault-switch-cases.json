@@ -1,0 +1,4541 @@
+{
+  "formatVersion": 1,
+  "instructions": "每项是独立任务；history 按时间包含已完成模拟工具调用及用户后续指令（role=user）。以最后响应为当前检查点，依据技能决定接下来行动。所有数据均为隔离模拟。",
+  "cases": [
+    {
+      "id": "search-then-other-vault",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-then-cloned-vault",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "clone-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "create-status-refresh",
+      "request": "在当前库新建《项目想法》，正文为“新增结论”。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        }
+      ]
+    },
+    {
+      "id": "search-next-page",
+      "request": "找出当前库所有标题含“工作”的笔记并汇总，保存为一篇新笔记。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": "page-2",
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "cursor": "page-2"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "tags-switch",
+      "request": "在当前库新建《项目想法》，正文为“新增结论”，选一个合适的现有标签。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_tags",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "tags": [
+              {
+                "name": "work",
+                "count": 1
+              }
+            ],
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "conflict-reread-switch",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "HASH_CONFLICT"
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n其他新内容",
+            "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "timeout-clone-has-submitted-body",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "TIMEOUT"
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "clone-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n\n新增结论",
+            "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "timeout-new-vault-not-found",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "TIMEOUT"
+            }
+          }
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "NOTE_NOT_FOUND"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "receipt-other-instance",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "clone-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        }
+      ]
+    },
+    {
+      "id": "readback-other-vault",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n\n新增结论",
+            "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing-response-binding",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "stable-append",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "stable-readback-newer-content",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n\n新增结论\n他人后续修改",
+            "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "changed-then-status-same-id-name",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "clone-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "clone-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        }
+      ]
+    },
+    {
+      "id": "restored-vault-awaiting-read",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "VAULT_CHANGED"
+            }
+          }
+        },
+        {
+          "role": "user",
+          "content": "我刚刚重启了 MemoCard，仍然选的是原来那个日常库目录，请继续刚才的追加。"
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        }
+      ]
+    },
+    {
+      "id": "restored-vault-fresh-append",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "VAULT_CHANGED"
+            }
+          }
+        },
+        {
+          "role": "user",
+          "content": "我刚刚重启了 MemoCard，仍然选的是原来那个日常库目录，请继续刚才的追加。"
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n重启期间补充",
+            "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "restored-vault-awaiting-readback",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "VAULT_CHANGED"
+            }
+          }
+        },
+        {
+          "role": "user",
+          "content": "我刚刚重启了 MemoCard，仍然选的是原来那个日常库目录，请继续刚才的追加。"
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n重启期间补充",
+            "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "body": "原记录\n重启期间补充\n\n新增结论"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        }
+      ]
+    },
+    {
+      "id": "restored-vault-verified",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "VAULT_CHANGED"
+            }
+          }
+        },
+        {
+          "role": "user",
+          "content": "我刚刚重启了 MemoCard，仍然选的是原来那个日常库目录，请继续刚才的追加。"
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n重启期间补充",
+            "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "body": "原记录\n重启期间补充\n\n新增结论"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n重启期间补充\n\n新增结论",
+            "contentHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "restored-vault-changed-again",
+      "request": "把“新增结论”追加到当前库的《工作记录》，其他内容保留。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "VAULT_CHANGED"
+            }
+          }
+        },
+        {
+          "role": "user",
+          "content": "我刚刚重启了 MemoCard，仍然选的是原来那个日常库目录，请继续刚才的追加。"
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "third-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录\n重启期间补充",
+            "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "service-host-client-closed",
+      "request": "主客户端已退出，MemoCardService 后台服务正在运行。请通过已配置的服务 MCP 把“新增结论”追加到当前库《工作记录》，其他内容保留。",
+      "environment": {
+        "configuredHost": "MemoCardService",
+        "serviceRunning": true,
+        "mainAppRunning": false
+      },
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "search_notes",
+          "arguments": {
+            "query": "原记录"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "body": "原记录",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+                "createdAt": "2026-10-21T03:00:00.000Z",
+                "updatedAt": "2026-10-22T03:00:00.000Z",
+                "relativePath": "工作记录.md",
+                "tags": []
+              }
+            ],
+            "nextCursor": null,
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "service-host-unavailable",
+      "request": "主客户端仍在运行。请通过已配置的服务 MCP 查找《工作记录》。",
+      "environment": {
+        "configuredHost": "MemoCardService",
+        "serviceRunning": false,
+        "mainAppRunning": true
+      },
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "HOST_UNAVAILABLE",
+              "message": "Start the configured MemoCard host"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "stable-delete",
+      "request": "删除当前库《工作记录》，移入回收站。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-without-request",
+      "request": "总结这篇旧笔记，整理建议即可。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-read-other-vault",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-read-other-instance",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "clone-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-receipt-awaiting-verification",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "delete_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "relativePath": "工作记录.md",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-verified",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "delete_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "relativePath": "工作记录.md",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "NOTE_NOT_FOUND"
+            }
+          }
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-timeout-reconcile",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "delete_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "TIMEOUT"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-hash-conflict",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "delete_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "HASH_CONFLICT"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "restore-list-requires-read",
+      "request": "恢复回收站中的《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "stable-restore",
+      "request": "恢复回收站中的《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "restore-read-other-instance",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "new-instance"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "restored-service-awaiting-archive",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "VAULT_CHANGED"
+            }
+          }
+        },
+        {
+          "role": "user",
+          "content": "我刚重启后台服务，已恢复同一个日常库原目录，请继续恢复这篇笔记。"
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        }
+      ]
+    },
+    {
+      "id": "restored-service-fresh-restore",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "VAULT_CHANGED"
+            }
+          }
+        },
+        {
+          "role": "user",
+          "content": "我刚重启后台服务，已恢复同一个日常库原目录，请继续恢复这篇笔记。"
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录\n重启期间补充",
+              "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "restore-receipt-awaiting-verification",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        }
+      ]
+    },
+    {
+      "id": "restore-verified",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [],
+            "issues": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "restore-incomplete-trash",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [],
+            "issues": [
+              {
+                "path": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "message": "无法读取，原文件已保留。"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "restore-hash-conflict",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "HASH_CONFLICT"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "restore-timeout-other-vault",
+      "request": "恢复当前库回收站《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {},
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "notes": [
+              {
+                "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+                "title": "工作记录",
+                "relativePath": "工作记录.md",
+                "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+                "deletedAt": "2026-10-22T05:00:00Z",
+                "preview": "原记录"
+              }
+            ],
+            "issues": []
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "TIMEOUT"
+            }
+          }
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "NOTE_NOT_FOUND"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-readback-awaiting-status",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "delete_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "relativePath": "工作记录.md",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "NOTE_NOT_FOUND"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "delete-readback-other-instance",
+      "request": "删除当前库《工作记录》。",
+      "history": [
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "title": "工作记录",
+            "body": "原记录",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+            "createdAt": "2026-10-21T03:00:00.000Z",
+            "updatedAt": "2026-10-22T03:00:00.000Z",
+            "relativePath": "工作记录.md",
+            "tags": []
+          }
+        },
+        {
+          "tool": "delete_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "relativePath": "工作记录.md",
+            "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          }
+        },
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          },
+          "response": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "deletedAt": "2026-10-22T05:00:00Z",
+            "note": {
+              "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+              "title": "工作记录",
+              "body": "原记录",
+              "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceUrl": "memocard://note/d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81?vault=vault-a",
+              "createdAt": "2026-10-21T03:00:00.000Z",
+              "updatedAt": "2026-10-22T03:00:00.000Z",
+              "relativePath": "工作记录.md",
+              "tags": []
+            }
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          },
+          "response": {
+            "isError": true,
+            "error": {
+              "code": "NOTE_NOT_FOUND"
+            }
+          }
+        },
+        {
+          "tool": "get_status",
+          "arguments": {},
+          "response": {
+            "connected": true,
+            "vaultName": "日常库",
+            "binding": {
+              "vaultId": "vault-b",
+              "instanceId": "instance-b"
+            },
+            "coverage": {
+              "complete": true,
+              "indexed": 1,
+              "indexedAt": "2026-10-22T03:00:00.000Z",
+              "pending": 0,
+              "issues": 0
+            },
+            "capabilities": [
+              "createNote",
+              "updateNote",
+              "getNote",
+              "queryNotes",
+              "listTags",
+              "getStatus",
+              "getTrash",
+              "getTrashedNote",
+              "deleteNote",
+              "restoreNote"
+            ],
+            "phase": "M1",
+            "syncState": "localReadComplete"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -20,14 +20,15 @@ before(async () => {
   executable = join(buildDirectory, 'LocalReadServerHarness');
   await promisify(execFile)('xcrun', ['swiftc', '-swift-version', '5', '-strict-concurrency=complete', '-warnings-as-errors',
     fileURLToPath(new URL('../Sources/LocalReadServer.swift', import.meta.url)),
+    fileURLToPath(new URL('../Sources/MCPAuthorization.swift', import.meta.url)),
     fileURLToPath(new URL('./LocalReadServerHarness.swift', import.meta.url)), '-o', executable]);
 });
 after(async () => { if (buildDirectory) await rm(buildDirectory, { recursive: true, force: true }); });
 
-async function nativeHost(t) {
+async function nativeHost(t, allowsWrites = false) {
   const directory = await mkdtemp(join(tmpdir(), 'memocard-native-connection-'));
   const configurationFile = join(directory, 'connection.json');
-  const host = spawn(executable, [configurationFile], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const host = spawn(executable, [configurationFile, ...(allowsWrites ? ['--allow-writes'] : [])], { stdio: ['ignore', 'pipe', 'pipe'] });
   let stderr = '';
   host.stderr.on('data', bytes => { stderr += bytes.toString(); });
   t.after(async () => {
@@ -168,4 +169,50 @@ test('overlarge native response returns a structured error and subsequent reads 
   }]);
   const next = await requestNative(host.configurationFile, 'getNote', { echo: 'still available' });
   assert.equal(next.echo, 'still available');
+});
+
+
+test('write dispatch requires opt-in and authenticates before forwarding create, update, delete or restore', async t => {
+  const readHost = await nativeHost(t);
+  const writeHost = await nativeHost(t, true);
+  for (const operation of ['createNote', 'updateNote', 'deleteNote', 'restoreNote']) {
+    const rejected = await exchange(readHost.config, [line(readHost.request({}, { operation }))]);
+    assert.equal(rejected[0]?.error.code, 'WRITE_DISABLED');
+    for (const field of ['token', 'instanceId', 'vaultId']) {
+      const replies = await exchange(writeHost.config, [line(writeHost.request({}, { operation, [field]: 'wrong' }))]);
+      assert.equal(replies[0]?.error.code, 'UNAUTHORIZED');
+    }
+    const binding = { vaultId: writeHost.config.vaultId, instanceId: writeHost.config.instanceId };
+    const accepted = await requestNative(writeHost.configurationFile, operation, { binding, echo: '中文 write' });
+    assert.equal(accepted.operation, operation);
+    assert.equal(accepted.echo, '中文 write');
+  }
+  for (const operation of ['saveNote', 'permanentlyDeleteNote', 'updateNoteProperty']) {
+    const rejected = await exchange(writeHost.config, [line(writeHost.request({}, { operation }))]);
+    assert.equal(rejected[0]?.error.code, 'INVALID_ARGUMENT');
+  }
+});
+
+
+test('legacy read consent stays read-only until explicit write authorization and survives revocation', async () => {
+  const { stdout, stderr } = await promisify(execFile)(executable, ['--authorization-test']);
+  assert.equal(stdout, 'AUTHORIZATION PASSED\n');
+  assert.equal(stderr, '');
+});
+
+test('native dispatch rejects stale bindings even when the current token and copied vault ID match', async t => {
+  const first = await nativeHost(t, true);
+  const second = await nativeHost(t, true);
+  assert.equal(first.config.vaultId, second.config.vaultId, 'Copied vault identity must not bypass the instance check.');
+  for (const operation of ['createNote', 'updateNote', 'deleteNote', 'restoreNote']) {
+    for (const binding of [undefined,
+      { vaultId: first.config.vaultId, instanceId: first.config.instanceId },
+      { vaultId: 'different-vault', instanceId: second.config.instanceId },
+    ]) {
+      const rejected = await exchange(second.config, [line(second.request({ binding }, { operation }))]);
+      assert.equal(rejected[0]?.ok, false);
+      assert.equal(rejected[0]?.error.code, 'VAULT_CHANGED');
+      assert.equal(rejected[0]?.data, undefined, 'The handler must never be called.');
+    }
+  }
 });

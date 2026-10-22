@@ -14,6 +14,16 @@ Configuration is exchanged via a temporary `0600` file. The harness prints only 
 
 These tests verify the production native TCP server with an in-memory handler. They do not verify the Mac app's sandbox, picker, vault storage, WebView bridge, iCloud, or iPhone. Use the application MCP smoke separately for the real vault read path.
 
+## Background service host MCP
+
+Run `pnpm test:service-host` on macOS. The runner compiles the complete production `ServiceHost`, `ServiceMCPServer`, transport and authorization code against the real `MemoCardCore` and `MemoCardLocalWeb` packages. Only the native folder picker and a start checkpoint are controlled; file operations, directory bookmarks, preferences and loopback requests are real and isolated in temporary vaults and a unique defaults suite.
+
+Coverage includes cancelling authorization while preserving read-only or writable connections, overlapping automatic restore and manual enable in both orders, and rejecting a pending picker after disable or a vault switch. From disabled state, two overlapping failed enables must remain disabled even after the export fault is removed and a fresh process starts; a later explicit enable must still work. A separate restart case exits and launches fresh processes using the same persisted bookmarks and preferences: legacy consent stays read-only, the selected vault and explicit grant recover, credentials rotate, old bindings and credentials fail, and fresh version-checked writes survive read-back. A later fresh process must also preserve disabled state. These checks run through `pnpm test:service`, including release CI.
+
+The harness does not validate the installed application's sandbox, native picker UI or iCloud. Verify those separately with the installed service and a disposable note; never use existing notes for write smoke tests.
+
+Deletion/restoration tests also use the official MCP SDK through stdio into that real host. They cover recoverable deletion, archived-body verification, active-note exclusion, stale active/archive hashes, switching between vaults with copied note IDs, a fresh process while a note is archived, restoration and subsequent editing. Unsafe archive paths, duplicate active identities and permanent-delete attempts are rejected, while unrelated notes retain their original hashes.
+
 ## Local Web HTTP
 
 Run `pnpm test:local-web`. A separate native harness compiles the production `LocalWebServer.swift`, serves a temporary production-shaped HTML fixture, and exercises the real loopback listener. Coverage includes exact Host/Origin checks, authentication/replay, forbidden operations, Unicode fragmentation, header/body limits, unauthorized image reads, path/symlink escape, served-only CSP replacement including Vite's encoded quotes, repeated launch session reuse, and stop/restart invalidation. The handler is synthetic; real Swift file operations and the browser UI are verified separately. `pnpm test:native` additionally covers binding invalidation between cloned vaults with identical vault IDs.

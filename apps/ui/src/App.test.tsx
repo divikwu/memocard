@@ -1416,3 +1416,38 @@ it('opens the recycle bin from the sidebar and refreshes collections after resto
   await user.click(screen.getByRole('button',{name:'所有笔记'}));
   await screen.findByRole('button',{name:/^打开 / });
 });
+
+it("keeps migrated MCP read access unchecked until explicit write consent", async () => {
+  window.history.replaceState(null, "", "#/settings");
+  const implementation = bridge.request.getMockImplementation()!;
+  let writes = false;
+  bridge.request.mockImplementation(async (operation, params) => {
+    if (operation === "getEnvironment") return { platform: "mac", mcpEnabled: true, mcpWritesEnabled: writes, capabilities: ["setMCPEnabled"] };
+    if (operation === "setMCPEnabled") { writes = params?.enabled === true; return {}; }
+    return implementation(operation, params);
+  });
+  render(<App />);
+  const control = await screen.findByRole("switch", { name: "MCP 本机读写" });
+  expect(control.getAttribute("aria-checked")).toBe("false");
+  expect(screen.getByText("当前仅读取。")).toBeTruthy();
+  expect(bridge.request.mock.calls.some(([op]) => op === "setMCPEnabled")).toBe(false);
+  fireEvent.click(control);
+  await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("setMCPEnabled", { enabled: true }));
+  await waitFor(() => expect(control.getAttribute("aria-checked")).toBe("true"));
+  expect(screen.getByText("写入时检查内容版本。")).toBeTruthy();
+  expect(screen.getByText(/可新建、修改、移入回收站和恢复笔记，不开放永久删除/)).toBeTruthy();
+});
+
+it("lets migrated MCP users revoke legacy read access without granting writes", async () => {
+  window.history.replaceState(null, "", "#/settings");
+  const implementation = bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation(async (operation, params) => {
+    if (operation === "getEnvironment") return { platform: "mac", mcpEnabled: true, mcpWritesEnabled: false, capabilities: ["setMCPEnabled"] };
+    if (operation === "setMCPEnabled") return {};
+    return implementation(operation, params);
+  });
+  render(<App />);
+  fireEvent.click(await screen.findByRole("button", { name: "关闭旧版读取" }));
+  await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("setMCPEnabled", { enabled: false }));
+  expect(bridge.request).not.toHaveBeenCalledWith("setMCPEnabled", { enabled: true });
+});

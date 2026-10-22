@@ -1,0 +1,398 @@
+{
+  "evaluatedAt": "2026-10-22",
+  "cases": [
+    {
+      "id": "search-then-other-vault",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "search-then-cloned-vault",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "create-status-refresh",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "search-next-page",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "tags-switch",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "conflict-reread-switch",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "timeout-clone-has-submitted-body",
+      "nextCalls": [],
+      "verification": "unknown",
+      "decision": "原库提交结果未知，不能用其他实例的内容、缺席或异常回执推断成功，不重放写入。"
+    },
+    {
+      "id": "timeout-new-vault-not-found",
+      "nextCalls": [],
+      "verification": "unknown",
+      "decision": "原库提交结果未知，不能用其他实例的内容、缺席或异常回执推断成功，不重放写入。"
+    },
+    {
+      "id": "receipt-other-instance",
+      "nextCalls": [],
+      "verification": "unknown",
+      "decision": "原库提交结果未知，不能用其他实例的内容、缺席或异常回执推断成功，不重放写入。"
+    },
+    {
+      "id": "readback-other-vault",
+      "nextCalls": [],
+      "verification": "unverified",
+      "decision": "保留有效原回执，但读回来自其他绑定或更新版本，不能宣称回执版本已验证，也不覆盖新内容。"
+    },
+    {
+      "id": "missing-response-binding",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "stable-append",
+      "nextCalls": [
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "原目标身份已核实且刚读取的完整绑定一致；仅追加新结论，保存后读回核验。"
+    },
+    {
+      "id": "stable-readback-newer-content",
+      "nextCalls": [],
+      "verification": "unverified",
+      "decision": "保留有效原回执，但读回来自其他绑定或更新版本，不能宣称回执版本已验证，也不覆盖新内容。"
+    },
+    {
+      "id": "changed-then-status-same-id-name",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "restored-vault-awaiting-read",
+      "nextCalls": [
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "已确认恢复原库；在新绑定下重新读取，回执不能代替读回验证。"
+    },
+    {
+      "id": "restored-vault-fresh-append",
+      "nextCalls": [
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "body": "原记录\n重启期间补充\n\n新增结论"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "原目标身份已核实且刚读取的完整绑定一致；仅追加新结论，保存后读回核验。"
+    },
+    {
+      "id": "restored-vault-awaiting-readback",
+      "nextCalls": [
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          }
+        }
+      ],
+      "verification": "unverified",
+      "decision": "已确认恢复原库；在新绑定下重新读取，回执不能代替读回验证。"
+    },
+    {
+      "id": "restored-vault-verified",
+      "nextCalls": [],
+      "verification": "verified",
+      "decision": "新绑定的写入回执和读回正文、hash 一致，已完成恢复和追加核验。"
+    },
+    {
+      "id": "restored-vault-changed-again",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "绑定缺失或变化，停止旧流程；保留原任务目标，核实原库身份后才能恢复读取。"
+    },
+    {
+      "id": "service-host-client-closed",
+      "nextCalls": [
+        {
+          "tool": "update_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "body": "原记录\n\n新增结论"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "原目标身份已核实且刚读取的完整绑定一致；仅追加新结论，保存后读回核验。"
+    },
+    {
+      "id": "service-host-unavailable",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "配置的服务宿主不可用，说明连接状态，不启动主客户端或切换到另一连接，不绕过 MCP。"
+    },
+    {
+      "id": "stable-delete",
+      "nextCalls": [
+        {
+          "tool": "delete_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "目标唯一且已明确授权；使用刚读取的绑定与内容版本，提交后再核实归档与活动状态。"
+    },
+    {
+      "id": "delete-without-request",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "整理不授权删除，给出总结，不调用删除或清空正文。"
+    },
+    {
+      "id": "delete-read-other-vault",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "读取绑定变化，停止，不将同名同 ID 内容作为原任务目标。"
+    },
+    {
+      "id": "delete-read-other-instance",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "读取绑定变化，停止，不将同名同 ID 内容作为原任务目标。"
+    },
+    {
+      "id": "delete-receipt-awaiting-verification",
+      "nextCalls": [
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          }
+        },
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          }
+        },
+        {
+          "tool": "get_status",
+          "arguments": {}
+        }
+      ],
+      "verification": "unverified",
+      "decision": "保留回执，核实精确归档的正文版本与活动笔记缺席，回执尚不是验证。"
+    },
+    {
+      "id": "delete-verified",
+      "nextCalls": [],
+      "verification": "verified",
+      "decision": "归档 ID、正文、版本与原读取和回执一致；活动读取缺席后，状态再次确认完整绑定未变化，已验证移入回收站。"
+    },
+    {
+      "id": "delete-timeout-reconcile",
+      "nextCalls": [
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {}
+        }
+      ],
+      "verification": "unknown",
+      "decision": "不盲目重放；先读取活动状态及原绑定的回收候选，再用精确归档核对结果。"
+    },
+    {
+      "id": "delete-hash-conflict",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "内容版本已变化，说明冲突，读取差异后需用户接受新版本才能继续删除。"
+    },
+    {
+      "id": "restore-list-requires-read",
+      "nextCalls": [
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "列表预览不能作为恢复依据，先完整读取精确回收记录。"
+    },
+    {
+      "id": "stable-restore",
+      "nextCalls": [
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "instance-a"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "使用刚读取归档的顶层绑定与 note.contentHash，恢复后核实活动正文和回收记录。"
+    },
+    {
+      "id": "restore-read-other-instance",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "归档响应来自另一实例，不能自动重新绑定后恢复。"
+    },
+    {
+      "id": "restored-service-awaiting-archive",
+      "nextCalls": [
+        {
+          "tool": "get_trashed_note",
+          "arguments": {
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "已明确原目录身份，建立恢复只读绑定；必须重新读取归档，不能重放旧版本。"
+    },
+    {
+      "id": "restored-service-fresh-restore",
+      "nextCalls": [
+        {
+          "tool": "restore_note",
+          "arguments": {
+            "binding": {
+              "vaultId": "vault-a",
+              "instanceId": "restarted-instance"
+            },
+            "trashKey": "c08554ec-191c-44d7-895d-194eb67365b4/工作记录.md",
+            "baseHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          }
+        }
+      ],
+      "verification": "not-written",
+      "decision": "身份已确认并完成新绑定归档读取，恢复最新已核对版本，随后读回验证。"
+    },
+    {
+      "id": "restore-receipt-awaiting-verification",
+      "nextCalls": [
+        {
+          "tool": "get_note",
+          "arguments": {
+            "id": "d9a9d5ec-1c9b-40ae-8a61-a1cc7d7baf81"
+          }
+        },
+        {
+          "tool": "list_trash",
+          "arguments": {}
+        }
+      ],
+      "verification": "unverified",
+      "decision": "读取恢复后的正文与回执版本，并核实精确归档已移出回收站。"
+    },
+    {
+      "id": "restore-verified",
+      "nextCalls": [],
+      "verification": "verified",
+      "decision": "活动正文、回执和原归档版本一致，绑定一致且完整回收列表已无精确归档，恢复已验证。"
+    },
+    {
+      "id": "restore-incomplete-trash",
+      "nextCalls": [],
+      "verification": "unverified",
+      "decision": "已读回活动正文，但回收列表有问题，不能把未列出归档当作已移出；报告此验证限制。"
+    },
+    {
+      "id": "restore-hash-conflict",
+      "nextCalls": [],
+      "verification": "not-written",
+      "decision": "归档版本变化，保留记录，说明差异并等待用户接受变化后的版本，不替换 hash 重试。"
+    },
+    {
+      "id": "restore-timeout-other-vault",
+      "nextCalls": [],
+      "verification": "unknown",
+      "decision": "恢复结果未知；其他库的同 ID 查无结果不能判断原库提交状态，不补写或重试。"
+    },
+    {
+      "id": "delete-readback-awaiting-status",
+      "nextCalls": [
+        {
+          "tool": "get_status",
+          "arguments": {}
+        }
+      ],
+      "verification": "unverified",
+      "decision": "活动读取错误没有 binding，必须在错误后重新确认完整绑定；先前归档成功不足以证明错误来自原实例。"
+    },
+    {
+      "id": "delete-readback-other-instance",
+      "nextCalls": [],
+      "verification": "unverified",
+      "decision": "原库删除有有效回执，但负向读回后状态显示切到其他实例，不能据此完成原库活动状态验证。"
+    }
+  ]
+}

@@ -71,8 +71,13 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
-        guard urls.contains(where: { $0.scheme == "memocard-service" && $0.host == "open-web" }) else { return }
-        run { try await self.host.openWeb() }
+        for url in urls where url.scheme == "memocard-service" {
+            switch url.host {
+            case "open-web": run { try await self.host.openWeb() }
+            case "configure-mcp": run { try await self.host.enableMCP() }
+            default: break
+            }
+        }
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) { rebuildMenu() }
@@ -104,6 +109,13 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(item("打开 Web", #selector(openWeb), enabled: true))
         menu.addItem(item("复制访问链接", #selector(copyLink), enabled: true))
         menu.addItem(item("停止 Web", #selector(stopWeb), enabled: host.webRunning))
+        menu.addItem(.separator())
+        let mcpStatus = NSMenuItem(title: host.mcpRunning ? (host.mcpWritesEnabled ? "MCP：读写已开启" : "MCP：仅读取") : "MCP：已停止", action: nil, keyEquivalent: "")
+        mcpStatus.isEnabled = false
+        menu.addItem(mcpStatus)
+        menu.addItem(item("启用 MCP 读写…", #selector(enableMCP), enabled: !host.mcpWritesEnabled))
+        menu.addItem(item("复制 MCP 配置路径", #selector(copyMCPPath), enabled: host.mcpRunning))
+        menu.addItem(item("停用 MCP", #selector(disableMCP), enabled: host.mcpEnabled))
         menu.addItem(.separator())
         let login = item("登录时启动", #selector(toggleLogin))
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
@@ -139,6 +151,9 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func openWeb() { run { try await self.host.openWeb() } }
     @objc private func copyLink() { run { try await self.host.copyWebLink() } }
     @objc private func stopWeb() { host.stopWeb(); rebuildMenu() }
+    @objc private func enableMCP() { run { try await self.host.enableMCP() } }
+    @objc private func copyMCPPath() { host.copyMCPConfigurationPath() }
+    @objc private func disableMCP() { host.disableMCP(); rebuildMenu() }
     @objc private func quit() { NSApp.terminate(nil) }
     @objc private func openLoginSettings() { SMAppService.openSystemSettingsLoginItems() }
 

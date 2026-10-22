@@ -57,6 +57,7 @@ final class NativeHost: ObservableObject {
     private var configURL: URL?
     private var server: LocalReadServer?
     private var startingServer: LocalReadServer?
+    private var mcpAllowsWrites = false
     private var activeMCP: MCPBinding?
     private var mcpGeneration = UUID()
     private var vaultGeneration = UUID()
@@ -69,7 +70,7 @@ final class NativeHost: ObservableObject {
     private var startTask: Task<Void, Never>?
     private var startupError: Error?
     private let defaults = UserDefaults.standard
-    private let readOperations: Set<String> = ["getStatus", "queryNotes", "getNote", "listTags"]
+    private let mcpOperations: Set<String> = ["getStatus", "queryNotes", "getNote", "listTags", "getTrash", "getTrashedNote", "createNote", "updateNote", "deleteNote", "restoreNote"]
     private struct MCPBinding: Equatable {
         let generation: UUID
         let vaultGeneration: UUID
@@ -157,7 +158,7 @@ final class NativeHost: ObservableObject {
             await startTask?.value
             let data: Any
             switch operation {
-            case "getEnvironment": data = ["platform": platform, "phase": "M1", "storage": "native", "mcpEnabled": server != nil, "vaultBinding": vaultGeneration.uuidString.lowercased(), "capabilities": hostCapabilities]
+            case "getEnvironment": data = ["platform": platform, "phase": "M1", "storage": "native", "mcpEnabled": server != nil, "mcpWritesEnabled": mcpAllowsWrites, "vaultBinding": vaultGeneration.uuidString.lowercased(), "capabilities": hostCapabilities]
             case "uiReady":
                 uiReady = true
                 await deliverPendingNote()
@@ -218,8 +219,8 @@ final class NativeHost: ObservableObject {
                 #if os(macOS)
                 let enabled = params["enabled"] as? Bool == true
                 defaults.set(enabled, forKey: "mcpEnabled")
-                if enabled { try await enableServer(allowPicker: true) } else { stopServer() }
-                data = ["enabled": server != nil]
+                if enabled { try await enableServer(allowPicker: true, authorizeWrites: true) } else { MCPAuthorization.revokeWrites(in: defaults); stopServer() }
+                data = ["enabled": server != nil, "writesEnabled": mcpAllowsWrites]
                 notify("statusChanged")
                 #else
                 throw fault("INVALID_ARGUMENT", "MCP 只在 Mac 上提供")
@@ -281,6 +282,7 @@ final class NativeHost: ObservableObject {
         var value = (try await invoke("getStatus", [:])) as? [String: Any] ?? [:]
         value["capabilities"] = (value["capabilities"] as? [String] ?? []) + hostCapabilities
         value["mcpEnabled"] = server != nil
+        value["mcpWritesEnabled"] = mcpAllowsWrites
         return value
     }
     func failure(_ error: Error) -> [String: Any] {
@@ -432,6 +434,7 @@ final class NativeHost: ObservableObject {
     private func stopServer() {
         mcpGeneration = UUID()
         activeMCP = nil
+        mcpAllowsWrites = false
         server?.stop(); server = nil
         startingServer?.stop(); startingServer = nil
         configURL?.stopAccessingSecurityScopedResource(); configURL = nil
@@ -481,10 +484,11 @@ final class NativeHost: ObservableObject {
             return nil
         }
     }
-    private func enableServer(allowPicker: Bool) async throws {
+    private func enableServer(allowPicker: Bool, authorizeWrites: Bool = false) async throws {
         guard !openingVault, let vaultURL, let selectedID = vaultID else {
             throw fault("STORE_UNAVAILABLE", "请先完成笔记库选择")
         }
+        let allowsWrites = authorizeWrites || MCPAuthorization.allowsWrites(in: defaults)
         stopServer()
         let generation = mcpGeneration, selectedGeneration = vaultGeneration
         try requireEnableAttempt(generation, vaultGeneration: selectedGeneration)
@@ -504,9 +508,9 @@ final class NativeHost: ObservableObject {
         do {
             try requireEnableAttempt(generation, vaultGeneration: selectedGeneration)
             _ = try validatedMCPDirectory(directory, vaultURL: vaultURL)
-            let candidate = LocalReadServer(vaultId: selectedID) { [weak self] operation, params in
+            let candidate = LocalReadServer(vaultId: selectedID, allowsWrites: allowsWrites) { [weak self] operation, params in
                 guard let self else { return ["ok": false, "error": ["code": "APP_NOT_RUNNING", "message": "应用已退出", "retryable": true]] }
-                return await self.readRequest(operation, params, generation: generation, vaultGeneration: selectedGeneration, vaultID: selectedID)
+                return await self.mcpRequest(operation, params, generation: generation, vaultGeneration: selectedGeneration, vaultID: selectedID)
             }
             service = candidate; startingServer = candidate
             let configuration = try await candidate.start()
@@ -535,7 +539,9 @@ final class NativeHost: ObservableObject {
             }
             // No suspension between persistence and publication of this exact server binding.
             if let newBookmark { defaults.set(newBookmark, forKey: "mcpDirectoryBookmark") }
+            if authorizeWrites { MCPAuthorization.grantWrites(in: defaults) }
             server = candidate; startingServer = nil; configURL = directory
+            mcpAllowsWrites = allowsWrites
             activeMCP = MCPBinding(generation: generation, vaultGeneration: selectedGeneration, vaultID: selectedID, instanceID: instanceID)
         } catch {
             service?.stop()
@@ -554,14 +560,25 @@ final class NativeHost: ObservableObject {
               defaults.bool(forKey: "mcpEnabled") else { throw fault("UNAUTHORIZED", "MCP 连接授权已失效") }
         return binding
     }
-    private func readRequest(_ operation: String, _ params: [String: Any], generation: UUID, vaultGeneration: UUID, vaultID: String) async -> [String: Any] {
-        guard readOperations.contains(operation), params["deleted"] as? Bool != true else { return failure(fault("UNAUTHORIZED", "只允许读取有效笔记")) }
+    private func mcpRequest(_ operation: String, _ params: [String: Any], generation: UUID, vaultGeneration: UUID, vaultID: String) async -> [String: Any] {
+        guard mcpOperations.contains(operation), params["deleted"] as? Bool != true else { return failure(fault("UNAUTHORIZED", "不允许此 MCP 操作")) }
         do {
             let binding = try requireActiveMCP(generation: generation, vaultGeneration: vaultGeneration, vaultID: vaultID)
-            let data = try await invoke(operation, params)
+            if ["createNote", "updateNote", "deleteNote", "restoreNote"].contains(operation) {
+                guard mcpAllowsWrites, MCPAuthorization.allowsWrites(in: defaults) else { throw VaultError(code: "WRITE_DISABLED", message: "请先明确开启 MCP 写入权限。") }
+                guard let expected = params["binding"] as? [String: Any],
+                      expected["vaultId"] as? String == binding.vaultID,
+                      expected["instanceId"] as? String == binding.instanceID else { throw VaultError(code: "VAULT_CHANGED", message: "笔记库实例已变化，请重新读取后再写入。") }
+            }
+            var data = try await invoke(operation, params, expectedBinding: vaultGeneration)
             let current = try requireActiveMCP(generation: generation, vaultGeneration: vaultGeneration, vaultID: vaultID)
             guard current == binding else { throw fault("UNAUTHORIZED", "MCP 实例已变化，请重新连接") }
             if operation == "getNote", let note = data as? [String: Any], note["deletedAt"] != nil && !(note["deletedAt"] is NSNull) { throw fault("NOT_FOUND", "笔记已删除") }
+            if operation == "getStatus", var status = data as? [String: Any] {
+                status["capabilities"] = mcpOperations.filter { mcpAllowsWrites || !["createNote", "updateNote", "deleteNote", "restoreNote"].contains($0) }.sorted()
+                data = status
+            }
+            if ["createNote", "updateNote", "deleteNote", "restoreNote"].contains(operation) { notify("notesChanged") }
             return ["ok": true, "data": data]
         } catch { return failure(error) }
     }
