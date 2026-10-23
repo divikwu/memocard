@@ -9,7 +9,7 @@ import { desktopGlobals } from "../.storybook/viewports";
 function SwitchExample({ defaultChecked, ...args }: ComponentProps<typeof Switch>) {
   const id = useId();
   const [checked, setChecked] = useState(defaultChecked ?? false);
-  return <div className="grid gap-2"><div className="flex items-center gap-3"><Switch {...args} id={id} checked={checked} aria-labelledby={`${id}-label`} onCheckedChange={(next, details) => { setChecked(next); args.onCheckedChange?.(next, details); }} /><label id={`${id}-label`} htmlFor={id}>接收提醒</label></div><output aria-label="开关回显" className="text-sm text-muted-foreground">{checked ? "已开启" : "已关闭"}</output></div>;
+  return <div className="grid gap-2"><div className="flex items-center gap-3"><Switch {...args} id={id} checked={checked} aria-labelledby={`${id}-label`} onCheckedChange={(next, details) => { setChecked(next); args.onCheckedChange?.(next, details); }} /><label id={`${id}-label`} htmlFor={id}>接收提醒</label></div><output aria-label="开关回显" className="text-sm text-secondary">{checked ? "已开启" : "已关闭"}</output></div>;
 }
 const meta = {
   title: "components/switch", component: Switch, globals: desktopGlobals,

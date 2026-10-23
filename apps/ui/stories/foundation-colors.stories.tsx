@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useId, useState } from "react";
 import themeCSS from "../src/features/theme/tokens.css?raw";
+import hueCSS from "../src/features/theme/hues.css?raw";
 import { useTheme } from "../src/features/theme/ThemeProvider";
 import { Button } from "../src/components/ui/button";
 import { Input } from "../src/components/ui/input";
@@ -14,7 +15,7 @@ import { colorPixel, contrastRatio, measurePair } from "./foundation-color-contr
 import { Colors, contrastPairs } from "./foundation-colors.example";
 
 // Keep the complete role-resolution check as a test fixture, outside the diagnostic page.
-const theme = themeCSS.match(/@theme inline \{([\s\S]*?)\n\}/)![1];
+const theme = [themeCSS, hueCSS].map(css => css.match(/@theme inline \{([\s\S]*?)\n\}/)![1]).join("\n");
 const colorRoles = [...theme.matchAll(/--color-([\w-]+):\s*var\((--[\w-]+)\)/g)]
   .map(([, name, variable]) => ({ name, variable }));
 
@@ -31,7 +32,7 @@ export const Default: Story = {
   play: async ({ canvasElement, globals }) => {
     const canvas = within(canvasElement);
     const style = getComputedStyle(canvasElement.ownerDocument.documentElement);
-    await expect(colorRoles).toHaveLength(35);
+    await expect(colorRoles).toHaveLength(108);
     const colorSamples = canvasElement.ownerDocument.createElement("div");
     colorSamples.hidden = true;
     canvasElement.append(colorSamples);
@@ -67,12 +68,9 @@ export const Default: Story = {
         await expect(reading).toHaveTextContent(pair.scope === "non-text" ? "图标 3:1" : measured.ratio >= 4.5 ? "文字 AA 通过" : "文字 AA 未达标（既有问题）");
       }
     }
-    const knownTextFailures = globals.palette === "blue" ? ["primary"] : [];
     const textFailures = contrastPairs.filter(pair => !pair.scope && baseline[pair.id] < 4.5).map(pair => pair.id);
-    await expect(textFailures).toEqual(knownTextFailures);
-    // Preserve the measured existing defect; green interaction tests do not claim AA.
-    if (knownTextFailures.length) await expect(baseline.primary).toBeCloseTo(3.761777718, 3);
-    for (const pair of contrastPairs.filter(pair => !pair.scope && !knownTextFailures.includes(pair.id))) await expect(baseline[pair.id], pair.id).toBeGreaterThanOrEqual(4.5);
+    await expect(textFailures).toEqual([]);
+    for (const pair of contrastPairs.filter(pair => !pair.scope)) await expect(baseline[pair.id], pair.id).toBeGreaterThanOrEqual(4.5);
     await expect(baseline["accent-text"]).toBeGreaterThanOrEqual(3);
     if (globals.theme === "light") await expect(baseline["muted-surface"]).toBeCloseTo(4.464779687, 3);
     else await expect(baseline["muted-surface"]).toBeGreaterThanOrEqual(4.5);
@@ -99,7 +97,7 @@ function ProductionStates() {
       <div className="min-w-0 space-y-3">
         <h3 className="text-balance text-sm font-medium">输入</h3>
         <label className="block space-y-2 text-sm">正常输入<Input aria-label="正常输入" value={value} onChange={event => setValue(event.target.value)} placeholder="输入一条笔记标题" /></label>
-        <label className="block space-y-2 text-sm">校验错误<Input aria-label="校验错误" aria-invalid="true" aria-describedby={`${id}-error`} defaultValue="尚未通过校验" /><span id={`${id}-error`} className="block text-destructive">请检查输入内容。</span></label>
+        <label className="block space-y-2 text-sm">校验错误<Input aria-label="校验错误" aria-invalid="true" aria-describedby={`${id}-error`} defaultValue="尚未通过校验" /><span id={`${id}-error`} className="block text-error">请检查输入内容。</span></label>
       </div>
       <div className="min-w-0 space-y-3">
         <h3 className="text-balance text-sm font-medium">Tabs</h3>
@@ -136,9 +134,11 @@ export const StateRegression: Story = {
     await userEvent.tab({ shift: true });
     await expect(button).toHaveFocus();
     await expect(button.matches(":focus-visible")).toBe(true);
-    await expect(getComputedStyle(button).boxShadow).not.toBe("none");
+    await expect(getComputedStyle(button).outlineWidth).toBe("2px");
+    await expect(getComputedStyle(button).outlineStyle).toBe("solid");
+    await expect(getComputedStyle(button).outlineOffset).toBe("3px");
     await expect(states.getByRole("button", { name: "不可用" })).toBeDisabled();
-    await expect(getComputedStyle(states.getByRole("button", { name: "不可用" })).opacity).toBe("0.5");
+    await expect(getComputedStyle(states.getByRole("button", { name: "不可用" })).opacity).toBe("1");
     await userEvent.tab();
     await expect(input).toHaveFocus();
     await userEvent.type(input, "本周笔记");
@@ -167,9 +167,9 @@ export const StateRegressionMobile: Story = { ...StateRegression, name: "State R
 function LiveThemeExample() {
   const { theme, palette, neutralPalette, setPalette, setNeutralPalette, resetAppearance } = useTheme();
   const instance = useId();
-  return <main data-testid="live-theme" data-instance={instance} className="space-y-4 bg-background p-6 text-foreground">
+  return <main data-testid="live-theme" data-instance={instance} className="space-y-4 bg-body p-6 text-primary">
     <h1 className="text-balance text-lg font-semibold">同一主题内切换颜色</h1>
-    <p className="text-pretty text-sm text-muted-foreground">直接调用生产 ThemeProvider，在组件保持挂载时更新 CSS 和原生 palette 的采样来源。</p>
+    <p className="text-pretty text-sm text-secondary">直接调用生产 ThemeProvider，在组件保持挂载时更新 CSS 和原生 palette 的采样来源。</p>
     <output aria-label="当前外观" className="block text-sm">{theme} / {palette} / {neutralPalette}</output>
     <div className="flex flex-wrap gap-3">
       <Button onClick={() => setPalette("blue")}>使用蓝色强调色</Button>
@@ -177,7 +177,7 @@ function LiveThemeExample() {
       <Button variant="outline" onClick={resetAppearance}>恢复默认外观</Button>
     </div>
     <div className="flex gap-3">
-      <div aria-label="强调色样本" className="size-20 rounded-lg bg-primary" />
+      <div aria-label="强调色样本" className="size-20 rounded-lg bg-accent-bg" />
       <div aria-label="侧栏颜色样本" className="size-20 rounded-lg border bg-sidebar" />
     </div>
   </main>;

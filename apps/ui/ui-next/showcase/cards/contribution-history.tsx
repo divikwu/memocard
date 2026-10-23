@@ -1,0 +1,111 @@
+// Adapted from shadcn/ui preview-02 (MIT); pinned source: build/verification/luma-showcase/source.
+import { Bar, BarChart, XAxis } from "recharts"
+
+import { Button } from "@ui-next/components/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@ui-next/components/card"
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@ui-next/components/chart"
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+} from "@ui-next/components/item"
+
+const chartData = [
+  { month: "Dec", amount: 800 },
+  { month: "Jan", amount: 1100 },
+  { month: "Feb", amount: 900 },
+  { month: "Mar", amount: 1300 },
+  { month: "Apr", amount: 750 },
+  { month: "May", amount: 1400 },
+]
+
+const chartConfig = {
+  amount: {
+    label: "Contribution",
+    color: "var(--color-data-blue-2)",
+  },
+} satisfies ChartConfig
+
+export function ContributionHistory() {
+  const isRounded = true
+
+  return (
+    <Card data-showcase-card="contribution-history">
+      <CardHeader>
+        <CardTitle>Contribution History</CardTitle>
+        <CardDescription>Last 6 months of activity</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ChartContainer config={chartConfig} className="h-[200px] w-full">
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
+          >
+            <XAxis
+              dataKey="month"
+              tickLine={false}
+              tickMargin={8}
+              axisLine={false}
+            />
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel className="min-w-40" />}
+            />
+            <Bar
+              dataKey="amount"
+              fill="var(--color-amount)"
+              radius={isRounded ? [6, 6, 0, 0] : 0}
+              maxBarSize={40}
+            />
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+      <CardContent>
+        <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-2">
+          <Item variant="muted" className="flex-col items-stretch">
+            <ItemContent className="gap-1">
+              <ItemDescription className="text-xs font-medium tracking-wider text-secondary uppercase">
+                Upcoming
+              </ItemDescription>
+              <span className="font-heading text-lg font-semibold">
+                May 25, 2024
+              </span>
+              <span className="text-sm text-secondary">
+                $1,000 scheduled
+              </span>
+            </ItemContent>
+          </Item>
+          <Item variant="muted" className="flex-col items-stretch">
+            <ItemContent className="gap-1">
+              <ItemDescription className="text-xs font-medium tracking-wider text-secondary uppercase">
+                Auto-Save Plan
+              </ItemDescription>
+              <span className="font-heading text-lg font-semibold">
+                Accelerated
+              </span>
+              <span className="text-sm text-secondary">
+                Recurring weekly
+              </span>
+            </ItemContent>
+          </Item>
+        </div>
+      </CardContent>
+      <CardFooter>
+        <Button className="w-full">View Full Report</Button>
+      </CardFooter>
+    </Card>
+  )
+}

@@ -1,4 +1,4 @@
-[data-sheet-swipe] { translate: 0 var(--sheet-swipe-y, 0px); transition: translate 180ms cubic-bezier(.22, 1, .36, 1); }
+[data-sheet-swipe] { translate: 0 var(--sheet-swipe-y, 0px); transition: translate var(--motion-duration-normal) var(--motion-ease-rebound); }
 [data-sheet-dragging] { transition: none; }
 [data-sheet-swipe] :is([data-slot="sheet-handle"], [data-slot="sheet-header"]) { touch-action: none; user-select: none; cursor: grab; }
 [data-sheet-swipe][data-swipe-disabled] :is([data-slot="sheet-handle"], [data-slot="sheet-header"]) { cursor: default; }

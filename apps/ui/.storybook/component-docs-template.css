@@ -54,11 +54,11 @@
 /* Keep Source's keyboard-focusable viewport as the only scroll container. */
 .component-docs-source .docblock-source [data-radix-scroll-area-viewport] { width: 100%; max-height: calc(var(--spacing) * 88); overflow: auto !important; }
 .component-docs-source .docblock-source [data-radix-scroll-area-viewport]:focus { outline: none; }
-.component-docs-source .docblock-source [data-radix-scroll-area-viewport]:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.component-docs-source .docblock-source [data-radix-scroll-area-viewport]:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: calc(-1 * var(--focus-outline-width)); }
 /* Override Source's light Prism selectors for every token, including punctuation. */
 .component-docs-source .docblock-source :is(pre.prismjs, pre.prismjs .token) { color: var(--foreground); font-family: var(--font-mono); }
-.component-docs-source .docblock-source pre.prismjs .token:is(.keyword, .tag, .attr-name) { color: var(--primary); font-weight: var(--font-weight-medium); }
-.component-docs-source .docblock-source pre.prismjs .token:is(.string, .attr-value) { color: var(--accent-text); }
+.component-docs-source .docblock-source pre.prismjs .token:is(.keyword, .tag, .attr-name) { color: var(--text-accent-color); font-weight: var(--font-weight-medium); }
+.component-docs-source .docblock-source pre.prismjs .token:is(.string, .attr-value) { color: var(--text-accent-color); }
 .component-docs-source .docblock-source pre.prismjs .token.comment { color: var(--muted-foreground); }
 .component-docs-source .docblock-source pre { display: block; overflow: visible; margin: 0; padding: calc(var(--spacing) * 4); border: 0; border-radius: 0; font-size: var(--text-sm); line-height: var(--text-sm--line-height); }
 .sbdocs .component-docs { width: 100%; max-width: var(--container-4xl); margin-inline: auto; font-family: var(--font-sans); }
@@ -73,11 +73,11 @@
 
 .component-docs-standalone { width: 100%; padding-inline: calc(var(--spacing) * 4); }
 .component-docs-table-scroll { max-width: 100%; overflow-x: auto; margin-block: calc(var(--spacing) * 4); border: 1px solid var(--border); border-radius: var(--radius); }
-.component-docs-table-scroll:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.component-docs-table-scroll:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 
 .component-docs-properties-table-wrap:focus-visible {
-  outline: 2px solid var(--ring);
-  outline-offset: 3px;
+  outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
 }
 .component-docs-properties { min-width: 0; color: var(--foreground); font-family: var(--font-sans); font-size: var(--text-sm); line-height: var(--text-sm--line-height); }
 .component-docs-properties-preview { position: relative; overflow: hidden; min-height: calc(var(--spacing) * 50); border: 1px solid var(--border); border-radius: var(--radius); background: var(--muted); }

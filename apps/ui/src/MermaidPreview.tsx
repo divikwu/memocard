@@ -39,7 +39,7 @@ export function MermaidPreview({ source }: { source: string }) {
   return <div className="mermaid-preview" contentEditable={false}>
     {current?.svg ? <div className="mermaid-viewport" role="region" aria-label="Mermaid 图形预览，可横向滚动" tabIndex={0}>
       <Button type="button" variant="ghost" className="note-image-trigger" aria-label="放大 Mermaid 图表" onClick={() => setOpen(true)}><Diagram svg={current.svg} /></Button>
-    </div> : <p className="text-sm text-muted-foreground" role={current?.error ? 'alert' : 'status'}>{current?.error ?? '正在生成图表预览…'}</p>}
+    </div> : <p className="text-sm text-secondary" role={current?.error ? 'alert' : 'status'}>{current?.error ?? '正在生成图表预览…'}</p>}
     {open && current?.svg && <Dialog open onOpenChange={value => { if (!value) setOpen(false); }}>
       <DialogContent className="image-viewer" showCloseButton={false} aria-describedby={undefined} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
         <DialogTitle className="sr-only">Mermaid 图表</DialogTitle>

@@ -1,0 +1,29 @@
+{
+  "name": "shadcn/typeset",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "25af02b1b467fcd53b63e0c6d6d324c57c16ef18",
+  "sourcePath": "apps/v4/app/(app)/(typeset)/typeset.css",
+  "sourceUrl": "https://raw.githubusercontent.com/shadcn-ui/ui/25af02b1b467fcd53b63e0c6d6d324c57c16ef18/apps/v4/app/(app)/(typeset)/typeset.css",
+  "sourceSha256": "47e2af83b960d10cfa3196c9527bb0c143a71883f78e7da709cfca8de9576288",
+  "documentationUrl": "https://ui.shadcn.com/docs/typeset",
+  "license": "MIT",
+  "licenseFile": "design/licenses/shadcn-ui.txt",
+  "localFiles": [
+    {
+      "path": "apps/ui/ui-next/typeset.css",
+      "sha256": "c211761035ba3a496463ab601fd0f47419e7b87702ff219a4d947581fd7918a0"
+    },
+    {
+      "path": "apps/ui/ui-next/typeset-theme.css",
+      "sha256": "33a1f868e9b4948a65d62ece00d8786fe03689cedc92d969ef2ce6506a197e10"
+    }
+  ],
+  "adaptations": [
+    "Replace shadcn foreground, muted foreground, code surface, checkbox accent and focus colors with existing Astryx semantic references.",
+    "Replace the literal mark fill with the existing yellow background role; no second color palette.",
+    "Use existing heading/code font roles, font weights, radius scale, border width and complete focus outline roles.",
+    "Keep the upstream descendant selectors, data-slot guards, first-child spacing, append-safe table rules, responsive mobile size bump, print and forced-color behavior.",
+    "Add a separate typeset-memocard preset mapping body/heading/code families, base size and reading-specific leading/flow roles; compact UI text is unchanged.",
+    "Extend not-typeset/data-not-typeset exclusion to both Typeset root rules and the MemoCard preset, so an opted-out root or nested Typeset root does not reapply typography or preset variables; selector specificity is unchanged."
+  ]
+}

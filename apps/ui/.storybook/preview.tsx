@@ -27,9 +27,11 @@ function memoryStorage(): Storage {
 }
 
 function useDocsGlobals(context: ComponentProps<typeof DocsContainer>["context"]) {
-  const [globals, setGlobals] = useState(() => context.getStoryContext(context.componentStories()[0]).globals);
+  const [globals, setGlobals] = useState(() => context.getStoryContext(context.componentStories()[0]).userGlobals);
   useEffect(() => {
-    const update = (event: GlobalsUpdatedPayload) => setGlobals(event.globals);
+    // Merged globals include a preview's fixed overrides, such as Dark.
+    // Only the user's toolbar choices belong to the enclosing Docs document.
+    const update = (event: GlobalsUpdatedPayload) => setGlobals(event.userGlobals);
     context.channel.on(GLOBALS_UPDATED, update);
     return () => { context.channel.off(GLOBALS_UPDATED, update); };
   }, [context.channel]);

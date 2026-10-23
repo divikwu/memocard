@@ -11,10 +11,9 @@
 .note-date-picker .rdp-day_button { display: block; width: 32px; height: 32px; margin-inline: auto; border-radius: 50%; }
 .note-date-picker .rdp-outside { color: var(--muted-foreground); }
 .note-date-picker button:hover { background: var(--hover-bg); color: var(--accent-foreground); }
-.note-date-picker button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.note-date-picker button:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .note-date-picker .rdp-selected .rdp-day_button { background: var(--primary); color: var(--primary-foreground); }
 .note-date-picker .rdp-today:not(.rdp-selected) .rdp-day_button { background: var(--secondary); color: var(--secondary-foreground); font-weight: var(--font-weight-semibold); }
-.note-date-picker .rdp-disabled { opacity: .5; }
 .note-date-picker .note-date-today { width: 100%; margin-top: 8px; font-weight: var(--font-weight-normal); }
 .note-date-time-option { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; min-height: 32px; font-size: var(--font-size-sm); }
 .note-date-time-input { margin-top: 8px; font-variant-numeric: tabular-nums; }

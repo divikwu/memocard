@@ -17,9 +17,22 @@ beforeEach(() => {
   });
 });
 afterEach(() => {
+  vi.doUnmock('./optional-fonts');
   vi.unstubAllGlobals();
   if (originalFonts) Object.defineProperty(document, 'fonts', originalFonts);
   else Reflect.deleteProperty(document, 'fonts');
+});
+
+it('defers the optional font registry until a packaged alternative is selected', async () => {
+  const loadOptionalFont = vi.fn().mockResolvedValue(undefined);
+  const registry = vi.fn(() => ({ loadOptionalFont }));
+  vi.doMock('./optional-fonts', registry);
+  const { loadFonts } = await import('./font-loader');
+  await loadFonts(['geist', 'pingfang', 'songti']);
+  expect(registry).not.toHaveBeenCalled();
+  await loadFonts(['inter', 'inter']);
+  expect(registry).toHaveBeenCalledOnce();
+  expect(loadOptionalFont).toHaveBeenCalledExactlyOnceWith('inter');
 });
 
 it('loads normal text once and registers real italics without downloading them eagerly', async () => {

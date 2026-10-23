@@ -1,10 +1,10 @@
 @import "./tag-colors.tokens.css";
 
-.note-tag-color-swatch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 4px; background: var(--tag-bg); color: var(--tag-fg); border: 1px solid color-mix(in oklab, var(--tag-fg) 20%, transparent); }
+.note-tag-color-swatch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 20px; border-radius: 4px; background: var(--tag-bg); color: var(--tag-fg); border: var(--border-width) solid color-mix(in oklab, var(--tag-fg) 20%, transparent); }
 .note-tag-color-option { display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 6px 8px; border-radius: 4px; font-size: var(--font-size-sm); outline: none; }
 .note-tag-color-option[data-checked] { background: color-mix(in oklab, var(--muted) 60%, transparent); }
 .note-tag-color-option[data-highlighted] { background: var(--hover-bg); }
-.note-tag-color-option[data-disabled] { pointer-events: none; opacity: 0.5; }
+.note-tag-color-option[data-disabled] { pointer-events: none; }
 .note-tag-color-check { color: var(--tag-fg); }
 
 /* Tag content and its actions share a foreground, including hover and focus. */

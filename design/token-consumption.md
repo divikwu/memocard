@@ -49,19 +49,39 @@ Logo 保留各平台已有尺寸：Web / H5 / macOS 使用 `sidebar.logoSize`，
 
 ## CSS 语义角色的当前消费
 
-角色名对应 [主题 token](../apps/ui/src/features/theme/tokens.css) 中 `@theme` 的工具类映射；表内只列本项目维护的语义，不把 Tailwind 上游色阶登记为新增产品 token。完整类型、主题轴与覆盖清单见 [token 定义规范](token-system.md) 和 [生成清单](token-coverage.generated.md)。
+下表角色族指底层 CSS 变量及原生 palette 键；Tailwind 公共接口已采用 Astryx 风格的新名称，不再按底层名称直接生成同名用法。例如 `--primary` 通过 `bg-accent-bg` 消费，`text-accent` 独立读取 `--text-accent-color`，`text-primary` 读取 `--foreground`。逐项工具类见 [映射表](token-engineering.md#工具类映射)。表内只列本项目维护的语义，不把 Tailwind 上游色阶登记为新增产品 token。完整类型、主题轴与覆盖清单见 [token 定义规范](token-system.md) 和 [生成清单](token-coverage.generated.md)。
 
 | 角色族 | 当前生产消费 | 原生边界 |
 | --- | --- | --- |
+| theme.definition | ThemeProvider 消费根 CSS 生命周期；defineTheme / JSON 构建提供继承、生成轴、平面输出与引用校验，默认入口不加载完整生成器 | 同一原生颜色采样与字段；新增根选择器观察。自定义非颜色轴映射继续审计 |
+| data 分类／顺序角色 | 独立 data.css 提供 56 项，Storybook SVG 示例与全类编译／浏览器验证；当前产品无数据图表，保持按需入口和 reserved 消费状态 | 不增加 palette 协议字段 |
+| syntax / diff 角色 | code.css 的 background 已由 typeset 的真实代码块消费；18 个完整高亮／diff 角色在独立 syntax.css 中提供，现有代码仍是普通文本 | 不增加 palette 协议字段 |
+| 公共 hue background / border / icon / text | `hues.css` 提供十色及 brown，Tag 前景接入 text，Callout 在组件内适配原 background/text。其余公共工具类以真实 Badge/图标验证；不虚构生产业务消费者 | Tag 原有 RGBA 键继续读取别名，值保持 |
+| on-dark / on-light、error-inverted、tint-hover、shadow | 固定前景用于反色表面；tint 派生 hover/pressed，shadow 参与 high；强错误底色为可用工具类，普通错误行为不变 | 字段不新增 |
 | `background / foreground`、`card / card-foreground` | 页面底色与正文；[Card](../apps/ui/src/components/ui/card.tsx) 和笔记集合 | palette 提供 background/foreground；原生容器与材质不照搬 Web Card |
 | `popover / popover-foreground` | [Popover](../apps/ui/src/components/ui/popover.tsx)、[Menu](../apps/ui/src/components/ui/dropdown-menu.tsx)、[Select](../apps/ui/src/components/ui/select.tsx) 浮层 | 系统菜单/弹窗由平台拥有，不复制 Web 浮层内部颜色与阴影 |
 | `primary / primary-foreground`、`secondary / secondary-foreground`、`destructive` | [Button](../apps/ui/src/components/ui/button.tsx) 的动作与危险变体、Switch、危险菜单项 | 自定义内容接收所需 palette；系统危险操作使用系统语义 |
 | `muted / muted-foreground`、`accent / accent-foreground`、`hover` | 辅助文字、[Tabs](../apps/ui/src/components/ui/tabs.tsx) 背景、[搜索结果](../apps/ui/src/components/note-search-dialog.tsx)、菜单焦点/悬停；hover 映射 `--hover-bg` | 原生仅接收已有 palette 键；不是完整 Web 状态机复制 |
 | `accent-text` | [NotePinButton](../apps/ui/src/components/note-pin-button.tsx) 的已固定状态 | 无单独原生同名键；按现有原生组件语义 |
-| `border / input / ring` | 全局边线与 outline、[Input](../apps/ui/src/components/ui/input.tsx)、Textarea、Select 的边框/焦点及 Button 焦点 | 自定义内容仅接收所需 border；系统输入/焦点沿平台行为 |
+| `border / input / ring` | 边线、输入框表面与保留颜色；键盘焦点已迁至 focus-outline token | 自定义内容仅接收所需 border；系统输入/焦点沿平台行为 |
 | `sidebar / sidebar-foreground / sidebar-accent / sidebar-accent-foreground / sidebar-border / sidebar-ring` | [Sidebar](../apps/ui/src/components/ui/sidebar.tsx) 容器、分组、行、展开控件及焦点 | `IOS_PALETTE_KEYS` 中的 sidebar 子集供自定义侧栏，仍保留原生命中区/字体缩放 |
 | `tag-<color>-bg / tag-<color>-fg` | [TagPill](../apps/ui/src/TagPill.tsx)、标签颜色菜单、编辑器标签；选项来自 tagColors | 默认/八种配色成对解析到 RGBA |
 | `chart-1…chart-5`、`emphasis / emphasis-foreground`、`sidebar-primary / sidebar-primary-foreground` | **保留定义，无当前生产消费者**；Foundations 展示不算生产接入 | 不在当前 `IOS_PALETTE_KEYS` 中 |
+
+| 交互角色 | 当前生产消费 | 默认与边界 |
+| --- | --- | --- |
+| `--text-accent-color` | Button 链接变体的 `text-accent` | 浅色 accent-700 / 深色 accent-400，mono 保留 accent-500；与操作填充独立覆盖 |
+| `--text-disabled-color / --icon-disabled-color` | 原生、Base UI 和 ARIA 控件的禁用文字/图标；QuickCapture 不可编辑文本 | 浅色 neutral-400，深色 neutral-600；不叠加整组透明度，不影响同组仍可操作的按钮 |
+| `--pressed-bg` | styles.css 的实际 `:active` 背景图叠加；按钮、链接、菜单、Tab、Switch 等控件 | 浅色 12%、深色 24% 中性色混合；排除禁用状态，保留选中填充和原有动画 |
+| `--focus-outline-width / style / color / offset` | 原子控件的 focus-ring、输入框组和快速记录外框、编辑器/日期/图片/滚动区域的原 CSS 消费者 | 2px solid、3px 偏移；浅色 accent-700 / 深色 accent-400；系统强制颜色保留 Highlight |
+
+| `--icon-primary-color / --icon-secondary-color` | 菜单选中标记、关闭控件／Select、菜单、输入附属图标、面包屑、搜索及格式工具 | 默认继承当前正文主色／次色的值；可独立覆盖，禁用与状态图标优先 |
+| `--success / success-muted / success-foreground`、`--warning / warning-muted / warning-foreground` | Alert 的 success / warning 变体消费主色与弱化背景；Badge 的对应变体消费实色填充与 on-success / on-warning 前景 | 无新增业务通知；颜色固定语义，不随用户强调色改变 |
+| `--error-muted / error-foreground` | destructive Alert 的背景；Button / Badge 的破坏性填充前景 | 现有 destructive 主色与深色填充透明度保持 |
+| `--surface-bg / surface-foreground`、`--inverted-bg / inverted-foreground` | Dialog / Sheet 与属性确认弹窗的通用表面与内容；Tooltip 背景、文字及箭头 | 默认值保持原组件背景和内容色；独立于 body / primary 工具类 |
+| `--overlay-bg / track-bg / accent-muted-bg / border-emphasized-color` | Dialog / Sheet 与属性确认弹窗遮罩、Switch 未选中轨道、文本选区、属性复选框边界 | 保留原 80% 遮罩、深色轨道 80%、22% 选区与原强调边界值 |
+
+上述新角色是 Web 交互契约；原生 palette 键及系统焦点规则保持原协议，不把 Web 轮廓参数复制给原生系统控件。
 
 ## 动态语义与平台所有权
 
@@ -73,17 +93,33 @@ Logo 保留各平台已有尺寸：Web / H5 / macOS 使用 `sidebar.logoSize`，
 | 字体资源与回退 | [font-options.ts](../apps/ui/src/lib/font-options.ts)、[font-loader.ts](../apps/ui/src/features/theme/font-loader.ts)；[笔记默认回退](../apps/ui/src/features/typography/tokens.css) | Web 的界面及笔记字体；原生系统字体不读取 Web 字体文件 | [foundations/typography](../apps/ui/stories/foundation-typography.stories.tsx) 沿用当前默认字体与既有回退，不表示全字体字形验收 |
 | 笔记字号/行高/阅读宽度/段距 | [排版偏好](../apps/ui/src/features/typography/preferences.ts)、[TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx)、[typeset.css](../apps/ui/src/typeset.css) | 笔记内容的既有排版变量，保留用户设置；不强行并入侧栏 token | 同一排版故事，生产 options 的四轴边界、真实 Provider 调整/恢复、H5 阅读宽度与溢出检查 |
 | 基础排版与通用文字角色 | [typography/scale.ts](../apps/ui/src/features/typography/scale.ts) → 生成 CSS；七档 rem 字号、三档字重、三种行高策略 | [Typeset](../apps/ui/src/typeset.css)、[styles.css](../apps/ui/src/styles.css)、[搜索](../apps/ui/src/components/note-search-dialog.css)、[Button](../apps/ui/src/components/ui/button.tsx) 及实际界面字号声明 | 8 个共享角色；Button / Tabs / 菜单 / Select / 输入组共享角色，字重由 manifest 生成；保留 17 个组件兼容别名但不再消费；注册、级联、缩放和交互测试，见 [Typography 系统](typography.md) |
-| 浮层阴影 | [theme/tokens.css](../apps/ui/src/features/theme/tokens.css) 的 `--overlay-shadow` | Web 的 Popover/Menu 等；原生菜单与材质由系统管理 | [foundations/elevation](../apps/ui/stories/foundation-effects.stories.tsx) |
-| 项目表面与控件阴影 | [theme/tokens.css](../apps/ui/src/features/theme/tokens.css) 与 [theme/capture.tokens.css](../apps/ui/src/features/theme/capture.tokens.css) 的四个项目角色，逐项见下表 | 原有值从组件迁入定义，保留浅深色与状态选择器；不替换成相近的上游档位 | Elevation / All tokens 读取目录；隐藏 [project shadows](../apps/ui/stories/project-shadows.stories.tsx) 核对原值及真实变量消费，原 QuickCapture / effects 交互测试保留 |
-| 动效与层级 | [全局 Reduce Motion](../apps/ui/src/styles.css)、[sidebar.tsx](../apps/ui/src/components/ui/sidebar.tsx)、[sheet.tsx](../apps/ui/src/components/ui/sheet.tsx) 及各组件 CSS | 时长、z-index 与手势仍由已有组件拥有，不新增全局数字。iOS 系统与 UIKit 容器继续管理原生动效 | effects 的浅/深色阴影与焦点；真实浏览器媒体偏好切换下的生产 Sheet 时长、关闭及焦点恢复 |
+| 浮层阴影 | [theme/tokens.css](../apps/ui/src/features/theme/tokens.css) 的 `--shadow-high` | Web 的 Dialog / Popover / Menu / Select / 属性确认等；原生菜单与材质由系统管理 | [foundations/elevation](../apps/ui/stories/foundation-effects.stories.tsx) |
+| 项目表面与控件阴影 | [theme/tokens.css](../apps/ui/src/features/theme/tokens.css) 与 [theme/capture.tokens.css](../apps/ui/src/features/theme/capture.tokens.css) 的层级与专用角色，逐项见下表 | 原有值从组件迁入定义，保留浅深色与状态选择器；不替换成相近的上游档位 | Elevation / All tokens 读取目录；隐藏 [project shadows](../apps/ui/stories/project-shadows.stories.tsx) 核对原值及真实变量消费，原 QuickCapture / effects 交互测试保留 |
+| 动效与层级 | [统一动效 token](../apps/ui/src/features/motion/tokens.css)、[全局 Reduce Motion](../apps/ui/src/styles.css)、[sidebar.tsx](../apps/ui/src/components/ui/sidebar.tsx)、[sheet.tsx](../apps/ui/src/components/ui/sheet.tsx) 及各组件 CSS | Web 时长与缓动统一消费 motion token；动画属性、z-index 与手势仍由已有组件拥有。iOS 系统与 UIKit 容器继续管理原生动效 | effects 的浅/深色阴影与焦点；真实浏览器媒体偏好切换下的生产 Sheet 时长、关闭及焦点恢复 |
 | 图标 | [Lucide 导出映射](../scripts/generate-sidebar-icons.mjs) 与锁定依赖 | 自定义侧栏用同源 SVG；系统工具栏、菜单保留 SF Symbols | effects 直接读取已生成的原生 SVG |
 | safe area / 系统控件度量 | [NativeChrome.swift](../apps/apple/Sources/NativeChrome.swift)、[WebView.swift](../apps/apple/Sources/WebView.swift) 与平台 API | 系统菜单、确认、文件选择、键盘、材质与安全区不复制成 Web token | 原生 App；适用场景见[组件清单](component-inventory.md) |
-| 原生安全区输出 | [WebView.swift](../apps/apple/Sources/WebView.swift) 的 scrollInsets | 写入 `--ios-top` / `--ios-bottom`（px）；[app-sidebar.css](../apps/ui/src/components/app-sidebar.css) 的原生导航容器以 0px 回退消费 | 原生 App；登记输出不替代设备安全区验收 |
+| 原生安全区输出 | [WebView.swift](../apps/apple/Sources/WebView.swift) 的 scrollInsets | 写入 `--ios-top` / `--ios-bottom`（px）；[ios-app-chrome.css](../apps/ui/src/components/ios-app-chrome.css) 的原生导航容器以 0px 回退消费 | 原生 App；登记输出不替代设备安全区验收 |
 | 浮层定位输出 | Base UI Positioner，依赖版本见 [package.json](../apps/ui/package.json) | `--available-height` / `--available-width` / `--anchor-width` / `--transform-origin` 在浮层局部消费，不能建立固定的全局默认值 | Popover、Menu、Select、Tooltip 与编辑器浮层 |
 | 标注背景、文字与菜单色样 | [import-layout.tokens.css](../apps/ui/src/import-layout.tokens.css) 的 background / text / swatch 三组，各九色 | [import-layout.css](../apps/ui/src/import-layout.css) 消费背景与文字，标题继承文字；[CalloutColorsMenu](../apps/ui/src/CalloutColorsMenu.tsx) 消费背景与固定色相样本。默认文字与样本沿用 foreground，默认背景透明；保留菜单与实际文字既有色值差异 | 隐藏 [callout colors](../apps/ui/stories/callout-colors.stories.tsx) 场景覆盖浅深色原值、实际 token 覆盖、菜单选择与重置；RichMarkdownEditor 回归覆盖撤销、序列化与重开 |
 | 内容局部颜色与布局 | [import-layout.css](../apps/ui/src/import-layout.css)、[rich-editor.css](../apps/ui/src/rich-editor.css)、[block-controls.css](../apps/ui/src/block-controls.css)、[MermaidPreview](../apps/ui/src/MermaidPreview.tsx) 等，完整文件见 registry | 选区、拖拽指示与内容布局仍由组件拥有；保留既有硬编码与主题派生，未将其误报为已迁入全局 token | 既有正文、富文本编辑器、快速记录和内容预览回归 |
 
-颜色诊断区分样本用途：普通文字前景/背景配对使用 4.5:1，`accent-text` 的当前生产消费者为已固定状态图标，使用非文本 3:1。Tabs 容器的继承色不等同于实际 Tab 文字颜色，必须检查真实 Trigger 的选中/未选中渲染；不能用容器比值认定文字缺陷。透明背景先与实际样本底色合成，判定使用未舍入比值；平面色样测量不是字形截图或整页无障碍审计。代表主题下的既有未达标项见[验证记录](validation.md)，不在故事中修改生产颜色或降低阈值。
+颜色诊断区分样本用途：普通文字前景/背景配对使用 4.5:1，`accent-text` 的当前生产消费者为已固定状态图标，使用非文本 3:1。Tabs 容器的继承色不等同于实际 Tab 文字颜色，必须检查真实 Trigger 的选中/未选中渲染；不能用容器比值认定文字缺陷。透明背景先与实际样本底色合成，判定使用未舍入比值；平面色样测量不是字形截图或整页无障碍审计。blue 填充和强调文字已在权威定义中修复并按 32 种主题组合回归，保持原阈值；历史结果与当前证据见[验证记录](validation.md)。
+
+主题覆盖由 [define-theme](../apps/ui/src/features/theme/define-theme.ts)、[ThemeStyle](../apps/ui/src/features/theme/ThemeStyle.tsx) 与已有 ThemeProvider 共同应用。预编译 CSS 可只传 name；完整生成器按需导入。font-mono 通过 --app-font-mono 保留原系统等宽栈，显式 code 字体轴同时设置界面与笔记代码默认；阅读偏好保持更高优先级。共享代码背景由核心 Tailwind 入口编译，完整 syntax / data 仍按需加载。
+
+原生 [ios-theme](../apps/ui/src/lib/ios-theme.ts) 将显式主题圆角的 px / rem / calc 长度发布到已有 rowRadius；未启用定义、原 rem 偏好或百分比值继续回退到 radiusValues。NativeSidebar 沿该字段绘制，Dynamic Type 字体与 UIKit 动效保持平台所有权。完整保留差异见[边界表](token-engineering.md#保留差异与适用边界)。
+
+## 共享控件度量与状态反馈
+
+| 角色 | 当前消费 | 边界 |
+| --- | --- | --- |
+| `--size-element-xs / sm / md / lg` | Button 文字与图标变体、Input、InputGroup、Select、Tabs | 1.5 / 2 / 2.25 / 2.5rem，保留当前根字号缩放；调用方 className 覆盖仍生效 |
+| `--size-textarea-min` | Textarea 的 min-h-textarea | 最小 4rem；内容自适应和调用方最小高度覆盖保留 |
+| `--border-width` | 基础组件普通边框、方向边框、CSS 边线、Separator 与菜单分隔线 | 默认 1px；显式 0 / 2px 等、焦点几何和原生命中区保持独立 |
+| `--shadow-inset-hover / success / warning / error` | Input / Textarea / Select / InputGroup 的 input-state | success / warning 通过 data-validation，error 通过 aria-invalid；错误优先，hover 排除校验与禁用，组内输入不重复绘制 |
+| `--shadow-inset-selected` | outline Button 的 aria-pressed=true | 持久选中，与全局临时按压 overlay 和键盘 outline 分开 |
+
+错误文字、aria-describedby 与 aria-invalid 仍由业务调用方负责。以上为 Web 度量／视觉反馈契约，不改变现有 Swift 尺寸、palette 键或动作协议。
 
 ## 项目阴影角色
 
@@ -91,12 +127,13 @@ Logo 保留各平台已有尺寸：Web / H5 / macOS 使用 `sidebar.logoSize`，
 
 | Token | 消费入口 | 模式与边界 |
 | --- | --- | --- |
-| `--surface-shadow` | [QuickCapture](../apps/ui/src/components/quick-capture.tsx)、[LoadingCapture](../apps/ui/src/components/loading-states.tsx)、[collectionClasses](../apps/ui/src/components/note-collection-layout.ts) 的卡片布局（包含加载卡片） | 浅深色同值；使用 `shadow-(--surface-shadow)`，列表布局仍为 shadow-none |
+| `--shadow-med` | [QuickCapture](../apps/ui/src/components/quick-capture.tsx)、[LoadingCapture](../apps/ui/src/components/loading-states.tsx)、[collectionClasses](../apps/ui/src/components/note-collection-layout.ts) 的卡片布局（包含加载卡片） | 浅深色同值；使用 `shadow-md`，列表布局仍为 shadow-none |
+| `--shadow-high` | Dialog / Popover / Menu / Select、属性确认及编辑器浮层 | 浅深色分别覆盖；shadow-lg 与 CSS 直接读取相同定义 |
 | `--surface-focus-shadow` | [quick-capture.css](../apps/ui/src/quick-capture.css) 的 `.quick-capture-group:focus-within` | 浅深色分别覆盖；桌面输入和移动 Sheet 共用，原聚焦条件不变 |
-| `--control-shadow` | [quick-capture.css](../apps/ui/src/quick-capture.css) 的继续页面按钮；[app-sidebar.css](../apps/ui/src/components/app-sidebar.css) 的移动端导航和 Sheet 关闭按钮 | 浅深色同值，保留原移动断点、描边与焦点反馈 |
+| `--shadow-low` | [quick-capture.css](../apps/ui/src/quick-capture.css) 的继续页面按钮；[mobile-tag-actions.css](../apps/ui/src/components/mobile-tag-actions.css) 的移动端导航和 Sheet 关闭按钮 | 浅深色同值，保留原移动断点、描边与焦点反馈 |
 | `--floating-control-shadow` | [quick-capture.css](../apps/ui/src/quick-capture.css) 的 mobile-record-bar 搜索与快速记录入口 | 浅深色分别覆盖；描边、背景与 focus-visible 规则不变 |
 
-上游 `shadow-lg` 等消费者和已使用 `--overlay-shadow` 的浮层继续复用现有定义；混合状态的 `inset 0 -2px var(--muted-foreground)` 是按钮状态下划线，仍由 rich-format-tools.css 拥有。
+`shadow-sm / md / lg` 统一映射 low / med / high，属性确认使用统一 high。旧 `--control-shadow / --surface-shadow / --overlay-shadow` 及 `shadow-overlay / surface` 保留兼容读取，新消费者与覆盖使用 canonical 层级；混合状态的 `inset 0 -2px var(--muted-foreground)` 是按钮状态下划线，仍由 rich-format-tools.css 拥有。
 
 ## 变更与验收
 

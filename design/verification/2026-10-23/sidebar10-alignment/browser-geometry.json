@@ -1,0 +1,1281 @@
+[
+  {
+    "stage": "desktop-home-legacy",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 20,
+        "padding": "0px",
+        "width": 28,
+        "x": 268,
+        "y": 18
+      },
+      "capture": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 162,
+        "padding": "0px",
+        "width": 768,
+        "x": 464,
+        "y": 264
+      },
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 700,
+        "padding": "32px 0px",
+        "width": 768,
+        "x": 464,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-home-next",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 20,
+        "padding": "0px",
+        "width": 28,
+        "x": 268,
+        "y": 18
+      },
+      "capture": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 162,
+        "padding": "0px",
+        "width": 768,
+        "x": 464,
+        "y": 280
+      },
+      "content": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 796.8515625,
+        "padding": "32px 0px",
+        "width": 768,
+        "x": 464,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-official",
+    "value": {
+      "body": {
+        "height": 944,
+        "padding": "40px 16px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "content": {
+        "height": 84.796875,
+        "padding": "0px",
+        "width": 768,
+        "x": 464,
+        "y": 96
+      },
+      "header": {
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "sidebar": {
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-notes-legacy",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 20,
+        "padding": "0px",
+        "width": 56,
+        "x": 268,
+        "y": 18
+      },
+      "capture": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 0,
+        "padding": "0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 710,
+        "padding": "32px 0px",
+        "width": 1120,
+        "x": 288,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-notes-next",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 20,
+        "padding": "0px",
+        "width": 56,
+        "x": 268,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 705.59375,
+        "padding": "32px 0px",
+        "width": 1120,
+        "x": 288,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "h5-390-notes-next",
+    "value": {
+      "bodyScroll": 390,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 32,
+        "padding": "0px",
+        "width": 182,
+        "x": 104,
+        "y": 12
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 1788,
+        "padding": "24px 0px",
+        "width": 358,
+        "x": 16,
+        "y": 56
+      },
+      "footer": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 68,
+        "padding": "8px 16px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 776
+      },
+      "header": {
+        "border": "0px",
+        "display": "grid",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 720,
+        "padding": "0px 16px",
+        "width": 390,
+        "x": 0,
+        "y": 56
+      },
+      "sidebar": null,
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  },
+  {
+    "stage": "h5-390-notes-legacy",
+    "value": {
+      "bodyScroll": 390,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 20,
+        "padding": "0px",
+        "width": 182,
+        "x": 104,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 1664,
+        "padding": "24px 0px",
+        "width": 358,
+        "x": 16,
+        "y": 56
+      },
+      "footer": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 68,
+        "padding": "8px 16px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 776
+      },
+      "header": {
+        "border": "0px",
+        "display": "grid",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 720,
+        "padding": "0px 16px",
+        "width": 390,
+        "x": 0,
+        "y": 56
+      },
+      "sidebar": null,
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  },
+  {
+    "stage": "h5-390-drawer-next",
+    "value": {
+      "bodyWidth": 390,
+      "width": 331.5
+    }
+  },
+  {
+    "stage": "h5-390-drawer-legacy",
+    "value": {
+      "bodyWidth": 390,
+      "width": 331.5
+    }
+  },
+  {
+    "stage": "h5-390-detail-next",
+    "value": {
+      "bodyScroll": 390,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 20,
+        "padding": "0px",
+        "width": 182,
+        "x": 104,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 304,
+        "padding": "24px 0px",
+        "width": 358,
+        "x": 16,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "grid",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 788,
+        "padding": "0px 16px",
+        "width": 390,
+        "x": 0,
+        "y": 56
+      },
+      "sidebar": null,
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  },
+  {
+    "stage": "h5-390-detail-legacy",
+    "value": {
+      "bodyScroll": 390,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 20,
+        "padding": "0px",
+        "width": 182,
+        "x": 104,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 282,
+        "padding": "24px 0px",
+        "width": 358,
+        "x": 16,
+        "y": 56
+      },
+      "footer": {
+        "border": "0px",
+        "display": "none",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 0,
+        "padding": "8px 16px 12px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "header": {
+        "border": "0px",
+        "display": "grid",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 788,
+        "padding": "0px 16px",
+        "width": 390,
+        "x": 0,
+        "y": 56
+      },
+      "sidebar": null,
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  },
+  {
+    "stage": "desktop-no-vault-next",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 20,
+        "padding": "0px",
+        "width": 56,
+        "x": 268,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 397.5,
+        "padding": "32px 0px",
+        "width": 1120,
+        "x": 288,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-no-vault-legacy",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 20,
+        "padding": "0px",
+        "width": 56,
+        "x": 268,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 509,
+        "padding": "32px 0px",
+        "width": 1120,
+        "x": 288,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-detail-next-final",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 20,
+        "padding": "0px",
+        "width": 98,
+        "x": 308,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 563,
+        "padding": "32px 0px",
+        "width": 720,
+        "x": 488,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 80px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-home-next-final",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 20,
+        "padding": "0px",
+        "width": 28,
+        "x": 268,
+        "y": 18
+      },
+      "capture": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 162,
+        "padding": "0px",
+        "width": 768,
+        "x": 464,
+        "y": 264
+      },
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 780.8515625,
+        "padding": "32px 0px",
+        "width": 768,
+        "x": 464,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "desktop-home-legacy-final",
+    "value": {
+      "bodyScroll": 1440,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 20,
+        "padding": "0px",
+        "width": 28,
+        "x": 268,
+        "y": 18
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 700,
+        "padding": "32px 0px",
+        "width": 768,
+        "x": 464,
+        "y": 56
+      },
+      "footer": null,
+      "header": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px",
+        "width": 1184,
+        "x": 256,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 944,
+        "padding": "0px 32px",
+        "width": 1184,
+        "x": 256,
+        "y": 56
+      },
+      "sidebar": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 1000,
+        "padding": "0px",
+        "width": 256,
+        "x": 0,
+        "y": 0
+      },
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        1440,
+        1000
+      ]
+    }
+  },
+  {
+    "stage": "h5-390-notes-next-final",
+    "value": {
+      "bodyScroll": 390,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 44,
+        "padding": "0px",
+        "width": 182,
+        "x": 104,
+        "y": 6
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 1664,
+        "padding": "24px 0px",
+        "width": 358,
+        "x": 16,
+        "y": 56
+      },
+      "footer": {
+        "border": "0px",
+        "display": "flex",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 68,
+        "padding": "8px 16px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 776
+      },
+      "header": {
+        "border": "0px",
+        "display": "grid",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+        "fontSize": "16px",
+        "height": 720,
+        "padding": "0px 16px",
+        "width": 390,
+        "x": 0,
+        "y": 56
+      },
+      "sidebar": null,
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Nunito Sans\", -apple-system, \".SFNSText-Regular\", \"San Francisco\", \"system-ui\", \"Segoe UI\", \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  },
+  {
+    "stage": "h5-390-notes-legacy-final",
+    "value": {
+      "bodyScroll": 390,
+      "breadcrumb": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 32,
+        "padding": "0px",
+        "width": 182,
+        "x": 104,
+        "y": 12
+      },
+      "capture": null,
+      "content": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 1664,
+        "padding": "24px 0px",
+        "width": 358,
+        "x": 16,
+        "y": 56
+      },
+      "footer": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 68,
+        "padding": "8px 16px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 776
+      },
+      "header": {
+        "border": "0px",
+        "display": "grid",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 56,
+        "padding": "0px 12px",
+        "width": 390,
+        "x": 0,
+        "y": 0
+      },
+      "scroll": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "16px",
+        "height": 720,
+        "padding": "0px 16px",
+        "width": 390,
+        "x": 0,
+        "y": 56
+      },
+      "sidebar": null,
+      "title": {
+        "border": "0px",
+        "display": "block",
+        "font": "\"Noto Sans SC Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+        "fontSize": "14px",
+        "height": 0,
+        "padding": "0px 25px 0px 0px",
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "viewport": [
+        390,
+        844
+      ]
+    }
+  },
+  {
+    "stage": "h5-390-drawer-next-final",
+    "value": {
+      "overflow": 390,
+      "width": 331.5
+    }
+  },
+  {
+    "stage": "h5-390-drawer-legacy-final",
+    "value": {
+      "overflow": 390,
+      "width": 331.5
+    }
+  },
+  {
+    "stage": "h5-320-drawer-next-final",
+    "value": {
+      "overflow": 320,
+      "width": 272
+    }
+  },
+  {
+    "stage": "h5-320-drawer-legacy-final",
+    "value": {
+      "overflow": 320,
+      "width": 272
+    }
+  }
+]

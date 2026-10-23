@@ -6,9 +6,9 @@
   background-color: transparent;
 }
 .note-search-input { font-size: var(--text-body-size); }
-:is(.note-search-dialog, .note-search-sheet)[data-keyboard-focus] .note-search-input:focus {
-  outline: 2px solid var(--ring);
-  outline-offset: 4px;
+:is(.note-search-dialog, .note-search-sheet)[data-keyboard-focus] .note-search-input:focus-visible {
+  outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
 }
 .note-search-status { padding: 2.5rem .75rem .75rem; }
 .note-search-empty { margin-block: auto; }

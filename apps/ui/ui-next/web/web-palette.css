@@ -1,0 +1,127 @@
+/* Web-only appearance choices. Mono / neutral retain the Luma base unchanged. */
+:root[data-web-palette="lime"] {
+  --web-palette-100: var(--color-lime-100);
+  --web-palette-200: var(--color-lime-200);
+  --web-palette-300: var(--color-lime-300);
+  --web-palette-700: var(--color-lime-700);
+  --web-palette-800: var(--color-lime-800);
+  --web-palette-950: var(--color-lime-950);
+}
+:root[data-web-palette="green"] {
+  --web-palette-100: var(--color-green-100);
+  --web-palette-200: var(--color-green-200);
+  --web-palette-300: var(--color-green-300);
+  --web-palette-700: var(--color-green-700);
+  --web-palette-800: var(--color-green-800);
+  --web-palette-950: var(--color-green-950);
+}
+:root[data-web-palette="emerald"] {
+  --web-palette-100: var(--color-emerald-100);
+  --web-palette-200: var(--color-emerald-200);
+  --web-palette-300: var(--color-emerald-300);
+  --web-palette-700: var(--color-emerald-700);
+  --web-palette-800: var(--color-emerald-800);
+  --web-palette-950: var(--color-emerald-950);
+}
+:root[data-web-palette="teal"] {
+  --web-palette-100: var(--color-teal-100);
+  --web-palette-200: var(--color-teal-200);
+  --web-palette-300: var(--color-teal-300);
+  --web-palette-700: var(--color-teal-700);
+  --web-palette-800: var(--color-teal-800);
+  --web-palette-950: var(--color-teal-950);
+}
+:root[data-web-palette="cyan"] {
+  --web-palette-100: var(--color-cyan-100);
+  --web-palette-200: var(--color-cyan-200);
+  --web-palette-300: var(--color-cyan-300);
+  --web-palette-700: var(--color-cyan-700);
+  --web-palette-800: var(--color-cyan-800);
+  --web-palette-950: var(--color-cyan-950);
+}
+:root[data-web-palette="sky"] {
+  --web-palette-100: var(--color-sky-100);
+  --web-palette-200: var(--color-sky-200);
+  --web-palette-300: var(--color-sky-300);
+  --web-palette-700: var(--color-sky-700);
+  --web-palette-800: var(--color-sky-800);
+  --web-palette-950: var(--color-sky-950);
+}
+:root[data-web-palette="blue"] {
+  --web-palette-100: var(--color-blue-100);
+  --web-palette-200: var(--color-blue-200);
+  --web-palette-300: var(--color-blue-300);
+  --web-palette-700: var(--color-blue-700);
+  --web-palette-800: var(--color-blue-800);
+  --web-palette-950: var(--color-blue-950);
+}
+:root[data-web-neutral="slate"],
+:root[data-web-neutral="slate"] .ui-next-theme {
+  --color-background-sidebar: var(--color-slate-50);
+  --color-background-muted: var(--color-slate-100);
+  --color-background-control: color-mix(in oklab, var(--color-slate-200) 50%, transparent);
+  --color-text-primary: var(--color-slate-950);
+  --color-text-secondary: var(--color-slate-500);
+  --color-text-control-secondary: var(--color-slate-600);
+  --color-text-disabled: var(--color-slate-400);
+  --color-icon-primary: var(--color-slate-950);
+  --color-icon-secondary: var(--color-slate-500);
+  --color-icon-disabled: var(--color-slate-400);
+  --color-text-accent: var(--color-slate-900);
+  --color-accent: var(--color-slate-900);
+  --color-accent-muted: var(--color-slate-100);
+  --color-icon-accent: var(--color-slate-950);
+  --color-on-accent: var(--color-slate-50);
+  --color-border: var(--color-slate-200);
+  --color-border-emphasized: var(--color-slate-500);
+  --focus-outline-color: var(--color-slate-500);
+  --color-skeleton: var(--color-slate-100);
+  --color-background-inverted: var(--color-slate-900);
+  --color-track: color-mix(in oklab, var(--color-slate-200) 90%, transparent);
+}
+:root[data-web-neutral="slate"][data-ui-theme="dark"],
+:root[data-web-neutral="slate"][data-ui-theme="dark"] .ui-next-theme {
+  --color-background-body: var(--color-slate-950);
+  --color-background-surface: var(--color-slate-900);
+  --color-background-card: var(--color-slate-900);
+  --color-background-popover: var(--color-slate-900);
+  --color-background-sidebar: var(--color-slate-900);
+  --color-background-muted: var(--color-slate-800);
+  --color-background-control: color-mix(in oklab, var(--color-white) 7.5%, transparent);
+  --color-text-primary: var(--color-slate-50);
+  --color-text-secondary: var(--color-slate-400);
+  --color-text-control-secondary: var(--color-slate-400);
+  --color-text-disabled: var(--color-slate-600);
+  --color-icon-primary: var(--color-slate-50);
+  --color-icon-secondary: var(--color-slate-400);
+  --color-icon-disabled: var(--color-slate-600);
+  --color-text-accent: var(--color-slate-200);
+  --color-accent: var(--color-slate-200);
+  --color-accent-muted: var(--color-slate-800);
+  --color-icon-accent: var(--color-slate-50);
+  --color-on-accent: var(--color-slate-900);
+  --color-border: color-mix(in srgb, var(--color-white) 10%, transparent);
+  --color-border-emphasized: var(--color-slate-400);
+  --focus-outline-color: var(--color-slate-400);
+  --color-skeleton: var(--color-slate-700);
+  --color-background-inverted: var(--color-slate-200);
+  --color-track: color-mix(in oklab, var(--color-white) 13.5%, transparent);
+}
+:root[data-web-palette]:not([data-web-palette="mono"]),
+:root[data-web-palette]:not([data-web-palette="mono"]) .ui-next-theme {
+  --color-text-accent: var(--web-palette-800);
+  --color-accent: var(--web-palette-700);
+  --color-accent-muted: var(--web-palette-100);
+  --color-icon-accent: var(--web-palette-800);
+  --color-on-accent: var(--color-white);
+  --focus-outline-color: var(--web-palette-700);
+}
+:root[data-web-palette]:not([data-web-palette="mono"])[data-ui-theme="dark"],
+:root[data-web-palette]:not([data-web-palette="mono"])[data-ui-theme="dark"] .ui-next-theme {
+  --color-text-accent: var(--web-palette-200);
+  --color-accent: var(--web-palette-300);
+  --color-accent-muted: var(--web-palette-950);
+  --color-icon-accent: var(--web-palette-200);
+  --color-on-accent: var(--web-palette-950);
+  --focus-outline-color: var(--web-palette-300);
+}

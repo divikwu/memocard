@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, stat, utimes, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { buildTokenCatalog, inspectCSSTokens, inspectRuntimeTokens, checkPublicPlacement, checkSourcePath } from './build-token-catalog.mjs';
 import { inspectConsumerText, checkConsumerReferences } from './token-consumers.mjs';
 import { IOS_PALETTE_KEYS } from '../apps/ui/src/lib/ios-palette.ts';
@@ -96,6 +98,10 @@ test('production coverage is complete, preserves mtimes and checks drift without
     const jsonPath = outputPath.replace(/\.md$/, '.json');
     const catalog = JSON.parse(await readFile(jsonPath, 'utf8'));
     assert.equal(catalog.css.length, result.css);
+    assert.equal(catalog.css.filter(token => token.id === 'color.data').length, 56);
+    assert.equal(catalog.css.filter(token => ['color.syntax', 'color.syntax-background'].includes(token.id)).length, 19);
+    assert.equal(catalog.optionalStylesheets.length, 2);
+    assert.ok(!content.split('## 生产源码消费索引')[1].split('## 组件 平台 与上游所有权')[0].includes('--data-categorical-blue'), 'Optional data values are not reported as production consumers');
     assert.equal(catalog.runtime.length, result.runtime);
     assert.equal(catalog.portable.length, result.portable);
     assert.ok(catalog.css.every(token => token.declarations.length && token.source && token.type));
@@ -105,14 +111,18 @@ test('production coverage is complete, preserves mtimes and checks drift without
       assert.ok(callouts.every(token => token.source === 'apps/ui/src/import-layout.tokens.css' && token.status === 'active' && token.type === 'color'));
       assert.ok(callouts.every(token => token.declarations.length === (role === 'text' ? 2 : 1)));
     }
+    const motion = catalog.css.filter(token => token.category === 'motion' && token.layer !== 'adapter');
+    assert.equal(motion.length, 11);
+    assert.ok(motion.every(token => token.source === 'apps/ui/src/features/motion/tokens.css' && token.status === 'active'));
+    assert.equal(motion.find(token => token.name === '--motion-ease-out').declarations[0].value, 'ease-out');
     const shadows = catalog.css.filter(token => ['effects.project-shadows', 'effects.capture-shadows'].includes(token.id));
     assert.deepEqual(shadows.map(token => token.name), ['--control-shadow', '--floating-control-shadow', '--surface-focus-shadow', '--surface-shadow']);
-    assert.ok(shadows.every(token => token.source === `apps/ui/src/features/theme/${token.id === 'effects.capture-shadows' ? 'capture.tokens' : 'tokens'}.css` && token.status === 'active' && token.type === 'shadow'));
+    assert.ok(shadows.every(token => token.source === `apps/ui/src/features/theme/${token.id === 'effects.capture-shadows' ? 'capture.tokens' : 'tokens'}.css` && token.status === (token.id === 'effects.capture-shadows' ? 'active' : 'alias') && token.type === 'shadow'));
     assert.ok(shadows.every(token => token.declarations.length === (['--surface-focus-shadow', '--floating-control-shadow'].includes(token.name) ? 2 : 1)));
     await utimes(jsonPath, new Date('2001-01-01'), new Date('2001-01-01'));
     const jsonMtime = (await stat(jsonPath)).mtimeMs;
     for (const status of ['reserved', 'baseline-only', 'platform-owned']) assert.ok(content.includes(status));
-    for (const [path, token] of [['TagPill.tsx', '--tag-default-fg'], ['MermaidPreview.tsx', '--secondary'], ['ios-app-chrome.tsx', 'radius.none'], ['WebView.swift', '--ios-top'], ['select.tsx', '--anchor-width'], ['nav-actions.tsx', '--accent-foreground'], ['import-layout.css', '--callout-text-gray'], ['CalloutColorsMenu.tsx', '--callout-swatch-gray'], ['quick-capture.tsx', '--surface-shadow'], ['loading-states.tsx', '--surface-shadow'], ['note-collection-layout.ts', '--surface-shadow'], ['quick-capture.css', '--surface-focus-shadow'], ['quick-capture.css', '--control-shadow'], ['quick-capture.css', '--floating-control-shadow'], ['app-sidebar.css', '--control-shadow']]) {
+    for (const [path, token] of [['TagPill.tsx', '--tag-default-fg'], ['MermaidPreview.tsx', '--secondary'], ['ios-app-chrome.tsx', 'radius.none'], ['WebView.swift', '--ios-top'], ['select.tsx', '--anchor-width'], ['nav-actions.tsx', '--accent-foreground'], ['import-layout.css', '--callout-text-gray'], ['CalloutColorsMenu.tsx', '--callout-swatch-gray'], ['quick-capture.tsx', '--shadow-med'], ['loading-states.tsx', '--shadow-med'], ['note-collection-layout.ts', '--shadow-med'], ['quick-capture.css', '--surface-focus-shadow'], ['quick-capture.css', '--shadow-low'], ['quick-capture.css', '--floating-control-shadow'], ['mobile-tag-actions.css', '--shadow-low']]) {
       assert.ok(content.split('\n').some(line => line.startsWith('| [') && line.includes(path) && line.includes(`\`${token}\``)), `${path} consumes ${token}`);
     }
     await utimes(outputPath, new Date('2001-01-01'), new Date('2001-01-01'));
@@ -131,20 +141,25 @@ test('production coverage is complete, preserves mtimes and checks drift without
     const registry = JSON.parse(await readFile(new URL('../design/tokens/registry.json', import.meta.url), 'utf8'));
     assert.deepEqual(registry.dynamicConsumers.find(entry => entry.source.endsWith('/ios-palette.ts')).tokens, IOS_PALETTE_KEYS.map(key => `--${key}`));
     const registryPath = join(directory, 'registry.json');
-    for (const [owned, error] of [
-      [registry.owned.filter(entry => entry.category !== 'motion'), /Uncovered token category: motion/],
+    for (const [owned, error, families = registry.families] of [
+      [registry.owned.map(entry => entry.category === 'motion' ? { ...entry, category: 'effects' } : entry), /Uncovered token category: motion/, registry.families.map(entry => entry.category === 'motion' ? { ...entry, category: 'effects' } : entry)],
       [[...registry.owned, registry.owned[0]], /Duplicate token contract/],
       [[{ ...registry.owned[0], sources: ['missing-source.css'] }, ...registry.owned.slice(1)], /ENOENT/],
     ]) {
-      await writeFile(registryPath, JSON.stringify({ ...registry, owned }));
+      await writeFile(registryPath, JSON.stringify({ ...registry, owned, families }));
       await assert.rejects(buildTokenCatalog({ ...options, registryPath }), error);
     }
     for (const [change, error] of [
+      [{ optionalStylesheets: [] }, /Unreachable token CSS/],
+      [{ optionalStylesheets: [null] }, /Invalid optional stylesheet entry/],
+      [{ optionalStylesheets: [...registry.optionalStylesheets, ...registry.optionalStylesheets] }, /Invalid optional stylesheet entry/],
+      [{ optionalStylesheets: [{ ...registry.optionalStylesheets[0], source: registry.families[0].source }] }, /already production-reachable/],
+      [{ optionalStylesheets: [{ ...registry.optionalStylesheets[0], verification: 'missing.browser.tsx' }] }, /ENOENT/],
       [{ dynamicConsumers: [] }, /Unbounded dynamic token read/],
       [{ externalSources: [] }, /Unknown consumer reference/],
       [{ runtimeSources: registry.runtimeSources.filter(entry => !entry.format) }, /Unknown consumer reference/],
       [{ owned: registry.owned.map(entry => ({ ...entry, sources: entry.sources.filter(path => !path.endsWith('/date-property-picker.css')) })) }, /Unowned production stylesheet/],
-      [{ families: registry.families.map(entry => entry.id === 'effects.overlay' ? { ...entry, status: 'reserved' } : entry) }, /Reserved token has a production consumer/],
+      [{ families: registry.families.map(entry => entry.id === 'effects.elevation' ? { ...entry, status: 'reserved' } : entry) }, /Reserved token has a production consumer/],
     ]) {
       await writeFile(registryPath, JSON.stringify({ ...registry, ...change }));
       await assert.rejects(buildTokenCatalog({ ...options, registryPath }), error);
@@ -153,6 +168,15 @@ test('production coverage is complete, preserves mtimes and checks drift without
     await writeFile(unreachable, await readFile(new URL(`../${source}`, import.meta.url), 'utf8'));
     await writeFile(registryPath, JSON.stringify({ ...registry, families: registry.families.map(entry => entry.source === source ? { ...entry, source: unreachable } : entry) }));
     await assert.rejects(buildTokenCatalog({ ...options, registryPath }), /Unreachable token CSS/);
+    const syntaxSource = registry.optionalStylesheets.find(entry => entry.source.endsWith('/syntax.css')).source;
+    const brokenImport = join(directory, 'syntax.css');
+    await writeFile(brokenImport, (await readFile(new URL(`../${syntaxSource}`, import.meta.url), 'utf8')).replace('./code.css', './missing.css'));
+    await writeFile(registryPath, JSON.stringify({
+      ...registry,
+      families: registry.families.map(entry => entry.source === syntaxSource ? { ...entry, source: brokenImport } : entry),
+      optionalStylesheets: registry.optionalStylesheets.map(entry => entry.source === syntaxSource ? { ...entry, source: brokenImport } : entry),
+    }));
+    await assert.rejects(buildTokenCatalog({ ...options, registryPath }), /Unregistered optional CSS import/);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -180,4 +204,47 @@ test('one seven-step scale feeds eight complete text styles; old names are adapt
   assert.ok(compatibility.every(token => token.family.layer === 'adapter' && token.family.status === 'alias'));
   const consumers = (await Promise.all(['styles.css', 'typeset.css', 'components/note-search-dialog.css'].map(file => readFile(new URL(`../apps/ui/src/${file}`, import.meta.url), 'utf8')))).join('\n');
   assert.ok(compatibility.every(token => !consumers.includes(`var(${token.name})`)));
+});
+
+
+test('optional domains compile independently and do not create utilities without their import', async () => {
+  const { compile } = createRequire(new URL('../apps/ui/package.json', import.meta.url))('tailwindcss');
+  const core = (await Promise.all(['tokens.css', 'hues.css', 'domains/code.css'].map(path => readFile(new URL(`../apps/ui/src/features/theme/${path}`, import.meta.url), 'utf8')))).join('\n');
+  const base = await compile(`${core}\n@tailwind utilities;`);
+  const withoutImport = base.build(['bg-body', 'bg-syntax-background', 'fill-data-categorical-blue', 'text-syntax-keyword']);
+  assert.ok(withoutImport.includes('.bg-body') && withoutImport.includes('.bg-syntax-background'));
+  assert.ok(!withoutImport.includes('.fill-data-categorical-blue') && !withoutImport.includes('.text-syntax-keyword'));
+  for (const [domain, count, utility] of [['data', 56, 'fill'], ['syntax', 19, 'text']]) {
+    const source = await readFile(new URL(`../apps/ui/src/features/theme/domains/${domain}.css`, import.meta.url), 'utf8');
+    const codeBackground = domain === 'syntax' ? await readFile(new URL('../apps/ui/src/features/theme/domains/code.css', import.meta.url), 'utf8') : '';
+    const aliases = [...(source + codeBackground).matchAll(/--color-([\w-]+):\s*var\((--[\w-]+)\);/g)];
+    assert.equal(aliases.length, count);
+    const compiler = await compile(`${source}\n@tailwind utilities;`, {
+      base: fileURLToPath(new URL('../apps/ui/src/features/theme/domains/', import.meta.url)),
+      async loadStylesheet(id, base) {
+        const path = resolve(base, id);
+        return { path, base: dirname(path), content: await readFile(path, 'utf8') };
+      },
+    });
+    const output = compiler.build(aliases.map(([, name]) => `${utility}-${name}`));
+    for (const [, name, variable] of aliases) {
+      assert.ok(output.includes(`.${utility}-${name} {`), `${name} produces a class`);
+      assert.ok(output.includes(`${utility === 'fill' ? 'fill' : 'color'}: var(${variable})`), `${name} reads its owning role`);
+    }
+  }
+});
+
+test('non-color Tailwind interfaces retain upstream fallbacks and use project-owned roles', async () => {
+  const requireUI = createRequire(new URL('../apps/ui/package.json', import.meta.url));
+  const { compile } = requireUI('tailwindcss');
+  const paths = [requireUI.resolve('tailwindcss/theme.css'), ...['theme/tokens.css', 'typography/scale.generated.css', 'motion/tokens.css'].map(path => fileURLToPath(new URL(`../apps/ui/src/features/${path}`, import.meta.url)))];
+  const source = (await Promise.all(paths.map(path => readFile(path, 'utf8')))).join('\n');
+  const compiler = await compile(`${source}\n@tailwind utilities;`);
+  const names = ['font-sans', 'font-heading', 'font-mono', 'font-normal', 'font-medium', 'font-semibold', 'font-bold', 'text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'text-3xl', 'text-4xl', 'text-5xl', 'rounded-none', 'rounded-xs', 'rounded-sm', 'rounded-md', 'rounded-lg', 'rounded-xl', 'rounded-full', 'p-4', 'gap-2', 'transition-colors', 'transition-opacity', 'transition-shadow', 'transition-transform', 'ease-out'];
+  const output = compiler.build([...names, 'text-2xs']);
+  for (const name of names) assert.ok(output.includes(`.${name} {`), `${name} compiles`);
+  assert.ok(output.includes('font-family: var(--app-font-mono)'));
+  assert.ok(output.includes('transition-duration: var(--tw-duration, var(--motion-duration-fast))'));
+  assert.ok(output.includes('transition-property: transform, translate, scale, rotate'));
+  assert.ok(!output.includes('.text-2xs {'), 'No implicit eighth project font size is introduced');
 });

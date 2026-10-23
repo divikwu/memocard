@@ -14,12 +14,12 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
   /* Keep the original draggable hit area inside the 16px gutter + 8px inset. */
   .note-page-width .block-controls { left: calc(var(--editor-gutter) - 24px) !important; }
   .note-page-width .block-controls button { opacity: 0; touch-action: none; }
-  .note-page-width .block-controls button:focus-visible { opacity: 1; outline-offset: -2px; }
+  .note-page-width .block-controls button:focus-visible { opacity: 1; outline-offset: var(--focus-outline-offset); }
 }
 .note-properties {
   --property-label-width: min(160px, 40%);
   padding: 0 2px 12px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--border-width) solid var(--border);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-sm);
 }
@@ -61,15 +61,15 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
 .note-tag-color-trigger { margin-right: 4px; opacity: 0; }
 .note-tag-option-row:hover .note-tag-color-trigger, .note-tag-option-row:focus-within .note-tag-color-trigger, .note-tag-color-trigger[data-popup-open] { opacity: 1; }
 @media (hover: none) { .note-tag-color-trigger { opacity: 1; } }
-.note-tag-option[data-disabled] { opacity: 0.5; }
+.note-tag-option[data-disabled] { }
 .note-tag-input { display: flex; flex-direction: column; }
-.note-tag-header { padding: 8px 12px; border-bottom: 1px solid var(--border); background: color-mix(in oklab, var(--muted) 50%, var(--background)); }
+.note-tag-header { padding: 8px 12px; border-bottom: var(--border-width) solid var(--border); background: color-mix(in oklab, var(--muted) 50%, var(--background)); }
 .note-tag-editor > p:not(.note-tag-hint) { margin: 8px 12px 12px; }
 .note-tag-selected { display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: 8px; }
 .note-tag-chip { display: inline-flex; align-items: center; gap: 2px; }
 .note-tag-selected-item { display: inline-flex; align-items: center; max-width: 100%; }
 .note-tag-chip:has(.note-tag-remove) { padding-right: 2px; }
-.note-tag-chip:focus-visible, .note-tag-remove:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.note-tag-chip:focus-visible, .note-tag-remove:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .note-tag-search { flex: 1 1 80px; width: 0; min-width: 80px; height: 20px; outline: none; background: transparent; font-size: var(--font-size-sm); }
 .note-tag-header .note-tag-search:focus { background-color: transparent; }
 .note-tag-hint { margin: 12px 12px 8px; }
@@ -107,7 +107,7 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
   padding: 0;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--muted-foreground);
+  border: var(--border-width) solid var(--border-emphasized-color);
   border-radius: 4px;
   background: transparent;
   line-height: 1;
@@ -116,8 +116,8 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
 .note-property-checkbox[data-checked] { border-color: var(--primary); background: var(--primary); color: var(--primary-foreground); }
 .note-property-checkbox-indicator { display: flex; align-items: center; justify-content: center; }
 .note-property-checkbox-indicator > svg { width: 12px; height: 12px; }
-.note-property-checkbox:disabled { opacity: 0.5; }
-.note-property-checkbox:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.note-property-checkbox:disabled { }
+.note-property-checkbox:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .note-properties[data-updating] :is(.note-property-label, .note-property-edit, .note-property-action, .note-property-checkbox):disabled { opacity: 1; }
 .note-property-confirm {
   position: fixed;
@@ -127,10 +127,10 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
   width: min(24rem, calc(100% - 2rem));
   transform: translate(-50%, -50%);
   padding: 20px;
-  border: 1px solid var(--border);
+  border: var(--border-width) solid var(--border);
   border-radius: 8px;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--surface-bg);
+  color: var(--surface-foreground);
 }
 
 .note-property-backdrop { position: fixed; inset: 0; z-index: 50; }
@@ -142,12 +142,12 @@ section.note-editor .note-page-title { padding-inline: var(--note-content-inset)
 .note-property-create-popup { width: min(280px, calc(100vw - 24px)); padding: 8px; }
 .note-property-create { display: grid; gap: 8px; font-size: var(--font-size-sm); line-height: var(--line-height-sm); }
 .note-property-create > input { height: 32px; }
-.note-property-type-list { display: grid; border-top: 1px solid var(--border); padding-top: 4px; }
+.note-property-type-list { display: grid; border-top: var(--border-width) solid var(--border); padding-top: 4px; }
 .note-property-type-label { padding: 4px 8px; font-size: var(--font-size-xs); color: var(--muted-foreground); }
 .note-property-create .note-property-type-option { width: 100%; height: 32px; justify-content: flex-start; gap: 8px; padding-inline: 8px; font-weight: var(--font-weight-normal); }
 .note-property-type-option > svg { opacity: .8; }
 
-.note-property-inline { border-radius: 4px; outline: 1px solid var(--border); background: var(--background); }
+.note-property-inline { border-radius: 4px; outline: var(--border-width) solid var(--border); background: var(--background); }
 .note-property-inline textarea {
   min-height: 32px;
   max-height: none;

@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import { radiusValues, sidebarTokens, spacingValues } from "../src/generated/design-tokens";
 import { ControlSizeRows } from "./foundation-sizing.example";
-import { motionCases, reducedMotionRules } from "./foundation-motion.data";
+import { motionCases, motionDurationTokens, motionEasingTokens, reducedMotionRules } from "./foundation-motion.data";
 import { MotionExample } from "./foundation-motion.example";
 import { SpacingPreview, WebSpacingBase, WebSpacingRows } from "./foundation-spacing.example";
 import { FontChoiceRows, TypographySizeBase, TypographyScaleRows, TextRoleRows } from "./foundation-typography.example";
@@ -53,13 +53,14 @@ function PortableTable({ category, inlinePreview = false }: { category: string; 
 function ShapeCurrentTable({ samples }: { samples: FoundationSamples }) {
   const tokens = catalog.css.filter(token => token.category === "shape");
   const levels = ["sm", "md", "lg", "xl", "2xl", "3xl", "4xl"];
-  const groups = [tokens.filter(token => token.name.startsWith("--radius-")).sort((a, b) => levels.indexOf(a.name.slice(9)) - levels.indexOf(b.name.slice(9))), tokens.filter(token => !token.name.startsWith("--radius-"))];
+  const groups = [tokens.filter(token => token.name.startsWith("--radius-")).sort((a, b) => levels.indexOf(a.name.slice(9)) - levels.indexOf(b.name.slice(9))), tokens.filter(token => token.name.includes("radius") && !token.name.startsWith("--radius-")), tokens.filter(token => !token.name.includes("radius"))];
   return <><p className="foundation-note">当前基准：<code aria-label="当前圆角基准">--radius = {samples.values["--radius-lg"] || "读取中…"}</code></p><ReferenceTable label="shape CSS definitions" columns={["Token", "Value", "Preview"]}>{groups.map((group, index) => <Fragment key={index}>
     {index === 1 && <tr className="foundation-table-group"><td colSpan={3}>交互区域圆角 · 独立规则</td></tr>}
+    {index === 2 && <tr className="foundation-table-group"><td colSpan={3}>边框宽度</td></tr>}
     {group.map(token => <tr key={token.name} data-token-kind="css" data-token-name={token.name} data-token-status={token.status}>
       <th scope="row"><code>{token.name}</code></th>
       <td><code>{samples.values[token.name] || "读取中…"}</code>{index === 0 && <code className="foundation-radius-formula">{token.declarations[0].value}</code>}</td>
-      <td><span aria-hidden="true" className="foundation-radius-preview" style={{ borderRadius: samples.values[token.name] }} /></td>
+      <td><span aria-hidden="true" className="foundation-radius-preview" style={index === 2 ? { borderWidth: samples.values[token.name], borderStyle: "solid", borderRadius: 0 } : { borderRadius: samples.values[token.name] }} /></td>
     </tr>)}
   </Fragment>)}</ReferenceTable></>;
 }
@@ -90,13 +91,13 @@ function SectionContent({ id, samples, category }: { id: SectionId; samples: Fou
   const colorGroup = category === "colors" && colorTokenGroups.find(group => group.id === id);
   if (colorGroup) return css(colorGroup.names.map(name => catalog.css.find(token => token.name === name)!));
   switch (id) {
-    case "colors": return css(catalog.css.filter(token => ["color.interface", "color.reserved"].includes(token.id)));
+    case "colors": return css(colorTokenGroups.flatMap(group => group.names.map(name => catalog.css.find(token => token.name === name)!)));
     case "tags": return css(catalog.css.filter(token => token.id.startsWith("color.tags")));
     case "callouts": return css(catalog.css.filter(token => ["color.callouts", "color.callout-text", "color.callout-swatch"].includes(token.id)));
     case "palettes": return css(catalog.css.filter(token => ["color.ramps", "color.swatches"].includes(token.id)));
     case "spacing-web": return <><WebSpacingBase /><ReferenceTable label="Web spacing scale" columns={["Token", "Value"]}><WebSpacingRows /></ReferenceTable></>;
     case "spacing": return <PortableTable category="spacing" inlinePreview={category === "spacing"} />;
-    case "sizing": return <>{examples && <><h3>Web 控件尺寸</h3><p className="foundation-section-description">样本直接使用生产组件，数值读取当前实际尺寸，随根字号更新。文字按钮与纯图标按钮分别展示；输入框在移动端保留较大的字号。控件密度与移动端命中区分别管理。</p><ReferenceTable label="Web control dimensions" columns={["Component / Size", "Value · Preview"]}><ControlSizeRows /></ReferenceTable><h3>跨端侧栏基准</h3><p className="foundation-section-description">下表保留逻辑基准（Web px / 原生 pt），并非所有常量在两端都直接使用。Web 桌面行默认 32px，移动行最小 48px，文字放大时行高随内容增长；移动展开按钮的视觉框 40px、命中区 44px 分开保留。原生文字与行高遵循 Dynamic Type。</p></>}<PortableTable category="sizing" inlinePreview={examples} /></>;
+    case "sizing": return <>{examples && <><h3>Web 控件尺寸</h3><p className="foundation-section-description">样本直接使用生产组件，数值读取当前实际尺寸，随根字号更新。文字按钮与纯图标按钮分别展示；输入框在移动端保留较大的字号。控件密度与移动端命中区分别管理。</p><ReferenceTable label="Web control dimensions" columns={["Component / Size", "Value · Preview"]}><ControlSizeRows /></ReferenceTable><h3>跨端侧栏基准</h3><p className="foundation-section-description">下表保留逻辑基准（Web px / 原生 pt），并非所有常量在两端都直接使用。Web 桌面行默认 32px，移动行最小 48px，文字放大时行高随内容增长；移动展开按钮的视觉框 40px、命中区 44px 分开保留。原生文字与行高遵循 Dynamic Type。</p></>}{css(catalog.css.filter(token => token.category === "sizing" && token.layer !== "adapter"))}<PortableTable category="sizing" inlinePreview={examples} /></>;
     case "shape": return <><PortableTable category="shape" />{category === "all" && <><h3>当前主题圆角</h3><ShapeCurrentTable samples={samples} /></>}</>;
     case "shape-current": return <ShapeCurrentTable samples={samples} />;
     case "elevation": return <>{examples && <><ShadowScale mode={samples.mode} /><h3>项目定义</h3></>}{css(catalog.css.filter(token => token.category === "effects" && token.layer !== "adapter"))}</>;
@@ -105,8 +106,22 @@ function SectionContent({ id, samples, category }: { id: SectionId; samples: Fou
     case "typography-size": return <ReferenceTable label="Typography size scale" columns={["Token", "Value", "Example"]}><TypographyScaleRows scale="size" /></ReferenceTable>;
     case "typography-weight": return <ReferenceTable label="Typography weights" columns={["Token", "Value"]}><TypographyScaleRows scale="weight" /></ReferenceTable>;
     case "typography-leading": return <ReferenceTable label="Typography leading" columns={["Token", "倍数 / 预览"]}><TypographyScaleRows scale="leading" /></ReferenceTable>;
-    case "motion": return <>
-      <ReferenceTable label="Motion reference" columns={["场景", "时长 / 缓动", "来源"]}>{motionCases.map(item => <tr key={item.name}><th scope="row">{item.name}</th><td><code>{item.duration}</code><br /><code>{item.easing}</code></td><td><code>{item.source}</code></td></tr>)}</ReferenceTable>
+    case "motion": return category === "all" ? css(catalog.css.filter(token => token.category === "motion" && token.layer !== "adapter")) : <>
+      <p>动效帮助理解状态与空间变化。时长和缓动统一读取生产 token，保留现有表现；进入方向、动画属性和手势阈值仍由组件维护。</p>
+      <h3>Duration</h3>
+      <ReferenceTable label="Motion duration tokens" columns={["Token", "Value"]}>{motionDurationTokens.map(token => <tr key={token.name}><th scope="row"><code>{token.name}</code></th><td><code>{samples.values[token.name] || token.declarations[0].value}</code></td></tr>)}</ReferenceTable>
+      <h3>Easing</h3>
+      <ReferenceTable label="Motion easing tokens" columns={["Token", "Value"]}>{motionEasingTokens.map(token => <tr key={token.name}><th scope="row"><code>{token.name}</code></th><td><code>{samples.values[token.name] || token.declarations[0].value}</code></td></tr>)}</ReferenceTable>
+      <h3>场景与 token</h3>
+      <ReferenceTable label="Motion reference" columns={["场景", "时长 / 缓动", "Token"]}>{motionCases.map(item => <tr key={item.name}><th scope="row">{item.name}</th><td><code>{item.duration}</code><br /><code>{item.easing}</code></td><td><code>{item.durationToken}</code><br /><code>{item.easingToken}</code></td></tr>)}</ReferenceTable>
+      <h3>使用方式</h3>
+      <p>普通控件继续使用 <code>transition-colors</code> 或指定过渡属性，默认读取 fast / standard。面板使用 <code>duration-(--motion-duration-panel)</code>，浮层动画使用 <code>animation-duration-(--motion-duration-fast)</code>。自定义 CSS 直接引用：</p>
+      <pre aria-label="动效 token CSS 用法" tabIndex={0} className="overflow-x-auto rounded-lg border border-border p-4 outline-none focus-visible:focus-ring"><code style={{ whiteSpace: "pre", overflowWrap: "normal" }}>{`.surface {
+  transition: box-shadow
+    var(--motion-duration-normal)
+    var(--motion-ease-out);
+}`}</code></pre>
+      <p>CSS 的 <code>--motion-ease-out: ease-out</code> 与 Tailwind 的 <code>ease-out</code> 工具类是不同曲线。既有界面不混用；高频悬停不增加等待，动画不阻塞操作，也不为已有即时变化新增动画。</p>
       <h3>减少动态效果</h3>
       <ReferenceTable label="Reduced motion rules" columns={["范围", "行为"]}>
         <tr><th scope="row">全局动画 / 过渡</th><td><code>{reducedMotionRules.animation} / {reducedMotionRules.transition}</code></td></tr>

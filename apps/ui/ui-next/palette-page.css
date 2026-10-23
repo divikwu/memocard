@@ -1,0 +1,14 @@
+.palette-document .palette-intro { margin: 16px 0 0; color: var(--color-text-secondary); font-size: 16px; line-height: 28px; }
+.palette-table-wrap { overflow-x: auto; }
+.token-document .palette-table { min-width: 520px; }
+.token-document .palette-table :is(th, td):last-child { width: 96px; }
+.palette-swatch { display: block; width: 64px; height: 40px; border: 1px solid var(--color-border); border-radius: var(--radius-inner); }
+.token-document.palette-document code.palette-name, .token-document.palette-document code.palette-source { font-size: 14px; line-height: 22px; }
+.palette-name { display: block; width: 100%; }
+.token-document.palette-document code.palette-source { display: block; color: var(--color-text-secondary); }
+.palette-copy { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; margin-top: 6px; padding: 3px 0; border: 0; border-radius: var(--radius-inner); background: transparent; color: var(--color-text-primary); cursor: pointer; }
+.token-document.palette-document .palette-copy code { font-size: 14px; line-height: 22px; }
+.palette-copy svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--color-icon-secondary); }
+.palette-copy:hover:not(:disabled) { color: var(--color-text-accent); }
+.palette-copy:disabled { color: var(--color-text-disabled); cursor: default; }
+.palette-copy:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }

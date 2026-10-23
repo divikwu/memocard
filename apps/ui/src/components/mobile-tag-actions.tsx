@@ -4,7 +4,7 @@ import { useTagPreferences } from "@/hooks/use-tag-preferences";
 import { useCollectionLayout } from "@/hooks/use-collection-layout";
 import { Button } from "./ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import "./app-sidebar.css";
+import "./mobile-tag-actions.css";
 
 const TagEditor = lazy(() => import("./tag-editor").then(module => ({ default: module.TagEditor })));
 
@@ -18,7 +18,7 @@ export function MobileTagActions({ tag, title, home = false, vaultId, onRename }
   const pinned = tag ? preferences.pinned.includes(tag) : false;
   return <>
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger render={<Button ref={titleButton} type="button" variant="ghost" size="sm" className="h-8 max-w-full min-w-0 gap-1 px-1 font-medium text-foreground" aria-label={tag ? `标签操作 ${tag}` : `视图选项 ${title}`} aria-current="page" />}><span className="truncate">{tag ? `# ${tag}` : title}</span><ChevronDown aria-hidden="true" className="size-4 shrink-0" /></DropdownMenuTrigger>
+      <DropdownMenuTrigger render={<Button ref={titleButton} type="button" variant="ghost" size="sm" className="h-8 max-w-full min-w-0 gap-1 px-1 font-medium text-primary" aria-label={tag ? `标签操作 ${tag}` : `视图选项 ${title}`} aria-current="page" />}><span className="truncate">{tag ? `# ${tag}` : title}</span><ChevronDown aria-hidden="true" className="size-4 shrink-0" /></DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="center" sideOffset={8} className="mobile-tag-dropdown" finalFocus={() => {
         if (openingEditor.current) { setEditing(openingEditor.current); openingEditor.current = null; return false; }
         return titleButton.current;
@@ -31,7 +31,7 @@ export function MobileTagActions({ tag, title, home = false, vaultId, onRename }
           <DropdownMenuItem closeOnClick={false} className="mobile-tag-menu-item" onClick={async () => { if (await togglePinned(tag)) setOpen(false); }}>{pinned ? <PinOff aria-hidden="true" /> : <Pin aria-hidden="true" />}{pinned ? "取消置顶" : "置顶标签"}</DropdownMenuItem>
           <DropdownMenuItem className="mobile-tag-menu-item" onClick={() => { openingEditor.current = tag; }}><Pencil aria-hidden="true" />编辑名称／图标</DropdownMenuItem>
         </>}
-        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        {error && <p role="alert" className="text-sm text-error">{error}</p>}
       </DropdownMenuContent>
     </DropdownMenu>
     {editing && titleButton.current && <Suspense fallback={null}><TagEditor path={editing} anchor={titleButton.current} sheet initialIcon={preferences.icons[editing] || ""} onClose={() => setEditing(null)} onSave={(name, icon) => saveAppearance(editing, name, icon, onRename)} /></Suspense>}

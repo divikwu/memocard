@@ -5,7 +5,7 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 
 export default tseslint.config(
-  { ignores: ["dist", "storybook-static"] },
+  { ignores: ["dist", "dist-web-next", "storybook-static", "storybook-next-static"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -25,6 +25,15 @@ export default tseslint.config(
         allowConstantExport: true,
         allowExportNames: ["buttonVariants", "badgeVariants", "tabsListVariants", "useSidebar"],
       }],
+    },
+  },
+  {
+    files: ["ui-next/**/*.{ts,tsx}"],
+    languageOptions: { globals: globals.browser },
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      "react-hooks/rules-of-hooks": "error",
+      "react-hooks/exhaustive-deps": "warn",
     },
   },
 );

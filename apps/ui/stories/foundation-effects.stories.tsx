@@ -10,11 +10,11 @@ import { MotionExample, inspectSheet, inspectReducedMotion } from "./foundation-
 const icons = Object.entries(import.meta.glob("../../apple/Resources/Assets.xcassets/Lucide-*.imageset/icon.svg", { eager: true, query: "?url", import: "default" })) as [string, string][];
 
 function Effects() {
-  return <main className="max-w-4xl space-y-8 bg-background p-6 text-foreground">
-    <header className="space-y-2"><h1 className="text-2xl font-semibold">图标、层次与输入反馈</h1><p className="text-sm text-muted-foreground">展示已有资源和组件样式；系统材质与系统控件尺寸继续由 iOS 管理。</p></header>
-    <section className="space-y-3"><h2 className="text-lg font-semibold">同源侧栏图标</h2><p className="text-sm text-muted-foreground">以下直接显示 Lucide 生成的原生侧栏 SVG；常规基准 {sidebarTokens.iconSize}px / pt，图标视觉框与触摸命中区分别维护。</p><div className="grid grid-cols-2 gap-3 sm:grid-cols-5">{icons.map(([path, url]) => <div key={path} className="flex items-center gap-2 rounded-lg border p-3 text-xs"><span aria-hidden="true" data-testid="sidebar-icon" style={{ width: sidebarTokens.iconSize, height: sidebarTokens.iconSize, flexShrink: 0, backgroundColor: "currentColor", maskImage: `url(${JSON.stringify(url)})`, maskSize: "contain", maskRepeat: "no-repeat", maskPosition: "center" }} /><code className="break-all">{path.match(/Lucide-(.+)\.imageset/)![1]}</code></div>)}</div></section>
-    <section className="space-y-3"><h2 className="text-lg font-semibold">浮层层次</h2><div aria-label="浮层阴影样本" className="rounded-lg bg-popover p-6 text-popover-foreground" style={{ boxShadow: "var(--overlay-shadow)" }}>生产 --overlay-shadow；明暗主题各自定义。</div><p className="text-sm text-muted-foreground">弹层层级仍属于对应组件；不为原生菜单复制 Web 阴影或 z-index。</p></section>
-    <section className="space-y-3"><h2 className="text-lg font-semibold">键盘焦点与动效</h2><Button variant="outline">用 Tab 检查焦点</Button><p className="text-sm text-muted-foreground">焦点使用现有 ring 语义。生产 CSS 在 prefers-reduced-motion: reduce 下缩短动画与过渡；本示例不新增统一时长或动画。</p></section>
+  return <main className="max-w-4xl space-y-8 bg-body p-6 text-primary">
+    <header className="space-y-2"><h1 className="text-2xl font-semibold">图标、层次与输入反馈</h1><p className="text-sm text-secondary">展示已有资源和组件样式；系统材质与系统控件尺寸继续由 iOS 管理。</p></header>
+    <section className="space-y-3"><h2 className="text-lg font-semibold">同源侧栏图标</h2><p className="text-sm text-secondary">以下直接显示 Lucide 生成的原生侧栏 SVG；常规基准 {sidebarTokens.iconSize}px / pt，图标视觉框与触摸命中区分别维护。</p><div className="grid grid-cols-2 gap-3 sm:grid-cols-5">{icons.map(([path, url]) => <div key={path} className="flex items-center gap-2 rounded-lg border p-3 text-xs"><span aria-hidden="true" data-testid="sidebar-icon" style={{ width: sidebarTokens.iconSize, height: sidebarTokens.iconSize, flexShrink: 0, backgroundColor: "currentColor", maskImage: `url(${JSON.stringify(url)})`, maskSize: "contain", maskRepeat: "no-repeat", maskPosition: "center" }} /><code className="break-all">{path.match(/Lucide-(.+)\.imageset/)![1]}</code></div>)}</div></section>
+    <section className="space-y-3"><h2 className="text-lg font-semibold">浮层层次</h2><div aria-label="浮层阴影样本" className="rounded-lg bg-popover p-6 text-on-popover" style={{ boxShadow: "var(--shadow-high)" }}>生产 --shadow-high；明暗主题各自定义。</div><p className="text-sm text-secondary">弹层层级仍属于对应组件；不为原生菜单复制 Web 阴影或 z-index。</p></section>
+    <section className="space-y-3"><h2 className="text-lg font-semibold">键盘焦点与动效</h2><Button variant="outline">用 Tab 检查焦点</Button><p className="text-sm text-secondary">键盘焦点使用统一的 2px 轮廓、强调色与 3px 偏移。生产 CSS 在 prefers-reduced-motion: reduce 下缩短动画与过渡；时长与缓动消费统一 motion token，保留既有动画。</p></section>
     <MotionExample />
   </main>;
 }
@@ -49,7 +49,9 @@ export const Regression: Story = {
     await userEvent.tab();
     const button = canvas.getByRole("button", { name: "用 Tab 检查焦点" });
     await expect(button).toHaveFocus();
-    await expect(getComputedStyle(button).boxShadow).not.toBe("none");
+    await expect(getComputedStyle(button).outlineWidth).toBe("2px");
+    await expect(getComputedStyle(button).outlineStyle).toBe("solid");
+    await expect(getComputedStyle(button).outlineOffset).toBe("3px");
     await inspectSheet(canvasElement);
   },
 };

@@ -1,0 +1,7 @@
+/* Storybook-only choices override roles at every theme root, including portals. */
+:root[data-ui-next-appearance],
+:root[data-ui-next-appearance] .ui-next-theme {
+  --radius-element: var(--ui-next-preview-radius);
+  --font-family-body: var(--ui-next-preview-body);
+  --font-family-heading: var(--ui-next-preview-heading);
+}

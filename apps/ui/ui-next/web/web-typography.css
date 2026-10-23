@@ -1,0 +1,28 @@
+/* The shared note preferences affect reading/editing content, never UI labels. */
+:root[data-web-typography] .note-markdown-next.typeset-memocard {
+  --typeset-font-body: var(--note-body-font, var(--font-family-body));
+  --typeset-font-heading: var(--note-heading-font, var(--font-family-heading));
+  --typeset-font-mono: var(--note-mono-font, var(--font-family-code));
+}
+:root[data-web-typography] .note-markdown-next.typeset-memocard:not([data-compact]) {
+  --typeset-size: var(--note-size, var(--font-size-base));
+  --typeset-leading: var(--note-leading, var(--text-reading-leading));
+  --typeset-flow: var(--note-flow, var(--spacing-reading-flow));
+  font-size: var(--typeset-size);
+  max-width: var(--note-measure, 90ch);
+}
+:root[data-web-typography] .note-editor-next textarea.note-page-title { font-family: var(--note-heading-font, var(--font-family-heading)); }
+/* Search and card summaries retain their compact density and use the note fonts. */
+:root[data-web-typography] .note-search-next-preview-content .note-markdown-next.typeset-memocard {
+  --typeset-size: var(--font-size-sm);
+  --typeset-leading: var(--text-supporting-leading);
+  --typeset-flow: .85em;
+}
+:root[data-web-typography] .note-markdown-next .note-mermaid-source pre { font-family: var(--note-mono-font, var(--font-family-code)); }
+.web-note-style-preview { min-width: 0; overflow: hidden; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); background: var(--color-background-body); }
+.web-note-style-preview > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: calc(var(--spacing-1) * 2); padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4); border-bottom: var(--border-width) solid var(--color-border); font-size: var(--font-size-sm); }
+.web-note-style-preview > header > p:last-child { color: var(--color-text-secondary); }
+.web-note-style-preview > header > p:first-child { font-weight: var(--font-weight-medium); }
+.web-note-style-preview-body { padding: calc(var(--spacing-1) * 6) calc(var(--spacing-1) * 5); }
+.web-note-style-preview-measure { width: 100%; max-width: var(--note-measure, 720px); margin-inline: auto; }
+@media (min-width: 640px) { .web-note-style-preview-body { padding: calc(var(--spacing-1) * 8); } }

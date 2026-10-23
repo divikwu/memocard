@@ -11,7 +11,7 @@ export function PageNotice({ title, children, actions, tone = 'error' }: {
     <AlertTitle className="text-balance">{title}</AlertTitle>
     <AlertDescription className="gap-3">
       <div className="min-w-0 break-words text-pretty">{children}</div>
-      {actions && <div className="flex flex-wrap items-center gap-2 text-foreground">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 text-primary">{actions}</div>}
     </AlertDescription>
   </Alert>;
 }

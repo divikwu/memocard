@@ -25,7 +25,7 @@ export function QuickCapturePrototype({ onRecord }: { onRecord: (value: CaptureV
   }
   function toggleTag(tag: string) { setTags(current => current.includes(tag) ? current.filter(value => value !== tag) : [...current, tag]); }
   return <form className="quick-capture" aria-label="快速输入" onSubmit={event => { event.preventDefault(); record(); }}>
-    <InputGroup className="quick-capture-group has-disabled:opacity-100 has-disabled:bg-background">
+    <InputGroup className="quick-capture-group has-disabled:opacity-100 has-disabled:bg-body">
       <InputGroupTextarea ref={textarea} aria-label="快速输入内容" placeholder="记下此刻的想法…" value={text} onChange={event => setText(event.target.value)} onKeyDown={event => {
         if (!event.nativeEvent.isComposing && (event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); record(); }
       }} className="quick-capture-textarea" />

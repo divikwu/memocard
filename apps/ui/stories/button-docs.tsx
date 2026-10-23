@@ -55,7 +55,7 @@ export function ButtonSizes({ args = {} }: { args?: ComponentProps<typeof Button
 export function ButtonStates() {
   return <div className="grid w-fit max-w-full gap-4 p-4" role="group" aria-label="按钮状态对照">
     {(["Default", "Disabled", "Loading"] as const).map(state => <div key={state}>
-      <p className="mb-1 text-sm text-muted-foreground">{state}</p>
+      <p className="mb-1 text-sm text-secondary">{state}</p>
       <div className="flex flex-wrap gap-3">{buttonArgTypes.variant.options.map(variant =>
         <Button key={variant} className="w-28" type="button" variant={variant} disabled={state !== "Default"} aria-busy={state === "Loading" || undefined}>
           {state === "Loading" ? <><LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" /><span className="sr-only">{variant} 处理中</span></> : variant}
@@ -72,7 +72,7 @@ export function ButtonStates() {
   const variants = ["default", "secondary", "outline", "ghost", "destructive", "link"] as const
   return <div className="grid w-fit max-w-full gap-4 p-4">
     {(["Default", "Disabled", "Loading"] as const).map(state => <div key={state}>
-      <p className="mb-1 text-sm text-muted-foreground">{state}</p>
+      <p className="mb-1 text-sm text-secondary">{state}</p>
       <div className="flex flex-wrap gap-3">{variants.map(variant =>
         <Button key={variant} className="w-28" type="button" variant={variant} disabled={state !== "Default"} aria-busy={state === "Loading" || undefined}>
           {state === "Loading" ? <><LoaderCircle aria-hidden="true" className="motion-safe:animate-spin" /><span className="sr-only">{variant} 处理中</span></> : variant}

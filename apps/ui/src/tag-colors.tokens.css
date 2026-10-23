@@ -2,28 +2,28 @@
 :root {
   --tag-bg-opacity: 8%;
   --tag-default-fg: var(--tag-gray-fg);
-  --tag-gray-fg: var(--color-zinc-800);
-  --tag-brown-fg: #64473a;
-  --tag-orange-fg: var(--color-orange-800);
-  --tag-yellow-fg: color-mix(in oklab, var(--color-yellow-700) 92%, var(--color-black));
-  --tag-green-fg: var(--color-emerald-800);
-  --tag-blue-fg: var(--color-blue-800);
-  --tag-purple-fg: var(--color-violet-800);
-  --tag-pink-fg: var(--color-pink-800);
-  --tag-red-fg: var(--color-red-800);
+  --tag-gray-fg: var(--color-text-gray);
+  --tag-brown-fg: var(--color-text-brown);
+  --tag-orange-fg: var(--color-text-orange);
+  --tag-yellow-fg: var(--color-text-yellow);
+  --tag-green-fg: var(--color-text-green);
+  --tag-blue-fg: var(--color-text-blue);
+  --tag-purple-fg: var(--color-text-purple);
+  --tag-pink-fg: var(--color-text-pink);
+  --tag-red-fg: var(--color-text-red);
 }
 .dark {
   --tag-bg-opacity: 16%;
   --tag-default-fg: var(--tag-gray-fg);
-  --tag-gray-fg: var(--color-zinc-200);
-  --tag-brown-fg: #d7b5a0;
-  --tag-orange-fg: var(--color-orange-200);
-  --tag-yellow-fg: var(--color-yellow-200);
-  --tag-green-fg: var(--color-emerald-200);
-  --tag-blue-fg: var(--color-blue-200);
-  --tag-purple-fg: var(--color-violet-200);
-  --tag-pink-fg: var(--color-pink-200);
-  --tag-red-fg: var(--color-red-200);
+  --tag-gray-fg: var(--color-text-gray);
+  --tag-brown-fg: var(--color-text-brown);
+  --tag-orange-fg: var(--color-text-orange);
+  --tag-yellow-fg: var(--color-text-yellow);
+  --tag-green-fg: var(--color-text-green);
+  --tag-blue-fg: var(--color-text-blue);
+  --tag-purple-fg: var(--color-text-purple);
+  --tag-pink-fg: var(--color-text-pink);
+  --tag-red-fg: var(--color-text-red);
 }
 :root, .dark {
   --tag-default-bg: var(--tag-gray-bg);

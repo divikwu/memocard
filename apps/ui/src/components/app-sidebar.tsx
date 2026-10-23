@@ -50,7 +50,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
   onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize,
 }: AppSidebarProps) {
   const { isMobile } = useSidebar();
-  const vaultTrigger = <SidebarMenuButton className="w-full data-[popup-open]:bg-hover" aria-label={`笔记库：${vaultName}`}>
+  const vaultTrigger = <SidebarMenuButton className="w-full data-[popup-open]:bg-overlay-hover" aria-label={`笔记库：${vaultName}`}>
     <Layers aria-hidden="true" />
     <span className="min-w-0 flex-1 truncate font-medium" title={vaultName}>{vaultName}</span><ChevronDown className="opacity-50" aria-hidden="true" />
   </SidebarMenuButton>;
@@ -63,17 +63,17 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
         {!isMobile && registeredVaults.length > 1 && index < 9 && <DropdownMenuShortcut aria-hidden="true">⌥{index + 1}</DropdownMenuShortcut>}
       </VaultMenuItem>)}
     {isMobile ? <Separator className="my-2" /> : <DropdownMenuSeparator />}
-    {canChooseVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(false)}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><FolderOpen className="size-4" aria-hidden="true" /></span><span className="font-medium">打开已有笔记库</span></VaultMenuItem>}
-    {canCreateVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(true)}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><FolderPlus className="size-4" aria-hidden="true" /></span><span className="font-medium">创建新笔记库</span></VaultMenuItem>}
-    {needsPermission && <VaultMenuItem mobile={isMobile} disabled={working} onClick={onReauthorize}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><ShieldCheck className="size-4" aria-hidden="true" /></span><span className="font-medium">重新授权文件夹</span></VaultMenuItem>}
-    <VaultMenuItem mobile={isMobile} onClick={() => onNavigate("settings")}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><Settings2 className="size-4" aria-hidden="true" /></span><span className="font-medium">笔记库设置</span></VaultMenuItem>
-    <VaultMenuItem mobile={isMobile} disabled={!connected || !canTrash} aria-current={view === "trash" ? "page" : undefined} onClick={() => onNavigate("trash")}><span className="flex size-6 items-center justify-center rounded-md border bg-background"><Trash2 className="size-4" aria-hidden="true" /></span><span className="font-medium">回收站</span></VaultMenuItem>
-    <VaultMenuItem mobile={isMobile} disabled title="帮助功能暂未开放"><span className="flex size-6 items-center justify-center rounded-md border bg-background"><CircleHelp className="size-4" aria-hidden="true" /></span><span className="font-medium">帮助</span></VaultMenuItem>
+    {canChooseVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(false)}><span className="flex size-6 items-center justify-center rounded-md border bg-body"><FolderOpen className="size-4" aria-hidden="true" /></span><span className="font-medium">打开已有笔记库</span></VaultMenuItem>}
+    {canCreateVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(true)}><span className="flex size-6 items-center justify-center rounded-md border bg-body"><FolderPlus className="size-4" aria-hidden="true" /></span><span className="font-medium">创建新笔记库</span></VaultMenuItem>}
+    {needsPermission && <VaultMenuItem mobile={isMobile} disabled={working} onClick={onReauthorize}><span className="flex size-6 items-center justify-center rounded-md border bg-body"><ShieldCheck className="size-4" aria-hidden="true" /></span><span className="font-medium">重新授权文件夹</span></VaultMenuItem>}
+    <VaultMenuItem mobile={isMobile} onClick={() => onNavigate("settings")}><span className="flex size-6 items-center justify-center rounded-md border bg-body"><Settings2 className="size-4" aria-hidden="true" /></span><span className="font-medium">笔记库设置</span></VaultMenuItem>
+    <VaultMenuItem mobile={isMobile} disabled={!connected || !canTrash} aria-current={view === "trash" ? "page" : undefined} onClick={() => onNavigate("trash")}><span className="flex size-6 items-center justify-center rounded-md border bg-body"><Trash2 className="size-4" aria-hidden="true" /></span><span className="font-medium">回收站</span></VaultMenuItem>
+    <VaultMenuItem mobile={isMobile} disabled title="帮助功能暂未开放"><span className="flex size-6 items-center justify-center rounded-md border bg-body"><CircleHelp className="size-4" aria-hidden="true" /></span><span className="font-medium">帮助</span></VaultMenuItem>
   </>;
   return <Sidebar id="desktop-sidebar" aria-label="笔记导航" className="border-r-0">
     <SidebarHeader>
       <div className="flex items-center gap-2">
-        <button type="button" aria-label="MemoCard，返回主页" className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-(--hover-row-radius) px-1.5 text-left outline-none hover:bg-hover focus-visible:ring-2 focus-visible:ring-sidebar-ring" onClick={() => onNavigate("home", null)}>
+        <button type="button" aria-label="MemoCard，返回主页" className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-(--hover-row-radius) px-1.5 text-left outline-none hover:bg-overlay-hover focus-visible:focus-ring" onClick={() => onNavigate("home", null)}>
           <img src="./favicon.png" alt="" draggable={false} className="shrink-0 object-contain" style={{ width: "var(--sidebar-logo-size)", height: "var(--sidebar-logo-size)" }} />
           <span className="truncate text-base font-semibold">MemoCard</span>
         </button>
@@ -106,12 +106,12 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
           </Sheet> : <DropdownMenu>
             <DropdownMenuTrigger render={vaultTrigger} />
             <DropdownMenuContent side="top" align="start" className="w-64 rounded-lg"><DropdownMenuGroup>
-              <DropdownMenuLabel className="text-xs text-muted-foreground">笔记库</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs text-secondary">笔记库</DropdownMenuLabel>
               {vaultMenuItems}
             </DropdownMenuGroup></DropdownMenuContent>
           </DropdownMenu>}
         </SidebarMenuItem>
-      </SidebarMenu>{hasVaultIssue && <p className="px-2 py-1 text-xs text-destructive">{vaultStatusText}</p>}</SidebarGroupContent></SidebarGroup>
+      </SidebarMenu>{hasVaultIssue && <p className="px-2 py-1 text-xs text-error">{vaultStatusText}</p>}</SidebarGroupContent></SidebarGroup>
     </SidebarFooter>
     <SidebarRail />
   </Sidebar>;

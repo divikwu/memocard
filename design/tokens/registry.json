@@ -40,7 +40,7 @@
         "palette",
         "neutral"
       ],
-      "description": "shadcn 语义工具类映射；值引用语义角色。",
+      "description": "Astryx 风格的 Tailwind 语义接口；primary 为正文，accent-bg / on-accent 为强调操作，值引用 MemoCard 现有角色。",
       "consumers": [
         "apps/ui/src/components/ui/button.tsx",
         "apps/ui/src/components/ui/input.tsx",
@@ -50,7 +50,7 @@
     {
       "id": "typography.utility",
       "source": "apps/ui/src/features/theme/tokens.css",
-      "pattern": "^--font-(heading|sans)$",
+      "pattern": "^--font-(heading|sans|mono)$",
       "category": "typography",
       "layer": "adapter",
       "type": "fontFamily",
@@ -66,7 +66,7 @@
     {
       "id": "effects.utility",
       "source": "apps/ui/src/features/theme/tokens.css",
-      "pattern": "^--shadow-overlay$",
+      "pattern": "^--shadow-(overlay|surface|sm|md|lg)$",
       "category": "effects",
       "layer": "adapter",
       "type": "shadow",
@@ -74,10 +74,11 @@
       "axes": [
         "mode"
       ],
-      "description": "浮层阴影工具类映射。",
+      "description": "low / med / high 映射为 shadow-sm / md / lg；旧 overlay / surface 工具类保留别名。",
       "consumers": [
         "apps/ui/src/components/ui/popover.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx"
+        "apps/ui/src/components/ui/dropdown-menu.tsx",
+        "apps/ui/src/components/note-collection-layout.ts"
       ]
     },
     {
@@ -100,7 +101,7 @@
     {
       "id": "typography.interface",
       "source": "apps/ui/src/features/theme/tokens.css",
-      "pattern": "^--app-font-(heading|body)$",
+      "pattern": "^--app-font-(heading|body|mono)$",
       "category": "typography",
       "layer": "semantic",
       "type": "fontFamily",
@@ -190,13 +191,11 @@
       "source": "apps/ui/src/features/theme/tokens.css",
       "pattern": "^--overlay-shadow$",
       "category": "effects",
-      "layer": "semantic",
+      "layer": "adapter",
       "type": "shadow",
-      "status": "active",
-      "axes": [
-        "mode"
-      ],
-      "description": "浅深色浮层阴影。",
+      "status": "alias",
+      "axes": [],
+      "description": "旧项目阴影名称的只读兼容别名；生产消费迁至 shadow-low / med / high。",
       "consumers": [
         "apps/ui/src/components/ui/dialog.tsx",
         "apps/ui/src/components/ui/popover.tsx",
@@ -208,17 +207,17 @@
       "source": "apps/ui/src/features/theme/tokens.css",
       "pattern": "^--(surface|control)-shadow$",
       "category": "effects",
-      "layer": "semantic",
+      "layer": "adapter",
       "type": "shadow",
-      "status": "active",
+      "status": "alias",
       "axes": [],
-      "description": "项目现有表面与轻量控件阴影；浅深色保持原有固定值。",
+      "description": "旧项目阴影名称的只读兼容别名；生产消费迁至 shadow-low / med / high。",
       "consumers": [
         "apps/ui/src/components/quick-capture.tsx",
         "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/note-collection-layout.ts",
         "apps/ui/src/quick-capture.css",
-        "apps/ui/src/components/app-sidebar.css"
+        "apps/ui/src/components/mobile-tag-actions.css"
       ]
     },
     {
@@ -611,6 +610,475 @@
       "id": "typography.weight-scale",
       "pattern": "^--font-weight-(normal|medium|semibold)$",
       "description": "三档字重由 scale.ts 统一生成，文档与生产共享数值。"
+    },
+    {
+      "id": "motion.duration",
+      "source": "apps/ui/src/features/motion/tokens.css",
+      "pattern": "^--motion-duration-[a-z-]+$",
+      "category": "motion",
+      "layer": "primitive",
+      "type": "duration",
+      "status": "active",
+      "axes": [],
+      "description": "保留现有 150ms、180ms、200ms、2s 与减少动态效果时长。",
+      "consumers": [
+        "apps/ui/src/styles.css",
+        "apps/ui/src/components/ui/sheet.tsx",
+        "apps/ui/src/quick-capture.css",
+        "apps/ui/src/import-layout.css"
+      ]
+    },
+    {
+      "id": "motion.curve",
+      "source": "apps/ui/src/features/motion/tokens.css",
+      "pattern": "^--motion-ease-[a-z-]+$",
+      "category": "motion",
+      "layer": "primitive",
+      "type": "cubicBezier",
+      "status": "active",
+      "axes": [],
+      "description": "统一缓动来源；CSS ease-out 关键字与 Tailwind 曲线分别保留。",
+      "consumers": [
+        "apps/ui/src/components/ui/dialog.tsx",
+        "apps/ui/src/components/ui/sidebar.tsx",
+        "apps/ui/src/components/ui/sheet-swipe.css",
+        "apps/ui/src/quick-capture.css",
+        "apps/ui/src/import-layout.css"
+      ]
+    },
+    {
+      "id": "motion.transition-duration-adapter",
+      "source": "apps/ui/src/features/motion/tokens.css",
+      "pattern": "^--default-transition-duration$",
+      "category": "motion",
+      "layer": "adapter",
+      "type": "duration",
+      "status": "alias",
+      "axes": [],
+      "description": "现有 Tailwind transition-* 工具类的默认时长映射。",
+      "consumers": [
+        "apps/ui/src/components/ui/button.tsx"
+      ]
+    },
+    {
+      "id": "motion.transition-easing-adapter",
+      "source": "apps/ui/src/features/motion/tokens.css",
+      "pattern": "^--default-transition-timing-function$",
+      "category": "motion",
+      "layer": "adapter",
+      "type": "cubicBezier",
+      "status": "alias",
+      "axes": [],
+      "description": "现有 Tailwind transition-* 工具类的默认缓动映射。",
+      "consumers": [
+        "apps/ui/src/components/ui/button.tsx"
+      ]
+    },
+    {
+      "id": "motion.pulse-adapter",
+      "source": "apps/ui/src/features/motion/tokens.css",
+      "pattern": "^--animate-pulse$",
+      "category": "motion",
+      "layer": "adapter",
+      "type": "policy",
+      "status": "alias",
+      "axes": [],
+      "description": "保留 pulse 关键帧和无限循环，只映射时长与缓动。",
+      "consumers": [
+        "apps/ui/src/components/ui/skeleton.tsx"
+      ]
+    },
+    {
+      "id": "color.interaction",
+      "pattern": "^--(text-accent-color|text-disabled-color|icon-disabled-color|pressed-bg)$",
+      "category": "color",
+      "type": "color",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral"
+      ],
+      "description": "独立强调文字、禁用文字/图标和按压叠加色；默认值沿现有色阶派生。",
+      "consumers": [
+        "apps/ui/src/styles.css",
+        "apps/ui/src/components/ui/button.tsx"
+      ],
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "layer": "semantic",
+      "status": "active"
+    },
+    {
+      "id": "focus.geometry",
+      "pattern": "^--focus-outline-(width|offset)$",
+      "category": "effects",
+      "type": "dimension",
+      "axes": [],
+      "description": "统一键盘焦点环的宽度与偏移。",
+      "consumers": [
+        "apps/ui/src/styles.css"
+      ],
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "layer": "semantic",
+      "status": "active"
+    },
+    {
+      "id": "focus.style",
+      "pattern": "^--focus-outline-style$",
+      "category": "effects",
+      "type": "policy",
+      "axes": [],
+      "description": "统一键盘焦点环线型。",
+      "consumers": [
+        "apps/ui/src/styles.css"
+      ],
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "layer": "semantic",
+      "status": "active"
+    },
+    {
+      "id": "focus.color",
+      "pattern": "^--focus-outline-color$",
+      "category": "color",
+      "type": "color",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral"
+      ],
+      "description": "统一键盘焦点色；浅色 accent-700、深色 accent-400，独立覆盖，保证代表页面表面对比度。",
+      "consumers": [
+        "apps/ui/src/styles.css"
+      ],
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "layer": "semantic",
+      "status": "active"
+    },
+    {
+      "id": "color.status",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--(success|success-muted|success-foreground|warning|warning-muted|warning-foreground|error-muted|error-foreground)$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "成功、警告和错误的填充、弱化背景与前景色；错误主色继续读取 destructive。",
+      "consumers": [
+        "apps/ui/src/components/ui/alert.tsx",
+        "apps/ui/src/components/ui/button.tsx",
+        "apps/ui/src/components/ui/badge.tsx"
+      ]
+    },
+    {
+      "id": "color.icons",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--icon-(primary|secondary)-color$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "neutral"
+      ],
+      "description": "普通图标主次角色与文字独立覆盖；状态图标和填充按钮图标继续跟随对应前景色。",
+      "consumers": [
+        "apps/ui/src/components/ui/select.tsx",
+        "apps/ui/src/components/ui/dropdown-menu.tsx",
+        "apps/ui/src/rich-format-tools.css"
+      ]
+    },
+    {
+      "id": "color.surfaces",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--(surface-bg|surface-foreground|inverted-bg|inverted-foreground|overlay-bg|track-bg|skeleton-bg|accent-muted-bg|border-emphasized-color)$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral"
+      ],
+      "description": "通用表面、反色、遮罩、轨道、弱化强调背景及强调边界；默认值保留已有组件表现。",
+      "consumers": [
+        "apps/ui/src/components/ui/dialog.tsx",
+        "apps/ui/src/components/ui/sheet.tsx",
+        "apps/ui/src/components/ui/tooltip.tsx",
+        "apps/ui/src/components/ui/switch.tsx",
+        "apps/ui/src/styles.css",
+        "apps/ui/src/Editor.css"
+      ]
+    },
+    {
+      "id": "sizing.utility",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--(size-(xs|sm|md|lg)|spacing-(element-(xs|sm|md|lg)|textarea))$",
+      "category": "sizing",
+      "layer": "adapter",
+      "type": "dimension",
+      "status": "alias",
+      "axes": [
+        "density"
+      ],
+      "description": "控件尺寸的 Tailwind size-* / h-element-* / min-h-textarea 映射。",
+      "consumers": [
+        "apps/ui/src/components/ui/button.tsx",
+        "apps/ui/src/components/ui/input.tsx",
+        "apps/ui/src/components/ui/tabs.tsx"
+      ]
+    },
+    {
+      "id": "sizing.elements",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--size-(element-(xs|sm|md|lg)|textarea-min)$",
+      "category": "sizing",
+      "layer": "semantic",
+      "type": "dimension",
+      "status": "active",
+      "axes": [
+        "density"
+      ],
+      "description": "保留既有控件密度；xs/sm/md/lg 为 24/32/36/40px 根字号基准，Textarea 最小 64px。",
+      "consumers": [
+        "apps/ui/src/components/ui/button.tsx",
+        "apps/ui/src/components/ui/input-group.tsx",
+        "apps/ui/src/components/ui/select.tsx",
+        "apps/ui/src/components/ui/textarea.tsx"
+      ]
+    },
+    {
+      "id": "shape.border-width",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--border-width$",
+      "category": "shape",
+      "layer": "semantic",
+      "type": "dimension",
+      "status": "active",
+      "axes": [],
+      "description": "共享普通边框与分隔线宽度，显式 border-0 及状态几何保持独立。",
+      "consumers": [
+        "apps/ui/src/components/ui/input.tsx",
+        "apps/ui/src/components/ui/separator.tsx",
+        "apps/ui/src/Editor.css"
+      ]
+    },
+    {
+      "id": "effects.elevation",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--shadow-(low|med|high)$",
+      "category": "effects",
+      "layer": "semantic",
+      "type": "shadow",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "低／中／高层级；默认沿用现有轻控件、内容表面及浮层阴影。",
+      "consumers": [
+        "apps/ui/src/components/ui/dialog.tsx",
+        "apps/ui/src/components/note-collection-layout.ts",
+        "apps/ui/src/components/mobile-tag-actions.css"
+      ]
+    },
+    {
+      "id": "effects.inset.utility",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--inset-shadow-(hover|selected|success|warning|error)$",
+      "category": "effects",
+      "layer": "adapter",
+      "type": "shadow",
+      "status": "alias",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "状态内阴影的 Tailwind inset-shadow-* 映射。",
+      "consumers": [
+        "apps/ui/src/styles.css",
+        "apps/ui/src/components/ui/input.tsx",
+        "apps/ui/src/components/ui/button.tsx"
+      ]
+    },
+    {
+      "id": "effects.inset",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--shadow-inset-(hover|selected|success|warning|error)$",
+      "category": "effects",
+      "layer": "semantic",
+      "type": "shadow",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "输入 hover／校验和持久选中反馈；与键盘焦点 outline 独立，输入组只在外框显示。",
+      "consumers": [
+        "apps/ui/src/styles.css",
+        "apps/ui/src/components/ui/input.tsx",
+        "apps/ui/src/components/ui/button.tsx"
+      ]
+    },
+    {
+      "id": "color.hue.utility",
+      "source": "apps/ui/src/features/theme/hues.css",
+      "pattern": "^--color-(blue|cyan|gray|green|orange|pink|purple|red|teal|yellow|brown)-(subtle|ring|vivid|icon)$",
+      "category": "color",
+      "layer": "adapter",
+      "type": "color",
+      "status": "alias",
+      "axes": [
+        "mode"
+      ],
+      "description": "Astryx 公共多色工具类；额外提供独立 icon 后缀与兼容内容的 brown 扩展。",
+      "consumers": [
+        "apps/ui/src/tag-colors.css",
+        "apps/ui/src/import-layout.css"
+      ]
+    },
+    {
+      "id": "color.hues",
+      "source": "apps/ui/src/features/theme/hues.css",
+      "pattern": "^--color-(background|border|icon|text)-(blue|cyan|gray|green|orange|pink|purple|red|teal|yellow|brown)$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "公共四色角色：标签前景和 Callout 局部适配已接入；边框／图标可经工具类独立使用，现有内容配色不变。",
+      "consumers": [
+        "apps/ui/src/tag-colors.tokens.css",
+        "apps/ui/src/import-layout.css"
+      ]
+    },
+    {
+      "id": "color.utility-values",
+      "source": "apps/ui/src/features/theme/tokens.css",
+      "pattern": "^--(on-dark-color|on-light-color|tint-hover-color|shadow-color|error-inverted-bg)$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "固定深浅底前景、悬停方向色、浮层阴影色和反色错误背景。",
+      "consumers": [
+        "apps/ui/src/features/theme/tokens.css",
+        "apps/ui/src/components/ui/tooltip.tsx",
+        "apps/ui/src/components/ui/button.tsx"
+      ]
+    },
+    {
+      "id": "color.data.utility",
+      "source": "apps/ui/src/features/theme/domains/data.css",
+      "pattern": "^--color-data-[a-z0-9-]+$",
+      "category": "color",
+      "layer": "adapter",
+      "type": "color",
+      "status": "alias",
+      "axes": [
+        "mode"
+      ],
+      "description": "data 领域的 Tailwind 颜色接口，独立引用拥有值的语义角色。",
+      "consumers": [
+        "apps/ui/stories/domain-tokens.example.tsx"
+      ]
+    },
+    {
+      "id": "color.data",
+      "source": "apps/ui/src/features/theme/domains/data.css",
+      "pattern": "^--data-[a-z0-9-]+$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "reserved",
+      "axes": [
+        "mode"
+      ],
+      "description": "56 项分类／顺序数据色板，可独立导入并用于图表，当前产品尚无数据图表。",
+      "consumers": [
+        "apps/ui/stories/domain-tokens.example.tsx"
+      ]
+    },
+    {
+      "id": "color.syntax.utility",
+      "source": "apps/ui/src/features/theme/domains/syntax.css",
+      "pattern": "^--color-syntax-[a-z0-9-]+$",
+      "category": "color",
+      "layer": "adapter",
+      "type": "color",
+      "status": "alias",
+      "axes": [
+        "mode"
+      ],
+      "description": "syntax 领域的 Tailwind 颜色接口，独立引用拥有值的语义角色。",
+      "consumers": [
+        "apps/ui/stories/domain-tokens.example.tsx"
+      ]
+    },
+    {
+      "id": "color.syntax",
+      "source": "apps/ui/src/features/theme/domains/syntax.css",
+      "pattern": "^--syntax-(?!background$)[a-z0-9-]+$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "reserved",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral"
+      ],
+      "description": "完整语法与 diff 配色接口；当前代码块未启用 tokenizer，不虚构高亮消费。",
+      "consumers": [
+        "apps/ui/stories/domain-tokens.example.tsx"
+      ]
+    },
+    {
+      "id": "color.syntax-background",
+      "source": "apps/ui/src/features/theme/domains/code.css",
+      "pattern": "^--syntax-background$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "neutral"
+      ],
+      "description": "普通代码块背景，保持原 muted 默认值，由核心 Tailwind 入口加载。",
+      "consumers": [
+        "apps/ui/src/typeset.css",
+        "apps/ui/src/RichMarkdownEditor.tsx",
+        "apps/ui/src/markdown.tsx"
+      ]
+    },
+    {
+      "id": "color.syntax-background.utility",
+      "source": "apps/ui/src/features/theme/domains/code.css",
+      "pattern": "^--color-syntax-background$",
+      "category": "color",
+      "layer": "adapter",
+      "type": "color",
+      "status": "alias",
+      "axes": [
+        "mode",
+        "neutral"
+      ],
+      "description": "代码背景的 Tailwind 接口，与完整高亮模块共用。",
+      "consumers": [
+        "apps/ui/stories/domain-tokens.example.tsx"
+      ]
     }
   ],
   "owned": [
@@ -673,7 +1141,7 @@
       "type": "dimension",
       "status": "component-owned",
       "axes": [],
-      "description": "Button/Input/Select 的大小变体、图标框与命中区；保留原有密度。",
+      "description": "控件大小由 size-element token 统一；padding、图标框、视觉框与命中区仍由组件变体拥有。",
       "sources": [
         "apps/ui/src/components/ui/button.tsx",
         "apps/ui/src/components/ui/input.tsx",
@@ -690,7 +1158,7 @@
       "type": "dimension",
       "status": "component-owned",
       "axes": [],
-      "description": "边线、分隔线、焦点环的宽度与偏移；ring 只提供颜色。",
+      "description": "普通边框和分隔线宽度读取 border-width，显式零宽、状态宽度与组件特例继续独立；焦点使用 focus-outline token。",
       "sources": [
         "apps/ui/src/components/ui/button.tsx",
         "apps/ui/src/components/ui/input.tsx",
@@ -707,7 +1175,7 @@
       "type": "percentage",
       "status": "component-owned",
       "axes": [],
-      "description": "禁用透明度、浮层遮罩和背景模糊按组件状态维护。",
+      "description": "浮层遮罩、背景模糊和组件可见性由组件拥有；禁用文字/图标由语义颜色拥有，不使用整组透明度。",
       "sources": [
         "apps/ui/src/components/ui/button.tsx",
         "apps/ui/src/components/ui/dialog.tsx",
@@ -755,7 +1223,7 @@
       "type": "duration",
       "status": "component-owned",
       "axes": [],
-      "description": "保持现有 duration 工具类与 SheetSwipe 恢复时长。",
+      "description": "组件拥有过渡属性、进入/退出方向与手势策略；时长统一消费 motion token。",
       "sources": [
         "apps/ui/src/components/ui/dialog.tsx",
         "apps/ui/src/components/ui/sidebar.tsx",
@@ -777,7 +1245,7 @@
       "type": "cubicBezier",
       "status": "component-owned",
       "axes": [],
-      "description": "默认缓动由 Tailwind 拥有；线性侧栏和手势恢复缓动保留组件策略。",
+      "description": "组件选择 motion 缓动角色，保留既有曲线和平台策略。",
       "sources": [
         "apps/ui/src/components/ui/sidebar.tsx",
         "apps/ui/src/components/ui/sheet-swipe.css",
@@ -817,6 +1285,9 @@
       "sources": [
         "apps/ui/src/hooks/use-mobile.ts",
         "apps/ui/src/components/app-sidebar.css",
+        "apps/ui/src/components/home-toolbar.css",
+        "apps/ui/src/components/ios-app-chrome.css",
+        "apps/ui/src/components/mobile-tag-actions.css",
         "apps/ui/src/components/ui/sidebar.tsx"
       ],
       "consumers": [
@@ -971,6 +1442,40 @@
         "apps/ui/src/callout-icon-picker.css",
         "apps/ui/src/rich-format-tools.css"
       ]
+    },
+    {
+      "id": "theme.definition",
+      "category": "color",
+      "layer": "component",
+      "type": "policy",
+      "status": "component-owned",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "radius",
+        "font",
+        "typography"
+      ],
+      "description": "主题定义、继承、生成、预编译与根选择器生命周期；默认样式仍由已登记 CSS 和偏好拥有。",
+      "sources": [
+        "apps/ui/src/features/theme/define-theme.ts",
+        "apps/ui/src/features/theme/theme-values.ts",
+        "apps/ui/src/features/theme/generate-theme-color.ts",
+        "apps/ui/src/features/theme/hct.ts",
+        "apps/ui/src/features/theme/color-math.ts",
+        "apps/ui/src/features/theme/theme-types.ts",
+        "apps/ui/src/generated/theme-contract.ts",
+        "apps/ui/src/features/theme/ThemeStyle.tsx",
+        "scripts/build-theme.mjs",
+        "scripts/build-theme-contract.mjs",
+        "apps/ui/src/lib/ios-theme.ts"
+      ],
+      "consumers": [
+        "apps/ui/src/features/theme/ThemeProvider.tsx",
+        "apps/ui/stories/theme-definition.browser.tsx",
+        "scripts/theme-definition.test.mjs"
+      ]
     }
   ],
   "runtimeSources": [
@@ -1035,7 +1540,7 @@
     {
       "source": "apps/apple/Sources/WebView.swift",
       "format": "swift-javascript",
-      "defaults": "apps/ui/src/components/app-sidebar.css",
+      "defaults": "apps/ui/src/components/ios-app-chrome.css",
       "contract": "platform.system",
       "tokens": {
         "--ios-top": {
@@ -1105,6 +1610,26 @@
           "type": "position"
         }
       }
+    }
+  ],
+  "optionalStylesheets": [
+    {
+      "source": "apps/ui/src/features/theme/domains/data.css",
+      "example": "apps/ui/stories/domain-tokens.example.tsx",
+      "verification": "apps/ui/stories/domain-tokens.browser.tsx"
+    },
+    {
+      "source": "apps/ui/src/features/theme/domains/syntax.css",
+      "example": "apps/ui/stories/domain-tokens.example.tsx",
+      "verification": "apps/ui/stories/domain-tokens.browser.tsx"
+    }
+  ],
+  "dynamicProducers": [
+    {
+      "source": "apps/ui/src/features/theme/define-theme.ts",
+      "contract": "theme.definition",
+      "expression": "`--syntax-${name}`",
+      "pattern": "^--syntax-[a-z-]+$"
     }
   ]
 }

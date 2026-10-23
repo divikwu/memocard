@@ -78,22 +78,22 @@ function Prototype() {
   function cards(items: DemoNote[], context = "所有笔记卡片") {
     // Match NoteCollection's cards, including dimensions, preview and tag controls.
     return <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))] gap-4" data-layout="cards" aria-label={context}>{items.map(item => <li className="min-w-0" key={item.id}>
-      <Card className="h-64 gap-0 overflow-hidden rounded-[16px] border border-border bg-card py-0 shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)] transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40"><CardContent className="flex h-full min-h-0 flex-col p-0">
+      <Card className="h-64 gap-0 overflow-hidden rounded-[16px] border border-border bg-card py-0 shadow-[0_4px_12px_rgba(25,25,25,0.027),0_1px_2px_rgba(25,25,25,0.02)] transition-colors hover:bg-overlay-hover has-[:focus-visible]:focus-ring"><CardContent className="flex h-full min-h-0 flex-col p-0">
         <button type="button" className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none" aria-label={`打开 ${item.title}`} onClick={() => openNote(item)}>
-          <div className="w-full px-4 pb-2 pt-4"><span className="block min-w-0 truncate text-base font-medium">{item.title}</span><time className="mt-1 block text-xs text-muted-foreground/80" dateTime={item.updatedAt}>{dateLabel(item.updatedAt)}</time></div>
+          <div className="w-full px-4 pb-2 pt-4"><span className="block min-w-0 truncate text-base font-medium">{item.title}</span><time className="mt-1 block text-xs text-secondary/80" dateTime={item.updatedAt}>{dateLabel(item.updatedAt)}</time></div>
           <div className="min-h-0 w-full flex-1 overflow-hidden px-4 pb-4"><NotePreview compact showTitle={false} hiddenTags={item.tags} title={item.title} body={[item.summary, ...item.sections.map(section => `## ${section.heading}\n\n${section.text}`)].join("\n\n")} notePath={`notes/${item.id}.md`} onError={setNotice} />{item.images?.[0] && <img className="quick-capture-card-image" src={item.images[0].src} alt={item.images[0].name} />}</div>
         </button>
-        <div className="flex min-h-10 items-center gap-2 overflow-hidden px-4 pb-3">{item.tags.slice(0, 2).map(value => <TagPill key={value} name={value} render={<button type="button" aria-label={`筛选标签 ${value}`} onClick={() => navigate("notes", value)} />} className="h-5 px-1.5 py-0 font-normal"><span className="truncate">{value}</span></TagPill>)}{item.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{item.tags.length - 2}</span>}</div>
+        <div className="flex min-h-10 items-center gap-2 overflow-hidden px-4 pb-3">{item.tags.slice(0, 2).map(value => <TagPill key={value} name={value} render={<button type="button" aria-label={`筛选标签 ${value}`} onClick={() => navigate("notes", value)} />} className="h-5 px-1.5 py-0 font-normal"><span className="truncate">{value}</span></TagPill>)}{item.tags.length > 2 && <span className="shrink-0 text-xs text-secondary/60">+{item.tags.length - 2}</span>}</div>
       </CardContent></Card>
     </li>)}</ul>;
   }
   function rows(items: DemoNote[], context: string) {
     // Match NoteCollection's list markup and primitives without changing production code.
     return <ul className="flex flex-col" data-layout="list" aria-label={context}>{items.map(item => <li className="min-w-0" key={item.id}>
-      <Card className="gap-0 overflow-hidden rounded-lg border-0 bg-card py-0 shadow-none transition-colors hover:bg-hover has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring/40"><CardContent className="flex h-full min-h-0 flex-row items-center p-0">
+      <Card className="gap-0 overflow-hidden rounded-lg border-0 bg-card py-0 shadow-none transition-colors hover:bg-overlay-hover has-[:focus-visible]:focus-ring"><CardContent className="flex h-full min-h-0 flex-row items-center p-0">
         <button onClick={() => openNote(item)} aria-label={`打开 ${item.title}`} className="flex min-h-0 min-w-0 flex-1 flex-col text-left outline-none"><div className="w-full px-2 py-2"><span className="block min-w-0 truncate text-sm font-medium">{item.title}</span></div></button>
-        <div className="flex min-w-0 max-w-1/3 shrink-0 items-center gap-2 overflow-hidden pr-2">{item.tags.slice(0, 2).map(value => <TagPill key={value} name={value} render={<button type="button" aria-label={`筛选标签 ${value}`} onClick={() => navigate("notes", value)} />} className="h-5 min-w-0 shrink px-1.5 py-0 font-normal"><span className="truncate">{value}</span></TagPill>)}{item.tags.length > 2 && <span className="shrink-0 text-xs text-muted-foreground/60">+{item.tags.length - 2}</span>}</div>
-        <time className="w-28 shrink-0 whitespace-nowrap pr-2 text-right text-xs tabular-nums text-muted-foreground/80" dateTime={item.updatedAt}>{dateLabel(item.updatedAt)}</time>
+        <div className="flex min-w-0 max-w-1/3 shrink-0 items-center gap-2 overflow-hidden pr-2">{item.tags.slice(0, 2).map(value => <TagPill key={value} name={value} render={<button type="button" aria-label={`筛选标签 ${value}`} onClick={() => navigate("notes", value)} />} className="h-5 min-w-0 shrink px-1.5 py-0 font-normal"><span className="truncate">{value}</span></TagPill>)}{item.tags.length > 2 && <span className="shrink-0 text-xs text-secondary/60">+{item.tags.length - 2}</span>}</div>
+        <time className="w-28 shrink-0 whitespace-nowrap pr-2 text-right text-xs tabular-nums text-secondary/80" dateTime={item.updatedAt}>{dateLabel(item.updatedAt)}</time>
       </CardContent></Card>
     </li>)}</ul>;
   }

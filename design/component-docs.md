@@ -20,7 +20,7 @@
 - `ComponentDocsTemplate`：接收 `name` 和 `overview`、`properties`、`accessibility` 三个 React 内容区，统一标题、简介、页签、排版与章节间距。Properties 保持挂载，切换页签时保留临时参数状态。
 - `ComponentDocsProperties`：共享预览 / 代码切换、Reset、反馈区域及参数表。调用方传入 `name`、`preview`、`code`、`parameters`、`onReset`，按需提供 `feedback`、`resetLabel` 和参数表前的说明内容。每条 `ComponentDocsParameter` 包含名称、类型、必填标记、可选默认值、说明和可选 `control` 渲染函数；控件直接接收生成的 `id`、`aria-labelledby`、`aria-describedby`，继续使用现有 Input / Select / Switch。未提供控件的行只读。组件只保存代码开合状态，参数值、点击计数和重置逻辑由调用方持有，Reset 不改变当前预览 / 代码状态。
 - `ComponentDocsExample`：接收 `title`、`story`（Story ID）、`code`、`description` 和预览内容；使用隔离 `<Story>` 时传入 `iframe`。统一预览卡片、描述 / Code 切换和代码复制；“在 Canvas 中打开”只在 Docs 中显示。
-- `ComponentDocsSource`：可独立使用的代码卡片；外层圆角、边框、背景、字体和语法颜色使用系统 token。TSX / Copy 工具栏位于顶部，代码占满内部宽度，只有代码区域滚动；嵌入示例卡片时沿用外层圆角，避免重复边框。保留 Storybook 高亮，复制使用现有 Button 的 ghost / sm 样式，提供成功和失败反馈。鼠标点击代码不显示焦点边框，键盘聚焦使用 `--ring` 提示并保留滚动能力。
+- `ComponentDocsSource`：可独立使用的代码卡片；外层圆角、边框、背景、字体和语法颜色使用系统 token。TSX / Copy 工具栏位于顶部，代码占满内部宽度，只有代码区域滚动；嵌入示例卡片时沿用外层圆角，避免重复边框。保留 Storybook 高亮，复制使用现有 Button 的 ghost / sm 样式，提供成功和失败反馈。鼠标点击代码不显示焦点边框，键盘聚焦使用统一 focus-outline token，滚动区以宽度 token 的负偏移绘制内轮廓以避免裁切，并保留滚动能力。
 - `ComponentDocsMarkdown`：保留 Storybook 的链接、标题和代码处理，将表格放入可键盘聚焦的局部滚动区域，统一圆角。
 - `ComponentDocsBestPractices`：接收 `items`，每条 `ComponentDocsPractice` 使用 `guidance: "do" | "dont"` 和 Markdown 字符串 `description`。复用现有 Badge 展示“推荐 / 避免”，沿用共享表格的描边、圆角、字体和间距 token；标题由调用方在文档流中提供。窄屏保持两列，说明与长英文完整换行，不引入独立滚动。Button 和模板展示页在 Overview 的“组成”之后共同使用；接入代码演示通过现有 `overview` 内容区组合，不增加模板参数。
 - `ComponentDocsStandalone`：独立 Canvas 两侧增加 `4 × --spacing`（默认 16px）；Docs 内或 `embed=true` 的 iframe 直接沿用外层留白。

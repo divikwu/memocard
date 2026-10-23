@@ -15,8 +15,8 @@ function SelectExample({ size = "default", disabled = false, readOnly = false, i
       <SelectTrigger id={id} size={size} aria-labelledby={`${id}-label`} aria-invalid={invalid || undefined} aria-describedby={invalid ? `${id}-error` : undefined}><SelectValue /></SelectTrigger>
       <SelectContent align="start">{items.map(item => <SelectItem key={item.value} value={item.value} disabled={item.value === "system"}>{item.label}</SelectItem>)}</SelectContent>
     </Select>
-    {invalid && <p id={`${id}-error`} className="text-sm text-destructive">请选择可用主题。</p>}
-    <output aria-label="选择回显" className="text-sm text-muted-foreground">{value}</output>
+    {invalid && <p id={`${id}-error`} className="text-sm text-error">请选择可用主题。</p>}
+    <output aria-label="选择回显" className="text-sm text-secondary">{value}</output>
   </div>;
 }
 const meta = {

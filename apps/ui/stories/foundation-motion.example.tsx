@@ -18,7 +18,7 @@ export function MotionExample({ compact = false }: { compact?: boolean }) {
   return <section className="space-y-3" aria-label={compact ? "动效演示" : undefined}>
     <Heading className="text-lg font-semibold">{compact ? "动效演示" : "系统动效偏好与真实抽屉"}</Heading>
     <output aria-label="当前动效媒体偏好" className="block text-sm">{reduced ? "reduce · 减少动态效果" : "no-preference · 常规动效"}</output>
-    {!compact && <p className="text-sm text-muted-foreground">Canvas 遵循浏览器／系统偏好。自动测试临时模拟两种偏好，再恢复常规动效；不修改生产样式或自造动画。</p>}
+    {!compact && <p className="text-sm text-secondary">Canvas 遵循浏览器／系统偏好。自动测试临时模拟两种偏好，再恢复常规动效；不修改生产样式或自造动画。</p>}
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<Button variant="outline">{compact ? "播放动效" : "打开生产抽屉"}</Button>} />
       <SheetContent>
@@ -26,7 +26,7 @@ export function MotionExample({ compact = false }: { compact?: boolean }) {
         {!compact && <p className="px-4 text-sm">减少动态效果时，生产全局 CSS 缩短此抽屉的动画与过渡。</p>}
       </SheetContent>
     </Sheet>
-    {!compact && <output aria-label="动效抽屉状态" className="block text-sm text-muted-foreground">{open ? "抽屉已打开" : "抽屉已关闭"}</output>}
+    {!compact && <output aria-label="动效抽屉状态" className="block text-sm text-secondary">{open ? "抽屉已打开" : "抽屉已关闭"}</output>}
   </section>;
 }
 

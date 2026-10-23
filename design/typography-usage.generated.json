@@ -138,6 +138,19 @@
     },
     {
       "property": "font-family",
+      "value": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/theme/tokens.css",
+          "scope": ":root",
+          "value": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+          "variable": "--app-font-mono"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
       "value": "var(--app-font-body)",
       "utilities": [
         "font-sans"
@@ -171,6 +184,19 @@
           "source": "apps/ui/src/styles.css",
           "scope": "@layer base → h1,\n  h2,\n  h3",
           "value": "var(--app-font-heading)"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--app-font-mono)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/src/features/theme/tokens.css",
+          "scope": "@theme inline",
+          "value": "var(--app-font-mono)",
+          "variable": "--font-mono"
         }
       ]
     },
@@ -783,7 +809,7 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "source": "apps/ui/src/ChoicePropertyEditor.core.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -803,7 +829,7 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/src/components/name-editor.tsx",
+          "source": "apps/ui/src/components/name-editor.core.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -922,7 +948,7 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "source": "apps/ui/src/ImagePropertyEditor.core.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -937,12 +963,12 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/src/NoteProperties.tsx",
+          "source": "apps/ui/src/NoteProperties.core.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "source": "apps/ui/src/PropertyOptionMenu.core.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -983,7 +1009,7 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "source": "apps/ui/src/TagPropertyEditor.core.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         }
@@ -1042,7 +1068,7 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "source": "apps/ui/src/ChoicePropertyEditor.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -1062,7 +1088,7 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/src/components/name-editor.tsx",
+          "source": "apps/ui/src/components/name-editor.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -1107,7 +1133,7 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/src/DatePropertyPicker.tsx",
+          "source": "apps/ui/src/DatePropertyPicker.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -1128,7 +1154,7 @@
           "variable": "--text-supporting-size"
         },
         {
-          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "source": "apps/ui/src/ImagePropertyEditor.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -1138,12 +1164,12 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/src/NoteProperties.tsx",
+          "source": "apps/ui/src/NoteProperties.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "source": "apps/ui/src/PropertyOptionMenu.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -1198,7 +1224,7 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "source": "apps/ui/src/TagPropertyEditor.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         }
@@ -1621,7 +1647,7 @@
           "variable": "--text-code-weight"
         },
         {
-          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "source": "apps/ui/src/ImagePropertyEditor.core.tsx",
           "scope": "font-normal",
           "value": "var(--font-weight-normal)"
         },
@@ -1631,7 +1657,7 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/src/NoteProperties.tsx",
+          "source": "apps/ui/src/NoteProperties.core.tsx",
           "scope": "font-normal",
           "value": "var(--font-weight-normal)"
         },
@@ -1711,7 +1737,7 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "source": "apps/ui/src/TagPropertyEditor.core.tsx",
           "scope": "font-normal",
           "value": "var(--font-weight-normal)"
         }
@@ -1947,12 +1973,12 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/src/NoteProperties.tsx",
+          "source": "apps/ui/src/NoteProperties.core.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "source": "apps/ui/src/PropertyOptionMenu.core.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
         },
@@ -2349,7 +2375,7 @@
           "value": "var(--leading-normal)"
         },
         {
-          "source": "apps/ui/src/components/name-editor.tsx",
+          "source": "apps/ui/src/components/name-editor.core.tsx",
           "scope": "leading-normal",
           "value": "var(--leading-normal)"
         },
@@ -2910,7 +2936,7 @@
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
         {
-          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "source": "apps/ui/src/ChoicePropertyEditor.core.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
@@ -2930,7 +2956,7 @@
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
         {
-          "source": "apps/ui/src/components/name-editor.tsx",
+          "source": "apps/ui/src/components/name-editor.core.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
@@ -2985,7 +3011,7 @@
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
         {
-          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "source": "apps/ui/src/ImagePropertyEditor.core.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
@@ -3000,17 +3026,17 @@
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
         {
-          "source": "apps/ui/src/NoteProperties.tsx",
+          "source": "apps/ui/src/NoteProperties.core.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
         {
-          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "source": "apps/ui/src/PropertyOptionMenu.core.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--line-height-sm))"
         },
         {
-          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "source": "apps/ui/src/TagPropertyEditor.core.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--line-height-sm))"
         }
@@ -3048,7 +3074,7 @@
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
         {
-          "source": "apps/ui/src/ChoicePropertyEditor.tsx",
+          "source": "apps/ui/src/ChoicePropertyEditor.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
@@ -3068,7 +3094,7 @@
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
         {
-          "source": "apps/ui/src/components/name-editor.tsx",
+          "source": "apps/ui/src/components/name-editor.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
@@ -3108,12 +3134,12 @@
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
         {
-          "source": "apps/ui/src/DatePropertyPicker.tsx",
+          "source": "apps/ui/src/DatePropertyPicker.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
         {
-          "source": "apps/ui/src/ImagePropertyEditor.tsx",
+          "source": "apps/ui/src/ImagePropertyEditor.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
@@ -3123,17 +3149,17 @@
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
         {
-          "source": "apps/ui/src/NoteProperties.tsx",
+          "source": "apps/ui/src/NoteProperties.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
         {
-          "source": "apps/ui/src/PropertyOptionMenu.tsx",
+          "source": "apps/ui/src/PropertyOptionMenu.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--line-height-xs))"
         },
         {
-          "source": "apps/ui/src/TagPropertyEditor.tsx",
+          "source": "apps/ui/src/TagPropertyEditor.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--line-height-xs))"
         }

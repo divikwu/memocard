@@ -24,12 +24,13 @@ export function beginImageDrag(editor: Editor, pos: number, event: DragEvent) {
   }
 }
 
-export const RichImageDrag = Extension.create({
+export const RichImageDrag = Extension.create<{ uiClassName: string }>({
   name: 'imageLayoutDrag',
+  addOptions: () => ({ uiClassName: '' }),
   addProseMirrorPlugins() {
-    const editor = this.editor;
+    const editor = this.editor, uiClassName = this.options.uiClassName;
     return [new Plugin({ view(view) {
-      const guide = document.createElement('div'); guide.className = 'rich-image-drop-guide'; guide.setAttribute('aria-hidden', 'true');
+      const guide = document.createElement('div'); guide.className = ['rich-image-drop-guide', uiClassName].filter(Boolean).join(' '); guide.setAttribute('aria-hidden', 'true');
       let target: { pos: number; side: 'left' | 'right' | 'above' | 'below' } | null = null;
       let frame = 0, x = 0, y = 0;
       let surface: HTMLElement | null = view.dom.parentElement;

@@ -5,3 +5,4 @@ packages:
 overrides:
   katex@<0.18.2: 0.18.9
   hono@<4.13.11: 4.13.13
+  ip-address@<10.7.4: 10.7.4

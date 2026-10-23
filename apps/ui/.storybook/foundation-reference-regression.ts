@@ -79,7 +79,9 @@ export const verifyFoundationReference: BrowserCommand<[FoundationReferenceCase]
     }
     assert.deepEqual(await root.locator('[data-token-kind="css"]').evaluateAll(rows => rows.map(row => row.getAttribute("data-token-name")).sort()), definitions.map(token => token.name).sort());
     assert.deepEqual(await root.locator('[data-token-kind="portable"]').evaluateAll(rows => rows.map(row => row.getAttribute("data-token-name")).sort()), catalog.portable.map(token => token.name).sort());
-    assert.equal(await root.locator('.foundation-control-preview, .foundation-type-preview, .foundation-focus-preview, .foundation-example-link, #foundation-adapters, #foundation-usage, #foundation-motion, #foundation-responsive').count(), 0);
+    assert.equal(await root.locator('.foundation-control-preview, .foundation-type-preview, .foundation-focus-preview, .foundation-example-link, #foundation-adapters, #foundation-usage, #foundation-responsive').count(), 0);
+    assert.equal(await root.getByRole("table", { name: "motion CSS definitions", exact: true }).count(), 1);
+    assert.equal(await root.getByRole("table", { name: "Motion reference", exact: true }).count(), 0);
     await page.waitForFunction(mode => document.querySelector(".foundation-document")?.getAttribute("data-token-mode") === mode, options.theme);
     assert.equal(await root.locator("[data-color-mode]").count(), definitions.filter(token => token.type === "color").length);
     assert.equal(await root.locator(`[data-color-mode="${options.theme === "light" ? "dark" : "light"}"]`).count(), 0);
@@ -101,8 +103,8 @@ export const verifyFoundationReference: BrowserCommand<[FoundationReferenceCase]
     }, { mode: options.theme, palette: options.palette });
     assert(current.rootUnchanged, "The sampler must not mutate the Docs theme");
     assert.equal(await root.locator(`[data-token-kind="css"][data-token-name="--primary"] [data-color-mode="${options.theme}"] code`).innerText(), current.expected);
-    const shadow = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--overlay-shadow").trim());
-    assert.equal(await root.locator('[data-token-name="--overlay-shadow"] td code').innerText(), shadow);
+    const shadow = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--shadow-high").trim());
+    assert.equal(await root.locator('[data-token-name="--shadow-high"] td code').innerText(), shadow);
     assert.equal(await root.locator("details, summary").count(), 0);
     assert.equal(await root.getByText("读取中…", { exact: true }).count(), 0);
     for (const selector of [".foundation-table-wrap", ".foundation-swatch"]) {
@@ -331,10 +333,13 @@ export const verifyFoundationReference: BrowserCommand<[FoundationReferenceCase]
       assert.deepEqual(await document.locator('[data-token-kind="css"]').evaluateAll(rows => rows.map(row => row.getAttribute("data-token-name")).sort()), catalog.css.filter(token => token.category === (category === "colors" ? "color" : category) && token.layer !== "adapter").map(token => token.name).sort());
       if (category === "colors") {
         const groups = [
-          { id: "colors", title: "基础表面与文字", names: ["--background", "--foreground", "--card", "--card-foreground", "--popover", "--popover-foreground", "--muted", "--muted-foreground"] },
-          { id: "colors-actions", title: "操作与状态", names: ["--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--accent", "--accent-foreground", "--accent-text", "--emphasis", "--emphasis-foreground", "--destructive"] },
-          { id: "colors-feedback", title: "边界与反馈", names: ["--border", "--input", "--ring", "--hover-bg"] },
+          { id: "colors", title: "基础表面与文字", names: ["--background", "--foreground", "--card", "--card-foreground", "--popover", "--popover-foreground", "--muted", "--muted-foreground", "--surface-bg", "--surface-foreground", "--inverted-bg", "--inverted-foreground", "--icon-primary-color", "--icon-secondary-color", "--text-disabled-color", "--icon-disabled-color", "--on-dark-color", "--on-light-color"] },
+          { id: "colors-actions", title: "操作与状态", names: ["--primary", "--primary-foreground", "--secondary", "--secondary-foreground", "--accent", "--accent-foreground", "--accent-text", "--emphasis", "--emphasis-foreground", "--text-accent-color", "--destructive", "--error-muted", "--error-foreground", "--success", "--success-muted", "--success-foreground", "--warning", "--warning-muted", "--warning-foreground", "--accent-muted-bg", "--error-inverted-bg"] },
+          { id: "colors-feedback", title: "边界与反馈", names: ["--border", "--input", "--ring", "--hover-bg", "--pressed-bg", "--overlay-bg", "--track-bg", "--skeleton-bg", "--border-emphasized-color", "--focus-outline-color", "--tint-hover-color", "--shadow-color"] },
           { id: "colors-sidebar", title: "侧栏", names: ["--sidebar", "--sidebar-foreground", "--sidebar-accent", "--sidebar-accent-foreground", "--sidebar-primary", "--sidebar-primary-foreground", "--sidebar-border", "--sidebar-ring"] },
+          { id: "colors-hues", title: "公共多色语义", names: catalog.css.filter(token => token.id === "color.hues").map(token => token.name) },
+          { id: "colors-data", title: "数据可视化（按需导入）", names: catalog.css.filter(token => token.id === "color.data").map(token => token.name) },
+          { id: "colors-syntax", title: "代码语法与差异", names: catalog.css.filter(token => ["color.syntax", "color.syntax-background"].includes(token.id)).map(token => token.name) },
           { id: "colors-chart", title: "图表", names: ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"] },
         ];
         assert.deepEqual(await document.locator(".foundation-body > section").evaluateAll(elements => elements.map(element => element.id)), [...groups.map(group => `foundation-${group.id}`), "foundation-tags", "foundation-callouts", "foundation-palettes"]);
@@ -705,9 +710,15 @@ export const verifyFoundationReference: BrowserCommand<[FoundationReferenceCase]
     const motion = page.locator('.foundation-document[data-foundation-page="motion"][aria-busy="false"]');
     await motion.waitFor();
     assert.deepEqual(await auditDocument(motion), headerStyle);
+    const durationRows = motion.getByRole("table", { name: "Motion duration tokens", exact: true }).locator("tbody tr");
+    assert.deepEqual((await durationRows.locator("td code").allTextContents()).map(value => parseFloat(value) * (value.endsWith("ms") ? 1 : 1000)), [150, 180, 200, 2000, 0.01]);
+    assert.equal(await motion.getByRole("table", { name: "Motion easing tokens", exact: true }).locator("tbody tr").count(), 6);
+    const motionCode = motion.getByLabel("动效 token CSS 用法", { exact: true });
+    assert.equal(await motionCode.getAttribute("tabindex"), "0");
+    assert.equal(await motionCode.locator("code").evaluate(element => getComputedStyle(element).whiteSpace), "pre");
     const motionRows = motion.getByRole("table", { name: "Motion reference", exact: true }).locator("tbody tr");
-    assert.equal(await motionRows.count(), 7);
-    assert.deepEqual(await motionRows.locator("td:first-of-type > code:first-of-type").allTextContents(), ["150ms", "180ms", "200ms", "200ms", "200ms", "180ms", "2s"]);
+    assert.equal(await motionRows.count(), 10);
+    assert.deepEqual(await motionRows.locator("td:first-of-type > code:first-of-type").allTextContents(), ["150ms", "180ms", "200ms", "200ms", "200ms", "180ms", "2s", "200ms", "150ms", "2s"]);
     assert.equal(await motion.getByRole("table", { name: "Reduced motion rules", exact: true }).locator("tbody tr").count(), 4);
     assert.equal(await motion.locator(".foundation-example-link").count(), 0);
     assert.equal(await motion.getByRole("region", { name: "动效演示", exact: true }).count(), 1);
@@ -749,8 +760,8 @@ export const verifyFoundationReference: BrowserCommand<[FoundationReferenceCase]
     assert.equal(await diagnostics.getByRole("heading", { name: "界面语义色", exact: true }).count(), 0);
     assert.equal(await diagnostics.getByRole("heading", { name: "标签颜色", exact: true }).count(), 0);
     const failedPairs = await diagnostics.locator('tr:has(output[data-result="fail"])').evaluateAll(rows => rows.map(row => row.getAttribute("data-pair-id")));
-    assert.deepEqual(failedPairs, options.palette === "blue" ? ["primary"] : []);
-    if (options.palette === "blue") assert(Math.abs(Number(await diagnostics.getByLabel("primary 对比度", { exact: true }).getAttribute("data-ratio")) - 3.761777718) < 0.001);
+    assert.deepEqual(failedPairs, []);
+    assert(Number(await diagnostics.getByLabel("primary 对比度", { exact: true }).getAttribute("data-ratio")) >= 4.5, "Primary text keeps the original AA threshold in every palette");
     assert.equal(await diagnostics.locator('output[data-result="diagnostic"]').count(), 1);
     assert.equal(await diagnostics.evaluate(element => element.scrollWidth <= element.clientWidth + 1), true);
     assert.equal(await diagnostics.getByRole("region", { name: "交互状态", exact: true }).count(), 0);

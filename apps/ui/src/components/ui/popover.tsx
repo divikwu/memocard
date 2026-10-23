@@ -32,7 +32,7 @@ function PopoverContent({
       <PopoverPrimitive.Popup
         data-slot="popover-content"
         className={cn(
-          "z-50 w-72 origin-(--transform-origin) rounded-md border border-transparent bg-popover shadow-overlay p-4 text-popover-foreground outline-hidden data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95",
+          "z-50 w-72 origin-(--transform-origin) motion-popup rounded-md border-(length:--border-width) border-transparent bg-popover shadow-lg p-4 text-on-popover outline-hidden data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[closed]:animate-out data-[closed]:fade-out-0 data-[closed]:zoom-out-95 data-[open]:animate-in data-[open]:fade-in-0 data-[open]:zoom-in-95",
           className
         )}
         {...props}
@@ -69,7 +69,7 @@ function PopoverDescription({
   return (
     <p
       data-slot="popover-description"
-      className={cn("text-muted-foreground", className)}
+      className={cn("text-secondary", className)}
       {...props}
     />
   )

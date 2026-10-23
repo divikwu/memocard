@@ -3,7 +3,7 @@ import { Button } from "../src/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../src/components/ui/sheet";
 
 export function DrawerCheck() {
-  return <main className="max-w-4xl space-y-6 bg-background p-6 text-foreground">
+  return <main className="max-w-4xl space-y-6 bg-body p-6 text-primary">
     <h1 className="text-2xl font-semibold">浮层检查</h1>
     <Sheet>
       <SheetTrigger render={<Button variant="outline">打开抽屉</Button>} />
@@ -26,7 +26,9 @@ export async function inspectDrawer({ canvasElement }: { canvasElement: HTMLElem
   await expect(canvas.getAllByRole("button")).toHaveLength(1);
   await userEvent.tab();
   await expect(trigger).toHaveFocus();
-  await expect(getComputedStyle(trigger).boxShadow).not.toBe("none");
+  await expect(getComputedStyle(trigger).outlineWidth).toBe("2px");
+    await expect(getComputedStyle(trigger).outlineStyle).toBe("solid");
+    await expect(getComputedStyle(trigger).outlineOffset).toBe("3px");
   for (const escape of [true, false]) {
     await userEvent.keyboard("{Enter}");
     const sheet = await page.findByRole("dialog", { name: "抽屉检查" });

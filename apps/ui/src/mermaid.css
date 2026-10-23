@@ -10,6 +10,6 @@
 @media (hover: none) { .mermaid-toolbar { opacity: 1; pointer-events: auto; } }
 .mermaid-preview { margin-block-start: 12px; }
 .mermaid-source[hidden] + div .mermaid-preview { margin-block-start: 0; }
-.mermaid-viewport { max-width: 100%; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-.mermaid-viewport:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.mermaid-viewport { max-width: 100%; overflow: auto; border: var(--border-width) solid var(--border); border-radius: var(--radius); padding: 16px; }
+.mermaid-viewport:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .mermaid-enlarged { max-width: 90vw; max-height: 80dvh; overflow: auto; padding: 16px; background: var(--background); border-radius: var(--radius); }

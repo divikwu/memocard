@@ -5,6 +5,8 @@ import type { FontChoice } from "@/lib/font-options";
 import { applyAppearance } from "./apply-appearance";
 import { APPEARANCE_STORAGE_KEY, DEFAULT_APPEARANCE, parseAppearance, type Appearance, type NeutralPalette, type Palette, type RadiusChoice, type Theme } from "./preferences";
 import { loadFonts } from "./font-loader";
+import { ThemeStyle } from "./ThemeStyle";
+import type { ThemeStyles } from "./theme-types";
 
 type ThemeContextValue = Appearance & {
   setTheme: (value: Theme) => void;
@@ -29,7 +31,7 @@ function readAppearance() {
   }
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({ children, definition }: { children: ReactNode; definition?: ThemeStyles }) {
   const [state, setState] = useState(readAppearance);
   const { appearance, persistenceError } = state;
   const [systemDark, setSystemDark] = useState(() => window.matchMedia(COLOR_SCHEME_QUERY).matches);
@@ -62,7 +64,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       window.cancelAnimationFrame(frame);
       transitionStyle.remove();
     };
-  }, [appearance, systemDark]);
+  }, [appearance, systemDark, definition?.name, definition?.cssText]);
 
   useEffect(() => {
     const sync = (event: StorageEvent) => {
@@ -95,7 +97,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     resetAppearance: () => save({ ...DEFAULT_APPEARANCE }),
     persistenceError,
   };
-  return <ThemeContext.Provider value={value}><TypographyProvider>{children}</TypographyProvider></ThemeContext.Provider>;
+  return <ThemeContext.Provider value={value}><ThemeStyle definition={definition} /><TypographyProvider>{children}</TypographyProvider></ThemeContext.Provider>;
 }
 
 export function useTheme() {

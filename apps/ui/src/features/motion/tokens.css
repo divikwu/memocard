@@ -1,0 +1,21 @@
+/* Shared Web motion values. Keep the pre-token timing and curves unchanged. */
+:root {
+  --motion-duration-fast: 150ms;
+  --motion-duration-normal: 180ms;
+  --motion-duration-panel: 200ms;
+  --motion-duration-pulse: 2s;
+  --motion-duration-reduced: 0.01ms;
+  --motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-ease-popup: ease;
+  --motion-ease-out: ease-out;
+  --motion-ease-linear: linear;
+  --motion-ease-rebound: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-pulse: cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Existing transition-* and animate-pulse consumers use the same source. */
+@theme inline {
+  --default-transition-duration: var(--motion-duration-fast);
+  --default-transition-timing-function: var(--motion-ease-standard);
+  --animate-pulse: pulse var(--motion-duration-pulse) var(--motion-ease-pulse) infinite;
+}

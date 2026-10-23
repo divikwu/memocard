@@ -19,7 +19,7 @@ function ExampleForm() {
     <label htmlFor={id} className="text-sm font-medium">示例文字</label>
     <Input id={id} value={value} placeholder="例如：保存更改" onChange={event => setValue(event.currentTarget.value)} />
     <Button type="submit" disabled={!value.trim()}>提交示例</Button>
-    <output aria-live="polite" className="text-sm text-muted-foreground">{message}</output>
+    <output aria-live="polite" className="text-sm text-secondary">{message}</output>
   </form>;
 }
 
@@ -38,7 +38,7 @@ export function ExampleForm() {
     <label htmlFor={id} className="text-sm font-medium">示例文字</label>
     <Input id={id} value={value} placeholder="例如：保存更改" onChange={event => setValue(event.currentTarget.value)} />
     <Button type="submit" disabled={!value.trim()}>提交示例</Button>
-    <output aria-live="polite" className="text-sm text-muted-foreground">{message}</output>
+    <output aria-live="polite" className="text-sm text-secondary">{message}</output>
   </form>
 }`;
 

@@ -20,9 +20,9 @@ function Preview(){
   const current=scenarios[index];
   const settings=['theme-storage-error','font-error'].includes(current.id);
   const route=settings?'#/settings':current.detail?`#/notes/${noteId}`:'#/notes';
-  return <main className="flex h-dvh flex-col bg-background text-foreground">
+  return <main className="flex h-dvh flex-col bg-body text-primary">
     <header className="space-y-3 border-b p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><Button variant="ghost" size="icon-sm" render={<a href="/preview/" aria-label="返回验收主页" title="返回验收主页" />}><House /></Button><h1 className="text-balance text-lg font-semibold">MemoCard · {page.title}验收</h1></div><span className="flex items-center gap-1.5 text-xs text-muted-foreground"><ShieldCheck className="size-4" />纯模拟数据，不连接真实笔记库</span></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex min-w-0 items-center gap-2"><Button variant="ghost" size="icon-sm" render={<a href="/preview/" aria-label="返回验收主页" title="返回验收主页" />}><House /></Button><h1 className="text-balance text-lg font-semibold">MemoCard · {page.title}验收</h1></div><span className="flex items-center gap-1.5 text-xs text-secondary"><ShieldCheck className="size-4" />纯模拟数据，不连接真实笔记库</span></div>
       <div className="flex flex-wrap items-center gap-2">
         <Select items={scenarioItems} value={String(index)} onValueChange={value=>{if(value !== null)setIndex(Number(value));}}>
           <SelectTrigger id="scenario" aria-label="验收场景" size="sm" className="w-full min-w-0 sm:w-80" title={scenarioItems[index].label}><SelectValue className="min-w-0 flex-1 text-left"><span className="truncate">{scenarioItems[index].label}</span></SelectValue></SelectTrigger>
@@ -38,12 +38,12 @@ function Preview(){
             <SelectTrigger id="preview-width" aria-label="预览尺寸" size="sm" className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent align="start"><SelectItem value="desktop">桌面</SelectItem><SelectItem value="mobile">窄屏 · 375px</SelectItem></SelectContent>
           </Select>
-          <span className="text-xs tabular-nums text-muted-foreground">{index+1} / {scenarios.length}</span>
+          <span className="text-xs tabular-nums text-secondary">{index+1} / {scenarios.length}</span>
         </div>
       </div>
-      <p className="text-pretty text-sm">{current.instructions}</p>{current.note && <p className="text-pretty text-xs text-muted-foreground">{current.note}</p>}
+      <p className="text-pretty text-sm">{current.instructions}</p>{current.note && <p className="text-pretty text-xs text-secondary">{current.note}</p>}
     </header>
-    <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-3"><iframe key={`${current.id}:${revision}:${width}`} title={`模拟场景：${current.label}`} className="mx-auto h-full min-h-96 max-w-full rounded-lg border bg-background" style={{width:width === 'mobile'?375:'100%'}} sandbox="allow-scripts allow-same-origin allow-modals" src={`/preview/client.html?scenario=${current.id}${route}`} /></div>
+    <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-3"><iframe key={`${current.id}:${revision}:${width}`} title={`模拟场景：${current.label}`} className="mx-auto h-full min-h-96 max-w-full rounded-lg border bg-body" style={{width:width === 'mobile'?375:'100%'}} sandbox="allow-scripts allow-same-origin allow-modals" src={`/preview/client.html?scenario=${current.id}${route}`} /></div>
   </main>;
 }
 createRoot(document.getElementById('root')!).render(<Preview />);

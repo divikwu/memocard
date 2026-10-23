@@ -14,8 +14,8 @@ function SheetExample({ side }: { side: "right" | "bottom" }) {
         <SheetDescription>查看当前笔记的信息，关闭后返回原来的操作位置。</SheetDescription>
       </SheetHeader>
       <dl className="space-y-3 px-4 text-sm">
-        <div><dt className="text-muted-foreground">标题</dt><dd>侧栏使用指南</dd></div>
-        <div><dt className="text-muted-foreground">标签</dt><dd>体验 / 使用指南</dd></div>
+        <div><dt className="text-secondary">标题</dt><dd>侧栏使用指南</dd></div>
+        <div><dt className="text-secondary">标签</dt><dd>体验 / 使用指南</dd></div>
       </dl>
       <SheetFooter>
         <SheetClose render={<Button variant="outline">完成</Button>} />
