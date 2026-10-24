@@ -1,0 +1,35 @@
+// Adapted from shadcn/ui preview-02 (MIT); pinned source: build/verification/luma-showcase/source.
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@ui-next/components/card"
+
+export function IndexInvesting() {
+  return (
+    <Card data-showcase-card="index-investing">
+      <CardHeader>
+        <CardTitle>Dollar-Cost Averaging</CardTitle>
+        <CardDescription>
+          A strategy for building wealth over time.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <CardDescription className="mt-3 text-sm leading-relaxed">
+          <a
+            href="#"
+            className="underline underline-offset-4 hover:text-accent"
+          >
+            Over time
+          </a>
+          , this smooths out the average cost of your investments. When prices
+          drop, your fixed amount buys more shares. When prices rise, you buy
+          fewer. The result is a lower average cost per share compared to
+          lump-sum investing during volatile periods.
+        </CardDescription>
+      </CardContent>
+    </Card>
+  )
+}

@@ -1,0 +1,264 @@
+{
+  "fixedHead": "b3620f08c4077961176d2ee89fdbf1a6dc25bf0b",
+  "requestedReplacements": [
+    "apps/ui/src/ChoicePropertyEditor.tsx",
+    "apps/ui/src/DatePropertyPicker.tsx",
+    "apps/ui/src/Editor.tsx",
+    "apps/ui/src/ImagePropertyEditor.tsx",
+    "apps/ui/src/NoteImage.tsx",
+    "apps/ui/src/NotePreview.tsx",
+    "apps/ui/src/NoteProperties.tsx",
+    "apps/ui/src/PropertyOptionMenu.tsx",
+    "apps/ui/src/RichFormatTools.tsx",
+    "apps/ui/src/RichHeadingFoldButton.tsx",
+    "apps/ui/src/RichMarkdownEditor.tsx",
+    "apps/ui/src/RichTagSuggestions.tsx",
+    "apps/ui/src/TagColorMenu.tsx",
+    "apps/ui/src/TagColorStyles.tsx",
+    "apps/ui/src/TagPropertyEditor.tsx",
+    "apps/ui/src/components/name-editor.tsx",
+    "apps/ui/src/components/note-delete-dialog.tsx",
+    "apps/ui/src/components/note-search-dialog.tsx",
+    "apps/ui/src/components/quick-capture-editor.tsx",
+    "apps/ui/src/components/quick-capture.tsx",
+    "apps/ui/src/components/trash-page.tsx",
+    "apps/ui/src/markdown.tsx",
+    "apps/ui/src/rich-heading-fold.tsx"
+  ],
+  "loadedReplacements": [
+    "apps/ui/src/ChoicePropertyEditor.tsx",
+    "apps/ui/src/DatePropertyPicker.tsx",
+    "apps/ui/src/Editor.tsx",
+    "apps/ui/src/ImagePropertyEditor.tsx",
+    "apps/ui/src/NoteImage.tsx",
+    "apps/ui/src/NotePreview.tsx",
+    "apps/ui/src/NoteProperties.tsx",
+    "apps/ui/src/PropertyOptionMenu.tsx",
+    "apps/ui/src/RichFormatTools.tsx",
+    "apps/ui/src/RichHeadingFoldButton.tsx",
+    "apps/ui/src/RichMarkdownEditor.tsx",
+    "apps/ui/src/RichTagSuggestions.tsx",
+    "apps/ui/src/TagColorMenu.tsx",
+    "apps/ui/src/TagColorStyles.tsx",
+    "apps/ui/src/TagPropertyEditor.tsx",
+    "apps/ui/src/components/name-editor.tsx",
+    "apps/ui/src/components/note-delete-dialog.tsx",
+    "apps/ui/src/components/note-search-dialog.tsx",
+    "apps/ui/src/components/quick-capture-editor.tsx",
+    "apps/ui/src/components/quick-capture.tsx",
+    "apps/ui/src/components/trash-page.tsx",
+    "apps/ui/src/markdown.tsx",
+    "apps/ui/src/rich-heading-fold.tsx"
+  ],
+  "baselineCurrentTokenCSS": true,
+  "causalBoundary": "Legacy entry source is loaded from the fixed HEAD before core extraction. Current App, providers, primitives, CSS and build settings remain; old entry class-name strings and chunk boundaries can also contribute to JS differences. This isolates the broad extraction boundary, not a proof that every byte is unavoidable factory overhead.",
+  "routes": [
+    {
+      "name": "home with quick capture",
+      "current": {
+        "raw": 1707444,
+        "gzip": 516602
+      },
+      "baseline": {
+        "raw": 1705881,
+        "gzip": 515967
+      },
+      "extractionDelta": {
+        "raw": 1563,
+        "gzip": 635
+      },
+      "currentLimits": {
+        "raw": 1708032,
+        "gzip": 527360
+      },
+      "currentExcess": {
+        "raw": 0,
+        "gzip": 0
+      }
+    },
+    {
+      "name": "iOS home with native chrome",
+      "current": {
+        "raw": 1724206,
+        "gzip": 523507
+      },
+      "baseline": {
+        "raw": 1722635,
+        "gzip": 522866
+      },
+      "extractionDelta": {
+        "raw": 1571,
+        "gzip": 641
+      },
+      "currentLimits": {
+        "raw": 1724416,
+        "gzip": 529408
+      },
+      "currentExcess": {
+        "raw": 0,
+        "gzip": 0
+      }
+    },
+    {
+      "name": "mobile home with title layout menu",
+      "current": {
+        "raw": 1714122,
+        "gzip": 520033
+      },
+      "baseline": {
+        "raw": 1712559,
+        "gzip": 519398
+      },
+      "extractionDelta": {
+        "raw": 1563,
+        "gzip": 635
+      },
+      "currentLimits": {
+        "raw": 1713152,
+        "gzip": 527360
+      },
+      "currentExcess": {
+        "raw": 970,
+        "gzip": 0
+      }
+    },
+    {
+      "name": "mobile home with swipe capture",
+      "current": {
+        "raw": 1716918,
+        "gzip": 521293
+      },
+      "baseline": {
+        "raw": 1715355,
+        "gzip": 520658
+      },
+      "extractionDelta": {
+        "raw": 1563,
+        "gzip": 635
+      },
+      "currentLimits": {
+        "raw": 1716224,
+        "gzip": 529408
+      },
+      "currentExcess": {
+        "raw": 694,
+        "gzip": 0
+      }
+    },
+    {
+      "name": "list",
+      "current": {
+        "raw": 1321647,
+        "gzip": 395898
+      },
+      "baseline": {
+        "raw": 1321191,
+        "gzip": 395743
+      },
+      "extractionDelta": {
+        "raw": 456,
+        "gzip": 155
+      },
+      "currentLimits": {
+        "raw": 1321984,
+        "gzip": 397312
+      },
+      "currentExcess": {
+        "raw": 0,
+        "gzip": 0
+      }
+    },
+    {
+      "name": "mobile list with quick capture",
+      "current": {
+        "raw": 1704184,
+        "gzip": 515002
+      },
+      "baseline": {
+        "raw": 1702621,
+        "gzip": 514367
+      },
+      "extractionDelta": {
+        "raw": 1563,
+        "gzip": 635
+      },
+      "currentLimits": {
+        "raw": 1708032,
+        "gzip": 527360
+      },
+      "currentExcess": {
+        "raw": 0,
+        "gzip": 0
+      }
+    },
+    {
+      "name": "mobile tag with actions",
+      "current": {
+        "raw": 1710862,
+        "gzip": 518433
+      },
+      "baseline": {
+        "raw": 1709299,
+        "gzip": 517798
+      },
+      "extractionDelta": {
+        "raw": 1563,
+        "gzip": 635
+      },
+      "currentLimits": {
+        "raw": 1710080,
+        "gzip": 527360
+      },
+      "currentExcess": {
+        "raw": 782,
+        "gzip": 0
+      }
+    },
+    {
+      "name": "detail",
+      "current": {
+        "raw": 1784673,
+        "gzip": 546688
+      },
+      "baseline": {
+        "raw": 1780114,
+        "gzip": 544794
+      },
+      "extractionDelta": {
+        "raw": 4559,
+        "gzip": 1894
+      },
+      "currentLimits": {
+        "raw": 1820672,
+        "gzip": 544768
+      },
+      "currentExcess": {
+        "raw": 0,
+        "gzip": 1920
+      }
+    },
+    {
+      "name": "detail with preserved Markdown",
+      "current": {
+        "raw": 2129662,
+        "gzip": 652166
+      },
+      "baseline": {
+        "raw": 2124987,
+        "gzip": 650235
+      },
+      "extractionDelta": {
+        "raw": 4675,
+        "gzip": 1931
+      },
+      "currentLimits": {
+        "raw": 2179072,
+        "gzip": 650240
+      },
+      "currentExcess": {
+        "raw": 0,
+        "gzip": 1926
+      }
+    }
+  ]
+}

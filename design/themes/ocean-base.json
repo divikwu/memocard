@@ -1,0 +1,5 @@
+{
+  "name": "ocean-base",
+  "color": { "accent": ["#0064E0", "#48CAE4"], "neutralStyle": "cool" },
+  "localTokens": { "--brand-emphasis": ["#123456", "#BFEAFF"] }
+}

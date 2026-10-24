@@ -21,7 +21,7 @@ function CalloutFixture() {
   const [editor, setEditor] = useState<Editor | null>(null);
   const [value, setValue] = useState(initial);
   const [open, setOpen] = useState(false);
-  return <main className="space-y-4 bg-background p-6 text-foreground">
+  return <main className="space-y-4 bg-body p-6 text-primary">
     <Menu.Root open={open} onOpenChange={setOpen}>
       <Menu.Trigger disabled={!editor}>标注操作</Menu.Trigger>
       <Menu.Portal><Menu.Positioner><Menu.Popup>

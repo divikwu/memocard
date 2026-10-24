@@ -8,6 +8,7 @@ import { desktopViewport, mobileViewport } from "./.storybook/viewports.ts";
 import { verifyDocsFont } from "./.storybook/docs-font-regression.ts";
 import { verifyComponentFont } from "./.storybook/component-font-regression.ts";
 import { verifyFoundationReference } from "./.storybook/foundation-reference-regression.ts";
+import { verifyTokenDocs } from "./.storybook/token-docs-regression.ts";
 
 // CI runs the full matrix; local Firefox can be opted in (macOS 27 may fail before page startup).
 const typographyBrowsers = process.env.CI || process.env.STORYBOOK_FIREFOX === "1"
@@ -22,10 +23,39 @@ const setReducedMotion: BrowserCommand<["reduce" | "no-preference"], void> = asy
   await page.emulateMedia({ reducedMotion });
 };
 
+const setColorScheme: BrowserCommand<["light" | "dark"], void> = async ({ page }, colorScheme) => {
+  await page.emulateMedia({ colorScheme });
+};
+
+const setPointerPressed: BrowserCommand<[boolean], void> = async ({ page }, pressed) => {
+  if (pressed) await page.mouse.down(); else await page.mouse.up();
+};
+
+const tabThroughControls: BrowserCommand<[], void> = async ({ page }) => {
+  // macOS WebKit uses Option+Tab to include buttons in native keyboard traversal.
+  await page.keyboard.press(process.platform === "darwin" && page.context().browser()?.browserType().name() === "webkit" ? "Alt+Tab" : "Tab");
+};
+
 export default mergeConfig(viteConfig, defineConfig({
   test: {
     fileParallelism: false,
     projects: [
+      {
+        extends: true,
+        test: {
+          name: "theme-tokens",
+          include: ["stories/theme-tokens.browser.tsx", "stories/hue-tokens.browser.tsx", "stories/domain-tokens.browser.tsx", "stories/theme-definition.browser.tsx"],
+          browser: { enabled: true, provider: playwright(), commands: { setPointerPressed, tabThroughControls, setColorScheme }, headless: true, instances: [{ browser: "chromium" }, { browser: "webkit" }], viewport: desktopViewport },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "motion-tokens",
+          include: ["stories/motion-tokens.browser.tsx"],
+          browser: { enabled: true, provider: playwright(), commands: { setReducedMotion }, headless: true, instances: [{ browser: "chromium" }, { browser: "webkit" }], viewport: desktopViewport },
+        },
+      },
       ...typographyBrowsers.map(browser => ({
         extends: true as const,
         test: {
@@ -40,8 +70,8 @@ export default mergeConfig(viteConfig, defineConfig({
           name: "docs-fonts",
           globalSetup: [fileURLToPath(new URL("./.storybook/font-test-server.ts", import.meta.url))],
           sequence: { groupOrder: 8 },
-          include: ["stories/docs-fonts.browser.ts", "stories/foundation-reference.browser.ts"],
-          browser: { enabled: true, provider: playwright(), commands: { verifyDocsFont, verifyComponentFont, verifyFoundationReference }, headless: true, instances: [{ browser: "chromium" }] },
+          include: ["stories/docs-fonts.browser.ts", "stories/foundation-reference.browser.ts", "stories/token-docs.browser.ts"],
+          browser: { enabled: true, provider: playwright(), commands: { verifyDocsFont, verifyComponentFont, verifyFoundationReference, verifyTokenDocs }, headless: true, instances: [{ browser: "chromium" }] },
         },
       },
       {

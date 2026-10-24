@@ -283,7 +283,7 @@ describe("note workspace", () => {
     expect(card?.className).toContain("bg-card");
     expect(card?.className).not.toContain("bg-[#fbfbfb]");
     expect(card?.className).not.toContain("bg-muted/50");
-    expect(card?.className).toContain("shadow-(--surface-shadow)");
+    expect(card?.className).toContain("shadow-md");
     expect(card?.className).not.toContain("shadow-none");
     expect(screen.getByText("新内容").className).toContain("text-base");
     expect(card?.querySelector("time")?.className).toContain("text-xs");

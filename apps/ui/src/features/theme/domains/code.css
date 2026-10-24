@@ -1,0 +1,8 @@
+/* Compile with the core Tailwind entry; full syntax colors remain optional. */
+@theme inline {
+  --color-syntax-background: var(--syntax-background);
+}
+
+:root {
+  --syntax-background: var(--muted);
+}

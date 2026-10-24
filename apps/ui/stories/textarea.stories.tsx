@@ -12,8 +12,8 @@ function TextareaExample({ defaultValue, ...args }: ComponentProps<typeof Textar
   return <div className="grid max-w-sm gap-2">
     <label htmlFor={id}>补充说明</label>
     <Textarea {...args} id={id} value={value} aria-describedby={args["aria-invalid"] ? `${id}-error` : undefined} onChange={event => { setValue(event.currentTarget.value); args.onChange?.(event); }} />
-    {args["aria-invalid"] && <p id={`${id}-error`} className="text-sm text-destructive">请补充说明。</p>}
-    <output aria-label="多行输入回显" className="whitespace-pre-wrap text-sm text-muted-foreground">{value || "尚未输入"}</output>
+    {args["aria-invalid"] && <p id={`${id}-error`} className="text-sm text-error">请补充说明。</p>}
+    <output aria-label="多行输入回显" className="whitespace-pre-wrap text-sm text-secondary">{value || "尚未输入"}</output>
   </div>;
 }
 const meta = {

@@ -1,0 +1,103 @@
+{
+  "preset": "b5F2gjwQRE",
+  "style": "base-luma",
+  "license": "design/licenses/shadcn-ui.txt",
+  "components": [
+    {
+      "name": "button",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/button.json",
+      "sha256": "b0d96d1fd38c7f77675f534cbc248873d84feb6256ac301f7977e2e08668d1c6",
+      "files": [
+        "registry/base-luma/ui/button.tsx"
+      ]
+    },
+    {
+      "name": "card",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/card.json",
+      "sha256": "f91923bf14917ffde7bf59fa7983b4103a4a3cbebae9a29d8080f094968f3b55",
+      "files": [
+        "registry/base-luma/ui/card.tsx"
+      ]
+    },
+    {
+      "name": "dialog",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/dialog.json",
+      "sha256": "ffc5cf4cc5d1642f28bcc7992d28fc83b0fd09f35ee7a97b8e8f754248cbbb8b",
+      "files": [
+        "registry/base-luma/ui/dialog.tsx"
+      ]
+    },
+    {
+      "name": "dropdown-menu",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/dropdown-menu.json",
+      "sha256": "431e8a912770724fe1ded2c6205a2e7045a34f15fdc60d467eaa542516e5f161",
+      "files": [
+        "registry/base-luma/ui/dropdown-menu.tsx"
+      ]
+    },
+    {
+      "name": "input",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/input.json",
+      "sha256": "50af7d88b22e4c16dee0893ff9db3082950a047c70dd0dbf844c629c46d75f4e",
+      "files": [
+        "registry/base-luma/ui/input.tsx"
+      ]
+    },
+    {
+      "name": "popover",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/popover.json",
+      "sha256": "802afc3c1634f943ec09dbebb48eef3b96a46a81822c8b5ee19551bf1028c484",
+      "files": [
+        "registry/base-luma/ui/popover.tsx"
+      ]
+    },
+    {
+      "name": "select",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/select.json",
+      "sha256": "9304819d9927612b94462ce8218a1ec5ececa161f462ce32328570d8acb0df9b",
+      "files": [
+        "registry/base-luma/ui/select.tsx"
+      ]
+    },
+    {
+      "name": "sheet",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/sheet.json",
+      "sha256": "5a93c6c29fc6a39420b9aa3efe08dd925725dd1541b22899d9fb81844e79aa19",
+      "files": [
+        "registry/base-luma/ui/sheet.tsx"
+      ]
+    },
+    {
+      "name": "switch",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/switch.json",
+      "sha256": "0a81b5fb67cfc586247f9d471d48ac3dd176b2e043b39a1a471f8f37263caa27",
+      "files": [
+        "registry/base-luma/ui/switch.tsx"
+      ]
+    },
+    {
+      "name": "tabs",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/tabs.json",
+      "sha256": "4bc050ca0a3c62394d06a243586fbf8af2d03434582419ac00f82641512026f8",
+      "files": [
+        "registry/base-luma/ui/tabs.tsx"
+      ]
+    },
+    {
+      "name": "textarea",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/textarea.json",
+      "sha256": "60e6bea3c2816e75b2e95f063d62645aa134555f537a5fc501269357d6007bd5",
+      "files": [
+        "registry/base-luma/ui/textarea.tsx"
+      ]
+    },
+    {
+      "name": "tooltip",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/tooltip.json",
+      "sha256": "47183f6cb121f85f0bf17d0450b30dca7e423d19abd05d1ccbf06d0875100452",
+      "files": [
+        "registry/base-luma/ui/tooltip.tsx"
+      ]
+    }
+  ]
+}

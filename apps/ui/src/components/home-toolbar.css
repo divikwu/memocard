@@ -1,0 +1,8 @@
+@media (max-width: 767px) {
+  .home-toolbar > :first-child { height: 38px; gap: 0; border-radius: 8px; background: var(--muted); }
+  .home-toolbar > :first-child > :is(button, span) { height: 32px; }
+  .home-toolbar > :first-child > :is([data-active], span:first-child) { background: var(--background); border-radius: 6px; }
+  .home-toolbar > :first-child > button::after { display: none; }
+  .home-toolbar > .collection-layout-switch { display: none; }
+  .dark .home-toolbar > :first-child > [data-active] { border-color: var(--input); background: color-mix(in oklab, var(--input) 30%, transparent); }
+}

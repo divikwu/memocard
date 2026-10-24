@@ -30,9 +30,9 @@ export function NoteCollectionExample({ home, state, onQueryChange, onSelectTag,
   const paginated = state === "pagination" || state === "paging";
   const notes = paginated ? matches.slice(0, pageSize) : matches;
   const opened = collectionNotes.find(note => note.id === openedId);
-  return <main className="min-h-dvh space-y-4 bg-background p-4 text-foreground md:p-6">
+  return <main className="min-h-dvh space-y-4 bg-body p-4 text-primary md:p-6">
     <h1 className="text-xl font-semibold">{home ? "主页笔记" : "笔记集合"}</h1>
-    <p className="max-w-2xl text-sm text-muted-foreground">真实 NoteCollection 与 NotePreview；查询、标签、分页和打开状态由此示例管理，只使用内存笔记。</p>
+    <p className="max-w-2xl text-sm text-secondary">真实 NoteCollection 与 NotePreview；查询、标签、分页和打开状态由此示例管理，只使用内存笔记。</p>
     {opened ? <section aria-label="笔记详情" className="space-y-4">
       <Button variant="outline" size="sm" onClick={() => setOpenedId(null)}>返回笔记集合</Button>
       <NotePreview title={opened.title} body={opened.body} notePath={opened.relativePath} onError={onError} />
@@ -52,9 +52,9 @@ export function NoteCollectionExample({ home, state, onQueryChange, onSelectTag,
         onNewNote={() => { setCreationRequested(true); onNewNote(); }}
         onLoadMore={() => { setPageSize(size => size + 2); onLoadMore(); }}
         onError={onError} formatDate={formatCollectionDate}>
-        <p className="py-8 text-center text-sm text-muted-foreground">{query || tag ? "没有找到相关笔记" : "笔记库中还没有笔记"}</p>
+        <p className="py-8 text-center text-sm text-secondary">{query || tag ? "没有找到相关笔记" : "笔记库中还没有笔记"}</p>
       </NoteCollection>
-      {creationRequested && <output aria-label="新建笔记请求" className="block text-sm text-muted-foreground">已请求打开现有的新建笔记流程</output>}
+      {creationRequested && <output aria-label="新建笔记请求" className="block text-sm text-secondary">已请求打开现有的新建笔记流程</output>}
     </>}
   </main>;
 }

@@ -5,6 +5,7 @@ import { composeStories, setProjectAnnotations, type ReactRenderer } from "@stor
 import { useOf, type StoryProps } from "@storybook/addon-docs/blocks";
 import { DocsContext, StoryStore, mockChannel } from "storybook/preview-api";
 import { GLOBALS_UPDATED } from "storybook/internal/core-events";
+import type { GlobalsUpdatedPayload } from "storybook/internal/types";
 import { userEvent } from "storybook/test";
 import { ButtonStoryFrame as StoryFrame } from "../.storybook/button-docs.fixture";
 import { componentDocsRenderer } from "../.storybook/component-docs-renderer";
@@ -37,7 +38,7 @@ async function renderTemplateDocs(element: HTMLElement) {
   await act(async () => { await renderer.render(context, parameters, element); await vi.dynamicImportSettled(); });
   return {
     unmount: () => act(() => renderer.unmount(element)),
-    updateGlobals: (theme: string) => act(() => channel.emit(GLOBALS_UPDATED, { globals: { theme }, initialGlobals: {} })),
+    updateGlobals: (theme: string) => act(() => channel.emit(GLOBALS_UPDATED, { globals: { theme }, userGlobals: { theme }, storyGlobals: {}, initialGlobals: {} } satisfies GlobalsUpdatedPayload)),
     rerender: () => act(async () => { await renderer.render(context, parameters, element); }),
   };
 }

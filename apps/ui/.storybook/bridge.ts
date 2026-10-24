@@ -2,34 +2,52 @@
 export type { RegisteredVault, Environment, Draft, DraftList, DraftIssue, Attachment, StorageMode } from "../src/bridge";
 export const isNative = false;
 export let isBrowserVault = false;
-export const isLocalWeb = false;
-export const isConnectedClient = false;
+export let isLocalWeb = false;
+export let isConnectedClient = false;
 export { errorMessage } from "../src/error-messages";
 type RequestHandler = (operation: string, params: Record<string, unknown>) => unknown | Promise<unknown>;
 let requestHandler: RequestHandler | undefined;
 let browserAssets: { binding: string; values: Record<string, Blob> } | undefined;
 let assetSequence = 0;
+type StorybookClientMode = "browser" | "local-web";
+let clientModes: { mode: StorybookClientMode }[] = [];
+
+function updateClientMode() {
+  const mode = clientModes.at(-1)?.mode;
+  isBrowserVault = mode === "browser" || (!mode && Boolean(browserAssets));
+  isLocalWeb = mode === "local-web";
+}
+
+export function setStorybookClientMode(mode: StorybookClientMode): () => void {
+  const scope = { mode };
+  clientModes.push(scope);
+  updateClientMode();
+  return () => { clientModes = clientModes.filter(value => value !== scope); updateClientMode(); };
+}
 
 export function setStorybookRequestHandler(handler: RequestHandler): () => void {
   requestHandler = handler;
-  return () => { if (requestHandler === handler) requestHandler = undefined; };
+  isConnectedClient = true;
+  return () => { if (requestHandler === handler) { requestHandler = undefined; isConnectedClient = false; } };
 }
 
 export function setStorybookBrowserAssets(values: Record<string, Blob>): () => void {
   const fixture = { binding: `storybook-assets-${++assetSequence}`, values };
   browserAssets = fixture;
-  isBrowserVault = true;
+  updateClientMode();
   return () => {
     if (browserAssets !== fixture) return;
     browserAssets = undefined;
-    isBrowserVault = false;
+    updateClientMode();
   };
 }
 
 export function resetStorybookBridge(): void {
   requestHandler = undefined;
+  isConnectedClient = false;
   browserAssets = undefined;
-  isBrowserVault = false;
+  clientModes = [];
+  updateClientMode();
 }
 
 export const getBrowserVaultBinding = () => browserAssets?.binding ?? null;

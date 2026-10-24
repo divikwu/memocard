@@ -10,6 +10,10 @@ import { Input } from "../src/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../src/components/ui/input-group";
 import { Tabs, TabsList, TabsTrigger } from "../src/components/ui/tabs";
 import { FoundationReference } from "./foundation-reference";
+import { Button } from "../src/components/ui/button";
+import { Textarea } from "../src/components/ui/textarea";
+import { Select, SelectTrigger, SelectValue } from "../src/components/ui/select";
+import { Separator } from "../src/components/ui/separator";
 
 let rootStyle: string;
 beforeEach(() => { rootStyle = document.documentElement.style.cssText; localStorage.clear(); });
@@ -72,6 +76,39 @@ test("block input groups retain their original density", () => {
   const view = render(<ThemeProvider><InputGroup><InputGroupAddon align="block-start">标题</InputGroupAddon><InputGroupInput aria-label="块布局标题" defaultValue="Note" /></InputGroup></ThemeProvider>);
   expect(view.container.querySelector("input")!.getBoundingClientRect().height).toBe(36);
   expect(parseFloat(getComputedStyle(view.container.querySelector('[data-slot="input-group-addon"]')!).paddingTop)).toBe(8);
+});
+
+test("semantic density overrides reach real controls while caller overrides retain precedence", () => {
+  const root = document.documentElement;
+  root.style.setProperty("--size-element-xs", "30px");
+  root.style.setProperty("--size-element-sm", "42px");
+  root.style.setProperty("--size-element-md", "50px");
+  root.style.setProperty("--size-element-lg", "58px");
+  root.style.setProperty("--size-textarea-min", "90px");
+  root.style.setProperty("--border-width", "3px");
+  const view = render(<>
+    <Button size="xs" data-testid="xs">XS</Button><Button size="sm" data-testid="sm">Small</Button>
+    <Button data-testid="md">Default</Button><Button size="lg" data-testid="lg">Large</Button>
+    <Button size="icon" data-testid="icon" aria-label="Icon">+</Button>
+    <Button className="h-12" data-testid="height-override">Override</Button>
+    <Button size="icon" className="size-6" data-testid="size-override" aria-label="Small icon">+</Button>
+    <Button variant="outline" className="border-0" data-testid="border-override">No border</Button>
+    <Input aria-label="Input" data-testid="input" />
+    <InputGroup data-testid="group"><InputGroupInput aria-label="Group input" /></InputGroup>
+    <Textarea aria-label="Textarea" data-testid="textarea" />
+    <Select defaultValue="one" items={[{ value: "one", label: "One" }]}><SelectTrigger data-testid="select"><SelectValue /></SelectTrigger></Select>
+    <Tabs defaultValue="one"><TabsList data-testid="tabs"><TabsTrigger value="one">One</TabsTrigger></TabsList></Tabs>
+    <Separator data-testid="separator" />
+  </>);
+  for (const [id, height] of [["xs", 30], ["sm", 42], ["md", 50], ["lg", 58], ["icon", 50], ["input", 50], ["group", 42], ["select", 50], ["tabs", 50], ["height-override", 48], ["size-override", 24]] as const) {
+    expect(view.getByTestId(id).getBoundingClientRect().height, id).toBe(height);
+  }
+  expect(view.getByTestId("icon").getBoundingClientRect().width).toBe(50);
+  expect(view.getByTestId("size-override").getBoundingClientRect().width).toBe(24);
+  for (const id of ["input", "group", "select"]) expect(getComputedStyle(view.getByTestId(id)).borderTopWidth, id).toBe("3px");
+  expect(getComputedStyle(view.getByTestId("border-override")).borderTopWidth).toBe("0px");
+  expect(getComputedStyle(view.getByTestId("textarea")).minHeight).toBe("90px");
+  expect(view.getByTestId("separator").getBoundingClientRect().height).toBe(3);
 });
 
 test("sizing Docs measure production components and follow root scaling", async () => {

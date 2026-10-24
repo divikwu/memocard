@@ -1,0 +1,7 @@
+{
+  "name": "ocean",
+  "extends": "./ocean-base.json",
+  "color": { "contrast": "high" },
+  "tokens": { "--text-accent-color": ["#064E8A", "#8FDFFF"] },
+  "syntax": { "comment": ["#515151", "#B8B8B8"] }
+}

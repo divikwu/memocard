@@ -37,7 +37,7 @@ function SheetOverlay({
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-background/80 backdrop-blur-sm data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
+        "fixed inset-0 z-50 motion-popup bg-overlay backdrop-blur-sm data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
         className
       )}
       style={state => ({ animationFillMode: "both", ...(typeof style === "function" ? style(state) : style) })}
@@ -69,15 +69,15 @@ function SheetContent({
       <SheetPrimitive.Popup
         data-slot="sheet-content"
         className={cn(
-          "fixed z-50 flex flex-col gap-4 bg-background transition ease-in-out data-[closed]:animate-out data-[closed]:duration-200 data-[open]:animate-in data-[open]:duration-200",
+          "fixed z-50 flex flex-col gap-4 bg-surface text-on-surface transition duration-(--motion-duration-panel) ease-(--motion-ease-standard) data-[closed]:animate-out data-[open]:animate-in",
           side === "right" &&
-            "inset-y-0 right-0 h-full w-3/4 border-l data-[closed]:slide-out-to-right data-[open]:slide-in-from-right sm:max-w-sm",
+            "inset-y-0 right-0 h-full w-3/4 border-l-(length:--border-width) data-[closed]:slide-out-to-right data-[open]:slide-in-from-right sm:max-w-sm",
           side === "left" &&
-            "inset-y-0 left-0 h-full w-3/4 border-r data-[closed]:slide-out-to-left data-[open]:slide-in-from-left sm:max-w-sm",
+            "inset-y-0 left-0 h-full w-3/4 border-r-(length:--border-width) data-[closed]:slide-out-to-left data-[open]:slide-in-from-left sm:max-w-sm",
           side === "top" &&
-            "inset-x-0 top-0 h-auto border-b data-[closed]:slide-out-to-top data-[open]:slide-in-from-top",
+            "inset-x-0 top-0 h-auto border-b-(length:--border-width) data-[closed]:slide-out-to-top data-[open]:slide-in-from-top",
           side === "bottom" &&
-            "inset-x-0 bottom-0 h-auto border-t data-[closed]:slide-out-to-bottom data-[open]:slide-in-from-bottom",
+            "inset-x-0 bottom-0 h-auto border-t-(length:--border-width) data-[closed]:slide-out-to-bottom data-[open]:slide-in-from-bottom",
           className
         )}
         style={state => ({ animationFillMode: "both", ...(typeof style === "function" ? style(state) : style) })}
@@ -86,7 +86,7 @@ function SheetContent({
         {children}
         {swipeToClose && side === "bottom" && <React.Suspense fallback={null}><SheetSwipe disabled={swipeDisabled} /></React.Suspense>}
         {showCloseButton && (
-          <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[open]:bg-secondary">
+          <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs text-icon-primary opacity-70 transition-opacity hover:opacity-100 focus-visible:focus-ring disabled:pointer-events-none data-[open]:bg-neutral">
             <XIcon className="size-4" />
             <span className="sr-only">关闭</span>
           </SheetPrimitive.Close>
@@ -123,7 +123,7 @@ function SheetTitle({
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn("font-semibold text-foreground", className)}
+      className={cn("font-semibold text-primary", className)}
       {...props}
     />
   )
@@ -136,7 +136,7 @@ function SheetDescription({
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn("type-label font-normal text-muted-foreground", className)}
+      className={cn("type-label font-normal text-secondary", className)}
       {...props}
     />
   )

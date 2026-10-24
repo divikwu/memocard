@@ -3,13 +3,17 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-  "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border px-4 py-3 type-label font-normal has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+  "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border-(length:--border-width) px-4 py-3 type-label font-normal has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
   {
     variants: {
       variant: {
-        default: "bg-sidebar text-card-foreground",
+        default: "bg-sidebar text-on-card",
         destructive:
-          "bg-sidebar text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
+          "bg-error-muted text-error *:data-[slot=alert-description]:text-current",
+        success:
+          "bg-success-muted text-success *:data-[slot=alert-description]:text-current",
+        warning:
+          "bg-warning-muted text-warning *:data-[slot=alert-description]:text-current",
       },
     },
     defaultVariants: {
@@ -54,7 +58,7 @@ function AlertDescription({
     <div
       data-slot="alert-description"
       className={cn(
-        "col-start-2 min-w-0 grid justify-items-start gap-1 type-label font-normal text-muted-foreground [&_p]:leading-relaxed",
+        "col-start-2 min-w-0 grid justify-items-start gap-1 type-label font-normal text-secondary [&_p]:leading-relaxed",
         className
       )}
       {...props}

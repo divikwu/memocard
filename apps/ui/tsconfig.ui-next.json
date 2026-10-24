@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@ui-next/*": [
+        "./ui-next/*"
+      ]
+    }
+  },
+  "include": [
+    "ui-next",
+    ".storybook-next",
+    "vite.storybook-next.config.ts",
+    "vite.web-next.config.ts"
+  ]
+}

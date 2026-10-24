@@ -40,8 +40,8 @@ function InputExample({ defaultValue, ...args }: ComponentProps<typeof Input>) {
   return <div className="grid max-w-sm gap-2">
     <label htmlFor={id}>笔记标题</label>
     <Input {...args} id={id} value={value} aria-describedby={args["aria-invalid"] ? `${id}-error` : undefined} onChange={event => { setValue(event.currentTarget.value); args.onChange?.(event); }} />
-    {args["aria-invalid"] && <p id={`${id}-error`} className="text-sm text-destructive">标题不能为空。</p>}
-    <output aria-label="输入回显" className="text-sm text-muted-foreground">{value || "尚未输入"}</output>
+    {args["aria-invalid"] && <p id={`${id}-error`} className="text-sm text-error">标题不能为空。</p>}
+    <output aria-label="输入回显" className="text-sm text-secondary">{value || "尚未输入"}</output>
   </div>;
 }
 const meta = {

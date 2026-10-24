@@ -96,24 +96,35 @@ it("refreshes native colors when accent and neutral palettes change within the s
     clearRect:vi.fn(),fillRect:vi.fn(),
     set fillStyle(value:string){fillStyle=value;},
     get fillStyle(){return fillStyle;},
-    getImageData:()=>({data:new Uint8ClampedArray(fillStyle === "blue" ? [0,0,255,255] : fillStyle === "slate" ? [15,23,42,255] : [255,255,255,255])}),
+    getImageData:()=>({data:new Uint8ClampedArray(fillStyle === "ocean" ? [12,34,56,255] : fillStyle === "blue" ? [0,0,255,255] : fillStyle === "slate" ? [15,23,42,255] : [255,255,255,255])}),
   };
   vi.spyOn(HTMLCanvasElement.prototype,"getContext").mockReturnValue(context as unknown as CanvasRenderingContext2D);
-  vi.spyOn(window,"getComputedStyle").mockImplementation(()=>({getPropertyValue:(key:string)=>key === "--primary" ? document.documentElement.dataset.palette || "white" : document.documentElement.dataset.neutralPalette || "white"}) as CSSStyleDeclaration);
+  vi.spyOn(window,"getComputedStyle").mockImplementation(()=>({borderTopLeftRadius:document.documentElement.style.getPropertyValue("--radius") || "10px",getPropertyValue:(key:string)=>key === "--radius" ? document.documentElement.style.getPropertyValue("--radius") || ".625rem" : key === "--primary" ? document.documentElement.dataset.memocardTheme || document.documentElement.dataset.palette || "white" : document.documentElement.dataset.neutralPalette || "white"}) as CSSStyleDeclaration);
   const root=document.documentElement;
-  const previous={className:root.className,palette:root.getAttribute("data-palette"),neutral:root.getAttribute("data-neutral-palette")};
+  const previous={className:root.className,palette:root.getAttribute("data-palette"),neutral:root.getAttribute("data-neutral-palette"),definition:root.getAttribute("data-memocard-theme"),style:root.getAttribute("style"),radius:root.getAttribute("data-radius")};
   try{
-    root.className="light";root.dataset.palette="mono";root.dataset.neutralPalette="neutral";
+    root.className="light";root.dataset.palette="mono";root.dataset.neutralPalette="neutral";root.dataset.radius="lg";
     render(<IOSAppChrome {...props()}/>);
+    send("chrome","navigation");
     await waitFor(()=>expect(surface("chrome").palette?.primary).toEqual([255,255,255,255]));
     act(()=>{root.dataset.palette="blue";});
     await waitFor(()=>expect(surface("chrome").palette?.primary).toEqual([0,0,255,255]));
     act(()=>{root.dataset.neutralPalette="slate";});
     await waitFor(()=>expect(surface("chrome").palette?.background).toEqual([15,23,42,255]));
+    act(()=>{root.dataset.memocardTheme="ocean";});
+    await waitFor(()=>expect(surface("chrome").palette?.primary).toEqual([12,34,56,255]));
+    expect(surface("navigation").rowRadius).toBe(radiusValues.lg);
+    act(()=>{root.style.setProperty("--radius","14px");});
+    await waitFor(()=>expect(surface("navigation").rowRadius).toBe(14));
+    act(()=>{root.removeAttribute("data-memocard-theme");});
+    await waitFor(()=>expect(surface("navigation").rowRadius).toBe(radiusValues.lg));
     expect(root.className).toBe("light");
   }finally{
     cleanup();root.className=previous.className;
     if(previous.palette === null)root.removeAttribute("data-palette");else root.setAttribute("data-palette",previous.palette);
     if(previous.neutral === null)root.removeAttribute("data-neutral-palette");else root.setAttribute("data-neutral-palette",previous.neutral);
+    if(previous.definition === null)root.removeAttribute("data-memocard-theme");else root.setAttribute("data-memocard-theme",previous.definition);
+    if(previous.style === null)root.removeAttribute("style");else root.setAttribute("style",previous.style);
+    if(previous.radius === null)root.removeAttribute("data-radius");else root.setAttribute("data-radius",previous.radius);
   }
 });

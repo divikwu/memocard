@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { REFERENCE_ROOT_SIZE } from './scale';
-import { FONT_FAMILIES } from '@/lib/font-options';
+import { FONT_FAMILIES, type FontChoice } from '@/lib/font-options';
 import { loadFonts } from '@/features/theme/font-loader';
 import { defaults, measurePresets, parseTypography, STORAGE_KEY, type Typography } from './preferences';
 
@@ -21,7 +21,7 @@ export function resolveTypography(value: Typography) {
     '--note-measure': `${measurePresets[value.measure].factor * Number(value.size)}px`,
   };
 }
-export function TypographyProvider({ children }: { children: ReactNode }) {
+export function TypographyProvider({ children, fontLoader = loadFonts }: { children: ReactNode; fontLoader?: (fonts: FontChoice[]) => Promise<unknown> }) {
   const [value, setValue] = useState(() => { try { return parseTypography(localStorage.getItem(STORAGE_KEY)); } catch { return { ...defaults }; } });
   const [error, setError] = useState('');
   const [fontError, setFontError] = useState('');
@@ -37,9 +37,9 @@ export function TypographyProvider({ children }: { children: ReactNode }) {
   }, [value]);
   useEffect(() => {
     let current = true;
-    if (typeof FontFace !== 'undefined') void loadFonts([value.body, value.heading === 'inherit' ? value.body : value.heading, value.mono]).then(() => { if (current) setFontError(''); }).catch(() => { if (current) setFontError('字体加载失败，暂时使用系统字体。'); });
+    if (typeof FontFace !== 'undefined') void fontLoader([value.body, value.heading === 'inherit' ? value.body : value.heading, value.mono]).then(() => { if (current) setFontError(''); }).catch(() => { if (current) setFontError('字体加载失败，暂时使用系统字体。'); });
     return () => { current = false; };
-  }, [value.body, value.heading, value.mono]);
+  }, [value.body, value.heading, value.mono, fontLoader]);
   function save(next: Typography) {
     const validated = parseTypography(JSON.stringify(next));
     setValue(validated);

@@ -11,7 +11,7 @@ const mock = path.join(root, ".storybook/bridge.ts");
 export default defineConfig({
   resolve: { alias: { "@": path.join(root, "src") } },
   // Story transforms discover these controls late; prebundle before browser tests.
-  optimizeDeps: { include: ["storybook/theming", "storybook/internal/core-events", "storybook/internal/router", "@base-ui/react/select", "@base-ui/react/switch", "@base-ui/react/tabs",
+  optimizeDeps: { include: ["lucide-react", "react-dom/client", "@base-ui/react/popover", "storybook/theming", "storybook/internal/core-events", "storybook/internal/router", "@base-ui/react/menu", "@base-ui/react/tooltip", "@base-ui/react/select", "@base-ui/react/switch", "@base-ui/react/tabs",
     "react-markdown", "rehype-katex", "rehype-raw", "rehype-sanitize", "remark-gfm", "remark-math",
     "@base-ui/react/alert-dialog", "@base-ui/react/button", "@base-ui/react/checkbox", "@base-ui/react/combobox", "@base-ui/react/dialog",
     "@lezer/markdown", "@tiptap/extension-image", "@tiptap/extension-list", "@tiptap/extension-mathematics",

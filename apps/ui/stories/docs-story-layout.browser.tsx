@@ -2,9 +2,41 @@ import { afterEach, expect, test } from "vitest";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
 import { userEvent } from "storybook/test";
 import { ButtonStoryFrame, buttonDocsStories } from "../.storybook/button-docs.fixture";
+import { observeDocsStoryLayout } from "../.storybook/docs-story-layout";
 import "../.storybook/preview.css";
 
 afterEach(cleanup);
+
+test("auto height converges for viewport-relative content without ResizeObserver feedback errors", async () => {
+  const frame = document.createElement("iframe");
+  Object.assign(frame.style, { width: "320px", height: "512px", border: "0" });
+  const loaded = new Promise<void>(resolve => frame.addEventListener("load", () => resolve(), { once: true }));
+  document.body.append(frame);
+  await loaded;
+  const content = frame.contentDocument!, view = content.defaultView!;
+  Object.assign(content.body.style, { margin: "0", padding: "16px" });
+  const root = content.createElement("div");
+  root.id = "storybook-root";
+  root.innerHTML = '<div style="height:50vh"></div>';
+  content.body.append(root);
+  const errors: string[] = [];
+  const onError = (event: ErrorEvent) => { errors.push(event.message); };
+  window.addEventListener("error", onError);
+  view.addEventListener("error", onError);
+  const stop = observeDocsStoryLayout(frame, { autoHeight: true, centered: true });
+  try {
+    await waitFor(() => expect(frame.clientHeight).toBe(65));
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    expect(frame.clientHeight).toBe(65);
+    expect(content.documentElement.scrollHeight).toBeLessThanOrEqual(frame.clientHeight);
+    expect(errors).toEqual([]);
+  } finally {
+    stop();
+    window.removeEventListener("error", onError);
+    view.removeEventListener("error", onError);
+    frame.remove();
+  }
+});
 
 test("Properties keeps readable row controls and confines narrow overflow to its table", async () => {
   const Properties = buttonDocsStories.Properties;

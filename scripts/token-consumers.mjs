@@ -63,7 +63,13 @@ export async function collectTokenConsumers({ root, registry, graph, reached, re
   }
   const styles = postcss.parse(await readFile(resolve(root, 'apps/ui/src/styles.css'), 'utf8'));
   const utilities = styles.nodes.filter(node => node.type === 'atrule' && ['utility', 'custom-variant'].includes(node.name)).map(node => node.toString() + (node.nodes ? '' : ';')).join('\n');
-  const theme = (await Promise.all([...registry.upstreamSources, ...new Set(registry.families.map(family => family.source))].map(path => readFile(resolve(root, path), 'utf8')))).join('\n');
+  // Every owning source is included once; imports between those sources would
+  // duplicate declarations and have no relative base in this combined input.
+  const theme = (await Promise.all([...registry.upstreamSources, ...new Set(registry.families.map(family => family.source))].map(path => readFile(resolve(root, path), 'utf8')))).map(css => {
+    const ast = postcss.parse(css);
+    ast.walkAtRules('import', rule => rule.remove());
+    return ast.toString();
+  }).join('\n');
   // Use the locked Tailwind compiler for variants, opacity, arbitrary values and @theme inline substitution.
   const design = await __unstable__loadDesignSystem(`${theme}\n${utilities}`);
   const rows = [], dynamicSources = new Map((registry.dynamicConsumers ?? []).map(entry => [entry.source, entry]));
@@ -88,6 +94,7 @@ export async function collectTokenConsumers({ root, registry, graph, reached, re
   for (const source of sourcePaths) {
     if (source.includes('/generated/')) continue;
     const code = await readFile(resolve(root, source), 'utf8'), strings = [], overrides = new Set(), portableUses = new Set();
+    const producers = (registry.dynamicProducers ?? []).filter(entry => entry.source === source);
     if (source.endsWith('.css')) {
       postcss.parse(code).walkDecls(decl => {
         strings.push(decl.value);
@@ -97,6 +104,11 @@ export async function collectTokenConsumers({ root, registry, graph, reached, re
     } else {
       const ast = ts.createSourceFile(source, code, ts.ScriptTarget.Latest, true);
       function visit(node) {
+        const producer = (ts.isStringLiteralLike(node) || ts.isTemplateExpression(node)) && producers.find(entry => entry.expression === node.getText(ast));
+        if (producer) {
+          for (const name of names) if (new RegExp(producer.pattern).test(name)) overrides.add(name);
+          return;
+        }
         if (ts.isStringLiteralLike(node)) strings.push(node.text);
         if (ts.isTemplateExpression(node)) strings.push(node.getText(ast).slice(1, -1));
         if (ts.isPropertyAssignment(node) && ts.isStringLiteral(node.name) && names.has(node.name.text)) overrides.add(node.name.text);

@@ -1,0 +1,11 @@
+/* MemoCard reading preset; UI text continues to use the compact type-* roles. */
+@layer components {
+  .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *)) {
+    --typeset-font-body: var(--font-family-body);
+    --typeset-font-heading: var(--font-family-heading);
+    --typeset-font-mono: var(--font-family-code);
+    --typeset-size: var(--font-size-base);
+    --typeset-leading: var(--text-reading-leading);
+    --typeset-flow: var(--spacing-reading-flow);
+  }
+}

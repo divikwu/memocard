@@ -26,8 +26,8 @@ export function EditorExample({ scenario, fixture, onSaved, onCommitted, onClose
     try { setOpened(await request<Note>("getNote", { id, vaultBinding: editorVaultBinding })); }
     catch (error) { onError(String(error)); }
   }
-  return <main className="min-h-dvh bg-background p-4 text-foreground md:p-6">
-    <p className="mb-4 text-sm text-muted-foreground">真实 Editor、EditorSession 和 NoteCollection；导航按钮是示例调用方，保存与恢复草稿只使用当前示例内存。</p>
+  return <main className="min-h-dvh bg-body p-4 text-primary md:p-6">
+    <p className="mb-4 text-sm text-secondary">真实 Editor、EditorSession 和 NoteCollection；导航按钮是示例调用方，保存与恢复草稿只使用当前示例内存。</p>
     {opened ? <>
       <div className="mb-4 flex flex-wrap gap-2">
         <Button variant="outline" size="sm" disabled={leaving} onClick={async () => {

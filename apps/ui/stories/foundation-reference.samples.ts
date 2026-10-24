@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import productCSS from "../src/styles.css?inline";
-import tagCSS from "../src/tag-colors.css?inline";
-import calloutCSS from "../src/import-layout.tokens.css?inline";
-import captureCSS from "../src/features/theme/capture.tokens.css?inline";
+import sampleCSS from "./foundation-reference.samples.css?inline";
 import { applyAppearance } from "../src/features/theme/apply-appearance";
 import { parseAppearance } from "../src/features/theme/preferences";
 import { catalog } from "./foundation-reference.data";
@@ -21,7 +18,7 @@ export function useFoundationValues() {
     document.body.append(frame);
     const content = frame.contentDocument!;
     const style = content.createElement("style");
-    style.textContent = `${productCSS}\n${tagCSS}\n${calloutCSS}\n${captureCSS}`;
+    style.textContent = sampleCSS;
     content.head.append(style);
     const sample = content.createElement("span");
     content.body.append(sample);
@@ -41,7 +38,7 @@ export function useFoundationValues() {
       const computed = content.defaultView!.getComputedStyle(content.documentElement);
       const values: Record<string, string> = {};
       for (const token of catalog.css.filter(token => token.layer !== "adapter")) {
-        if (token.category === "shape") {
+        if (token.category === "shape" && token.name.includes("radius")) {
           // Tailwind may inline these aliases instead of emitting their custom properties.
           sample.style.borderRadius = token.declarations[0].value;
           values[token.name] = content.defaultView!.getComputedStyle(sample).borderTopLeftRadius;

@@ -6,6 +6,7 @@ import { composeStories, setProjectAnnotations, type ReactRenderer } from "@stor
 import { useOf, type StoryProps } from "@storybook/addon-docs/blocks";
 import { DocsContext, StoryStore, mockChannel } from "storybook/preview-api";
 import { GLOBALS_UPDATED } from "storybook/internal/core-events";
+import type { GlobalsUpdatedPayload } from "storybook/internal/types";
 import * as buttonStories from "../stories/button.stories";
 import { observeDocsStoryLayout } from "./docs-story-layout";
 import previewCss from "./preview.css?inline";
@@ -83,6 +84,6 @@ export async function renderButtonDocs(element: HTMLElement) {
   await act(async () => { await vi.dynamicImportSettled(); });
   return Object.assign(() => { act(() => renderer.unmount(element)); }, {
     rerender: () => act(async () => { await renderer.render(context, parameters, element); }),
-    updateGlobals: (globals: Record<string, unknown>) => act(() => channel.emit(GLOBALS_UPDATED, { globals, initialGlobals: {} })),
+    updateGlobals: (globals: Record<string, unknown>) => act(() => channel.emit(GLOBALS_UPDATED, { globals, userGlobals: globals, storyGlobals: {}, initialGlobals: {} } satisfies GlobalsUpdatedPayload)),
   });
 }

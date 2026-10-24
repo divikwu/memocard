@@ -32,7 +32,7 @@ function QuickCaptureExample({ scenario, onRecorded, onContinue, onOpenDrafts }:
   const editor = useRef<HTMLTextAreaElement>(null);
   useEffect(() => { if (continued) editor.current?.focus(); }, [continued]);
   return <main className="mx-auto w-full max-w-2xl p-4" style={{ minHeight: docked ? "100dvh" : undefined }}>
-    <p className="mb-4 text-sm text-muted-foreground">真实 QuickCapture；保存、草稿和图片选择使用当前示例的内存数据。</p>
+    <p className="mb-4 text-sm text-secondary">真实 QuickCapture；保存、草稿和图片选择使用当前示例的内存数据。</p>
     <div className={docked ? "mobile-record-bar" : undefined} style={docked ? { position: "fixed", bottom: 16, left: 16, right: 16 } : undefined}>
       <QuickCapture key={mount} vaultId={captureVaultId} vaultBinding={captureVaultBinding} rootNotes={false}
         tags={["工作", "生活", "设计/灵感"]} disabled={scenario === "disabled"} canImage

@@ -23,12 +23,12 @@ export default function TagEmojiPicker({ selected = "", disabled = false, onSele
     <Input autoFocus aria-label="搜索 Emoji" placeholder="搜索 Emoji" disabled={disabled} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.nativeEvent.isComposing && customEmoji && !disabled) { event.preventDefault(); onSelect(custom); } }} className="mb-2" />
     {customEmoji && !items.length && <Button type="button" variant="ghost" disabled={disabled} className="mb-2 w-full" onClick={() => onSelect(custom)}>使用 <span className="emoji-icon">{custom}</span></Button>}
     <div aria-label="Emoji" className="-mx-1 grid max-h-56 grid-cols-[repeat(auto-fill,minmax(2rem,1fr))] gap-1 overflow-y-auto overscroll-contain px-1">
-      {items.map(item => { const emoji = nativeEmoji(item.u); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" disabled={disabled} className={cn("text-xl", selected === emoji && "bg-accent text-accent-foreground")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}><span className="emoji-icon">{emoji}</span></Button>; })}
+      {items.map(item => { const emoji = nativeEmoji(item.u); return <Button key={item.u} type="button" variant="ghost" size="icon-sm" disabled={disabled} className={cn("text-xl", selected === emoji && "bg-state text-on-state")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} title={item.n.join("、")} onClick={() => onSelect(emoji)}><span className="emoji-icon">{emoji}</span></Button>; })}
     </div>
-    {!items.length && !customEmoji && <p role="status" className="pb-2 text-sm text-muted-foreground">没有匹配的 Emoji</p>}
+    {!items.length && !customEmoji && <p role="status" className="pb-2 text-sm text-secondary">没有匹配的 Emoji</p>}
     <TooltipProvider>
       <div aria-label="Emoji 分类" className="-mx-3 flex items-center justify-between border-t px-3 pt-2">
-        {categories.map(([key, label]) => { const Icon = categoryIcons[key]; return <Tooltip key={key}><TooltipTrigger render={<Button type="button" variant="ghost" size="icon-sm" disabled={disabled} className={cn("text-muted-foreground", category === key && !needle && "bg-accent text-accent-foreground")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} onClick={() => { setCategory(key); setQuery(""); }}><Icon /></Button>} /><TooltipContent side="top" sideOffset={6}>{label}</TooltipContent></Tooltip>; })}
+        {categories.map(([key, label]) => { const Icon = categoryIcons[key]; return <Tooltip key={key}><TooltipTrigger render={<Button type="button" variant="ghost" size="icon-sm" disabled={disabled} className={cn("text-secondary", category === key && !needle && "bg-state text-on-state")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} onClick={() => { setCategory(key); setQuery(""); }}><Icon /></Button>} /><TooltipContent side="top" sideOffset={6}>{label}</TooltipContent></Tooltip>; })}
       </div>
     </TooltipProvider>
   </div>;

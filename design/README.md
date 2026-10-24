@@ -10,6 +10,7 @@
 - [组件归属表](component-ownership.md)
 - [已使用组件维护表](component-inventory.md)
 - [组件使用文档结构与维护方式](component-docs.md)
+- [新旧 UI 的 Storybook 入口](ui-next.md)
 - [Token 消费映射](token-consumption.md)
 - [侧栏规格与验收清单](components/sidebar.md)
 - [搜索与快速记录场景及验收边界](components/search-capture.md)
@@ -24,6 +25,7 @@
 | --- | --- | --- |
 | 圆角选项、侧栏静态基准 | `tokens/sidebar.tokens.json`（DTCG） | Style Dictionary 生成 CSS、TS、Swift 和对照表 |
 | 动态颜色、强调色、中性色、Web 字体和语义映射 | `apps/ui/src/features/theme/tokens.css` | `styles.css` 导入；CSS 计算后经现有 palette bridge 传原生 |
+| Web 动效时长与缓动 | `apps/ui/src/features/motion/tokens.css` | 默认 Tailwind 过渡映射、组件工具类与 CSS 引用；保持减少动态效果规则 |
 | 标签与标注领域颜色 | `apps/ui/src/tag-colors.tokens.css`、`import-layout.tokens.css` | 原领域样式入口导入，Web 与原生所需子集共享 |
 | 外观选项与默认值 | `features/theme/preferences.ts`、`ThemeProvider.tsx` | 保留设备级偏好、存储格式与运行时外观写入 |
 | 笔记默认字体回退 | `features/typography/tokens.css` | `styles.css` 导入；TypographyProvider 覆盖用户偏好 |
@@ -35,6 +37,8 @@
 每项设计值只有一个维护位置。v1 没有复制全部颜色到 Swift，也没有迁移全部历史 CSS；未来迁移一个类别时，必须同时删除其旧定义并更新此表。
 
 完整体系按九类登记基础标尺、语义、组件和平台职责。CSS 族的类型、主题轴、消费入口、运行时偏好输出与组件/平台所有权维护在 `tokens/registry.json`；默认表达式从权威源码生成到覆盖清单。组件局部度量与平台行为可以继续由各自源码拥有，登记覆盖不代表全部提升为全局变量。选型继续为 shadcn/ui + Base UI + Tailwind，保留现有外观与交互。
+
+Tailwind `@theme` 接口参考 Astryx 语义命名：正文为 `text-primary`，强调按钮为 `bg-accent-bg text-on-accent`。组件、Storybook 和预览入口已统一迁移；底层 CSS 与原生 palette 值保持。新旧名称对应及扩展角色见 [工具类映射](token-engineering.md#工具类映射)。
 
 覆盖清单还自动索引生产依赖图与 CSS、工具类/样式类引用、局部覆盖、动态 palette 和 Apple 尺寸消费，校验原生安全区输出及上游定位变量。代表入口说明用途，完整逐文件依赖以生成索引为准；潜在依赖不等于全部运行状态已验收。
 

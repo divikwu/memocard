@@ -551,3 +551,106 @@ token 无变化的重复构建保留四份生成物时间戳，新增 mtime 回�
 - 第二轮 `436f117` 的远程 design 中快速记录通过，H5 搜索前置断言捕捉到分页后的 Dialog 抢焦。真实调用栈表明 Base UI 在分页按钮移除后先微任务、再下一帧恢复 Popup 焦点；受控执行其已排队的原始回调于输入点击之后，准确复现 INPUT → DIV 与原焦点断言失败。故事只新增等待实际 Popup 恢复及该浏览器帧提交，再执行原点击，保留全部焦点/选择/回调断言，不改生产组件、调度或超时；6 项搜索定向验证通过。红绿日志为 `/tmp/memocard-note-search-focus-{controlled-red,targeted-green}.log`，CI 原始现场不足以独立证明同一调用栈。最终帧同步版本的完整本机运行中 67 个组件故事通过，既有断点用例再次 15 秒超时；保留原断言/超时与此前单跑通过证据，不将该次完整命令标为通过。
 - 本机截图位于 `build/verification/search-capture/`；生产最终日志为 `/tmp/memocard-search-capture-focus-verify-final.log`，初版设计/原生结果和红绿证据亦保留在 `/tmp/memocard-search-capture-*`、`/tmp/memocard-quick-capture-*` 与 `/tmp/memocard-native-preview-*`。这些辅助文件未提交，跨机器应重跑已维护的故事和 harness。
 - 第二轮 [Verify #39209982954](https://github.com/divikwu/memocard/actions/runs/39209982954) 的 release 在 `simctl bootstatus` 原 180 秒上限失败，probe 尚未安装、App 业务断言未运行；UI 1058、native-core 126、Swift 索引 6 等此前阶段通过。与首轮 App 缺 marker 是不同阶段，不合并归因为同一问题，也不延长上限。
+
+
+## Astryx 风格 Tailwind 语义接口（2026-10-22）
+
+- `theme/tokens.css` 的 `@theme inline` 改为按正文、表面、操作、状态命名：`text-primary` 读取正文色，强调操作使用 `bg-accent-bg text-on-accent`。保留 MemoCard 独立的 state、输入、焦点、侧栏和前景/背景配对，数值仍来自既有 CSS；没有引入 Astryx 包。组件、故事和预览入口同步迁移，原生 palette 键与底层主题声明保持。映射见 [工程文档](token-engineering.md#工具类映射)。
+- 与改动前工作区快照逐项比较 102 种可编译工具类组合，除类名外的生成 CSS 一致，包含透明度、hover、focus、dark 和 data 变体；主题源中全部非 `@theme` 声明一致。排版 CSS 的直接颜色读取接回底层变量，防止 `--color-primary` 改义造成正文控件变色。
+- 新增 `theme-tokens` Chromium / WebKit 回归，共 66/66：浅深色 × 八种强调色 × 两种中性色的 32 种组合，覆盖 27 个角色、真实 Button / Skeleton、局部状态覆盖和表面阴影。原颜色场景 11/11 通过，保留 22 组配对、原生采样及既有对比度问题断言。
+- Token 定义检查与 17 项 token 回归、10 项设计登记回归、Storybook 类型检查、UI lint、生产 UI 与 Storybook 构建通过；UI lint 保留既有编辑器 Hook 警告。资源预算未提高，当前共同工作区的 bundle 检查通过。上述检查不代表真机或完整原生 App 已重新验收。
+- 全量 UI 首次为 1100/1101，一项移动端设置返回主页后打开搜索的用例超过原 5 秒上限；未确认原因。原用例单独运行通过，随后以 2 个 worker 完整复跑 68 个文件、1101/1101 通过（142.08 秒），没有改动测试断言或超时。完整复跑的本机临时日志名为 `memocard-theme-ui-tests.log`（不入库）。
+
+
+## 强调文字 禁用 按压和统一焦点 token（2026-10-22）
+
+- 强调文字改为独立 `--text-accent-color`，默认沿当前 accent-500；操作填充继续读取 --primary。新增禁用文字/图标与 pressed-bg，并登记四项 focus-outline token。公开 CSS 共 310 项，其中非适配层 190 项；所有新角色有实际消费者。
+- 迁移 Button、Input、Textarea、Select、Switch、Tabs、Sidebar、关闭按钮、输入框组及编辑器/日期/图片/滚动区域的既有焦点消费者。焦点默认 2px solid、3px 偏移，浅色 accent-700、深色 accent-400；输入框组和快速记录仅由外框显示焦点。文档裁切滚动区按宽度 token 使用内轮廓，强制颜色模式保留 Highlight。
+- 禁用颜色同时识别原生 disabled、Base UI data-disabled 和 aria-disabled=true，替换整组透明度；填充按钮/开关使用既有 muted 表面，开关滑块使用禁用图标色。QuickCapture 的不可编辑内容同步 aria-disabled。仍可操作的输入框组附加按钮不受禁用输入染色。按压只添加临时背景图，排除禁用状态，保留选中填充、真实动作和既有动画。
+- 主题 Chromium / WebKit 74/74 通过：全部 32 种配色组合，文字/填充分离、禁用文字/图标独立覆盖、单圈焦点与四项 token 覆盖、真实鼠标按下/松开。焦点色相对页面、卡片、浮层及侧栏表面的 128 组配对在每个浏览器均达到 3:1；不将平面色样检查解释为整页无障碍合规。macOS WebKit 以 Option+Tab 遍历按钮，其他环境使用 Tab。
+- 新增 Lucide 测试引用曾触发 Vite 晚发现依赖、页面重载和无效 Hook 调用；已显式加入现有依赖预优化，修复后完整主题测试通过。首次 WebKit 原生 Tab 跳过按钮，改为上述平台键盘遍历后通过，没有模拟 focus-visible 或更改业务焦点管理。
+- `pnpm verify:web` 完整通过，包括 UI 1101 项测试、MCP 测试/构建、类型、lint、token 与设计登记校验及资源预算。主题/动效/组件浏览器回归共 149 项通过；文档模板与 Chromium/WebKit 排版/密度回归 56 项通过，Storybook 构建与类型/lint 通过。保留既有编辑器 Hook 与构建 chunk 提示。最终首屏 gzip 为 192416 bytes，预算 192512 未改。
+- 与本轮前工作区快照逐字节核对 typography scale/生成 CSS、motion token、便携 JSON、圆角派生公式、外观偏好及原生 palette 协议，均未变更。本机临时日志名为 `memocard-interaction-{verify-web,stories,docs-density,storybook-build,design-lint}.log`（不入库）。本轮未重新运行真机/完整原生 App 验收。
+
+
+## 状态颜色、普通图标与背景语义 2026-10-22
+
+- 新增 18 项语义颜色及对应 18 项 Tailwind 映射：成功／警告／错误的弱化背景和前景、主要／次要图标、通用表面、反色、遮罩、轨道、弱化强调与强调边界。登记为 346 项静态定义，其中 208 项非适配层定义；注册表、消费映射和 Storybook 分类同步更新。All tokens 与 Color 分类共用颜色角色清单，避免新增角色只进入注册表而未显示。
+- Alert 与 Badge 新增 success / warning 变体；破坏性 Alert、Button / Badge 迁入 error-muted / on-error。没有将既有信息通知改成成功或警告。浅色成功角色的首轮弱化配对未达 4.5:1，已将新增成功／警告默认值设为既有 green-800 / amber-800，深色用 green-400 / amber-400。Chromium / WebKit 覆盖全部 32 种主题组合，验证状态提示文字与实色 Badge / 破坏性 Button 的指定底色合成对比度均达到 4.5:1；这不是整页无障碍合规结论。
+- Select、菜单、输入附属图标、面包屑、关闭控件、搜索／设置／加载提示和格式工具迁入图标角色。新增回归发现破坏性菜单图标的旧 important 声明压过禁用角色；现只给普通变体设置次要图标色，破坏性图标继承状态前景，禁用角色优先。保留显式图标色及填充按钮内容前景。
+- Dialog / Sheet、属性确认弹窗、Tooltip、Switch、文本选区和属性复选框分别消费 surface、overlay、inverted、track、accent-muted、border-emphasized。默认值保留既有表面、遮罩 80%、深色轨道 80%、选区 22% 和边界色；真实 Portal 的独立覆盖、Tooltip 箭头、Switch 选中与禁用隔离均有浏览器回归。
+- 最终 `pnpm verify:web` 通过，当前共同工作区 UI 1103 项、类型／lint、token／登记、MCP、构建与资源门禁通过；主题／动效／组件浏览器回归 136 项、320px 浅色与 1368px 深色完整 Foundation Docs 回归 2 项通过。Storybook 构建、类型和 lint 通过。保留既有编辑器 Hook、构建 chunk 和 Base UI Collapsible 提示。
+- 字号／字重／行高、圆角公式、动效源文件、外观选项和原生 palette 协议均与本轮修改前比对一致。未做原生真机验收。共同工作区同时存在独立 MCP 权限改动及其测试，保留这些改动，不归为本轮 token 迁移。
+- 首轮 bundle 门禁在共同工作区测得首屏 192935 bytes gzip，超出原 192512 上限；为新增颜色语义明确增加 1 KiB 首屏 gzip 预留，上限改为 193536。最终共同工作区产物为 192997 bytes gzip；该总量包含并行改动，不作为 token 单独增量。JS／CSS 单文件、路由和字体预算保持。未通过删除功能、降低对比度阈值或延长测试超时通过门禁。
+- 日志与冻结值证据保存在 `build/verification/astryx-semantic-colors/`。尚未提交或发布。
+
+
+## Astryx 持续目标第一批：尺寸、边框与阴影 2026-10-22
+
+- 首批新增 31 项公开定义，注册总数 377、非适配层 219。共用 size-element-xs / sm / md / lg 与 size-textarea-min，根字号基准仍为 24 / 32 / 36 / 40 / 64px；普通边框、方向边框、CSS 边线与分隔线读取 1px border-width。显式零宽、其他宽度、组件留白、图标及命中框保持各自职责。
+- 本机编译确认 Astryx bridge 的 --size-* 生成 size-* 而不会生成 h-*，因此另提供 spacing-element-* 映射高度。原类名合并器不识别语义尺寸／内阴影，已登记对应命名；真实控件验证标准类、h-auto、变体和状态内阴影覆盖均有效。
+- low / med / high 默认使用原轻控件、表面与浮层阴影，通过 shadow-sm / md / lg 消费；生产 CSS 读取同一 canonical 层级，旧 control / surface / overlay 名称保留兼容别名。属性确认由旧上游 shadow-lg 采用统一 high；快速记录聚焦与底部悬浮角色保持专用值和时序。五项状态 inset 具备实际消费：输入 hover、data-validation success / warning、aria-invalid error 与 outline Button 的 aria-pressed selected；错误优先、禁用不 hover、输入组单层绘制。
+- 全部 32 种颜色组合的角色与焦点对比度、真实 Portal 阴影、QuickCapture 桌面／移动浮层、按压／禁用隔离与层级覆盖继续检查。新增错误态检查以真实键盘遍历确认 2px / 3px 焦点 outline 与 inset 同时保留；显式 inset-shadow-none 可覆盖默认反馈。首轮对 disabled:pointer-events-none 输入执行普通 hover 被浏览器命中检查拦截，测试改用真实强制指针定位，没有移除生产禁用规则或延长超时。
+- 最终 pnpm verify:web 退出 0：UI 1106 项（69 文件）、MCP、类型／lint、登记／token、构建及资源门禁通过；Storybook 类型、lint、构建通过。主题／动效／密度／组件浏览器回归 177 项，320px 浅色与 1368px 深色完整 Foundation Docs 2 项通过；末次补充错误态键盘断言后，该场景 Chromium / WebKit 两项定向复跑通过（属于上述主题场景，不重复累计）。保留既有编辑器 Hook、大 chunk、MaxListeners 与 Base UI Collapsible 提示。
+- 上游阴影参考表与项目实际映射分开；All tokens 与 Sizing 增加实际语义尺寸，Shape 增加边框预览，兼容阴影别名不重复展示。reserved-token 的负向测试从已迁为别名的旧 overlay 族转到有真实生产消费者的 canonical elevation 族，保留原拒绝条件。
+- 字号／字重／行高、圆角公式、动效源、外观选项、侧栏 JSON 和原生 palette 协议与批次开始逐项比对一致；没有原生真机验收。本批不修改既有并行 MCP 权限实现。
+- 新的度量、默认边框与状态阴影增加共享样式和组件类名成本。原资源门禁触发后，单独登记本批预留：初始 CSS 增加 3 KiB raw，上限 105 KiB；首屏 gzip 增加 1 KiB，上限 190 KiB；共享路由增量增加 6 KiB raw / 1 KiB gzip（叠加原共享预留），各路由基准及字体上限不变。最终初始 CSS 为 107007 bytes，首屏 193922 bytes gzip，所有路由通过。第一次资源失败日志与最终完整门禁日志均保留，不以移除断言或延长超时通过。
+- 证据位于 build/verification/astryx-sizing-elevation/。后续目标仍包括公共多色语义、缺失颜色与 bridge 命名、剩余消费／蓝色按钮对比度、领域接口和主题定义／继承／生成；本批通过不代表总目标完成。尚未提交或发布。
+
+
+## Astryx 持续目标第二批：公共色板、颜色角色与对比度 2026-10-22
+
+- hue CSS 新增十种 Astryx 公共色相与 brown 兼容扩展，每色 background / border / icon / text 四个角色，配套 subtle / ring / icon / vivid 工具类。补齐 on-dark / on-light、tint-hover、shadow、error-inverted 与 border-strong 别名。共新增 99 项定义，当前静态定义 476，非适配层 268；所有上游 64 个 Tailwind 颜色后缀均有对应映射，差集为空。Storybook 的分类页、All tokens 与注册表同步。
+- Tag 前景别名接入公共 hue text，背景仍按原透明度派生；九组默认浅深色及原生 tag-* RGBA 与独立旧值基准一致。Callout 在组件作用域把公共 background / text 绑定至原组件 token，保留与 Tag 不同的默认配色；菜单选择、正文和标题、覆盖及保存数据属性均通过真实编辑器回归。cyan / teal 等公共色相未加入产品保存选项。ring / icon 接口以真实 Badge 和图标验证独立覆盖及对比度，不虚构新业务消费者。
+- 修复原 blue primary 白字约 3.76:1：填充采用 accent-600，白字保持。强调文字和固定图标独立采用浅色 accent-700 / 深色 accent-400，mono 保留原 accent-500。Chromium / WebKit 全部 32 种主题组合验证真实 Button、链接在 body / card / popover 上达到 4.5:1，图标达到 3:1。十一色弱化背景合成后的文字达到 4.5:1，边框／图标达到 3:1。on-inverted 采用固定 on-dark / on-light；深色前景从原 body 变为纯黑。普通 muted 容器诊断继续单列，不降低阈值。
+- tint-hover 继续以原透明度派生 hover / pressed；high 阴影采用项目已有的 color-mix 语法消费 shadow color，默认颜色和几何保持。真实悬停与 Dialog Portal 覆盖已验证。字号／字重／行高源、圆角公式、尺寸、动效源、偏好选项、Callout 数值源、ThemeProvider 与原生 palette 协议源码均与批次开始一致。blue primary 的原生采样随填充修复改变，标签采样与协议字段保持；未进行原生真机验收。
+- 完整 pnpm verify:web 退出 0，UI 1106 项、69 文件，以及 MCP、类型／lint、登记／token、生产构建与资源门禁通过。最终颜色／主题／Callout 浏览器 107 项通过，320px 浅色与 1368px 深色 Foundation Docs 2 项通过；末次明确默认标签类名后的十项色板回归复跑通过，属于前述场景，不重复累计。Storybook 构建、类型和定向 lint 通过。首轮测试修正了过渡期间立即取值、错误导入 waitFor 和 Tailwind 的透明 ring 占位层计数，保留生产过渡、组合阴影和阈值。
+- 公共色板连同所引用的 Tailwind 色阶带来入口 CSS +8632 bytes、初始 gzip +1162 bytes；当前入口 CSS 115639 bytes、初始 gzip 195084 bytes。为这批颜色单独预留 9 KiB raw / 2 KiB gzip，初始 CSS 上限 114 KiB、gzip 上限 192 KiB；共享路由预留累计 27 KiB raw / 5 KiB gzip，各路由原基准、JS 和字体上限不变。完整门禁通过，原失败与逐路由审计日志保留。
+- 证据位于 build/verification/astryx-public-hues/。目标继续保留数据／语法高亮领域接口、主题定义／继承／生成及剩余非颜色接口核对；没有将本批完成当作总目标完成，未提交或发布。并行 MCP 权限改动保持。
+
+
+## Astryx 持续目标第三批：数据、语法与加载边界 2026-10-22
+
+- 新增 56 项 data 语义角色和 19 项 syntax / diff 语义角色，以及对应 75 项 Tailwind 颜色映射；注册总数 626，非适配层 343。固定上游基准 f94e9622941e4997b0d6af7fc717ccc3d5cefaa6 的全部数据角色及浅深值逐项相同，语法公共后缀差集为空。完整模块提供实际 CSS 值、可编译工具类、渲染示例和独立覆盖；不是只登记名称。
+- data.css 按需导入，提供十个分类色、一个中性色和九组五档顺序色。syntax.css 按需导入，提供完整语法与 diff 接口；code.css 单独拥有共用背景，由现有 typeset 加载。Markdown 阅读视图与 RichMarkdownEditor 的 pre 代码块消费新背景角色，浅深色与独立旧表达式基准一致、文本保留且覆盖有效。历史 LiveMarkdownEditor 不在生产依赖图，本批没有修改它，也没有为对齐新增 tokenizer、数据图表或保存选项。
+- 语法关键字适配强调文字，混合 5% 正文；comment / punctuation 混合 8% 正文，新增／删除底色使用原状态弱化色的 25%。第一轮 Chromium 浅色 green 的关键字在新增行背景上为 4.4768:1，已在新增语法角色中修复，未改变上一批产品强调色或降低 4.5:1 阈值。两个浏览器的全部 32 种主题组合逐项检查 15 个前景在普通代码及三种 diff 背景上的合成对比度；56 个数据 SVG fill、九组强度递增、独立覆盖与实际背景绑定均通过。数据系列色不作普通文字 AA 承诺。
+- 注册表新增明确的 optionalStylesheets 入口，关联示例与浏览器验证；生成器验证元数据、源文件与相对导入的所有权，仍拒绝未登记的不可达定义、已在生产加载却伪装为 optional 的来源，以及未知导入。消费索引继续只统计真实生产图。合并 Tailwind 主题用于依赖分析时移除重复 import，因为所有已登记拥有源已逐份纳入；实际独立编译仍解析真实模块导入。十八项 token 测试覆盖旧门禁、这些负向场景、全部 75 个工具类的独立编译，以及仅加载核心／代码背景时不生成 data 与 keyword 类。
+- Storybook 新增 Domain Tokens 分类柱图、强度色阶、代码与 diff 示例；Color 和 All tokens 加入全部领域角色。隔离采样器加载可选模块，确保目录显示真实值而不是继承色回退。320px 浅色与 1368px 深色完整 Foundation Docs 两项通过；Storybook 构建、类型与定向 lint 通过。浏览器新增 RichMarkdownEditor 夹具时发现依赖优化热更新造成 React 上下文错误，已将 Popover 与 react-dom/client 加入预构建后复验，没有延长超时或绕过实际控件。
+- 完整 pnpm verify:web 退出 0，当前共同工作区 UI 1106 项／69 文件、MCP、类型／lint、登记／token、生产构建与资源门禁通过。最终组合主题／颜色／领域／Callout 浏览器 177 项通过；末次补充 diff 背景逐项绑定断言后的领域 70 项复跑通过，属于前述场景，不重复累计。最后加强可选模块导入负向门禁后，token 18 项再次通过。
+- 第一次把所有语法颜色随普通代码块加载时，一条路由 raw 预算超出。改为共用背景与完整高亮模块分开，最终生产 CSS 中没有 data 或 syntax-keyword 定义，仅有轻量代码背景；入口 CSS 仍为 115639 bytes，初始 gzip 195078 bytes，所有路由通过，未更改任何预算。没有新增运行时依赖、字体或产品状态。
+- 主题核心／hue、字号／字重／行高源、动效、圆角及尺寸定义、外观偏好／ThemeProvider、标签／Callout 原值、原生 palette 协议及 bundle 上限与批次开始逐项一致；typeset 的字号、字重、行高、圆角、留白声明一致。没有原生真机验收，独立 MCP 权限／服务改动继续保留。
+- 证据位于 build/verification/astryx-domain-tokens/。目标继续包含主题定义、继承与生成，以及剩余非颜色公共映射的逐项核对；本批通过不表示总目标完成，未提交或发布。
+
+
+## Astryx 持续目标第四批：主题定义、继承与生成核心 2026-10-22
+
+- 新增 defineTheme、生成轴、ThemeStyle 与 ThemeProvider.definition 接入。合并顺序为父主题平面结果 → 本层声明的生成轴 → syntax → 显式 token；子层 color 参数保留父层种子／风格，undefined 不清除继承值。localTokens 按家族继承，定义及轴数据克隆／冻结。生成契约由已登记默认源构建，344 项可写名称、1033 项已知引用；626 项静态 CSS 名称与 13 项偏好／原生输出保持，新增一项主题所有权契约，合计 18 项。
+- 颜色轴沿固定 Astryx 基准的 CIELAB 近似 HCT 算法，保留来源与许可，适配 MemoCard 的现有语义角色；没有增加运行时依赖。七种种子覆盖纯黑、白及高饱和色，standard / high 配对均检查文字 4.5:1、强边界／焦点 3:1。neutral-only 不写入强调角色。显式 token 覆盖不自动重算前景，完整配对采用 color.accent。
+- 排版轴省略 ratio 时沿现有七档比例，base=16 与旧字号／行高一致；角色保留原字重引用与 4px 网格。radius 只生成基准，七种派生公式保留；motion scale=1 保留原值，reduced 与曲线不由缩放轴改写。这些轴仅在显式应用 definition 时生效，默认主入口继续使用原值与用户偏好，未增加设置选项。
+- JSON 构建支持相对 extends、循环检测、自包含 CSS、mtime 保持和 --check 漂移拒绝；运行时与构建共享工厂。ocean 继承 ocean-base，checked-in CSS 纳入 token 测试。工厂拒绝无效 extends、未知字段／token、适配别名、错误形状／数值／引用及通过现有默认表达式产生的环；未静默接受不支持的 Astryx 字段。21 项 Node token／CLI 测试与 22 项新 UI 工厂测试通过，末次补充 null 字体与 undefined 轴参数断言后的 22 项复跑通过。
+- Chromium / WebKit 78 项主题定义检查通过：全部 32 种外观组合中运行时与预编译 CSS 的实际组件样式一致；填充／链接对比度、继承的 local token、组件局部覆盖、实例保留、选择器／style 清理、系统深浅色变化、字体偏好优先、显式字号／圆角／时长生成及真实 Dialog Portal 均验证。原生 IOS_PALETTE_KEYS 30 个字段保持，采样 primary 与真实按钮一致；原生观察增加根主题属性，既有发布回归检查仅改变该属性也会刷新颜色。原生自定义非颜色轴的同步边界继续审计，未进行真机验收。
+- 完整 pnpm verify:web 退出 0，UI 1128 项／70 文件，以及 MCP、类型／lint、登记／token、构建与资源门禁通过。最终 Storybook 构建、类型、定向 lint 和 320px 浅色／1368px 深色 Foundation Docs 两项通过。主题示例 Canvas 使用独立 iframe。首次主题浏览器夹具未加载原生入口拥有的 tag CSS，字段检查明确失败；补齐真实样式依赖后复验，没有删减协议字段或降低阈值。
+- 最初完整契约被 Tailwind 源扫描当作样式表达式，入口 CSS 达 131289 bytes 并触发门禁。已排除生成器／元数据扫描，最终入口 CSS 115710 bytes、初始 gzip 195255 bytes。默认生产依赖图中无完整生成器、HCT 或契约模块；核心样式声明逐项未变。当前路由相对上一批增加 587 raw / 177 gzip bytes，主要为根样式生命周期与原生属性观察；单独增加 1 KiB shared raw 预留，累计 28 KiB raw / 5 KiB gzip，初始、gzip、JS、字体及各路由基准上限保持。原体积失败与逐路由审计保留。
+- 核心／hue CSS、排版源和生成默认、动效、外观／阅读偏好、原生 palette 协议、标签／Callout 原值、portable JSON 与生成 CSS 均与批次开始逐项一致。并行 MCP 权限／服务改动未触碰。证据位于 build/verification/astryx-theme-definition/，尚未提交或发布。
+- 持续目标仍包括运行时工厂进入生产入口后的消费索引审计、自定义非颜色与原生度量的映射边界，以及剩余非颜色桥接差距与最终逐项完成审计；本批通过不代表总目标完成。
+
+
+## Astryx 持续目标第五批：生产集成与最终收口 2026-10-22
+
+- 按固定 f94e9622941e4997b0d6af7fc717ccc3d5cefaa6 基准再次逐项审计：79 个核心颜色角色各有 canonical 定义；64 个 Tailwind 颜色后缀差集为空，3 个 element size、1 个 border、4 个 focus 和 8 个 shadow 角色齐全，data / syntax 为 56 / 19 项。其余 spacing、排版、圆角、时长和主题工厂字段均有实现或有依据的保留结论，见 token-engineering 的边界表。没有把未实现的 Astryx 区域主题、StyleX 组件解释器或字号扩展标为已实现。
+- font-mono 接入 app-font-mono，默认精确保留原 Tailwind 等宽字体栈；显式 code 轴同时设置界面与笔记代码默认，偏好依旧优先。Skeleton 拆出 skeleton-bg，默认继续引用 accent，实际 Skeleton 独立覆盖不改变 state 选中表面。编辑器属性静态边线与块菜单分隔线的两个遗漏已接入 border-width。登记总数为 629 CSS / 345 非适配定义、13 runtime、28 portable、18 owned；生成契约为 346 可写名称、1035 已知引用。
+- 在复制的生产入口真正导入运行时工厂，复现元数据被当作消费者的错误后，将生成契约移入既有 generated 目录；syntax 动态声明通过严格的所有权、表达式和范围契约索引。新回归同时确认真实 reserved 读取、未知引用、缺失／错配／陈旧契约仍失败。隔离入口的消费索引及 Safari 16.4 目标生产构建通过；默认 App 入口与偏好不变，完整生成器仍按需加载。
+- 原生显式圆角经 CSS 计算为 px，复用原 rowRadius 字段；真实浏览器验证 px / rem / calc / 0，百分比回退，默认／仅改颜色时保留既有逻辑点偏好。JS 发布回归检查主题启用、值变化及移除后回退；原 IOS_PALETTE_KEYS 和 NativeSurface 协议未改。NativeSidebar 的 Dynamic Type 与 NativeChrome 平台动效沿原所有权，没有新增原生字段或真机视觉验收。
+- 运行时构建暴露共用代码背景的 @theme 落入懒加载 CSS，已将共用入口移到核心 Tailwind 编译入口。Docs 采样合并为单个 Tailwind CSS 入口，完整 data / syntax 仍可选，生产不包含其完整默认值。最终生产入口 CSS 115848 bytes、初始 gzip 195348 bytes，全部路由通过；本批没有改变任何 bundle 上限。
+- 最终 pnpm verify:web 退出 0：UI 1133 项 / 71 文件，Node token／CLI 23 项，以及 MCP、登记、类型、lint、构建与资源门禁通过。291 项真实浏览器检查覆盖主题、hue、领域配色、动效与相关故事；Storybook 构建、类型和定向 lint 通过，320px 浅色／1368px 深色 Foundation Docs 两项复验通过。新增 Skeleton 首先触发 Docs 定义数量及分组预期失败，已补齐展示和完整预期，没有降低覆盖要求。现有 LiveMarkdownEditor hook lint 与 Base UI 动画提示保留，未扩大本轮修复范围。
+- 从第一次迁移前快照核对主入口、排版源／生成默认、两类偏好、原生 palette 与 NativeSurface、portable JSON 及生成 CSS / TS 共 10 份来源均保持；圆角派生公式不变。本批动效、预算脚本不变，核心主题的变化仅为等宽接口和独立 Skeleton 角色。保护证据、上游逐项映射、原始失败与最终日志位于 build/verification/astryx-integration/。并行 MCP 权限／服务改动未触碰，尚未提交或发布。本轮适用项的持续目标已完成；保留差异不作为暗中扩大字号／几何／平台协议的授权。
+
+
+## Storybook token Docs 优化 2026-10-22
+
+- Docs 根文档和隔离预览的工具栏广播改为读取 Storybook 的 userGlobals，避免把固定 Dark 示例的合并 globals 提升为整个 Docs 的明暗状态。首个真实页面回归复现了工具栏 light、Docs dark；修复后 Default 跟随工具栏，Dark 保持显式深色，主题定义不泄漏到 Docs 根文档。
+- Domain tokens 与 Theme definition 启用现有自动高度机制；实际宽屏 Domain 内容及 iframe 均为 989px，消除原 320px 内部截断。补齐同一个 Tailwind 入口的可选 CSS 导入、领域类名用法、语义类名与底层覆盖入口对照，以及完整 defineTheme 继承和 ThemeProvider 应用代码、预编译 CSS 命令与导入方式。
+- Colors 诊断的选中前景从不存在的 accent-primary 修正为 accent-foreground。Foundation Docs 删除过时的 blue primary 3.761777718 失败预期，继续要求全部验收配对通过，并明确 primary 至少 4.5:1；未降低阈值。
+- 最终 27 项浏览器检查通过：新增两页 Docs 的 320 / 1024px × light / dark 八项，原 Foundation Docs 六项，选定的标准与 Button Docs 字体八项，以及既有示例布局五项。另有八项 Storybook 单元测试通过；Storybook 静态构建、类型、lint、token 生成一致性和设计登记检查通过。此轮未重跑完整 verify:web，也未进行原生真机验收。
+- 首次静态矩阵中的 Foundation 六项已通过；新测试有两项在 iframe 重载瞬间读取空 documentElement 而失败。已改为等待 Docs、Default、Dark 三份文档实际就绪并核对模式，随后八项全部通过；没有延长超时、移除预览或缩减断言。
+- 与本轮开始快照比对，33 份受保护来源（主题、排版、动效、偏好、原生同步和 manager 导航）内容一致；字号、圆角及动效数值、Sizing 导航策略和生产代码保持。本轮没有触碰并行 MCP 权限／服务修改。原始失败、最终日志、源码差异及可见浏览器截图位于 build/verification/astryx-storybook-optimize/，尚未提交或发布。

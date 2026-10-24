@@ -225,10 +225,10 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/components/app-sidebar.tsx",
         "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/name-editor.tsx",
+        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/src/components/nav-actions.tsx",
         "apps/ui/src/components/note-collection.tsx",
         "apps/ui/src/components/note-delete-dialog.tsx",
@@ -584,7 +584,7 @@
       "value": "auto",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/note-collection.tsx",
         "apps/ui/src/components/note-search-dialog.tsx",
@@ -625,10 +625,10 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/NotePreview.tsx",
-        "apps/ui/src/NoteProperties.tsx",
-        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/NoteProperties.core.tsx",
+        "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/src/components/loading-states.tsx"
       ]
     },
@@ -715,7 +715,7 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/DatePropertyPicker.tsx",
+        "apps/ui/src/DatePropertyPicker.core.tsx",
         "apps/ui/src/components/ui/dropdown-menu.tsx",
         "apps/ui/src/components/ui/select.tsx"
       ]
@@ -743,10 +743,10 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/components/app-sidebar.tsx",
         "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/name-editor.tsx",
+        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/src/components/note-collection.tsx",
         "apps/ui/src/components/note-search-dialog.tsx",
         "apps/ui/src/components/quick-capture.tsx",
@@ -769,7 +769,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/components/app-sidebar.tsx",
         "apps/ui/src/components/note-search-dialog.tsx",
         "apps/ui/src/components/ui/sidebar.tsx"
@@ -781,7 +781,7 @@
       "value": "3",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/components/name-editor.tsx",
+        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/src/components/note-search-dialog.tsx"
       ]
     },
@@ -826,8 +826,8 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/ChoicePropertyEditor.tsx",
-        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/ChoicePropertyEditor.core.tsx",
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/note-collection.tsx",
         "apps/ui/src/components/note-search-dialog.tsx",
@@ -966,7 +966,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/ImagePropertyEditor.tsx",
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/components/tag-emoji-picker.tsx",
         "apps/ui/src/components/ui/input-group.tsx"
       ]
@@ -996,7 +996,7 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/TagPropertyEditor.tsx",
+        "apps/ui/src/TagPropertyEditor.core.tsx",
         "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/note-search-dialog.tsx",
         "apps/ui/src/components/trash-page.tsx"
@@ -1010,7 +1010,7 @@
         "apps/ui/src/components/emoji-picker-panel.tsx",
         "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/mobile-tag-actions.tsx",
-        "apps/ui/src/components/name-editor.tsx",
+        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/src/components/note-collection.tsx",
         "apps/ui/src/components/tag-emoji-picker.tsx",
         "apps/ui/src/components/ui/sidebar.tsx"
@@ -1033,7 +1033,7 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/src/components/app-sidebar.tsx",
         "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/note-collection.tsx",
@@ -1061,9 +1061,9 @@
       "value": "3",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/ChoicePropertyEditor.tsx",
+        "apps/ui/src/ChoicePropertyEditor.core.tsx",
         "apps/ui/src/NoteImage.tsx",
-        "apps/ui/src/components/name-editor.tsx",
+        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/src/components/note-search-dialog.tsx",
         "apps/ui/src/components/tag-editor.tsx",
         "apps/ui/src/components/tag-emoji-picker.tsx",
@@ -1136,8 +1136,8 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/NoteProperties.tsx",
-        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/NoteProperties.core.tsx",
+        "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/src/components/app-sidebar.tsx",
         "apps/ui/src/components/ui/input-group.tsx",
         "apps/ui/src/components/ui/input.tsx",
@@ -1150,7 +1150,7 @@
       "step": "1.5",
       "value": "1.5",
       "consumers": [
-        "apps/ui/src/PropertyOptionMenu.tsx",
+        "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/src/components/ui/dropdown-menu.tsx",
         "apps/ui/src/components/ui/input-group.tsx",
         "apps/ui/src/components/ui/select.tsx",
@@ -1303,9 +1303,9 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/App.tsx",
-        "apps/ui/src/NoteProperties.tsx",
+        "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/name-editor.tsx",
+        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/src/components/note-search-dialog.tsx"
       ]
     },

@@ -1807,3 +1807,14 @@ it('closes mobile link layers without opening the format sheet and returns to th
  expect(editor.state.selection.from).toBe(1);expect(editor.state.selection.to).toBe(3);
  await user.click(screen.getByRole('button',{name:'更多格式'}));expect(await screen.findByRole('dialog',{name:'更多格式'})).toBeTruthy();
 });
+
+it('closes an open block menu when editing is disabled and refuses its stale delete action',async()=>{
+ const original='待保存内容';
+ const {editor,change,rerender}=await setup(original);
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
+ const remove=await screen.findByRole('menuitem',{name:'删除'});
+ rerender(<RichMarkdownEditor value={original} disabled notePath="notes/a.md" onChange={change} onSave={vi.fn()} onError={vi.fn()}/>);
+ fireEvent.click(remove);
+ expect(editor.getText()).toBe(original);expect(change).not.toHaveBeenCalled();
+ expect(screen.queryByRole('menu',{name:'内容块操作菜单'})).toBeNull();
+});

@@ -1,0 +1,479 @@
+[
+  {
+    "state": "expanded-default-new",
+    "value": {
+      "bodyBg": "rgb(255, 255, 255)",
+      "calendar": {
+        "align": "left",
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.708 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20.0004px",
+        "padding": "6px 8px",
+        "textGap": null,
+        "weight": "400"
+      },
+      "filter": {
+        "align": "left",
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.145 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20.0004px",
+        "padding": "6px 32px 6px 8px",
+        "textGap": 8,
+        "weight": "400"
+      },
+      "home": {
+        "align": "left",
+        "bg": "oklch(0.97 0 none)",
+        "color": "oklch(0.145 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20.0004px",
+        "padding": "6px 8px",
+        "textGap": null,
+        "weight": "500"
+      },
+      "sidebarBg": "oklch(0.985 0 none)",
+      "trigger": {
+        "align": "center",
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.145 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20px",
+        "padding": "0px",
+        "textGap": null,
+        "weight": "500"
+      }
+    }
+  },
+  {
+    "state": "expanded-default-old",
+    "value": {
+      "bodyBg": "rgb(255, 255, 255)",
+      "calendar": {
+        "align": "left",
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.708 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20.0004px",
+        "padding": "6px 8px",
+        "textGap": null,
+        "weight": "400"
+      },
+      "filter": {
+        "align": "center",
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.145 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20.0004px",
+        "padding": "6px 32px 6px 8px",
+        "textGap": 8,
+        "weight": "400"
+      },
+      "home": {
+        "align": "left",
+        "bg": "oklab(0.269 0 0 / 0.06)",
+        "color": "oklch(0.205 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20.0004px",
+        "padding": "6px 8px",
+        "textGap": null,
+        "weight": "500"
+      },
+      "sidebarBg": "oklch(0.985 0 none)",
+      "trigger": {
+        "align": "center",
+        "bg": "rgba(0, 0, 0, 0)",
+        "color": "oklch(0.145 0 none)",
+        "fontSize": "14px",
+        "height": 32,
+        "lineHeight": "20.0004px",
+        "padding": "0px",
+        "textGap": null,
+        "weight": "500"
+      }
+    }
+  },
+  {
+    "state": "hover-new",
+    "value": {
+      "aria": null,
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "oklch(0.145 0 none)",
+      "height": 32,
+      "image": "none",
+      "parentBg": "oklch(0.97 0 none)",
+      "parentImage": "none",
+      "weight": "400"
+    }
+  },
+  {
+    "state": "hover-old",
+    "value": {
+      "aria": null,
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "oklch(0.205 0 none)",
+      "height": 32,
+      "image": "none",
+      "parentBg": "rgb(255, 255, 255)",
+      "parentImage": "linear-gradient(oklab(0.269 0 0 / 0.06), oklab(0.269 0 0 / 0.06))",
+      "weight": "400"
+    }
+  },
+  {
+    "state": "selected-nested-new",
+    "value": {
+      "aria": "page",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "oklch(0.145 0 none)",
+      "height": 32,
+      "image": "none",
+      "parentBg": "oklch(0.97 0 none)",
+      "parentImage": "none",
+      "weight": "500"
+    }
+  },
+  {
+    "state": "selected-nested-old",
+    "value": {
+      "aria": "page",
+      "bg": "rgba(0, 0, 0, 0)",
+      "color": "oklch(0.205 0 none)",
+      "height": 32,
+      "image": "none",
+      "parentBg": "rgb(255, 255, 255)",
+      "parentImage": "linear-gradient(oklab(0.269 0 0 / 0.06), oklab(0.269 0 0 / 0.06))",
+      "weight": "500"
+    }
+  },
+  {
+    "state": "keyboard-focus-new",
+    "value": {
+      "clips": [
+        {
+          "left": 0,
+          "overflow": "auto",
+          "right": 255,
+          "tag": "no-scrollbar flex min-h-0 flex-1 flex-col gap-2 overflow-auto [--radius:var(--radius-container)] group-data-[collapsible=icon]:overflow-hidden"
+        },
+        {
+          "left": 0,
+          "overflow": "hidden",
+          "right": 1280,
+          "tag": "group/sidebar-wrapper flex min-h-svh w-full has-data-[variant=inset]:bg-sidebar web-app-shell"
+        }
+      ],
+      "focused": true,
+      "offset": "3px",
+      "outline": "oklch(0.556 0 none) solid 2px",
+      "right": 247,
+      "visible": true
+    }
+  },
+  {
+    "state": "keyboard-focus-old",
+    "value": {
+      "clips": [
+        {
+          "left": 0,
+          "overflow": "auto",
+          "right": 255,
+          "tag": "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden"
+        },
+        {
+          "left": 0,
+          "overflow": "hidden",
+          "right": 1280,
+          "tag": "group/sidebar-wrapper flex w-full has-data-[variant=inset]:bg-sidebar h-dvh min-h-0 overflow-hidden bg-body pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)] text-primary"
+        }
+      ],
+      "focused": true,
+      "offset": "3px",
+      "outline": "oklch(0.371 0 none) solid 2px",
+      "right": 247,
+      "visible": true
+    }
+  },
+  {
+    "state": "dark-default-new",
+    "body": "oklch(0.145 0 none)",
+    "row": {
+      "background": "rgba(0, 0, 0, 0)",
+      "height": 32,
+      "weight": "400"
+    },
+    "sidebar": "oklch(0.205 0 none)",
+    "trigger": {
+      "background": "rgba(0, 0, 0, 0)",
+      "hover": false,
+      "rect": {
+        "bottom": 44,
+        "height": 32,
+        "left": 215,
+        "right": 247,
+        "top": 12,
+        "width": 32,
+        "x": 215,
+        "y": 12
+      }
+    }
+  },
+  {
+    "state": "dark-default-old",
+    "body": "oklch(0.145 0 none)",
+    "row": {
+      "background": "rgba(0, 0, 0, 0)",
+      "height": 32,
+      "weight": "400"
+    },
+    "sidebar": "oklch(0.205 0 none)",
+    "trigger": {
+      "background": "rgba(0, 0, 0, 0)",
+      "hover": false,
+      "rect": {
+        "bottom": 44,
+        "height": 32,
+        "left": 215,
+        "right": 247,
+        "top": 12,
+        "width": 32,
+        "x": 215,
+        "y": 12
+      }
+    }
+  },
+  {
+    "state": "h5-vault-old",
+    "close": {
+      "bottom": 555,
+      "height": 36,
+      "left": 338,
+      "right": 374,
+      "top": 519,
+      "width": 36,
+      "x": 338,
+      "y": 519
+    },
+    "font": "16px",
+    "height": 48,
+    "icon": 20
+  },
+  {
+    "state": "h5-vault-new",
+    "close": {
+      "bottom": 699,
+      "height": 36,
+      "left": 338,
+      "right": 374,
+      "top": 663,
+      "width": 36,
+      "x": 338,
+      "y": 663
+    },
+    "font": "16px",
+    "height": 48,
+    "icon": 20
+  },
+  {
+    "state": "settings-seven-changes",
+    "accent": "oklch(80.9% .105 251.813)",
+    "body": {
+      "flow": "0px",
+      "font": "\"Lora Variable\", \"Songti SC\", STSong, serif",
+      "line": "34.2px",
+      "size": "18px"
+    },
+    "heading": "\"Inter Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+    "mono": "\"JetBrains Mono Variable\", SFMono-Regular, \"SF Mono\", \"PingFang SC\", ui-monospace, monospace",
+    "neutral": "slate",
+    "overflow": 390,
+    "ui": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+    "viewport": 390,
+    "width": "504px"
+  },
+  {
+    "state": "production-after-reload",
+    "controls": [
+      {
+        "label": "主题",
+        "value": "dark"
+      },
+      {
+        "label": "强调色",
+        "value": "blue"
+      },
+      {
+        "label": "中性色",
+        "value": "slate"
+      },
+      {
+        "label": "标题字体",
+        "value": "inter"
+      },
+      {
+        "label": "正文字体",
+        "value": "geist"
+      },
+      {
+        "label": "圆角",
+        "value": "large"
+      },
+      {
+        "label": "行宽",
+        "value": "60"
+      },
+      {
+        "label": "笔记标题字体",
+        "value": "inter"
+      },
+      {
+        "label": "笔记正文字体",
+        "value": "lora"
+      },
+      {
+        "label": "笔记等宽字体",
+        "value": "jetbrains-mono"
+      },
+      {
+        "label": "字号",
+        "value": "18"
+      },
+      {
+        "label": "行高",
+        "value": "1.9"
+      },
+      {
+        "label": "段落间距",
+        "value": "2em"
+      }
+    ],
+    "neutral": "slate",
+    "palette": "blue",
+    "radius": "0.875rem",
+    "ui": "\"Geist Variable\", \"Noto Sans SC Variable\", -apple-system, \"system-ui\", \"Segoe UI\", sans-serif",
+    "values": {
+      "body": "\"Lora Variable\", \"Songti SC\", STSong, serif",
+      "flow": "36px",
+      "heading": "\"Inter Variable\", \"PingFang SC\", \"Noto Sans SC\", system-ui, sans-serif",
+      "leading": "34.2px",
+      "mono": "\"JetBrains Mono Variable\", SFMono-Regular, \"SF Mono\", \"PingFang SC\", ui-monospace, monospace",
+      "size": "18px",
+      "width": "504px"
+    }
+  },
+  {
+    "state": "h5-tabs-final-320",
+    "bg": "oklch(0.97 0 none)",
+    "client": 60,
+    "list": {
+      "bottom": 308,
+      "height": 52,
+      "left": 16,
+      "right": 296,
+      "top": 256,
+      "width": 280,
+      "x": 16,
+      "y": 256
+    },
+    "outer": {
+      "bottom": 312,
+      "height": 60,
+      "left": 12,
+      "right": 300,
+      "top": 252,
+      "width": 288,
+      "x": 12,
+      "y": 252
+    },
+    "pageWidth": 320,
+    "scroll": 60,
+    "tabs": [
+      {
+        "after": "none",
+        "focus": false,
+        "offset": "0px",
+        "outline": "3px",
+        "rect": {
+          "bottom": 304,
+          "height": 44,
+          "left": 20,
+          "right": 156,
+          "top": 260,
+          "width": 136,
+          "x": 20,
+          "y": 260
+        },
+        "selected": "false"
+      },
+      {
+        "after": "none",
+        "focus": true,
+        "offset": "2.5px",
+        "outline": "2px",
+        "rect": {
+          "bottom": 304,
+          "height": 44,
+          "left": 156,
+          "right": 292,
+          "top": 260,
+          "width": 136,
+          "x": 156,
+          "y": 260
+        },
+        "selected": "true"
+      }
+    ]
+  },
+  {
+    "state": "desktop-inline-tag-suggestion",
+    "formZ": "10",
+    "hit": true,
+    "rect": {
+      "bottom": 557.5,
+      "height": 32,
+      "left": 554.6796875,
+      "right": 784.6796875,
+      "top": 525.5,
+      "width": 230,
+      "x": 554.6796875,
+      "y": 525.5
+    }
+  },
+  {
+    "state": "h5-tag-editor-drag",
+    "distance": 180,
+    "closed": true,
+    "focusReturned": "标签操作 生活/咖啡"
+  },
+  {
+    "state": "h5-tree-icon-final",
+    "opacity": 1,
+    "widths": [
+      320,
+      390
+    ]
+  },
+  {
+    "state": "h5-vault-fixed-final-390",
+    "menuWidth": 358,
+    "listContentWidth": 358,
+    "menuHeight": 50,
+    "font": 16,
+    "icon": 20,
+    "headerClose": 36
+  },
+  {
+    "state": "browser-story-outcomes",
+    "nestedAlignmentDesktop": true,
+    "nestedAlignmentMobile320": true,
+    "mobileVaultGeometry320": true,
+    "mobileVaultGeometry390": true
+  }
+]

@@ -5,7 +5,7 @@ import postcss from 'postcss';
 import { createRequire } from 'node:module';
 import { checkTokenConsumption } from './check-token-consumption.mjs';
 import { productionGraph } from './check-design-inventory.mjs';
-import { collectTokenConsumers } from './token-consumers.mjs';
+import { collectTokenConsumers, inspectConsumerText } from './token-consumers.mjs';
 
 const repository = fileURLToPath(new URL('../', import.meta.url));
 const categories = ['color', 'typography', 'spacing', 'sizing', 'shape', 'effects', 'layering', 'motion', 'responsive'];
@@ -169,8 +169,39 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
   }
   const registered = new Set([...documents.keys(), ...registry.generatedSources].map(path => resolve(root, path)));
   const graph = await productionGraph(root), reached = await reachableCSS(root, graph);
+  const producerKeys = new Set();
+  for (const producer of registry.dynamicProducers ?? []) {
+    const owner = registry.owned.find(entry => entry.id === producer.contract);
+    const key = `${producer.source}:${producer.expression}`;
+    if (!owner?.sources.includes(producer.source) || producerKeys.has(key)
+      || typeof producer.expression !== 'string' || !/^`--[a-z-]+\$\{[a-zA-Z]+\}`$/.test(producer.expression)
+      || typeof producer.pattern !== 'string' || !producer.pattern.startsWith('^--') || !producer.pattern.endsWith('$')
+      || !records.some(record => new RegExp(producer.pattern).test(record.name))) throw new Error('Invalid dynamic producer contract.');
+    const inferred = inspectConsumerText(producer.expression, new Set(records.map(record => record.name)));
+    const declared = records.filter(record => new RegExp(producer.pattern).test(record.name)).map(record => record.name).sort();
+    if (JSON.stringify(inferred) !== JSON.stringify(declared)) throw new Error('Dynamic producer pattern does not match its output expression.');
+    const code = await readFile(resolve(root, producer.source), 'utf8');
+    if (code.split(producer.expression).length !== 2) throw new Error(`Stale dynamic producer contract: ${producer.source}`);
+    producerKeys.add(key);
+  }
+  const optional = registry.optionalStylesheets ?? [];
+  if (!Array.isArray(optional)) throw new Error('Invalid optional stylesheet entries.');
+  const optionalPaths = new Set();
+  for (const entry of optional) {
+    if (!entry || typeof entry.source !== 'string' || !entry.source.endsWith('.css') || !documents.has(entry.source)
+      || typeof entry.example !== 'string' || typeof entry.verification !== 'string'
+      || !entry.example.endsWith('.tsx') || !entry.verification.endsWith('.browser.tsx')
+      || optionalPaths.has(resolve(root, entry.source))) throw new Error('Invalid optional stylesheet entry.');
+    for (const path of [entry.source, entry.example, entry.verification]) await checkSourcePath(resolve(root, path));
+    if (reached.has(resolve(root, entry.source))) throw new Error(`Optional stylesheet is already production-reachable: ${entry.source}`);
+    postcss.parse(documents.get(entry.source)).walkAtRules('import', rule => {
+      const target = rule.params.match(/^["']([^"']+)["']/)?.[1];
+      if (!target?.startsWith('.') || !registered.has(resolve(root, dirname(entry.source), target))) throw new Error(`Unregistered optional CSS import: ${entry.source} ${rule.params}`);
+    });
+    optionalPaths.add(resolve(root, entry.source));
+  }
   const ownedSources = new Set(registry.owned.flatMap(entry => entry.sources).map(path => resolve(root, path)));
-  for (const source of documents.keys()) if (!reached.has(resolve(root, source))) throw new Error(`Unreachable token CSS: ${source}`);
+  for (const source of documents.keys()) if (!reached.has(resolve(root, source)) && !optionalPaths.has(resolve(root, source))) throw new Error(`Unreachable token CSS: ${source}`);
   for (const source of reached) if (!registered.has(source) && !ownedSources.has(source)) throw new Error(`Unowned production stylesheet: ${relative(root, source)}`);
   for (const entry of registry.runtimeSources) if (!graph.has(entry.source) && !(entry.format === 'swift-javascript' && /^apps\/apple\/Sources\/[^/]+\.swift$/.test(entry.source))) throw new Error(`Unreachable runtime token writer: ${entry.source}`);
   for (const path of await cssFiles(resolve(root, 'apps/ui/src'))) if (!registered.has(path)) checkPublicPlacement(await readFile(path, 'utf8'), relative(root, path));
@@ -206,6 +237,10 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
     '| 名称 | 类别与层级 | 类型与状态 | 默认表达式 | 后续声明数 | 权威来源 |',
     '| --- | --- | --- | --- | ---: | --- |',
     ...records.map(record => `| \`${record.name}\` | ${record.family.category} / ${record.family.layer} | ${record.family.type} / ${record.family.status} | \`${cell(record.declarations[0].value)}\` | ${record.declarations.length - 1} | ${link(record.family.source)} |`), '',
+    '## 可选 CSS 模块', '',
+    '这些模块提供完整默认值和工具类接口，按需导入，不计作生产依赖图的既有消费者。必须显式登记示例与浏览器验证；未登记来源仍受导入可达性检查。', '',
+    '| 入口 | 渲染示例 | 浏览器验证 |', '| --- | --- | --- |',
+    ...optional.map(entry => `| ${link(entry.source)} | ${link(entry.example)} | ${link(entry.verification)} |`), '',
     '## 运行时输出（偏好与原生安全区）', '',
     'Web 偏好默认选项、校验和存储由 preferences 拥有；数值转换与派生公式由输出源码拥有。与静态 CSS 同名的字体项为明确的偏好覆盖。原生安全区由 WebView 的 scrollInsets 写入，消费端 CSS 以 0px 回退。检查静态字符串键和 setProperty 的字面量参数，Swift 只提取 callAsyncJavaScript 的普通字符串，不解释任意动态代码。', '',
     '| 名称 | 类型与单位 | 契约 | 默认或回退来源 | 输出与派生 |', '| --- | --- | --- | --- | --- |',
@@ -241,7 +276,7 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
   const catalog = JSON.stringify({
     version: registry.version,
     css: records.map(({ name, family, declarations }) => ({ name, ...family, declarations })),
-    runtime, portable, owned: registry.owned,
+    runtime, portable, owned: registry.owned, optionalStylesheets: optional,
     external: (registry.externalSources ?? []).flatMap(entry => Object.entries(entry.tokens).map(([name, metadata]) => ({ name, ...metadata, contract: entry.contract, source: entry.source }))),
   }, null, 2) + '\n';
   const catalogPath = destination.replace(/\.md$/, '.json');

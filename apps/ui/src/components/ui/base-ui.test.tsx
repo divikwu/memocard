@@ -65,7 +65,6 @@ it("styles disabled switches using their Base UI state attribute", () => {
   const control = screen.getByRole("switch", { name: "禁用" });
   expect(control.hasAttribute("data-disabled")).toBe(true);
   expect(control.matches(":disabled")).toBe(false);
-  expect(control.classList.contains("data-[disabled]:opacity-50")).toBe(true);
   expect(control.classList.contains("data-[disabled]:cursor-not-allowed")).toBe(true);
 });
 

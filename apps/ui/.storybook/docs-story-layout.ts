@@ -2,8 +2,14 @@
 export function observeDocsStoryLayout(frame: HTMLIFrameElement, { autoHeight, centered }: { autoHeight: boolean; centered: boolean }) {
   let observer: ResizeObserver | undefined;
   let restoreLayout: (() => void) | undefined;
+  let pendingResize: number | undefined;
+  const cancelResize = () => {
+    if (pendingResize !== undefined) cancelAnimationFrame(pendingResize);
+    pendingResize = undefined;
+  };
   const observeContent = () => {
     observer?.disconnect();
+    cancelResize();
     restoreLayout?.();
     restoreLayout = undefined;
     const content = frame.contentDocument;
@@ -33,11 +39,20 @@ export function observeDocsStoryLayout(frame: HTMLIFrameElement, { autoHeight, c
       if (!autoHeight) return;
     }
     const resize = () => {
+      if (frame.contentDocument !== content) return;
       const body = view.getComputedStyle(content.body);
-      frame.style.height = `${Math.ceil(root.getBoundingClientRect().height + parseFloat(body.paddingTop) + parseFloat(body.paddingBottom))}px`;
+      const height = `${Math.ceil(root.getBoundingClientRect().height + parseFloat(body.paddingTop) + parseFloat(body.paddingBottom))}px`;
+      if (frame.style.height !== height) frame.style.height = height;
     };
     // body/html can fill the iframe; measure the root's natural content height.
-    observer = new ResizeObserver(resize);
+    // Defer writes outside observer delivery, as iframe height changes its viewport.
+    observer = new ResizeObserver(() => {
+      if (pendingResize !== undefined) return;
+      pendingResize = requestAnimationFrame(() => {
+        pendingResize = undefined;
+        resize();
+      });
+    });
     observer.observe(root);
     resize();
   };
@@ -45,6 +60,7 @@ export function observeDocsStoryLayout(frame: HTMLIFrameElement, { autoHeight, c
   observeContent();
   return () => {
     observer?.disconnect();
+    cancelResize();
     restoreLayout?.();
     frame.removeEventListener("load", observeContent);
   };

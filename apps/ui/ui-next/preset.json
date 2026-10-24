@@ -1,0 +1,27 @@
+{
+  "code": "b5F2gjwQRE",
+  "version": "b",
+  "values": {
+    "menuColor": "default",
+    "menuAccent": "subtle",
+    "radius": "medium",
+    "font": "noto-sans",
+    "iconLibrary": "hugeicons",
+    "theme": "neutral",
+    "baseColor": "neutral",
+    "style": "luma",
+    "chartColor": "sky",
+    "fontHeading": "noto-serif"
+  },
+  "derived": [],
+  "url": "https://ui.shadcn.com/create?preset=b5F2gjwQRE",
+  "base": "base",
+  "template": "vite",
+  "pointer": true,
+  "projectOverrides": {
+    "radius": "0.5rem",
+    "fontHeading": "inherit",
+    "contrast": "Secondary text neutral-500 light / neutral-400 dark; control auxiliary text neutral-600 light / neutral-400 dark; focus neutral-500 light / neutral-400 dark; controls use the Luma fill and transparent boundary through semantic tokens. Meaningful state colors retain semantic contrast constraints."
+  },
+  "upstreamRegistry": "https://ui.shadcn.com/init?base=base&style=luma&baseColor=neutral&theme=neutral&chartColor=sky&iconLibrary=hugeicons&font=noto-sans&fontHeading=noto-serif&radius=medium&menuColor=default&menuAccent=subtle&preset=b5F2gjwQRE&pointer=true"
+}

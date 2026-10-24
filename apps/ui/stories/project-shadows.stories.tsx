@@ -75,7 +75,7 @@ export const Default: Story = {
     // Changing each role must reach every affected consumer, including the portal.
     const root = document.documentElement;
     const sentinel = "0 7px 13px rgb(18 52 86 / 70%)";
-    const names = ["--surface-shadow", "--surface-focus-shadow", "--control-shadow", "--floating-control-shadow"];
+    const names = ["--shadow-med", "--surface-focus-shadow", "--shadow-low", "--floating-control-shadow"];
     try {
       for (const name of names) root.style.setProperty(name, sentinel);
       for (const element of [group, loading, ...cards, canvas.getByRole("button", { name: "导航阴影" }), canvas.getByRole("button", { name: "搜索全部笔记" }), canvas.getByRole("button", { name: "打开快速记录" })]) await check(element, sentinel);

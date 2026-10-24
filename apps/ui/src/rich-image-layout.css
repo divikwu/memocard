@@ -1,7 +1,7 @@
 .rich-image { position: relative; min-width: 0; width: fit-content; max-width: 100%; }
 .typeset figure[data-image-columns] .rich-image { width: 100%; }
 .rich-editor-content figure[data-image-columns] .rich-image { margin-block: 0; }
-.rich-image-tools { position: absolute; top: 8px; right: 8px; z-index: 2; display: flex; border: 1px solid var(--border); border-radius: 6px; background: var(--popover); color: var(--popover-foreground); opacity: 0; }
+.rich-image-tools { position: absolute; top: 8px; right: 8px; z-index: 2; display: flex; border: var(--border-width) solid var(--border); border-radius: 6px; background: var(--popover); color: var(--popover-foreground); opacity: 0; }
 .rich-image-tools > button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 5px; }
 .rich-image-tools > button:hover { background: var(--hover-bg); }
 .rich-image-tools:focus-within, .rich-image-tools[data-open] { opacity: 1; }
@@ -10,7 +10,7 @@
 .rich-image-column-controls { position: absolute; inset: 0; pointer-events: none; }
 .rich-image-column-resize { position: absolute; top: 0; bottom: 0; width: 24px; transform: translateX(-50%); pointer-events: auto; cursor: col-resize; touch-action: none; background: transparent; }
 .rich-image-column-resize::after { content: ''; position: absolute; top: 8px; bottom: 8px; left: 11px; width: 2px; border-radius: 2px; background: var(--muted-foreground); opacity: 0; }
-.rich-image-column-resize:focus-visible::after, .rich-image-column-resize:active::after { opacity: 1; background: var(--ring); }
+.rich-image-column-resize:focus-visible::after, .rich-image-column-resize:active::after { opacity: 1; background: var(--focus-outline-color); }
 .rich-image-drop-guide { position: fixed; z-index: 70; pointer-events: none; border-radius: 2px; background: var(--ring); }
 .rich-image-dragging { opacity: .2; }
 @media (hover: hover) and (pointer: fine) {

@@ -7,7 +7,7 @@
 .trash-card { position: relative; }
 .trash-item-open { position: absolute; inset: 0; border: 0; border-radius: inherit; padding: 0; background: transparent; cursor: pointer; outline: none; }
 .trash-item-open:disabled { cursor: default; }
-.trash-item-open:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.trash-item-open:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .trash-item-content { min-width: 0; display: grid; gap: 8px; }
 .trash-item-actions { position: relative; z-index: 1; flex-shrink: 0; flex-wrap: wrap; }
 .trash-empty { display: grid; justify-items: center; gap: 12px; padding: 48px 24px; text-align: center; }
