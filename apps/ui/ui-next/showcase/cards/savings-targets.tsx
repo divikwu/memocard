@@ -28,11 +28,21 @@ import {
   ItemFooter,
   ItemGroup,
 } from "@ui-next/components/item"
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@ui-next/components/native-select"
 import { Progress } from "@ui-next/components/progress"
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ui-next/components/select"
+
+const ORDER_TYPES = [
+  { label: "Market Order", value: "market" },
+  { label: "Limit Order", value: "limit" },
+  { label: "Stop Order", value: "stop" },
+]
 
 export function SavingsTargets() {
   return (
@@ -112,15 +122,20 @@ export function SavingsTargets() {
             </Field>
             <Field>
               <FieldLabel htmlFor="invest-type">Order Type</FieldLabel>
-              <NativeSelect id="invest-type" defaultValue="market">
-                <NativeSelectOption value="market">
-                  Market Order
-                </NativeSelectOption>
-                <NativeSelectOption value="limit">
-                  Limit Order
-                </NativeSelectOption>
-                <NativeSelectOption value="stop">Stop Order</NativeSelectOption>
-              </NativeSelect>
+              <Select items={ORDER_TYPES} defaultValue="market">
+                <SelectTrigger id="invest-type" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {ORDER_TYPES.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
               <FieldDescription>
                 Market orders execute at the current price.
               </FieldDescription>

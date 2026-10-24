@@ -7,7 +7,7 @@ export const additionalComponentDocs: Record<AdditionalComponentKey, AdditionalC
   accordion: {
     key: "accordion", name: "Accordion", description: "将一组说明组织为可展开的面板。Base UI 管理展开状态、触发器与内容关联，Luma 封装提供边框、图标和过渡。",
     anatomy: ["Accordion：维护展开项的值数组。", "AccordionItem：用唯一 value 标识一个面板。", "AccordionTrigger / AccordionContent：面板标题按钮与对应内容。"],
-    practices: ["标题应在收起时也能说明内容。", "比较多个面板时使用 multiple；简短的必要说明可直接显示。", "每项使用稳定且唯一的 value。"],
+    practices: ["标题应在收起时也能说明内容。分组外框与内部横线使用 border-divider：浅色 black / 8%，深色 white / 10%。", "比较多个面板时使用 multiple；简短的必要说明可直接显示。", "每项使用稳定且唯一的 value。"],
     props: [
       { name: "value / defaultValue", type: "unknown[]", description: "Accordion 属性：受控展开项或初始展开项；单项模式同样使用数组。" },
       { name: "onValueChange", type: "(value: unknown[], eventDetails) => void", description: "Accordion 属性：展开项变更回调。" },
@@ -144,7 +144,7 @@ function CheckboxField() {
   combobox: {
     key: "combobox", name: "Combobox", description: "将可搜索输入与选项列表组合。Base UI 处理过滤、活动选项、选择和键盘操作，Luma 封装提供输入组与弹层样式。",
     anatomy: ["Combobox：数据项与选择状态。", "ComboboxInput：可编辑输入、下拉触发器与可选清除按钮。", "ComboboxContent / List / Item / Empty：弹层、候选项和无结果状态。"],
-    practices: ["为字段提供可见名称和能理解的选项文字。", "少量且无需搜索的选项可使用 Select。", "输入清空、无结果和已选择状态都应有明确反馈。"],
+    practices: ["为字段提供可见名称和能理解的选项文字。", "弹层需要和完整输入组等宽时，用 useComboboxAnchor 绑定输入组外层，并传给 ComboboxContent.anchor，使尺寸和定位跟随容器。", "少量且无需搜索的选项可使用 Select。", "输入清空、无结果和已选择状态都应有明确反馈。"],
     props: [
       { name: "Combobox.items", type: "readonly Value[]", description: "Base UI 属性：候选项数据；对象项需要配置对应的字符串转换方式。" },
       { name: "Combobox.value / defaultValue", type: "Value | null（单选）/ readonly Value[]（多选）", description: "Base UI 属性：受控值或初始选择；多选在根组件设置 multiple，使用值数组。" },
@@ -224,7 +224,7 @@ function NameField() {
   },
   "input-group": {
     key: "input-group", name: "Input Group", description: "把输入与图标、前后缀或附加操作放入共同边框。输入值由原生控件管理，装饰与操作通过 Addon 明确分工。",
-    anatomy: ["InputGroup：共享边框与焦点样式的分组。", "InputGroupInput / InputGroupTextarea：输入控件。", "InputGroupAddon / Text / Button：前后缀、说明与附加操作。"],
+    anatomy: ["InputGroup：共享边框与焦点样式的分组；单行为全圆角，包含 textarea 时为 12px 圆角（None 时 0px），内部输入不重复绘制圆角。", "InputGroupInput / InputGroupTextarea：输入控件。", "InputGroupAddon / Text / Button：前后缀、说明与附加操作。"],
     practices: ["继续为输入提供外部 Label；图标不能代替字段名称。", "附加动作使用 InputGroupButton，装饰图标隐藏于辅助技术。", "提交按钮显式设置 type=submit，其余操作保留 button 类型。"],
     props: [
       { name: "InputGroupAddon.align", type: '"inline-start" | "inline-end" | "block-start" | "block-end"', defaultValue: "inline-start", description: "封装属性：前后缀相对输入的排列位置。" },
@@ -367,7 +367,7 @@ function DensityField() {
   separator: {
     key: "separator", name: "Separator", description: "在相关内容组之间建立视觉与语义分隔。Base UI Separator 提供方向与分隔语义，Luma 封装提供细线样式。",
     anatomy: ["Separator：分隔节点。", "orientation：水平或垂直方向。", "className：长度与局部布局。"],
-    practices: ["仅在内容分组确实需要时使用。", "垂直分隔需要有明确高度的容器。", "仅为装饰的线条可使用 aria-hidden。"],
+    practices: ["仅在内容分组确实需要时使用。默认颜色使用 bg-divider（--color-divider）：浅色 black / 8%，深色 white / 10%。", "垂直分隔需要有明确高度的容器。", "仅为装饰的线条可使用 aria-hidden。"],
     props: [
       { name: "orientation", type: '"horizontal" | "vertical"', defaultValue: "horizontal", description: "Base UI 属性：线条方向与 aria-orientation。" },
       { name: "className", type: "string | ((state) => string | undefined)", description: "自定义尺寸和局部布局；回调的 state.orientation 为 horizontal 或 vertical，结果与基础样式合并。" },
@@ -473,7 +473,7 @@ function VolumeField() {
   table: {
     key: "table", name: "Table", description: "为原生表格提供一致的行、列、边框和滚动样式。数据、排序、筛选和分页由使用方实现，组件本身保留 HTML 表格语义。",
     anatomy: ["Table / TableCaption：表格与内容说明。", "TableHeader / Body / Footer：表头、主体与汇总区域。", "TableRow / Head / Cell：行、表头单元格与数据单元格。"],
-    practices: ["仅在数据具有行列关系时使用表格。", "列名清楚，数字保持便于比较的对齐方式。", "排序等交互使用真实按钮，并明确表达当前排序状态。"],
+    practices: ["仅在数据具有行列关系时使用表格。表头、行与汇总区的分隔线使用 border-divider：浅色 black / 8%，深色 white / 10%。", "列名清楚，数字保持便于比较的对齐方式。", "排序等交互使用真实按钮，并明确表达当前排序状态。"],
     props: [
       { name: "Table.children", type: "ReactNode", description: "原生表格内容，按 caption、thead、tbody、tfoot 组合。" },
       { name: "Table.className", type: "string", description: "表格本体样式；外层容器负责水平滚动。" },
@@ -493,7 +493,7 @@ function VolumeField() {
   toggle: {
     key: "toggle", name: "Toggle", description: "控制一个可持续开启或关闭的模式，例如文字格式。Base UI 管理按下状态，Luma 封装提供普通与边框视觉。",
     anatomy: ["Toggle：可聚焦的切换按钮。", "pressed：持续生效的按下状态。", "children：文字或具有独立名称的图标。"],
-    practices: ["用于保持状态的操作；一次性命令使用 Button。", "切换前后保持稳定的名称，让按下状态表达是否开启。", "仅图标的按钮提供 aria-label。"],
+    practices: ["用于保持状态的操作；一次性命令使用 Button。", "outline 使用 border-border：浅色 black / 8%，深色 white / 10%；选中时使用 bg-muted 区分，描边颜色保持一致。", "切换前后保持稳定的名称，让按下状态表达是否开启。", "仅图标的按钮提供 aria-label。"],
     props: [
       { name: "pressed / defaultPressed", type: "boolean", description: "Base UI 属性：受控或初始按下状态。" },
       { name: "onPressedChange", type: "(pressed: boolean, eventDetails) => void", description: "Base UI 属性：切换状态回调。" },
@@ -509,7 +509,7 @@ function VolumeField() {
   "toggle-group": {
     key: "toggle-group", name: "Toggle Group", description: "将相关的持续状态按钮组合为单选或多选集合。Base UI 管理方向键导航，Luma 封装统一组内尺寸、变体和间距。",
     anatomy: ["ToggleGroup：选择值数组、导航方向和组名称。", "ToggleGroupItem：具有唯一 value 的切换按钮。", "variant / size / spacing：由组传给各项的视觉配置。"],
-    practices: ["互斥模式使用单选，可同时生效的格式使用 multiple。", "单选模式同样使用值数组，而不是字符串。", "为整个组和每个图标按钮提供清楚的名称。"],
+    practices: ["互斥模式使用单选，可同时生效的格式使用 multiple。", "组内 outline 按钮与 Toggle 共用 border-border，选中项通过 bg-muted 区分，不加强描边。", "单选模式同样使用值数组，而不是字符串。", "为整个组和每个图标按钮提供清楚的名称。"],
     props: [
       { name: "value / defaultValue", type: "readonly string[]", description: "Base UI 属性：受控值或初始值；单选也使用数组。" },
       { name: "onValueChange", type: "(value: string[], eventDetails) => void", description: "Base UI 属性：选择集合变更。" },

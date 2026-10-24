@@ -13,7 +13,7 @@ it("resolves ItemSeparator orientation classes and merges local overrides", () =
   expect(separator.classList.contains("my-4")).toBe(true);
   expect(separator.classList.contains("my-2")).toBe(false);
   expect(separator.classList.contains("bg-warning-muted")).toBe(true);
-  expect(separator.classList.contains("bg-border")).toBe(false);
+  expect(separator.classList.contains("bg-divider")).toBe(false);
   view.rerender(<ItemSeparator orientation="vertical" className={className} />);
   expect(separator.classList.contains("custom-vertical")).toBe(true);
   expect(separator.classList.contains("custom-horizontal")).toBe(false);
@@ -22,5 +22,5 @@ it("resolves ItemSeparator orientation classes and merges local overrides", () =
   expect(separator.classList.contains("my-6")).toBe(true);
   expect(separator.classList.contains("my-2")).toBe(false);
   expect(separator.classList.contains("bg-error")).toBe(true);
-  expect(separator.classList.contains("bg-border")).toBe(false);
+  expect(separator.classList.contains("bg-divider")).toBe(false);
 });

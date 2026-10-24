@@ -17,7 +17,7 @@ const colorSections: Section[] = [
   { id: "syntax", title: "Syntax Tokens", description: "代码语法与差异高亮，引用与 color-mix 随主题解析。" },
   { id: "data", title: "Data Visualization Tokens", description: "分类颜色、连续色阶与中性色。" },
   { id: "brand", title: "Brand", description: "官方 Color 表未给出值，保留为待配置。" },
-  { id: "extensions", title: "Project Extensions", description: "项目扩展角色覆盖控件底色、状态填充与强调反馈，均引用基础色板并单独计数。" },
+  { id: "extensions", title: "Project Extensions", description: "项目扩展角色覆盖控件底色、弱描边、状态填充与强调反馈，均引用基础色板并单独计数。" },
 ].map(section => ({ ...section, rows: tokens.filter(token => token.colorGroup === section.id) }));
 const baseSections: Section[] = [
   { id: "spacing-base", title: "Spacing Base", rows: select("--spacing-").filter(token => token.name !== "--spacing-reading-flow") },
@@ -25,7 +25,9 @@ const baseSections: Section[] = [
   { id: "border", title: "Border Tokens", rows: select("--border-") },
   { id: "focus", title: "Focus Tokens", rows: select("--focus-") },
   { id: "radius", title: "Radius Scale", rows: select("--radius-") },
-  { id: "shadows", title: "Elevation Scale", rows: select("--shadow-") },
+  { id: "shadows", title: "Elevation Scale", description: "浅色沿用当前柔和投影，深色针对本项目背景校准。浅色三档均为 2 层；深色 low、med 为 1 层，high 为 2 层。偏移、模糊、扩散与透明度分别按模式定义，1px 表面边界使用独立描边。", rows: tokens.filter(token => ["--shadow-low", "--shadow-med", "--shadow-high"].includes(token.name)) },
+  { id: "input-shadow", title: "Input Focus", description: "快速输入聚焦保留现有投影参数，浅色使用 neutral-900、深色使用 black 基色；独立于三档表面投影，也不替代键盘焦点描边。", rows: tokens.filter(token => token.name === "--shadow-input-focus") },
+  { id: "state-rings", title: "Control State", description: "以下 2px 内环属于悬停、选中与校验反馈，不属于表面层级，也不用作 1px 装饰边框。", rows: select("--shadow-inset-") },
   { id: "duration", title: "Duration", rows: select("--duration-") },
   { id: "easing", title: "Easing", rows: select("--ease-") },
   { id: "font-families", title: "Font Families", rows: select("--font-family-") },
@@ -41,7 +43,7 @@ function TokenTable({ rows, values, mode, title, showUsage }: { rows: ThemeToken
     <tbody>{rows.map(token => {
       const value = values[token.name];
       const definition = mode === "dark" ? token.dark : token.light;
-      return <tr key={token.name} data-token-row={token.name} data-tailwind={token.interfaces.join(" ")} data-token-source={token.colorGroup ? token.projectExtension ? "project" : "astryx" : undefined} data-token-value-source={isColor(token) && !token.pending ? "tailwind" : undefined} data-token-definition={isColor(token) && !token.pending ? definition : undefined} data-token-pending={token.pending || undefined}>
+      return <tr key={token.name} data-token-row={token.name} data-tailwind={token.interfaces.join(" ")} data-token-source={token.colorGroup ? token.projectExtension ? "project" : "astryx" : undefined} data-token-value-source={isColor(token) && !token.pending ? token.valueSource ?? "tailwind" : undefined} data-token-definition={isColor(token) && !token.pending ? definition : undefined} data-token-pending={token.pending || undefined}>
         <th scope="row"><code>{token.name}</code>{token.projectExtension && <span className="token-interface">项目扩展</span>}{showUsage && token.interfaces.length > 0 && <span className="token-interface">{token.interfaces.join(" · ")}</span>}</th>
         <td>{token.pending ? <span className="token-pending">待配置</span> : isColor(token) ? <><span className="token-color-value"><span aria-hidden="true" className="token-swatch" style={{ backgroundColor: value }} /><code>{value || "读取中…"}</code></span><span className="token-color-definition"><code>{definition}</code></span></>
           : <div className="token-value"><code>{value || "读取中…"}</code>
@@ -95,7 +97,7 @@ function pageSections(category: TokenCategory, measurements: Measurements, globa
   switch (category) {
     case "all": result = [...colorSections, ...baseSections]; break;
     case "colors": result = colorSections; break;
-    case "elevation": result = [section("shadows"), content("elevation-levels"), { id: "shadow-color", title: "Shadow Color", rows: tokens.filter(token => token.name === "--color-shadow") }]; break;
+    case "elevation": result = [section("shadows"), content("elevation-levels"), section("input-shadow"), { id: "surface-border", title: "Surface Border", description: "普通描边与分隔线使用 --color-border 和 --color-divider：浅色 black / 8%，深色 white / 10%。笔记集合卡片与快速记录输入面板使用 --color-border-subtle：浅色 black / 6%，深色 white / 5%。组件直接使用对应角色，不叠加透明度。1px 实际边框与投影独立组合；错误状态和焦点描边继续使用各自角色。", rows: tokens.filter(token => ["--color-border", "--color-border-subtle", "--color-divider"].includes(token.name)) }, { id: "shadow-color", title: "Shadow Color", description: "浅色三档投影使用不透明 rgb(25 25 25) 基色；深色使用 black 适配本项目背景，各层分别定义透明度。输入聚焦保留自身基色。", rows: tokens.filter(token => token.name === "--color-shadow") }, section("state-rings")]; break;
     case "icons": result = [content("icon-usage")]; break;
     case "illustrations": result = [content("illustration-scenarios"), content("illustration-guidelines"), content("illustration-placement")]; break;
     case "motion": result = [section("duration"), section("easing"), content("motion-helps"), content("motion-hurts"), content("motion-preferences")]; break;
@@ -201,7 +203,7 @@ export function TokenPage({ category }: { category: TokenCategory }) {
       {section.rows && <TokenTable rows={section.rows} values={measurements.values} mode={mode} showUsage={category !== "all"} title={section.title} />}
       {section.content}
     </section>)}
-      <footer className="token-note">语义命名与尺度参考 <a href={`https://github.com/facebook/astryx/tree/${sourceRef}`} target="_blank" rel="noopener noreferrer">Astryx Neutral + Core · {sourceRef.slice(0, 7)}</a>；颜色引用 <a href="https://tailwindcss.com/docs/colors" target="_blank" rel="noopener noreferrer">Tailwind 基础色板</a>；视觉配置采用 <a href="https://ui.shadcn.com/create?preset=b5F2gjwQRE" target="_blank" rel="noopener noreferrer">shadcn Luma · b5F2gjwQRE</a>，默认使用 Noto Sans／Noto Serif 与 Hugeicons，圆角基准为 8px；当前预览由工具栏选择字体与圆角。brand 待配置；自适应字号与 domain 覆盖尚未接入。</footer>
+      <footer className="token-note">语义命名与尺度参考 <a href={`https://github.com/facebook/astryx/tree/${sourceRef}`} target="_blank" rel="noopener noreferrer">Astryx Neutral + Core · {sourceRef.slice(0, 7)}</a>；颜色主要引用 <a href="https://tailwindcss.com/docs/colors" target="_blank" rel="noopener noreferrer">Tailwind 基础色板</a>，三档浅色投影沿用 Notion BasSm／BasMd／BasLg 实测参数，深色根据本项目背景校准；视觉配置采用 <a href="https://ui.shadcn.com/create?preset=b5F2gjwQRE" target="_blank" rel="noopener noreferrer">shadcn Luma · b5F2gjwQRE</a>，正文默认使用 Noto Sans，标题默认跟随正文，图标使用 Hugeicons，圆角基准为 8px；当前预览由工具栏选择字体与圆角。brand 待配置；自适应字号与 domain 覆盖尚未接入。</footer>
     </div>
   </main>;
 }

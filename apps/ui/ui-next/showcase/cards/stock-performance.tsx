@@ -22,6 +22,7 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxList,
+  useComboboxAnchor,
 } from "@ui-next/components/combobox"
 import { Field, FieldGroup, FieldLabel } from "@ui-next/components/field"
 import { Separator } from "@ui-next/components/separator"
@@ -65,6 +66,7 @@ const chartConfig = {
 
 export function StockPerformance() {
   const tickerId = React.useId()
+  const tickerAnchor = useComboboxAnchor()
   const [ticker, setTicker] = React.useState("VOO")
 
   const data = CHART_DATA[ticker] ?? DEFAULT_DATA
@@ -86,12 +88,14 @@ export function StockPerformance() {
                 if (value !== null) setTicker(value)
               }}
             >
-              <ComboboxInput
-                id={tickerId}
-                aria-labelledby={`${tickerId}-label`}
-                placeholder="Search ticker..."
-              />
-              <ComboboxContent>
+              <div ref={tickerAnchor}>
+                <ComboboxInput
+                  id={tickerId}
+                  aria-labelledby={`${tickerId}-label`}
+                  placeholder="Search ticker..."
+                />
+              </div>
+              <ComboboxContent anchor={tickerAnchor}>
                 <ComboboxEmpty>No tickers found.</ComboboxEmpty>
                 <ComboboxList>
                   {(item) => (

@@ -33,7 +33,7 @@ export function ReceivingMethod() {
         <CardDescription>Payout Preferences</CardDescription>
         <CardTitle>Receiving Method</CardTitle>
         <CardAction>
-          <Button variant="ghost" size="icon-sm" className="bg-muted" aria-label="Dismiss receiving method">
+          <Button variant="secondary" size="icon-sm" aria-label="Dismiss receiving method">
             <IconPlaceholder
               lucide="XIcon"
               tabler="IconX"
@@ -63,7 +63,7 @@ export function ReceivingMethod() {
               className="grid grid-cols-1 items-start gap-3 md:grid-cols-2"
             >
               <FieldLabel htmlFor="method-bank">
-                <Field orientation="horizontal" className="pb-2.5!">
+                <Field orientation="horizontal" className="p-3!">
                   <RadioGroupItem value="bank" id="method-bank" />
                   <FieldContent>
                     <FieldTitle>Bank Transfer</FieldTitle>
@@ -72,7 +72,7 @@ export function ReceivingMethod() {
                 </Field>
               </FieldLabel>
               <FieldLabel htmlFor="method-paypal">
-                <Field orientation="horizontal" className="pb-2.5!">
+                <Field orientation="horizontal" className="p-3!">
                   <RadioGroupItem value="paypal" id="method-paypal" />
                   <FieldContent>
                     <FieldTitle>PayPal</FieldTitle>

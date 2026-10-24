@@ -120,9 +120,13 @@ it("flushes unfinished edits before opening settings and preserves them across a
   await user.click(await screen.findByRole("menuitem", { name: "设置" }));
   await screen.findByRole("heading", { name: "设置", level: 1 });
   expect(fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")?.body).toBe("离开编辑页前必须保留的正文");
-  await user.selectOptions(screen.getByRole("combobox", { name: "主题" }), "dark");
+  await user.click(screen.getByRole("combobox", { name: "主题" }));
+  await user.click(await screen.findByRole("option", { name: "深色" }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   await user.click(screen.getByText("高级外观"));
-  await user.selectOptions(screen.getByRole("combobox", { name: "圆角" }), "none");
+  await user.click(screen.getByRole("combobox", { name: "圆角" }));
+  await user.click(await screen.findByRole("option", { name: "None · 0px" }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   expect(document.documentElement.dataset.uiTheme).toBe("dark");
   expect(JSON.parse(localStorage.getItem("memocard-web-appearance-v1") || "{}").radius).toBe("none");
   await user.click(screen.getByRole("button", { name: "所有笔记" }));

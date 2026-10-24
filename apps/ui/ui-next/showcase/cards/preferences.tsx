@@ -50,7 +50,7 @@ export function Preferences() {
           Manage your account settings and notifications.
         </CardDescription>
         <CardAction>
-          <Button variant="ghost" size="icon-sm" className="bg-muted" aria-label="Dismiss preferences">
+          <Button variant="secondary" size="icon-sm" aria-label="Dismiss preferences">
             <IconPlaceholder
               lucide="XIcon"
               tabler="IconX"

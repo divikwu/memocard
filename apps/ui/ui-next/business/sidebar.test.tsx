@@ -13,11 +13,12 @@ const tags = [{ name: "项目", count: 8 }, { name: "项目/MemoCard", count: 5 
 const props = (): AppSidebarProps => ({ view: "notes", tag: null, tags, vaultName: "我的笔记", vaultId, registeredVaults: [{ vaultId, name: "我的笔记", active: true }, { vaultId: "other", name: "工作笔记", active: false }], connected: true, canTrash: true, vaultStatusText: "已连接", hasVaultIssue: false, canCreate: true, canChooseVault: true, canCreateVault: true, needsPermission: true, working: false, filterCounts: { untagged: 2, images: 4, links: 6 }, onNavigate: vi.fn(), onNewNote: vi.fn(), onSearch: vi.fn(), onSelectVault: vi.fn(), onActivateVault: vi.fn(), onReauthorize: vi.fn(), onRenameTag: vi.fn(async () => {}) });
 
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
   Object.defineProperty(window, "matchMedia", { configurable: true, value: vi.fn((query: string) => ({ matches: query.includes("max-width") && window.innerWidth < 768, media: query, onchange: null, addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn() })) });
   localStorage.removeItem(preferencesKey);
 });
-afterEach(() => { cleanup(); localStorage.removeItem(preferencesKey); vi.restoreAllMocks(); });
+afterEach(() => { cleanup(); localStorage.removeItem(preferencesKey); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 function mount(overrides: Partial<AppSidebarProps> = {}) {
   const args = { ...props(), ...overrides };
@@ -128,6 +129,49 @@ it("keeps ordinary Emoji search Enter inside the picker without saving the tag",
   expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBe(dialog);
   expect(localStorage.getItem(preferencesKey)).toBeNull();
   expect(within(dialog).getByRole("button", { name: "警告、小心" })).not.toBeNull();
+});
+
+it("focuses the anchored editor and discards unsaved name and Emoji changes on outside dismissal", async () => {
+  const user = userEvent.setup();
+  const args = mount();
+  await user.click(screen.getByRole("button", { name: "标签操作 生活" }));
+  await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
+  const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
+  const name = within(dialog).getByRole("textbox", { name: "标签名称" });
+  await waitFor(() => expect(document.activeElement).toBe(name));
+  await user.clear(name);
+  await user.type(name, "工作");
+  await user.click(within(dialog).getByRole("button", { name: "选择 Emoji" }));
+  const search = within(dialog).getByRole("textbox", { name: "搜索 Emoji" });
+  await waitFor(() => expect(document.activeElement).toBe(search));
+  await user.type(search, "🧑🏽‍💻{Enter}");
+  expect(within(dialog).getByRole("button", { name: "选择 Emoji" }).textContent).toBe("🧑🏽‍💻");
+  await user.click(screen.getByRole("button", { name: /^主页$/ }));
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBeNull());
+  expect(args.onRenameTag).not.toHaveBeenCalled();
+  expect(localStorage.getItem(preferencesKey)).toBeNull();
+});
+
+it("protects an anchored rename from Escape and outside dismissal while saving", async () => {
+  const user = userEvent.setup();
+  let complete!: () => void;
+  const rename = vi.fn(() => new Promise<void>(resolve => { complete = resolve; }));
+  mount({ onRenameTag: rename });
+  await user.click(screen.getByRole("button", { name: "标签操作 生活" }));
+  await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
+  const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
+  const name = within(dialog).getByRole("textbox", { name: "标签名称" });
+  fireEvent.change(name, { target: { value: "工作" } });
+  await user.click(within(dialog).getByRole("button", { name: "保存" }));
+  expect(name).toHaveProperty("disabled", true);
+  await user.click(within(dialog).getByRole("button", { name: "保存中…" }));
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: /^主页$/ }));
+  expect(screen.getByRole("dialog", { name: "编辑标签" })).toBe(dialog);
+  expect(rename).toHaveBeenCalledTimes(1);
+  complete();
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBeNull());
+  expect(rename).toHaveBeenCalledWith("生活", "工作");
 });
 
 it("does not announce zero note counts before optional quick filter counts have loaded", async () => {

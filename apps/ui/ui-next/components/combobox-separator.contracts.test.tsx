@@ -83,7 +83,7 @@ it("merges Separator state callback classes and updates them with orientation", 
   const className = vi.fn((state: { orientation: "horizontal" | "vertical" }) => `custom-${state.orientation}`);
   const { rerender } = render(<Separator className={className} />);
   expect(screen.getByRole("separator").classList.contains("custom-horizontal")).toBe(true);
-  expect(screen.getByRole("separator").classList.contains("bg-border")).toBe(true);
+  expect(screen.getByRole("separator").classList.contains("bg-divider")).toBe(true);
   expect(className).toHaveBeenCalledWith({ orientation: "horizontal" });
   rerender(<Separator orientation="vertical" className={className} />);
   expect(screen.getByRole("separator").classList.contains("custom-vertical")).toBe(true);
@@ -94,7 +94,7 @@ it("merges Separator state callback classes and updates them with orientation", 
 it("preserves string class names on Separator", () => {
   render(<Separator className="custom-separator" />);
   expect(screen.getByRole("separator").classList.contains("custom-separator")).toBe(true);
-  expect(screen.getByRole("separator").classList.contains("bg-border")).toBe(true);
+  expect(screen.getByRole("separator").classList.contains("bg-divider")).toBe(true);
 });
 
 it("documents Badge className consistently with its native span contract", () => {

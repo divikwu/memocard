@@ -19,7 +19,7 @@ const coreComponentDocs: Record<CoreComponentKey, ComponentDoc> = {
   button: {
     key: "button", name: "Button", description: "触发操作的按钮。Luma 提供主要、次要、边框、轻量、危险和链接六种视觉变体，交互由 Base UI Button 承载。",
     anatomy: ["Button：可聚焦的操作节点。", "children：操作文字与可选的 Hugeicons 图标。", "variant / size：决定视觉强调与尺寸。"],
-    practices: ["使用明确的动词描述操作；同一区域突出一个主要操作。", "图标按钮使用 icon 尺寸，并提供独立的可访问名称。", "导航使用链接语义；危险操作采用 destructive 视觉并说明后果。"],
+    practices: ["使用明确的动词描述操作；同一区域突出一个主要操作。", "ghost 按钮的 hover 使用 bg-overlay-hover：浅色黑色 4%，深色白色 4%；侧栏展开按钮的展开态覆盖同样沿用该角色。", "图标按钮使用 icon 尺寸，并提供独立的可访问名称。", "导航使用链接语义；危险操作采用 destructive 视觉并说明后果。"],
     props: [
       { name: "variant", type: '"default" | "outline" | "secondary" | "ghost" | "destructive" | "link"', defaultValue: "default", description: "封装属性：选择视觉变体。" },
       { name: "size", type: '"default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg"', defaultValue: "default", description: "封装属性：文字按钮或仅图标按钮的尺寸。" },
@@ -61,7 +61,7 @@ const coreComponentDocs: Record<CoreComponentKey, ComponentDoc> = {
 </>`,
   },
   textarea: {
-    key: "textarea", name: "Textarea", description: "用于多行文本输入。封装保留原生 textarea 的值、事件与表单属性，默认按内容调整高度并提供最小高度。",
+    key: "textarea", name: "Textarea", description: "用于多行文本输入。封装保留原生 textarea 的值、事件与表单属性，默认按内容调整高度并提供最小高度。使用独立的 rounded-textarea 圆角，默认 12px、None 时 0px。",
     anatomy: ["label：说明需要填写的内容。", "Textarea：多行输入节点。", "描述 / 错误信息：说明格式、限制或修正方式。"],
     practices: ["为较长内容提供足够空间，并保持描述靠近字段。", "长度限制通过 maxLength 与可见说明配合传达。", "提交状态和保存反馈由使用方实现，避免仅依靠颜色提示。"],
     props: [
@@ -190,7 +190,7 @@ import { Popover, PopoverTrigger, PopoverContent,
   },
   select: {
     key: "select", name: "Select", description: "从预定义选项中选择表单值。Root 管理值与开关，Trigger 展示当前值，Content 中组合选项与分组。",
-    anatomy: ["Select：管理值、表单信息与选项数据。", "SelectTrigger / SelectValue：触发选择并展示当前标签。", "SelectContent / Group / Label / Item / Separator：定位选项与分组。"],
+    anatomy: ["Select：管理值、表单信息与选项数据。", "SelectTrigger / SelectValue：触发选择并展示当前标签，右侧展开图标统一使用 Hugeicons ChevronDownIcon。", "SelectContent / Group / Label / Item / Separator：定位选项与分组。弹层宽度为触发框宽度加两个 spacing-1（默认共 8px），保留 9rem 最小宽度；列表或分组四边使用 p-1（默认 4px），选项左右使用 px-2（默认 8px），选中标记参与行内布局；选项使用 list 默认的 rounded-item，默认 12px、None 时 0px；触发框使用 rounded-control 全圆角，None 模式也保持全圆角；弹层外框使用独立的 rounded-select-popover，默认 20px、None 时 0px。"],
     practices: ["选项文本应清楚区分，表单字段提供可见名称。", "使用 items 提供值与标签映射，避免 Trigger 只显示内部值。", "对象值需要稳定比较逻辑；菜单操作不使用 Select 代替。"],
     props: [
       { name: "Select.value / defaultValue", type: "Value | Value[] | null", description: "Base UI Root 泛型属性：受控或初始值；数组用于 multiple 模式。" },
@@ -268,13 +268,13 @@ import { Sheet, SheetTrigger, SheetContent, SheetHeader,
   },
   tabs: {
     key: "tabs", name: "Tabs", description: "在同一区域切换一组相关内容。Root 维护当前标签值，List 组织标签，Content 通过相同的 value 关联对应面板。",
-    anatomy: ["Tabs：当前值与方向的根节点。", "TabsList / TabsTrigger：标签组与各标签。", "TabsContent：与触发标签同值的内容面板。"],
-    practices: ["用于同一主题的并列内容；独立页面导航使用链接。", "标签简洁且含义明确，面板 value 与对应 Trigger 保持一致。", "自动激活仅适用于切换成本低的内容，较慢内容保留手动激活。"],
+    anatomy: ["Tabs：当前值与方向的根节点。", "TabsList / TabsTrigger：标签组与各标签；分段样式标签按钮使用 rounded-full 全圆角、h-element-sm（32px）和 px-3（默认左右各 12px），横向外层为 36px，四边内边距各 2px；线条样式使用 rounded-element（默认 8px、None 时 0px）和 px-1（默认左右各 4px）。", "TabsContent：与触发标签同值的内容面板。"],
+    practices: ["用于同一主题的并列内容；独立页面导航使用链接。", "标签简洁且含义明确，面板 value 与对应 Trigger 保持一致。", "自动激活仅适用于切换成本低的内容，较慢内容保留手动激活。", "布局切换器保留按钮组与 aria-pressed 语义，复用 tabsListVariants 与 tabsTriggerStyles，与分段 Tabs 共用外观。"],
     props: [
       { name: "Tabs.value / defaultValue", type: "TabsTab.Value", description: "Base UI Root 属性：受控或初始选中值，支持稳定的任意值；null 表示不选中标签。未指定 defaultValue 时由 Base UI 选择初始项。" },
       { name: "Tabs.onValueChange", type: "(value, eventDetails) => void", description: "Base UI Root 属性：当前标签变化通知。" },
       { name: "Tabs.orientation", type: '"horizontal" | "vertical"', defaultValue: "horizontal", description: "Root 属性：决定布局方向与键盘移动方向。" },
-      { name: "TabsList.variant", type: '"default" | "line"', defaultValue: "default", description: "封装属性：胶囊背景或线条样式。" },
+      { name: "TabsList.variant", type: '"default" | "line"', defaultValue: "default", description: "封装属性：胶囊背景或线条样式；line 使用 gap-3，默认标签间距 12px。" },
       { name: "TabsList.activateOnFocus", type: "boolean", defaultValue: "false", description: "Base UI List 属性：方向键聚焦后是否立即激活标签。" },
       { name: "TabsTrigger.value / TabsContent.value", type: "TabsTab.Value", description: "Base UI 子部件属性：用同一值关联标签与面板。" },
       { name: "TabsTrigger.disabled", type: "boolean", defaultValue: "false", description: "Base UI Tab 属性：禁止激活当前标签。" },

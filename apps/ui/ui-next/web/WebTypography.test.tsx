@@ -41,6 +41,12 @@ afterEach(() => {
   document.documentElement.removeAttribute("style");
 });
 
+async function choose(user: ReturnType<typeof userEvent.setup>, label: string, option: string) {
+  await user.click(screen.getByRole("combobox", { name: label }));
+  await user.click(await screen.findByRole("option", { name: option }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+}
+
 function mount(editor = false) {
   return render(<WebAppearanceProvider><WebTypographyProvider><WebSettings state={state()} />{editor && <div className="note-editor-next"><textarea className="note-page-title" aria-label="页面标题" defaultValue="原标题" /><RichMarkdownEditor value="正文" notePath="notes/a.md" disabled={false} onChange={vi.fn()} onSave={vi.fn()} onError={vi.fn()} /></div>}</WebTypographyProvider></WebAppearanceProvider>);
 }
@@ -65,7 +71,7 @@ it("restores all seven existing note preferences and applies the CSS-free shared
   const value = { ...defaults, measure: "60", heading: "lora", body: "inter", mono: "jetbrains-mono", size: "18", leading: "1.9", flow: "2em" };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
   mount();
-  for (const [label, property] of [["行宽", "measure"], ["笔记标题字体", "heading"], ["笔记正文字体", "body"], ["笔记等宽字体", "mono"], ["字号", "size"], ["行高", "leading"], ["段落间距", "flow"]] as const) expect((screen.getByRole("combobox", { name: label }) as HTMLSelectElement).value).toBe(value[property]);
+  for (const [label, text] of [["行宽", "窄"], ["笔记标题字体", "Lora"], ["笔记正文字体", "Inter"], ["笔记等宽字体", "JetBrains Mono"], ["字号", "18px 基准"], ["行高", "宽松（1.9）"], ["段落间距", "宽松（2em）"]]) expect(screen.getByRole("combobox", { name: label }).textContent).toBe(text);
   const root = document.documentElement.style;
   expect(root.getPropertyValue("--note-measure")).toBe("504px");
   expect(root.getPropertyValue("--note-size")).toBe("var(--font-size-lg)");
@@ -77,7 +83,7 @@ it("restores all seven existing note preferences and applies the CSS-free shared
   expect(computed.getPropertyValue("--typeset-size")).toContain("--note-size");
   expect(computed.getPropertyValue("--typeset-leading")).toContain("--note-leading");
   expect(computed.getPropertyValue("--typeset-flow")).toContain("--note-flow");
-  await waitFor(() => expect(loadPreviewFonts).toHaveBeenCalledWith(["inter", "lora", "jetbrains-mono"]));
+  await waitFor(() => expect(loadPreviewFonts).toHaveBeenCalledWith(["inter", "lora", "jetbrains-mono"], false));
   expect(legacyLoadFonts).not.toHaveBeenCalled();
 });
 
@@ -90,12 +96,12 @@ it("persists note styles independently, retains a live editor and undo history, 
   act(() => editor.commands.insertContentAt(3, "修改"));
   const uiBody = document.documentElement.style.getPropertyValue("--ui-next-preview-body");
   const uiHeading = document.documentElement.style.getPropertyValue("--ui-next-preview-heading");
-  await user.selectOptions(screen.getByRole("combobox", { name: "笔记正文字体" }), "inter");
-  await user.selectOptions(screen.getByRole("combobox", { name: "笔记标题字体" }), "lora");
-  await user.selectOptions(screen.getByRole("combobox", { name: "字号" }), "18");
-  await user.selectOptions(screen.getByRole("combobox", { name: "行宽" }), "70");
-  await user.selectOptions(screen.getByRole("combobox", { name: "行高" }), "1.9");
-  await user.selectOptions(screen.getByRole("combobox", { name: "段落间距" }), "2em");
+  await choose(user, "笔记正文字体", "Inter");
+  await choose(user, "笔记标题字体", "Lora");
+  await choose(user, "字号", "18px 基准");
+  await choose(user, "行宽", "适中");
+  await choose(user, "行高", "宽松（1.9）");
+  await choose(user, "段落间距", "宽松（2em）");
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({ body: "inter", heading: "lora", measure: "70", size: "18", leading: "1.9", flow: "2em" });
   expect(document.documentElement.style.getPropertyValue("--note-measure")).toBe("594px");
   expect(document.documentElement.style.getPropertyValue("--ui-next-preview-body")).toBe(uiBody);
@@ -108,7 +114,7 @@ it("persists note styles independently, retains a live editor and undo history, 
   expect(editor.getText()).toBe("正文");
   view.unmount();
   mount();
-  expect((screen.getByRole("combobox", { name: "行宽" }) as HTMLSelectElement).value).toBe("70");
+  expect(screen.getByRole("combobox", { name: "行宽" }).textContent).toBe("适中");
   expect(document.documentElement.style.getPropertyValue("--note-measure")).toBe("594px");
 });
 
@@ -117,8 +123,12 @@ it("retains a proportional legacy code font while randomization uses only the or
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ bodyFont: "geist", theme: "dark", radius: "none" }));
   mount();
   const mono = screen.getByRole("combobox", { name: "笔记等宽字体" });
-  expect((mono as HTMLSelectElement).value).toBe("inter");
-  expect(within(mono).getByRole("option", { name: "Inter（已有设置）" })).toBeTruthy();
+  expect(mono.textContent).toBe("Inter（已有设置）");
+  const user = userEvent.setup();
+  await user.click(mono);
+  expect((await screen.findByRole("option", { name: "Inter（已有设置）" })).getAttribute("aria-selected")).toBe("true");
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   vi.spyOn(Math, "random").mockReturnValue(0);
   fireEvent.click(screen.getByRole("button", { name: "随机搭配" }));
   const randomized = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
@@ -134,13 +144,13 @@ it("syncs the existing typography storage key and reports a failed save without 
   const user = userEvent.setup();
   mount();
   act(() => window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY, newValue: JSON.stringify({ ...defaults, measure: "60", leading: "1.75" }) })));
-  expect((screen.getByRole("combobox", { name: "行宽" }) as HTMLSelectElement).value).toBe("60");
+  expect(screen.getByRole("combobox", { name: "行宽" }).textContent).toBe("窄");
   expect(document.documentElement.style.getPropertyValue("--note-measure")).toBe("448px");
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Denied"); });
-  await user.selectOptions(screen.getByRole("combobox", { name: "字号" }), "18");
+  await choose(user, "字号", "18px 基准");
   expect(document.documentElement.style.getPropertyValue("--note-size")).toBe("var(--font-size-lg)");
   expect(screen.getByText("无法保存设置；当前已生效，重开后可能恢复默认。").getAttribute("role")).toBe("status");
   act(() => window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY, newValue: "invalid" })));
-  expect((screen.getByRole("combobox", { name: "字号" }) as HTMLSelectElement).value).toBe("16");
+  expect(screen.getByRole("combobox", { name: "字号" }).textContent).toBe("16px 基准");
   expect(document.documentElement.style.getPropertyValue("--note-measure")).toBe("720px");
 });

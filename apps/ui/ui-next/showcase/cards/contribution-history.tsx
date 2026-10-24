@@ -1,5 +1,7 @@
 // Adapted from shadcn/ui preview-02 (MIT); pinned source: build/verification/luma-showcase/source.
+import { useEffect, useRef, useState } from "react"
 import { Bar, BarChart, XAxis } from "recharts"
+import { usePreviewAppearance } from "@ui-next/preview-mode"
 
 import { Button } from "@ui-next/components/button"
 import {
@@ -39,7 +41,16 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export function ContributionHistory() {
-  const isRounded = true
+  const chartRef = useRef<HTMLDivElement>(null)
+  const { radius } = usePreviewAppearance()
+  const [barRadius, setBarRadius] = useState(0)
+
+  // Recharts requires numeric radii, so resolve the CSS role in pixels.
+  useEffect(() => {
+    if (chartRef.current) {
+      setBarRadius(parseFloat(getComputedStyle(chartRef.current).borderTopLeftRadius))
+    }
+  }, [radius])
 
   return (
     <Card data-showcase-card="contribution-history">
@@ -48,7 +59,7 @@ export function ContributionHistory() {
         <CardDescription>Last 6 months of activity</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[200px] w-full">
+        <ChartContainer ref={chartRef} config={chartConfig} className="h-[200px] w-full rounded-element">
           <BarChart
             accessibilityLayer
             data={chartData}
@@ -67,7 +78,7 @@ export function ContributionHistory() {
             <Bar
               dataKey="amount"
               fill="var(--color-amount)"
-              radius={isRounded ? [6, 6, 0, 0] : 0}
+              radius={[barRadius, barRadius, 0, 0]}
               maxBarSize={40}
             />
           </BarChart>

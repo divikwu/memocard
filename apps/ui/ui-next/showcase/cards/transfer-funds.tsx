@@ -47,7 +47,7 @@ export function TransferFunds() {
           Move money between your connected accounts.
         </CardDescription>
         <CardAction>
-          <Button variant="ghost" size="icon-sm" className="bg-muted" aria-label="Dismiss transfer funds">
+          <Button variant="secondary" size="icon-sm" aria-label="Dismiss transfer funds">
             <IconPlaceholder
               lucide="XIcon"
               tabler="IconX"

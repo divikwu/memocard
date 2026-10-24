@@ -113,13 +113,13 @@
 .note-property-create .note-property-type-option { width: 100%; height: var(--size-element-sm); justify-content: flex-start; gap: calc(var(--spacing-1) * 2); padding-inline: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-normal); }
 .note-property-type-option > svg { opacity: .8; }
 
-.note-property-inline { border-radius: var(--radius-inner); outline: var(--border-width) solid var(--color-border); background: var(--color-background-body); }
+.note-property-inline { border-radius: var(--radius-textarea); outline: var(--border-width) solid var(--color-border); background: var(--color-background-body); }
 .note-property-inline textarea {
   min-height: var(--size-element-sm);
   max-height: none;
   padding: calc(var(--spacing-1) * 1.5);
   border: 0;
-  border-radius: var(--radius-inner);
+  border-radius: var(--radius-textarea);
   font: inherit;
   line-height: inherit;
   resize: none;

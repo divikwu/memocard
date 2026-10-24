@@ -31,9 +31,9 @@ function ThemeDocsContainer({ children, context }: ComponentProps<typeof DocsCon
 const preview: Preview = {
   globalTypes: {
     theme: { description: "预览主题", toolbar: { icon: "circlehollow", items: ["light", "dark"], dynamicTitle: true } },
-    radius: { description: "圆角基准；默认保留项目 8px，显式圆形、胶囊和 chat 角色保持独立", toolbar: { title: "圆角", items: PREVIEW_RADII.map(({ value, title }) => ({ value, title })), dynamicTitle: true } },
-    headingFont: { description: "标题字体", toolbar: { title: "标题字体", items: [{ value: "inherit", title: "标题 · 跟随正文" }, ...PREVIEW_FONTS.map(font => ({ value: font.id, title: `标题 · ${font.label}` }))], dynamicTitle: true } },
-    bodyFont: { description: "正文字体", toolbar: { title: "正文字体", items: PREVIEW_FONTS.map(font => ({ value: font.id, title: `正文 · ${font.label}` })), dynamicTitle: true } },
+    radius: { description: "圆角基准；默认保留项目 8px，显式圆形、胶囊和 chat 角色保持独立", toolbar: { title: "圆角", items: PREVIEW_RADII.filter(({ value }) => value === "default" || value === "none").map(({ value, title }) => ({ value, title })), dynamicTitle: true } },
+    headingFont: { description: "标题字体", toolbar: { title: "标题字体", items: [{ value: "inherit", title: "标题 · 跟随正文" }, ...PREVIEW_FONTS.filter(font => font.id === "noto-serif" || font.id === "noto-sans").map(font => ({ value: font.id, title: `标题 · ${font.label}` }))], dynamicTitle: true } },
+    bodyFont: { description: "正文字体", toolbar: { title: "正文字体", items: PREVIEW_FONTS.filter(font => font.id === "noto-sans" || font.id === "noto-serif").map(font => ({ value: font.id, title: `正文 · ${font.label}` })), dynamicTitle: true } },
   },
   initialGlobals: { theme: "light", ...DEFAULT_PREVIEW_APPEARANCE },
   parameters: {

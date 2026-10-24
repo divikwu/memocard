@@ -48,7 +48,7 @@ function DropdownMenuContent({
           data-slot="dropdown-menu-content"
           className={cnState(
             className,
-            "z-50 max-h-(--available-height) w-(--anchor-width) min-w-48 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-3xl bg-popover p-1.5 text-primary shadow-lg ring-1 ring-primary/5 duration-fast-min ease-standard outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:ring-primary/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95"
+            "z-50 max-h-(--available-height) w-(--anchor-width) min-w-48 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-popover bg-popover p-1.5 text-primary shadow-lg border border-border duration-fast-min ease-standard outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95"
           )}
           {...props}
         />
@@ -72,7 +72,7 @@ function DropdownMenuLabel({
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cnState(className, "px-3 py-2.5 text-xs text-secondary data-inset:pl-9.5")}
+      className={cnState(className, "px-2 py-2.5 text-xs text-secondary data-inset:pl-8.5")}
       {...props}
     />
   )
@@ -94,7 +94,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cnState(
         className,
-        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-full px-3 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary not-data-[variant=destructive]:focus:**:text-accent dark:not-data-[variant=destructive]:focus:**:text-primary data-inset:pl-9.5 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error dark:data-[variant=destructive]:focus:bg-error/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-error"
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary not-data-[variant=destructive]:focus:**:text-accent dark:not-data-[variant=destructive]:focus:**:text-primary data-inset:pl-8.5 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error dark:data-[variant=destructive]:focus:bg-error/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-error"
       )}
       {...props}
     />
@@ -119,7 +119,7 @@ function DropdownMenuSubTrigger({
       data-inset={inset}
       className={cnState(
         className,
-        "flex cursor-default items-center gap-2 rounded-full px-3 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary not-data-[variant=destructive]:focus:**:text-accent dark:not-data-[variant=destructive]:focus:**:text-primary data-inset:pl-9.5 data-popup-open:bg-accent-muted data-popup-open:text-accent dark:data-popup-open:text-primary data-open:bg-accent-muted data-open:text-accent dark:data-open:text-primary [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "flex cursor-default items-center gap-2 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary not-data-[variant=destructive]:focus:**:text-accent dark:not-data-[variant=destructive]:focus:**:text-primary data-inset:pl-8.5 data-popup-open:bg-accent-muted data-popup-open:text-accent dark:data-popup-open:text-primary data-open:bg-accent-muted data-open:text-accent dark:data-open:text-primary [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >
@@ -142,7 +142,7 @@ function DropdownMenuSubContent({
       data-slot="dropdown-menu-sub-content"
       className={cnState(
         className,
-        "w-auto min-w-36 rounded-3xl bg-popover p-1.5 text-primary shadow-lg ring-1 ring-primary/5 duration-fast-min ease-standard data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:ring-primary/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+        "w-auto min-w-36 rounded-popover bg-popover p-1.5 text-primary shadow-lg border border-border duration-fast-min ease-standard data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
       )}
       align={align}
       alignOffset={alignOffset}
@@ -168,7 +168,7 @@ function DropdownMenuCheckboxItem({
       data-inset={inset}
       className={cnState(
         className,
-        "relative flex cursor-default items-center gap-2.5 rounded-full py-2 pr-8 pl-3 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary focus:**:text-accent dark:focus:**:text-primary data-inset:pl-9.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary focus:**:text-accent dark:focus:**:text-primary data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       checked={checked}
       {...props}
@@ -209,7 +209,7 @@ function DropdownMenuRadioItem({
       data-inset={inset}
       className={cnState(
         className,
-        "relative flex cursor-default items-center gap-2.5 rounded-full py-2 pr-8 pl-3 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary focus:**:text-accent dark:focus:**:text-primary data-inset:pl-9.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary focus:**:text-accent dark:focus:**:text-primary data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >
@@ -233,7 +233,7 @@ function DropdownMenuSeparator({
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
-      className={cnState(className, "-mx-1.5 my-1.5 h-px bg-border/50")}
+      className={cnState(className, "-mx-1.5 my-1.5 h-px bg-divider")}
       {...props}
     />
   )

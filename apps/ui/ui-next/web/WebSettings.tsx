@@ -5,13 +5,13 @@ import { Button } from "../components/button";
 import { Card, CardContent } from "../components/card";
 import { Switch } from "../components/switch";
 import { Label } from "../components/label";
-import { NativeSelect, NativeSelectOption } from "../components/native-select";
 import { usePreviewFontStatus } from "../preview-mode";
 import { getPreviewRadius, PREVIEW_RADII } from "../preview-appearance";
-import { getPreviewFont, PREVIEW_FONTS, type PreviewFont } from "../preview-fonts";
+import { getPreviewFont, PREVIEW_FONTS } from "../preview-fonts";
 import { ChevronDownIcon } from "../icons";
 import { Spinner } from "../components/spinner";
-import { useWebAppearance, WEB_NEUTRALS, WEB_PALETTES, type WebAppearance } from "./WebAppearance";
+import { useWebAppearance, WEB_NEUTRALS, WEB_PALETTES } from "./WebAppearance";
+import { WebSettingSelect } from "./WebSettingSelect";
 import { WebTypographySettings } from "./WebTypographySettings";
 import "./web-settings.css";
 
@@ -26,7 +26,7 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
   const id = useId();
   const appearance = useWebAppearance();
   const fonts = usePreviewFontStatus();
-  const bodyFont = useRef<HTMLSelectElement>(null);
+  const bodyFont = useRef<HTMLButtonElement>(null);
   const advanced = useRef<HTMLDetailsElement>(null);
   const field = (name: string) => `${id}-${name}`;
   return <div className="web-settings"><h1 className="sr-only">设置</h1>
@@ -38,13 +38,13 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
       </CardContent></Card>
     </section>
     {appearance && <section aria-labelledby={field("appearance-heading")}><div className="web-setting-section-heading"><h2 id={field("appearance-heading")}>外观</h2><Button variant="ghost" size="sm" onClick={appearance.resetAppearance}>恢复默认</Button></div><Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">
-      <div><Label htmlFor={field("theme")}>主题</Label><NativeSelect id={field("theme")} value={appearance.value.theme} onChange={event => appearance.onChange({ ...appearance.value, theme: event.target.value as WebAppearance["theme"] })}><NativeSelectOption value="light">浅色</NativeSelectOption><NativeSelectOption value="dark">深色</NativeSelectOption><NativeSelectOption value="system">跟随系统</NativeSelectOption></NativeSelect></div>
-      <div><div className="web-setting-description"><Label htmlFor={field("palette")}>强调色</Label><p>用于按钮和选中状态。</p></div><NativeSelect id={field("palette")} value={appearance.value.palette} onChange={event => appearance.onChange({ ...appearance.value, palette: event.target.value as WebAppearance["palette"] })}>{WEB_PALETTES.map(option => <NativeSelectOption key={option.value} value={option.value}>{option.label}</NativeSelectOption>)}</NativeSelect></div>
+      <div><Label htmlFor={field("theme")}>主题</Label><WebSettingSelect id={field("theme")} value={appearance.value.theme} onValueChange={theme => appearance.onChange({ ...appearance.value, theme })} options={[{ value: "light", label: "浅色" }, { value: "dark", label: "深色" }, { value: "system", label: "跟随系统" }]} /></div>
+      <div><div className="web-setting-description"><Label htmlFor={field("palette")}>强调色</Label><p>用于按钮和选中状态。</p></div><WebSettingSelect id={field("palette")} value={appearance.value.palette} onValueChange={palette => appearance.onChange({ ...appearance.value, palette })} options={WEB_PALETTES} /></div>
       <details ref={advanced} className="web-file-status web-appearance-advanced"><summary>高级外观<ChevronDownIcon aria-hidden="true" /></summary><div className="web-setting-card-content web-advanced-fields">
-      <div><Label htmlFor={field("neutral")}>中性色</Label><NativeSelect id={field("neutral")} value={appearance.value.neutralPalette} onChange={event => appearance.onChange({ ...appearance.value, neutralPalette: event.target.value as WebAppearance["neutralPalette"] })}>{WEB_NEUTRALS.map(option => <NativeSelectOption key={option.value} value={option.value}>{option.label}</NativeSelectOption>)}</NativeSelect></div>
-      <div><Label htmlFor={field("heading")}>标题字体</Label><NativeSelect id={field("heading")} value={appearance.value.headingFont} onChange={event => appearance.onChange({ ...appearance.value, headingFont: event.target.value as WebAppearance["headingFont"] })}><NativeSelectOption value="inherit">跟随正文</NativeSelectOption>{appearance.value.headingFont !== "inherit" && !PREVIEW_FONTS.some(font => font.id === appearance.value.headingFont) && <NativeSelectOption value={appearance.value.headingFont}>{getPreviewFont(appearance.value.headingFont).label}（已有设置）</NativeSelectOption>}{PREVIEW_FONTS.map(font => <NativeSelectOption key={font.id} value={font.id}>{font.label}</NativeSelectOption>)}</NativeSelect></div>
-      <div><Label htmlFor={field("body")}>正文字体</Label><NativeSelect ref={bodyFont} id={field("body")} value={appearance.value.bodyFont} onChange={event => appearance.onChange({ ...appearance.value, bodyFont: event.target.value as PreviewFont })}>{!PREVIEW_FONTS.some(font => font.id === appearance.value.bodyFont) && <NativeSelectOption value={appearance.value.bodyFont}>{getPreviewFont(appearance.value.bodyFont).label}（已有设置）</NativeSelectOption>}{PREVIEW_FONTS.map(font => <NativeSelectOption key={font.id} value={font.id}>{font.label}</NativeSelectOption>)}</NativeSelect></div>
-      <div><Label htmlFor={field("radius")}>圆角</Label><NativeSelect id={field("radius")} value={appearance.value.radius} onChange={event => appearance.onChange({ ...appearance.value, radius: event.target.value as WebAppearance["radius"] })}>{!PREVIEW_RADII.some(option => option.value === appearance.value.radius) && <NativeSelectOption value={appearance.value.radius}>{getPreviewRadius(appearance.value.radius).title}</NativeSelectOption>}{PREVIEW_RADII.map(option => <NativeSelectOption key={option.value} value={option.value}>{option.title}</NativeSelectOption>)}</NativeSelect></div>
+      <div><Label htmlFor={field("neutral")}>中性色</Label><WebSettingSelect id={field("neutral")} value={appearance.value.neutralPalette} onValueChange={neutralPalette => appearance.onChange({ ...appearance.value, neutralPalette })} options={WEB_NEUTRALS} /></div>
+      <div><Label htmlFor={field("heading")}>标题字体</Label><WebSettingSelect id={field("heading")} value={appearance.value.headingFont} onValueChange={headingFont => appearance.onChange({ ...appearance.value, headingFont })} options={[{ value: "inherit", label: "跟随正文" }, ...(appearance.value.headingFont !== "inherit" && !PREVIEW_FONTS.some(font => font.id === appearance.value.headingFont) ? [{ value: appearance.value.headingFont, label: `${getPreviewFont(appearance.value.headingFont).label}（已有设置）` }] : []), ...PREVIEW_FONTS.map(font => ({ value: font.id, label: font.label }))]} /></div>
+      <div><Label htmlFor={field("body")}>正文字体</Label><WebSettingSelect ref={bodyFont} id={field("body")} value={appearance.value.bodyFont} onValueChange={bodyFont => appearance.onChange({ ...appearance.value, bodyFont })} options={[...(!PREVIEW_FONTS.some(font => font.id === appearance.value.bodyFont) ? [{ value: appearance.value.bodyFont, label: `${getPreviewFont(appearance.value.bodyFont).label}（已有设置）` }] : []), ...PREVIEW_FONTS.map(font => ({ value: font.id, label: font.label }))]} /></div>
+      <div><Label htmlFor={field("radius")}>圆角</Label><WebSettingSelect id={field("radius")} value={appearance.value.radius} onValueChange={radius => appearance.onChange({ ...appearance.value, radius })} options={[...(!PREVIEW_RADII.some(option => option.value === appearance.value.radius) ? [{ value: appearance.value.radius, label: getPreviewRadius(appearance.value.radius).title }] : []), ...PREVIEW_RADII.map(option => ({ value: option.value, label: option.title }))]} /></div>
       </div></details>
       {fonts.status !== "ready" && <div className="web-font-status" role="status"><p>{fonts.status === "failed" ? "所选字体暂时无法加载，当前使用回退字体。" : "正在加载所选字体，当前使用回退字体。"}</p>{fonts.status === "failed" && <Button variant="outline" size="sm" onClick={() => { fonts.retry(); if (advanced.current) advanced.current.open = true; bodyFont.current?.focus(); }}>重试加载字体</Button>}</div>}
       {appearance.persistenceError && <p role="status" className="text-sm text-error">无法读取或保存外观设置；本次会话中的选择仍然有效。</p>}

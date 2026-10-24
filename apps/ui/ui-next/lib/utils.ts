@@ -6,6 +6,7 @@ const twMerge = extendTailwindMerge({
     theme: { spacing: ["element-sm", "element-md", "element-lg"], ease: ["standard"] },
     classGroups: {
       duration: [{ duration: ["fast-min", "fast", "fast-max", "medium-min", "medium", "slow"] }],
+      shadow: [{ shadow: ["med"] }],
     },
   },
 });

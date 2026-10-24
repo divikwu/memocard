@@ -71,24 +71,58 @@ const loaders = {
   "noto-sans-sc": () => Promise.resolve(),
 } satisfies Record<Exclude<PreviewFont, "system-mono" | "pingfang" | "songti">, () => Promise<unknown>>;
 
-const pending = new Map<PreviewFont, Promise<unknown>>();
+const pending = new Map<string, Promise<unknown>>();
+let retryAttempt = 0;
 
-export function loadPreviewFonts(fonts: PreviewFont[]): Promise<unknown[]> {
+function retryFailedFontFaces(families: string[]) {
+  const failed = [...document.fonts].filter(face => face.status === "error" && families.includes(face.family.replace(/["']/g, "")));
+  if (!failed.length) return;
+  const attempt = String(++retryAttempt);
+  for (const sheet of document.styleSheets) {
+    let rules: CSSRuleList;
+    try { rules = sheet.cssRules; } catch { continue; }
+    for (const rule of rules) {
+      if (rule.type !== CSSRule.FONT_FACE_RULE) continue;
+      const { style } = rule as CSSFontFaceRule;
+      if (!failed.some(face => face.family.replace(/["']/g, "") === style.getPropertyValue("font-family").replace(/["']/g, "")
+        && face.style === (style.getPropertyValue("font-style") || "normal")
+        && face.weight === (style.getPropertyValue("font-weight") || "normal")
+        && face.unicodeRange.replace(/\s/g, "").toLowerCase() === (style.getPropertyValue("unicode-range") || "U+0-10FFFF").replace(/\s/g, "").toLowerCase())) continue;
+      // A failed FontFace cannot load again; changing src creates a fresh face.
+      style.setProperty("src", style.getPropertyValue("src").replace(/url\((["']?)(.*?)\1\)/g, (_match, _quote, source: string) => {
+        const url = new URL(source, sheet.href || document.baseURI);
+        url.searchParams.set("font-retry", attempt);
+        return `url("${url.href}")`;
+      }));
+    }
+  }
+}
+
+export function loadPreviewFonts(fonts: PreviewFont[], includeChineseCompanion = true): Promise<unknown[]> {
   return Promise.all([...new Set(fonts)].map(font => {
     if (font === "system-mono" || font === "pingfang" || font === "songti") return Promise.resolve();
-    let request = pending.get(font);
+    const key = `${font}:${includeChineseCompanion}`;
+    let request = pending.get(key);
     if (!request) {
       const option = getPreviewFont(font);
       request = loaders[font]().then(async () => {
-        const family = option.fontFamily.split(",")[0];
-        const faces = await document.fonts.load(`400 16px ${family}`, "Aa");
-        if (!faces.length) throw new Error(`Unable to load ${option.label}.`);
-        return faces;
+        const stack = option.fontFamily.split(",").map(family => family.trim().replace(/["']/g, ""));
+        const families = [...new Set([stack[0], ...(includeChineseCompanion ? stack.filter(family => family.endsWith(" SC Variable")) : [])])];
+        retryFailedFontFaces(families);
+        const faces = await Promise.all(families.map(async family => {
+          // Common punctuation overlaps many CJK subsets; use Han characters only.
+          const loaded = await document.fonts.load(`400 16px "${family}"`, family.endsWith(" SC Variable") ? "中文" : "Aa");
+          if (!loaded.length) throw new Error(`Unable to load ${option.label}.`);
+          return loaded;
+        }));
+        await document.fonts.ready;
+        if ([...document.fonts].some(face => face.status === "error" && families.includes(face.family.replace(/["']/g, "")))) throw new Error(`Unable to load ${option.label}.`);
+        return faces[0];
       }).catch(error => {
-        pending.delete(font);
+        pending.delete(key);
         throw error;
       });
-      pending.set(font, request);
+      pending.set(key, request);
     }
     return request;
   }));

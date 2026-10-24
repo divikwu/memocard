@@ -32,12 +32,14 @@
   --color-icon-accent: var(--color-neutral-950);
   --color-neutral: color-mix(in srgb, var(--color-black) 6%, transparent);
   --color-overlay: color-mix(in srgb, var(--color-black) 50%, transparent);
-  --color-overlay-hover: color-mix(in srgb, var(--color-black) 5%, transparent);
+  --color-overlay-hover: color-mix(in srgb, var(--color-black) 4%, transparent);
   --color-overlay-pressed: color-mix(in srgb, var(--color-black) 10%, transparent);
-  --color-border: var(--color-neutral-200);
+  --color-border: color-mix(in srgb, var(--color-black) 8%, transparent);
+  --color-border-subtle: color-mix(in srgb, var(--color-black) 6%, transparent);
+  --color-divider: var(--color-border);
   --color-border-emphasized: var(--color-neutral-500);
   --color-skeleton: var(--color-neutral-100);
-  --color-shadow: color-mix(in srgb, var(--color-black) 10%, transparent);
+  --color-shadow: rgb(25 25 25);
   --color-tint-hover: var(--color-black);
   --color-on-dark: var(--color-white);
   --color-on-light: var(--color-neutral-950);
@@ -192,19 +194,25 @@
   --size-element-md: 36px;
   --size-element-lg: 40px;
   --border-width: 1px;
-  --focus-outline-width: 2px;
+  --focus-outline-width: 1px;
   --focus-outline-style: solid;
-  --focus-outline-color: var(--color-border-emphasized);
-  --focus-outline-offset: 3px;
+  --focus-outline-color: color-mix(in srgb, var(--color-neutral-900) 8%, transparent);
+  --focus-outline-offset: calc(-1 * var(--focus-outline-width));
   --radius-none: 0px;
   --radius-inner: calc(var(--radius-element) * 0.6);
   --radius-element: 0.5rem;
+  --radius-control: var(--radius-full);
+  --radius-textarea: calc(var(--radius-element) * 1.5);
+  --radius-select-popover: calc(var(--radius-element) * 2.5);
   --radius-container: calc(var(--radius-element) * 1.4);
+  --radius-item: calc(var(--radius-element) * 1.5);
+  --radius-popover: calc(var(--radius-element) * 2.5);
+  --radius-card: calc(var(--radius-element) * 2.5);
   --radius-page: calc(var(--radius-element) * 2.6);
   --radius-chat: 28px;
   --radius-full: 9999px;
   --font-family-body: "Noto Sans Variable", "Noto Sans SC Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-family-heading: "Noto Serif Variable", "Noto Serif SC Variable", Georgia, serif;
+  --font-family-heading: var(--font-family-body);
   --font-family-code: ui-monospace, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
@@ -245,9 +253,10 @@
   --duration-slow: 700ms;
   --duration-slow-max: 935ms;
   --ease-standard: cubic-bezier(0.24, 1, 0.4, 1);
-  --shadow-low: 0 2px 4px color-mix(in srgb, var(--color-black) 5%, transparent), 0 4px 8px color-mix(in srgb, var(--color-black) 10%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--color-black) 0%, transparent);
-  --shadow-med: 0 2px 4px color-mix(in srgb, var(--color-black) 5%, transparent), 0 4px 12px color-mix(in srgb, var(--color-black) 10%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--color-black) 0%, transparent);
-  --shadow-high: 0 4px 6px color-mix(in srgb, var(--color-black) 10%, transparent), 0 12px 24px color-mix(in srgb, var(--color-black) 15%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--color-black) 0%, transparent);
+  --shadow-low: 0 4px 12px color-mix(in srgb, var(--color-shadow) 2.7%, transparent), 0 1px 2px color-mix(in srgb, var(--color-shadow) 2%, transparent);
+  --shadow-med: 0 4px 12px color-mix(in srgb, var(--color-shadow) 2.7%, transparent), 0 1px 2px color-mix(in srgb, var(--color-shadow) 2%, transparent);
+  --shadow-high: 0 20px 24px color-mix(in srgb, var(--color-shadow) 5%, transparent), 0 5px 8px color-mix(in srgb, var(--color-shadow) 2.7%, transparent);
+  --shadow-input-focus: 0 6px 20px color-mix(in srgb, var(--color-neutral-900) 6%, transparent), 0 1px 3px color-mix(in srgb, var(--color-neutral-900) 3%, transparent);
   /* State rings remain separate from elevation and outline focus. */
   --shadow-inset-hover: inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 30%, transparent);
   --shadow-inset-selected: inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 50%, transparent);
@@ -279,12 +288,14 @@
   --color-icon-accent: var(--color-neutral-50);
   --color-neutral: color-mix(in srgb, var(--color-white) 10%, transparent);
   --color-overlay: color-mix(in srgb, var(--color-black) 80%, transparent);
-  --color-overlay-hover: color-mix(in srgb, var(--color-white) 5%, transparent);
+  --color-overlay-hover: color-mix(in srgb, var(--color-white) 4%, transparent);
   --color-overlay-pressed: color-mix(in srgb, var(--color-white) 10%, transparent);
   --color-border: color-mix(in srgb, var(--color-white) 10%, transparent);
+  --color-border-subtle: color-mix(in srgb, var(--color-white) 5%, transparent);
+  --color-divider: var(--color-border);
   --color-border-emphasized: var(--color-neutral-400);
   --color-skeleton: var(--color-neutral-700);
-  --color-shadow: color-mix(in srgb, var(--color-black) 30%, transparent);
+  --color-shadow: var(--color-black);
   --color-tint-hover: var(--color-white);
   --color-on-dark: var(--color-white);
   --color-on-light: var(--color-neutral-950);
@@ -369,9 +380,10 @@
   --color-data-gray-2: var(--color-neutral-200);
   --color-data-gray-1: var(--color-neutral-50);
 
-  --shadow-low: 0 2px 4px color-mix(in srgb, var(--color-black) 25%, transparent), 0 4px 8px color-mix(in srgb, var(--color-black) 40%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--color-white) 8%, transparent);
-  --shadow-med: 0 2px 4px color-mix(in srgb, var(--color-black) 35%, transparent), 0 4px 12px color-mix(in srgb, var(--color-black) 50%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--color-white) 12%, transparent);
-  --shadow-high: 0 4px 6px color-mix(in srgb, var(--color-black) 50%, transparent), 0 12px 24px color-mix(in srgb, var(--color-black) 70%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--color-white) 15%, transparent);
+  --shadow-low: 0 2px 4px color-mix(in srgb, var(--color-shadow) 16%, transparent);
+  --shadow-med: 0 4px 12px -2px color-mix(in srgb, var(--color-shadow) 24%, transparent);
+  --shadow-high: 0 14px 28px -6px color-mix(in srgb, var(--color-shadow) 36%, transparent), 0 2px 4px -1px color-mix(in srgb, var(--color-shadow) 24%, transparent);
+  --shadow-input-focus: 0 6px 20px color-mix(in srgb, var(--color-black) 28%, transparent), 0 1px 3px color-mix(in srgb, var(--color-black) 18%, transparent);
 }
 
 /* Register aliases without overwriting the system variables they reference. */
@@ -412,6 +424,8 @@
   --color-error-bg: var(--color-error-fill);
   --color-on-error: var(--color-on-error);
   --color-border: var(--color-border);
+  --color-border-subtle: var(--color-border-subtle);
+  --color-divider: var(--color-divider);
   --color-border-strong: var(--color-border-emphasized);
   --color-focus: var(--focus-outline-color);
   --color-on-dark: var(--color-on-dark);
@@ -569,7 +583,13 @@
   --text-5xl: var(--font-size-5xl);
   --radius-inner: var(--radius-inner);
   --radius-element: var(--radius-element);
+  --radius-control: var(--radius-control);
+  --radius-textarea: var(--radius-textarea);
+  --radius-select-popover: var(--radius-select-popover);
   --radius-container: var(--radius-container);
+  --radius-item: var(--radius-item);
+  --radius-popover: var(--radius-popover);
+  --radius-card: var(--radius-card);
   --radius-page: var(--radius-page);
   --radius-chat: var(--radius-chat);
   --radius-sm: var(--radius-inner);
@@ -580,9 +600,11 @@
   --radius-3xl: calc(var(--radius-element) * 2.2);
   --radius-4xl: var(--radius-page);
   --shadow-sm: var(--shadow-low);
-  --shadow-md: var(--shadow-med);
+  --shadow-md: initial;
+  --shadow-med: var(--shadow-med);
   --shadow-lg: var(--shadow-high);
   --shadow-xl: var(--shadow-high);
+  --shadow-input-focus: var(--shadow-input-focus);
   --shadow-inset-hover: var(--shadow-inset-hover);
   --shadow-inset-selected: var(--shadow-inset-selected);
   --shadow-inset-success: var(--shadow-inset-success);

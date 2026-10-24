@@ -5,7 +5,7 @@ import { FONT_GROUPS } from "../../src/lib/font-groups";
 import { Button } from "../components/button";
 import { Card, CardContent } from "../components/card";
 import { Label } from "../components/label";
-import { NativeSelect, NativeSelectOption } from "../components/native-select";
+import { WebSettingSelect } from "./WebSettingSelect";
 import { NoteMarkdown } from "../business/NoteMarkdown";
 
 const labels: Record<keyof Typography, string> = { measure: "行宽", heading: "笔记标题字体", body: "笔记正文字体", mono: "笔记等宽字体", size: "字号", leading: "行高", flow: "段落间距" };
@@ -39,10 +39,10 @@ export function WebTypographySettings() {
     {error && <p role="status" className="text-sm text-error">{error}</p>}
     <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">{keys.map(key => <div key={key}>
       <Label htmlFor={`${id}-${key}`}>{labels[key]}</Label>
-      <NativeSelect id={`${id}-${key}`} value={value[key]} onChange={event => save({ ...value, [key]: event.target.value })}>
-        {key === "mono" && !options.mono.includes(value.mono) && <NativeSelectOption value={value.mono}>{choiceLabel(key, value.mono)}（已有设置）</NativeSelectOption>}
-        {options[key].map(option => <NativeSelectOption key={option} value={option}>{choiceLabel(key, option)}</NativeSelectOption>)}
-      </NativeSelect>
+      <WebSettingSelect id={`${id}-${key}`} value={value[key]} onValueChange={next => save({ ...value, [key]: next })} options={[
+        ...(key === "mono" && !options.mono.includes(value.mono) ? [{ value: value.mono, label: `${choiceLabel(key, value.mono)}（已有设置）` }] : []),
+        ...options[key].map(option => ({ value: option, label: choiceLabel(key, option) })),
+      ]} />
     </div>)}</CardContent></Card>
     <div role="region" aria-label="笔记排版预览" className="web-note-style-preview"><header><p>实时预览</p><p>随内容风格设置即时更新</p></header><div className="web-note-style-preview-body"><div className="web-note-style-preview-measure"><NoteMarkdown body={preview} /></div></div></div>
   </section>;

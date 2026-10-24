@@ -25,6 +25,7 @@ import {
   TooltipTrigger,
 } from "@ui-next/components/tooltip"
 import { IconPlaceholder } from "@ui-next/showcase-icons"
+import { SidebarContext, useSidebar, type SidebarContextProps } from "@ui-next/components/sidebar-context"
 
 const SIDEBAR_COOKIE_NAME = "ui-next-sidebar-state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
@@ -32,27 +33,6 @@ const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "85vw"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
-
-type SidebarContextProps = {
-  state: "expanded" | "collapsed"
-  open: boolean
-  setOpen: (open: boolean) => void
-  openMobile: boolean
-  setOpenMobile: (open: boolean) => void
-  isMobile: boolean
-  toggleSidebar: () => void
-}
-
-const SidebarContext = React.createContext<SidebarContextProps | null>(null)
-
-function useSidebar() {
-  const context = React.useContext(SidebarContext)
-  if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider.")
-  }
-
-  return context
-}
 
 function SidebarProvider({
   defaultOpen = true,
@@ -273,7 +253,7 @@ function Sidebar({
           data-slot="sidebar-inner"
           inert={state === "collapsed" && collapsible === "offcanvas"}
           aria-hidden={state === "collapsed" && collapsible === "offcanvas"}
-          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-2xl group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-border"
+          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-2xl group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:border group-data-[variant=floating]:border-border"
         >
           {children}
         </div>
@@ -296,8 +276,8 @@ function SidebarTrigger({
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
-      size="icon-sm"
-      className={cnState(className, "aria-expanded:bg-transparent aria-expanded:hover:bg-muted dark:aria-expanded:bg-transparent dark:aria-expanded:hover:bg-muted/50")}
+      size="icon"
+      className={cnState(className, "aria-expanded:bg-transparent aria-expanded:hover:bg-overlay-hover dark:aria-expanded:bg-transparent dark:aria-expanded:hover:bg-overlay-hover")}
       onClick={(event) => {
         onClick?.(event)
         toggleSidebar()
@@ -363,7 +343,7 @@ function SidebarInput({
     <Input
       data-slot="sidebar-input"
       data-sidebar="input"
-      className={cn("h-element-sm w-full bg-neutral shadow-none", className)}
+      className={cn("h-element-sm w-full shadow-none", className)}
       {...props}
     />
   )
@@ -402,7 +382,7 @@ function SidebarSeparator({
     <Separator
       data-slot="sidebar-separator"
       data-sidebar="separator"
-      className={cnState(className, "mx-2 w-auto bg-border")}
+      className={cnState(className, "mx-2 w-auto bg-divider")}
       {...props}
     />
   )
@@ -524,7 +504,7 @@ const sidebarMenuButtonVariants = cva(
       variant: {
         default: "hover:bg-accent-muted hover:text-primary",
         outline:
-          "bg-body shadow-[0_0_0_1px_var(--color-border)] hover:bg-accent-muted hover:text-primary hover:shadow-[0_0_0_1px_var(--color-accent-muted)]",
+          "border border-border bg-body hover:border-accent-muted hover:bg-accent-muted hover:text-primary",
       },
       size: {
         default: "h-element-md text-sm",

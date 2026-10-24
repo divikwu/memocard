@@ -1,12 +1,12 @@
 .note-search-next-dialog { height: min(680px,calc(100dvh - 2rem)); max-width: min(60rem,calc(100% - 2rem)); border-radius: var(--radius-container); }
 :is([data-slot="dialog-overlay"]:has(~ .note-search-next-dialog), [data-slot="sheet-overlay"]:has(~ .note-search-next-sheet)) { background: color-mix(in oklab, var(--color-background-body) 80%, transparent); }
-.note-search-next-dialog, .note-search-next-sheet { box-shadow: 0 calc(var(--spacing-1) * 5) calc(var(--spacing-1) * 6) color-mix(in srgb, var(--color-black) 5%, transparent), 0 calc(var(--spacing-1) * 1.25) calc(var(--spacing-1) * 2) color-mix(in srgb, var(--color-black) 2.7%, transparent), 0 0 0 var(--border-width) color-mix(in srgb, var(--color-text-primary) 7%, transparent); }
+.note-search-next-dialog, .note-search-next-sheet { border-color: var(--color-border); box-shadow: var(--shadow-high); }
 .note-search-next-field .note-search-next-input:focus { background-color: transparent; }
 .note-search-next-input { font-size: var(--font-size-base); }
 .note-search-next-input:focus-visible { outline: none; }
 :is(.note-search-next-dialog,.note-search-next-sheet)[data-keyboard-focus] .note-search-next-input:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 :is(.note-search-next-dialog,.note-search-next-sheet) .text-xs { line-height: var(--text-supporting-leading); }
-.note-search-next-control { border-radius: calc(var(--radius-element) * .8); }
+.note-search-next-control { border-radius: var(--radius-full); }
 .note-search-next-control:hover { background-color: var(--color-overlay-hover); color: var(--color-text-primary); }
 .note-search-next-status { padding: calc(var(--spacing-1) * 10) calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 3); }
 .note-search-next-empty { margin-block: auto; }

@@ -56,7 +56,7 @@ function DialogContent({
         data-slot="dialog-content"
         className={cnState(
           className,
-          "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full overflow-y-auto overscroll-contain break-words max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl bg-popover p-6 text-sm text-primary shadow-xl ring-1 ring-primary/5 duration-fast-min ease-standard outline-none sm:max-w-md dark:ring-primary/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full overflow-y-auto overscroll-contain break-words max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl bg-popover p-6 text-sm text-primary shadow-xl border border-border duration-fast-min ease-standard outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           showCloseButton && "[&>[data-slot=dialog-header]]:pr-6"
         )}
         {...props}
@@ -67,8 +67,8 @@ function DialogContent({
             data-slot="dialog-close"
             render={
               <Button
-                variant="ghost"
-                className="absolute top-4 right-4 bg-muted"
+                variant="secondary"
+                className="absolute top-4 right-4"
                 size="icon-sm"
               />
             }

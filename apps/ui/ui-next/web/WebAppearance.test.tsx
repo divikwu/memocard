@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { AppViewState } from "../../src/App";
 import { noteEditor } from "../../src/editor-test-utils";
 import { RichMarkdownEditor } from "../business/RichMarkdownEditor";
 import { PREVIEW_FONTS, getPreviewFont, loadPreviewFonts } from "../preview-fonts";
-import { DEFAULT_WEB_APPEARANCE, WebAppearanceProvider, useWebAppearance } from "./WebAppearance";
+import { DEFAULT_WEB_APPEARANCE, WEB_NEUTRALS, WEB_PALETTES, WebAppearanceProvider, useWebAppearance } from "./WebAppearance";
 import { WebSettings } from "./WebSettings";
 
 vi.mock("../preview-fonts", async original => ({ ...await original<typeof import("../preview-fonts")>(), loadPreviewFonts: vi.fn().mockResolvedValue(undefined) }));
@@ -29,6 +29,11 @@ afterEach(() => {
 function Controls() {
   const appearance = useWebAppearance()!;
   return <><pre aria-label="当前设置">{JSON.stringify(appearance.value)}</pre><button onClick={() => appearance.onChange({ ...appearance.value, theme: "system" })}>跟随系统</button><button onClick={() => appearance.onChange({ ...appearance.value, theme: "light" })}>浅色</button><button onClick={() => appearance.onChange({ ...appearance.value, radius: "none" })}>无圆角</button><button onClick={() => appearance.onChange({ ...appearance.value, palette: "blue", neutralPalette: "slate" })}>冷灰蓝色</button><button onClick={appearance.resetAppearance}>恢复默认</button>{appearance.persistenceError && <p role="status">保存失败</p>}</>;
+}
+async function choose(user: ReturnType<typeof userEvent.setup>, label: string, option: string) {
+  await user.click(screen.getByRole("combobox", { name: label }));
+  await user.click(await screen.findByRole("option", { name: option }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
 }
 function receive(value: unknown, storage: Storage = localStorage, storageKey: string | null = key) {
   act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: value === null ? null : JSON.stringify(value), storageArea: storage })));
@@ -145,15 +150,15 @@ const settingsState = () => ({
   capabilities: new Set(), environment: null, unsupportedBrowser: false,
 } as unknown as AppViewState);
 
-it("exposes native labelled appearance selectors and restores the last indexed timestamp", async () => {
+it("uses labelled UI-next appearance selectors and restores the last indexed timestamp", async () => {
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  await user.selectOptions(screen.getByRole("combobox", { name: "主题" }), "system");
+  await choose(user, "主题", "跟随系统");
   await user.click(screen.getByText("高级外观"));
-  await user.selectOptions(screen.getByRole("combobox", { name: "正文字体" }), "geist");
-  await user.selectOptions(screen.getByRole("combobox", { name: "标题字体" }), "inherit");
+  await choose(user, "正文字体", "Geist");
+  await choose(user, "标题字体", "跟随正文");
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "system", bodyFont: "geist", headingFont: "inherit" });
-  expect((screen.getByRole("combobox", { name: "正文字体" }) as HTMLSelectElement).tagName).toBe("SELECT");
+  expect(screen.getByRole("combobox", { name: "正文字体" }).getAttribute("data-slot")).toBe("select-trigger");
   fireEvent.click(screen.getByText("本机文件状态"));
   expect(screen.getByText("最近索引时间").nextElementSibling?.querySelector("time")?.dateTime).toBe("2026-10-22T08:12:00Z");
 });
@@ -215,20 +220,26 @@ it("connects all eight palette choices, both neutral choices and reset to the re
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
   const palette = screen.getByRole("combobox", { name: "强调色" });
-  expect(within(palette).getAllByRole("option")).toHaveLength(8);
+  await user.click(palette);
+  expect(await screen.findAllByRole("option")).toHaveLength(8);
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   for (const value of ["lime", "green", "emerald", "teal", "cyan", "sky", "blue", "mono"]) {
-    await user.selectOptions(palette, value);
+    await choose(user, "强调色", WEB_PALETTES.find(option => option.value === value)!.label);
     expect(document.documentElement.dataset.webPalette).toBe(value);
     expect(JSON.parse(localStorage.getItem(key)!).palette).toBe(value);
   }
   await user.click(screen.getByText("高级外观"));
   const neutral = screen.getByRole("combobox", { name: "中性色" });
-  expect(within(neutral).getAllByRole("option")).toHaveLength(2);
+  await user.click(neutral);
+  expect(await screen.findAllByRole("option")).toHaveLength(2);
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   for (const value of ["slate", "neutral"]) {
-    await user.selectOptions(neutral, value);
+    await choose(user, "中性色", WEB_NEUTRALS.find(option => option.value === value)!.label);
     expect(document.documentElement.dataset.webNeutral).toBe(value);
   }
-  await user.selectOptions(palette, "blue");
+  await choose(user, "强调色", "蓝色");
   await user.click(screen.getByRole("button", { name: /^恢复默认$/ }));
   expect(JSON.parse(localStorage.getItem(key)!)).toEqual(DEFAULT_WEB_APPEARANCE);
 });
@@ -241,11 +252,40 @@ it("shows existing font and radius values as real current options before the use
   const radius = screen.getByRole("combobox", { name: "圆角" });
   const heading = screen.getByRole("combobox", { name: "标题字体" });
   const body = screen.getByRole("combobox", { name: "正文字体" });
-  expect(radius).toHaveProperty("value", "legacy-xs");
-  expect(heading).toHaveProperty("value", "songti");
-  expect(body).toHaveProperty("value", "pingfang");
-  expect(within(body).getByRole("option", { name: /已有设置/ })).toHaveProperty("selected", true);
-  await user.selectOptions(radius, "default");
+  expect(radius.textContent).toBe("已有设置 · 4px");
+  expect(heading.textContent).toBe(`${getPreviewFont("songti").label}（已有设置）`);
+  expect(body.textContent).toBe(`${getPreviewFont("pingfang").label}（已有设置）`);
+  await user.click(body);
+  expect((await screen.findByRole("option", { name: /已有设置/ })).getAttribute("aria-selected")).toBe("true");
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  await choose(user, "圆角", "默认 · 8px");
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ radius: "default", headingFont: "songti", bodyFont: "pingfang" });
   expect(document.documentElement.style.getPropertyValue("--ui-next-preview-radius")).toBe("0.5rem");
+});
+
+it("supports keyboard selection and Escape without losing trigger focus or changing a cancelled choice", async () => {
+  const user = userEvent.setup();
+  render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
+  const theme = screen.getByRole("combobox", { name: "主题" });
+  theme.focus();
+  await user.keyboard("{Enter}");
+  const light = await screen.findByRole("option", { name: "浅色" });
+  await waitFor(() => expect(document.activeElement).toBe(light));
+  await user.keyboard("{ArrowDown}");
+  const dark = screen.getByRole("option", { name: "深色" });
+  await waitFor(() => expect(document.activeElement).toBe(dark));
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  expect(JSON.parse(localStorage.getItem(key)!).theme).toBe("dark");
+  expect(document.activeElement).toBe(theme);
+  await user.keyboard("{Enter}");
+  const selected = await screen.findByRole("option", { name: "深色" });
+  await waitFor(() => expect(document.activeElement).toBe(selected));
+  await user.keyboard("{ArrowDown}");
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("option", { name: "跟随系统" })));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  expect(JSON.parse(localStorage.getItem(key)!).theme).toBe("dark");
+  expect(document.activeElement).toBe(theme);
 });

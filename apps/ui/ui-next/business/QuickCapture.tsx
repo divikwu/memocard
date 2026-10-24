@@ -2,13 +2,13 @@ import { lazy, Suspense, useCallback, useRef } from "react";
 import { EditorContent, type Editor } from "@tiptap/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Add01Icon from "@hugeicons/core-free-icons/Add01Icon";
-import ArrowUp01Icon from "@hugeicons/core-free-icons/ArrowUp01Icon";
 import ArrowUpRight01Icon from "@hugeicons/core-free-icons/ArrowUpRight01Icon";
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon";
 import FolderOpenIcon from "@hugeicons/core-free-icons/FolderOpenIcon";
 import HashIcon from "@hugeicons/core-free-icons/HashIcon";
 import ImageAdd01Icon from "@hugeicons/core-free-icons/ImageAdd01Icon";
 import Loading03Icon from "@hugeicons/core-free-icons/Loading03Icon";
+import TelegramIcon from "@hugeicons/core-free-icons/TelegramIcon";
 import Tick02Icon from "@hugeicons/core-free-icons/Tick02Icon";
 import { useQuickCapture, type QuickCaptureProps } from "../../src/hooks/use-quick-capture";
 import { useCaptureEditor, type CaptureEditorProps } from "../../src/capture-editor";
@@ -26,7 +26,7 @@ const VaultImage = lazy(() => import("./NoteMarkdown").then(module => ({ default
 
 export type { QuickCaptureHandle, QuickCaptureMemory, QuickCaptureProps } from "../../src/hooks/use-quick-capture";
 
-const icons = { add: Add01Icon, send: ArrowUp01Icon, continue: ArrowUpRight01Icon, close: Cancel01Icon, folder: FolderOpenIcon, tag: HashIcon, image: ImageAdd01Icon, loading: Loading03Icon, check: Tick02Icon };
+const icons = { add: Add01Icon, send: TelegramIcon, continue: ArrowUpRight01Icon, close: Cancel01Icon, folder: FolderOpenIcon, tag: HashIcon, image: ImageAdd01Icon, loading: Loading03Icon, check: Tick02Icon };
 function Icon({ name, className }: { name: keyof typeof icons; className?: string }) { return <HugeiconsIcon icon={icons[name]} aria-hidden="true" strokeWidth={2} className={className || "size-4 shrink-0"} />; }
 
 export function QuickCapture(props: QuickCaptureProps) {
@@ -34,7 +34,7 @@ export function QuickCapture(props: QuickCaptureProps) {
   const { expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
   const swipe = useCallback((button: HTMLButtonElement | null) => button ? installSheetSwipe(button.parentElement!, () => button.click(), busy) : undefined, [busy]);
   const form = <form className="next-quick-capture" aria-label="快速输入" aria-busy={busy} onSubmit={event => { event.preventDefault(); void record(); }}>
-    <InputGroup className="next-capture-group bg-surface shadow-sm">
+    <InputGroup className="next-capture-group border-border-subtle bg-surface shadow-med">
       <CaptureEditor value={capture.text} tags={options} resetKey={capture.id} disabled={blocked} field={textarea} editorRef={editorRef} onChange={text => changeCapture({ ...captureCurrent.current, text })} onSave={() => void record()} />
       {capture.images.length > 0 && <div className="next-capture-images" aria-label="待记录的图片">{capture.images.map((image, index) => {
         const source = assetUrl(image.markdownPath, capture.relativePath);
@@ -51,7 +51,6 @@ export function QuickCapture(props: QuickCaptureProps) {
           </PopoverContent>
         </Popover>
         <InputGroupButton size="sm" disabled={blocked || !canImage} aria-label="添加图片" title="添加图片" onClick={() => void image()}><Icon name="image" />图片</InputGroupButton>
-        <span className="next-capture-shortcut">⌘ / Ctrl + Enter</span>
         <InputGroupButton type="submit" variant="default" size="sm" className="next-capture-submit" disabled={!canRecord}><Icon name={busy ? "loading" : "send"} className={busy ? "size-4 animate-spin motion-reduce:animate-none" : undefined} />{busy ? "处理中" : "记录"}</InputGroupButton>
       </InputGroupAddon>
     </InputGroup>

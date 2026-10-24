@@ -60,7 +60,7 @@ export function ReleaseCatalog() {
     <Card data-showcase-card="release-catalog">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <InputGroup className="max-w-sm border-border bg-muted">
+          <InputGroup className="max-w-sm border-border">
             <InputGroupAddon>
               <IconPlaceholder
                 lucide="SearchIcon"

@@ -47,7 +47,7 @@ export function PayoutThreshold() {
           Set the minimum balance required before a payout is triggered.
         </CardDescription>
         <CardAction>
-          <Button variant="ghost" size="icon-sm" className="bg-muted" aria-label="Dismiss payout threshold">
+          <Button variant="secondary" size="icon-sm" aria-label="Dismiss payout threshold">
             <IconPlaceholder
               lucide="XIcon"
               tabler="IconX"

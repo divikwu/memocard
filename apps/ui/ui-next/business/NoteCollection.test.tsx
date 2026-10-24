@@ -60,6 +60,32 @@ it("persists layout changes without removing tags or dates from list mode", asyn
   expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
 });
 
+it("keeps list opening permission-aware and tag actions independent", async () => {
+  const user = userEvent.setup();
+  const options = props({ canOpen: false, home: { tab: "recent", pinnedCount: 0, onTabChange: vi.fn() } });
+  const view = render(<NoteCollection {...options} />);
+  const open = screen.getByRole("button", { name: "打开 咖啡记录" });
+  expect(open.querySelector(".next-note-list-title")?.textContent).toBe(note.title);
+  expect(open.querySelector("time")?.getAttribute("dateTime")).toBe(note.updatedAt);
+  expect(open).toHaveProperty("disabled", true);
+  await user.click(open);
+  expect(options.onOpen).not.toHaveBeenCalled();
+  const tag = screen.getByRole("button", { name: "筛选标签 area/coffee" });
+  await user.click(tag);
+  await user.keyboard("{Enter} ");
+  expect(options.onSelectTag).toHaveBeenCalledTimes(3);
+  expect(options.onOpen).not.toHaveBeenCalled();
+
+  view.rerender(<NoteCollection {...options} canOpen />);
+  expect(open).toHaveProperty("disabled", false);
+  expect(open.querySelector("button, a")).toBeNull();
+  open.focus();
+  await user.keyboard("{Enter} ");
+  expect(options.onOpen).toHaveBeenCalledTimes(2);
+  expect(options.onOpen).toHaveBeenLastCalledWith("coffee");
+  expect(options.onSelectTag).toHaveBeenCalledTimes(3);
+});
+
 it("preserves controlled search, clear and create actions and permission flags", async () => {
   const user = userEvent.setup();
   const options = props();

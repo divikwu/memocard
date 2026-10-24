@@ -140,7 +140,7 @@ function ComboboxContent({
           data-chips={!!anchor}
           className={cnState(
             className,
-            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-3xl bg-popover text-primary shadow-lg ring-1 ring-primary/5 duration-fast-min ease-standard data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1.5 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-element-sm *:data-[slot=input-group]:border-border-strong *:data-[slot=input-group]:bg-neutral *:data-[slot=input-group]:shadow-none dark:ring-primary/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            "group/combobox-content relative max-h-(--available-height) w-(--anchor-width) max-w-(--available-width) min-w-[calc(var(--anchor-width)+--spacing(7))] origin-(--transform-origin) overflow-hidden rounded-popover bg-popover text-primary shadow-lg border border-border duration-fast-min ease-standard data-[chips=true]:min-w-(--anchor-width) data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 *:data-[slot=input-group]:m-1.5 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-element-sm *:data-[slot=input-group]:border-border-strong *:data-[slot=input-group]:shadow-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           )}
           {...props}
         />
@@ -172,7 +172,7 @@ function ComboboxItem({
       data-slot="combobox-item"
       className={cnState(
         className,
-        "relative flex w-full cursor-default items-center gap-2.5 rounded-full py-2 pr-8 pl-3 text-sm font-medium outline-hidden focus-visible:focus-ring select-none data-highlighted:bg-accent-muted data-highlighted:text-accent dark:data-highlighted:text-primary not-data-[variant=destructive]:data-highlighted:**:text-accent dark:not-data-[variant=destructive]:data-highlighted:**:text-primary data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex w-full cursor-default items-center gap-2.5 rounded-element py-2 pr-8 pl-3 text-sm font-medium outline-hidden focus-visible:focus-ring select-none data-highlighted:bg-accent-muted data-highlighted:text-accent dark:data-highlighted:text-primary not-data-[variant=destructive]:data-highlighted:**:text-accent dark:not-data-[variant=destructive]:data-highlighted:**:text-primary data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >
@@ -244,7 +244,7 @@ function ComboboxSeparator({
   return (
     <ComboboxPrimitive.Separator
       data-slot="combobox-separator"
-      className={cnState(className, "-mx-1.5 my-1.5 h-px bg-border")}
+      className={cnState(className, "-mx-1.5 my-1.5 h-px bg-divider")}
       {...props}
     />
   )
@@ -260,7 +260,7 @@ function ComboboxChips({
       data-slot="combobox-chips"
       className={cnState(
         className,
-        "flex min-h-element-md flex-wrap items-center gap-1.5 rounded-3xl border border-transparent bg-control bg-clip-padding px-3 py-1.5 text-sm transition-[color,box-shadow,background-color] focus-within:focus-ring has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5 dark:has-aria-invalid:border-error/50 dark:has-aria-invalid:ring-error/40"
+        "flex min-h-element-md flex-wrap items-center gap-1.5 rounded-control border border-transparent bg-control bg-clip-padding px-3 py-1.5 text-sm transition-[color,box-shadow,background-color] focus-within:focus-ring has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5 dark:has-aria-invalid:border-error/50 dark:has-aria-invalid:ring-error/40"
       )}
       {...props}
     />

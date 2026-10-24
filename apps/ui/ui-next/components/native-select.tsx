@@ -25,7 +25,7 @@ function NativeSelect({
       <select
         data-slot="native-select"
         data-size={size}
-        className="h-element-md w-full min-w-0 appearance-none rounded-3xl border border-transparent bg-control py-1 pr-8 pl-3 text-sm transition-[color,box-shadow,background-color] outline-none select-none selection:bg-accent-bg selection:text-on-accent placeholder:text-control-secondary focus-visible:focus-ring disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-[size=sm]:h-element-sm dark:aria-invalid:border-error/50 dark:aria-invalid:ring-error/40"
+        className="h-element-md w-full min-w-0 appearance-none rounded-control border border-transparent bg-control py-1 pr-8 pl-3 text-sm transition-[color,box-shadow,background-color] outline-none select-none selection:bg-accent-bg selection:text-on-accent placeholder:text-control-secondary focus-visible:focus-ring disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-[size=sm]:h-element-sm dark:aria-invalid:border-error/50 dark:aria-invalid:ring-error/40"
         {...props}
       />
       <IconPlaceholder

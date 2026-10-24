@@ -36,7 +36,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
           if (event.nativeEvent.isComposing) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); moveSelection(event.key === "ArrowDown" ? 1 : -1); }
           if (event.key === "Enter" && active && !loading && available) { event.preventDefault(); onOpenNote(active.id); }
-        }} disabled={!available} placeholder={`在 ${vaultName} 中搜索…`} className="note-search-next-input h-element-lg min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 shadow-none" />
+        }} disabled={!available} placeholder={`在 ${vaultName} 中搜索…`} className="note-search-next-input h-element-lg min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none" />
         {query && <Button variant="ghost" size="icon-sm" className="note-search-next-control" aria-label="清空搜索" onClick={() => { setQuery(""); input.current?.focus(); }}><CloseIcon aria-hidden="true" /></Button>}
       </div>
       <div className="flex min-h-0 flex-1">

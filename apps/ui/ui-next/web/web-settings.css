@@ -13,7 +13,7 @@
 .web-setting-block { display: grid; justify-items: start; gap: calc(var(--spacing-1) * 4); padding-block: calc(var(--spacing-1) * 4); }
 .web-setting-block > .flex { width: 100%; }
 .web-appearance-fields label { font-size: var(--font-size-sm); }
-.web-appearance-fields [data-slot=native-select-wrapper], .web-appearance-fields select { width: 100%; }
+.web-appearance-fields [data-slot=select-trigger] { width: 100%; }
 .web-file-status { margin-inline: calc(var(--spacing-1) * -4); }
 .web-file-status summary { display: flex; align-items: center; justify-content: space-between; min-height: calc(var(--spacing-1) * 14); padding-inline: calc(var(--spacing-1) * 4); list-style: none; cursor: pointer; font-size: var(--font-size-sm); border-radius: 0 0 var(--radius-container) var(--radius-container); }
 .web-file-status summary::-webkit-details-marker { display: none; }
@@ -33,10 +33,10 @@
 .web-file-status p { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
 @media (min-width: 640px) {
   .web-setting-row, .web-appearance-fields > div:not(.web-font-status), .web-advanced-fields > div { flex-direction: row; align-items: center; gap: calc(var(--spacing-1) * 6); }
-  .web-appearance-fields [data-slot=native-select-wrapper] { flex-shrink: 0; width: calc(var(--spacing-1) * 48); }
+  .web-appearance-fields [data-slot=select-trigger] { flex-shrink: 0; width: calc(var(--spacing-1) * 48); }
 }
 
-@media (max-width: 767px) { .web-appearance-fields select { min-height: calc(var(--size-element-lg) + var(--spacing-1)); font-size: var(--font-size-base); } }
+@media (max-width: 767px) { .web-appearance-fields [data-slot=select-trigger] { min-height: calc(var(--size-element-lg) + var(--spacing-1)); font-size: var(--font-size-base); } }
 
 .web-font-status { display: grid; justify-items: start; gap: calc(var(--spacing-1) * 2); padding-block: calc(var(--spacing-1) * 4); font-size: var(--font-size-sm); line-height: var(--text-body-leading); color: var(--color-text-secondary); }
 .web-appearance-fields > [role=status] { padding-block: calc(var(--spacing-1) * 4); }

@@ -36,13 +36,13 @@ function ItemSeparator({
 }
 
 const itemVariants = cva(
-  "group/item flex w-full flex-wrap items-center rounded-2xl border text-sm transition-colors duration-fast-min ease-standard outline-none focus-visible:focus-ring [a]:transition-colors [a]:hover:bg-muted",
+  "group/item flex w-full flex-wrap items-center rounded-item border text-sm transition-colors duration-fast-min ease-standard outline-none focus-visible:focus-ring [a]:transition-colors [a]:hover:bg-muted",
   {
     variants: {
       variant: {
         default: "border-transparent",
         outline: "border-border",
-        muted: "border-transparent bg-muted/50",
+        muted: "border-transparent bg-muted dark:bg-muted/50",
       },
       size: {
         default: "gap-3.5 px-4 py-3.5",

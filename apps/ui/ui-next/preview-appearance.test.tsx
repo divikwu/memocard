@@ -52,6 +52,7 @@ it("resolves inherit against the selected body font and restores defaults", () =
   expect(loadPreviewFonts).toHaveBeenLastCalledWith(["inter", "inter"]);
   rerender(<PreviewModeProvider mode="light">内容</PreviewModeProvider>);
   expect(root.style.getPropertyValue("--ui-next-preview-radius")).toBe("0.5rem");
-  expect(root.style.getPropertyValue("--ui-next-preview-heading")).toContain("Noto Serif Variable");
+  expect(root.style.getPropertyValue("--ui-next-preview-heading")).toBe(root.style.getPropertyValue("--ui-next-preview-body"));
   expect(root.style.getPropertyValue("--ui-next-preview-body")).toContain("Noto Sans Variable");
+  expect(loadPreviewFonts).toHaveBeenLastCalledWith(["noto-sans", "noto-sans"]);
 });

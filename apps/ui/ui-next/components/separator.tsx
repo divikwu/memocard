@@ -14,7 +14,7 @@ function Separator({
       data-slot="separator"
       orientation={orientation}
       className={(state) => cn(
-        "shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch",
+        "shrink-0 bg-divider data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch",
         typeof className === "function" ? className(state) : className
       )}
       {...props}

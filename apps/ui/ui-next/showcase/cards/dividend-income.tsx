@@ -90,7 +90,7 @@ export function DividendIncome() {
           Quarterly dividend payouts across your portfolio holdings.
         </CardDescription>
         <CardAction>
-          <Button variant="ghost" size="icon-sm" className="bg-muted" aria-label="Dismiss dividend income">
+          <Button variant="secondary" size="icon-sm" aria-label="Dismiss dividend income">
             <IconPlaceholder
               lucide="XIcon"
               tabler="IconX"

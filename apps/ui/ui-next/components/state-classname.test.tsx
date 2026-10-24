@@ -3,12 +3,25 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { Button } from "./button";
+import { Card } from "./card";
 import { Checkbox } from "./checkbox";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "./radio-group";
 import { Toggle } from "./toggle";
 
 afterEach(cleanup);
+
+it("lets Card elevation be removed without treating shadow color as elevation", () => {
+  const view = render(<Card role="article" aria-label="笔记卡片" />);
+  const card = screen.getByRole("article", { name: "笔记卡片" });
+  expect(card.classList.contains("shadow-med")).toBe(true);
+  view.rerender(<Card role="article" aria-label="笔记卡片" className="shadow-none" />);
+  expect(card.classList.contains("shadow-none")).toBe(true);
+  expect(card.classList.contains("shadow-med")).toBe(false);
+  view.rerender(<Card role="article" aria-label="笔记卡片" className="shadow-red-500" />);
+  expect(card.classList.contains("shadow-med")).toBe(true);
+  expect(card.classList.contains("shadow-red-500")).toBe(true);
+});
 
 it("resolves Button callback classes when disabled changes and merges variant overrides", async () => {
   const user = userEvent.setup();
@@ -91,7 +104,7 @@ it("resolves popup, group, label and separator callbacks in a real opened menu",
   const separator = screen.getByRole("separator");
   expect(separator.classList.contains("menu-separator")).toBe(true);
   expect(separator.classList.contains("bg-error")).toBe(true);
-  expect(separator.classList.contains("bg-border/50")).toBe(false);
+  expect(separator.classList.contains("bg-divider")).toBe(false);
   await user.click(screen.getByRole("menuitem", { name: "归档" }));
   await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
 });
@@ -101,7 +114,7 @@ it("preserves string class overrides when merging component defaults", () => {
   const button = screen.getByRole("button", { name: "保存" });
   expect([...button.classList].filter(value => value.startsWith("h-"))).toEqual(["h-10"]);
   expect(button.classList.contains("rounded-none")).toBe(true);
-  expect(button.classList.contains("rounded-4xl")).toBe(false);
+  expect(button.classList.contains("rounded-full")).toBe(false);
   expect(button.classList.contains("bg-accent-bg")).toBe(false);
   const checkbox = screen.getByRole("checkbox", { name: "订阅" });
   expect(checkbox.classList.contains("size-6")).toBe(true);

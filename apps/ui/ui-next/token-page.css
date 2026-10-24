@@ -40,7 +40,7 @@
 .token-value { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
 .token-value:has(> .token-shadow-preview) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
 .token-radius-preview { display: inline-block; width: 44px; height: 40px; flex: 0 0 auto; border: 1px solid var(--color-border-emphasized); background: var(--color-background-muted); }
-.token-shadow-preview { display: inline-block; width: 64px; height: 40px; margin: 8px; border-radius: var(--radius-element); background: var(--color-background-surface); }
+.token-shadow-preview { display: inline-block; width: 64px; height: 40px; margin: 8px; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-element); background: var(--color-background-surface); }
 .token-font-preview { display: block; width: 100%; font-size: 14px; line-height: 1.5; }
 .token-document .token-note { margin-top: 24px; color: var(--color-text-secondary); font-size: 12px; line-height: 1.7; }
 .token-document .token-note a { color: inherit; text-underline-offset: 4px; }

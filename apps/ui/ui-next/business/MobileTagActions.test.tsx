@@ -9,6 +9,7 @@ import { swipeSheet } from "../../src/components/ui/sheet-swipe.test-utils";
 const vaultId = "ui-next-mobile-tag-actions-test";
 const key = `memocard:tags:${vaultId}`;
 beforeEach(() => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   localStorage.clear();
   vi.stubGlobal("innerWidth", 390);
   vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));

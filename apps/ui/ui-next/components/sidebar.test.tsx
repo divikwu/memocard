@@ -12,6 +12,19 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); mediaListeners.clear(); vi.unstubAllGlobals(); });
 
+it("keeps the provider context available after the sidebar module is re-evaluated", async () => {
+  const refreshedModulePath = "./sidebar.tsx?hmr-context-regression";
+  const { useSidebar: useRefreshedSidebar } = await import(refreshedModulePath);
+  function RefreshedConsumer() {
+    return <p>{useRefreshedSidebar().state}</p>;
+  }
+  const user = userEvent.setup();
+  render(<SidebarProvider persistState={false}><SidebarTrigger /><RefreshedConsumer /></SidebarProvider>);
+  expect(screen.getByText("expanded")).not.toBeNull();
+  await user.click(screen.getByRole("button", { name: "收起侧栏" }));
+  expect(screen.getByText("collapsed")).not.toBeNull();
+});
+
 it("makes collapsed offcanvas content inert and announces the trigger state", async () => {
   const user = userEvent.setup();
   const { container } = render(<SidebarProvider persistState={false}><Sidebar><button>侧栏业务操作</button></Sidebar><SidebarTrigger /></SidebarProvider>);
