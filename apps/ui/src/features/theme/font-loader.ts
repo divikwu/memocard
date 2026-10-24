@@ -4,6 +4,21 @@ const geistItalic = { family: "Geist Variable", load: () => import("@fontsource-
 
 const pending = new Map<FontChoice, Promise<unknown>>();
 
+async function loadFont(font: FontChoice) {
+  if (font === "geist") {
+    const { default: url } = await geistItalic.load();
+    document.fonts.add(new FontFace(geistItalic.family, `url(${url})`, { style: "italic", weight: "100 900" }));
+    return;
+  }
+  if (font === "noto-sans-sc") {
+    // Keep this CSS import separate so the build retains its preload dependency.
+    await import("@fontsource-variable/noto-sans-sc/wght.css");
+    return;
+  }
+  const module = await import("./optional-fonts");
+  return module.loadOptionalFont(font);
+}
+
 export function loadFonts(fonts: FontChoice[]): Promise<unknown[]> {
   return Promise.all([...new Set(fonts)].map((font) => {
     if (font === "pingfang" || font === "songti") return Promise.resolve();
@@ -11,7 +26,7 @@ export function loadFonts(fonts: FontChoice[]): Promise<unknown[]> {
     if (!request) {
       // CSS keeps the CJK unicode-range subsets demand-loaded by the browser;
       // FontFace.load() here would eagerly fetch every registered subset.
-      request = (font === "geist" ? geistItalic.load().then(({ default: url }) => { document.fonts.add(new FontFace(geistItalic.family, `url(${url})`, { style: "italic", weight: "100 900" })); }) : font === "noto-sans-sc" ? import("@fontsource-variable/noto-sans-sc/wght.css") : import("./optional-fonts").then(module => module.loadOptionalFont(font))).catch((error) => {
+      request = loadFont(font).catch((error) => {
         pending.delete(font);
         throw error;
       });
