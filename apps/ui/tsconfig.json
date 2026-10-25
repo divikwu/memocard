@@ -30,7 +30,6 @@
   "include": [
     "src",
     "vite.config.ts",
-    "preview",
-    "vite.preview.config.ts"
+    "ui-state-fixtures"
   ]
 }

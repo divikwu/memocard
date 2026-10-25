@@ -1,5 +1,5 @@
 import type { Note, NotePage, NotePins, TagPreferenceState, TrashItem, VaultStatus } from "@memocard/contracts";
-import { createPreviewMock } from "../../preview/mock";
+import { createPreviewMock } from "../../ui-state-fixtures/mock";
 import type { DraftList, Environment } from "../../src/bridge";
 
 // Entirely in-memory backend used by the integrated page stories and regression tests.

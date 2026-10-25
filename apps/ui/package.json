@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "dev:states": "vite --config vite.preview.config.ts",
+    "dev:states": "vite --config vite.preview-next.config.ts",
+    "dev:states:ui-next": "vite --config vite.preview-next.config.ts",
+    "build:states:ui-next": "vite build --config vite.preview-next.config.ts",
+    "typecheck:states:ui-next": "tsc --project tsconfig.preview-next.json --noEmit",
+    "test:states:ui-next": "vitest run --config vite.storybook-next.config.ts preview/ --maxWorkers=3",
     "typecheck:ui-next": "tsc --project tsconfig.ui-next.json --noEmit",
     "storybook:ui-next": "storybook dev --config-dir .storybook-next --host 127.0.0.1 --port 6016 --exact-port --no-open --disable-telemetry",
     "build:storybook:ui-next": "storybook build --config-dir .storybook-next --output-dir storybook-next-static --disable-telemetry",

@@ -1,4 +1,5 @@
 node_modules/
+apps/ui/preview-next-static/
 dist/
 .build/
 __pycache__/
