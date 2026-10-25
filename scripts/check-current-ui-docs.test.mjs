@@ -1,5 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CURRENT_UI_DOCS, validateCurrentDocument } from "./check-current-ui-docs.mjs";
 
 test("current documentation resolves repository and relative source links", () => {
@@ -23,4 +26,19 @@ test("the scope includes platform specs and excludes historical migration eviden
 
 test("Markdown examples inside code are not treated as documentation links", () => {
   assert.deepEqual(validateCurrentDocument("`![image](../assets/example.jpg)`\n```markdown\n[example](missing.md)\n```", "PROJECT_PLAN.md", "/repo", () => false), []);
+});
+
+test("clean checkouts allow documented build destinations and still reject missing source and output assets", () => {
+  const markdown = "`apps/ui/dist` `apps/ui/storybook-next-static` [states](../apps/ui/preview-next-static/) `apps/ui/dist-source` [missing asset](../apps/ui/dist/missing.js)";
+  const errors = validateCurrentDocument(markdown, "design/current.md", "/repo", () => false);
+  assert.equal(errors.length, 2);
+  assert.ok(errors.some(error => error.includes("apps/ui/dist-source")));
+  assert.ok(errors.some(error => error.includes("dist/missing.js")));
+});
+
+test("all current contracts pass without ignored Web, Storybook or preview output directories", () => {
+  const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+  const missing = new Set(["apps/ui/dist", "apps/ui/storybook-next-static", "apps/ui/preview-next-static"].map(path => resolve(projectRoot, path)));
+  const errors = CURRENT_UI_DOCS.flatMap(filename => validateCurrentDocument(readFileSync(resolve(projectRoot, filename), "utf8"), filename, projectRoot, path => !missing.has(path) && existsSync(path)));
+  assert.deepEqual(errors, []);
 });

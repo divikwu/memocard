@@ -15,9 +15,13 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 export function validateCurrentDocument(markdown, filename, projectRoot = root, exists = existsSync) {
   const errors = [];
+  // Documented build destinations are absent before a clean checkout is built.
+  // Only these directories are destinations; missing source or asset links still fail.
+  const buildOutputs = new Set(["apps/ui/dist", "apps/ui/storybook-next-static", "apps/ui/preview-next-static"].map(path => resolve(projectRoot, path)));
   const check = (target, base) => {
     const path = decodeURIComponent(target.replace(/^<|>$/g, "").split(/[?#]/)[0]);
-    if (path && !exists(resolve(base, path))) errors.push(`${filename}: missing local reference ${target}`);
+    const absolute = resolve(base, path);
+    if (path && !buildOutputs.has(absolute) && !exists(absolute)) errors.push(`${filename}: missing local reference ${target}`);
   };
   const prose = markdown.replace(/^```[^\n]*\n[\s\S]*?^```[ \t]*$/gm, "");
   const links = prose.replace(/`[^`\n]*`/g, "");
