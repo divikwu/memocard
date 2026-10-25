@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { Note, NotePage } from "@memocard/contracts";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
-import { setStorybookClientMode, setStorybookRequestHandler } from "../../.storybook/bridge";
+import { setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { NoteCollection } from "../business/NoteCollection";
 import { TrashPage } from "../business/TrashPage";
 import { Button } from "../components/button";

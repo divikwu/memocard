@@ -1,11 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { Note, NoteProperties, PropertyChange, PropertyType } from '@memocard/contracts';
-import { setStorybookRequestHandler, setStorybookBrowserAssets } from '../../.storybook/bridge';
+import { setStorybookRequestHandler, setStorybookBrowserAssets } from '../../test-support/bridge';
 import { Editor, type EditorHandle } from '../business/Editor';
 import { Button } from '../components/button';
 import { LumaStoryFrame } from '../LumaPage';
-import { editorContentReview } from '../../stories/editor-content.fixture';
+import { editorContentReview } from '../../test-support/editor-content.fixture';
 
 const body = `## 把思考写进上下文
 
@@ -108,7 +108,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 export const Desktop: Story = {};
 export const ContentReview: Story = { name: '内容样式 · WEB / H5', args: { initialBody: editorContentReview } };
-export const H5: Story = { decorators: [Story => <div style={{ maxWidth: 390, marginInline: 'auto' }}><Story /></div>] };
+export const H5: Story = { tags: ["mobile"], globals: { viewport: { value: "mobile", isRotated: false } }, decorators: [Story => <div style={{ maxWidth: 390, marginInline: 'auto' }}><Story /></div>] };
 export const ReadOnly: Story = { args: { readOnly: true } };
 export const SaveRetry: Story = { args: { failSave: true } };
 export const Images: Story = { name: '图片 · 拖动与撤销', args: { initialBody: '## 图片顺序\n\n开头：拖动图片改变位置，按 Escape 取消，或按 ⌘/Ctrl Z 撤销。\n\n![灰色卡片](../assets/editor.png)\n\n中间：第一张图片之后的文字。\n\n![蓝色卡片](../assets/editor-second.png)\n\n结尾：第二张图片之后的文字。' } };

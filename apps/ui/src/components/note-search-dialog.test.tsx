@@ -3,12 +3,12 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import type { Note } from "@memocard/contracts";
-import { NoteSearchDialog } from "./note-search-dialog";
-import { swipeSheet } from "./ui/sheet-swipe.test-utils";
+import { NoteSearchDialog } from "@ui-next/business/NoteSearchDialog";
+import { swipeSheet } from "@ui-next/components/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("../bridge", () => ({ request: bridge.request, errorMessage: (cause: unknown) => String(cause) }));
-vi.mock("../markdown", () => ({ Markdown: ({ body }: { body: string }) => <p>{body}</p> }));
+vi.mock("@ui-next/business/NoteMarkdown", () => ({ NoteMarkdown: ({ body }: { body: string }) => <p>{body}</p> }));
 const coverage = { complete: true, indexed: 2, pending: 0, issues: 0, indexedAt: "2026-10-16T00:00:00Z" };
 const note: Note = { id: "first", title: "项目计划", body: "计划正文", tags: ["工作"], relativePath: "projects/计划.md", createdAt: "2026-10-15T00:00:00Z", updatedAt: "2026-10-16T00:00:00Z", contentHash: "hash", sourceUrl: "" };
 const second = { ...note, id: "second", title: "周末散步", body: "散步正文", relativePath: "生活/散步.md" };

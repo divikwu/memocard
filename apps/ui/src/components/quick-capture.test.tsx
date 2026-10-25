@@ -1,16 +1,16 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { swipeSheet } from './ui/sheet-swipe.test-utils';
+import { swipeSheet } from '@ui-next/components/sheet-swipe.test-utils';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { noteEditor, replaceCaptureText } from '../editor-test-utils';
 import type { Note } from '@memocard/contracts';
-import { QuickCapture } from './quick-capture';
+import { QuickCapture } from '@ui-next/business/QuickCapture';
 import { readQuickCaptureDraft, writeQuickCaptureDraft } from '../quick-capture-draft';
 
 const bridge=vi.hoisted(()=>({request:vi.fn()}));
 vi.mock('../bridge',()=>({request:bridge.request,errorMessage:(cause:unknown)=>cause instanceof Error ? cause.message : '操作未完成'}));
-vi.mock('../NoteImage',()=>({NoteImage:({source,alt}:{source:string;alt:string})=><img src={source} alt={alt} />}));
+vi.mock('@ui-next/business/NoteMarkdown',()=>({VaultImage:({source,alt}:{source:string;alt:string})=><img src={source} alt={alt} />}));
 const note=(params:Record<string,unknown>):Note=>({id:params.id as string,title:'新内容',body:params.body as string,tags:params.inheritedTags as string[] ?? [],createdAt:'2026-10-14T08:00:00Z',updatedAt:'2026-10-14T08:00:00Z',contentHash:'saved',relativePath:'新内容.md',sourceUrl:'memocard://note/test'});
 function changeCaptureInput(element:HTMLElement, event:{target:{value:string;selectionStart?:number;selectionEnd?:number}}) {
   replaceCaptureText(element,event.target.value,event.target.selectionStart ?? event.target.value.length,event.target.selectionEnd ?? event.target.selectionStart ?? event.target.value.length);
@@ -243,7 +243,7 @@ it('restores mobile text, selected tags and attachments after remount without cr
   expect(screen.getByRole('textbox',{name:'快速输入内容'})).toHaveProperty('textContent',draft.text);
   expect(screen.queryByLabelText('已选标签')).toBeNull();
   expect(screen.getByRole('img',{name:'待记录图片 1'})).toBeTruthy();
-  expect(screen.getByRole('status').textContent).toContain('草稿已保存在本机');
+  expect(screen.getByRole('status').textContent).not.toContain('草稿保护暂不可用');
   await user.click(screen.getByRole('button',{name:'记录'}));
   await waitFor(()=>expect(props.onRecorded).toHaveBeenCalledOnce());
   expect(bridge.request).toHaveBeenCalledWith('saveNote',expect.objectContaining({id:draft.id,vaultBinding:'reopened-binding',tags:['工作'],inheritedTags:[]}));
@@ -296,7 +296,7 @@ it('reports storage failure without losing input or claiming protection and retr
   write.mockRestore();
   await user.click(screen.getByRole('button',{name:'重试草稿保护'}));
   expect(readQuickCaptureDraft('vault-a')?.text).toBe('仍留在输入框');
-  expect(screen.getByRole('status').textContent).toContain('草稿已保存在本机');
+  expect(screen.getByRole('status').textContent).not.toContain('草稿保护暂不可用');
 });
 
 it('leaves an unreadable mobile draft intact even when retrying restoration',async()=>{

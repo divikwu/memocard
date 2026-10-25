@@ -1,7 +1,7 @@
 // Development-only visual fixture. All data stays in memory; no vault files are read or written.
 import { createRoot } from "react-dom/client";
-import { ThemeProvider } from "../src/features/theme/ThemeProvider";
-import "../src/styles.css";
+import { WebAppearanceProvider } from "../ui-next/web/WebAppearance";
+import "../ui-next/styles.css";
 import { inlineTags } from "../src/inline-tags";
 const fixture = new URLSearchParams(location.search).get("fixture");
 const note = { id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", title: "", body: "# 给想法留一点空间\n\n这是 UI 验收的模拟笔记。支持 **Markdown**、[链接](https://example.com) 和多级标签。\n\n- 整理灵感\n- 继续写作", tags: ["工作/设计", "生活"], relativePath: "notes/设计/灵感.md", createdAt: "2026-09-29T08:00:00Z", updatedAt: "2026-09-29T08:00:00Z", contentHash: "fixture" };
@@ -53,4 +53,4 @@ window.webkit = { messageHandlers: { memocard: { postMessage: async message => {
   return { ok: true, data };
 } } } };
 const { App } = await import("../src/App");
-createRoot(document.getElementById("root")!).render(<ThemeProvider><App /></ThemeProvider>);
+createRoot(document.getElementById("root")!).render(<WebAppearanceProvider><App /></WebAppearanceProvider>);

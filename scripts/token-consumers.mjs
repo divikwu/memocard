@@ -61,8 +61,7 @@ export async function collectTokenConsumers({ root, registry, graph, reached, re
       visit(ast);
     }
   }
-  const styles = postcss.parse(await readFile(resolve(root, 'apps/ui/src/styles.css'), 'utf8'));
-  const utilities = styles.nodes.filter(node => node.type === 'atrule' && ['utility', 'custom-variant'].includes(node.name)).map(node => node.toString() + (node.nodes ? '' : ';')).join('\n');
+  const utilities = (await Promise.all([...reached].map(path => readFile(path, 'utf8')))).flatMap(code => postcss.parse(code).nodes.filter(node => node.type === 'atrule' && ['utility', 'custom-variant'].includes(node.name)).map(node => node.toString() + (node.nodes ? '' : ';'))).join('\n');
   // Every owning source is included once; imports between those sources would
   // duplicate declarations and have no relative base in this combined input.
   const theme = (await Promise.all([...registry.upstreamSources, ...new Set(registry.families.map(family => family.source))].map(path => readFile(resolve(root, path), 'utf8')))).map(css => {

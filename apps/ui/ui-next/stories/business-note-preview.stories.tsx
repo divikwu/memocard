@@ -1,7 +1,7 @@
 import { useState, type ComponentProps } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
-import { setStorybookBrowserAssets } from "../../.storybook/bridge";
+import { setStorybookBrowserAssets } from "../../test-support/bridge";
 import { NotePreview } from "../business/NotePreview";
 import { Button } from "../components/button";
 import { usePreviewMode } from "../preview-mode";
@@ -109,7 +109,10 @@ export const RichContent: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByRole("link", { name: "继续阅读" })).toBeVisible();
-    await expect(canvas.getByRole("tablist", { name: "Mermaid 显示模式" })).toBeVisible();
+    const modes = canvas.getByRole("tablist", { name: "Mermaid 显示模式" });
+    // Desktop mode controls appear on hover or keyboard focus within the diagram.
+    within(modes).getByRole("tab", { name: "源码与图形" }).focus();
+    await waitFor(() => expect(modes).toBeVisible());
     await waitFor(() => expect(canvas.getByRole("button", { name: "放大 Mermaid 图表" })).toBeVisible());
   },
 };

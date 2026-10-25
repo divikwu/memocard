@@ -1,22 +1,15 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
 import { readIOSThemeRadius } from "./ios-theme";
-const root = document.documentElement;
-const names = ["data-memocard-theme", "data-radius"], original = names.map(name => root.getAttribute(name));
-afterEach(() => { vi.restoreAllMocks(); names.forEach((name, index) => { const value = original[index]; if (value === null) root.removeAttribute(name); else root.setAttribute(name, value); }); });
-it("keeps the portable fallback without an active definition or an altered base", () => {
-  root.removeAttribute("data-memocard-theme");
-  const read = vi.spyOn(window, "getComputedStyle").mockReturnValue({ getPropertyValue: () => ".625rem" } as unknown as CSSStyleDeclaration);
+afterEach(() => { vi.restoreAllMocks(); document.querySelector(".web-app")?.remove(); });
+it("does not publish a radius when unified tokens are unavailable", () => {
+  vi.spyOn(window, "getComputedStyle").mockReturnValue({ getPropertyValue: () => "" } as unknown as CSSStyleDeclaration);
   expect(readIOSThemeRadius()).toBeUndefined();
-  expect(read).not.toHaveBeenCalled();
-  root.dataset.memocardTheme = "color-only"; root.dataset.radius = "lg";
-  expect(readIOSThemeRadius()).toBeUndefined();
-  expect(read).toHaveBeenCalledTimes(1);
 });
-it.each([["12px", 12], ["0px", 0], ["14.5px", 14.5], ["50%", undefined]])("samples a representable themed length and removes the probe: %s", (value, expected) => {
-  root.dataset.memocardTheme = "custom";
-  vi.spyOn(window, "getComputedStyle").mockReturnValue({ getPropertyValue: () => "12px", borderTopLeftRadius: value } as unknown as CSSStyleDeclaration);
-  const count = root.childElementCount;
+it.each([["12px", 12], ["0px", 0], ["14.5px", 14.5], ["50%", undefined]])("samples the unified control radius and removes its probe: %s", (value, expected) => {
+  const theme = document.createElement("div"); theme.className = "web-app ui-next-theme"; document.body.append(theme);
+  const read = vi.spyOn(window, "getComputedStyle").mockReturnValue({ getPropertyValue: () => ".5rem", borderTopLeftRadius: value } as unknown as CSSStyleDeclaration);
   expect(readIOSThemeRadius()).toBe(expected);
-  expect(root.childElementCount).toBe(count);
+  expect(read.mock.calls[0][0]).toBe(theme);
+  expect(theme.childElementCount).toBe(0);
 });

@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { Note } from "@memocard/contracts";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
-import { setStorybookBrowserAssets, setStorybookRequestHandler } from "../../.storybook/bridge";
+import { setStorybookBrowserAssets, setStorybookRequestHandler } from "../../test-support/bridge";
 import { QuickCapture, type QuickCaptureHandle, type QuickCaptureMemory, type QuickCaptureProps } from "../business/QuickCapture";
 import { usePreviewMode } from "../preview-mode";
 import { TagColorProvider } from "../../src/TagColorProvider";
@@ -103,7 +103,7 @@ export const ColoredInlineTag: Story = {
     await userEvent.keyboard("{Escape}");
     const tag = field.querySelector<HTMLElement>(`.rich-inline-tag[data-tag="${encodeURIComponent("工作")}"]`)!;
     const probe = canvasElement.ownerDocument.createElement("span");
-    probe.style.cssText = "color:var(--color-text-green);background:var(--color-background-green)";
+    probe.style.cssText = "color:var(--color-text-green);background:color-mix(in oklab,var(--color-text-green) var(--tag-bg-opacity),transparent)";
     canvasElement.append(probe);
     await expect(getComputedStyle(tag).color).toBe(getComputedStyle(probe).color);
     await expect(getComputedStyle(tag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);

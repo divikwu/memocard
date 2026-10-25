@@ -9,16 +9,16 @@ type View = {
   MoreHorizontal: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Maximize: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Trash2: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
-  Button: ComponentType<Omit<ComponentProps<typeof import("@/components/ui/button")["Button"]>, "render">>;
-  Skeleton: ComponentType<ComponentProps<typeof import("@/components/ui/skeleton")["Skeleton"]>>;
-  Popover: ComponentType<ComponentProps<typeof import("@/components/ui/popover")["Popover"]>>;
-  PopoverContent: ComponentType<ComponentProps<typeof import("@/components/ui/popover")["PopoverContent"]>>;
-  PopoverTrigger: ComponentType<ComponentProps<typeof import("@/components/ui/popover")["PopoverTrigger"]>>;
-  DropdownMenu: ComponentType<ComponentProps<typeof import("@/components/ui/dropdown-menu")["DropdownMenu"]>>;
-  DropdownMenuContent: ComponentType<Omit<ComponentProps<typeof import("@/components/ui/dropdown-menu")["DropdownMenuContent"]>, "ref">>;
-  DropdownMenuItem: ComponentType<Omit<ComponentProps<typeof import("@/components/ui/dropdown-menu")["DropdownMenuItem"]>, "ref">>;
-  DropdownMenuTrigger: ComponentType<Omit<ComponentProps<typeof import("@/components/ui/dropdown-menu")["DropdownMenuTrigger"]>, "ref">>;
-  ImageViewer: ComponentType<ComponentProps<typeof import("./ImageViewer")["default"]>>;
+  Button: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/button")["Button"]>, "render">>;
+  Skeleton: ComponentType<ComponentProps<typeof import("@ui-next/components/skeleton")["Skeleton"]>>;
+  Popover: ComponentType<ComponentProps<typeof import("@ui-next/components/popover")["Popover"]>>;
+  PopoverContent: ComponentType<ComponentProps<typeof import("@ui-next/components/popover")["PopoverContent"]>>;
+  PopoverTrigger: ComponentType<ComponentProps<typeof import("@ui-next/components/popover")["PopoverTrigger"]>>;
+  DropdownMenu: ComponentType<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenu"]>>;
+  DropdownMenuContent: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuContent"]>, "ref">>;
+  DropdownMenuItem: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuItem"]>, "ref">>;
+  DropdownMenuTrigger: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuTrigger"]>, "ref">>;
+  ImageViewer: ComponentType<ComponentProps<typeof import("../ui-next/business/NoteMarkdown")["ImageViewer"]>>;
 };
 
 export function createImagePropertyEditor(view: View) {

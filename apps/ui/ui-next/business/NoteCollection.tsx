@@ -56,7 +56,7 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
 }
 
 export function NoteCollection({ home, notes, loading = false, searching = false, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
-  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout");
+  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
   const cards = layout === "cards";
   const layoutButtons = <div role="group" aria-label={home ? "主页布局" : "笔记布局"} data-variant="default" className={cn(tabsListVariants(), "next-note-layout")}>
     <Button type="button" variant="ghost" className={tabsTriggerStyles} aria-label="卡片布局" title="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>

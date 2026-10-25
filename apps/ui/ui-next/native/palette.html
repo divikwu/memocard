@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="UTF-8"><title>Native theme fixture sampler</title></head><body>
+<div class="web-app ui-next-theme" id="palette-theme"></div>
+<script type="module">
+  import "../styles.css";
+  import "../preview-appearance.css";
+  import "../web/web-palette.css";
+  import "../business/note-properties.css";
+  import { readIOSPalette, IOS_PALETTE_KEYS } from "../../src/lib/ios-palette.ts";
+  import { readIOSThemeRadius } from "../../src/lib/ios-theme.ts";
+  import { DEFAULT_WEB_APPEARANCE } from "../web/WebAppearance.tsx";
+  import { getPreviewRadius } from "../preview-appearance.ts";
+  window.sidebarPaletteSampler = { readIOSPalette, readIOSThemeRadius, keys: IOS_PALETTE_KEYS, appearance: DEFAULT_WEB_APPEARANCE, radius: getPreviewRadius(DEFAULT_WEB_APPEARANCE.radius).radius };
+</script>
+</body></html>

@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const [baselineRef = "a53fb0a", directory = "build/verification/performance/sidebar-tags", ...extra] = process.argv.slice(2);
 if (extra.length) throw new Error("Usage: node scripts/benchmark-sidebar-tags.mjs [baseline-ref] [output-directory]");
 const output = resolve(root, directory);
-const sourcePath = "apps/ui/src/components/tag-navigation.tsx";
+const sourcePath = "apps/ui/ui-next/business/tag-navigation.tsx";
 const git = args => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 const baselineCommit = git(["rev-parse", baselineRef]);
 const source = execFileSync("git", ["show", `${baselineCommit}:${sourcePath}`], { cwd: root, encoding: "utf8" });

@@ -1,4 +1,0 @@
-@import "./home-toolbar.css";
-
-[data-native-chrome] :is(.collection-layout-switch, .collection-toolbar) { display: none; }
-[data-native-chrome] main > :not(.note-page-scroll) { padding-block: var(--ios-top, 0px) var(--ios-bottom, 0px); }

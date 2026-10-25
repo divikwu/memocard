@@ -39,7 +39,7 @@ export type RichEditorProps = {
 };
 export type RichIcon = ComponentType<Omit<SVGProps<SVGSVGElement>, 'strokeWidth'> & { size?: number; strokeWidth?: number }>;
 export type RichEditorUI = {
-  RichHeadingFolding: typeof import('./rich-heading-fold').RichHeadingFolding;
+  RichHeadingFolding: ReturnType<typeof import('./rich-heading-fold-core').createRichHeadingFolding>;
   icons: Record<'Plus' | 'GripVertical' | 'Type' | 'Heading' | 'List' | 'ListOrdered' | 'ListTodo' | 'Quote' | 'Code' | 'Minus' | 'Table' | 'Sigma' | 'ImageIcon' | 'Search' | 'ArrowUp' | 'ArrowDown' | 'Copy' | 'Trash2' | 'RefreshCw' | 'Check' | 'ChevronRight' | 'MessageSquareQuote', RichIcon>;
   Markdown: ComponentType<{ body: string; notePath: string; onError?: (message: string) => void }>;
   NoteImage: ComponentType<{ source: string; alt: string; width?: number | string; height?: number | string; onDragStart?: DragEventHandler<HTMLElement> }>;

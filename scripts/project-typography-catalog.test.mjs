@@ -76,9 +76,9 @@ test('production catalog is reachable and stable; drift checks preserve the file
     assert.equal(new Set(catalog.entries.map(row => `${row.property}:${row.value}`)).size, catalog.entries.length);
     assert.ok(catalog.entries.every(row => row.locations.length && row.locations.every(location => location.source.endsWith('.css') || graph.has(location.source))));
     assert.ok(catalog.entries.every(row => row.locations.every(location => !/stories|\.(?:test|spec)\./.test(location.source))));
-    assert.ok(catalog.entries.find(row => row.property === 'font-size' && row.value === 'var(--text-title-size)').locations.some(location => location.scope === '.note-page-title'));
-    assert.ok(catalog.entries.find(row => row.property === 'font-size' && row.value === '2rem').locations.some(location => location.variable === '--font-size-3xl' && location.scope === ':root'));
-    assert.ok(catalog.entries.find(row => row.property === 'font-family' && row.value === 'system-ui').locations.some(location => location.source.endsWith('/MermaidPreview.tsx')));
+    assert.ok(catalog.entries.find(row => row.property === 'font-size' && row.value === 'var(--font-size-note-title)').locations.some(location => location.scope === '.note-editor-next .note-page-title'));
+    assert.ok(catalog.entries.find(row => row.property === 'font-size' && row.value === '2rem').locations.some(location => location.variable === '--font-size-note-title' && location.source === 'apps/ui/ui-next/theme.css'));
+    assert.ok(catalog.entries.find(row => row.property === 'font-family' && row.value === 'var(--font-family-body)').locations.some(location => location.source.endsWith('/NoteMarkdown.tsx')));
     assert.ok(!catalog.entries.some(row => row.locations.some(location => location.source.endsWith('/LiveMarkdownEditor.tsx'))));
     assert.ok(catalog.native.find(row => row.property === 'lineSpacing' && row.value === '6').locations.some(location => location.source.endsWith('/NativeDesignedPanel.swift')));
     assert.ok(catalog.native.some(row => row.value === '.system(size: bodyFontSize)'));
@@ -108,4 +108,9 @@ test('native definitions preserve nested expressions, platform conditions and pr
     #endif
   `]]));
   assert.deepEqual(entries.map(row => [row.property, row.value]), [['font', '.headline'], ['font', '.system(size: size == 44 ? 20 : 16)'], ['fontWeight', 'selected ? .medium : .regular'], ['lineSpacing', '6']]);
+});
+
+test('expands the current token-based font shorthand without dropping line height or family', async () => {
+  const result = await collectTypographyUsage(new Map([['current.css', '.code {font: var(--font-size-sm)/var(--text-supporting-leading) var(--font-family-code);}']]), theme);
+  for (const [property, value] of [['font-family','var(--font-family-code)'],['font-size','var(--font-size-sm)'],['line-height','var(--text-supporting-leading)']]) assert.ok(result.entries.some(row => row.property === property && row.value === value));
 });

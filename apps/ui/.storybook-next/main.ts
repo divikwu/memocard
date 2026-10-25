@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 const config: StorybookConfig = {
   stories: ["../ui-next/stories/**/*.stories.@(ts|tsx)"],
-  addons: ["@storybook/addon-docs"],
+  addons: ["@storybook/addon-docs", "@storybook/addon-vitest"],
   framework: {
     name: "@storybook/react-vite",
     options: { builder: { viteConfigPath: fileURLToPath(new URL("../vite.storybook-next.config.ts", import.meta.url)) } },

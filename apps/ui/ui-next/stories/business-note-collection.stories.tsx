@@ -53,7 +53,7 @@ const meta = { title: "business/note collection", id: "ui-next-business-note-col
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Desktop: Story = {};
-export const H5: Story = { decorators: [Story => <div style={{ maxWidth: 390, marginInline: "auto" }}><Story /></div>] };
+export const H5: Story = { tags: ["mobile"], globals: { viewport: { value: "mobile", isRotated: false } }, decorators: [Story => <div style={{ maxWidth: 390, marginInline: "auto" }}><Story /></div>] };
 export const Home: Story = { args: { home: true } };
 export const Loading: Story = { args: { loading: true } };
 export const EmptyCollection: Story = { args: { empty: true } };
@@ -69,7 +69,7 @@ export const ColoredTags: Story = {
   play: async ({ canvasElement }) => {
     const tag = await within(canvasElement).findByRole("button", { name: "筛选标签 area/coffee" });
     const probe = canvasElement.ownerDocument.createElement("span");
-    probe.style.cssText = "color:var(--color-text-blue);background:var(--color-background-blue)";
+    probe.style.cssText = "color:var(--color-text-blue);background:color-mix(in oklab,var(--color-text-blue) var(--tag-bg-opacity),transparent)";
     canvasElement.append(probe);
     await expect(getComputedStyle(tag).color).toBe(getComputedStyle(probe).color);
     await expect(getComputedStyle(tag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import type { Note } from "@memocard/contracts";
 import { NoteSearchDialog } from "./NoteSearchDialog";
-import { swipeSheet } from "../../src/components/ui/sheet-swipe.test-utils";
+import { swipeSheet } from "../components/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("../../src/bridge", () => ({ request: bridge.request, errorMessage: (cause: unknown) => String(cause) }));

@@ -7,14 +7,14 @@ import { request, errorMessage } from './bridge';
 import { normalizePropertyTag, tagKey } from './inline-tags';
 
 type View = {
-  TagColorMenu: ComponentType<ComponentProps<typeof import("./TagColorMenu")["default"]>>;
+  TagColorMenu: ComponentType<ComponentProps<typeof import("@ui-next/business/property-editors")["TagColorMenu"]>>;
   X: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
-  Button: ComponentType<Omit<ComponentProps<typeof import("@/components/ui/button")["Button"]>, "render">>;
-  TagPill: ComponentType<Omit<ComponentProps<typeof import("./TagPill")["default"]>, "variant" | "render">>;
-  Tooltip: ComponentType<ComponentProps<typeof import("@/components/ui/tooltip")["Tooltip"]>>;
-  TooltipContent: ComponentType<ComponentProps<typeof import("@/components/ui/tooltip")["TooltipContent"]>>;
-  TooltipProvider: ComponentType<ComponentProps<typeof import("@/components/ui/tooltip")["TooltipProvider"]>>;
-  TooltipTrigger: ComponentType<ComponentProps<typeof import("@/components/ui/tooltip")["TooltipTrigger"]>>;
+  Button: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/button")["Button"]>, "render">>;
+  TagPill: ComponentType<Omit<ComponentProps<typeof import("@ui-next/business/property-editors")["TagPill"]>, "variant" | "render">>;
+  Tooltip: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["Tooltip"]>>;
+  TooltipContent: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["TooltipContent"]>>;
+  TooltipProvider: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["TooltipProvider"]>>;
+  TooltipTrigger: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["TooltipTrigger"]>>;
 };
 
 export function createTagPropertyEditor(view: View) {

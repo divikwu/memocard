@@ -1,4 +1,4 @@
 {
-  "extends": "./tsconfig.json",
-  "include": [".storybook", ".storybook/browser-commands.d.ts", "stories", "vite.storybook.config.ts", "vitest.storybook.config.ts"]
+  "extends": "./tsconfig.ui-next.json",
+  "include": [".storybook-next", "ui-next", "test-support", "vite.storybook-next.config.ts", "vitest.storybook.config.ts"]
 }

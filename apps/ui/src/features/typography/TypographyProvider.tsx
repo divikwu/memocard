@@ -2,7 +2,6 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
 import { REFERENCE_ROOT_SIZE } from './scale';
 import { FONT_FAMILIES, type FontChoice } from '@/lib/font-options';
-import { loadFonts } from '@/features/theme/font-loader';
 import { defaults, measurePresets, parseTypography, STORAGE_KEY, type Typography } from './preferences';
 
 const Context = createContext<{ value: Typography; save: (next: Typography) => void; error: string }>({ value: defaults, save: () => {}, error: '' });
@@ -21,7 +20,7 @@ export function resolveTypography(value: Typography) {
     '--note-measure': `${measurePresets[value.measure].factor * Number(value.size)}px`,
   };
 }
-export function TypographyProvider({ children, fontLoader = loadFonts }: { children: ReactNode; fontLoader?: (fonts: FontChoice[]) => Promise<unknown> }) {
+export function TypographyProvider({ children, fontLoader }: { children: ReactNode; fontLoader: (fonts: FontChoice[]) => Promise<unknown> }) {
   const [value, setValue] = useState(() => { try { return parseTypography(localStorage.getItem(STORAGE_KEY)); } catch { return { ...defaults }; } });
   const [error, setError] = useState('');
   const [fontError, setFontError] = useState('');

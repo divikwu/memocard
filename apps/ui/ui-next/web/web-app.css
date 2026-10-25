@@ -110,3 +110,6 @@
 
 .web-workspace-empty[data-guide] { gap: calc(var(--spacing-1) * 6); padding-block: calc(var(--spacing-1) * 12); }
 @media (min-width: 640px) { .web-workspace-empty[data-guide] { padding-block: calc(var(--spacing-1) * 16); } }
+
+/* SwiftUI supplies navigation and safe-area insets for the native editor host. */
+.web-app[data-native-chrome="true"] { padding: 0; }

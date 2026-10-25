@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
-import { Markdown } from './markdown';
+import { NoteMarkdown as Markdown } from "@ui-next/business/NoteMarkdown";
 import { bindNoteImage } from './note-image';
 
 vi.mock('./note-image', () => ({ bindNoteImage: vi.fn(() => vi.fn()) }));

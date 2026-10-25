@@ -73,7 +73,7 @@ export async function buildProjectSpacingCatalog({ check = false, outputPath = r
   let base;
   postcss.parse(theme).walkDecls('--spacing', declaration => { base = declaration.value; });
   if (!base) throw new Error('Missing upstream --spacing definition');
-  const custom = postcss.parse(documents.get('apps/ui/src/styles.css')).nodes.filter(node => node.type === 'atrule' && node.name === 'custom-variant').map(node => node.toString() + (node.nodes ? '' : ';')).join('\n');
+  const custom = [...documents].filter(([source]) => source.endsWith('.css')).flatMap(([, code]) => postcss.parse(code).nodes.filter(node => node.type === 'atrule' && node.name === 'custom-variant').map(node => node.toString() + (node.nodes ? '' : ';'))).join('\n');
   const catalog = { version: 1, upstream: { source: 'tailwindcss/theme.css', version: require('tailwindcss/package.json').version, name: '--spacing', value: base }, ...await collectSpacingUsage(documents, `${theme}\n${custom}`) };
   const content = JSON.stringify(catalog, null, 2) + '\n';
   const existing = await readFile(outputPath, 'utf8').catch(error => { if (error.code !== 'ENOENT') throw error; });

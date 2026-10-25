@@ -2,7 +2,7 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { swipeSheet } from "../../src/components/ui/sheet-swipe.test-utils";
+import { swipeSheet } from "../components/sheet-swipe.test-utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "./sheet";
 
 beforeEach(() => {

@@ -8,7 +8,7 @@ import { PreviewModeProvider } from "../ui-next/preview-mode";
 import { DEFAULT_PREVIEW_APPEARANCE, parsePreviewAppearance, PREVIEW_RADII } from "../ui-next/preview-appearance";
 import { PREVIEW_FONTS } from "../ui-next/preview-fonts";
 import { componentDocsRenderer } from "../ui-next/component-docs-renderer";
-import "../ui-next/styles.css";
+import "./preview.css";
 import "../ui-next/preview-appearance.css";
 
 function ThemeDocsContainer({ children, context }: ComponentProps<typeof DocsContainer>) {
@@ -35,7 +35,7 @@ const preview: Preview = {
     headingFont: { description: "标题字体", toolbar: { title: "标题字体", items: [{ value: "inherit", title: "标题 · 跟随正文" }, ...PREVIEW_FONTS.filter(font => font.id === "noto-serif" || font.id === "noto-sans").map(font => ({ value: font.id, title: `标题 · ${font.label}` }))], dynamicTitle: true } },
     bodyFont: { description: "正文字体", toolbar: { title: "正文字体", items: PREVIEW_FONTS.filter(font => font.id === "noto-sans" || font.id === "noto-serif").map(font => ({ value: font.id, title: `正文 · ${font.label}` })), dynamicTitle: true } },
   },
-  initialGlobals: { theme: "light", ...DEFAULT_PREVIEW_APPEARANCE },
+  initialGlobals: { theme: "light", viewport: { value: "desktop", isRotated: false }, ...DEFAULT_PREVIEW_APPEARANCE },
   parameters: {
     layout: "fullscreen",
     viewport: {

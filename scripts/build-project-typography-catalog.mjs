@@ -39,6 +39,8 @@ export function collectNativeTypography(documents) {
 
 function fontLonghands(value) {
   if (/^(inherit|initial|unset|revert|revert-layer)$/.test(value)) return properties.map(property => [property, value]);
+  const variable = value.match(/^(?:(var\(--font-weight-[\w-]+\))\s+)?(var\(--font-size-[\w-]+\))(?:\s*\/\s*(var\(--[\w-]+\)|[\d.]+))?\s+(.+)$/);
+  if (variable) return [['font-family', variable[4]], ['font-size', variable[2]], ['font-weight', variable[1] ?? 'normal'], ['line-height', variable[3] ?? 'normal']];
   const match = value.match(/^(.*?)\b(\d*\.?\d+(?:px|rem|em|%))(?:\s*\/\s*([^\s]+))?\s+(.+)$/);
   if (!match) throw new Error(`Unsupported font shorthand needs explicit catalog support: ${value}`);
   return [['font-family', match[4]], ['font-size', match[2]], ['font-weight', match[1].match(/\b(?:[1-9]00|bold|bolder|lighter|normal)\b/)?.[0] ?? 'normal'], ['line-height', match[3] ?? 'normal']];

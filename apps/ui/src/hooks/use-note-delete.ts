@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { request } from "../bridge";
-import type { NoteDeleteTarget } from "../components/note-delete-dialog";
+export type NoteDeleteTarget = { id: string; title: string; vaultId: string; vaultBinding?: string };
 
 export type NoteDeleteProps = { target: NoteDeleteTarget; prepareDelete: () => Promise<{id:string;contentHash:string} | null>; onDeleted: () => void; onCancel: () => void };
 export function useNoteDelete({ target, prepareDelete, onDeleted }: NoteDeleteProps) {

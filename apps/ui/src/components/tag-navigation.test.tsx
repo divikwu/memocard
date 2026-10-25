@@ -3,11 +3,11 @@ import { cleanup, render as renderUI, screen, waitFor, within } from "@testing-l
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
-import { SidebarProvider } from "./ui/sidebar";
-import { TagNavigation } from "./tag-navigation";
+import { SidebarProvider } from "@ui-next/components/sidebar";
+import { TagNavigation } from "@ui-next/business/tag-navigation";
 import { TagColorProvider } from "@/TagColorProvider";
+import TagColorStyles from "@ui-next/business/TagColorStyles";
 import { setTagColor } from "@/tag-colors";
-vi.mock("./tag-emoji-picker", () => ({ default: ({ onSelect }: { onSelect: (emoji: string) => void }) => <button onClick={() => onSelect("🎨")}>选择画板</button> }));
 const render = (ui: ReactElement) => renderUI(<SidebarProvider>{ui}</SidebarProvider>);
 const props = { vaultId: "vault-a", tags: [{ name: "工作", count: 2 }, { name: "工作/设计", count: 1 }, { name: "生活", count: 1 }], selected: null, onSelect: vi.fn() };
 beforeEach(() => { localStorage.clear(); vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} })); vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} }); });
@@ -15,7 +15,7 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it("keeps palettes available per vault without coloring sidebar tags", async () => {
   setTagColor("vault-a", "工作/设计", "green");
   setTagColor("vault-b", "工作/设计", "red");
-  const ui = (vaultId: string) => <TagColorProvider vaultId={vaultId}><TagNavigation {...props} vaultId={vaultId} /></TagColorProvider>;
+  const ui = (vaultId: string) => <TagColorProvider vaultId={vaultId}><TagColorStyles /><TagNavigation {...props} vaultId={vaultId} /></TagColorProvider>;
   const view = render(ui("vault-a"));
   await waitFor(() => expect(document.querySelector("style[data-tag-colors]")?.textContent).toContain("--tag-green-bg"));
   expect(screen.getByRole("button", { name: "工作/设计" }).hasAttribute("data-tag")).toBe(false);
@@ -78,11 +78,12 @@ it("searches full paths and saves icons without changing navigation", async () =
   expect(screen.getByRole("button", { name: "选择 Emoji" }).textContent).toBe("");
   expect(screen.queryByRole("button", { name: "使用图标 🎨" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "选择 Emoji" }));
-  expect(screen.getByText("选择图标").parentElement?.parentElement?.className).toContain("-mx-3");
-  expect(screen.getByRole("button", { name: "清除" }).hasAttribute("disabled")).toBe(true);
-  await user.click(await screen.findByRole("button", { name: "选择画板" }));
-  expect(screen.getByRole("button", { name: "选择画板" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "清除" }).hasAttribute("disabled")).toBe(false);
+  expect(screen.getByRole("region", { name: "选择图标" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "清除图标" }).hasAttribute("disabled")).toBe(true);
+  await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "🎨");
+  await user.click(await screen.findByRole("button", { name: /调色板/ }));
+  expect(screen.getByRole("button", { name: "选择 Emoji" }).textContent).toBe("🎨");
+  expect(screen.getByRole("button", { name: "清除图标" }).hasAttribute("disabled")).toBe(false);
   await user.click(screen.getByRole("button", { name: "保存" }));
   expect(screen.queryByLabelText("编辑标签")).toBeNull();
   expect(screen.getByRole("button", { name: "工作/设计" }).textContent).toContain("🎨");
@@ -103,23 +104,17 @@ it("renames before saving display preferences and discards unsaved edits", async
   expect(onRename).toHaveBeenCalledWith("工作", "职业");
 });
 
-it("aligns hierarchy controls and stretches nested rows", () => {
-  render(<TagNavigation {...props} tags={[...props.tags, { name: "工作/设计/界面", count: 1 }]} />);
-  expect(screen.getByRole("button", { name: "搜索标签" }).className).toContain("-mr-1.5");
-  const nestedButton = screen.getByRole("button", { name: "工作/设计" });
-  const nestedRow = nestedButton.parentElement;
-  const nestedCollapsible = nestedRow?.parentElement;
-  const nestedItem = nestedCollapsible?.parentElement;
-  const nestedMenu = nestedItem?.parentElement;
-
-  expect(nestedButton.className).toContain("w-full");
-  expect(nestedButton.querySelector("span")?.getAttribute("aria-hidden")).toBe("true");
-  expect(nestedRow?.className).toContain("w-full");
-  expect(nestedCollapsible?.className).toContain("w-full");
-  expect(nestedItem?.className).toContain("w-full");
-  expect(nestedMenu?.className).toContain("mr-0");
-  expect(nestedMenu?.className).toContain("pr-0");
-  expect(screen.getByRole("button", { name: "展开或收起标签 工作/设计" }).className).toContain("left-1.5");
+it("keeps expanding a nested branch separate from selecting its tag", async () => {
+  const user = userEvent.setup(), onSelect = vi.fn();
+  render(<TagNavigation {...props} onSelect={onSelect} tags={[...props.tags, { name: "工作/设计/界面", count: 1 }]} />);
+  const toggle = screen.getByRole("button", { name: "展开或收起标签 工作/设计" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  await user.click(toggle);
+  await waitFor(() => expect(screen.queryByRole("button", { name: "工作/设计/界面" })).toBeNull());
+  expect(onSelect).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "工作/设计" }));
+  expect(onSelect).toHaveBeenCalledWith("工作/设计");
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
 });
 
 it("keeps source order and leaves missing-parent paths available only through search or pins", async () => {

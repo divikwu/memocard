@@ -73,13 +73,13 @@ function AccordionContent({
       data-slot="accordion-content"
       className={cnState(
         typeof className === "function" ? className : undefined,
-        "overflow-hidden px-4 text-sm duration-medium-min ease-standard data-open:animate-accordion-down data-closed:animate-accordion-up"
+        "h-(--accordion-panel-height) overflow-hidden px-4 text-sm transition-[height] duration-medium-min ease-standard data-starting-style:h-0 data-ending-style:h-0"
       )}
       {...props}
     >
       <div
         className={cn(
-          "h-(--accordion-panel-height) pt-0 pb-4 data-ending-style:h-0 data-starting-style:h-0 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary [&_p:not(:last-child)]:mb-4",
+          "pt-0 pb-4 [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-primary [&_p:not(:last-child)]:mb-4",
           typeof className === "string" ? className : undefined
         )}
       >

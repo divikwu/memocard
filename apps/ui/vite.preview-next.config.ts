@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { uiNextStyleBoundary } from "./vite.ui-next-boundary.ts";
 
 const uiRoot = fileURLToPath(new URL(".", import.meta.url));
 const previewRoot = path.join(uiRoot, "ui-next/preview");
@@ -13,7 +12,7 @@ export default defineConfig({
   publicDir: path.join(uiRoot, "public"),
   cacheDir: path.join(uiRoot, "node_modules/.vite-preview-next"),
   resolve: { alias: { "@": path.join(uiRoot, "src"), "@ui-next": path.join(uiRoot, "ui-next") } },
-  plugins: [uiNextStyleBoundary(), {
+  plugins: [{
     name: "isolated-ui-next-preview",
     enforce: "pre",
     resolveId(source, importer) {

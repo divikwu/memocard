@@ -1,7 +1,0 @@
-/* One Tailwind entry for the isolated Docs resolver, including optional domains. */
-@import "../src/styles.css";
-@import "../src/features/theme/domains/data.css";
-@import "../src/features/theme/domains/syntax.css";
-@import "../src/tag-colors.css";
-@import "../src/import-layout.tokens.css";
-@import "../src/features/theme/capture.tokens.css";

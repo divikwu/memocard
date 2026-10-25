@@ -22,17 +22,17 @@ function markState(editor: Editor, name: string): boolean | 'mixed' {
 export type RichFormatUI = {
   uiClassName?: string;
   icons: Record<'Link' | 'Highlighter' | 'MoreHorizontal' | 'Superscript' | 'Subscript' | 'Keyboard' | 'Info' | 'Check' | 'Minus' | 'Code' | 'Strikethrough' | 'Unlink' | 'RemoveFormatting' | 'FileText' | 'X', import('./rich-editor-core').RichIcon>;
-  Dialog: typeof import('./components/ui/dialog').Dialog;
-  DialogContent: ComponentType<ComponentProps<typeof import('./components/ui/dialog').DialogContent>>;
-  DialogTitle: ComponentType<ComponentProps<typeof import('./components/ui/dialog').DialogTitle>>;
+  Dialog: typeof import('@ui-next/components/dialog').Dialog;
+  DialogContent: ComponentType<ComponentProps<typeof import('@ui-next/components/dialog').DialogContent>>;
+  DialogTitle: ComponentType<ComponentProps<typeof import('@ui-next/components/dialog').DialogTitle>>;
   MobileDialogHeader?: ComponentType<{ title: string; onClose: () => void }>;
-  Input: ComponentType<ComponentProps<typeof import('./components/ui/input').Input>>;
-  Button: ComponentType<Omit<ComponentProps<typeof import('./components/ui/button').Button>, 'render'>>;
-  Select: typeof import('./components/ui/select').Select;
-  SelectContent: ComponentType<ComponentProps<typeof import('./components/ui/select').SelectContent>>;
-  SelectItem: ComponentType<Omit<ComponentProps<typeof import('./components/ui/select').SelectItem>, 'ref'>>;
-  SelectTrigger: ComponentType<ComponentProps<typeof import('./components/ui/select').SelectTrigger>>;
-  SelectValue: ComponentType<ComponentProps<typeof import('./components/ui/select').SelectValue>>;
+  Input: ComponentType<ComponentProps<typeof import('@ui-next/components/input').Input>>;
+  Button: ComponentType<Omit<ComponentProps<typeof import('@ui-next/components/button').Button>, 'render'>>;
+  Select: typeof import('@ui-next/components/select').Select;
+  SelectContent: ComponentType<ComponentProps<typeof import('@ui-next/components/select').SelectContent>>;
+  SelectItem: ComponentType<Omit<ComponentProps<typeof import('@ui-next/components/select').SelectItem>, 'ref'>>;
+  SelectTrigger: ComponentType<ComponentProps<typeof import('@ui-next/components/select').SelectTrigger>>;
+  SelectValue: ComponentType<ComponentProps<typeof import('@ui-next/components/select').SelectValue>>;
 };
 export function createRichFormatTools({ uiClassName = '', icons, Dialog, DialogContent, DialogTitle, MobileDialogHeader, Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue }: RichFormatUI) {
 const { Link, Highlighter, MoreHorizontal, Superscript, Subscript, Keyboard, Info, Check, Minus, Code, Strikethrough, Unlink, RemoveFormatting, FileText, X } = icons;

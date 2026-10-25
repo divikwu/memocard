@@ -329,7 +329,7 @@ private enum NativeSidebarPreviewData {
                 "navigation": NativeSurface(
             id: "navigation", instance: "sidebar-preview", kind: "list", title: "MemoCard", presented: true,
             loading: state == .loading, error: state == .error ? "标签加载失败，请稍后重试。" : nil,
-            resetKey: "sidebar-preview-\(state.rawValue)", rowRadius: Double(DesignRadius.lg),
+            resetKey: "sidebar-preview-\(state.rawValue)", rowRadius: SidebarPreviewPalette.rowRadius,
             sections: [
                 NativeSection(id: "pages", actions: [
                     NativeAction(id: "home", title: "主页", icon: "house"),
@@ -365,18 +365,18 @@ private enum NativeSidebarPreviewData {
     let selection = NativeSidebarPreviewData.color("sidebar-accent", palette: palette)
     VStack(spacing: SidebarTokens.rowGap) {
         NativeSidebarItem(item: NativeAction(id: "home", title: "主页", icon: "house"),
-                          selection: selection, radius: DesignRadius.lg) {}
+                          selection: selection, radius: CGFloat(SidebarPreviewPalette.rowRadius)) {}
         NativeSidebarItem(item: NativeAction(id: "tag:product", title: "产品", icon: "number", selected: true),
-                          selection: selection, radius: DesignRadius.lg,
+                          selection: selection, radius: CGFloat(SidebarPreviewPalette.rowRadius),
                           expanded: .constant(true), expansionLabel: "展开或收起产品") {}
         NativeSidebarItem(item: NativeAction(id: "tag:guide", title: "使用指南", emoji: "📘"),
-                          selection: selection, radius: DesignRadius.lg) {}
+                          selection: selection, radius: CGFloat(SidebarPreviewPalette.rowRadius)) {}
         NativeSidebarItem(item: NativeAction(id: "calendar", title: "日历", icon: "calendar", disabled: true),
-                          selection: selection, radius: DesignRadius.lg) {}
+                          selection: selection, radius: CGFloat(SidebarPreviewPalette.rowRadius)) {}
         NativeSidebarItem(item: NativeAction(id: "filter:images", title: "有图片", icon: "photo", badge: 12),
-                          selection: selection, radius: DesignRadius.lg) {}
+                          selection: selection, radius: CGFloat(SidebarPreviewPalette.rowRadius)) {}
         NativeSidebarItem(item: NativeAction(id: "tag:long", title: "一个很长的标签名称，用于验证文字截断", icon: "number"),
-                          selection: selection, radius: DesignRadius.lg,
+                          selection: selection, radius: CGFloat(SidebarPreviewPalette.rowRadius),
                           expanded: .constant(false), expansionLabel: "展开或收起长标签") {}
     }
     .foregroundStyle(NativeSidebarPreviewData.color("sidebar-foreground", palette: palette))

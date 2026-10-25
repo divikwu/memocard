@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { App, type AppViewState } from "../../src/App";
 import { replaceCaptureText, replaceEditorText } from "../../src/editor-test-utils";
-import { resetStorybookBridge, setStorybookRequestHandler } from "../../.storybook/bridge";
+import { resetStorybookBridge, setStorybookRequestHandler } from "../../test-support/bridge";
 import { createWorkspaceFixture } from "./workspace-fixture";
 import { WebAppearanceProvider } from "./WebAppearance";
 import { preloadWebEditor, renderWebApp } from "./WebAppView";

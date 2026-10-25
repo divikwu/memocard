@@ -2,11 +2,12 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import ImagePropertyEditor from './ImagePropertyEditor';
+import { ImagePropertyEditor } from "@ui-next/business/property-editors";
 import { request } from './bridge';
 vi.mock('./bridge', () => ({request:vi.fn(),errorMessage:(cause:Error) => cause.message}));
 vi.mock('./note-image', () => ({bindNoteImage:(image:HTMLImageElement,source:string) => { image.src = source; return () => {}; }}));
 const props = {name:'封面',value:'',noteId:'note-a',notePath:'folder/A.md',vaultBinding:'vault-a',editable:true,busy:false};
+beforeEach(() => { vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))); });
 beforeEach(() => {
   vi.mocked(request).mockReset();
   vi.stubGlobal('ResizeObserver',class { observe() {} unobserve() {} disconnect() {} });

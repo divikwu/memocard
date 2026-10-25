@@ -13,8 +13,14 @@ it("keeps the retired preview absent and sends the existing command to the new o
   expect(scripts["dev:states"]).toBe(scripts["dev:states:ui-next"]);
 });
 
+it("keeps the legacy UI primitives and Storybook retired", () => {
+  for (const entry of ["src/components/ui", ".storybook", "stories", "vite.storybook.config.ts"]) {
+    expect(existsSync(path.join(uiRoot, entry)), entry).toBe(false);
+  }
+});
+
 it("has no active relative module dependency on the retired preview", () => {
-  const pending = ["src", "ui-next", "ui-state-fixtures", "mascot-fixtures", ".storybook", ".storybook-next", "stories"].map(folder => path.join(uiRoot, folder));
+  const pending = ["src", "ui-next", "ui-state-fixtures", "mascot-fixtures", "test-support", ".storybook-next"].map(folder => path.join(uiRoot, folder));
   while (pending.length) {
     const folder = pending.pop()!;
     for (const entry of readdirSync(folder, { withFileTypes: true })) {

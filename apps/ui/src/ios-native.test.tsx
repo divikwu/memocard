@@ -3,13 +3,13 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const bridge=vi.hoisted(()=>{window.__memocardNativeChrome=true;return {request:vi.fn()};});
 vi.mock("./bridge",()=>({request:bridge.request,errorMessage:(e:unknown)=>e instanceof Error ? e.message : "失败"}));
-vi.mock("./NoteImage",()=>({NoteImage:({alt}:{alt:string})=><img alt={alt}/> }));
-vi.mock("./markdown",()=>({Markdown:({body,notePath}:{body:string;notePath:string})=><div data-testid="rich-trash-preview" data-path={notePath}>{body}</div>}));
+vi.mock("../ui-next/business/NoteMarkdown",()=>({NoteMarkdown:({body,notePath}:{body:string;notePath:string})=><div data-testid="rich-trash-preview" data-path={notePath}>{body}</div>}));
 import { useIOSSurface, type NativeSurface } from "./ios-native";
-import { QuickCapture } from "./components/quick-capture";
-import { NoteSearchDialog } from "./components/note-search-dialog";
+import { QuickCapture } from "../ui-next/business/QuickCapture";
+import { NoteDeleteDialog } from "../ui-next/business/NoteDeleteDialog";
+import { NoteSearchDialog } from "../ui-next/business/NoteSearchDialog";
 import { readQuickCaptureDraft } from "./quick-capture-draft";
-import TrashPage from "./components/trash-page";
+import { TrashPage } from "../ui-next/business/TrashPage";
 
 type Published=NativeSurface & {id:string;instance:string;remove?:boolean};
 const surface=(id:string):Published=>bridge.request.mock.calls.filter(([op,p])=>op === "updateNativeSurface" && p.id === id && !p.remove).at(-1)![1];
@@ -141,4 +141,42 @@ it("preserves the native search session and rejects an older query reply",async(
   page.rerender(<NoteSearchDialog {...props}/>);
   expect(surface("search").sections?.[0].fields?.[0].value).toBe("新");
   expect(surface("search").sections?.some(section=>section.actions?.some(action=>action.id === "note:new"))).toBe(true);
+});
+
+
+it("uses native note deletion confirmation and prevents duplicate delete requests", async () => {
+  let finish!: () => void;
+  bridge.request.mockImplementation((op: string) => op === "deleteNote" ? new Promise<void>(resolve => { finish = resolve; }) : Promise.resolve({}));
+  const onDeleted = vi.fn(), onCancel = vi.fn();
+  const prepareDelete = vi.fn().mockResolvedValue({ id: "note", contentHash: "reviewed" });
+  render(<NoteDeleteDialog target={{ id: "note", title: "草稿笔记", vaultId: "qa", vaultBinding: "binding" }} prepareDelete={prepareDelete} onDeleted={onDeleted} onCancel={onCancel} />);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(surface("delete-note").presented).toBe(true);
+  act(() => { send("delete-note", "delete"); send("delete-note", "delete"); send("delete-note", "close"); });
+  await waitFor(() => expect(finish).toBeTypeOf("function"));
+  expect(prepareDelete).toHaveBeenCalledOnce();
+  expect(onCancel).not.toHaveBeenCalled();
+  expect(bridge.request.mock.calls.filter(([op]) => op === "deleteNote")).toHaveLength(1);
+  expect(bridge.request).toHaveBeenCalledWith("deleteNote", { id: "note", baseHash: "reviewed", vaultId: "qa", vaultBinding: "binding" });
+  await act(async () => finish());
+  expect(onDeleted).toHaveBeenCalledOnce();
+});
+
+it("keeps permanent trash deletion in the native confirmation and retries a failed request", async () => {
+  const item = { trashKey: "archive", id: "note", title: "已删除笔记", relativePath: "notes/old.md", contentHash: "listed", deletedAt: new Date().toISOString() };
+  let fail = true;
+  bridge.request.mockImplementation(async (op: string) => {
+    if (op === "getTrash") return { notes: [item], issues: [] };
+    if (op === "permanentlyDeleteNote") { if (fail) throw new Error("磁盘只读"); return {}; }
+    return {};
+  });
+  render(<TrashPage vaultId="qa" vaultBinding="binding" refreshVersion={0} canPermanentlyDelete onRestored={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "永久删除笔记：已删除笔记" }));
+  expect(surface("delete-trash").presented).toBe(true);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  send("delete-trash", "delete");
+  await waitFor(() => expect(surface("delete-trash").error).toBe("磁盘只读"));
+  fail = false; send("delete-trash", "delete");
+  await waitFor(() => expect(surface("delete-trash").presented).toBe(false));
+  expect(bridge.request.mock.calls.filter(([op]) => op === "permanentlyDeleteNote")).toHaveLength(2);
 });

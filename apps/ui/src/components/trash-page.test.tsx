@@ -3,10 +3,10 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { Note, TrashItem } from '@memocard/contracts';
-import TrashPage from './trash-page';
+import { TrashPage } from '@ui-next/business/TrashPage';
 const bridge=vi.hoisted(()=>({request:vi.fn()}));
 vi.mock('../bridge',()=>({request:bridge.request,errorMessage:(cause:unknown)=>cause instanceof Error ? cause.message : '失败'}));
-vi.mock('../markdown',()=>({Markdown:({body,notePath}:{body:string;notePath:string})=><article data-path={notePath}>{body}</article>}));
+vi.mock('@ui-next/business/NoteMarkdown',()=>({NoteMarkdown:({body,notePath}:{body:string;notePath:string})=><article data-path={notePath}>{body}</article>}));
 const note:Note={id:'note',title:'旧笔记',body:'完整正文与图片',tags:['工作'],createdAt:'2026-10-14T08:00:00Z',updatedAt:'2026-10-14T08:00:00Z',contentHash:'fresh',relativePath:'Folder/旧笔记.md',sourceUrl:'memocard://note/note'};
 const item:TrashItem={trashKey:'token/Folder/旧笔记.md',id:note.id,title:note.title,relativePath:note.relativePath,deletedAt:'2026-10-14T09:00:00Z',contentHash:'listed',preview:'正文预览'};
 const props={vaultId:'vault',vaultBinding:'binding',refreshVersion:0,onRestored:vi.fn()};

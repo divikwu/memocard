@@ -8,7 +8,7 @@ export function isDocumentation(path) {
   if (path.split('/').some(part => !part || part === '.' || part === '..')) return false;
   return documentation.has(path)
     || /^docs\/.+\.(md|png|jpe?g|webp)$/s.test(path)
-    || /^apps\/ui\/(stories|\.storybook)\/.+\.(tsx?|css|html|mdx?)$/s.test(path);
+    || /^apps\/ui\/(ui-next\/stories|\.storybook-next)\/.+\.(tsx?|css|html|mdx?)$/s.test(path);
 }
 
 export function classifyDiff(raw) {

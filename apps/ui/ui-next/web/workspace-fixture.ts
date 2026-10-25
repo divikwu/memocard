@@ -1,7 +1,7 @@
 import type { Note, NotePage, NotePins, TagPreferenceState, TrashItem, VaultStatus } from "@memocard/contracts";
 import { createPreviewMock } from "../../ui-state-fixtures/mock";
 import type { DraftList, Environment } from "../../src/bridge";
-import { editorContentReview } from "../../stories/editor-content.fixture";
+import { editorContentReview } from "../../test-support/editor-content.fixture";
 
 // Entirely in-memory backend used by the integrated page stories and regression tests.
 export async function createWorkspaceFixture(scenario = "loading") {
