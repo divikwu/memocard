@@ -1,6 +1,7 @@
 import type { Note, NotePage, NotePins, TagPreferenceState, TrashItem, VaultStatus } from "@memocard/contracts";
 import { createPreviewMock } from "../../preview/mock";
 import type { DraftList, Environment } from "../../src/bridge";
+import { editorContentReview } from "../../stories/editor-content.fixture";
 
 // Entirely in-memory backend used by the integrated page stories and regression tests.
 export async function createWorkspaceFixture(scenario = "loading") {
@@ -31,7 +32,7 @@ export async function createWorkspaceFixture(scenario = "loading") {
   if (scenario.startsWith("review-trash")) extra.push("permanentlyDeleteNote");
   if (scenario === "review-editor") {
     const note = base.snapshot().notes.find(note => note.title === "今天的手冲记录")!;
-    await base.request("saveNote", { ...note, body: `${note.body}\n\n> 逐状态对照：保留原有编辑与保存行为。\n\n- [ ] 待办事项\n- [x] 已完成事项\n\n\`\`\`ts\nconst message = "MemoCard";\n\`\`\`\n\n| 项目 | 状态 | 平台 | 属性 | 正文 | 保存 | 撤销 | 预览 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| 编辑器 | 同状态对照 | Web/H5 | 保留 | 保留 | 校验 | 保留 | 保留 |\n\n[示例链接](https://example.com) 与 [[Weekend reading list]]\n\n${"这是一段用于验证长文档滚动、光标定位和窄屏换行的文字。".repeat(24)}` });
+    await base.request("saveNote", { ...note, body: `${note.body}\n\n> 逐状态对照：保留原有编辑与保存行为。\n\n- [ ] 待办事项\n- [x] 已完成事项\n\n\`\`\`ts\nconst message = "MemoCard";\n\`\`\`\n\n| 项目 | 状态 | 平台 | 属性 | 正文 | 保存 | 撤销 | 预览 |\n| --- | --- | --- | --- | --- | --- | --- | --- |\n| 编辑器 | 同状态对照 | Web/H5 | 保留 | 保留 | 校验 | 保留 | 保留 |\n\n[示例链接](https://example.com) 与 [[Weekend reading list]]\n\n${editorContentReview}\n\n${"这是一段用于验证长文档滚动、光标定位和窄屏换行的文字。".repeat(24)}` });
   }
   if (scenario.startsWith("review-trash")) {
     const notes = base.snapshot().notes;

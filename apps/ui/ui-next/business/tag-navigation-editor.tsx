@@ -14,7 +14,7 @@ import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { Label } from "../components/label";
 import { Popover, PopoverContent } from "../components/popover";
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../components/sheet";
+import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../components/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
 import { SidebarIcon } from "./sidebar-icons";
 import { cn } from "../lib/utils";
@@ -95,6 +95,6 @@ export function TagEditor({ path, initialIcon, anchor, mobile, onClose, onSave }
     <p id={`${id}-description`} className="px-1 text-pretty text-xs leading-normal text-secondary">使用 / 分隔多级标签；改名会更新笔记中的标签。</p>
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
   </form>{pickerOpen && <EmojiPicker selected={icon} disabled={saving} autoFocus={!mobile} onSelect={setIcon} />}</div>;
-  if (mobile) return <Sheet open onOpenChange={(open, details) => { if (!open) { if (saving) details.cancel(); else onClose(); } }}><SheetContent side="bottom" className="next-sidebar-vault-sheet next-sidebar-tag-editor" showCloseButton={false} swipeToClose swipeDisabled={saving} initialFocus={input} finalFocus={returnFocus}><SheetHeader className="flex-row items-center justify-between p-0"><div><SheetTitle>编辑标签</SheetTitle><SheetDescription>调整标签名称与图标。</SheetDescription></div><SheetClose render={<Button type="button" variant="ghost" size="icon-sm" aria-label="关闭编辑标签" disabled={saving} />}><SidebarIcon name="close" /></SheetClose></SheetHeader>{content}</SheetContent></Sheet>;
+  if (mobile) return <Sheet open onOpenChange={(open, details) => { if (!open) { if (saving) details.cancel(); else onClose(); } }}><SheetContent side="bottom" className="next-sidebar-vault-sheet next-sidebar-tag-editor" showCloseButton={false} swipeToClose swipeDisabled={saving} initialFocus={input} finalFocus={returnFocus}><SheetHeader className="flex-row items-center justify-between p-0"><div><SheetTitle>编辑标签</SheetTitle><SheetDescription>调整标签名称与图标。</SheetDescription></div><SheetCloseButton aria-label="关闭编辑标签" disabled={saving} /></SheetHeader>{content}</SheetContent></Sheet>;
   return <Popover open onOpenChange={(open, details) => { if (!open) { if (saving) details.cancel(); else onClose(); } }}><PopoverContent anchor={anchor} side="right" align="start" sideOffset={8} collisionPadding={12} aria-label="编辑标签" className="next-sidebar-tag-editor" initialFocus={input} finalFocus={returnFocus}>{content}</PopoverContent></Popover>;
 }

@@ -56,11 +56,11 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
 }
 
 export function NoteCollection({ home, notes, loading = false, searching = false, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
-  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
+  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout");
   const cards = layout === "cards";
   const layoutButtons = <div role="group" aria-label={home ? "主页布局" : "笔记布局"} data-variant="default" className={cn(tabsListVariants(), "next-note-layout")}>
-    <button type="button" className={tabsTriggerStyles} aria-label="卡片布局" title="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></button>
-    <button type="button" className={tabsTriggerStyles} aria-label="列表布局" title="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></button>
+    <Button type="button" variant="ghost" className={tabsTriggerStyles} aria-label="卡片布局" title="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
+    <Button type="button" variant="ghost" className={tabsTriggerStyles} aria-label="列表布局" title="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
   </div>;
   const content = <>
     {loading && <span role="status" aria-label={searching ? "正在搜索笔记" : "正在读取笔记库"} className="sr-only">{searching ? "正在搜索笔记…" : "正在读取笔记库…"}</span>}

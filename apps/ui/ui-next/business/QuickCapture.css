@@ -1,6 +1,6 @@
 .next-quick-capture { position: relative; z-index: 10; isolation: isolate; width: 100%; }
 .next-capture-group { overflow: visible; border-radius: calc(var(--radius-element) * 3); }
-.next-capture-group:focus-within { box-shadow: var(--shadow-input-focus); }
+.next-capture-group:focus-within { box-shadow: var(--shadow-med); }
 .next-capture-editor { position: relative; width: 100%; min-width: 0; }
 .next-capture-editor-content { min-height: calc(var(--spacing-1) * 28); max-height: 20rem; overflow-y: auto; padding: calc(var(--spacing-1) * 4); white-space: pre-wrap; overflow-wrap: anywhere; outline: none; font: inherit; font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
 .next-capture-editor[data-empty]::before { content: "记下此刻的想法…"; position: absolute; inset-block-start: calc(var(--spacing-1) * 4); inset-inline-start: calc(var(--spacing-1) * 4); color: var(--color-text-secondary); font-size: var(--font-size-sm); pointer-events: none; }
@@ -16,11 +16,11 @@
 .next-capture-tag-picker { width: min(18rem, calc(100vw - var(--spacing-1) * 8)); padding: calc(var(--spacing-1) * 2); row-gap: 0; }
 .next-capture-tag-picker [data-slot="input"], .next-capture-tag-options > button { border-radius: var(--radius-item); }
 .next-capture-tag-options { max-height: 15rem; overflow-y: auto; padding-top: calc(var(--spacing-1) * 2); }
-.next-capture-tag-options > button { width: 100%; height: auto; min-height: var(--size-element-md); justify-content: flex-start; font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
+.next-capture-tag-options > button { width: 100%; height: auto; min-height: var(--size-element-md); justify-content: flex-start; padding-inline: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
 .next-capture-tag-options > button > span { min-width: 0; flex: 1; overflow-wrap: anywhere; text-align: start; }
 .next-capture-tag-options > p { padding: calc(var(--spacing-1) * 2); font-size: var(--font-size-xs); color: var(--color-text-secondary); }
-.next-capture-suggestions { position: absolute; z-index: 60; display: grid; gap: var(--spacing-1); width: min(15rem, 100%); padding: var(--spacing-1); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); background: var(--color-background-popover); box-shadow: var(--shadow-high); }
-.next-capture-suggestions > button { width: 100%; min-width: 0; justify-content: space-between; text-align: start; }
+.next-capture-suggestions { position: absolute; z-index: 60; display: grid; gap: var(--spacing-1); width: min(15rem, 100%); padding: var(--spacing-1); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-popover); background: var(--color-background-popover); box-shadow: var(--shadow-high); }
+.next-capture-suggestions > button { width: 100%; min-width: 0; justify-content: space-between; padding-inline: calc(var(--spacing-1) * 2); border-radius: var(--radius-item); text-align: start; }
 .next-capture-suggestions > button > span:first-child { overflow: hidden; text-overflow: ellipsis; }
 .next-capture-suggestions > p { padding: calc(var(--spacing-1) * 2); }
 .next-capture-error { margin-top: calc(var(--spacing-1) * 2); color: var(--color-error); font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
@@ -28,15 +28,18 @@
 .next-capture-save-status { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-1); margin: calc(var(--spacing-1) * 2); color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: var(--text-supporting-leading); }
 .next-capture-save-status:empty { display: none; }
 .next-capture-entry { width: 100%; min-height: calc(var(--size-element-lg) + var(--spacing-1) * 2); justify-content: flex-start; gap: calc(var(--spacing-1) * 3); padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4); color: var(--color-text-secondary); font-weight: var(--font-weight-normal); }
-.next-capture-sheet { max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); gap: calc(var(--spacing-1) * 3); overflow-y: auto; overscroll-behavior: contain; border-radius: var(--radius-page) var(--radius-page) 0 0; padding: calc(var(--spacing-1) * 4) max(calc(var(--spacing-1) * 4), env(safe-area-inset-right)) max(calc(var(--spacing-1) * 4), env(safe-area-inset-bottom)) max(calc(var(--spacing-1) * 4), env(safe-area-inset-left)); }
-.next-capture-sheet[data-sheet-swipe] { translate: 0 var(--sheet-swipe-y, 0px); }
-.next-capture-sheet[data-sheet-dragging] { transition: none; }
-.next-capture-sheet [data-slot="sheet-header"], .next-capture-sheet-handle { touch-action: none; }
-.next-capture-sheet-handle { display: flex; flex: none; justify-content: center; padding-block: var(--spacing-1); }
-.next-capture-sheet-handle > span { width: 2rem; height: var(--spacing-1); border-radius: var(--radius-full); background: var(--color-border-emphasized); }
+.next-capture-sheet { max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); overflow-y: auto; overscroll-behavior: contain; }
 .next-capture-sheet .next-capture-editor-content { min-height: 10rem; max-height: min(20rem, 40dvh); font-size: var(--font-size-base); }
 .next-capture-continue { min-height: var(--size-element-lg); width: 100%; margin-top: calc(var(--spacing-1) * 2); }
 @media (max-width: 767px) {
+  .next-capture-sheet .next-capture-group { box-shadow: none; }
+  .next-capture-sheet .next-capture-continue { border-color: var(--color-border-subtle); }
+  .next-capture-sheet .next-capture-tool { width: calc(var(--size-element-lg) + var(--spacing-1)); padding-inline: 0; }
+  .next-capture-sheet .next-capture-submit { min-width: calc(var(--size-element-lg) + var(--spacing-1)); padding-inline: 0; }
+  .next-capture-sheet :is(.next-capture-tool, .next-capture-submit) { display: grid; place-items: center; gap: 0; padding: 0; }
+  .next-capture-sheet .next-capture-tool > span, .next-capture-sheet .next-capture-submit > span { display: none; }
   .next-capture-footer > button, .next-capture-tag-options > button { min-height: calc(var(--size-element-lg) + var(--spacing-1)); }
   .next-capture-editor-content, .next-capture-editor[data-empty]::before { font-size: var(--font-size-base); }
+  .next-capture-editor-content, .next-capture-editor[data-empty]::before { line-height: var(--text-note-body-leading); }
+  .next-capture-sheet .next-capture-continue { min-height: calc(var(--spacing-1) * 11); }
 }

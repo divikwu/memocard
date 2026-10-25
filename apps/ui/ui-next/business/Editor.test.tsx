@@ -19,16 +19,113 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); resetStorybookBridge(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-async function rich(value: string, extra: Partial<RichEditorProps> = {}) {
+async function rich(value: string, extra: Partial<RichEditorProps> = {}, withScrollSurface = false) {
   const onChange = vi.fn();
   const props = { value, notePath: 'notes/a.md', disabled: false, onChange, onSave: vi.fn(), onError: vi.fn(), ...extra };
-  const view = render(<RichMarkdownEditor {...props} />);
+  const content = <RichMarkdownEditor {...props} />;
+  const view = render(withScrollSurface ? <div className="note-page-scroll" style={{ overflowY: 'auto', scrollPaddingTop: 80, scrollPaddingBottom: 24 }}>{content}</div> : content);
   const field = await screen.findByRole('textbox', { name: '笔记内容' });
   const editor = noteEditor(field);
   vi.spyOn(editor.view, 'coordsAtPos').mockReturnValue({ left: 60, right: 160, top: 100, bottom: 126 });
   await waitFor(() => expect(editor.getText()).not.toBe(''));
-  return { editor, field, onChange, props, rerender: view.rerender };
+  return { editor, field, onChange, props, rerender: view.rerender, unmount: view.unmount };
 }
+
+async function scrollCaret() {
+  const view = await rich('正文内容', { autoFocus: false }, true);
+  const surface = view.field.closest<HTMLElement>('.note-page-scroll')!;
+  vi.spyOn(surface, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 40, 600, 400));
+  Object.defineProperty(surface, 'clientHeight', { configurable: true, value: 400 });
+  surface.scrollTop = 200;
+  act(() => view.editor.view.focus());
+  const pending = new Map<number, FrameRequestCallback>();
+  let frame = 0;
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => { pending.set(++frame, callback); return frame; });
+  const cancel = vi.fn((id: number) => pending.delete(id));
+  vi.stubGlobal('cancelAnimationFrame', cancel);
+  const flush = () => act(() => { const callbacks = [...pending.values()]; pending.clear(); callbacks.forEach(callback => callback(0)); });
+  return { ...view, surface, pending, cancel, flush };
+}
+
+it.each([
+  { edge: 'top', caretTop: 100, expected: 180 },
+  { edge: 'bottom', caretTop: 430, expected: 240 },
+])('keeps the caret inside the scroll surface padded $edge edge without writing or changing selection', async ({ caretTop, expected }) => {
+  const { editor, surface, onChange, flush } = await scrollCaret();
+  vi.mocked(editor.view.coordsAtPos).mockReturnValue({ left: 60, right: 60, top: caretTop, bottom: caretTop + 26 });
+  act(() => editor.commands.setTextSelection(2));
+  const selection = editor.state.selection.toJSON();
+  flush();
+  expect(surface.scrollTop).toBe(expected);
+  expect(editor.state.selection.toJSON()).toEqual(selection);
+  expect(editor.getText()).toBe('正文内容');
+  expect(onChange).not.toHaveBeenCalled();
+  act(() => { expect(editor.commands.undo()).toBe(false); });
+});
+
+it('leaves legacy unpadded surfaces and ranged text selections alone', async () => {
+  const { editor, surface, onChange, flush } = await scrollCaret();
+  vi.mocked(editor.view.coordsAtPos).mockReturnValue({ left: 60, right: 60, top: 50, bottom: 76 });
+  surface.style.scrollPaddingTop = '';
+  surface.style.scrollPaddingBottom = '';
+  act(() => editor.commands.setTextSelection(2));
+  flush();
+  expect(surface.scrollTop).toBe(200);
+  surface.style.scrollPaddingTop = '80px';
+  act(() => editor.commands.setTextSelection({ from: 2, to: 4 }));
+  const selection = editor.state.selection.toJSON();
+  flush();
+  expect(surface.scrollTop).toBe(200);
+  expect(editor.state.selection.toJSON()).toEqual(selection);
+  expect(onChange).not.toHaveBeenCalled();
+});
+
+it('reveals the caret after native navigation keyup without a selection change', async () => {
+  const { editor, field, surface, flush, onChange } = await scrollCaret();
+  vi.mocked(editor.view.coordsAtPos).mockReturnValue({ left: 60, right: 60, top: 50, bottom: 76 });
+  const selection = editor.state.selection.toJSON();
+  fireEvent.keyUp(field, { key: 'ArrowUp' });
+  flush();
+  expect(surface.scrollTop).toBe(130);
+  expect(editor.state.selection.toJSON()).toEqual(selection);
+  expect(onChange).not.toHaveBeenCalled();
+  surface.scrollTop = 200;
+  fireEvent.keyUp(field, { key: 'a' });
+  flush();
+  expect(surface.scrollTop).toBe(200);
+});
+
+it('reveals the caret for scroll-into-view transactions with an unchanged selection', async () => {
+  const { editor, surface, flush, onChange } = await scrollCaret();
+  vi.mocked(editor.view.coordsAtPos).mockReturnValue({ left: 60, right: 60, top: 430, bottom: 456 });
+  // Native scrolling has already run when Tiptap emits the transaction event.
+  editor.view.setProps({ handleScrollToSelection: () => true });
+  const selection = editor.state.selection.toJSON();
+  act(() => editor.view.dispatch(editor.state.tr.scrollIntoView()));
+  flush();
+  expect(surface.scrollTop).toBe(240);
+  expect(editor.state.selection.toJSON()).toEqual(selection);
+  expect(onChange).not.toHaveBeenCalled();
+  act(() => { expect(editor.commands.undo()).toBe(false); });
+});
+
+it('cancels stale caret work and does not scroll after blur or unmount', async () => {
+  const { editor, field, surface, pending, cancel, flush, unmount, onChange } = await scrollCaret();
+  vi.mocked(editor.view.coordsAtPos).mockReturnValue({ left: 60, right: 60, top: 50, bottom: 76 });
+  act(() => { editor.commands.setTextSelection(2); editor.commands.setTextSelection(3); });
+  expect(pending.size).toBe(1);
+  act(() => field.blur());
+  flush();
+  expect(surface.scrollTop).toBe(200);
+  act(() => { editor.view.focus(); editor.commands.setTextSelection(4); });
+  expect(pending.size).toBe(1);
+  const frame = [...pending.keys()][0];
+  unmount();
+  expect(cancel).toHaveBeenCalledWith(frame);
+  expect(pending.size).toBe(0);
+  expect(surface.scrollTop).toBe(200);
+  expect(onChange).not.toHaveBeenCalled();
+});
 
 it('keeps semantic Markdown, tables, tasks and math in the shared next editor without an opening write', async () => {
   const value = '# 标题\n\n正文 **重点**\n\n- [ ] 任务\n\n| 名称 | 状态 |\n| --- | --- |\n| 项目 | 完成 |\n\n$E=mc^2$';
@@ -69,6 +166,59 @@ it('folds headings with the next view without adding a Markdown write or undo en
   expect(onChange).not.toHaveBeenCalled();
 });
 
+it.each(['pointer', 'keyboard'] as const)('keeps the block handle on the heading whose fold button receives %s input', async input => {
+  let resizeEditor = () => {};
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(private callback: ResizeObserverCallback) {}
+    observe(target: Element) { if (target.matches('.rich-editor')) resizeEditor = () => this.callback([], this as unknown as ResizeObserver); }
+    disconnect() {}
+    unobserve() {}
+  });
+  const { editor, field, onChange } = await rich('# 一级标题\n\n## 二级标题\n\n### 三级标题\n\n正文');
+  const headings = Array.from(field.querySelectorAll<HTMLElement>('h1, h2, h3'));
+  headings.forEach((heading, index) => vi.spyOn(heading, 'getBoundingClientRect').mockReturnValue(new DOMRect(64, 100 + index * 80, 400, 26)));
+  vi.spyOn(field.closest('.rich-editor')!, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 500, 500));
+  const second = editor.view.posAtDOM(headings[1], 0);
+  act(() => { editor.commands.setTextSelection(second); });
+  vi.spyOn(editor.view, 'posAtCoords').mockReturnValue({ pos: second, inside: second - 1 });
+  fireEvent.mouseMove(headings[1], { clientX: 80, clientY: 190 });
+  const grip = screen.getByRole('button', { name: '内容块操作' });
+  expect(grip.parentElement!.style.top).toBe('193px');
+  const fold = screen.getByRole('button', { name: '收起“三级标题”章节' });
+  if (input === 'pointer') fireEvent.mouseMove(fold, { clientX: 50, clientY: 270 });
+  else fireEvent.focus(fold);
+  expect(grip.parentElement!.style.top).toBe('273px');
+  fireEvent.click(fold);
+  act(() => { resizeEditor(); });
+  expect(grip.parentElement!.style.top).toBe('273px');
+  fireEvent.click(grip);
+  expect(editor.state.selection.from).toBe(editor.view.posAtDOM(headings[2], 0) - 1);
+  expect(onChange).not.toHaveBeenCalled();
+});
+
+it('retargets the block handle when scrolling puts another heading under a stationary pointer', async () => {
+  const { editor, field, onChange } = await rich('# 一级标题\n\n## 二级标题\n\n### 三级标题\n\n正文');
+  const headings = Array.from(field.querySelectorAll<HTMLElement>('h1, h2, h3'));
+  headings.forEach((heading, index) => vi.spyOn(heading, 'getBoundingClientRect').mockReturnValue(new DOMRect(64, 100 + index * 80, 400, 26)));
+  vi.spyOn(field.closest('.rich-editor')!, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 500, 500));
+  const second = editor.view.posAtDOM(headings[1], 0), third = editor.view.posAtDOM(headings[2], 0);
+  const coordinates = vi.spyOn(editor.view, 'posAtCoords').mockReturnValue({ pos: second, inside: second - 1 });
+  fireEvent.mouseMove(headings[1], { clientX: 80, clientY: 190 });
+  const grip = screen.getByRole('button', { name: '内容块操作' });
+  expect(grip.parentElement!.style.top).toBe('193px');
+  const original = Object.getOwnPropertyDescriptor(document, 'elementFromPoint');
+  Object.defineProperty(document, 'elementFromPoint', { configurable: true, value: () => headings[2] });
+  try {
+    coordinates.mockReturnValue({ pos: third, inside: third - 1 });
+    fireEvent.scroll(document);
+    expect(grip.parentElement!.style.top).toBe('273px');
+    expect(onChange).not.toHaveBeenCalled();
+  } finally {
+    if (original) Object.defineProperty(document, 'elementFromPoint', original);
+    else Reflect.deleteProperty(document, 'elementFromPoint');
+  }
+});
+
 it('uses the next link controls while preserving the text selection and undoing the saved mark', async () => {
   const { editor, onChange } = await rich('alpha beta');
   act(() => { editor.commands.setTextSelection({ from: 1, to: 6 }); });
@@ -87,11 +237,15 @@ it('uses the next link controls while preserving the text selection and undoing 
 });
 
 it('keeps the mobile link-type portal in the editor style scope and cancels without changing content', async () => {
+  vi.stubGlobal('innerWidth', 390);
   vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   const { editor, field, onChange } = await rich('alpha beta');
   act(() => { editor.commands.setTextSelection({ from: 1, to: 6 }); });
   fireEvent.click(await screen.findByRole('button', { name: /^链接$/ }, { timeout: 5000 }));
   const dialog = await screen.findByRole('dialog', { name: '编辑链接' });
+  expect(dialog.dataset.slot).toBe('sheet-content');
+  expect(dialog.dataset.side).toBe('bottom');
+  expect(within(dialog).getByRole('button', { name: '关闭弹窗' }).classList.contains('next-sheet-close-button')).toBe(true);
   const user = userEvent.setup();
   await user.click(within(dialog).getByRole('combobox', { name: '链接类型' }));
   const option = await screen.findByRole('option', { name: 'Wiki 笔记链接' });

@@ -8,6 +8,7 @@ import { cn, cnState } from "../lib/utils"
 import { Button } from "./button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
+import "./sheet.css"
 const SheetSwipe = React.lazy(() => import("./sheet-swipe"))
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
@@ -20,6 +21,12 @@ function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
 
 function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
+}
+
+function SheetCloseButton({ className, render = <Button type="button" variant="secondary" size="icon-sm" />, children, ...props }: SheetPrimitive.Close.Props) {
+  return <SheetClose aria-label="关闭" {...props} className={cnState(className, "next-sheet-close-button relative shrink-0")} render={render}>
+    {children ?? <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />}
+  </SheetClose>
 }
 
 function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
@@ -39,25 +46,21 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   )
 }
 
-function SheetContent({
+function SheetPopup({
   className,
   children,
   side = "right",
   showCloseButton = true,
-  forceBackdrop = false,
   swipeToClose = false,
   swipeDisabled = false,
   ...props
 }: SheetPrimitive.Popup.Props & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
-  forceBackdrop?: boolean
   swipeToClose?: boolean
   swipeDisabled?: boolean
 }) {
   return (
-    <SheetPortal>
-      <SheetOverlay forceRender={forceBackdrop} />
       <SheetPrimitive.Popup
         data-slot="sheet-content"
         data-side={side}
@@ -71,23 +74,14 @@ function SheetContent({
         {children}
         {swipeToClose && side === "bottom" && <React.Suspense fallback={null}><SheetSwipe disabled={swipeDisabled} /></React.Suspense>}
         {showCloseButton && (
-          <SheetPrimitive.Close
-            data-slot="sheet-close"
-            render={
-              <Button
-                variant="secondary"
-                className="absolute top-4 right-4"
-                size="icon-sm"
-              />
-            }
-          >
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
-            <span className="sr-only">关闭</span>
-          </SheetPrimitive.Close>
+          <SheetCloseButton className="absolute top-4 right-4" />
         )}
       </SheetPrimitive.Popup>
-    </SheetPortal>
   )
+}
+
+function SheetContent({ forceBackdrop = false, ...props }: React.ComponentProps<typeof SheetPopup> & { forceBackdrop?: boolean }) {
+  return <SheetPortal><SheetOverlay forceRender={forceBackdrop} /><SheetPopup {...props} /></SheetPortal>;
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
@@ -137,7 +131,9 @@ export {
   Sheet,
   SheetTrigger,
   SheetClose,
+  SheetCloseButton,
   SheetContent,
+  SheetPopup,
   SheetHeader,
   SheetFooter,
   SheetTitle,

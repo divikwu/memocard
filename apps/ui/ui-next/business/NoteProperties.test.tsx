@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { Note } from '@memocard/contracts';
 import NoteProperties from './NoteProperties';
+import { PropertyPopover, PropertyPopoverContent, PropertyPopoverTrigger } from './property-popover';
 import { request } from '../../src/bridge';
 vi.mock('../../src/bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
 // Keep cold calendar compilation outside the property interaction deadline.
@@ -167,6 +168,23 @@ it('places delete in the property-name menu and keeps confirmation cancellable',
  expect(screen.getByText('将从所有笔记中删除此属性及已填写的值，此操作无法撤销。')).toBeTruthy();
  expect(screen.queryByRole('menuitem',{name:'清空值'})).toBeNull();
  await user.click(screen.getByRole('button',{name:'取消'}));
+ expect(onApply).not.toHaveBeenCalled();
+});
+
+it.each(['close', 'escape'] as const)('uses the shared mobile shell for confirmation and cancels with %s without deleting', async dismissal => {
+ vi.stubGlobal('innerWidth',390);
+ vi.stubGlobal('matchMedia',()=>({matches:true,addEventListener(){},removeEventListener(){}}));
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'属性菜单 摘要'}));
+ await user.click(await screen.findByRole('menuitem',{name:'删除属性'}));
+ const confirmation=await screen.findByRole('alertdialog');
+ expect(confirmation.dataset.slot).toBe('sheet-content');
+ expect(confirmation.dataset.side).toBe('bottom');
+ expect(within(confirmation).getByRole('heading',{name:'删除属性「摘要」？'})).toBeTruthy();
+ expect(within(confirmation).getByRole('button',{name:'确认删除'})).toBeTruthy();
+ if(dismissal==='close') await user.click(within(confirmation).getByRole('button',{name:'取消确认'}));
+ else await user.keyboard('{Escape}');
+ await waitFor(()=>expect(screen.queryByRole('alertdialog')).toBeNull());
  expect(onApply).not.toHaveBeenCalled();
 });
 it('edits text in its existing value cell, cancels with Escape and saves with Enter',async () => {
@@ -641,6 +659,148 @@ it('preserves existing time and timezone when changing the day, and can remove t
  expect(screen.queryByLabelText('时间')).toBeNull();
  await user.click(screen.getByRole('button',{name:'2026年10月15日'}));
  await waitFor(()=>expect(onApply).toHaveBeenLastCalledWith({name:'日期',type:'date',value:'2026-10-15'}));
+});
+
+function responsivePropertyViewport(initialMobile=false) {
+ let mobile=initialMobile;
+ const listeners=new Set<()=>void>();
+ vi.stubGlobal('innerWidth',mobile?390:1024);
+ vi.stubGlobal('matchMedia',()=>({get matches(){return mobile;},addEventListener(_type:string,listener:()=>void){listeners.add(listener);},removeEventListener(_type:string,listener:()=>void){listeners.delete(listener);}}));
+ return (next:boolean)=>{
+  vi.stubGlobal('innerWidth',next?390:1024);mobile=next;
+  act(()=>{for(const listener of [...listeners])listener();});
+ };
+}
+
+it('keeps the open property presentation and adapts the next opening to the current breakpoint', async () => {
+ const resize=responsivePropertyViewport();
+ vi.mocked(request).mockImplementation(async operation=>operation==='getPropertyLabels'?{labels:{},contentHash:'labels'}:operation==='listTags'?{tags:[]}:{properties:[],tagProperty:{name:'tags',type:'list',value:[],editable:true},writable:true,contentHash:'hash'});
+ const user=userEvent.setup();
+ render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={vi.fn()}/>);
+ await user.click(await screen.findByRole('button',{name:'编辑标签'}));
+ expect((await screen.findByRole('dialog',{name:'编辑标签'})).dataset.slot).toBe('popover-content');
+ resize(true);
+ expect(screen.getByRole('dialog',{name:'编辑标签'}).dataset.slot).toBe('popover-content');
+ await user.keyboard('{Escape}');
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标签'})).toBeNull());
+ await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('button',{name:'编辑标签'})));
+ await user.click(screen.getByRole('button',{name:'编辑标签'}));
+ expect((await screen.findByRole('dialog',{name:'编辑标签'})).dataset.side).toBe('bottom');
+ resize(false);
+ expect(screen.getByRole('dialog',{name:'编辑标签'}).dataset.side).toBe('bottom');
+ await user.click(screen.getByRole('button',{name:'关闭编辑标签'}));
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标签'})).toBeNull());
+ await user.click(screen.getByRole('button',{name:'编辑标签'}));
+ expect((await screen.findByRole('dialog',{name:'编辑标签'})).dataset.slot).toBe('popover-content');
+});
+
+it('retains an unsaved property name across the mobile breakpoint and creates it once', async () => {
+ const resize=responsivePropertyViewport();
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'添加属性'}));
+ await user.type(within(await screen.findByRole('dialog',{name:'添加属性'})).getByRole('textbox',{name:'属性名'}),'保留名称');
+ resize(true);
+ const dialog=screen.getByRole('dialog',{name:'添加属性'});
+ expect(within(dialog).getByRole('textbox',{name:'属性名'})).toHaveProperty('value','保留名称');
+ expect(onApply).not.toHaveBeenCalled();
+ await user.click(within(dialog).getByRole('button',{name:/^文本$/}));
+ await waitFor(()=>expect(onApply).toHaveBeenCalledExactlyOnceWith({name:'保留名称',type:'text',value:'',create:true}));
+});
+
+it('retains an unsaved date across the desktop breakpoint and saves it when closing', async () => {
+ const resize=responsivePropertyViewport(true);
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ const input=within(await screen.findByRole('dialog',{name:'编辑属性 日期'})).getByRole('textbox',{name:'属性值'});
+ await user.clear(input);await user.type(input,'10/14/2026');
+ resize(false);
+ const dialog=screen.getByRole('dialog',{name:'编辑属性 日期'});
+ expect(within(dialog).getByRole('textbox',{name:'属性值'})).toHaveProperty('value','10/14/2026');
+ expect(onApply).not.toHaveBeenCalled();
+ await user.click(within(dialog).getByRole('button',{name:'关闭编辑属性 日期'}));
+ await waitFor(()=>expect(onApply).toHaveBeenCalledExactlyOnceWith({name:'日期',type:'date',value:'2026-10-14'}));
+});
+
+it('preserves default-open cancellation, completion callbacks and trigger focus across a breakpoint', async () => {
+ const resize=responsivePropertyViewport();
+ let preventClose=true;
+ const onOpenChange=vi.fn((_next:boolean,details:{cancel:()=>void})=>{if(preventClose)details.cancel();});
+ const onOpenChangeComplete=vi.fn();
+ const user=userEvent.setup();
+ render(<PropertyPopover defaultOpen onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
+  <PropertyPopoverTrigger>打开属性</PropertyPopoverTrigger>
+  <PropertyPopoverContent aria-label="属性草稿"><input aria-label="草稿" defaultValue="原值" /></PropertyPopoverContent>
+ </PropertyPopover>);
+ await user.type(within(await screen.findByRole('dialog',{name:'属性草稿'})).getByRole('textbox',{name:'草稿'}),'未保存');
+ resize(true);
+ await user.keyboard('{Escape}');
+ expect(screen.getByRole('dialog',{name:'属性草稿'}).dataset.slot).toBe('popover-content');
+ expect(screen.getByRole('textbox',{name:'草稿'})).toHaveProperty('value','原值未保存');
+ expect(onOpenChange).toHaveBeenCalledWith(false,expect.objectContaining({reason:'escape-key'}));
+ preventClose=false;
+ await user.keyboard('{Escape}');
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'属性草稿'})).toBeNull());
+ await waitFor(()=>expect(onOpenChangeComplete).toHaveBeenCalledWith(false));
+ await user.click(screen.getByRole('button',{name:'打开属性'}));
+ expect((await screen.findByRole('dialog',{name:'属性草稿'})).dataset.side).toBe('bottom');
+ resize(false);
+ await user.click(screen.getByRole('button',{name:'关闭属性草稿'}));
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'属性草稿'})).toBeNull());
+ await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('button',{name:'打开属性'})));
+});
+
+it('uses a mobile tag sheet and closes without submitting search text, returning focus to its trigger', async () => {
+ vi.stubGlobal('innerWidth',390);
+ vi.stubGlobal('matchMedia',()=>({matches:true,addEventListener(){},removeEventListener(){}}));
+ vi.mocked(request).mockImplementation(async operation=>operation==='getPropertyLabels'?{labels:{},contentHash:'labels'}:operation==='listTags'?{tags:[]}:{properties:[],tagProperty:{name:'tags',type:'list',value:[],editable:true},writable:true,contentHash:'hash'});
+ const onApply=vi.fn(),user=userEvent.setup();
+ render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={onApply}/>);
+ const trigger=await screen.findByRole('button',{name:'编辑标签'});
+ await user.click(trigger);
+ const sheet=await screen.findByRole('dialog',{name:'编辑标签'});
+ expect(sheet.dataset.side).toBe('bottom');
+ expect(sheet.querySelector('[data-slot="sheet-header"]')).not.toBeNull();
+ await user.type(within(sheet).getByRole('combobox',{name:'搜索或新建属性标签'}),'未提交');
+ await user.click(within(sheet).getByRole('button',{name:'关闭编辑标签'}));
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标签'})).toBeNull());
+ await waitFor(()=>expect(document.activeElement).toBe(trigger));
+ expect(onApply).not.toHaveBeenCalled();
+});
+
+it('preserves mobile date Escape cancellation and commits a changed date when closing the sheet', async () => {
+ vi.stubGlobal('innerWidth',390);
+ vi.stubGlobal('matchMedia',()=>({matches:true,addEventListener(){},removeEventListener(){}}));
+ const {user,onApply}=await setup();
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ let sheet=await screen.findByRole('dialog',{name:'编辑属性 日期'});
+ expect(sheet.dataset.side).toBe('bottom');
+ let input=within(sheet).getByRole('textbox',{name:'属性值'});
+ await user.clear(input);await user.type(input,'10/13/2026{Escape}');
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑属性 日期'})).toBeNull());
+ expect(onApply).not.toHaveBeenCalled();
+ await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
+ sheet=await screen.findByRole('dialog',{name:'编辑属性 日期'});
+ input=within(sheet).getByRole('textbox',{name:'属性值'});
+ await user.clear(input);await user.type(input,'10/14/2026');
+ await user.click(within(sheet).getByRole('button',{name:'关闭编辑属性 日期'}));
+ await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:'2026-10-14'}));
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑属性 日期'})).toBeNull());
+});
+
+it('uses the common mobile sheet for a property rename and cancels without writing its label', async () => {
+ vi.stubGlobal('innerWidth',390);
+ vi.stubGlobal('matchMedia',()=>({matches:true,addEventListener(){},removeEventListener(){}}));
+ const {user}=await setup();
+ await user.click(screen.getByRole('button',{name:'属性菜单 摘要'}));
+ await user.click(await screen.findByRole('menuitem',{name:'重命名'}));
+ const sheet=await screen.findByRole('dialog',{name:'重命名属性'});
+ expect(sheet.dataset.side).toBe('bottom');
+ const input=within(sheet).getByRole('textbox',{name:'新属性名'});
+ await user.clear(input);await user.type(input,'未保存名称');
+ await user.click(within(sheet).getByRole('button',{name:'关闭重命名属性'}));
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'重命名属性'})).toBeNull());
+ expect(vi.mocked(request).mock.calls.some(([operation])=>operation==='renamePropertyLabel')).toBe(false);
+ expect(screen.getByRole('button',{name:'属性菜单 摘要'})).toBeTruthy();
 });
 
 it('saves inline number input on blur and discards changes on Escape like text input',async () => {

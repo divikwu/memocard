@@ -9,6 +9,7 @@ vi.mock('../../src/note-image', () => ({bindNoteImage:(image:HTMLImageElement,so
 const props = {name:'封面',value:'',noteId:'note-a',notePath:'folder/A.md',vaultBinding:'vault-a',editable:true,busy:false};
 beforeEach(() => {
   vi.mocked(request).mockReset();
+  vi.stubGlobal('matchMedia', () => ({matches:false,addEventListener(){},removeEventListener(){}}));
   vi.stubGlobal('ResizeObserver',class { observe() {} unobserve() {} disconnect() {} });
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });

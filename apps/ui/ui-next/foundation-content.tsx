@@ -128,9 +128,10 @@ export function FoundationContent({ section }: { section: ContentSection }) {
     <thead><tr><th scope="col">Level</th><th scope="col">When to use</th></tr></thead>
     <tbody>{[
       ["none · shadow-none", "平面、嵌入的页面内容，例如普通表单与文档区域。"],
-      ["low · shadow-sm", "笔记集合卡片与轻微抬起的小控件，例如移动端圆形导航按钮与滑块。"],
-      ["med · shadow-med", "通用 Card、Luma 卡片与快速输入的默认表面。"],
+      ["low · shadow-sm", "轻微抬起的小控件，例如移动端圆形导航按钮与滑块，以及 PC 快速记录的默认表面。"],
+      ["med · shadow-med", "通用 Card、Luma 卡片与 PC 快速记录的聚焦表面。"],
       ["high · shadow-lg", "脱离页面流的菜单、Popover 与对话框；模态遮罩单独定义。"],
+      ["card hover · shadow-card-hover", "PC 笔记卡片的悬停反馈；默认无投影，独立于 low、med、high 三档表面层级。"],
     ].map(([level, text]) => <tr key={level}><th scope="row"><code>{level}</code></th><td>{text}</td></tr>)}</tbody>
   </table></div>;
   if (section === "concentric-radius") return <>

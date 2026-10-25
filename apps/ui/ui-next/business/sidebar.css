@@ -31,7 +31,7 @@
 .next-sidebar-section-toggle { display: flex; height: 100%; min-width: 0; flex: 1; align-items: center; gap: var(--spacing-1); border-radius: var(--radius-full); outline: none; text-align: left; }
 .next-sidebar-section-toggle:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .next-sidebar-section-toggle[data-panel-open] > svg { transform: rotate(90deg); }
-.next-sidebar-vault-sheet { max-height: 80dvh; gap: calc(var(--spacing-1) * 4); overflow: hidden; border-radius: var(--radius-page) var(--radius-page) 0 0; padding: calc(var(--spacing-1) * 4) max(calc(var(--spacing-1) * 4), env(safe-area-inset-right)) max(calc(var(--spacing-1) * 4), env(safe-area-inset-bottom)) max(calc(var(--spacing-1) * 4), env(safe-area-inset-left)); }
+.next-sidebar-vault-sheet { max-height: 80dvh; overflow: hidden; }
 .next-sidebar-vault-menu-item { justify-content: flex-start; width: 100%; height: auto; min-height: calc(var(--size-element-lg) + var(--spacing-1)); gap: calc(var(--spacing-1) * 2); padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 2); border-radius: var(--radius-item); font-weight: var(--font-weight-normal); text-align: left; }
 .next-sidebar-vault-icon { display: flex; width: calc(var(--spacing-1) * 8); height: calc(var(--spacing-1) * 8); flex-shrink: 0; align-items: center; justify-content: center; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-element); background: var(--color-background-body); }
 .next-sidebar-tag-editor { max-height: 85dvh; overflow-y: auto; }
@@ -49,26 +49,24 @@
 .next-sidebar-tag-editor .next-sidebar-emoji-categories { margin-inline: calc(var(--spacing-1) * -3); padding-inline: calc(var(--spacing-1) * 3); }
 .next-mobile-tag-menu { max-width: calc(100vw - var(--spacing-1) * 8); }
 .next-mobile-tag-menu [role^="menuitem"] { min-height: calc(var(--size-element-lg) + var(--spacing-1)); }
-@media (min-width: 768px) {
-  /* Center the guide on the 28px toggle at a 4px inset without moving child rows. */
-  .next-business-sidebar [data-sidebar="menu-sub"] { margin-left: calc(var(--spacing-1) * 4.5 - var(--border-width) * .5); padding-left: calc(var(--spacing-1) * 1.5 + var(--border-width) * .5); }
-}
+/* Align the guide with the parent icon, retaining the shared child-row inset. */
+.next-business-sidebar [data-sidebar="menu-sub"] { margin-left: calc(var(--spacing-1) * 4.5 - var(--border-width) * .5); padding-left: calc(var(--spacing-1) * 1.5 + var(--border-width) * .5); }
 @media (max-width: 767px) {
   .next-sidebar-vault-menu-item { min-height: calc(var(--size-element-lg) + var(--spacing-1) * 2); font-size: var(--font-size-base); }
   .next-sidebar-vault-menu-item svg { width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); }
-  .next-sidebar-vault-sheet [data-slot=sheet-header] [data-slot=sheet-close] { width: calc(var(--spacing-1) * 9); height: calc(var(--spacing-1) * 9); border-color: var(--color-border); border-radius: var(--radius-full); background: var(--color-background-body); box-shadow: var(--shadow-low); }
-  .next-sidebar-vault-sheet [data-slot=sheet-header] [data-slot=sheet-close] svg { width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); }
-  .next-business-sidebar { --next-sidebar-row-min: calc(var(--size-element-lg) + var(--spacing-1) * 2); }
+  .next-business-sidebar { --next-sidebar-row-min: calc(var(--size-element-lg) + var(--spacing-1)); }
   .next-business-sidebar[data-mobile="true"] { padding-top: env(safe-area-inset-top); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }
-  .next-business-sidebar .next-sidebar-row { font-size: var(--font-size-base); }
+  .next-business-sidebar .next-sidebar-brand { height: var(--next-sidebar-row-min); }
   .next-business-sidebar .next-sidebar-row { padding-left: calc(var(--spacing-1) * 3); }
+  .next-business-sidebar [data-sidebar="menu-sub"] { margin-left: calc(var(--spacing-1) * 5 - var(--border-width) * .5); padding-left: calc(var(--spacing-1) + var(--border-width) * .5); }
   .next-business-sidebar .next-sidebar-tree-row > .next-sidebar-row { padding-right: calc(var(--size-element-lg) + var(--spacing-1) * 2); }
-  .next-business-sidebar .next-sidebar-tree-toggle { left: auto; right: var(--spacing-1); width: var(--size-element-lg); height: var(--size-element-lg); opacity: 1; }
+  .next-business-sidebar .next-sidebar-tree-toggle { left: auto; right: calc(var(--spacing-1) * .5); width: var(--size-element-lg); height: var(--size-element-lg); opacity: 1; }
   .next-business-sidebar .next-sidebar-tree-toggle::after { position: absolute; inset: calc(var(--spacing-1) * -.5); content: ""; }
   .next-business-sidebar .next-sidebar-tree-row:is(:hover, :focus-within) .next-sidebar-branch-icon, .next-business-sidebar .next-sidebar-branch-icon { opacity: 1; }
   .next-business-sidebar .next-sidebar-tag-section [data-sidebar="menu-badge"] { display: none; }
-  .next-business-sidebar [data-sidebar="group-label"] { height: calc(var(--size-element-lg) + var(--spacing-1)); padding-left: 0; }
-  .next-business-sidebar [data-sidebar="group-label"] > button[aria-label] { width: calc(var(--size-element-lg) + var(--spacing-1)); height: 100%; }
+  .next-business-sidebar [data-sidebar="group-label"] { height: var(--next-sidebar-row-min); padding-inline: 0; }
+  .next-business-sidebar .next-sidebar-section-toggle { justify-content: flex-start; padding-inline: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 3.5); }
+  .next-business-sidebar .next-sidebar-section-toggle:is(:hover, :active) { background: var(--color-overlay-hover); }
   .next-sidebar-tag-editor .next-sidebar-emoji-grid { max-height: calc(var(--size-element-md) * 4 + var(--spacing-1) * 5); }
   .next-sidebar-tag-editor .next-sidebar-emoji-picker { margin-inline: calc(var(--spacing-1) * -4); padding-inline: calc(var(--spacing-1) * 4); }
   .next-sidebar-tag-editor .next-sidebar-emoji-categories { margin-inline: calc(var(--spacing-1) * -4); padding-inline: calc(var(--spacing-1) * 4); }

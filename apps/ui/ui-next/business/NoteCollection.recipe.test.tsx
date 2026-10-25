@@ -29,7 +29,7 @@ it("uses the UI body font for card titles and the compact reading recipe for rea
   expect(getComputedStyle(screen.getByRole("heading", { name: "集合的界面标题" })).fontFamily).toContain("--font-family-body");
   expect(getComputedStyle(previewHeading).fontSize).toBe("1em");
   expect(getComputedStyle(previewHeading).fontFamily).toBe(getComputedStyle(markdown).fontFamily);
-  expect(getComputedStyle(markdown).getPropertyValue("--typeset-flow")).toBe(".4em");
+  expect(getComputedStyle(markdown).getPropertyValue("--typeset-flow")).toBe("var(--spacing-1)");
   expect(getComputedStyle(markdown).fontSize).toContain("--font-size-sm");
   expect(getComputedStyle(markdown).lineHeight).toContain("--text-body-leading");
   expect(markdown.querySelector("button, a, input, [tabindex]")).toBeNull();

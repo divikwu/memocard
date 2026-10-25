@@ -8,6 +8,10 @@ import { mermaidSVG } from "../../src/mermaid-svg";
 import { Button } from "../components/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "../components/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
+import { HugeiconsIcon } from "@hugeicons/react";
+import SourceCodeIcon from "@hugeicons/core-free-icons/SourceCodeIcon";
+import GitBranchIcon from "@hugeicons/core-free-icons/GitBranchIcon";
+import Layout2RowIcon from "@hugeicons/core-free-icons/Layout2RowIcon";
 import { CloseIcon } from "../icons";
 import "./note-content.css";
 
@@ -91,10 +95,20 @@ function MermaidDiagram({ source }: { source: string }) {
   </div>;
 }
 
+const mermaidModes = [
+  { value: "source", label: "仅源码", icon: SourceCodeIcon },
+  { value: "preview", label: "仅图形", icon: GitBranchIcon },
+  { value: "both", label: "源码与图形", icon: Layout2RowIcon },
+] as const;
+
 export function MermaidContent({ source, children }: { source: string; children: React.ReactNode }) {
   const [mode, setMode] = useState("both");
   return <Tabs className="note-mermaid-next" value={mode} onValueChange={setMode}>
-    <TabsList contentEditable={false} aria-label="Mermaid 显示模式"><TabsTrigger value="source">仅源码</TabsTrigger><TabsTrigger value="preview">仅图形</TabsTrigger><TabsTrigger value="both">源码与图形</TabsTrigger></TabsList>
+    <div className="note-mermaid-toolbar" contentEditable={false}>
+      <TabsList contentEditable={false} aria-label="Mermaid 显示模式" activateOnFocus>
+        {mermaidModes.map(({ value, label, icon }) => <TabsTrigger key={value} value={value} aria-label={label} title={label}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></TabsTrigger>)}
+      </TabsList>
+    </div>
     <TabsContent value={mode} keepMounted>
       <div className="note-mermaid-source" hidden={mode === "preview"}>{children}</div>
       <div contentEditable={false} hidden={mode === "source"}><MermaidDiagram source={source} /></div>

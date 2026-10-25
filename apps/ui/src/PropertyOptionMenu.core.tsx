@@ -6,6 +6,7 @@ import { tagColors, type TagColor } from './tag-colors';
 import { errorMessage } from './error-messages';
 
 type View = {
+  ConfirmationPopup?: ComponentType<ComponentProps<typeof AlertDialog.Popup>>;
   Check: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Hash: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   MoreHorizontal: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
@@ -24,6 +25,7 @@ type View = {
 };
 
 export function createPropertyOptionMenu(view: View) {
+  const ConfirmationPopup = view.ConfirmationPopup ?? AlertDialog.Popup;
   const { Check, Hash, MoreHorizontal, Trash2, Button, Input, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuSeparator, TagPill } = view;
 type PropertyOptionMenuProps = {
   name:string;
@@ -78,7 +80,7 @@ function PropertyOptionMenu({name:tag, kind, color, disabled, normalizeName, onC
       </DropdownMenuContent>
     </DropdownMenu>
     <AlertDialog.Root open={removing} onOpenChange={value => { if (!working) setRemoving(value); }}>
-      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><AlertDialog.Popup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除{kind}「{tag}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 text-sm text-secondary">{deleteDescription}</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={disabled || working} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-error" disabled={disabled || working} onClick={() => void change(null)}>{working ? '正在删除…' : '确认删除'}</Button></div></AlertDialog.Popup></AlertDialog.Portal>
+      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><ConfirmationPopup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除{kind}「{tag}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 text-sm text-secondary">{deleteDescription}</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={disabled || working} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-error" disabled={disabled || working} onClick={() => void change(null)}>{working ? '正在删除…' : '确认删除'}</Button></div></ConfirmationPopup></AlertDialog.Portal>
     </AlertDialog.Root>
   </>;
 }

@@ -918,7 +918,7 @@ it.each(['mouse','keyboard'])('opens link properties by %s and cancels without w
  const {editor,field,change}=await setup('正文',{autoFocus:false});
  const user=userEvent.setup();
  act(()=>{editor.commands.setTextSelection({from:1,to:3});});
- await user.click(screen.getByRole('button',{name:'更多格式'}));
+ await user.click(await screen.findByRole('button',{name:'更多格式'}));
  const editLink=await screen.findByRole('button',{name:'编辑链接'});
  if(activation==='mouse')await user.click(editLink);else{editLink.focus();await user.keyboard('{Enter}');}
  const dialog=await screen.findByRole('dialog',{name:'编辑链接'});
@@ -1022,7 +1022,7 @@ it('keeps cancelled slash commands as text and supports keyboard insertion',asyn
 it('creates and removes a link through properties without losing selected text',async()=>{
  const {editor,field,change}=await setup('正文');
  act(()=>{editor.commands.setTextSelection({from:1,to:3});});
- fireEvent.click(screen.getByRole('button',{name:'更多格式'}));fireEvent.click(screen.getByRole('button',{name:'编辑链接'}));
+ fireEvent.click(await screen.findByRole('button',{name:'更多格式'}));fireEvent.click(screen.getByRole('button',{name:'编辑链接'}));
  fireEvent.change(screen.getByRole('textbox',{name:'链接地址'}),{target:{value:'https://example.com'}});
  fireEvent.click(screen.getByRole('button',{name:'保存'}));
  expect(field.querySelector('a')?.getAttribute('href')).toContain('https://example.com');

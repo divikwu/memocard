@@ -286,7 +286,7 @@ test("uses validation and selection insets without duplicating group or keyboard
   expect(error.matches(":focus-visible")).toBe(true);
   expect(getComputedStyle(error).outlineWidth).toBe("2px");
   expect(getComputedStyle(error).outlineOffset).toBe("3px");
-  expect(getComputedStyle(error).boxShadow).toContain(expected("error"));
+  await expect.poll(() => getComputedStyle(error).boxShadow).toContain(expected("error"));
 });
 
 test("keeps component-local state overrides and surface shadows", () => {
