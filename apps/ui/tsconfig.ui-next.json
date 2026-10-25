@@ -14,6 +14,7 @@
     "ui-next",
     ".storybook-next",
     "vite.storybook-next.config.ts",
+    "vite.preview-next.config.ts",
     "vite.web-next.config.ts"
   ]
 }

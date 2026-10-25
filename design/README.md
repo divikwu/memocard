@@ -11,6 +11,7 @@
 - [已使用组件维护表](component-inventory.md)
 - [组件使用文档结构与维护方式](component-docs.md)
 - [新旧 UI 的 Storybook 入口](ui-next.md)
+- [新版整页状态与吉祥物 Preview](ui-next-preview.md)
 - [Token 消费映射](token-consumption.md)
 - [侧栏规格与验收清单](components/sidebar.md)
 - [搜索与快速记录场景及验收边界](components/search-capture.md)
@@ -58,7 +59,7 @@ Tailwind `@theme` 接口参考 Astryx 语义命名：正文为 `text-primary`，
 
 ## 工程边界
 
-Storybook、故事、模拟数据和浏览器测试只用于开发，不进入生产入口或原生 Web 资源。现有 `apps/ui/preview` 保留整页状态与流程验收职责。原生 Preview 使用生产组件及隔离的 `NativeHost(previewSurfaces:)`，不连接真实笔记库或启动服务。
+Storybook、故事、模拟数据和浏览器测试只用于开发，不进入生产入口或原生 Web 资源。整页状态与流程验收统一使用 `apps/ui/ui-next/preview`，入口与覆盖范围见[新版 Preview](ui-next-preview.md)。旧版 Preview 的页面、配置和入口已移除；角色创作源与历史原型说明见[设计归档](mascots/README.md)。场景数据和吉祥物素材分别由 `ui-state-fixtures` 与 `mascot-fixtures` 共享维护。原生 Preview 使用生产组件及隔离的 `NativeHost(previewSurfaces:)`，不连接真实笔记库或启动服务。
 
 Storybook 的 Foundations 包含尺寸/间距、完整 CSS 语义色与标签色、真实 Provider 驱动的界面/笔记排版、图标/阴影/焦点与动效边界。高频基础组件直接使用生产 Button、Input、Textarea、Select、Switch、Tabs、Dialog、Dropdown Menu、Popover、Tooltip 和 Sheet，分别记录适用状态与键盘/关闭/焦点行为。侧栏仍保留组合故事。搜索与快速记录包含生产组件的业务 Story 和真实原生 overlay 的独立 Preview，使用隔离数据反馈输入、关闭与保存结果。NoteCollection 与 NotePreview 的业务 Story 覆盖集合浏览和内容预览，iOS 复核共用组件的实际 WKWebView 路径；场景操作和边界见对应组件说明。其他业务组件继续使用维护表中登记的现有 fixture/回归，未把它们声明为已完成独立 Story。
 

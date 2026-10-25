@@ -1,0 +1,12 @@
+/* Preserve the two existing faded artwork variants, including their edge softening. */
+[data-mascot-fade] {
+  mask-image: linear-gradient(to bottom, black 76%, transparent 93%);
+  -webkit-mask-image: linear-gradient(to bottom, black 76%, transparent 93%);
+}
+
+.mascot-preview-fade {
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2.5px);
+  mask-image: linear-gradient(to bottom, transparent 76%, black 93%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 76%, black 93%);
+}
