@@ -81,19 +81,23 @@ function retryFailedFontFaces(families: string[]) {
   for (const sheet of document.styleSheets) {
     let rules: CSSRuleList;
     try { rules = sheet.cssRules; } catch { continue; }
-    for (const rule of rules) {
+    for (let index = 0; index < rules.length; index++) {
+      const rule = rules[index];
       if (rule.type !== CSSRule.FONT_FACE_RULE) continue;
       const { style } = rule as CSSFontFaceRule;
       if (!failed.some(face => face.family.replace(/["']/g, "") === style.getPropertyValue("font-family").replace(/["']/g, "")
         && face.style === (style.getPropertyValue("font-style") || "normal")
         && face.weight === (style.getPropertyValue("font-weight") || "normal")
         && face.unicodeRange.replace(/\s/g, "").toLowerCase() === (style.getPropertyValue("unicode-range") || "U+0-10FFFF").replace(/\s/g, "").toLowerCase())) continue;
-      // A failed FontFace cannot load again; changing src creates a fresh face.
-      style.setProperty("src", style.getPropertyValue("src").replace(/url\((["']?)(.*?)\1\)/g, (_match, _quote, source: string) => {
+      const source = style.getPropertyValue("src").replace(/url\((["']?)(.*?)\1\)/g, (_match, _quote, source: string) => {
         const url = new URL(source, sheet.href || document.baseURI);
         url.searchParams.set("font-retry", attempt);
         return `url("${url.href}")`;
-      }));
+      });
+      // Firefox cannot mutate font descriptors; replace the failed face's rule.
+      const descriptors = Array.from(style, name => `${name}: ${name === "src" ? source : style.getPropertyValue(name)};`).join(" ");
+      sheet.insertRule(`@font-face { ${descriptors} }`, index);
+      sheet.deleteRule(index + 1);
     }
   }
 }
