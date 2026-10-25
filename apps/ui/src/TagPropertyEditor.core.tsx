@@ -2,7 +2,7 @@ import type { ComponentType, ComponentProps, SVGProps } from "react";
 import PropertyOptionList from './PropertyOptionList';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
-import { cn } from '@/lib/utils';
+import { cn } from '@ui-next/lib/utils';
 import { request, errorMessage } from './bridge';
 import { normalizePropertyTag, tagKey } from './inline-tags';
 

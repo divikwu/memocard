@@ -13,8 +13,8 @@ it("keeps the retired preview absent and sends the existing command to the new o
   expect(scripts["dev:states"]).toBe(scripts["dev:states:ui-next"]);
 });
 
-it("keeps the legacy UI primitives and Storybook retired", () => {
-  for (const entry of ["src/components/ui", ".storybook", "stories", "vite.storybook.config.ts"]) {
+it("keeps retired UI source, generated Web tokens and Storybook absent", () => {
+  for (const entry of ["src/components/ui", "src/lib/utils.ts", "src/generated/design-tokens.css", "src/generated/design-tokens.ts", ".storybook", "stories", "vite.storybook.config.ts"]) {
     expect(existsSync(path.join(uiRoot, entry)), entry).toBe(false);
   }
 });

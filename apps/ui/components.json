@@ -16,7 +16,7 @@
   "menuAccent": "subtle",
   "aliases": {
     "components": "@ui-next/components",
-    "utils": "@/lib/utils",
+    "utils": "@ui-next/lib/utils",
     "ui": "@ui-next/components",
     "lib": "@/lib",
     "hooks": "@/hooks"

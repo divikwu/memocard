@@ -174,7 +174,6 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/components/note-collection-layout.ts",
         "apps/ui/ui-next/business/NoteSearchDialog.tsx",
         "apps/ui/ui-next/web/WebSettings.tsx",
         "apps/ui/ui-next/web/WebTypographySettings.tsx"
@@ -268,7 +267,6 @@
       "step": "4",
       "value": "4",
       "consumers": [
-        "apps/ui/src/components/note-collection-layout.ts",
         "apps/ui/ui-next/business/NoteSearchDialog.tsx",
         "apps/ui/ui-next/components/calendar.tsx",
         "apps/ui/ui-next/components/empty.tsx",
@@ -993,7 +991,6 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/components/note-collection-layout.ts",
         "apps/ui/ui-next/business/TrashPage.tsx",
         "apps/ui/ui-next/web/WebSettings.tsx",
         "apps/ui/ui-next/web/WebTypographySettings.tsx"

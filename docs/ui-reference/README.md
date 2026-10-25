@@ -1,5 +1,8 @@
 # UI 模板源码基线
 
+> 历史范围（2026-10-25 标记）：本页保留2026-09-28 至 10-09 的上游快照与旧实现映射，旧端口、源码路径、默认外观及主题 API 不再作为现行维护契约。当前规则见[现行规范](../../design/README.md)。被删除的源文件可用 `git show 6214317:<仓库相对路径>` 查看迁移前快照；本机 ignored 证据路径不保证在新克隆中存在。
+
+
 唯一基线：[官方 new-york-v4/sidebar-10](https://ui.shadcn.com/view/new-york-v4/sidebar-10)。
 
 2026-09-28 的原始快照保持不变；2026-09-29 从同一个 new-york-v4 registry 补齐 Sheet、Popover、Tooltip、Breadcrumb、Collapsible、Separator、Skeleton、Textarea、Badge、Switch、Alert、Tabs。manifest.json 保存来源与 SHA-256，LICENSE.md 保存上游许可。

@@ -1,7 +1,7 @@
 <!-- Generated from design/tokens/sidebar.tokens.json. Run pnpm tokens:build; do not edit. -->
-# Portable sidebar tokens
+# Sidebar baselines and native constants
 
-Baselines map to CSS logical pixels and native points. Radius CSS uses rem with the existing 16px baseline; this does not equate physical device pixels with points. Runtime colors and system control metrics are outside this table.
+Baseline dimensions use logical pixels in the source and points in generated Swift. Physical device pixels are not equivalent to points. The current Web theme owns its own dimensions; no Web CSS or TypeScript is generated from this table. Runtime colors and system control metrics are outside this table.
 
 | Token | Baseline | Purpose |
 | --- | ---: | --- |

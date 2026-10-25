@@ -61,3 +61,19 @@
 | 打包字体（woff/woff2） | 6,245,480 B | 17,701,416 B | 保留新版字体选项、normal/italic字形子集与双CJK companion；按字形和字体选择加载 |
 
 保持单JS 600KiB限制。当前入口CSS限制400KiB、初始闭包330KiB gzip，各路由在测得成本上保留约4–8%空间；字体按normal非CJK、italic非CJK、双CJK分别限制3.75/3.75/10.5MiB。已将设置页恢复为按路由加载，并将生产Tailwind扫描范围与Storybook展示代码分开；没有通过移除字体或预览能力压低数值。门禁继续拒绝旧视图、故事/夹具、Radix或懒加载global utilities进入产品产物。
+
+## 全面审查后的优化（2026-10-25）
+
+上述数据属于首次入口迁移。后续审查发现的旧工具链、无用样式与文档契约已完成清理：
+
+- shadcn 的 utils alias 和两个共享编辑组件统一使用当前 `ui-next/lib/utils`；删除旧 helper，新增语义尺寸、时长、阴影、缓动与状态回调的 10 项回归。
+- 删除无调用的 `collectionClasses` 和旧 Web token CSS/TS 文件、生成格式、专属消费识别分支。保留原生 Swift 常量与基准文档；生成检查和实际 CSS 产物检查共同阻止旧输出、旧全局 token 和旧网格工具类回流。当前 token 消费文件数为 106，其余定义及原生输出数量未变。
+- Web 标签基准默认使用已发布 UI-next `de51cec`，修复历史模块依赖与 `useSidebar` mock；1,000 / 5,000 / 10,000 标签的三种结构均得到基线/当前各 9 组、每组 11 次结果。共享依赖使用当前版本，测量是 SSR 冷挂载，不能作为完整历史 App、DOM 或 FPS 对比；结果接近，不宣称性能改善。
+- 更新现行主题、排版、组件、编辑器和平台职责，历史双 UI 与旧主题工程记录明确标为历史。新增 18 份现行文档的源码路径、链接与退役命令检查及 5 项反例。
+- 冻结锁文件的离线安装清除 17 个多余依赖；清除旧 Storybook 缓存和四处可重建 Apple/service 输出，删除前文件字节合计约 1.31GB，不等于精确磁盘释放量。恢复备份与历史验证材料保留。
+
+本轮重新执行类型、lint、共享 1,022 项、新版 401 项、Storybook Chromium/WebKit 136 项和默认生产浏览器 2 条流程，全部通过；维护目录、token/icon/spacing/typography、CI/构建脚本与 palette 检查通过。Swift Core 133 项、loopback 11 项、本机 Web 14 项、原生侧栏 6 项、服务回归，以及 13 项 Python 与 Simulator surface probe 全部通过。probe 已卸载；没有使用真实用户目录。
+
+生产、状态预览、Storybook、Mac、iOS Simulator 和 Service 构建通过，Service 签名校验通过；三份 App 和 Apple 源资源的 587 个 Web 文件与生产构建逐文件 SHA256 一致。当前初始静态闭包为 315,924 B gzip，主页加快速记录为 432,498 B，编辑器加完整 Markdown 为 793,487 B；原预算继续通过。这些是打包成本，不是运行速度测量。
+
+具体数值与资源一致性见[本轮验证证据](verification/2026-10-25/ui-cleanup-followup/verification.json)。上文 Firefox、Storybook 控制台和真机验收边界继续适用；本轮只提交本地分支，未推送、合并、安装或替换现有客户端。

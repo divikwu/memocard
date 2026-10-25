@@ -8,13 +8,11 @@ import { TagNavigation } from "../ui-next/business/tag-navigation";
 
 // Run the real navigation and recursive branches, replacing only presentation and
 // browser storage. This isolates tree work from DOM/layout and is not an FPS test.
-vi.mock("../ui-next/business/TagColorStyles", () => ({ default: () => null }));
-vi.mock("../src/hooks/use-mobile", () => ({ useIsMobile: () => false }));
 vi.mock("../src/hooks/use-tag-preferences", () => ({ useTagPreferences: () => ({ preferences: { pinned: [], icons: {} }, error: "", togglePinned() {}, saveAppearance() {} }) }));
 vi.mock("../ui-next/business/sidebar-tree-item", () => ({ SidebarTreeItem: ({ children, label, accessories }: { children?: ReactNode; label: string; accessories?: ReactNode }) => <div>{label}{accessories}{children}</div> }));
 vi.mock("../ui-next/components/sidebar", () => {
   const Content = ({ children }: { children?: ReactNode }) => children;
-  return { SidebarGroup: Content, SidebarGroupLabel: Content, SidebarMenu: Content, SidebarMenuBadge: Content, SidebarMenuAction: Content, SidebarMenuSub: Content };
+  return { useSidebar: () => ({ isMobile: false }), SidebarGroup: Content, SidebarGroupLabel: Content, SidebarMenu: Content, SidebarMenuBadge: Content, SidebarMenuSub: Content };
 });
 vi.mock("../ui-next/components/dropdown-menu", () => ({ DropdownMenu: () => null, DropdownMenuContent: () => null, DropdownMenuItem: () => null, DropdownMenuTrigger: () => null }));
 

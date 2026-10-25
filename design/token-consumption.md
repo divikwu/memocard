@@ -4,7 +4,7 @@
 
 ## 可移植尺寸
 
-[sidebar.tokens.json](tokens/sidebar.tokens.json) 继续生成 [Swift](../apps/apple/Sources/DesignTokens.generated.swift)、[TS](../apps/ui/src/generated/design-tokens.ts)、[基准 CSS](../apps/ui/src/generated/design-tokens.css) 和 [对照表](TOKENS.generated.md)。当前生产 Web 不导入这份基准 CSS；Web 实际尺寸由新版主题和组件 CSS 拥有，不能把相同数值当作共享 token 消费。原生直接消费 [NativeSidebar.swift](../apps/apple/Sources/NativeSidebar.swift) 中的常量。
+[sidebar.tokens.json](tokens/sidebar.tokens.json) 仅生成 [Swift](../apps/apple/Sources/DesignTokens.generated.swift) 和 [基准对照表](TOKENS.generated.md)。当前 Web 尺寸直接由 Luma 主题和组件 CSS 拥有，不再生成无消费者的 Web CSS / TypeScript。原生直接消费 [NativeSidebar.swift](../apps/apple/Sources/NativeSidebar.swift) 中的常量；数值相同不代表共享消费。
 
 | Token | 状态 | Web 消费 | iOS 消费 |
 | --- | --- | --- | --- |
@@ -18,7 +18,7 @@
 | `radius.xs` | baseline-only | 无当前生产消费者；仅保留生成基准 | 无当前生产消费者 |
 | `radius.sm` | baseline-only | 无当前生产消费者；仅保留生成基准 | 无当前生产消费者 |
 | `radius.md` | baseline-only | 无当前生产消费者；仅保留生成基准 | 无当前生产消费者 |
-| `radius.lg` | active | 无当前生产消费者；仅保留生成基准 | DesignRadius.lg 仅作原生侧栏缺省与 Preview 基准 |
+| `radius.lg` | active | 无当前生产消费者；仅保留生成基准 | DesignRadius.lg 仅作原生侧栏尚无运行时值时的缺省；Debug Preview 消费当前 CSS 采样圆角 |
 | `radius.xl` | baseline-only | 无当前生产消费者；仅保留生成基准 | 无当前生产消费者 |
 | `radius.2xl` | baseline-only | 无当前生产消费者；仅保留生成基准 | 无当前生产消费者 |
 | `sidebar.desktopRowHeight` | baseline-only | 无当前生产消费者；仅保留生成基准 | 无当前生产消费者 |

@@ -2,6 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import postcss from "postcss";
 
 // Static dependency closures include the entry, shared chunks and their CSS.
 // Dynamic children are measured explicitly in the routes that use them.
@@ -23,11 +24,28 @@ export function routeFiles(manifest, entries = []) {
 
 export function checkCurrentManifest(manifest) {
   for (const key of Object.keys(manifest)) {
-    if (/^src\/(?:components\/(?!name-editor\.core)|(?:Editor|RichMarkdownEditor|NoteProperties|NotePreview|markdown)\.tsx|features\/theme\/Theme)/.test(key)
+    if (/^src\/(?:components\/(?!name-editor\.core)|generated\/design-tokens\.(?:css|ts)$|(?:Editor|RichMarkdownEditor|NoteProperties|NotePreview|markdown)\.tsx|features\/theme\/Theme)/.test(key)
       || /(?:^|\/)(?:\.storybook(?:-next)?|stories|preview|test-support|ui-state-fixtures|mascot-fixtures)\//.test(key)) {
       throw new Error(`Retired or development-only UI module in production manifest: ${key}`);
     }
   }
+}
+
+export function checkCurrentStylesheet(css, asset) {
+  const stylesheet = postcss.parse(css, { from: asset });
+  stylesheet.walkDecls(declaration => {
+    const owner = declaration.parent;
+    if (owner.type !== "rule" || !owner.selectors.some(selector => /^(?::root|:host|html|body|\.ui-next-theme)(?:$|[.#:\[])/.test(selector.trim()))) return;
+    if (/^--(?:radius|sidebar-(?:desktop-row-height|mobile-row-min-height|icon-size|content-gap|row-gap|logo-size|mobile-font-size|desktop-font-size|toggle-visual-size|touch-target-size|horizontal-padding))$/.test(declaration.prop)) {
+      throw new Error(`Retired Web token in ${asset}: ${declaration.prop}`);
+    }
+  });
+  stylesheet.walkRules(rule => {
+    const selector = rule.selector.replace(/\\(.)/g, "$1");
+    if (selector.includes(".grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))]")) {
+      throw new Error(`Retired collection layout utility in ${asset}: ${rule.selector}`);
+    }
+  });
 }
 
 export async function checkUIBundle(root = resolve("apps/ui/dist")) {
@@ -79,6 +97,7 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
       fonts[group] += bytes.length;
     }
     if (entry.endsWith(".css") && !assets.includes(`assets/${entry}`) && /@layer\s+utilities\s*\{/.test(bytes.toString("utf8"))) throw new Error(`Lazy CSS ${entry} emits global utilities that can override responsive styles.`);
+    if (entry.endsWith(".css")) checkCurrentStylesheet(bytes.toString("utf8"), entry);
     if (/\.(?:js|css)$/.test(entry) && /radix/i.test(bytes.toString("utf8"))) throw new Error(`Radix reference in shipped UI asset: ${entry}`);
   }
   // The existing 26 UI font choices package normal/italic subsets; both Chinese

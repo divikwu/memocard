@@ -1,22 +1,23 @@
 # 笔记集合与正文预览
 
-## 维护边界
+## 当前实现与职责
 
-`NoteCollection` 与 `NotePreview` 是 Web 生产组件，桌面、H5 和 iOS 的 WKWebView 共用。Storybook 直接导入这些组件、现有 CSS 与 ThemeProvider，不复制卡片、Markdown 或编辑器。iOS 继续由原生标题菜单提供布局切换，系统导航、菜单和返回行为保持原有实现；不为共用 Web 内容另造 SwiftUI Preview。
+[NoteCollection](../../apps/ui/ui-next/business/NoteCollection.tsx)、[NotePreview](../../apps/ui/ui-next/business/NotePreview.tsx) 和 [NoteMarkdown](../../apps/ui/ui-next/business/NoteMarkdown.tsx) 是唯一生产视图，桌面、H5 和 iOS WKWebView 共用。主题来自 Luma CSS，外观由 WebAppearance / PreviewModeProvider 应用，正文偏好独立。
 
-集合的查询、标签范围、分页数据和打开笔记由调用方管理。故事中的示例调用方只在内存中过滤固定笔记并接收回调；打开后展示真实 NotePreview，返回后保留查询、标签和布局。该接收页用于核对回调与内容，不代替生产 Editor、路由或文件读写验收。
+集合的查询范围、标签、分页和打开笔记由共享 App 控制器管理。主页默认列表、其他集合默认卡片，已有布局偏好继续读取；主页独立存储布局。iOS 原生标题菜单与内容集合使用同一布局 hook，不能出现菜单选中与页面布局不一致。
 
-## 开发入口
+## 预览入口
 
-- Storybook：`business/note collection`，核对浏览、列表/卡片切换、标签筛选、打开/返回、最近更新/已固定、加载、空态、不可用和分页。
-- Storybook：`business/note preview`，核对空正文、Markdown 展开/收起、文本与表格摘要裁切、本地图片大图/焦点返回、图片缺失，以及 H5 表格横向滚动。
-- 在 Canvas 运行 play 或手动交互；Docs 的隔离示例保留手动操作，默认不自动播放。桌面契约为 1024×900，标记 mobile 的故事为 390×844。
-- 完整 App：iPhone 连接专用 QA 库，使用原生标题菜单切换列表/卡片，从卡片标签进入范围，打开笔记并用原生返回恢复集合。小屏列表按现有规则隐藏标签，不因此修改默认布局。
+- [集合故事](../../apps/ui/ui-next/stories/business-note-collection.stories.tsx)：`business/note collection`，核对列表/卡片、标签、查询、分页、打开/返回、主页 tabs、加载与空态。
+- [摘要故事](../../apps/ui/ui-next/stories/business-note-preview.stories.tsx)：`business/note preview`，核对正文展开、摘要裁切、表格、本地图片及失败状态。
+- [页面故事](../../apps/ui/ui-next/stories/web-workspace.stories.tsx)：`pages/Web & H5`，通过真实 App 控制器验证跨组件操作。
 
-每故事使用临时偏好存储。图片只安装当前故事的精确路径和 binding 对应的 Blob；默认 bridge 拒绝真实库操作。内存状态、图片与故事代码不进入正式 App。
+故事 fixture 只在内存中过滤、打开和保存，临时偏好与精确图片路径/binding 通过[隔离桥](../../apps/ui/test-support/bridge.ts)提供。单组件的接收页只核对回调，不能替代生产 Editor、真实路由或文件读写。
 
-## 验收边界
+## 交互与验证
 
-执行 `pnpm verify:design` 检查类型、静态构建和真实 Chromium play；执行生产回归与 bundle 检查，核对生产源码和资源没有因故事新增而漂移。实际运行结果记录在 [validation.md](../validation.md)。
+布局使用可访问的按钮组和 `aria-pressed`，通过 Tab / Enter / Space 操作；主页“最近更新/已固定”仍为内容 Tabs。标签按钮只改变范围，独立打开按钮按稳定笔记 ID 导航；加载更多、忙碌、错误和保留旧结果各有状态。窄屏布局通过顶部菜单操作，正文不重复展示完整工具栏。
 
-Storybook 的过滤/打开回调不能替代真实 App 的路由与数据验证；Chromium 不能替代 WKWebView。模拟器复核与自动测试分别记录。大列表滚动性能、所有 Markdown 组合、旧系统、真机与 iCloud 同步没有由这些故事自动覆盖。
+执行 `pnpm verify:design` 与 `pnpm verify:web`；iOS 使用原生菜单和返回操作核对布局同步、集合与搜索会话恢复。Storybook 的 1024×900 / 390×844 浏览器回归、生产沙盒流程与 Simulator 是独立证据。
+
+大库 DOM/布局、真实滚动帧率、全部 Markdown 组合、真实附件、旧系统、辅助技术和跨设备同步不由单组件故事自动覆盖。历史验收见[验证记录](../validation.md)，当前功能清理边界见[迁移记录](../ui-retirement-2026-10-25.md)。

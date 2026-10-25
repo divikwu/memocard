@@ -92,7 +92,7 @@ export async function collectTokenConsumers({ root, registry, graph, reached, re
   }
   for (const source of sourcePaths) {
     if (source.includes('/generated/')) continue;
-    const code = await readFile(resolve(root, source), 'utf8'), strings = [], overrides = new Set(), portableUses = new Set();
+    const code = await readFile(resolve(root, source), 'utf8'), strings = [], overrides = new Set();
     const producers = (registry.dynamicProducers ?? []).filter(entry => entry.source === source);
     if (source.endsWith('.css')) {
       postcss.parse(code).walkDecls(decl => {
@@ -111,15 +111,6 @@ export async function collectTokenConsumers({ root, registry, graph, reached, re
         if (ts.isStringLiteralLike(node)) strings.push(node.text);
         if (ts.isTemplateExpression(node)) strings.push(node.getText(ast).slice(1, -1));
         if (ts.isPropertyAssignment(node) && ts.isStringLiteral(node.name) && names.has(node.name.text)) overrides.add(node.name.text);
-        if ((ts.isElementAccessExpression(node) || ts.isPropertyAccessExpression(node)) && ts.isIdentifier(node.expression)) {
-          const group = { radiusValues: 'radius', spacingValues: 'spacing', sidebarTokens: 'sidebar' }[node.expression.text];
-          if (group) {
-            const key = ts.isPropertyAccessExpression(node) ? node.name.text : node.argumentExpression && ts.isStringLiteral(node.argumentExpression) ? node.argumentExpression.text : null;
-            const matches = portable.filter(token => token.name.startsWith(`${group}.`) && (!key || token.name === `${group}.${key}`));
-            if (!matches.length) throw new Error(`Unknown portable token reference: ${source} ${group}.${key}`);
-            for (const token of matches) portableUses.add(token.name);
-          }
-        }
         ts.forEachChild(node, visit);
       }
       visit(ast);
@@ -137,7 +128,7 @@ export async function collectTokenConsumers({ root, registry, graph, reached, re
       for (const name of matches) for (const token of styleClasses.get(name) ?? []) styles.add(token);
     }
     const tokens = sorted([...direct, ...utilities, ...styles]);
-    if (tokens.length || overrides.size || portableUses.size) rows.push({ source, direct, utilities, styles: sorted(styles), overrides: sorted(overrides), portable: sorted(portableUses) });
+    if (tokens.length || overrides.size) rows.push({ source, direct, utilities, styles: sorted(styles), overrides: sorted(overrides) });
     dynamicSources.delete(source);
   }
   if (dynamicSources.size) throw new Error(`Unreachable dynamic consumer: ${[...dynamicSources.keys()].join(', ')}`);

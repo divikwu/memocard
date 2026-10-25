@@ -31,7 +31,7 @@ iOS 主导航使用 UIKit 自定义侧栏容器，展开时保持主页面原宽
 
 ## 开发
 
-跨端 UI 的现行规则、token 维护、Storybook 与原生 Preview 入口见[设计规范 v1](design/README.md)。
+跨端 UI 的现行规则、token 维护、Storybook 与原生 Preview 入口见[设计维护入口](design/README.md)。
 
 本次验证环境：Node 24.18.0、pnpm 10.34.1、Xcode 27.0；最低系统目标 macOS 14 / iOS 17；编译 iOS 原生玻璃界面需要 Xcode 26 或以上，CI 在 macOS 26 上显式使用 Xcode 26.6。
 
@@ -77,9 +77,9 @@ pnpm --filter @memocard/ui dev
 
 唯一 Storybook 使用当前生产组件，启动 `pnpm --filter @memocard/ui storybook` 后访问 <http://127.0.0.1:6016/>；整页状态与流程入口使用 `pnpm --filter @memocard/ui dev:states`，地址为 <http://127.0.0.1:5182/>。Storybook 配置位于 `.storybook-next`，故事位于 `ui-next/stories`；旧组件与旧 Storybook 已退出维护。生产资源只输出 `apps/ui/dist`，状态预览和 Storybook 构建各自隔离。
 
-### 同区实时编辑
+### 语义富文本编辑
 
-笔记编辑器已取消“编辑 / 预览”标签页。标题、粗体、斜体、代码和本地图片在同一编辑区显示；编辑某一行时显示该行 Markdown 标记，移开光标后恢复排版。原始 Markdown 始终用于草稿和保存，未编辑的段落不会经过富文本转换。支持撤销/重做，`⌘Enter` 保存；`⌘` / `Ctrl` + 单击安全外链可用系统浏览器打开。引用式链接/图片及未支持的扩展语法保留为可编辑原文。
+当前笔记编辑器使用 Tiptap / ProseMirror，与安全 Markdown 阅读视图共用内容语义和排版。标题、强调、列表、引用、表格、公式和本地图片在同一编辑区呈现，保留撤销/重做、草稿与 Markdown 版本保护；不再使用光标逐行切换源码标记的旧编辑器。`⌘ / Ctrl + Enter` 保存，`⌘ / Ctrl` + 单击安全外链可用系统浏览器打开。未支持的扩展语法保留原格式，不能据此承诺任意 Markdown 扩展都能结构化编辑。实现与阅读配置见[内容风格](docs/CONTENT_STYLE.md)。
 
 正常粘贴富文本或 Markdown 时，完整的行内代码标签（如 `#project/memocard`）会自动取消代码格式并识别为标签，其他排版和代码保持原样；纯文本粘贴和代码块内粘贴保持字面内容。已有笔记中的代码不会自动转换。
 
@@ -109,6 +109,6 @@ pnpm --filter @memocard/mcp smoke --connection-file /绝对路径/service-connec
 
 ## 数据与安全边界
 
-原生与本机 Web 文件操作在 Swift 中协调执行；独立 Web 使用浏览器目录授权直接写文件，Node 不直接写笔记。Mac 启用 App Sandbox，目录经系统选择器授权；MCP 连接配置为 `0600`，TCP 只绑定 `127.0.0.1`。本机 Web 使用独立 HTTP 服务和授权，不复用 MCP 令牌；MCP 仅开放读取、新建、带版本检查的修改、移入回收站与恢复，不开放永久删除。WKWebView 与独立 Web 生产页面 CSP 禁止数据网络请求；本机 Web 只允许同源接口。页面禁止 frame 和表单提交，Markdown 原始 HTML 不执行。
+原生与本机 Web 文件操作在 Swift 中协调执行；独立 Web 使用浏览器目录授权直接写文件，Node 不直接写笔记。Mac 启用 App Sandbox，目录经系统选择器授权；MCP 连接配置为 `0600`，TCP 只绑定 `127.0.0.1`。本机 Web 使用独立 HTTP 服务和授权，不复用 MCP 令牌；MCP 仅开放读取、新建、带版本检查的修改、移入回收站与恢复，不开放永久删除。生产页面 CSP 仅允许本源连接及声明的本地资源；WKWebView 额外允许应用文档/附件 scheme，本机 Web 通过同源接口调用宿主，不向第三方数据端点请求。页面禁止 frame 和表单提交，Markdown 原始 HTML 不执行。
 
 笔记文件是事实来源。当前版本对不完整扫描采取保守处理：保留本机草稿，拒绝正式覆盖保存。笔记库备份/恢复尚未实现，请勿将此验证版作为唯一笔记副本。

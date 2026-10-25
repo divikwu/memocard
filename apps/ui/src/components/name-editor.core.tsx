@@ -1,7 +1,7 @@
 import type { ComponentType, ComponentProps, SVGProps } from "react";
 import { useRef, useState, type ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@/lib/utils";
+import { cn } from "@ui-next/lib/utils";
 
 type View = {
   Popover: ComponentType<ComponentProps<typeof import("@ui-next/components/popover")["Popover"]>>;
