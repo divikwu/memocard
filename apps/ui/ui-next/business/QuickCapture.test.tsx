@@ -150,7 +150,7 @@ it('restores mobile text, selected tags and attachments after remount without cr
   expect(screen.getByRole('textbox',{name:'快速输入内容'})).toHaveProperty('textContent',draft.text);
   expect(screen.queryByLabelText('已选标签')).toBeNull();
   expect(screen.getByRole('img',{name:'待记录图片 1'})).toBeTruthy();
-  expect(screen.getByRole('status').textContent).toContain('草稿已保存在本机');
+  expect(screen.queryByText(/草稿已保存在本机/)).toBeNull();
   await user.click(screen.getByRole('button',{name:'记录'}));
   await waitFor(()=>expect(props.onRecorded).toHaveBeenCalledOnce());
   expect(bridge.request).toHaveBeenCalledWith('saveNote',expect.objectContaining({id:draft.id,vaultBinding:'reopened-binding',tags:['工作'],inheritedTags:[]}));
@@ -169,7 +169,7 @@ it('reports storage failure without losing input or claiming protection and retr
   write.mockRestore();
   await user.click(screen.getByRole('button',{name:'重试草稿保护'}));
   expect(readQuickCaptureDraft('vault-a')?.text).toBe('仍留在输入框');
-  expect(screen.getByRole('status').textContent).toContain('草稿已保存在本机');
+  expect(screen.queryByText(/草稿已保存在本机/)).toBeNull();
 });
 
 it('leaves an unreadable mobile draft intact even when retrying restoration',async()=>{

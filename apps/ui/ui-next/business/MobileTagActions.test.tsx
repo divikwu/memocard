@@ -20,14 +20,14 @@ it("keeps the header layout menu in sync with the existing home and note prefere
   const user = userEvent.setup();
   const view = render(<MobileTagActions title="主页" home onRename={vi.fn()} />);
   await user.click(screen.getByRole("button", { name: "视图选项 主页" }));
-  expect((await screen.findByRole("menuitemradio", { name: "列表" })).getAttribute("aria-checked")).toBe("true");
-  await user.click(await screen.findByRole("menuitemradio", { name: "卡片" }));
-  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
+  expect((await screen.findByRole("menuitemradio", { name: "卡片" })).getAttribute("aria-checked")).toBe("true");
+  await user.click(await screen.findByRole("menuitemradio", { name: "列表" }));
+  expect(localStorage.getItem("memocard:home-layout")).toBe("list");
   view.rerender(<MobileTagActions title="所有笔记" onRename={vi.fn()} />);
   await user.click(screen.getByRole("button", { name: "视图选项 所有笔记" }));
-  await user.click(await screen.findByRole("menuitemradio", { name: "列表" }));
-  expect(localStorage.getItem("memocard:note-layout")).toBe("list");
-  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
+  await user.click(await screen.findByRole("menuitemradio", { name: "卡片" }));
+  expect(localStorage.getItem("memocard:note-layout")).toBe("cards");
+  expect(localStorage.getItem("memocard:home-layout")).toBe("list");
 });
 
 it("pins from the H5 header, edits name and icon through the sheet, and restores trigger focus", async () => {

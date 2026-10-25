@@ -219,7 +219,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       const value = event.target.value.replace(/[\r\n]+/g, ' ');
       lastEnteredTitle.current = value;
       if (richEditor.current) changeNoteTitle(richEditor.current, value); else session.update(body, relativePath, value);
-    }} onBlur={() => { if (richEditor.current) endNoteTyping(richEditor.current); }} onKeyDown={event => {
+    }} onPointerDown={event => { event.currentTarget.dataset.pointerFocus = 'true'; }} onBlur={event => { delete event.currentTarget.dataset.pointerFocus; if (richEditor.current) endNoteTyping(richEditor.current); }} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
     }} />;

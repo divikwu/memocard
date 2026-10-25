@@ -25,6 +25,7 @@ export type RichFormatUI = {
   Dialog: typeof import('./components/ui/dialog').Dialog;
   DialogContent: ComponentType<ComponentProps<typeof import('./components/ui/dialog').DialogContent>>;
   DialogTitle: ComponentType<ComponentProps<typeof import('./components/ui/dialog').DialogTitle>>;
+  MobileDialogHeader?: ComponentType<{ title: string; onClose: () => void }>;
   Input: ComponentType<ComponentProps<typeof import('./components/ui/input').Input>>;
   Button: ComponentType<Omit<ComponentProps<typeof import('./components/ui/button').Button>, 'render'>>;
   Select: typeof import('./components/ui/select').Select;
@@ -33,7 +34,7 @@ export type RichFormatUI = {
   SelectTrigger: ComponentType<ComponentProps<typeof import('./components/ui/select').SelectTrigger>>;
   SelectValue: ComponentType<ComponentProps<typeof import('./components/ui/select').SelectValue>>;
 };
-export function createRichFormatTools({ uiClassName = '', icons, Dialog, DialogContent, DialogTitle, Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue }: RichFormatUI) {
+export function createRichFormatTools({ uiClassName = '', icons, Dialog, DialogContent, DialogTitle, MobileDialogHeader, Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue }: RichFormatUI) {
 const { Link, Highlighter, MoreHorizontal, Superscript, Subscript, Keyboard, Info, Check, Minus, Code, Strikethrough, Unlink, RemoveFormatting, FileText, X } = icons;
 return function RichFormatTools({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
@@ -169,7 +170,7 @@ return function RichFormatTools({ editor }: { editor: Editor }) {
       <div className="rich-format-header"><Popover.Title>{propertyTitle}</Popover.Title><Popover.Close aria-label="关闭弹窗" render={<Button variant="ghost" size="icon-sm" />}><X aria-hidden="true" /></Popover.Close></div>{fields}
     </Popover.Popup></Popover.Positioner></Popover.Portal></Popover.Root>
     <Dialog open={mobile && (open || propertiesOpen)} onOpenChangeComplete={finishPropertyClose} onOpenChange={next => { if (!next) { if (propertiesOpen) close(); else { setOpen(false); restore(); bookmark.current = null; } } }}><DialogContent aria-describedby={undefined} className={`rich-properties rich-format-sheet ${uiClassName}`} showCloseButton={false} style={{ translate: 'none', bottom: `calc(${position.sheetBottom}px + env(safe-area-inset-bottom))`, maxHeight: position.sheetHeight }} initialFocus={properties ? () => propertyInput.current : undefined} finalFocus={() => editor.view.dom}>
-      <div className="rich-format-header"><DialogTitle>{properties ? propertyTitle : '更多格式'}</DialogTitle><Button variant="ghost" size="icon-sm" aria-label="关闭弹窗" onClick={() => { if (properties) close(); else { setOpen(false); restore(); bookmark.current = null; } }}><X aria-hidden="true" /></Button></div>{properties ? fields : more}
+      {MobileDialogHeader ? <MobileDialogHeader title={properties ? propertyTitle : '更多格式'} onClose={() => { if (properties) close(); else { setOpen(false); restore(); bookmark.current = null; } }} /> : <div className="rich-format-header"><DialogTitle>{properties ? propertyTitle : '更多格式'}</DialogTitle><Button variant="ghost" size="icon-sm" aria-label="关闭弹窗" onClick={() => { if (properties) close(); else { setOpen(false); restore(); bookmark.current = null; } }}><X aria-hidden="true" /></Button></div>}{properties ? fields : more}
     </DialogContent></Dialog>
   </>;
 }

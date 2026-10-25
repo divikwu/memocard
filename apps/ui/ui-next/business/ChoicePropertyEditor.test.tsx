@@ -6,7 +6,10 @@ import type { NoteProperty } from '@memocard/contracts';
 import { ChoicePropertyEditor } from './property-editors';
 const options = [{name:'设计',color:'blue' as const},{name:'开发',color:'green' as const}];
 const property:NoteProperty = {name:'领域',type:'multiSelect',value:['设计'],options,editable:true};
-beforeEach(()=>vi.stubGlobal('ResizeObserver',class { observe() {} unobserve() {} disconnect() {} }));
+beforeEach(()=>{
+ vi.stubGlobal('ResizeObserver',class { observe() {} unobserve() {} disconnect() {} });
+ vi.stubGlobal('matchMedia',()=>({matches:false,addEventListener(){},removeEventListener(){}}));
+});
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 it('replaces the selected value in single-select with keyboard and clears via chip removal',async()=>{
  const user = userEvent.setup(), onSave = vi.fn().mockResolvedValue(undefined);

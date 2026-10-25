@@ -18,6 +18,8 @@
   --color-background-popover: var(--color-white);
   --color-background-muted: var(--color-neutral-100);
   --color-background-control: color-mix(in oklab, var(--color-neutral-200) 50%, transparent);
+  --color-background-glass: color-mix(in srgb, var(--color-background-body) 75%, transparent);
+  --color-background-selection: color-mix(in srgb, var(--color-blue-500) 14%, transparent);
   --color-text-primary: var(--color-neutral-950);
   --color-text-secondary: var(--color-neutral-500);
   --color-text-control-secondary: var(--color-neutral-600);
@@ -189,6 +191,8 @@
   --color-brand: initial;
 
   --spacing-1: 0.25rem;
+  --spacing-glass-fade: calc(var(--spacing-1) * 6);
+  --blur-glass: calc(var(--spacing-1) * .75);
   --spacing-reading-flow: 1.25em;
   --size-element-sm: 32px;
   --size-element-md: 36px;
@@ -228,6 +232,11 @@
   --font-size-xl: 1.25rem;
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 1.875rem;
+  --font-size-note-title: 2rem;
+  --text-note-title-leading: 1.25;
+  --text-note-body-leading: 1.6;
+  --text-note-subheading-leading: 1.2;
+  --text-note-large-leading: 1.5556;
   --font-size-4xl: 2.25rem;
   --font-size-5xl: 3rem;
   --text-body-leading: 1.4286;
@@ -252,10 +261,13 @@
   --duration-slow-min: 525ms;
   --duration-slow: 700ms;
   --duration-slow-max: 935ms;
+  --duration-card-hover: 600ms;
   --ease-standard: cubic-bezier(0.24, 1, 0.4, 1);
-  --shadow-low: 0 4px 12px color-mix(in srgb, var(--color-shadow) 2.7%, transparent), 0 1px 2px color-mix(in srgb, var(--color-shadow) 2%, transparent);
-  --shadow-med: 0 4px 12px color-mix(in srgb, var(--color-shadow) 2.7%, transparent), 0 1px 2px color-mix(in srgb, var(--color-shadow) 2%, transparent);
-  --shadow-high: 0 20px 24px color-mix(in srgb, var(--color-shadow) 5%, transparent), 0 5px 8px color-mix(in srgb, var(--color-shadow) 2.7%, transparent);
+  --ease-card-hover: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-low: 0 4px 12px -4px color-mix(in srgb, var(--color-shadow) 4%, transparent), 0 1px 2px color-mix(in srgb, var(--color-shadow) 2%, transparent);
+  --shadow-med: 0 12px 16px -12px color-mix(in srgb, var(--color-shadow) 12%, transparent), 0 2px 6px -2px color-mix(in srgb, var(--color-shadow) 3%, transparent);
+  --shadow-high: 0 20px 24px -20px color-mix(in srgb, var(--color-shadow) 20%, transparent), 0 4px 8px -4px color-mix(in srgb, var(--color-shadow) 4%, transparent);
+  --shadow-card-hover: 0 16px 32px -24px color-mix(in srgb, var(--color-black) 24%, transparent);
   --shadow-input-focus: 0 6px 20px color-mix(in srgb, var(--color-neutral-900) 6%, transparent), 0 1px 3px color-mix(in srgb, var(--color-neutral-900) 3%, transparent);
   /* State rings remain separate from elevation and outline focus. */
   --shadow-inset-hover: inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 30%, transparent);
@@ -274,6 +286,7 @@
   --color-background-popover: var(--color-neutral-900);
   --color-background-muted: var(--color-neutral-800);
   --color-background-control: color-mix(in oklab, var(--color-white) 7.5%, transparent);
+  --color-background-selection: color-mix(in srgb, var(--color-blue-400) 24%, transparent);
   --color-text-primary: var(--color-neutral-50);
   --color-text-secondary: var(--color-neutral-400);
   --color-text-control-secondary: var(--color-neutral-400);
@@ -380,9 +393,9 @@
   --color-data-gray-2: var(--color-neutral-200);
   --color-data-gray-1: var(--color-neutral-50);
 
-  --shadow-low: 0 2px 4px color-mix(in srgb, var(--color-shadow) 16%, transparent);
-  --shadow-med: 0 4px 12px -2px color-mix(in srgb, var(--color-shadow) 24%, transparent);
-  --shadow-high: 0 14px 28px -6px color-mix(in srgb, var(--color-shadow) 36%, transparent), 0 2px 4px -1px color-mix(in srgb, var(--color-shadow) 24%, transparent);
+  --shadow-low: 0 2px 4px -1px color-mix(in srgb, var(--color-shadow) 16%, transparent);
+  --shadow-med: 0 4px 12px -3px color-mix(in srgb, var(--color-shadow) 24%, transparent);
+  --shadow-high: 0 14px 28px -7px color-mix(in srgb, var(--color-shadow) 36%, transparent), 0 2px 4px -1px color-mix(in srgb, var(--color-shadow) 24%, transparent);
   --shadow-input-focus: 0 6px 20px color-mix(in srgb, var(--color-black) 28%, transparent), 0 1px 3px color-mix(in srgb, var(--color-black) 18%, transparent);
 }
 
@@ -404,6 +417,7 @@
   --color-popover: var(--color-background-popover);
   --color-muted: var(--color-background-muted);
   --color-control: var(--color-background-control);
+  --color-selection: var(--color-background-selection);
   --color-accent-bg: var(--color-accent);
   --color-accent-muted: var(--color-accent-muted);
   --color-on-accent: var(--color-on-accent);
@@ -604,6 +618,7 @@
   --shadow-med: var(--shadow-med);
   --shadow-lg: var(--shadow-high);
   --shadow-xl: var(--shadow-high);
+  --shadow-card-hover: var(--shadow-card-hover);
   --shadow-input-focus: var(--shadow-input-focus);
   --shadow-inset-hover: var(--shadow-inset-hover);
   --shadow-inset-selected: var(--shadow-inset-selected);
@@ -780,5 +795,6 @@
     --duration-slow-min: 0ms;
     --duration-slow: 0ms;
     --duration-slow-max: 0ms;
+    --duration-card-hover: 0ms;
   }
 }

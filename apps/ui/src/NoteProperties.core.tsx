@@ -11,6 +11,7 @@ import { formatPropertyDate } from './property-dates';
 import { validPropertyNumber } from './property-numbers';
 
 type View = {
+  ConfirmationPopup?: ComponentType<ComponentProps<typeof AlertDialog.Popup>>;
   Checkbox: { Root: ComponentType<CheckboxPrimitive.Root.Props>; Indicator: ComponentType<CheckboxPrimitive.Indicator.Props> };
   CalendarDays: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   LoaderCircle: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
@@ -65,6 +66,7 @@ type View = {
 };
 
 export function createNoteProperties(view: View) {
+  const ConfirmationPopup = view.ConfirmationPopup ?? AlertDialog.Popup;
   const { Checkbox, CalendarDays, LoaderCircle, Check, ChevronDown, ChevronUp, Clock, FileText, Plus, Text, SquareCheck, Pencil, Trash2, Copy, CircleChevronDown, ListChecks, SlidersHorizontal, Image, Hash, Button, PageNotice, Input, Skeleton, NameEditor, Textarea, TagPill, Collapsible, CollapsibleContent, CollapsibleTrigger, Popover, PopoverTrigger, PopoverContent, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, ChoicePropertyEditor, ChoicePill, DatePropertyPicker, ImagePropertyEditor, TagPropertyEditor } = view;
 const noteTime = (value?: string) => {
   const date = value ? new Date(value) : null;
@@ -313,14 +315,14 @@ function NoteProperties({ note, savedProperties, saveError, renderHeader, pendin
     <CollapsibleTrigger render={<Button variant="ghost" size="sm" className="note-property-action text-secondary" />}><span className="flex size-4 shrink-0 items-center justify-center">{loading ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : open ? <ChevronUp /> : <ChevronDown />}</span>属性</CollapsibleTrigger>
     {renaming && <NameEditor initialName={renaming.name} anchor={renaming.anchor} side="bottom" align="start" sideOffset={4} className="w-80" title="重命名属性" inputLabel="新属性名" maxLength={100} selectOnFocus busy={busy} onSave={saveLabel} onClose={() => { setRenaming(null); setError(''); }} />}
     <AlertDialog.Root open={Boolean(typeChange)} onOpenChange={value => { if (!changingType && !value) { setTypeChange(null); setError(''); } }}>
-      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><AlertDialog.Popup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">更改「{typeChange ? label(`property:${typeChange.property.name}`) : ''}」的类型？</AlertDialog.Title><AlertDialog.Description className="mt-2 break-words text-sm text-secondary">库内所有同名属性将改为「{typeChange ? propertyTypes[typeChange.type === 'list' ? 'multiSelect' : typeChange.type].label : ''}」。转换会丢值时不会修改笔记。</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={busy || changingType} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" disabled={busy || changingType} onClick={() => {
+      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><ConfirmationPopup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">更改「{typeChange ? label(`property:${typeChange.property.name}`) : ''}」的类型？</AlertDialog.Title><AlertDialog.Description className="mt-2 break-words text-sm text-secondary">库内所有同名属性将改为「{typeChange ? propertyTypes[typeChange.type === 'list' ? 'multiSelect' : typeChange.type].label : ''}」。转换会丢值时不会修改笔记。</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={busy || changingType} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" disabled={busy || changingType} onClick={() => {
         if (!typeChange || changingType) return;
         setChangingType(true);
         void apply({...propertyTypeChange(typeChange.property,typeChange.type),definition:true}).then(() => setTypeChange(null)).catch(() => undefined).finally(() => setChangingType(false));
-      }}>确认更改</Button></div></AlertDialog.Popup></AlertDialog.Portal>
+      }}>确认更改</Button></div></ConfirmationPopup></AlertDialog.Portal>
     </AlertDialog.Root>
     <AlertDialog.Root open={Boolean(removing)} onOpenChange={value => { if (!busy && !value) setRemoving(null); }}>
-      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><AlertDialog.Popup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除属性「{removing ? label(`property:${removing.name}`) : ''}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 break-words text-sm text-secondary">将从所有笔记中删除此属性及已填写的值，此操作无法撤销。</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={busy} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => { if (removing) void apply({name:removing.name,remove:true}).catch(() => undefined); }}>确认删除</Button></div></AlertDialog.Popup></AlertDialog.Portal>
+      <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><ConfirmationPopup className="note-property-confirm shadow-lg"><AlertDialog.Title className="break-words font-semibold">删除属性「{removing ? label(`property:${removing.name}`) : ''}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 break-words text-sm text-secondary">将从所有笔记中删除此属性及已填写的值，此操作无法撤销。</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={busy} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => { if (removing) void apply({name:removing.name,remove:true}).catch(() => undefined); }}>确认删除</Button></div></ConfirmationPopup></AlertDialog.Portal>
     </AlertDialog.Root>
   </Collapsible></>;
 }

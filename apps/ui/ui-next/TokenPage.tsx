@@ -25,8 +25,10 @@ const baseSections: Section[] = [
   { id: "border", title: "Border Tokens", rows: select("--border-") },
   { id: "focus", title: "Focus Tokens", rows: select("--focus-") },
   { id: "radius", title: "Radius Scale", rows: select("--radius-") },
-  { id: "shadows", title: "Elevation Scale", description: "浅色沿用当前柔和投影，深色针对本项目背景校准。浅色三档均为 2 层；深色 low、med 为 1 层，high 为 2 层。偏移、模糊、扩散与透明度分别按模式定义，1px 表面边界使用独立描边。", rows: tokens.filter(token => ["--shadow-low", "--shadow-med", "--shadow-high"].includes(token.name)) },
-  { id: "input-shadow", title: "Input Focus", description: "快速输入聚焦保留现有投影参数，浅色使用 neutral-900、深色使用 black 基色；独立于三档表面投影，也不替代键盘焦点描边。", rows: tokens.filter(token => token.name === "--shadow-input-focus") },
+  { id: "shadows", title: "Elevation Scale", description: "浅色三档均为 2 层，以不同偏移、模糊、负扩散和透明度区分表面层级。深色 low、med 为 1 层，high 为 2 层，保留各模式独立参数。1px 表面边界使用独立描边。", rows: tokens.filter(token => ["--shadow-low", "--shadow-med", "--shadow-high"].includes(token.name)) },
+  { id: "card-hover-shadow", title: "Card Hover", description: "PC 笔记卡片默认无投影，悬停时使用独立的 shadow-card-hover；仅定义阴影，缩放与动效参数单独维护。", rows: tokens.filter(token => token.name === "--shadow-card-hover") },
+  { id: "input-shadow", title: "Input Focus", description: "独立输入聚焦投影保留自身参数。PC 快速记录统一使用三档表面投影：默认 shadow-low（shadow-sm），聚焦 shadow-med；H5 弹窗保持无投影。键盘焦点继续使用独立描边。", rows: tokens.filter(token => token.name === "--shadow-input-focus") },
+  { id: "glass-blur", title: "Glass Blur", description: "页面顶部与底部毛玻璃遮罩的背景模糊半径；渐隐高度和表面颜色使用各自 token。", rows: select("--blur-") },
   { id: "state-rings", title: "Control State", description: "以下 2px 内环属于悬停、选中与校验反馈，不属于表面层级，也不用作 1px 装饰边框。", rows: select("--shadow-inset-") },
   { id: "duration", title: "Duration", rows: select("--duration-") },
   { id: "easing", title: "Easing", rows: select("--ease-") },
@@ -97,7 +99,7 @@ function pageSections(category: TokenCategory, measurements: Measurements, globa
   switch (category) {
     case "all": result = [...colorSections, ...baseSections]; break;
     case "colors": result = colorSections; break;
-    case "elevation": result = [section("shadows"), content("elevation-levels"), section("input-shadow"), { id: "surface-border", title: "Surface Border", description: "普通描边与分隔线使用 --color-border 和 --color-divider：浅色 black / 8%，深色 white / 10%。笔记集合卡片与快速记录输入面板使用 --color-border-subtle：浅色 black / 6%，深色 white / 5%。组件直接使用对应角色，不叠加透明度。1px 实际边框与投影独立组合；错误状态和焦点描边继续使用各自角色。", rows: tokens.filter(token => ["--color-border", "--color-border-subtle", "--color-divider"].includes(token.name)) }, { id: "shadow-color", title: "Shadow Color", description: "浅色三档投影使用不透明 rgb(25 25 25) 基色；深色使用 black 适配本项目背景，各层分别定义透明度。输入聚焦保留自身基色。", rows: tokens.filter(token => token.name === "--color-shadow") }, section("state-rings")]; break;
+    case "elevation": result = [section("shadows"), content("elevation-levels"), section("card-hover-shadow"), section("input-shadow"), section("glass-blur"), { id: "surface-border", title: "Surface Border", description: "普通描边与分隔线使用 --color-border 和 --color-divider：浅色 black / 8%，深色 white / 10%。笔记集合卡片与快速记录输入面板使用 --color-border-subtle：浅色 black / 6%，深色 white / 5%。组件直接使用对应角色，不叠加透明度。1px 实际边框与投影独立组合；错误状态和焦点描边继续使用各自角色。", rows: tokens.filter(token => ["--color-border", "--color-border-subtle", "--color-divider"].includes(token.name)) }, { id: "shadow-color", title: "Shadow Color", description: "浅色三档投影使用不透明 rgb(25 25 25) 基色；深色使用 black 适配本项目背景，各层分别定义透明度。输入聚焦保留自身基色。", rows: tokens.filter(token => token.name === "--color-shadow") }, section("state-rings")]; break;
     case "icons": result = [content("icon-usage")]; break;
     case "illustrations": result = [content("illustration-scenarios"), content("illustration-guidelines"), content("illustration-placement")]; break;
     case "motion": result = [section("duration"), section("easing"), content("motion-helps"), content("motion-hurts"), content("motion-preferences")]; break;

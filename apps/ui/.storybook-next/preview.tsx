@@ -38,6 +38,14 @@ const preview: Preview = {
   initialGlobals: { theme: "light", ...DEFAULT_PREVIEW_APPEARANCE },
   parameters: {
     layout: "fullscreen",
+    viewport: {
+      options: {
+        desktopWide: { name: "宽屏 · 1440 × 900", styles: { width: "1440px", height: "900px" }, type: "desktop" },
+        desktop: { name: "桌面 · 1024 × 900", styles: { width: "1024px", height: "900px" }, type: "desktop" },
+        tablet: { name: "平板 · 768 × 1024", styles: { width: "768px", height: "1024px" }, type: "tablet" },
+        mobile: { name: "H5 · 390 × 844", styles: { width: "390px", height: "844px" }, type: "mobile" },
+      },
+    },
     docs: { container: ThemeDocsContainer, renderer: componentDocsRenderer },
     options: {
       storySort: {

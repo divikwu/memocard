@@ -17,7 +17,7 @@ export type MobileTagActionsProps = { tag?: string | null; title?: string; home?
 
 export function MobileTagActions({ tag, title, home = false, vaultId, onRename }: MobileTagActionsProps) {
   const { preferences, error, togglePinned, saveAppearance } = useTagPreferences(vaultId);
-  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : undefined, home ? "list" : "cards");
+  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : undefined);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [pinning, setPinning] = useState(false);
@@ -26,7 +26,7 @@ export function MobileTagActions({ tag, title, home = false, vaultId, onRename }
   const pinned = !!tag && preferences.pinned.includes(tag);
   return <>
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger render={<Button ref={titleButton} type="button" variant="ghost" size="sm" className="min-w-0 max-w-full gap-1 px-1 font-medium text-primary" aria-label={tag ? `标签操作 ${tag}` : `视图选项 ${title}`} aria-current="page" />}><span className="truncate">{tag ? `# ${tag}` : title}</span><HugeiconsIcon icon={ArrowDown01Icon} className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" /></DropdownMenuTrigger>
+      <DropdownMenuTrigger render={<Button ref={titleButton} type="button" variant="ghost" size="sm" className="min-w-0 max-w-full gap-1 pr-1 pl-3 text-base font-medium text-primary" aria-label={tag ? `标签操作 ${tag}` : `视图选项 ${title}`} aria-current="page" />}><span className="truncate">{tag ? `# ${tag}` : title}</span><HugeiconsIcon icon={ArrowDown01Icon} className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" /></DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="center" sideOffset={8} className="next-mobile-tag-menu" finalFocus={() => {
         if (openingEditor.current) { setEditing(openingEditor.current); openingEditor.current = null; return false; }
         return titleButton.current;

@@ -304,8 +304,16 @@ export const verifyFoundationReference: BrowserCommand<[FoundationReferenceCase]
         ["components-tabs--docs", "横向 default 列表使用 h-9、line 使用 h-8"],
         ["sidebar-full-sidebar--docs", "移动展开控件的视觉框 40px、命中区 44px"],
       ]) {
-        await page.goto(new URL(`iframe.html?id=${id}&viewMode=docs`, base).href);
-        await page.waitForFunction(expected => document.querySelector(".sbdocs-content")?.textContent?.includes(expected), text);
+        const docsPage = await isolated.newPage();
+        docsPage.on("pageerror", error => errors.push(error.message));
+        docsPage.on("requestfailed", request => { if (["script", "stylesheet"].includes(request.resourceType()) && request.failure()?.errorText !== "net::ERR_ABORTED") errors.push(`${request.url()}: ${request.failure()?.errorText}`); });
+        try {
+          await docsPage.goto(new URL(`iframe.html?id=${id}&viewMode=docs`, base).href);
+          await docsPage.waitForFunction(expected => document.querySelector(".sbdocs-content")?.textContent?.includes(expected), text);
+        } finally {
+          docsPage.removeAllListeners("requestfailed");
+          await docsPage.close();
+        }
       }
       for (const [category, selector] of [["sizing", 'table[aria-label="Web control dimensions"]'], ["typography", ".foundation-type-preview"], ["effects", 'table[aria-label="Tailwind shadow scale"]'], ["motion", 'table[aria-label="Motion reference"]']] as const) {
         await page.goto(new URL(`iframe.html?id=foundations-${category}--docs&viewMode=docs`, base).href);

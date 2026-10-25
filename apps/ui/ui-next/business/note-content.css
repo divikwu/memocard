@@ -1,9 +1,11 @@
 .note-preview-next { min-width: 0; color: var(--color-text-primary); }
 .note-preview-next[data-compact] { position: relative; height: 100%; overflow: hidden; color: var(--color-text-secondary); }
 .note-markdown-next { min-width: 0; }
-.note-markdown-next :is(li.task-list-item > input[type="checkbox"], .note-task-indicator) { appearance: none; display: inline-grid; place-items: center; width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); margin-inline-end: .5em; vertical-align: -.1em; border: var(--border-width) solid var(--color-text-secondary); border-radius: calc(var(--spacing-1) * .75); background: var(--color-background-body); }
-.note-markdown-next :is(li.task-list-item > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"]) { border-color: var(--color-accent); background: var(--color-accent); }
-.note-markdown-next :is(li.task-list-item > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"])::before { content: ""; width: calc(var(--spacing-1) * 1.25); height: calc(var(--spacing-1) * 2.25); border: solid var(--color-on-accent); border-width: 0 calc(var(--border-width) * 2) calc(var(--border-width) * 2) 0; transform: translateY(calc(var(--border-width) * -1)) rotate(45deg); }
+.note-markdown-next :is(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"], .note-task-indicator) { appearance: none; display: inline-grid; place-items: center; width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); border: var(--border-width) solid var(--color-text-secondary); border-radius: calc(var(--spacing-1) * .75); background: var(--color-background-body); }
+.note-markdown-next :is(li.task-list-item > input[type="checkbox"], .note-task-indicator) { margin-inline-end: .5em; vertical-align: -.1em; }
+.note-markdown-next :is(li.task-list-item > input[type="checkbox"]:checked, li[data-type="taskItem"] > label > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"]) { border-color: var(--color-accent); background: var(--color-accent); }
+.note-markdown-next :is(li.task-list-item > input[type="checkbox"]:checked, li[data-type="taskItem"] > label > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"])::before { content: ""; width: calc(var(--spacing-1) * 1.25); height: calc(var(--spacing-1) * 2.25); border: solid var(--color-on-accent); border-width: 0 calc(var(--border-width) * 2) calc(var(--border-width) * 2) 0; transform: translateY(calc(var(--border-width) * -1)) rotate(45deg); }
+.note-markdown-next :is(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"]):focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .note-markdown-next[data-compact] { display: -webkit-box; -webkit-box-orient: vertical; font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); --typeset-leading: var(--text-supporting-leading); --typeset-flow: .65em; color: inherit; overflow: hidden; }
 .note-markdown-next[data-compact] :is(h1,h2,h3,h4,h5,h6) { color: inherit; }
 .note-preview-ellipsis { position: absolute; inset-inline-start: 0; bottom: 0; font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); }
@@ -49,13 +51,21 @@
 .note-viewer-next::before { display: none; }
 .note-viewer-image { max-width: min(960px,85%); max-height: 80%; object-fit: contain; }
 .note-viewer-close { position: absolute; z-index: 1; top: max(16px,env(safe-area-inset-top)); right: max(16px,env(safe-area-inset-right)); width: 44px; height: 44px; }
-.note-mermaid-next { min-width: 0; margin-block-start: var(--typeset-flow); }
-.note-mermaid-next > [data-slot="tabs-list"] { max-width: 100%; }
-.note-mermaid-next [data-slot="tabs-trigger"] { padding-inline: calc(var(--spacing-1) * 2); }
+.note-mermaid-next { position: relative; min-width: 0; gap: 0; margin-block-start: var(--typeset-flow); }
+.note-mermaid-toolbar { position: absolute; inset-block-start: calc(var(--spacing-1) * 2); inset-inline-end: calc(var(--spacing-1) * 2); z-index: 1; opacity: 0; pointer-events: none; }
+.note-mermaid-next:is(:hover, :focus-within) > .note-mermaid-toolbar { opacity: 1; pointer-events: auto; }
+.note-mermaid-toolbar [data-slot="tabs-list"] { max-width: 100%; height: var(--size-element-md); padding: calc(var(--spacing-1) * .75); border-radius: calc(var(--radius-element) + var(--spacing-1) * .5); background: var(--color-background-surface); }
+.note-mermaid-next [data-slot="tabs-trigger"] { flex: none; height: calc(100% - var(--border-width)); padding: var(--spacing-1) calc(var(--spacing-1) * 2); border-radius: var(--radius-element); transition-property: color, background-color, border-color, opacity; }
+.note-mermaid-next [data-slot="tabs-trigger"][data-active] { background: var(--color-background-muted); }
 .note-mermaid-next [hidden] { display: none; }
 .note-mermaid-source pre { margin: 0; padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4); border-radius: var(--radius-element); overflow-x: auto; background: var(--color-background-muted); font: var(--font-size-sm)/var(--text-supporting-leading) var(--font-family-code); }
 .note-mermaid-diagram { margin-block-start: calc(var(--spacing-1) * 3); }
+.note-mermaid-source[hidden] + div .note-mermaid-diagram { margin-block-start: 0; }
 .note-diagram-scroll { max-width: 100%; overflow: auto; padding: calc(var(--spacing-1) * 4); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-element); }
 .note-diagram-trigger { display: block; width: fit-content; height: auto; padding: 0; background: transparent; }
 .note-diagram-enlarged { max-width: 90vw; max-height: 80dvh; overflow: auto; padding: calc(var(--spacing-1) * 4); border-radius: var(--radius-element); background: var(--color-background-surface); }
 @media (max-width: 640px) { .note-markdown-next figure[data-image-columns] { grid-template-columns: minmax(0,1fr) !important; } }
+@media (max-width: 767px) {
+  .note-mermaid-toolbar { opacity: 1; pointer-events: auto; }
+}
+@media (hover: none) { .note-mermaid-toolbar { opacity: 1; pointer-events: auto; } }

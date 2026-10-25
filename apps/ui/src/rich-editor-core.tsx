@@ -146,6 +146,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   const [calloutIcon, setCalloutIcon] = useState<CalloutIconTarget | null>(null);
   const isMobile = useIsMobile();
   const [toolbar, setToolbar] = useState<{ top: number; pos: number; left?: number }>({ top: 14, pos: 0 });
+  const toolbarTarget = useRef<{ position: number; pointer: { clientX: number; clientY: number; buttons: number } | null }>({ position: 0, pointer: null });
   const [, setRevision] = useState(0);
   const [dropTop, setDropTop] = useState<number | null>(null);
   const [selectionBox, setSelectionBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
@@ -157,6 +158,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   const beforeDrag = useRef<EditorState | null>(null);
   const internalDrag = useRef(false);
   const frame = useRef(0);
+  const caretFrame = useRef(0);
   const pointerY = useRef(0);
   const pointerX = useRef(0);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -190,7 +192,12 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
         return DecorationSet.create(state.doc, blocks);
       },
       handleDOMEvents: {
-        keyup(_view, event) { pastePlain.current = event.shiftKey; return false; },
+        keyup(_view, event) {
+          pastePlain.current = event.shiftKey;
+          const e = editorRef.current;
+          if (e && !event.isComposing && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) revealCaret(e);
+          return false;
+        },
         blur() { pastePlain.current = false; return false; },
       },
       handleKeyDown(view, event) {
@@ -281,6 +288,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     },
     onTransaction({ editor: e, transaction }) {
       if (initialized.current && !transaction.getMeta('noteHistorySeed') && transaction.before.attrs.noteEdit !== e.state.doc.attrs.noteEdit) latest.current.onNoteEdit?.(noteEdit(e.state.doc), noteEdit(transaction.before));
+      if (transaction.scrolledIntoView) revealCaret(e);
     },
     onUpdate({ editor: e, transaction }) {
       if (!initialized.current) return;
@@ -292,7 +300,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
         slash.current = { from: selection.$from.start(), to: selection.$from.end() }; setActiveIndex(0); setMenu('insert'); setFilter(text.slice(1));
       } else { slash.current = null; setMenu(null); }
     },
-    onSelectionUpdate({ editor: e }) { positionToolbar(e); setRevision(n => n + 1); },
+    onSelectionUpdate({ editor: e }) { positionToolbar(e); setRevision(n => n + 1); revealCaret(e); },
   });
   editorRef.current = editor;
   const stopRangeSelection = useCallback((cancel = false) => {
@@ -323,12 +331,39 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     const from = block.pos;
     const element = e.view.nodeDOM(from);
     if (element instanceof HTMLElement) {
+      toolbarTarget.current.position = from;
       const rect = element.getBoundingClientRect();
       const line = parseFloat(getComputedStyle(element).lineHeight) || 26;
       const top = rect.top - root.current.getBoundingClientRect().top + Math.min(rect.height, line) / 2;
       const left = image ? rect.left - root.current.getBoundingClientRect().left - 28 : undefined;
       setToolbar(current => current.pos === from && current.top === top && current.left === left ? current : { pos: from, top, left });
     }
+  }
+  function positionFoldToolbar(e: TiptapEditor, target: EventTarget | null) {
+    const heading = target instanceof Element ? target.closest('.rich-heading-fold-widget')?.closest('.rich-foldable-heading') : null;
+    if (!heading || !e.view.dom.contains(heading)) return false;
+    positionToolbar(e, e.view.posAtDOM(heading, 0));
+    return true;
+  }
+  function revealCaret(e: TiptapEditor) {
+    cancelAnimationFrame(caretFrame.current); caretFrame.current = 0;
+    if (!(e.state.selection instanceof TextSelection) || !e.state.selection.empty) return;
+    caretFrame.current = requestAnimationFrame(() => {
+      caretFrame.current = 0;
+      if (!root.current || e.isDestroyed || !e.isFocused || !e.isEditable || e.view.composing || rangeGesture.current || dragging.current || isImageDragging(e) || root.current.hasAttribute('data-menu-open') || !(e.state.selection instanceof TextSelection) || !e.state.selection.empty) return;
+      const surface = root.current.closest<HTMLElement>('.note-page-scroll');
+      if (!surface) return;
+      const style = getComputedStyle(surface);
+      const paddingTop = parseFloat(style.scrollPaddingTop) || 0, paddingBottom = parseFloat(style.scrollPaddingBottom) || 0;
+      if (!paddingTop && !paddingBottom) return;
+      const bounds = surface.getBoundingClientRect(), viewport = window.visualViewport;
+      const top = Math.max(bounds.top + surface.clientTop + paddingTop, viewport?.offsetTop ?? 0);
+      const bottom = Math.min(bounds.top + surface.clientTop + surface.clientHeight - paddingBottom, (viewport?.offsetTop ?? 0) + (viewport?.height ?? window.innerHeight));
+      if (bottom <= top) return;
+      const caret = e.view.coordsAtPos(e.state.selection.head);
+      const delta = caret.top < top ? caret.top - top : caret.bottom > bottom ? caret.bottom - bottom : 0;
+      if (delta) surface.scrollTop += delta;
+    });
   }
   useImperativeHandle(ref, () => root.current?.querySelector('[role=textbox]') as HTMLDivElement);
   useLayoutEffect(() => {
@@ -373,7 +408,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   }, [editor, props.value]);
   useEffect(() => {
     if (!editor) return;
-    const observer = new ResizeObserver(() => { positionToolbar(editor); });
+    const observer = new ResizeObserver(() => { positionToolbar(editor, toolbarTarget.current.position); });
     if (root.current) observer.observe(root.current); return () => observer.disconnect();
   }, [editor]);
   useEffect(() => {
@@ -382,6 +417,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     window.addEventListener('blur', cancel); document.addEventListener('visibilitychange', hidden);
     return () => {
       cancelAnimationFrame(frame.current);
+      cancelAnimationFrame(caretFrame.current); caretFrame.current = 0;
       stopRangeSelection();
       window.removeEventListener('blur', cancel); document.removeEventListener('visibilitychange', hidden);
     };
@@ -415,10 +451,11 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       editor.view.focus();
       frame.current = requestAnimationFrame(scrollDrag);
     };
-    const hover = (event: MouseEvent) => {
+    const followPointer = (event: Pick<MouseEvent, 'target' | 'buttons' | 'clientX' | 'clientY'>) => {
       const target = event.target, element = root.current;
       if (element?.contains(target as Node)) setTyping(false);
-      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || isImageDragging(editor) || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools, .rich-heading-fold-widget')) return;
+      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || isImageDragging(editor) || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools')) return;
+      if (positionFoldToolbar(editor, target)) return;
       const controls = controlsRef.current?.getBoundingClientRect();
       if (toolbar.left != null && controls && event.clientY >= controls.top && event.clientY <= controls.bottom && event.clientX >= controls.left && event.clientX <= controls.right + 12) return;
       const image = target.closest('.rich-image');
@@ -434,6 +471,14 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       const left = rect.width ? Math.max(rect.left + 1, Math.min(event.clientX, rect.right - 1)) : event.clientX;
       const position = editor.view.posAtCoords({ left, top: event.clientY });
       if (position) positionToolbar(editor, position.pos);
+    };
+    const hover = (event: MouseEvent) => {
+      toolbarTarget.current.pointer = { clientX: event.clientX, clientY: event.clientY, buttons: event.buttons };
+      followPointer(event);
+    };
+    const scrollHover = () => {
+      const pointer = toolbarTarget.current.pointer;
+      if (pointer) followPointer({ ...pointer, target: document.elementFromPoint(pointer.clientX, pointer.clientY) });
     };
     const continueWriting = (event: MouseEvent) => {
       const target = event.target, element = root.current;
@@ -451,8 +496,9 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     // Page margins belong to the scroll surface, so they do not bubble through the editor.
     document.addEventListener('pointerdown', start, true);
     document.addEventListener('mousemove', hover);
+    document.addEventListener('scroll', scrollHover, true);
     document.addEventListener('click', continueWriting);
-    return () => { document.removeEventListener('pointerdown', start, true); document.removeEventListener('mousemove', hover); document.removeEventListener('click', continueWriting); };
+    return () => { document.removeEventListener('pointerdown', start, true); document.removeEventListener('mousemove', hover); document.removeEventListener('scroll', scrollHover, true); document.removeEventListener('click', continueWriting); };
   });
   function handleInsertKey(event: { key: string; preventDefault: () => void; isComposing?: boolean; keyCode?: number }) {
     if (event.isComposing || event.keyCode === 229 || editorRef.current?.view.composing) return false;
@@ -573,11 +619,13 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     else run(item);
   }
   return <Menu.Root open={menu === 'block'} modal={false} onOpenChange={(open, details) => { if (open) openBlockMenu(); else { setMenu(current => current === 'block' ? null : current); if (details.reason === 'escape-key') editor.commands.focus(); } }}><Popover.Root open={menu === 'insert'} onOpenChange={open => { if (!open && menu === 'insert') { slash.current = null; setMenu(null); } }}><div className={`note-editor rich-editor ${uiClassName}`} ref={root} data-selecting={selectionBox != null || undefined} data-dragging={isDragging || undefined} data-typing={typing || undefined} data-menu-open={menu != null || undefined}
+    onFocusCapture={event => { if (!menu && !rangeGesture.current && !dragging.current && positionFoldToolbar(editor, event.target)) toolbarTarget.current.pointer = null; }}
     onInputCapture={event => { if (editor.view.dom.contains(event.target as Node)) setTyping(true); }}
     onPointerMove={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); } }}
     onPointerUp={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); stopRangeSelection(); } }}
     onPointerCancel={() => stopRangeSelection(true)} onLostPointerCapture={() => stopRangeSelection()}
     onKeyDownCapture={event => {
+    toolbarTarget.current.pointer = null;
     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229 || editor.view.composing) return;
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && (event.target as HTMLElement).closest('.rich-image-tools, .rich-image-column-controls')) {
       event.preventDefault(); event.stopPropagation(); if (event.shiftKey) editor.commands.redo(); else editor.commands.undo(); return;

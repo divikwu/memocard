@@ -24,9 +24,9 @@ it("retains the stored Luma sidebar surface independently from body, card and mu
 });
 
 it.each([
-  { name: "--shadow-low", light: [["0 4px 12px", 2.7], ["0 1px 2px", 2]], dark: [["0 2px 4px", 16]], interfaces: ["shadow-sm"] },
-  { name: "--shadow-med", light: [["0 4px 12px", 2.7], ["0 1px 2px", 2]], dark: [["0 4px 12px -2px", 24]], interfaces: ["shadow-med"] },
-  { name: "--shadow-high", light: [["0 20px 24px", 5], ["0 5px 8px", 2.7]], dark: [["0 14px 28px -6px", 36], ["0 2px 4px -1px", 24]], interfaces: ["shadow-lg", "shadow-xl"] },
+  { name: "--shadow-low", light: [["0 4px 12px -4px", 4], ["0 1px 2px", 2]], dark: [["0 2px 4px -1px", 16]], interfaces: ["shadow-sm"] },
+  { name: "--shadow-med", light: [["0 12px 16px -12px", 12], ["0 2px 6px -2px", 3]], dark: [["0 4px 12px -3px", 24]], interfaces: ["shadow-med"] },
+  { name: "--shadow-high", light: [["0 20px 24px -20px", 20], ["0 4px 8px -4px", 4]], dark: [["0 14px 28px -7px", 36], ["0 2px 4px -1px", 24]], interfaces: ["shadow-lg", "shadow-xl"] },
   { name: "--shadow-input-focus", light: [["0 6px 20px", 6], ["0 1px 3px", 3]], dark: [["0 6px 20px", 28], ["0 1px 3px", 18]], interfaces: ["shadow-input-focus"] },
 ])("keeps $name soft in both modes without embedding a surface edge", ({ name, light, dark, interfaces }) => {
   const token = tokens.find(token => token.name === name)!;
@@ -35,7 +35,7 @@ it.each([
     const color = name === "--shadow-input-focus" ? mode === "light" ? "--color-neutral-900" : "--color-black" : "--color-shadow";
     expect(token[mode]).toBe(layers.map(([geometry, opacity]) => `${geometry} color-mix(in srgb, var(${color}) ${opacity}%, transparent)`).join(", "));
     expect(token[mode]).not.toContain("inset");
-    const blurs = [...token[mode].matchAll(/(?:^|, )0 \d+px (\d+)px(?: -?\d+px)? color-mix/g)].map(match => Number(match[1]));
+    const blurs = [...token[mode].matchAll(/(?:^|, )0 \d+px (\d+)px(?: -?\d+(?:\.\d+)?px)? color-mix/g)].map(match => Number(match[1]));
     expect(blurs).toHaveLength(layers.length);
     expect(blurs.every(blur => blur > 0)).toBe(true);
   }
@@ -63,6 +63,7 @@ it("keeps border roles independent from shadows and preserves utility aliases", 
     { name: "--shadow-md", value: "initial" },
     { name: "--shadow-lg", value: "var(--shadow-high)" },
     { name: "--shadow-xl", value: "var(--shadow-high)" },
+    { name: "--shadow-card-hover", value: "var(--shadow-card-hover)" },
     { name: "--shadow-input-focus", value: "var(--shadow-input-focus)" },
     { name: "--color-border", value: "var(--color-border)" },
     { name: "--color-border-subtle", value: "var(--color-border-subtle)" },

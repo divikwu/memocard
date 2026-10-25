@@ -6,7 +6,11 @@ import { TagColorMenu } from './property-editors';
 import { changeTagSettings } from '../../src/tag-settings';
 import { parseTagColors, readTagColors, setTagColor } from '../../src/tag-colors';
 
-beforeEach(() => { localStorage.clear(); vi.stubGlobal('ResizeObserver',class {observe() {} unobserve() {} disconnect() {}}); });
+beforeEach(() => {
+  localStorage.clear();
+  vi.stubGlobal('ResizeObserver',class {observe() {} unobserve() {} disconnect() {}});
+  vi.stubGlobal('matchMedia',()=>({matches:false,addEventListener(){},removeEventListener(){}}));
+});
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it('saves a normalized name using Enter and does not choose a color', async () => {
   const user = userEvent.setup(), onChangeTag = vi.fn().mockResolvedValue(undefined);

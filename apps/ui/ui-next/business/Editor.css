@@ -3,9 +3,30 @@
 .note-editor-next > .note-properties { margin-top: calc(var(--spacing-1) * 2); }
 .note-editor-next > [data-slot=alert] { margin-block: 0 calc(var(--spacing-1) * 8); }
 .note-editor-next > [data-slot=alert]:has(+ [data-slot=alert]) { margin-block-end: calc(var(--spacing-1) * 2); }
-.note-editor-next .note-page-title { display: block; width: 100%; min-width: 0; min-height: 1.2em; padding: 0 calc(var(--spacing-1) * 2); resize: none; overflow: hidden; border: 0; border-radius: var(--radius-element); background: transparent; color: var(--color-text-primary); font-family: var(--font-family-heading); font-size: var(--font-size-3xl); font-weight: var(--font-weight-medium); line-height: var(--text-heading-1-leading); outline: none; }
+.note-editor-next .note-page-title { display: block; width: 100%; min-width: 0; min-height: 1.2em; padding: 0 calc(var(--spacing-1) * 2); resize: none; overflow: hidden; border: 0; border-radius: var(--radius-element); background: transparent; color: var(--color-text-primary); font-family: var(--font-family-heading); font-size: var(--font-size-note-title); font-weight: var(--font-weight-semibold); line-height: var(--text-note-title-leading); outline: none; }
 .note-editor-next .note-page-title::placeholder { color: var(--color-text-secondary); }
-.note-editor-next .note-page-title:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
+.note-editor-next .note-page-title:focus-visible:not([data-pointer-focus]) { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .note-editor-next .next-editor-document { min-width: 0; margin-block-start: calc(var(--spacing-1) * 8); }
+.note-editor-next .note-markdown-next { --typeset-leading: var(--note-leading, var(--text-note-body-leading)); --typeset-flow: var(--note-flow, 1em); font-size: var(--note-size, var(--font-size-base)); }
+.note-editor-next .next-rich-ui.rich-editor { --editor-gutter: calc(var(--spacing-1) * 2); --editor-inset-right: calc(var(--spacing-1) * 2); }
+.note-editor-next .block-controls { gap: 0; left: calc(var(--editor-gutter) - var(--spacing-1) * 6); }
+/* Two 20px controls, a 2px gap, and 4px before the heading. */
+.note-editor-next .block-controls[data-heading] { left: calc(var(--editor-gutter) - var(--spacing-1) * 11.5); }
+.note-editor-next .note-markdown-next h1 { font-size: var(--font-size-2xl); line-height: var(--text-heading-1-leading); }
+.note-editor-next .note-markdown-next h2 { font-size: var(--font-size-xl); line-height: var(--text-note-subheading-leading); }
+.note-editor-next .note-markdown-next h3 { font-size: var(--font-size-lg); line-height: var(--text-note-large-leading); }
+.note-editor-next .note-markdown-next h4 { font-size: var(--font-size-base); line-height: var(--typeset-leading); }
+.note-editor-next .note-markdown-next h5 { font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
+.note-editor-next .note-markdown-next h6 { font-size: var(--font-size-xs); line-height: var(--text-supporting-leading); }
+.note-editor-next .note-markdown-next pre { line-height: var(--text-body-leading); padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4); }
+.note-editor-next .note-markdown-next table { width: 100%; font-size: var(--font-size-sm); line-height: 1.5; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-element); }
+.note-editor-next .note-markdown-next :is(th:first-child, td:first-child) { padding-inline-start: 1em; }
 .note-editor-next .mobile-save-status { padding-inline: calc(var(--spacing-1) * 2); color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: var(--text-supporting-leading); }
-@media (max-width: 767px) { .note-editor-next > .mobile-save-status { margin-top: calc(var(--spacing-1) * 2); } .note-editor-next .note-page-title { font-size: var(--font-size-2xl); } }
+.note-editor-next .rich-editor-content > .node-codeBlock:not(:first-child) { margin-block-start: var(--typeset-flow); }
+.note-editor-next .rich-editor-content > .rich-footnote:not(:first-child) { margin-block-start: calc(var(--typeset-flow) / .875); }
+@media (max-width: 767px) {
+  .note-editor-next > .mobile-save-status { margin-top: calc(var(--spacing-1) * 2); }
+  .note-editor-next .block-controls, .note-editor-next .block-controls[data-heading] { left: calc(var(--editor-gutter) - var(--spacing-1) * 7); }
+  .note-editor-next .block-controls button { opacity: 0; touch-action: none; }
+  .note-editor-next .block-controls button:focus-visible { opacity: 1; }
+}

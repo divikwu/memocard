@@ -47,6 +47,8 @@ export const utilities = [...source.matchAll(/@utility ([\w-]+)\s*\{/g)].map(([,
 
 const projectColors = new Set([
   "--color-background-control",
+  "--color-background-glass",
+  "--color-background-selection",
   "--color-background-sidebar",
   "--color-text-control-secondary",
   "--color-border-subtle",
@@ -69,7 +71,7 @@ function colorGroupOf(name: string) {
 function categoryOf(name: string): Exclude<TokenCategory, "all"> {
   if (name === "--spacing-reading-flow") return "typography";
   if (name.startsWith("--color-icon-")) return "icons";
-  if (name.startsWith("--shadow-") || name === "--color-shadow") return "elevation";
+  if (name.startsWith("--shadow-") || name.startsWith("--blur-") || name === "--color-shadow") return "elevation";
   if (name.startsWith("--color-")) return "colors";
   if (name.startsWith("--duration-") || name.startsWith("--ease-")) return "motion";
   if (name.startsWith("--radius-") || name.startsWith("--focus-") || name === "--border-width") return "shape";

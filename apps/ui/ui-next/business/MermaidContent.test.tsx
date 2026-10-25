@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { renderMermaidSVG } from 'beautiful-mermaid';
 import { MermaidContent } from './NoteMarkdown';
@@ -10,6 +11,21 @@ beforeEach(() => {
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
+
+it('activates the focused display mode with arrow keys without replacing source content', async () => {
+  vi.useRealTimers();
+  const user = userEvent.setup();
+  render(<MermaidContent source="A"><pre contentEditable>A</pre></MermaidContent>);
+  const source = screen.getByText('A');
+  await user.click(screen.getByRole('tab', { name: '仅源码' }));
+  await user.keyboard('{ArrowRight}');
+  expect(screen.getByRole('tab', { name: '仅图形' }).getAttribute('aria-selected')).toBe('true');
+  expect(source.closest<HTMLElement>('.note-mermaid-source')!.hidden).toBe(true);
+  await user.keyboard('{End}');
+  expect(screen.getByRole('tab', { name: '源码与图形' }).getAttribute('aria-selected')).toBe('true');
+  expect(screen.getByText('A')).toBe(source);
+  expect(source.closest<HTMLElement>('.note-mermaid-source')!.hidden).toBe(false);
+});
 
 it('debounces source typing and cancels stale or unmounted diagram work', async () => {
   const view = render(<MermaidContent source="A"><pre>A</pre></MermaidContent>);

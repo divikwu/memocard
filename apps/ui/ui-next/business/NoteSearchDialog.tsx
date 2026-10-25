@@ -7,7 +7,7 @@ import { useNoteSearch, type NoteSearchProps } from "../../src/use-note-search";
 import { useIsMobile } from "../../src/hooks/use-mobile";
 import { Button } from "../components/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../components/dialog";
-import { SheetClose, SheetContent, SheetHeader, SheetTitle } from "../components/sheet";
+import { SheetCloseButton, SheetContent, SheetHeader, SheetTitle } from "../components/sheet";
 import { Input } from "../components/input";
 import { Spinner } from "../components/spinner";
 import { CloseIcon, DocumentIcon, SearchIcon } from "../icons";
@@ -28,7 +28,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   const SearchContent = isMobile ? SheetContent : DialogContent;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className={isMobile ? "note-search-next-sheet gap-4 overflow-hidden" : "note-search-next-dialog flex flex-col gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 ring-0 dark:ring-0"}>
-      {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle className="font-sans font-semibold">搜索笔记</SheetTitle><SheetClose render={<Button type="button" variant="ghost" size="icon-sm" className="note-search-next-control" aria-label="退出搜索" />}><CloseIcon aria-hidden="true" /></SheetClose></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}
+      {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle className="font-sans font-semibold">搜索笔记</SheetTitle><SheetCloseButton aria-label="退出搜索" /></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}
       <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
       <div className="note-search-next-field flex shrink-0 items-center gap-3 border-b px-4 py-2">
         <SearchIcon aria-hidden="true" className="size-5 shrink-0 text-icon-secondary" />

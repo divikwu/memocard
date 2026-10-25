@@ -38,7 +38,7 @@
   .note-search-next-keyboard-hints,.note-search-next-escape { display: none; }
 }
 @media (max-width: 767px) {
-  .note-search-next-sheet { height: 90dvh; max-height: calc(100dvh - env(safe-area-inset-top) - 16px); border-radius: var(--radius-page) var(--radius-page) 0 0; padding: 16px max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }
+  .note-search-next-sheet { height: 90dvh; max-height: calc(100dvh - env(safe-area-inset-top) - 16px); }
   .note-search-next-field { gap: calc(var(--spacing-1) * 2); padding: 0; }
   .note-search-next-results { padding: 0; }
 }

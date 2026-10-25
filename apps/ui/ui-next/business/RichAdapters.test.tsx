@@ -80,6 +80,23 @@ it("searches common icons, clears them, and returns keyboard focus on Escape wit
   expect(change).toHaveBeenCalledTimes(count);
 });
 
+it("uses the shared mobile sheet for callout icons and cancels without changing content or selection", async () => {
+  vi.stubGlobal("innerWidth",390);
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  const { editor, change } = await setup('开头\n\n<aside data-callout="blue" data-callout-icon="🧭"><p>正文</p></aside>');
+  const selection = editor.state.selection.toJSON();
+  const trigger = screen.getByRole("button", { name: "更改标注图标" });
+  fireEvent.click(trigger);
+  const dialog = await screen.findByRole("dialog", { name: "编辑标注图标" });
+  expect(dialog.getAttribute("data-side")).toBe("bottom");
+  expect(within(dialog).getByRole("button", { name: "关闭编辑标注图标" })).toBeTruthy();
+  await userEvent.setup().keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标注图标" })).toBeNull());
+  expect(change).not.toHaveBeenCalled();
+  expect(editor.state.selection.toJSON()).toEqual(selection);
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+});
+
 it("changes callout text/background independently and resets colors without losing icon or content", async () => {
   const original = '开头\n\n<aside data-callout="blue" data-callout-icon="🧭"><p><strong>标题</strong></p><ul><li>正文</li></ul></aside>';
   const { editor, field, change } = await setup(original);
@@ -115,6 +132,7 @@ it("keeps Mermaid source editable across preview modes and saves fences without 
   expect(code?.closest<HTMLElement>(".note-mermaid-source")?.hidden).toBe(true);
   fireEvent.click(screen.getByRole("tab", { name: "仅源码" }));
   expect(field.querySelector("pre code.language-mermaid")).toBe(code);
+  expect(change).not.toHaveBeenCalled();
   let pos = 0;
   editor.state.doc.descendants((node, at) => { if (node.type.name === "codeBlock" && node.attrs.language === "mermaid") pos = at + node.nodeSize - 2; });
   act(() => editor.commands.insertContentAt(pos, "新"));
@@ -122,6 +140,9 @@ it("keeps Mermaid source editable across preview modes and saves fences without 
   expect(saved).toContain(ordinary); expect(saved).not.toContain("<svg"); expect(saved).not.toContain("note-mermaid-next");
   fireEvent.click(screen.getByRole("tab", { name: "源码与图形" }));
   await waitFor(() => expect(screen.getByRole("img", { name: "Mermaid 图表" }).shadowRoot?.textContent).toContain("完成新"));
+  act(() => editor.commands.undo());
+  expect(field.querySelector("pre code.language-mermaid")?.textContent).toBe(source);
+  expect(change.mock.lastCall![0]).toContain(ordinary);
   cleanup();
   const reopened = await setup(saved);
   expect(reopened.field.querySelector("pre code.language-mermaid")?.textContent).toContain("完成新");

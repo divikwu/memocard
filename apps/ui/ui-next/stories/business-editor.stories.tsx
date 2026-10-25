@@ -5,6 +5,7 @@ import { setStorybookRequestHandler, setStorybookBrowserAssets } from '../../.st
 import { Editor, type EditorHandle } from '../business/Editor';
 import { Button } from '../components/button';
 import { LumaStoryFrame } from '../LumaPage';
+import { editorContentReview } from '../../stories/editor-content.fixture';
 
 const body = `## 把思考写进上下文
 
@@ -96,7 +97,9 @@ function EditorFixture({ readOnly = false, failSave = false, initialBody }: { re
   return <LumaStoryFrame><div className="mx-auto grid w-full max-w-4xl gap-6">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4"><p className="text-sm text-secondary">本地交互示例：正文、属性、附件与撤销均可操作。</p><Button disabled={readOnly} onClick={() => { void handle.current?.finish(); }}>完成并保存</Button></div>
     {saved && <p role="status" className="text-sm text-secondary">{saved}</p>}
-    <Editor initial={{ id: initial.id, title: initial.title, body: initial.body, tags: initial.tags, baseHash: initial.contentHash, relativePath: initial.relativePath }} initialNote={initial} capabilities={new Set(readOnly ? ['getNoteProperties'] : ['saveNote', 'saveDraft', 'getNoteProperties', 'updateNoteProperty', 'pickImage'])} handle={handle} onClose={() => setSaved('未保存更改。')} onSaved={note => setSaved(`已保存「${note.title}」`)} />
+    <div className="min-w-0 md:px-12"><div className="mx-auto w-full max-w-[var(--note-measure,45rem)]">
+      <Editor initial={{ id: initial.id, title: initial.title, body: initial.body, tags: initial.tags, baseHash: initial.contentHash, relativePath: initial.relativePath }} initialNote={initial} capabilities={new Set(readOnly ? ['getNoteProperties'] : ['saveNote', 'saveDraft', 'getNoteProperties', 'updateNoteProperty', 'pickImage'])} handle={handle} onClose={() => setSaved('未保存更改。')} onSaved={note => setSaved(`已保存「${note.title}」`)} />
+    </div></div>
   </div></LumaStoryFrame>;
 }
 
@@ -104,7 +107,9 @@ const meta = { title: 'business/editor', id: 'ui-next-business-editor', componen
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Desktop: Story = {};
+export const ContentReview: Story = { name: '内容样式 · WEB / H5', args: { initialBody: editorContentReview } };
 export const H5: Story = { decorators: [Story => <div style={{ maxWidth: 390, marginInline: 'auto' }}><Story /></div>] };
 export const ReadOnly: Story = { args: { readOnly: true } };
 export const SaveRetry: Story = { args: { failSave: true } };
 export const Images: Story = { name: '图片 · 拖动与撤销', args: { initialBody: '## 图片顺序\n\n开头：拖动图片改变位置，按 Escape 取消，或按 ⌘/Ctrl Z 撤销。\n\n![灰色卡片](../assets/editor.png)\n\n中间：第一张图片之后的文字。\n\n![蓝色卡片](../assets/editor-second.png)\n\n结尾：第二张图片之后的文字。' } };
+export const ImageColumns: Story = { name: '图片 · 并排与列宽', args: { initialBody: '## 图片并排\n\n<figure data-image-columns="50,50"><img src="../assets/editor.png" alt="灰色卡片"><img src="../assets/editor-second.png" alt="蓝色卡片"><figcaption>拖动分隔线调整列宽，也可用方向键；Escape 取消、撤销恢复。</figcaption></figure>' } };

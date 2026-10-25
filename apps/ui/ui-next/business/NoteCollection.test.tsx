@@ -62,6 +62,7 @@ it("persists layout changes without removing tags or dates from list mode", asyn
 
 it("keeps list opening permission-aware and tag actions independent", async () => {
   const user = userEvent.setup();
+  localStorage.setItem("memocard:home-layout", "list");
   const options = props({ canOpen: false, home: { tab: "recent", pinnedCount: 0, onTabChange: vi.fn() } });
   const view = render(<NoteCollection {...options} />);
   const open = screen.getByRole("button", { name: "打开 咖啡记录" });
@@ -117,8 +118,8 @@ it("switches recent and pinned home tabs with an independent persisted layout", 
     const [tab, setTab] = useState<"recent" | "pinned">("recent");
     return <NoteCollection {...options} home={{ tab, pinnedCount: 2, onTabChange: next => { tabChange(next); setTab(next); } }} />;
   }
-  render(<HomeFixture />);
-  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("list");
+  const view = render(<HomeFixture />);
+  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("cards");
   expect(screen.getByText(note.updatedAt)).toBeTruthy();
   await user.click(screen.getByRole("tab", { name: /已固定/ }));
   expect(tabChange).toHaveBeenLastCalledWith("pinned");
@@ -126,10 +127,13 @@ it("switches recent and pinned home tabs with an independent persisted layout", 
   await user.keyboard("{ArrowLeft}");
   expect(tabChange).toHaveBeenLastCalledWith("recent");
   expect(screen.getByRole("tab", { name: /最近更新/ }).getAttribute("aria-selected")).toBe("true");
-  await user.click(screen.getByRole("button", { name: "卡片布局" }));
-  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("cards");
-  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
+  await user.click(screen.getByRole("button", { name: "列表布局" }));
+  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("list");
+  expect(localStorage.getItem("memocard:home-layout")).toBe("list");
   expect(localStorage.getItem("memocard:note-layout")).toBeNull();
+  view.unmount();
+  render(<HomeFixture />);
+  expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
 });
 
 it("keeps existing results while loading and preserves caller empty and error feedback", () => {
