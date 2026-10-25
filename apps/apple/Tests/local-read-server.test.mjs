@@ -113,7 +113,7 @@ test('fragmented Unicode and coalesced requests preserve boundaries without writ
   assert.deepEqual(replies.map(reply => reply.data.echo), ['中文 🌱', 'next']);
 });
 
-test('exactly 8 MiB JSON frames are accepted and oversized frames are rejected', async t => {
+test('exactly 8 MiB JSON frames are accepted', async t => {
   const host = await nativeHost(t);
   const request = host.request({ padding: '' });
   const initialSize = Buffer.byteLength(JSON.stringify(request));
@@ -123,8 +123,30 @@ test('exactly 8 MiB JSON frames are accepted and oversized frames are rejected',
   const replies = await exchange(host.config, [exact], { timeoutMs: 10000 });
   assert.equal(replies.length, 1);
   assert.equal(replies[0].ok, true);
-  request.params.padding += 'x';
-  assert.deepEqual(await exchange(host.config, [line(request)], { timeoutMs: 10000 }), []);
+});
+
+test('JSON frames one byte over 8 MiB are rejected', async t => {
+  const host = await nativeHost(t);
+  const request = host.request({ padding: '' });
+  const initialSize = Buffer.byteLength(JSON.stringify(request));
+  request.params.padding = 'x'.repeat(MAX_FRAME + 1 - initialSize);
+  const oversized = line(request);
+  assert.equal(oversized.length, MAX_FRAME + 2);
+  assert.deepEqual(await exchange(host.config, [oversized], { timeoutMs: 10000 }), []);
+});
+
+test('coalesced maximum-size frames preserve every response within the existing connection deadline', async t => {
+  const host = await nativeHost(t);
+  const requests = Array.from({ length: 4 }, (_, i) => {
+    const request = host.request({ padding: '', echo: `large-frame-${i}` });
+    request.params.padding = 'x'.repeat(MAX_FRAME - Buffer.byteLength(JSON.stringify(request)));
+    return request;
+  });
+  const frames = requests.map(line);
+  assert.ok(frames.every(frame => frame.length === MAX_FRAME + 1));
+  const replies = await exchange(host.config, [Buffer.concat(frames)], { expectedReplies: 4, timeoutMs: 10000 });
+  assert.deepEqual(replies.map(reply => reply.requestId), requests.map(request => request.requestId));
+  assert.deepEqual(replies.map(reply => reply.data.echo), ['large-frame-0', 'large-frame-1', 'large-frame-2', 'large-frame-3']);
 });
 
 test('authenticates token, instance and vault before read-only dispatch', async t => {
