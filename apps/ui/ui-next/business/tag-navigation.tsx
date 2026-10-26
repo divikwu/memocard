@@ -1,4 +1,5 @@
-import { lazy, Suspense, useMemo, useRef, useState } from "react";
+import { recoverableLazy } from "../components/recoverable-lazy";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { Collapsible } from "@base-ui/react/collapsible";
 import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
 import { indexTags } from "../../src/components/tag-tree-index";
@@ -8,7 +9,7 @@ import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { SidebarTreeItem } from "./sidebar-tree-item";
 import { SidebarIcon } from "./sidebar-icons";
-const TagEditor = lazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })));
+const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
 
 type NavigationProps = { onRename?: (from: string, to: string) => Promise<void>; vaultId?: string | null; tags: { name: string; count: number }[]; selected: string | null; onSelect: (path: string) => void };
 type Preferences = { pinned: string[]; icons: Record<string, string> };

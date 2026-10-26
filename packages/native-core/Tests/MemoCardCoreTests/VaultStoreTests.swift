@@ -199,6 +199,94 @@ final class VaultStoreTests: XCTestCase {
         await core.close()
     }
 
+    func testIncompleteCompatibleScanKeepsReadableIdentitiesAcrossQueriesAndReopen() async throws {
+        let good = vault.appendingPathComponent("Good.md"), bad = vault.appendingPathComponent("Bad.md")
+        let original = Data("Readable note #keep".utf8)
+        try original.write(to: good)
+        try Data("---\ninvalid: [\n---\nBroken frontmatter".utf8).write(to: bad)
+        let core = try await store(create: false)
+        let first = try await call(core, "queryNotes")
+        XCTAssertEqual((first["coverage"] as? [String: Any])?["complete"] as? Bool, false)
+        let note = try XCTUnwrap((first["notes"] as? [[String: Any]])?.first)
+        let id = try XCTUnwrap(note["id"] as? String)
+        for _ in 0..<3 {
+            let page = try await call(core, "queryNotes")
+            XCTAssertEqual((page["notes"] as? [[String: Any]])?.first?["id"] as? String, id)
+            let read = try await call(core, "getNote", ["id": id])
+            XCTAssertEqual(read["body"] as? String, "Readable note #keep")
+        }
+        await expectCode("SCAN_INCOMPLETE") {
+            _ = try await self.call(core, "updateNote", ["id": id, "body": "Must remain blocked", "baseHash": note["contentHash"]!])
+        }
+        XCTAssertEqual(try Data(contentsOf: good), original)
+        await core.close()
+        let reopened = try await store(create: false)
+        let read = try await call(reopened, "getNote", ["id": id])
+        XCTAssertEqual(read["relativePath"] as? String, "Good.md")
+        XCTAssertEqual(read["contentHash"] as? String, note["contentHash"] as? String)
+        await reopened.close()
+    }
+
+    func testIncompleteCompatibleScanRetainsUnknownIdentitiesAndLaterResolvesMoves() async throws {
+        let retained = vault.appendingPathComponent("Retained.md"), moved = vault.appendingPathComponent("Moved.md")
+        let original = Data("Existing identity".utf8)
+        try original.write(to: retained)
+        let core = try await store(create: false)
+        let initial = try await call(core, "queryNotes")
+        let old = try XCTUnwrap((initial["notes"] as? [[String: Any]])?.first)
+        let oldID = try XCTUnwrap(old["id"] as? String)
+        try Data("---\ninvalid: [\n---\nUnreadable temporarily".utf8).write(to: retained)
+        try Data("A new readable source".utf8).write(to: vault.appendingPathComponent("New.md"))
+        let incomplete = try await call(core, "queryNotes")
+        let newID = try XCTUnwrap((incomplete["notes"] as? [[String: Any]])?.first?["id"] as? String)
+        let identityURL = await core.identityURL
+        let identities = try JSONDecoder().decode([FileIdentity].self, from: Data(contentsOf: identityURL))
+        XCTAssertTrue(identities.contains { $0.id == oldID && $0.path == "Retained.md" })
+        XCTAssertTrue(identities.contains { $0.id == newID && $0.path == "New.md" })
+        await core.close()
+        try original.write(to: retained)
+        try FileManager.default.moveItem(at: retained, to: moved)
+        let reopened = try await store(create: false)
+        let oldRead = try await call(reopened, "getNote", ["id": oldID])
+        XCTAssertEqual(oldRead["relativePath"] as? String, "Moved.md")
+        let newRead = try await call(reopened, "getNote", ["id": newID])
+        XCTAssertEqual(newRead["relativePath"] as? String, "New.md")
+        await reopened.close()
+    }
+
+    func testIncompleteCompatibleScanDoesNotMoveAnUnreadableSourceIdentityToACopy() async throws {
+        for directoryUnavailable in [false, true] {
+            let sourceFolder = vault.appendingPathComponent("Unavailable-\(directoryUnavailable)")
+            try FileManager.default.createDirectory(at: sourceFolder, withIntermediateDirectories: true)
+            let original = sourceFolder.appendingPathComponent("Original.md")
+            let body = Data("Identical body \(directoryUnavailable)".utf8)
+            try body.write(to: original)
+            let core = try await store(create: false)
+            let before = try await call(core, "queryNotes")
+            let old = try XCTUnwrap((before["notes"] as? [[String: Any]])?.first { $0["relativePath"] as? String == "Unavailable-\(directoryUnavailable)/Original.md" })
+            let oldID = try XCTUnwrap(old["id"] as? String)
+            let blocked = directoryUnavailable ? sourceFolder : original
+            try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: blocked.path)
+            defer { try? FileManager.default.setAttributes([.posixPermissions: directoryUnavailable ? 0o755 : 0o644], ofItemAtPath: blocked.path) }
+            let copyPath = "Copy-\(directoryUnavailable).md"
+            try body.write(to: vault.appendingPathComponent(copyPath))
+            let partial = try await call(core, "queryNotes")
+            XCTAssertEqual((partial["coverage"] as? [String: Any])?["complete"] as? Bool, false)
+            let copy = try XCTUnwrap((partial["notes"] as? [[String: Any]])?.first { $0["relativePath"] as? String == copyPath })
+            let copyID = try XCTUnwrap(copy["id"] as? String)
+            XCTAssertNotEqual(copyID, oldID)
+            await expectCode("NOTE_UNAVAILABLE") { _ = try await self.call(core, "getNote", ["id": oldID]) }
+            try FileManager.default.setAttributes([.posixPermissions: directoryUnavailable ? 0o755 : 0o644], ofItemAtPath: blocked.path)
+            await core.close()
+            let reopened = try await store(create: false)
+            let originalRead = try await call(reopened, "getNote", ["id": oldID])
+            XCTAssertEqual(originalRead["relativePath"] as? String, old["relativePath"] as? String)
+            let copyRead = try await call(reopened, "getNote", ["id": copyID])
+            XCTAssertEqual(copyRead["relativePath"] as? String, copyPath)
+            await reopened.close()
+        }
+    }
+
     func waitForIndexPhase(_ core: VaultStore, _ phase: String) async throws -> [String: Any] {
         for _ in 0..<5000 {
             let status = try await call(core, "getStatus", ["background": true])

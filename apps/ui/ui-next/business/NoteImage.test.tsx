@@ -78,6 +78,20 @@ it('keeps editor images eager, Markdown images lazy, and compact images noninter
   expect(screen.queryByRole('button')).toBeNull();
 });
 
+it('retries a failed image binding without losing its reserved geometry', () => {
+  render(<NoteImage source="/retry.png" alt="照片" width={640} height={320} loading="lazy" />);
+  const image = screen.getByRole('img', { name: '照片' });
+  fireEvent.error(image);
+  const attempts = vi.mocked(bindNoteImage).mock.calls.length;
+  fireEvent.click(screen.getByRole('button', { name: '重试读取图片 照片' }));
+  expect(bindNoteImage).toHaveBeenCalledTimes(attempts + 1);
+  expect(screen.getByRole('button', { name: '查看大图 照片' }).getAttribute('aria-busy')).toBe('true');
+  expect(image.getAttribute('width')).toBe('640');
+  expect(image.getAttribute('height')).toBe('320');
+  fireEvent.load(image);
+  expect(screen.queryByRole('button', { name: '重试读取图片 照片' })).toBeNull();
+});
+
 it('does not reserve dimensions cached for another vault binding', () => {
   runtime.browser = true; runtime.binding = 'vault-a';
   const first = render(<NoteImage source="memocard-asset://vault/assets/isolated.png" alt="封面" loading="lazy" />);

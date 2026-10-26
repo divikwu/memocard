@@ -1,11 +1,19 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { NoteMarkdown as Markdown } from "@ui-next/business/NoteMarkdown";
 import { request } from "./bridge";
 vi.mock("./bridge", () => ({ request: vi.fn() }));
 vi.mock("./client-mode", () => ({ isBrowserVault: false, isLocalWeb: true }));
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+beforeEach(() => vi.stubGlobal("IntersectionObserver", class {
+  constructor(private callback: IntersectionObserverCallback) {}
+  observe(target: Element) {
+    const bounds = new DOMRect(0, 0, 80, 40);
+    this.callback([{ target, isIntersecting: true, time: 0, rootBounds: null, intersectionRatio: 1, boundingClientRect: bounds, intersectionRect: bounds }], this as unknown as IntersectionObserver);
+  }
+  disconnect() {}
+}));
+afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 it("renders a wiki alias, resolves its target and dispatches the existing protected opening flow", async () => {
   vi.mocked(request).mockResolvedValue({ kind: "note", id: "11111111-1111-4111-8111-111111111111", path: "Projects/Target.md" });
   const opened = vi.fn(); window.addEventListener("memocard:open-note", opened);

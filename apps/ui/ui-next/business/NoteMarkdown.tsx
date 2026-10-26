@@ -18,7 +18,7 @@ import "./note-content.css";
 export type VaultImageProps = { source: string; alt: string; width?: string | number; height?: string | number; loading?: "lazy"; interactive?: boolean; onDragStart?: DragEventHandler<HTMLImageElement> };
 
 export function VaultImage({ source, alt, width, height, loading, interactive = true, onDragStart }: VaultImageProps) {
-  const { ref: image, state, dimensions, onLoaded, onFailed } = useNoteImage(source);
+  const { ref: image, state, dimensions, onLoaded, onFailed, retry } = useNoteImage(source, loading === 'lazy');
   const [open, setOpen] = useState(false);
   const dragged = useRef(false);
   const visual = <>
@@ -29,6 +29,7 @@ export function VaultImage({ source, alt, width, height, loading, interactive = 
   return <>
     {interactive ? <Button variant="ghost" type="button" className="note-image-next" data-image-state={state} data-image-sized={Boolean((width && height) || dimensions) || undefined} aria-label={alt ? `查看大图 ${alt}` : "查看大图"} aria-busy={state === "loading"} onClick={event => { event.stopPropagation(); if (!dragged.current || event.detail === 0) setOpen(true); }}>{visual}</Button>
       : <span className="note-image-next" data-image-state={state} data-image-sized={Boolean((width && height) || dimensions) || undefined}>{visual}</span>}
+    {interactive && state === 'failed' && <Button type="button" variant="ghost" size="sm" aria-label={`重试读取图片 ${alt}`} onClick={event => { event.stopPropagation(); retry(); }}>重试</Button>}
     {open && <ImageViewer source={source} alt={alt || "笔记图片"} onClose={() => setOpen(false)} />}
   </>;
 }

@@ -1,4 +1,5 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { recoverableLazy } from "../components/recoverable-lazy";
+import { Suspense, type ReactNode } from "react";
 import type { Note } from "@memocard/contracts";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon";
@@ -18,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants, tabsTrigger
 import { AddIcon, CloseIcon, DocumentIcon, SearchIcon } from "../icons";
 import { cn } from "../lib/utils";
 import "./NoteCollection.css";
-const NotePreview = lazy(() => import("./NotePreview").then(module => ({ default: module.NotePreview })));
+const NotePreview = recoverableLazy(() => import("./NotePreview").then(module => ({ default: module.NotePreview })), "笔记预览");
 
 export type NoteCollectionProps = {
   home?: { tab: "recent" | "pinned"; pinnedCount: number; onTabChange: (tab: "recent" | "pinned") => void };

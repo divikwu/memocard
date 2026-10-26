@@ -755,7 +755,8 @@
       "value": "4",
       "consumers": [
         "apps/ui/ui-next/business/NoteSearchDialog.tsx",
-        "apps/ui/ui-next/components/popover.tsx"
+        "apps/ui/ui-next/components/popover.tsx",
+        "apps/ui/ui-next/components/recoverable-lazy.tsx"
       ]
     },
     {
@@ -1093,6 +1094,14 @@
         "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui-next/business/NoteSearchDialog.tsx"
+      ]
+    },
+    {
+      "utility": "space-y-3",
+      "step": "3",
+      "value": "3",
+      "consumers": [
+        "apps/ui/ui-next/components/recoverable-lazy.tsx"
       ]
     }
   ]

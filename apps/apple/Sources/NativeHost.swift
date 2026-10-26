@@ -69,7 +69,8 @@ final class NativeHost: ObservableObject {
     private var presenter: VaultPresenter?
     private var startTask: Task<Void, Never>?
     private var startupError: Error?
-    private let defaults = UserDefaults.standard
+    var vaultOpenCheckpoint: (@MainActor (VaultStore) async throws -> Void)?
+    private let defaults: UserDefaults
     private let mcpOperations: Set<String> = ["getStatus", "queryNotes", "getNote", "listTags", "getTrash", "getTrashedNote", "createNote", "updateNote", "deleteNote", "restoreNote"]
     private struct MCPBinding: Equatable {
         let generation: UUID
@@ -81,13 +82,15 @@ final class NativeHost: ObservableObject {
     #if DEBUG && os(iOS)
     // Layout previews use fixed surfaces without opening a vault or starting services.
     init(previewSurfaces: [String: NativeSurface]) {
+        defaults = .standard
         core = .failure(CocoaError(.featureUnsupported))
         isPreview = true
         for surface in previewSurfaces.values { nativeSurfaceStore.update(surface) }
     }
     #endif
 
-    init() {
+    init(defaults: UserDefaults = .standard, localDataURL: URL? = nil) {
+        self.defaults = defaults
         #if DEBUG && os(iOS)
         if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
             core = .failure(CocoaError(.featureUnsupported))
@@ -95,7 +98,7 @@ final class NativeHost: ObservableObject {
             return
         }
         #endif
-        let local = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("MemoCard", isDirectory: true)
+        let local = localDataURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("MemoCard", isDirectory: true)
         core = Result { try VaultStore(localDataURL: local) }
         startTask = Task { [weak self] in
             guard let self, let bookmark = defaults.data(forKey: "vaultBookmark") else { return }
@@ -105,6 +108,7 @@ final class NativeHost: ObservableObject {
                 let url = try restore(bookmark)
                 restored = url
                 try await store.open(url: url, create: false, binding: generation)
+                try await vaultOpenCheckpoint?(store)
                 let info = try await coreStatus()
                 guard vaultGeneration == generation else { throw fault("CANCELLED", "笔记库选择已变化") }
                 guard let id = info["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
@@ -175,6 +179,7 @@ final class NativeHost: ObservableObject {
                 defaults.removeObject(forKey: "vaultBookmark")
                 do {
                     try await store.open(url: url, create: create, binding: generation)
+                    try await vaultOpenCheckpoint?(store)
                     let info = try await coreStatus()
                     guard vaultGeneration == generation else { throw fault("CANCELLED", "笔记库选择已变化") }
                     guard let id = info["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
@@ -193,7 +198,7 @@ final class NativeHost: ObservableObject {
                 data = try await status()
                 await deliverPendingNote()
                 notify("statusChanged")
-            case "getStatus": data = try await status()
+            case "getStatus": data = try await status(background: params["background"] as? Bool ?? false)
             case "pickImage":
                 guard vaultURL != nil, !openingVault else { throw fault("STORE_UNAVAILABLE", "请先选择笔记库") }
                 if let binding = params["vaultBinding"] as? String, UUID(uuidString: binding) != vaultGeneration { throw fault("VAULT_CHANGED", "笔记库已切换，请重新选择图片") }
@@ -264,7 +269,7 @@ final class NativeHost: ObservableObject {
         return try JSONSerialization.jsonObject(with: await store.perform(operation: operation, params: encoded, expectedBinding: expectedBinding))
     }
     private func coreStatus() async throws -> [String: Any] {
-        try JSONSerialization.jsonObject(with: await store.perform(operation: "getStatus", params: Data("{}".utf8))) as? [String: Any] ?? [:]
+        try JSONSerialization.jsonObject(with: await store.perform(operation: "getStatus", params: Data("{\"background\":true}".utf8))) as? [String: Any] ?? [:]
     }
     private func beginVaultOpen() -> UUID {
         // Revoke the network capability synchronously, before yielding to the core actor.
@@ -278,8 +283,8 @@ final class NativeHost: ObservableObject {
         vaultURL = nil
         return vaultGeneration
     }
-    func status() async throws -> [String: Any] {
-        var value = (try await invoke("getStatus", [:])) as? [String: Any] ?? [:]
+    func status(background: Bool = true) async throws -> [String: Any] {
+        var value = (try await invoke("getStatus", ["background": background])) as? [String: Any] ?? [:]
         value["capabilities"] = (value["capabilities"] as? [String] ?? []) + hostCapabilities
         value["mcpEnabled"] = server != nil
         value["mcpWritesEnabled"] = mcpAllowsWrites

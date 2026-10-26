@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { swipeSheet } from '@ui-next/components/sheet-swipe.test-utils';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { noteEditor, replaceCaptureText } from '../editor-test-utils';
 import type { Note } from '@memocard/contracts';
 import { QuickCapture } from '@ui-next/business/QuickCapture';
-import { readQuickCaptureDraft, writeQuickCaptureDraft } from '../quick-capture-draft';
+import { createQuickCaptureDraftProtection, readQuickCaptureDraft, writeQuickCaptureDraft } from '../quick-capture-draft';
+import { useQuickCapture } from '../hooks/use-quick-capture';
 
 const bridge=vi.hoisted(()=>({request:vi.fn()}));
 vi.mock('../bridge',()=>({request:bridge.request,errorMessage:(cause:unknown)=>cause instanceof Error ? cause.message : '操作未完成'}));
@@ -19,6 +20,7 @@ const props={vaultId:'vault-a',vaultBinding:'binding-a',rootNotes:true,tags:['�
 beforeEach(()=>{
   document.elementFromPoint=()=>null;
   localStorage.clear();
+  sessionStorage.clear();
   vi.stubGlobal('innerWidth',1024);
   vi.stubGlobal('matchMedia',vi.fn(()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
   bridge.request.mockReset(); props.onRecorded.mockReset();
@@ -226,6 +228,225 @@ function mobile() {
   vi.stubGlobal('innerWidth',390);
   vi.stubGlobal('matchMedia',vi.fn(()=>({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
 }
+
+function pageStorage(): Storage {
+  const values = new Map<string, string>();
+  return {get length() { return values.size; }, clear: () => values.clear(), getItem: key => values.get(key) ?? null,
+    key: index => [...values.keys()][index] ?? null, removeItem: key => { values.delete(key); }, setItem: (key, value) => { values.set(key, value); }};
+}
+
+it.each(['record', 'continue'] as const)('keeps another mobile page draft protected after %s', async action => {
+  mobile();
+  vi.stubGlobal('sessionStorage', pageStorage());
+  const first = renderHook(() => useQuickCapture({...props, handle: {current: null}, onContinue: vi.fn()}));
+  vi.stubGlobal('sessionStorage', pageStorage());
+  const second = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  act(() => first.result.current.changeCapture({...first.result.current.capture, text: 'Page A'}));
+  act(() => second.result.current.changeCapture({...second.result.current.capture, text: 'Page B'}));
+  await act(async () => { if (action === 'record') await first.result.current.record(); else await first.result.current.continueInPage(); });
+  expect(second.result.current.capture.text).toBe('Page B');
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Page B');
+  second.unmount();
+  const reopened = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(reopened.result.current.capture.text).toBe('Page B');
+});
+
+it('restores each mobile page own draft after refresh and reclaims replaced revisions', () => {
+  mobile();
+  const pageA = pageStorage(), pageB = pageStorage();
+  vi.stubGlobal('sessionStorage', pageA);
+  const first = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  vi.stubGlobal('sessionStorage', pageB);
+  const second = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  for (let index = 0; index < 20; index++) {
+    act(() => first.result.current.changeCapture({...first.result.current.capture, text: `Page A ${index}`}));
+    act(() => second.result.current.changeCapture({...second.result.current.capture, text: `Page B ${index}`}));
+  }
+  expect(localStorage.length).toBeLessThanOrEqual(3);
+  first.unmount(); second.unmount();
+  vi.stubGlobal('sessionStorage', pageA);
+  const reopenedA = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(reopenedA.result.current.capture.text).toBe('Page A 19');
+  vi.stubGlobal('sessionStorage', pageB);
+  const reopenedB = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(reopenedB.result.current.capture.text).toBe('Page B 19');
+});
+
+it('retires only the restored legacy snapshot while retaining a later legacy page update', () => {
+  mobile();
+  const original = {id: 'legacy', text: 'Legacy A', tags: [], images: [], relativePath: 'legacy.md'};
+  writeQuickCaptureDraft(props.vaultId, original);
+  const first = createQuickCaptureDraftProtection(props.vaultId);
+  expect(first.read()?.text).toBe('Legacy A');
+  writeQuickCaptureDraft(props.vaultId, {...original, text: 'Legacy B'});
+  first.write({...original, text: ''});
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Legacy B');
+});
+
+it('forks a copied page revision before editing so the original page cannot clear it', async () => {
+  mobile();
+  const pageA = pageStorage(), pageB = pageStorage();
+  vi.stubGlobal('sessionStorage', pageA);
+  const first = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  act(() => first.result.current.changeCapture({...first.result.current.capture, text: 'Shared starting point'}));
+  for (let index = 0; index < pageA.length; index++) { const key = pageA.key(index)!; pageB.setItem(key, pageA.getItem(key)!); }
+  vi.stubGlobal('sessionStorage', pageB);
+  const second = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(second.result.current.capture.text).toBe('Shared starting point');
+  act(() => second.result.current.changeCapture({...second.result.current.capture, text: 'Copied page changes'}));
+  await act(async () => { await first.result.current.record(); });
+  second.unmount();
+  const reopened = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(reopened.result.current.capture.text).toBe('Copied page changes');
+});
+
+it.each(['copied', 'latest'] as const)('retains the original page after a %s borrower edits or clears its snapshot', mode => {
+  mobile();
+  const pageA = pageStorage(), pageB = pageStorage();
+  vi.stubGlobal('sessionStorage', pageA);
+  const first = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  act(() => first.result.current.changeCapture({...first.result.current.capture, text: 'Shared starting point'}));
+  if (mode === 'copied') for (let index = 0; index < pageA.length; index++) { const key = pageA.key(index)!; pageB.setItem(key, pageA.getItem(key)!); }
+  vi.stubGlobal('sessionStorage', pageB);
+  const second = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(second.result.current.capture.text).toBe('Shared starting point');
+  act(() => second.result.current.changeCapture({...second.result.current.capture, text: 'Borrowed page changes'}));
+  first.unmount(); vi.stubGlobal('sessionStorage', pageA);
+  const refreshed = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(refreshed.result.current.capture.text).toBe('Shared starting point');
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Borrowed page changes');
+  act(() => second.result.current.changeCapture({...second.result.current.capture, text: '', images: []}));
+  refreshed.unmount();
+  const reopened = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(reopened.result.current.capture.text).toBe('Shared starting point');
+});
+
+it.each(['record', 'continue'] as const)('does not revive an unchanged snapshot after two reloads and successful %s', async action => {
+  mobile(); vi.stubGlobal('sessionStorage', pageStorage());
+  let current = renderHook(() => useQuickCapture({...props, handle: {current: null}, onContinue: vi.fn()}));
+  act(() => current.result.current.changeCapture({...current.result.current.capture, text: 'Complete this snapshot'}));
+  for (let index = 0; index < 2; index++) {
+    current.unmount();
+    current = renderHook(() => useQuickCapture({...props, handle: {current: null}, onContinue: vi.fn()}));
+    expect(current.result.current.capture.text).toBe('Complete this snapshot');
+  }
+  await act(async () => { if (action === 'record') await current.result.current.record(); else await current.result.current.continueInPage(); });
+  expect(readQuickCaptureDraft(props.vaultId)).toBeNull();
+  vi.stubGlobal('sessionStorage', pageStorage());
+  const fresh = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(fresh.result.current.capture.text).toBe('');
+});
+
+it('keeps a different borrowed source globally discoverable after recording the edited copy', async () => {
+  mobile(); vi.stubGlobal('sessionStorage', pageStorage());
+  const first = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  act(() => first.result.current.changeCapture({...first.result.current.capture, text: 'Original unsaved content'}));
+  first.unmount(); vi.stubGlobal('sessionStorage', pageStorage());
+  const second = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  act(() => second.result.current.changeCapture({...second.result.current.capture, text: 'Different completed content'}));
+  await act(async () => { await second.result.current.record(); });
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Original unsaved content');
+  vi.stubGlobal('sessionStorage', pageStorage());
+  const fresh = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(fresh.result.current.capture.text).toBe('Original unsaved content');
+});
+
+it('keeps a borrowed legacy snapshot after manual clearing but retires completed legacy tags', async () => {
+  mobile(); vi.stubGlobal('sessionStorage', pageStorage());
+  const legacy = {id: 'legacy-tags', text: 'Legacy content', tags: ['工作'], images: [], relativePath: 'legacy.md'};
+  writeQuickCaptureDraft(props.vaultId, legacy);
+  const borrower = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  act(() => borrower.result.current.changeCapture({...borrower.result.current.capture, text: '', images: []}));
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Legacy content');
+  borrower.unmount();
+  const cleared = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(cleared.result.current.capture.text).toBe('');
+  cleared.unmount();
+  vi.stubGlobal('sessionStorage', pageStorage());
+  const recording = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(recording.result.current.capture.text).toBe('Legacy content #工作 ');
+  await act(async () => { await recording.result.current.record(); });
+  expect(readQuickCaptureDraft(props.vaultId)).toBeNull();
+});
+
+it('protects new input on retry after both prior completion cleanup and the new write failed', async () => {
+  mobile(); vi.stubGlobal('sessionStorage', pageStorage());
+  const current = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  act(() => current.result.current.changeCapture({...current.result.current.capture, text: 'Already recorded A'}));
+  const remove = vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(() => { throw new Error('Cleanup unavailable'); });
+  await act(async () => { await current.result.current.record(); });
+  remove.mockRestore();
+  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('Write unavailable'); });
+  act(() => current.result.current.changeCapture({...current.result.current.capture, text: 'Still unsaved B'}));
+  expect(current.result.current.draftError).not.toBe('');
+  write.mockRestore();
+  act(() => current.result.current.retryProtection());
+  expect(current.result.current.draftError).toBe('');
+  current.unmount();
+  const reopened = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(reopened.result.current.capture.text).toBe('Still unsaved B');
+});
+
+it('shows a readable restored draft when quota prevents creating its initial page snapshot', async () => {
+  mobile(); vi.stubGlobal('sessionStorage', pageStorage());
+  writeQuickCaptureDraft(props.vaultId, {id: 'quota-draft', text: 'Readable protected content', tags: [], images: [], relativePath: 'quota.md'});
+  const original = localStorage.getItem('memocard:quick-capture:v1:vault-a');
+  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); });
+  render(<QuickCapture {...props} />);
+  expect(screen.getByRole('textbox', {name: '快速输入内容'})).toHaveProperty('textContent', 'Readable protected content');
+  expect(screen.getByRole('status').textContent).toContain('草稿保护暂不可用');
+  expect(localStorage.getItem('memocard:quick-capture:v1:vault-a')).toBe(original);
+  write.mockRestore();
+  await userEvent.setup().click(screen.getByRole('button', {name: '重试草稿保护'}));
+  expect(screen.getByRole('status').textContent).not.toContain('草稿保护暂不可用');
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Readable protected content');
+});
+
+it('keeps protection failure visible when recovery succeeds but its new snapshot cannot be stored', () => {
+  mobile(); vi.stubGlobal('sessionStorage', pageStorage());
+  localStorage.setItem('memocard:quick-capture:v1:vault-a', 'unreadable');
+  const capture = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(capture.result.current.draftError).toContain('无法恢复');
+  writeQuickCaptureDraft(props.vaultId, {id: 'recovered-quota', text: 'Recovered content', tags: [], images: [], relativePath: 'recovered.md'});
+  const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); });
+  act(() => capture.result.current.retryProtection());
+  expect(capture.result.current.capture.text).toBe('Recovered content');
+  expect(capture.result.current.draftError).toContain('草稿保护暂不可用');
+  write.mockRestore();
+  act(() => capture.result.current.retryProtection());
+  expect(capture.result.current.draftError).toBe('');
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Recovered content');
+});
+
+it('retains a different page revision written during successful record cleanup', () => {
+  const capture = {id: 'first', text: 'Page A', tags: [], images: [], relativePath: 'first.md'};
+  vi.stubGlobal('sessionStorage', pageStorage());
+  const first = createQuickCaptureDraftProtection(props.vaultId); first.write(capture);
+  vi.stubGlobal('sessionStorage', pageStorage());
+  const second = createQuickCaptureDraftProtection(props.vaultId); second.write({...capture, id: 'second', text: 'Page B'});
+  const remove = Storage.prototype.removeItem;
+  let interleaved = false;
+  vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(function(this:Storage, key) {
+    if (!interleaved) { interleaved = true; second.write({...capture, id: 'second', text: 'Page B latest'}); }
+    remove.call(this, key);
+  });
+  first.write({...capture, text: ''});
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Page B latest');
+  expect(second.read()?.text).toBe('Page B latest');
+});
+
+it('keeps local draft recovery available when session storage rejects its page pointer', () => {
+  mobile();
+  const page = pageStorage();
+  page.setItem = () => { throw new DOMException('Storage denied', 'SecurityError'); };
+  vi.stubGlobal('sessionStorage', page);
+  writeQuickCaptureDraft(props.vaultId, {id: 'legacy', text: 'Recover locally', tags: [], images: [], relativePath: 'legacy.md'});
+  const capture = renderHook(() => useQuickCapture({...props, handle: {current: null}}));
+  expect(capture.result.current.capture.text).toBe('Recover locally');
+  act(() => capture.result.current.changeCapture({...capture.result.current.capture, text: 'Still protected'}));
+  expect(readQuickCaptureDraft(props.vaultId)?.text).toBe('Still protected');
+  expect(capture.result.current.draftError).toBe('');
+});
 
 it('restores mobile text, selected tags and attachments after remount without creating a source',async()=>{
   mobile();

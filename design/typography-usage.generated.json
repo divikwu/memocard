@@ -219,7 +219,7 @@
         },
         {
           "source": "apps/ui/ui-next/business/NoteMarkdown.tsx",
-          "scope": "line 76",
+          "scope": "line 77",
           "value": "var(--font-family-body)"
         },
         {

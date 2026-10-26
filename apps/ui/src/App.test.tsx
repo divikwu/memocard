@@ -1387,6 +1387,7 @@ it('removes a deleted mobile search result while retaining the query and other r
   expect(within(search).getByRole('combobox')).toHaveProperty('value', '散步');
   await waitFor(() => expect(within(search).queryByRole('option', { name: searched.title })).toBeNull());
   expect(within(search).getByRole('option', { name: kept.title })).toBeTruthy();
+  await waitFor(() => expect(document.activeElement).toBe(within(search).getByRole('combobox')));
   await user.keyboard('{Enter}');
   await waitFor(() => expect(bridge.request.mock.calls.filter(([operation]) => operation === 'getNote').at(-1)?.[1]).toEqual({ id: kept.id }));
 });

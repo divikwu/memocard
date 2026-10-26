@@ -1,14 +1,15 @@
 import type { BridgeRequest, BridgeResponse, Coverage, Note, NotePage, NoteQuickFilter, PropertyChange, VaultStatus } from "@memocard/contracts";
-import { Document } from "yaml";
+import type { Document } from "yaml";
 import { createId } from "./uuid";
 import { inlineTags } from "./inline-tags";
-import { BrowserVaultError, canonicalId, encodeBrowserNote, encodeObsidianNote, parseObsidianNote, fileAt, fileError, parseBrowserNote, parseDate, readBytes, safeParts, sha256, validatedTags } from "./browser-files";
+import { BrowserVaultError, canonicalId, fileAt, fileError, parseDate, readBytes, safeParts, sha256, validatedTags } from "./browser-file-io";
+import type { parseBrowserNote, parseObsidianNote } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker, BrowserWritable, ParsedBrowserNote } from "./browser-files";
 import { IndexedDBVaultStorage } from "./browser-storage";
 import type { BrowserDraft, BrowserVaultStorage, StoredSelection } from "./browser-storage";
 import { readNotePins, resolvedNotePins, setNotePinned } from "./browser-note-pins";
 
-export { BrowserVaultError } from "./browser-files";
+export { BrowserVaultError } from "./browser-file-io";
 export type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker } from "./browser-files";
 export type { BrowserVaultStorage, BrowserDraft, StoredSelection } from "./browser-storage";
 
@@ -87,8 +88,8 @@ export class BrowserVault {
       image.close();
       if (!valid) throw new Error("empty image");
     });
-    this.parseLegacy = options.parseLegacy ?? parseBrowserNote;
-    this.parseCompatible = options.parseCompatible ?? parseObsidianNote;
+    this.parseLegacy = options.parseLegacy ?? (async (...args: Parameters<typeof parseBrowserNote>) => (await import("./browser-files")).parseBrowserNote(...args));
+    this.parseCompatible = options.parseCompatible ?? (async (...args: Parameters<typeof parseObsidianNote>) => (await import("./browser-files")).parseObsidianNote(...args));
   }
 
   get binding(): string | null { return this.selection?.binding ?? null; }
@@ -260,6 +261,7 @@ export class BrowserVault {
     const old = this.compatible ? await this.storage.identities(this.scope(selected)) : [];
     const files: { path: string; bytes: Uint8Array; modified: number; hash: string }[] = [];
     const scannedPaths = new Set<string>();
+    const observedPaths = new Set<string>(), unavailableFolders = new Set<string>();
     const walk = async (directory: BrowserDirectoryHandle, path: string): Promise<void> => {
       try {
         for await (const [name, child] of directory.entries()) {
@@ -268,6 +270,7 @@ export class BrowserVault {
           safeParts(relativePath, this.compatible ? "vault" : "notes");
           if (child.kind === "directory") { snapshot.folders.push(relativePath); await walk(child, relativePath); continue; }
           if (!/\.md$/i.test(name)) continue;
+          observedPaths.add(relativePath);
           try {
             const bytes = await readBytes(child);
             const hash = await sha256(bytes);
@@ -294,16 +297,17 @@ export class BrowserVault {
       } catch (error) {
         const failure = fileError(error);
         if (failure.code === "UNAUTHORIZED") throw failure;
+        unavailableFolders.add(path);
         snapshot.coverage.issues++;
       }
     };
     await walk(this.compatible ? selected.handle : await selected.handle.getDirectoryHandle("notes"), this.compatible ? "" : "notes");
     if (this.compatible) {
       const identities = [];
-      const paths = new Set(files.map(file => file.path));
       const existingByPath = new Map(old.map(item => [item.path, item]));
       const missingByHash = new Map<string, typeof old>();
-      for (const item of old) if (!paths.has(item.path)) {
+      // An unreadable file or unenumerated subtree is not evidence of a move.
+      for (const item of old) if (!observedPaths.has(item.path) && ![...unavailableFolders].some(folder => !folder || item.path.startsWith(`${folder}/`))) {
         const values = missingByHash.get(item.hash) ?? [];
         values.push(item); missingByHash.set(item.hash, values);
       }
@@ -318,7 +322,6 @@ export class BrowserVault {
         const identity = existingByPath.get(file.path)
           ?? (moved.length === 1 && candidates.length === 1 ? moved[0] : undefined);
         const entry = { id: identity?.id ?? createId(), path: file.path, hash: file.hash, createdAt: identity?.createdAt ?? new Date(file.modified || 0).toISOString() };
-        identities.push(entry);
         try {
           const cached = this.parsedCache.get(file.path);
           if (cached?.hash === file.hash && cached.vaultId === selected.vaultId && cached.identityId === entry.id
@@ -329,10 +332,14 @@ export class BrowserVault {
             this.parsedCache.set(file.path, { hash: file.hash, vaultId: selected.vaultId, identityId: entry.id, createdAt: entry.createdAt, modified: file.modified, parsed });
             snapshot.parsed.push(parsed);
           }
+          identities.push(entry);
         }
         catch { snapshot.coverage.issues++; }
       }
-      if (!snapshot.coverage.issues && !snapshot.coverage.pending) await this.storage.saveIdentities(this.scope(selected), identities);
+      const currentPaths = new Set(identities.map(item => item.path)), currentIds = new Set(identities.map(item => item.id));
+      // Publish stable readable identities without pruning files an incomplete scan could not verify.
+      const retained = snapshot.coverage.issues || snapshot.coverage.pending ? old.filter(item => !currentPaths.has(item.path) && !currentIds.has(item.id)) : [];
+      await this.storage.saveIdentities(this.scope(selected), [...retained, ...identities]);
     }
     for (const path of this.parsedCache.keys()) if (!scannedPaths.has(path)) this.parsedCache.delete(path);
     const counts = new Map<string, number>();
@@ -459,6 +466,7 @@ export class BrowserVault {
     return this.lock(`memocard:browser:vault:${selected.vaultId}`, async () => {
       this.requireBinding(selected);
       const snapshot = await this.scan(selected);
+      const [{ Document }, { encodeBrowserNote, encodeObsidianNote, parseBrowserNote, parseObsidianNote }] = await Promise.all([import("yaml"), import("./browser-files")]);
       if (snapshot.duplicateIds.has(save.id)) throw new BrowserVaultError("DUPLICATE_ID", "多份文件使用同一个 ID，无法覆盖保存。");
       if (!snapshot.coverage.complete) throw new BrowserVaultError("SCAN_INCOMPLETE", "笔记库包含不可读或格式异常文件；草稿已保留，处理后再提交。", true);
       const existing = snapshot.parsed.find(({ note }) => note.id === save.id);

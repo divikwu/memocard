@@ -1,6 +1,6 @@
 # 已使用组件维护表
 
-本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **84 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui-next` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
+本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **85 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui-next` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
 
 当前产品和唯一 Storybook 共用新版组件。iOS 的 SwiftUI/UIKit 导航、搜索、快速记录及系统确认通过表面协议保持；正文继续消费同一 Web 输出。共享core仍可直接消费Base UI/Tiptap，不称作无界面依赖的纯算法。
 
@@ -30,6 +30,7 @@
 | `apps/ui/src/rich-format-core.tsx` | 保留共享实现；由当前UI消费 | 编辑器共享状态、事务、内容与当前控件注入 | editor / property / runtime | `apps/ui/ui-next/business/Editor.test.tsx`；`apps/ui/ui-next/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/rich-heading-fold-button-core.tsx` | 保留共享实现；由当前UI消费 | 编辑器共享状态、事务、内容与当前控件注入 | editor / property / runtime | `apps/ui/ui-next/business/Editor.test.tsx`；`apps/ui/ui-next/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/rich-heading-fold-core.tsx` | 保留共享实现；由当前UI消费 | 编辑器共享状态、事务、内容与当前控件注入 | editor / property / runtime | `apps/ui/ui-next/business/Editor.test.tsx`；`apps/ui/ui-next/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
+| `apps/ui/ui-next/components/recoverable-lazy.tsx` | 当前功能分块加载与错误恢复 | 保留应用框架；失败后重新调用加载器，重试保持父级状态 | state / runtime | `apps/ui/ui-next/web/WebApp.loading.test.tsx` | 网络与部署环境另验；不以刷新页面代替局部恢复 |
 | `apps/ui/ui-next/business/CalloutColorsMenu.tsx` | 当前编辑器内部适配 | 格式、图片、Callout、代码或图标；保留选区/撤销契约 | editor / selection / content | `apps/ui/ui-next/business/RichAdapters.test.tsx`；`apps/ui/ui-next/business/Editor.test.tsx`；`apps/ui/ui-next/stories/business-editor.stories.tsx` | 内部组合无需独立Story；触摸/IME与复杂选区另验 |
 | `apps/ui/ui-next/business/CalloutIconPicker.tsx` | 当前编辑器内部适配 | 格式、图片、Callout、代码或图标；保留选区/撤销契约 | editor / selection / content | `apps/ui/ui-next/business/RichAdapters.test.tsx`；`apps/ui/ui-next/business/Editor.test.tsx`；`apps/ui/ui-next/stories/business-editor.stories.tsx` | 内部组合无需独立Story；触摸/IME与复杂选区另验 |
 | `apps/ui/ui-next/business/Editor.tsx` | 当前编辑器适配 | 共享 editor-core；标题/正文、保存/冲突/草稿、撤销 | editor / typeset / state | `apps/ui/ui-next/business/Editor.test.tsx`；`apps/ui/ui-next/stories/business-editor.stories.tsx` | IME、真机键盘和真实附件选择另验 |

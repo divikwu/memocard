@@ -4,12 +4,13 @@
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 import { cn, cnState } from "../lib/utils"
+import { recoverableLazy } from "./recoverable-lazy"
 
 import { Button } from "./button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
 import "./sheet.css"
-const SheetSwipe = React.lazy(() => import("./sheet-swipe"))
+const SheetSwipe = recoverableLazy(() => import("./sheet-swipe"), "滑动关闭")
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />

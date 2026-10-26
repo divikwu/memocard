@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MobileTagActions } from "./MobileTagActions";
+import { NoteCollection } from "./NoteCollection";
 import { swipeSheet } from "../components/sheet-swipe.test-utils";
 
 const vaultId = "ui-next-mobile-tag-actions-test";
@@ -18,16 +19,24 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); localS
 
 it("keeps the header layout menu in sync with the existing home and note preference keys", async () => {
   const user = userEvent.setup();
-  const view = render(<MobileTagActions title="主页" home onRename={vi.fn()} />);
+  const view = render(<><MobileTagActions key="home" title="主页" home onRename={vi.fn()} />
+    <NoteCollection home={{ tab: "recent", pinnedCount: 0, onTabChange: vi.fn() }} notes={[]}
+      query="" onQueryChange={vi.fn()} searchPlaceholder="搜索笔记内容" searchDisabled={false}
+      hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate
+      onNewNote={vi.fn()} onOpen={vi.fn()} onSelectTag={vi.fn()} onLoadMore={vi.fn()} onError={vi.fn()} formatDate={value => value} />
+  </>);
+  expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
   await user.click(screen.getByRole("button", { name: "视图选项 主页" }));
+  expect((await screen.findByRole("menuitemradio", { name: "列表" })).getAttribute("aria-checked")).toBe("true");
+  await user.click(await screen.findByRole("menuitemradio", { name: "卡片" }));
+  expect(screen.getByRole("button", { name: "卡片布局" }).getAttribute("aria-pressed")).toBe("true");
+  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
+  view.rerender(<MobileTagActions key="notes" title="所有笔记" onRename={vi.fn()} />);
+  await user.click(screen.getByRole("button", { name: "视图选项 所有笔记" }));
   expect((await screen.findByRole("menuitemradio", { name: "卡片" })).getAttribute("aria-checked")).toBe("true");
   await user.click(await screen.findByRole("menuitemradio", { name: "列表" }));
-  expect(localStorage.getItem("memocard:home-layout")).toBe("list");
-  view.rerender(<MobileTagActions title="所有笔记" onRename={vi.fn()} />);
-  await user.click(screen.getByRole("button", { name: "视图选项 所有笔记" }));
-  await user.click(await screen.findByRole("menuitemradio", { name: "卡片" }));
-  expect(localStorage.getItem("memocard:note-layout")).toBe("cards");
-  expect(localStorage.getItem("memocard:home-layout")).toBe("list");
+  expect(localStorage.getItem("memocard:note-layout")).toBe("list");
+  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
 });
 
 it("pins from the H5 header, edits name and icon through the sheet, and restores trigger focus", async () => {

@@ -1,4 +1,5 @@
-import { lazy, Suspense, useRef, useState } from "react";
+import { recoverableLazy } from "../components/recoverable-lazy";
+import { Suspense, useRef, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon";
 import GridViewIcon from "@hugeicons/core-free-icons/GridViewIcon";
@@ -12,12 +13,12 @@ import { Button } from "../components/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
 import "./sidebar.css";
 
-const TagEditor = lazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })));
+const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
 export type MobileTagActionsProps = { tag?: string | null; title?: string; home?: boolean; vaultId?: string | null; onRename: (from: string, to: string) => Promise<void> };
 
 export function MobileTagActions({ tag, title, home = false, vaultId, onRename }: MobileTagActionsProps) {
   const { preferences, error, togglePinned, saveAppearance } = useTagPreferences(vaultId);
-  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : undefined);
+  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : undefined, home ? "list" : "cards");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [pinning, setPinning] = useState(false);

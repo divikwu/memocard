@@ -131,3 +131,60 @@ it("still checks Chinese when a note explicitly chooses Noto Sans SC", async () 
   await loadPreviewFonts(["noto-sans-sc"], false);
   expect(load).toHaveBeenCalledExactlyOnceWith('400 16px "Noto Sans SC Variable"', "中文");
 });
+
+it("loads the Chinese serif fallback for a legacy UI Songti choice while keeping note fallback independent", async () => {
+  const { loadPreviewFonts } = await import("./preview-fonts");
+  await loadPreviewFonts(["songti"], false);
+  expect(load).not.toHaveBeenCalled();
+  await loadPreviewFonts(["songti"]);
+  expect(load).toHaveBeenCalledExactlyOnceWith('400 16px "Noto Serif SC Variable"', "中文");
+});
+
+it("keeps real serif CSS out of the default page and loads it when serif or legacy Songti is selected", async () => {
+  const { createServer } = await import("vite");
+  const { chromium } = await import("playwright");
+  const { fileURLToPath, URL: NodeURL } = await import("node:url");
+  const uiRoot = fileURLToPath(new NodeURL("../", import.meta.url));
+  const server = await createServer({
+    configFile: `${uiRoot}vite.config.ts`, logLevel: "error",
+    server: { host: "127.0.0.1", port: 0, strictPort: false, open: false },
+    optimizeDeps: { noDiscovery: true, include: [] },
+    plugins: [{ name: "font-selection-probe", configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url !== "/__font-selection") return next();
+        response.setHeader("Content-Type", "text/html");
+        response.end('<script type="module">import "/ui-next/styles.css"; import {loadPreviewFonts} from "/ui-next/preview-fonts.ts"; window.loadFonts=loadPreviewFonts;</script>');
+      });
+    } }],
+  });
+  let browser:Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  try {
+    await server.listen();
+    const address = server.httpServer!.address();
+    if (!address || typeof address === "string") throw new Error("Missing font probe listener");
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    const requests:string[] = [];
+    page.on("request", request => { requests.push(request.url()); });
+    await page.goto(`http://127.0.0.1:${address.port}/__font-selection`);
+    await page.waitForFunction(() => "loadFonts" in window);
+    const families = () => page.evaluate(() => [...document.fonts].map(face => ({family: face.family, style: face.style})));
+    expect((await families()).some(face => face.family.includes("Noto Serif"))).toBe(false);
+    await page.evaluate(() => (window as unknown as {loadFonts: (fonts:string[], companion?:boolean) => Promise<unknown>}).loadFonts(["noto-sans"]));
+    expect(requests.some(url => url.includes("noto-serif"))).toBe(false);
+    await page.evaluate(() => (window as unknown as {loadFonts: (fonts:string[]) => Promise<unknown>}).loadFonts(["noto-serif"]));
+    const loaded = await families();
+    expect(loaded.some(face => face.family.includes("Noto Serif Variable") && face.style === "normal")).toBe(true);
+    expect(loaded.some(face => face.family.includes("Noto Serif Variable") && face.style === "italic")).toBe(true);
+    expect(loaded.some(face => face.family.includes("Noto Serif SC Variable"))).toBe(true);
+    await page.close();
+
+    const legacy = await browser.newPage();
+    await legacy.goto(`http://127.0.0.1:${address.port}/__font-selection`);
+    await legacy.waitForFunction(() => "loadFonts" in window);
+    await legacy.evaluate(() => (window as unknown as {loadFonts: (fonts:string[]) => Promise<unknown>}).loadFonts(["songti"]));
+    const fallback = await legacy.evaluate(() => [...document.fonts].map(face => face.family));
+    expect(fallback.some(family => family.includes("Noto Serif SC Variable"))).toBe(true);
+    expect(fallback.some(family => family.includes("Noto Serif Variable"))).toBe(false);
+  } finally { await browser?.close(); await server.close(); }
+}, 20_000);

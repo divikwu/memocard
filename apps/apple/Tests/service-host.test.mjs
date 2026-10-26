@@ -2,7 +2,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, readFile, rm, mkdir, writeFile, copyFile, stat } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, mkdir, writeFile, copyFile, stat, appendFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,9 +23,20 @@ before(async () => {
   const sources = join(buildDirectory, 'Sources/ServiceHostHarness');
   await mkdir(sources, { recursive: true });
   for (const source of ['Service/ServiceHost.swift', 'Service/ServiceMCPServer.swift',
-    'Sources/LocalReadServer.swift', 'Sources/MCPAuthorization.swift', 'Tests/ServiceHostHarness.swift']) {
+    'Sources/LocalReadServer.swift', 'Sources/MCPAuthorization.swift', 'Sources/NativeHost.swift', 'Tests/ServiceHostHarness.swift']) {
     await copyFile(new URL('../' + source, import.meta.url), join(sources, source.split('/').at(-1)));
   }
+  // Expose the real dispatch only in the isolated harness; production visibility stays private.
+  await appendFile(join(sources, 'ServiceHost.swift'), `
+extension ServiceHost {
+  func regressionWebStatus() async throws -> [String: Any] {
+    guard let vaultURL else { throw fault("BAD_FIXTURE", "No test vault") }
+    try await store.open(url: vaultURL, create: false, binding: vaultGeneration)
+    return await webRequest(["version": 1, "requestId": "regression", "operation": "getStatus",
+      "params": ["background": true], "_authorizationEpoch": webAuthorizationEpoch])
+  }
+}
+`);
   await writeFile(join(buildDirectory, 'Package.swift'), `// swift-tools-version: 5.9
 import PackageDescription
 let package = Package(name: "ServiceHostRegression", platforms: [.macOS(.v14)], dependencies: [
@@ -109,6 +120,62 @@ test('cancelling write authorization preserves the existing read-only connection
   assert.deepEqual(await f.config(), config);
   await assert.rejects(f.call('createNote', { binding: before.binding, body: 'must not write' }), { code: 'WRITE_DISABLED' });
 });
+
+for (const outcome of ['success', 'failure']) {
+  test(`late startup restore ${outcome} preserves the explicitly selected vault and registry`, async t => {
+    const f = await fixture(t);
+    const held = f.host.wait('restore-held');
+    const restoring = f.host.command('hold-restore');
+    await held;
+    assert.equal((await f.host.command('switch', { name: 'Vault B' })).vaultName, 'Vault B');
+    await f.host.command('release-restore', { result: outcome });
+    const finished = await restoring;
+    assert.equal(finished.vaultName, 'Vault B');
+    assert.equal(finished.data.connected, false, 'The superseded candidate must be closed');
+    assert.equal((await f.restart()).vaultName, 'Vault B');
+  });
+}
+
+test('shutdown invalidates a pending startup restore', async t => {
+  const f = await fixture(t);
+  const held = f.host.wait('restore-held');
+  const restoring = f.host.command('hold-restore');
+  await held;
+  await f.host.command('shutdown');
+  await f.host.command('release-restore', { result: 'success' });
+  const finished = await restoring;
+  assert.equal(finished.vaultName, '未选择笔记库');
+  assert.equal(finished.data.connected, false, 'Shutdown must close the pending candidate');
+});
+
+test('a selection made before the startup task runs owns its restore attempt', async t => {
+  const f = await fixture(t);
+  assert.equal((await f.host.command('switch-before-restore')).vaultName, 'Vault B');
+  assert.equal((await f.restart()).vaultName, 'Vault B');
+});
+
+for (const adapter of ['native', 'web']) {
+  test(`${adapter} host dispatch preserves background indexing requests`, async t => {
+    const f = await fixture(t);
+    const status = f.host.wait(`${adapter}-status`);
+    await f.host.command(`${adapter}-background`);
+    const response = (await status).data;
+    assert.equal(response.ok, true);
+    assert.equal(response.data.indexing?.phase, 'reading');
+    assert.equal(response.data.coverage.indexed, 0);
+    assert.equal(response.data.coverage.complete, false);
+  });
+  test(`${adapter} startup publishes identity without a synchronous source scan`, async t => {
+    const f = await fixture(t);
+    const status = f.host.wait(`${adapter}-startup-status`);
+    await f.host.command(`${adapter}-startup`);
+    const response = (await status).data;
+    assert.equal(response.ok, true);
+    assert.equal(response.data.indexing?.phase, 'reading');
+    assert.equal(response.data.coverage.complete, false);
+    assert.equal(response.sourceReads, 0);
+  });
+}
 
 test('disabling a pending confirmed start prevents late consent and persists the disabled state', async t => {
   const f = await fixture(t); await f.host.command('hold-start');
