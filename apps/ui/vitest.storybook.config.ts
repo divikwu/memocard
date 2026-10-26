@@ -3,10 +3,10 @@ import { defineConfig, mergeConfig } from "vitest/config";
 import type { BrowserCommand } from "vitest/node";
 import { playwright } from "@vitest/browser-playwright";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
-import viteConfig from "./vite.storybook-next.config.ts";
+import viteConfig from "./vite.storybook.config.ts";
 
 const uiRoot = fileURLToPath(new URL(".", import.meta.url));
-const configDir = fileURLToPath(new URL("./.storybook-next", import.meta.url));
+const configDir = fileURLToPath(new URL("./.storybook", import.meta.url));
 const viewportSetup = fileURLToPath(new URL("./test-support/viewport.setup.ts", import.meta.url));
 const screenshotDirectory = fileURLToPath(new URL("../../build/verification/storybook", import.meta.url));
 const desktop = { width: 1024, height: 900 };

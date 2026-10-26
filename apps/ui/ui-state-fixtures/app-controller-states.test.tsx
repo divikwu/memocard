@@ -11,7 +11,7 @@ const fixture=vi.hoisted(()=>({request:vi.fn(),browser:false}));
 vi.mock('../src/bridge',async()=>({errorMessage:(await import('../src/error-messages')).errorMessage,request:fixture.request,isConnectedClient:true,isNative:false,get isBrowserVault(){return fixture.browser;},get isLocalWeb(){return !fixture.browser;},reconnectVault:vi.fn()}));
 vi.mock('../src/client-mode',()=>({get isBrowserVault(){return fixture.browser;},get isLocalWeb(){return !fixture.browser;}}));
 vi.mock('../src/browser-runtime',()=>({getBrowserVaultBinding:()=> 'preview',readBrowserAsset:()=>Promise.reject(new Error('模拟附件不可用'))}));
-beforeAll(async()=>{await Promise.all([import('../ui-next/business/Editor'),import('../ui-next/business/NoteCollection')]);},30000);
+beforeAll(async()=>{await Promise.all([import('../ui/business/Editor'),import('../ui/business/NoteCollection')]);},30000);
 beforeEach(()=>{
   vi.stubGlobal('ResizeObserver',class{observe(){}unobserve(){}disconnect(){}});
   vi.stubGlobal('matchMedia',()=>({matches:false,addListener:vi.fn(),removeListener:vi.fn(),addEventListener:vi.fn(),removeEventListener:vi.fn()}));

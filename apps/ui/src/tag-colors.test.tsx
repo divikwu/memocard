@@ -1,10 +1,10 @@
-import TagColorStyles from '@ui-next/business/TagColorStyles';
+import TagColorStyles from '@ui/business/TagColorStyles';
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TagColorProvider } from './TagColorProvider';
-import { TagPropertyEditor } from "@ui-next/business/property-editors";
+import { TagPropertyEditor } from "@ui/business/property-editors";
 import { parseTagColors, readTagColors, renameTagColors, setTagColor, tagColorKey } from './tag-colors';
 import { request } from './bridge';
 

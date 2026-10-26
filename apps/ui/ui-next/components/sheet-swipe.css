@@ -1,7 +1,0 @@
-.next-sheet-swipe[data-sheet-swipe] { translate: 0 var(--sheet-swipe-y, 0px); transition: translate var(--duration-medium) var(--ease-standard), transform var(--duration-medium-min) var(--ease-standard), opacity var(--duration-medium-min) var(--ease-standard); }
-.next-sheet-swipe[data-sheet-dragging] { transition: none; }
-.next-sheet-swipe[data-sheet-swipe] :is([data-slot="sheet-handle"], [data-slot="sheet-header"]) { touch-action: none; user-select: none; cursor: grab; }
-.next-sheet-swipe[data-swipe-disabled] :is([data-slot="sheet-handle"], [data-slot="sheet-header"]) { cursor: default; }
-.next-sheet-swipe [data-slot="sheet-handle"] { order: -1; display: flex; height: calc(var(--spacing-1) * 6); flex-shrink: 0; align-items: center; justify-content: center; margin-block: calc(var(--spacing-1) * -4.5); }
-.next-sheet-swipe [data-slot="sheet-handle"]::before { content: ""; width: calc(var(--spacing-1) * 9); height: var(--spacing-1); border-radius: var(--radius-full); background: var(--color-text-secondary); opacity: .25; }
-@media (prefers-reduced-motion: reduce) { .next-sheet-swipe[data-sheet-swipe] { transition: none; } }

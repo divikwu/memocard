@@ -1,0 +1,44 @@
+.ui-note-search-dialog { height: min(680px,calc(100dvh - 2rem)); max-width: min(60rem,calc(100% - 2rem)); border-radius: var(--radius-container); }
+:is([data-slot="dialog-overlay"]:has(~ .ui-note-search-dialog), [data-slot="sheet-overlay"]:has(~ .ui-note-search-sheet)) { background: color-mix(in oklab, var(--color-background-body) 80%, transparent); }
+.ui-note-search-dialog, .ui-note-search-sheet { border-color: var(--color-border); box-shadow: var(--shadow-high); }
+.ui-note-search-field .ui-note-search-input:focus { background-color: transparent; }
+.ui-note-search-input { font-size: var(--font-size-base); }
+.ui-note-search-input:focus-visible { outline: none; }
+:is(.ui-note-search-dialog,.ui-note-search-sheet)[data-keyboard-focus] .ui-note-search-input:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
+:is(.ui-note-search-dialog,.ui-note-search-sheet) .text-xs { line-height: var(--text-supporting-leading); }
+.ui-note-search-control { border-radius: var(--radius-full); }
+.ui-note-search-control:hover { background-color: var(--color-overlay-hover); color: var(--color-text-primary); }
+.ui-note-search-status { padding: calc(var(--spacing-1) * 10) calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 3); }
+.ui-note-search-empty { margin-block: auto; }
+.ui-note-search-mark { background: color-mix(in oklab,var(--color-accent) 15%,transparent); color: inherit; }
+.ui-note-search-preview,.ui-note-search-dismiss { display: none; }
+.ui-note-search-preview-content { overflow: clip; mask-image: linear-gradient(#000 calc(100% - 32px),transparent); }
+.ui-note-search-preview-heading { margin-bottom: calc(var(--spacing-1) * 4); }
+.ui-note-search-preview-title { margin: 0; font-family: var(--font-family-body); font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); line-height: 1.2; }
+/* Search keeps the existing compact preview recipe, independently of reading preferences. */
+.ui-note-search-preview-content .ui-note-markdown { --typeset-size: var(--font-size-sm); --typeset-flow: .85em; font-size: var(--font-size-sm); font-weight: var(--font-weight-normal); line-height: var(--text-body-leading); color: var(--color-text-secondary); }
+.ui-note-search-preview-content .ui-note-markdown :is(h1,h2) { font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); line-height: 1.5; }
+.ui-note-search-preview-content .ui-note-markdown :is(h3,h4,h5) { font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
+.ui-note-search-preview-content .ui-note-markdown h5 { font-weight: var(--font-weight-medium); }
+.ui-note-search-preview-content .ui-note-markdown h6 { font-size: var(--font-size-xs); font-weight: var(--font-weight-medium); line-height: var(--text-supporting-leading); }
+.ui-note-search-preview-content .ui-note-markdown :is(kbd,:not(pre) > code,pre,figcaption,caption,.footnotes,[data-footnotes]) { font-size: var(--font-size-sm); }
+.ui-note-search-preview-content .ui-note-markdown :is(:not(pre) > code,pre) { line-height: var(--text-body-leading); }
+.ui-note-search-preview-content .ui-note-markdown pre { font-weight: var(--font-weight-normal); }
+.ui-note-search-preview-content .ui-note-markdown :is(sup,sub) { font-size: var(--font-size-xs); }
+.ui-note-search-preview-content .ui-note-markdown hr { margin-block-start: calc(var(--spacing-1) * 5); }
+.ui-note-search-preview-content .ui-note-markdown figure[data-image-columns] { gap: calc(var(--spacing-1) * 2); align-items: stretch; }
+.ui-note-search-preview-content .ui-note-markdown figure[data-image-columns] .ui-note-image { height: 100%; }
+.ui-note-search-preview-content .ui-note-markdown figure[data-image-columns] img { height: 100%; object-fit: cover; }
+.ui-note-search-preview-content .ui-note-markdown :is(figure[data-image-columns],p:has(> .ui-note-image)) { margin-block-start: calc(var(--spacing-1) * 2); }
+@media (min-width: 640px) { .ui-note-search-field { padding-inline: calc(var(--spacing-1) * 5); } }
+@media (min-width: 1024px) and (min-height: 480px) { .ui-note-search-preview { display: flex; flex-direction: column; width: calc((min(64rem,100vw - 2rem) - 2px) * .38); } }
+@media (pointer: coarse) {
+  .ui-note-search-footer { padding-block: calc(var(--spacing-1) * 2); }
+  .ui-note-search-dismiss { display: inline-flex; min-height: 44px; }
+  .ui-note-search-keyboard-hints,.ui-note-search-escape { display: none; }
+}
+@media (max-width: 767px) {
+  .ui-note-search-sheet { height: 90dvh; max-height: calc(100dvh - env(safe-area-inset-top) - 16px); }
+  .ui-note-search-field { gap: calc(var(--spacing-1) * 2); padding: 0; }
+  .ui-note-search-results { padding: 0; }
+}

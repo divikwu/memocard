@@ -99,7 +99,7 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     assert.equal(catalog.runtime.length, result.runtime);
     assert.equal(catalog.portable.length, result.portable);
     assert.equal(catalog.optionalStylesheets.length, 0);
-    assert.ok(catalog.css.every(token => token.declarations.length && token.source.startsWith('apps/ui/ui-next/') && token.type));
+    assert.ok(catalog.css.every(token => token.declarations.length && token.source.startsWith('apps/ui/ui/') && token.type));
     assert.ok(catalog.css.find(token => token.name === '--color-accent').declarations.some(declaration => declaration.source.endsWith('/web-palette.css')));
     assert.ok(catalog.css.find(token => token.name === '--radius-element').declarations.some(declaration => declaration.source.endsWith('/preview-appearance.css')));
     assert.ok(catalog.css.find(token => token.name === '--color-brand').status === 'reserved');
@@ -148,13 +148,13 @@ test('explicit stylesheet overrides keep one owner and reference aliases do not 
   assert.equal(records.find(record => record.name === '--surface').declarations.length, 3);
   assert.throws(() => inspectCSSTokens([family], sources), /Unregistered CSS token/);
   assert.throws(() => inspect(':root {--surface:var(--surface);--text:black;}'), /Cyclic CSS alias/);
-  assert.throws(() => checkPublicPlacement('.ui-next-theme {--forgotten:red;}', 'current.css'), /outside registered sources/);
+  assert.throws(() => checkPublicPlacement('.ui-theme {--forgotten:red;}', 'current.css'), /outside registered sources/);
 });
 
 test('current semantic utilities compile from the sole theme and keep standard Tailwind fallbacks', async () => {
   const require = createRequire(new URL('../apps/ui/package.json', import.meta.url));
   const { compile } = require('tailwindcss');
-  const source = (await Promise.all([require.resolve('tailwindcss/theme.css'), fileURLToPath(new URL('../apps/ui/ui-next/theme.css', import.meta.url))].map(path => readFile(path, 'utf8')))).join('\n');
+  const source = (await Promise.all([require.resolve('tailwindcss/theme.css'), fileURLToPath(new URL('../apps/ui/ui/theme.css', import.meta.url))].map(path => readFile(path, 'utf8')))).join('\n');
   const compiler = await compile(`${source}\n@tailwind utilities;`);
   const names = ['bg-body','text-primary','text-control-secondary','font-sans','font-heading','font-mono','font-bold','text-sm','text-3xl','text-4xl','rounded-element','rounded-container','p-4','gap-2','transition-colors','duration-fast','ease-standard'];
   const output = compiler.build(names);

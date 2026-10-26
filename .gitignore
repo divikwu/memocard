@@ -1,5 +1,5 @@
 node_modules/
-apps/ui/preview-next-static/
+apps/ui/preview-static/
 dist/
 .build/
 __pycache__/
@@ -15,8 +15,10 @@ connection.json
 *.p12
 verification-artifacts/
 apps/ui/storybook-static/
+# Retired build outputs can remain after updating an existing checkout.
+apps/ui/preview-next-static/
 apps/ui/storybook-next-static/
+apps/ui/dist-web-next/
 apps/ui/.vitest-attachments/
 apps/ui/stories/__screenshots__/
 apps/apple/Resources/Web/
-apps/ui/dist-web-next/

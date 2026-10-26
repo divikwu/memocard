@@ -1,6 +1,6 @@
 # 吉祥物素材与创作档案
 
-现行 [UI-next 吉祥物预览](http://127.0.0.1:5182/mascots.html) 展示 13 个实例，使用 11 对方向／表情图集；两项渐隐变体复用原图。唯一运行时目录为 `apps/ui/mascot-fixtures`，其 `catalog.ts` 静态引用 22 张 WebP，许可证保留在同目录。
+现行 [MemoCard UI 吉祥物预览](http://127.0.0.1:5182/mascots.html) 展示 13 个实例，使用 11 对方向／表情图集；两项渐隐变体复用原图。唯一运行时目录为 `apps/ui/mascot-fixtures`，其 `catalog.ts` 静态引用 22 张 WebP，许可证保留在同目录。
 
 ## 文件归属
 

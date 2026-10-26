@@ -3,9 +3,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import type { Note } from "@memocard/contracts";
-import { NoteCollection } from "@ui-next/business/NoteCollection";
+import { NoteCollection } from "@ui/business/NoteCollection";
 
-vi.mock("@ui-next/business/NotePreview", () => ({ NotePreview: ({ body }: { body: string }) => <p>{body}</p> }));
+vi.mock("@ui/business/NotePreview", () => ({ NotePreview: ({ body }: { body: string }) => <p>{body}</p> }));
 const note: Note = { id: "note-1", title: "散步的想法", body: "周末散步时想到的记录", tags: ["生活"], createdAt: "2026-10-10T08:00:00Z", updatedAt: "2026-10-10T08:00:00Z", contentHash: "hash", relativePath: "notes/note-1.md", sourceUrl: "memocard://note/note-1" };
 const props = { notes: [note], query: "", onQueryChange: vi.fn(), searchPlaceholder: "搜索当前标签内容", searchDisabled: false, hasMore: true, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "10月10日 16:00" };
 

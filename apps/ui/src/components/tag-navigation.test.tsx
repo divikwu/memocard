@@ -3,10 +3,10 @@ import { cleanup, render as renderUI, screen, waitFor, within } from "@testing-l
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
-import { SidebarProvider } from "@ui-next/components/sidebar";
-import { TagNavigation } from "@ui-next/business/tag-navigation";
+import { SidebarProvider } from "@ui/components/sidebar";
+import { TagNavigation } from "@ui/business/tag-navigation";
 import { TagColorProvider } from "@/TagColorProvider";
-import TagColorStyles from "@ui-next/business/TagColorStyles";
+import TagColorStyles from "@ui/business/TagColorStyles";
 import { setTagColor } from "@/tag-colors";
 const render = (ui: ReactElement) => renderUI(<SidebarProvider>{ui}</SidebarProvider>);
 const props = { vaultId: "vault-a", tags: [{ name: "工作", count: 2 }, { name: "工作/设计", count: 1 }, { name: "生活", count: 1 }], selected: null, onSelect: vi.fn() };

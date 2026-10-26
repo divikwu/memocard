@@ -1,6 +1,6 @@
 # 内容风格与 Typeset
 
-设置 → 内容风格维护笔记阅读与编辑的七项偏好，独立于导航、工具栏和通用 UI 外观。当前设置由 [WebTypographySettings](../apps/ui/ui-next/web/WebTypographySettings.tsx)、[preferences](../apps/ui/src/features/typography/preferences.ts) 和 [TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx) 实现。
+设置 → 内容风格维护笔记阅读与编辑的七项偏好，独立于导航、工具栏和通用 UI 外观。当前设置由 [WebTypographySettings](../apps/ui/ui/web/WebTypographySettings.tsx)、[preferences](../apps/ui/src/features/typography/preferences.ts) 和 [TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx) 实现。
 
 ## 当前默认与存储
 
@@ -20,11 +20,11 @@
 
 ## 当前渲染与编辑
 
-阅读样式为 [typeset.css](../apps/ui/ui-next/typeset.css) 和 [Typeset 主题](../apps/ui/ui-next/typeset-theme.css)，设置通过 [web-typography.css](../apps/ui/ui-next/web/web-typography.css) 映射到正文、笔记标题和代码。来源与许可见 [typeset.LICENSE](../apps/ui/src/typeset.LICENSE)。卡片摘要和搜索预览保留自己的紧凑密度；设置不改变导航或工具栏。
+阅读样式为 [typeset.css](../apps/ui/ui/typeset.css) 和 [Typeset 主题](../apps/ui/ui/typeset-theme.css)，设置通过 [web-typography.css](../apps/ui/ui/web/web-typography.css) 映射到正文、笔记标题和代码。来源与许可见 [typeset.LICENSE](../apps/ui/src/typeset.LICENSE)。卡片摘要和搜索预览保留自己的紧凑密度；设置不改变导航或工具栏。
 
-[NoteMarkdown](../apps/ui/ui-next/business/NoteMarkdown.tsx) 复用安全 Markdown 管线，支持 GFM、任务、标题、链接、Wiki 链接、脚注、授权本地图片、表格、公式及允许的 HTML 语义元素。表格提供可聚焦的横向滚动区域。原始 HTML 经过白名单清洗，不执行脚本、事件或任意样式；图片继续受库内附件边界限制。
+[NoteMarkdown](../apps/ui/ui/business/NoteMarkdown.tsx) 复用安全 Markdown 管线，支持 GFM、任务、标题、链接、Wiki 链接、脚注、授权本地图片、表格、公式及允许的 HTML 语义元素。表格提供可聚焦的横向滚动区域。原始 HTML 经过白名单清洗，不执行脚本、事件或任意样式；图片继续受库内附件边界限制。
 
-编辑器使用 [RichMarkdownEditor](../apps/ui/ui-next/business/RichMarkdownEditor.tsx) 和共享 [rich-editor-core](../apps/ui/src/rich-editor-core.tsx) 的 Tiptap / ProseMirror 语义 DOM。表格、公式、图片、Callout、链接、脚注和格式菜单各保留版本、撤销及 Markdown 保护契约；未支持语法保留原格式，不承诺任意第三方 Markdown 扩展都可结构化编辑。
+编辑器使用 [RichMarkdownEditor](../apps/ui/ui/business/RichMarkdownEditor.tsx) 和共享 [rich-editor-core](../apps/ui/src/rich-editor-core.tsx) 的 Tiptap / ProseMirror 语义 DOM。表格、公式、图片、Callout、链接、脚注和格式菜单各保留版本、撤销及 Markdown 保护契约；未支持语法保留原格式，不承诺任意第三方 Markdown 扩展都可结构化编辑。
 
 保存、草稿、附件与属性更新仍由共享业务内核处理。内容风格只改变显示，不改变 Markdown 源文件或保存位置；图片导入、未知格式和复杂表格的实际支持以当前编辑器回归为准。音视频导入/播放器未由 Typeset 样式选择器自动获得。
 

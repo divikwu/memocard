@@ -46,7 +46,7 @@ async function createNote() {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("@ui-next/business/NoteCollection"), import("@ui-next/business/sidebar"), import("@ui-next/business/QuickCapture"), import("@ui-next/business/HomeMascot"), import("@ui-next/business/Editor")]);
+  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/sidebar"), import("@ui/business/QuickCapture"), import("@ui/business/HomeMascot"), import("@ui/business/Editor")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -284,9 +284,9 @@ describe("note workspace", () => {
     expect(pageTitle.closest(".web-page-content")).not.toBeNull();
     const list = await screen.findByRole("list", { name: "笔记列表" });
     expect(list.getAttribute("data-layout")).toBe("cards");
-    expect(list.className).toContain("next-note-cards");
+    expect(list.className).toContain("ui-note-cards");
     const card = list.querySelector('[data-slot="card"]');
-    expect(card?.className).toContain("next-note-card");
+    expect(card?.className).toContain("ui-note-card");
     expect(within(card as HTMLElement).getByRole("button", { name: "打开 新内容" })).toBeTruthy();
     expect(within(card as HTMLElement).getByRole("button", { name: "筛选标签 生活" })).toBeTruthy();
     expect(card?.querySelector("time")?.getAttribute("dateTime")).toBe(note.updatedAt);

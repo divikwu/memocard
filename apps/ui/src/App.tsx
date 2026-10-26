@@ -10,10 +10,10 @@ import type { NoteDeleteProps, NoteDeleteTarget } from "./hooks/use-note-delete"
 import type { QuickCaptureHandle, QuickCaptureMemory, QuickCaptureProps } from "./hooks/use-quick-capture";
 import type { TrashPageProps } from "./hooks/use-trash";
 import type { NoteSearchProps, NoteSearchSession } from "./use-note-search";
-import type { AppSidebarProps } from "../ui-next/business/sidebar";
-import type { NoteCollectionProps } from "../ui-next/business/NoteCollection";
-import type { IOSAppChromeProps } from "../ui-next/native/IOSAppChrome";
-import { preloadWebEditor, renderWebApp } from "../ui-next/web/WebAppView";
+import type { AppSidebarProps } from "../ui/business/sidebar";
+import type { NoteCollectionProps } from "../ui/business/NoteCollection";
+import type { IOSAppChromeProps } from "../ui/native/IOSAppChrome";
+import { preloadWebEditor, renderWebApp } from "../ui/web/WebAppView";
 import { createId } from "./uuid";
 import { subscribeToOpenNotes } from "./open-note";
 import { useIsMobile } from "@/hooks/use-mobile";

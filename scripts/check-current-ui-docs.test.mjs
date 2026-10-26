@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 import { CURRENT_UI_DOCS, validateCurrentDocument } from "./check-current-ui-docs.mjs";
 
 test("current documentation resolves repository and relative source links", () => {
-  const known = new Set(["/repo/apps/ui/src/App.tsx", "/repo/apps/ui/ui-next/theme.css"]);
-  assert.deepEqual(validateCurrentDocument("[App](../apps/ui/src/App.tsx#L1) and `apps/ui/ui-next/theme.css` [upstream](https://example.com/docs)", "design/current.md", "/repo", path => known.has(path)), []);
+  const known = new Set(["/repo/apps/ui/src/App.tsx", "/repo/apps/ui/ui/theme.css"]);
+  assert.deepEqual(validateCurrentDocument("[App](../apps/ui/src/App.tsx#L1) and `apps/ui/ui/theme.css` [upstream](https://example.com/docs)", "design/current.md", "/repo", path => known.has(path)), []);
 });
 test("missing local references fail even when the prose is otherwise valid", () => {
   const errors = validateCurrentDocument("[example](../apps/ui/missing.tsx)", "design/current.md", "/repo", () => false);
@@ -17,6 +17,24 @@ test("missing local references fail even when the prose is otherwise valid", () 
 test("retired theme and browser commands cannot return to current contracts", () => {
   const errors = validateCurrentDocument("Use defineTheme with pnpm theme:build and --project docs-fonts", "design/current.md", "/repo", () => true);
   assert.equal(errors.length, 3);
+});
+test("retired UI command aliases cannot return to current documentation", () => {
+  for (const command of [
+    "dev:states:ui", "build:states:ui", "typecheck:states:ui", "test:states:ui",
+    "storybook:ui", "build:storybook:ui", "dev:web-next", "build:web-next",
+    "dev:states:ui-next", "build:states:ui-next", "typecheck:states:ui-next", "test:states:ui-next",
+    "storybook:ui-next", "build:storybook:ui-next", "typecheck:ui-next", "test:ui-next", "verify:ui-next",
+  ]) {
+    for (const markdown of [`\`${command}\` 是兼容命令。`, `pnpm --filter @memocard/ui ${command}`]) {
+      const errors = validateCurrentDocument(markdown, "design/current.md", "/repo", () => true);
+      assert.equal(errors.length, 1, markdown);
+      assert.match(errors[0], /retired UI command/);
+    }
+  }
+});
+test("current UI commands remain valid", () => {
+  const commands = ["dev:states", "build:states", "typecheck:states", "test:states", "storybook", "build:storybook", "typecheck:ui", "test:ui", "verify:ui"];
+  assert.deepEqual(validateCurrentDocument(commands.map(command => `pnpm ${command}`).join("\n"), "design/current.md", "/repo", () => true), []);
 });
 test("the scope includes platform specs and excludes historical migration evidence", () => {
   assert.ok(CURRENT_UI_DOCS.includes("design/components/search-capture.md"));
@@ -29,7 +47,7 @@ test("Markdown examples inside code are not treated as documentation links", () 
 });
 
 test("clean checkouts allow documented build destinations and still reject missing source and output assets", () => {
-  const markdown = "`apps/ui/dist` `apps/ui/storybook-next-static` [states](../apps/ui/preview-next-static/) `apps/ui/dist-source` [missing asset](../apps/ui/dist/missing.js)";
+  const markdown = "`apps/ui/dist` `apps/ui/storybook-static` [states](../apps/ui/preview-static/) `apps/ui/dist-source` [missing asset](../apps/ui/dist/missing.js)";
   const errors = validateCurrentDocument(markdown, "design/current.md", "/repo", () => false);
   assert.equal(errors.length, 2);
   assert.ok(errors.some(error => error.includes("apps/ui/dist-source")));
@@ -38,7 +56,7 @@ test("clean checkouts allow documented build destinations and still reject missi
 
 test("all current contracts pass without ignored Web, Storybook or preview output directories", () => {
   const projectRoot = fileURLToPath(new URL("..", import.meta.url));
-  const missing = new Set(["apps/ui/dist", "apps/ui/storybook-next-static", "apps/ui/preview-next-static"].map(path => resolve(projectRoot, path)));
+  const missing = new Set(["apps/ui/dist", "apps/ui/storybook-static", "apps/ui/preview-static"].map(path => resolve(projectRoot, path)));
   const errors = CURRENT_UI_DOCS.flatMap(filename => validateCurrentDocument(readFileSync(resolve(projectRoot, filename), "utf8"), filename, projectRoot, path => !missing.has(path) && existsSync(path)));
   assert.deepEqual(errors, []);
 });

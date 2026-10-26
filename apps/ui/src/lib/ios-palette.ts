@@ -20,7 +20,7 @@ export function readIOSPalette(): Record<string, number[]> | undefined {
   canvas.width = canvas.height = 1;
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return;
-  const theme = document.querySelector(".web-app.ui-next-theme") ?? document.documentElement;
+  const theme = document.querySelector(".web-app.ui-theme") ?? document.documentElement;
   const style = getComputedStyle(theme);
   const colors: Record<string, number[]> = {};
   for (const key of IOS_PALETTE_KEYS) {

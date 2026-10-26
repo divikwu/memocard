@@ -11,17 +11,17 @@ type View = {
   Hash: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   MoreHorizontal: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Trash2: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
-  Button: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/button")["Button"]>, "render">>;
-  Input: ComponentType<ComponentProps<typeof import("@ui-next/components/input")["Input"]>>;
-  DropdownMenu: ComponentType<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenu"]>>;
-  DropdownMenuTrigger: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuTrigger"]>, "ref">>;
-  DropdownMenuContent: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuContent"]>, "ref">>;
-  DropdownMenuItem: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuItem"]>, "ref">>;
-  DropdownMenuGroup: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuGroup"]>, "ref">>;
-  DropdownMenuLabel: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuLabel"]>, "ref">>;
-  DropdownMenuRadioGroup: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuRadioGroup"]>, "ref">>;
-  DropdownMenuSeparator: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/dropdown-menu")["DropdownMenuSeparator"]>, "ref">>;
-  TagPill: ComponentType<Omit<ComponentProps<typeof import("@ui-next/business/property-editors")["TagPill"]>, "variant" | "render">>;
+  Button: ComponentType<Omit<ComponentProps<typeof import("@ui/components/button")["Button"]>, "render">>;
+  Input: ComponentType<ComponentProps<typeof import("@ui/components/input")["Input"]>>;
+  DropdownMenu: ComponentType<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenu"]>>;
+  DropdownMenuTrigger: ComponentType<Omit<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenuTrigger"]>, "ref">>;
+  DropdownMenuContent: ComponentType<Omit<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenuContent"]>, "ref">>;
+  DropdownMenuItem: ComponentType<Omit<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenuItem"]>, "ref">>;
+  DropdownMenuGroup: ComponentType<Omit<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenuGroup"]>, "ref">>;
+  DropdownMenuLabel: ComponentType<Omit<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenuLabel"]>, "ref">>;
+  DropdownMenuRadioGroup: ComponentType<Omit<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenuRadioGroup"]>, "ref">>;
+  DropdownMenuSeparator: ComponentType<Omit<ComponentProps<typeof import("@ui/components/dropdown-menu")["DropdownMenuSeparator"]>, "ref">>;
+  TagPill: ComponentType<Omit<ComponentProps<typeof import("@ui/business/property-editors")["TagPill"]>, "variant" | "render">>;
 };
 
 export function createPropertyOptionMenu(view: View) {

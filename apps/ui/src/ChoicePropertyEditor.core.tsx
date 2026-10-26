@@ -6,7 +6,7 @@ import PropertyOptionList from './PropertyOptionList';
 
 type View = {
   X: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
-  PropertyOptionMenu: ComponentType<ComponentProps<typeof import("@ui-next/business/property-editors")["PropertyOptionMenu"]>>;
+  PropertyOptionMenu: ComponentType<ComponentProps<typeof import("@ui/business/property-editors")["PropertyOptionMenu"]>>;
 };
 
 export function createChoicePropertyEditor(view: View) {

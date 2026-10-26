@@ -8,7 +8,7 @@ export default defineConfig({
   base: "./",
   resolve: { alias: {
     "@": fileURLToPath(new URL("./src", import.meta.url)),
-    "@ui-next": fileURLToPath(new URL("./ui-next", import.meta.url)),
+    "@ui": fileURLToPath(new URL("./ui", import.meta.url)),
   } },
   server: { host: "127.0.0.1", port: 5180, strictPort: true },
   plugins: [react(), tailwindcss(), {

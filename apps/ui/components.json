@@ -5,7 +5,7 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "ui-next/styles.css",
+    "css": "ui/styles.css",
     "baseColor": "neutral",
     "cssVariables": true,
     "prefix": ""
@@ -15,9 +15,9 @@
   "menuColor": "default",
   "menuAccent": "subtle",
   "aliases": {
-    "components": "@ui-next/components",
-    "utils": "@ui-next/lib/utils",
-    "ui": "@ui-next/components",
+    "components": "@ui/components",
+    "utils": "@ui/lib/utils",
+    "ui": "@ui/components",
     "lib": "@/lib",
     "hooks": "@/hooks"
   }

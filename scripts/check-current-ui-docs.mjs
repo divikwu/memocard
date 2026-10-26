@@ -8,7 +8,7 @@ export const CURRENT_UI_DOCS = [
   "design/README.md", "design/foundations.md", "design/token-system.md",
   "design/token-consumption.md", "design/component-docs.md", "design/component-inventory.md",
   "design/component-ownership.md", "design/typography.md", "design/native-typography.md",
-  "design/ui-next-preview.md", "design/components/editor.md", "design/components/note-browser.md",
+  "design/ui-preview.md", "design/components/editor.md", "design/components/note-browser.md",
   "design/components/search-capture.md", "design/components/sidebar.md", "design/performance.md",
 ];
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -17,7 +17,7 @@ export function validateCurrentDocument(markdown, filename, projectRoot = root, 
   const errors = [];
   // Documented build destinations are absent before a clean checkout is built.
   // Only these directories are destinations; missing source or asset links still fail.
-  const buildOutputs = new Set(["apps/ui/dist", "apps/ui/storybook-next-static", "apps/ui/preview-next-static"].map(path => resolve(projectRoot, path)));
+  const buildOutputs = new Set(["apps/ui/dist", "apps/ui/storybook-static", "apps/ui/preview-static"].map(path => resolve(projectRoot, path)));
   const check = (target, base) => {
     const path = decodeURIComponent(target.replace(/^<|>$/g, "").split(/[?#]/)[0]);
     const absolute = resolve(base, path);
@@ -31,11 +31,12 @@ export function validateCurrentDocument(markdown, filename, projectRoot = root, 
   for (const [, path] of prose.matchAll(/`([^`\n]+)`/g)) {
     if (/[\s*{}]/.test(path)) continue;
     if (/^(?:apps|scripts|packages|design|docs)\//.test(path)) check(path, projectRoot);
-    else if (/^(?:src|ui-next|test-support|\.storybook-next)\//.test(path)) check(path, resolve(projectRoot, "apps/ui"));
+    else if (/^(?:src|ui|test-support|\.storybook)\//.test(path)) check(path, resolve(projectRoot, "apps/ui"));
   }
   for (const [pattern, label] of [
     [/\bdefineTheme\b|\bThemeProvider\b/g, "retired theme API"],
     [/\bpnpm\s+(?:--filter\s+@memocard\/ui\s+)?theme:build\b/g, "retired theme command"],
+    [/\b(?:(?:[a-z]+:)+(?:ui-next|web-next)|(?:(?:dev|build|typecheck|test):states|(?:build:)?storybook):ui)\b/g, "retired UI command"],
     [/--project\s+(?:['"])?(?:docs-fonts|typography-[a-z*]+)/g, "retired browser test project"],
   ]) for (const match of markdown.matchAll(pattern)) errors.push(`${filename}: ${label}: ${match[0]}`);
   return errors;

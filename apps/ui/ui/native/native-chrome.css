@@ -1,0 +1,4 @@
+.web-app[data-native-chrome] .web-app-shell { padding-top: 0; }
+.web-app[data-native-chrome] .web-app-scroll { padding-block: var(--ios-top, 0px) var(--ios-bottom, 0px); scroll-padding-block: var(--ios-top, 0px) var(--ios-bottom, 0px); }
+.web-app[data-native-chrome] .ui-note-layout,
+.web-app[data-native-chrome] section.ui-note-collection > .ui-note-toolbar { display: none; }

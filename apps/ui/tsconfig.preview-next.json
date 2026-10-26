@@ -1,4 +1,0 @@
-{
-  "extends": "./tsconfig.ui-next.json",
-  "include": ["ui-next/preview", "ui-state-fixtures", "mascot-fixtures", "vite.preview-next.config.ts"]
-}

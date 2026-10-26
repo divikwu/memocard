@@ -19,13 +19,13 @@ Web 的现行排版见 [Typography](typography.md)。iOS 系统文字继续采�
 
 - [NativeChrome.swift](../apps/apple/Sources/NativeChrome.swift)：系统导航、操作菜单、原生搜索/快速记录外壳和 Preview。
 - [NativeDesignedPanel.swift](../apps/apple/Sources/NativeDesignedPanel.swift)：搜索结果、输入区和原生自定义内容的现有字体/间距。
-- [IOSAppChrome](../apps/ui/ui-next/native/IOSAppChrome.tsx)：从共享 App 状态发布原生 chrome 与列表表面；读取当前外观与已解析的主题。
+- [IOSAppChrome](../apps/ui/ui/native/IOSAppChrome.tsx)：从共享 App 状态发布原生 chrome 与列表表面；读取当前外观与已解析的主题。
 - [typography-usage.generated.json](typography-usage.generated.json)：当前源码扫描得到的 Swift 文字表达式和位置。`pnpm typography:build` 更新，`pnpm typography:check` 检查漂移。
 
 局部 `.system(size:)`、条件字号和 `lineSpacing` 是现有实现，不能据扫描索引提升为全局字号角色。Swift `lineSpacing` 是额外行距，不等于 CSS 完整行高；系统 `.headline`、`.caption` 等保持平台语义。
 
 ## 外观与验证
 
-UI 主题由 WebAppearance 与 CSS 解析。原生 chrome 接收 light / dark / system；自定义表面接收 RGBA palette 与实际 `rowRadius`。Debug 预览颜色和默认圆角由 [独立 sampler](../apps/ui/ui-next/native/palette.html) 生成，不能以原生尺寸 JSON 的旧圆角值替代当前主题采样。
+UI 主题由 WebAppearance 与 CSS 解析。原生 chrome 接收 light / dark / system；自定义表面接收 RGBA palette 与实际 `rowRadius`。Debug 预览颜色和默认圆角由 [独立 sampler](../apps/ui/ui/native/palette.html) 生成，不能以原生尺寸 JSON 的旧圆角值替代当前主题采样。
 
 执行 `pnpm palette:build`、`pnpm test:palette`、`pnpm test:native-surfaces` 和相应 iOS 构建。Xcode Preview、真实 Simulator surface probe、WKWebView 与真机分别验证。系统文字放大、输入法、键盘、辅助技术和真实设备未验收时单独注明，不用 Web 浏览器结果代替。

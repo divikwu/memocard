@@ -5,7 +5,7 @@ import { parseTagColors, readTagColors, setTagColor, subscribeTagColors } from '
 import { normalizePropertyTag, tagKey } from './inline-tags';
 
 type View = {
-  PropertyOptionMenu: ComponentType<ComponentProps<typeof import("@ui-next/business/property-editors")["PropertyOptionMenu"]>>;
+  PropertyOptionMenu: ComponentType<ComponentProps<typeof import("@ui/business/property-editors")["PropertyOptionMenu"]>>;
 };
 
 export function createTagColorMenu(view: View) {

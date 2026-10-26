@@ -72,7 +72,7 @@ UI 维护补充（2026-10-25）：当前只有 Luma / Base UI 一套视图和 St
 
 设置：笔记库、同步状态、重建索引、备份恢复、外观；Mac 另有 MCP 开关/配置导出。业务入口按实际已实现能力展示，未交付的计划不因 UI 迁移视为完成。现行外观支持浅色/深色/系统、8 种强调色、2 种中性色、标题/正文字体和常规 0/7.2/8/10/14px 圆角；默认采用 Luma 浅色/黑白/Neutral/Noto Sans/8px。旧合法字体与圆角兼容恢复，当前选项与字体资源以设置页及源码白名单为准。正文内容风格独立；首版无自由 HEX、背景图和逐组件改色。
 
-界面保留 Sidebar-10 页面骨架，使用 shadcn Luma / Base UI 与 Tailwind CSS 4；现行控件、业务视图和页面在 `apps/ui/ui-next`，共享控制器与文件/宿主桥接在 `apps/ui/src`。Web、H5、macOS/iOS WebView 和本机服务消费同一生产构建；Storybook 和状态预览使用隔离数据。这不将 M1 真机关卡或完整 M3 标记为通过。
+界面保留 Sidebar-10 页面骨架，使用 shadcn Luma / Base UI 与 Tailwind CSS 4；现行控件、业务视图和页面在 `apps/ui/ui`，共享控制器与文件/宿主桥接在 `apps/ui/src`。Web、H5、macOS/iOS WebView 和本机服务消费同一生产构建；Storybook 和状态预览使用隔离数据。这不将 M1 真机关卡或完整 M3 标记为通过。
 
 ## 3. 文件契约、同步与可靠性
 

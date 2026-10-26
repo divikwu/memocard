@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { NoteMarkdown as Markdown } from "@ui-next/business/NoteMarkdown";
+import { NoteMarkdown as Markdown } from "@ui/business/NoteMarkdown";
 import { assetUrl, externalUrl } from "./urls";
 
 describe("safe note rendering", () => {

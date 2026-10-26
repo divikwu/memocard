@@ -6,13 +6,13 @@
 
 | 内容 | 当前来源 | 维护边界 |
 | --- | --- | --- |
-| 语义颜色、字体标尺、尺寸、圆角、动效、Tailwind 别名 | [theme.css](../apps/ui/ui-next/theme.css) | 产品和 Storybook 使用同一份定义；`@theme reference inline` 提供工具类映射 |
-| 强调色与中性色覆盖 | [web-palette.css](../apps/ui/ui-next/web/web-palette.css)、[WebAppearance](../apps/ui/ui-next/web/WebAppearance.tsx) | 明暗/系统、8 种强调色、2 种中性色；显式覆盖同名语义角色 |
-| UI 字体与圆角选择 | [preview-appearance](../apps/ui/ui-next/preview-appearance.ts)、[preview-mode](../apps/ui/ui-next/preview-mode.tsx)、[字体资源](../apps/ui/ui-next/preview-fonts.ts) | 名称源于早期预览目录，现由产品和示例共同消费 |
-| 笔记内容风格 | [preferences.ts](../apps/ui/src/features/typography/preferences.ts)、[TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx)、[web-typography.css](../apps/ui/ui-next/web/web-typography.css) | 正文、标题、等宽字体及阅读节奏；不改变导航工具栏 |
-| 标签及 Callout | [note-properties.css](../apps/ui/ui-next/business/note-properties.css)、[note-content.css](../apps/ui/ui-next/business/note-content.css) | 复用主题色系，局部角色和保存标识由业务组件拥有 |
+| 语义颜色、字体标尺、尺寸、圆角、动效、Tailwind 别名 | [theme.css](../apps/ui/ui/theme.css) | 产品和 Storybook 使用同一份定义；`@theme reference inline` 提供工具类映射 |
+| 强调色与中性色覆盖 | [web-palette.css](../apps/ui/ui/web/web-palette.css)、[WebAppearance](../apps/ui/ui/web/WebAppearance.tsx) | 明暗/系统、8 种强调色、2 种中性色；显式覆盖同名语义角色 |
+| UI 字体与圆角选择 | [preview-appearance](../apps/ui/ui/preview-appearance.ts)、[preview-mode](../apps/ui/ui/preview-mode.tsx)、[字体资源](../apps/ui/ui/preview-fonts.ts) | 名称源于早期预览目录，现由产品和示例共同消费 |
+| 笔记内容风格 | [preferences.ts](../apps/ui/src/features/typography/preferences.ts)、[TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx)、[web-typography.css](../apps/ui/ui/web/web-typography.css) | 正文、标题、等宽字体及阅读节奏；不改变导航工具栏 |
+| 标签及 Callout | [note-properties.css](../apps/ui/ui/business/note-properties.css)、[note-content.css](../apps/ui/ui/business/note-content.css) | 复用主题色系，局部角色和保存标识由业务组件拥有 |
 | 原生可移植尺寸 | [sidebar.tokens.json](tokens/sidebar.tokens.json) | 只生成 Swift 常量和[基准对照表](TOKENS.generated.md)，不生成 Web CSS / TS |
-| 原生颜色、圆角、安全区 | [ios-palette](../apps/ui/src/lib/ios-palette.ts)、[ios-theme](../apps/ui/src/lib/ios-theme.ts)、[原生适配器](../apps/ui/ui-next/native/IOSAppChrome.tsx)、[WebView](../apps/apple/Sources/WebView.swift) | 浏览器解析颜色和圆角后传递；SwiftUI / UIKit 拥有系统表面和安全区 |
+| 原生颜色、圆角、安全区 | [ios-palette](../apps/ui/src/lib/ios-palette.ts)、[ios-theme](../apps/ui/src/lib/ios-theme.ts)、[原生适配器](../apps/ui/ui/native/IOSAppChrome.tsx)、[WebView](../apps/apple/Sources/WebView.swift) | 浏览器解析颜色和圆角后传递；SwiftUI / UIKit 拥有系统表面和安全区 |
 
 ## 定义层级与覆盖类别
 
@@ -38,7 +38,7 @@
 
 ## 主题、偏好和单位
 
-主题由 CSS 的 `:root` / `.ui-next-theme` 与 `data-ui-theme` 解析；WebAppearance 管理产品偏好，PreviewModeProvider 应用当前明暗、字体和圆角。产品存储键为 `memocard-web-appearance-v1`，旧 `memocard-appearance-v1` 只作兼容读取；已有字体与圆角选择保留，恢复默认采用当前 Luma 默认值。Storybook 的 globals 与 fixture 存储独立。
+主题由 CSS 的 `:root` / `.ui-theme` 与 `data-ui-theme` 解析；WebAppearance 管理产品偏好，PreviewModeProvider 应用当前明暗、字体和圆角。产品存储键为 `memocard-web-appearance-v1`，旧 `memocard-appearance-v1` 只作兼容读取；已有字体与圆角选择保留，恢复默认采用当前 Luma 默认值。Storybook 的 globals 与 fixture 存储独立。
 
 常规圆角选项为 0 / 7.2 / 8 / 10 / 14px 的 16px 根字号基准，派生角色在主题 CSS 中维护；兼容旧设备值不代表仍有一套旧主题。间距基础为 `.25rem`，标准控件高度由 `--size-element-*` 拥有。CSS 长度、Swift 逻辑点与物理设备像素不能直接混同。
 

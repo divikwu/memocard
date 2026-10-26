@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { NoteProperty } from '@memocard/contracts';
-import { ChoicePropertyEditor } from "@ui-next/business/property-editors";
+import { ChoicePropertyEditor } from "@ui/business/property-editors";
 const options = [{name:'设计',color:'blue' as const},{name:'开发',color:'green' as const}];
 const property:NoteProperty = {name:'领域',type:'multiSelect',value:['设计'],options,editable:true};
 beforeEach(() => { vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))); });

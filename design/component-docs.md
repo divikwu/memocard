@@ -1,18 +1,18 @@
 # 组件文档维护
 
-唯一 Storybook 使用当前生产组件、Luma 主题和 Base UI。配置为 [main.ts](../apps/ui/.storybook-next/main.ts)，故事位于 `apps/ui/ui-next/stories`。启动 `pnpm --filter @memocard/ui storybook`，访问 <http://127.0.0.1:6016/>。
+MemoCard UI 是唯一 Storybook，使用当前生产组件、Luma 主题和 Base UI。配置为 [main.ts](../apps/ui/.storybook/main.ts)，故事位于 `apps/ui/ui/stories`。启动 `pnpm --filter @memocard/ui storybook`，访问 <http://127.0.0.1:6016/>。
 
 ## 源码与入口
 
 | 内容 | 当前实现 | Storybook |
 | --- | --- | --- |
-| 基础控件 | `apps/ui/ui-next/components` | `components/*` |
-| 业务视图 | `apps/ui/ui-next/business` | `business/*` |
-| 完整页面 | [WebAppView](../apps/ui/ui-next/web/WebAppView.tsx) 与共享 [App](../apps/ui/src/App.tsx) | `pages/Web & H5` |
-| 主题与基础规范 | [TokenPage](../apps/ui/ui-next/TokenPage.tsx)、[主题目录](../apps/ui/ui-next/token-catalog.ts) | `foundations/*` |
-| 文档模板 | [ComponentDocsTemplate](../apps/ui/ui-next/ComponentDocsTemplate.tsx)、[组件说明](../apps/ui/ui-next/ComponentDocs.tsx) | `ui-next-component-docs-template` 的 Docs |
+| 基础控件 | `apps/ui/ui/components` | `components/*` |
+| 业务视图 | `apps/ui/ui/business` | `business/*` |
+| 完整页面 | [WebAppView](../apps/ui/ui/web/WebAppView.tsx) 与共享 [App](../apps/ui/src/App.tsx) | `pages/Web & H5` |
+| 主题与基础规范 | [TokenPage](../apps/ui/ui/TokenPage.tsx)、[主题目录](../apps/ui/ui/token-catalog.ts) | `foundations/*` |
+| 文档模板 | [ComponentDocsTemplate](../apps/ui/ui/ComponentDocsTemplate.tsx)、[组件说明](../apps/ui/ui/ComponentDocs.tsx) | `ui-component-docs-template` 的 Docs |
 
-维护路径和覆盖边界以[组件维护表](component-inventory.md)为准。只有 `ui-next` 这一套当前实现；保留的兼容命令不会启动另一套产品。
+维护路径和覆盖边界以[组件维护表](component-inventory.md)为准。只有 `ui` 这一套当前实现；Story ID 和内部链接统一使用 `ui-*`，例如 [all tokens](http://127.0.0.1:6016/?path=/docs/ui-theme--docs)。
 
 ## 编写规则
 
@@ -31,6 +31,6 @@ pnpm --filter @memocard/ui test:storybook
 pnpm verify:design
 ```
 
-静态输出只有 `apps/ui/storybook-next-static`。浏览器项目由 [vitest.storybook.config.ts](../apps/ui/vitest.storybook.config.ts) 定义：`storybook-desktop`、`storybook-mobile` 和 `ui-quality`。桌面故事采用 1024×900，移动故事采用 390×844；质量检查涵盖窄屏、文字放大、减少动态和字体失败。以配置和实际日志为准，不保留已经删除的专用测试项目命令。
+静态输出只有 `apps/ui/storybook-static`。浏览器项目由 [vitest.storybook.config.ts](../apps/ui/vitest.storybook.config.ts) 定义：`storybook-desktop`、`storybook-mobile` 和 `ui-quality`。桌面故事采用 1024×900，移动故事采用 390×844；质量检查涵盖窄屏、文字放大、减少动态和字体失败。以配置和实际日志为准，不保留已经删除的专用测试项目命令。
 
 Storybook、状态 Preview、生产浏览器流程和原生 Simulator 分开报告。内存写入不证明真实 vault 写入，浏览器测试不代替 WKWebView、系统 picker、IME、键盘、安全区或真机验收。历史模板迁移和旧页签测试记录只作为演进证据，现行维护从本页入口开始。

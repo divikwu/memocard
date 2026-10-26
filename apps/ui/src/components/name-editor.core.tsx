@@ -1,18 +1,18 @@
 import type { ComponentType, ComponentProps, SVGProps } from "react";
 import { useRef, useState, type ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { cn } from "@ui-next/lib/utils";
+import { cn } from "@ui/lib/utils";
 
 type View = {
-  Popover: ComponentType<ComponentProps<typeof import("@ui-next/components/popover")["Popover"]>>;
-  PopoverContent: ComponentType<ComponentProps<typeof import("@ui-next/components/popover")["PopoverContent"]>>;
-  Button: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/button")["Button"]>, "render">>;
-  Input: ComponentType<ComponentProps<typeof import("@ui-next/components/input")["Input"]>>;
-  Sheet: ComponentType<ComponentProps<typeof import("@ui-next/components/sheet")["Sheet"]>>;
-  SheetClose: ComponentType<ComponentProps<typeof import("@ui-next/components/sheet")["SheetClose"]>>;
-  SheetContent: ComponentType<ComponentProps<typeof import("@ui-next/components/sheet")["SheetContent"]>>;
-  SheetHeader: ComponentType<ComponentProps<typeof import("@ui-next/components/sheet")["SheetHeader"]>>;
-  SheetTitle: ComponentType<ComponentProps<typeof import("@ui-next/components/sheet")["SheetTitle"]>>;
+  Popover: ComponentType<ComponentProps<typeof import("@ui/components/popover")["Popover"]>>;
+  PopoverContent: ComponentType<ComponentProps<typeof import("@ui/components/popover")["PopoverContent"]>>;
+  Button: ComponentType<Omit<ComponentProps<typeof import("@ui/components/button")["Button"]>, "render">>;
+  Input: ComponentType<ComponentProps<typeof import("@ui/components/input")["Input"]>>;
+  Sheet: ComponentType<ComponentProps<typeof import("@ui/components/sheet")["Sheet"]>>;
+  SheetClose: ComponentType<ComponentProps<typeof import("@ui/components/sheet")["SheetClose"]>>;
+  SheetContent: ComponentType<ComponentProps<typeof import("@ui/components/sheet")["SheetContent"]>>;
+  SheetHeader: ComponentType<ComponentProps<typeof import("@ui/components/sheet")["SheetHeader"]>>;
+  SheetTitle: ComponentType<ComponentProps<typeof import("@ui/components/sheet")["SheetTitle"]>>;
   X: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
 };
 export function createNameEditor(view: View) {

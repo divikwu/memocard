@@ -2,7 +2,7 @@
 import { within, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { TagPropertyEditor } from "@ui-next/business/property-editors";
+import { TagPropertyEditor } from "@ui/business/property-editors";
 import { request } from './bridge';
 vi.mock('./bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
 beforeEach(() => {

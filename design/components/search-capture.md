@@ -2,14 +2,14 @@
 
 ## 当前维护来源
 
-Web / H5 使用 [NoteSearchDialog](../../apps/ui/ui-next/business/NoteSearchDialog.tsx) 与 [QuickCapture](../../apps/ui/ui-next/business/QuickCapture.tsx)，共享搜索 hook、捕获草稿和保存内核。iOS producer 沿用相同内核并发布 native surface，界面由 [NativeChrome](../../apps/apple/Sources/NativeChrome.swift) / [NativeDesignedPanel](../../apps/apple/Sources/NativeDesignedPanel.swift) 渲染，不同时弹出一份网页搜索或捕获面板。
+Web / H5 使用 [NoteSearchDialog](../../apps/ui/ui/business/NoteSearchDialog.tsx) 与 [QuickCapture](../../apps/ui/ui/business/QuickCapture.tsx)，共享搜索 hook、捕获草稿和保存内核。iOS producer 沿用相同内核并发布 native surface，界面由 [NativeChrome](../../apps/apple/Sources/NativeChrome.swift) / [NativeDesignedPanel](../../apps/apple/Sources/NativeDesignedPanel.swift) 渲染，不同时弹出一份网页搜索或捕获面板。
 
 | 入口 | 当前数据与职责 |
 | --- | --- |
-| [搜索故事](../../apps/ui/ui-next/stories/business-note-search.stories.tsx) | `business/note search`；真实去抖查询、选择、分页、预览、重试和会话恢复 |
-| [捕获故事](../../apps/ui/ui-next/stories/business-quick-capture.stories.tsx) | `business/quick capture`；文本、正文标签、附件、临时草稿、保存及继续页面 |
-| [页面故事](../../apps/ui/ui-next/stories/web-workspace.stories.tsx) | 真实 App 控制器中的搜索 → 详情 → 返回和捕获 → 刷新集合 |
-| [原生适配](../../apps/ui/ui-next/native/IOSAppChrome.tsx)与原生 Preview | 系统输入/键盘/选择器、surface instance/ACK、关闭和原生动作 |
+| [搜索故事](../../apps/ui/ui/stories/business-note-search.stories.tsx) | `business/note search`；真实去抖查询、选择、分页、预览、重试和会话恢复 |
+| [捕获故事](../../apps/ui/ui/stories/business-quick-capture.stories.tsx) | `business/quick capture`；文本、正文标签、附件、临时草稿、保存及继续页面 |
+| [页面故事](../../apps/ui/ui/stories/web-workspace.stories.tsx) | 真实 App 控制器中的搜索 → 详情 → 返回和捕获 → 刷新集合 |
+| [原生适配](../../apps/ui/ui/native/IOSAppChrome.tsx)与原生 Preview | 系统输入/键盘/选择器、surface instance/ACK、关闭和原生动作 |
 
 [test-support/bridge.ts](../../apps/ui/test-support/bridge.ts) 默认拒绝未配置的数据和资产操作，每故事重置临时 handler、存储和图片。原生 Preview 使用隔离 Host，无 WebView、vault 或服务，示例图片在内存中生成。开发场景的失败开关不是产品能力，也不应通过破坏真实目录权限来制造保存失败。
 

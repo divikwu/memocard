@@ -2,19 +2,19 @@ import type { ComponentType, ComponentProps, SVGProps } from "react";
 import PropertyOptionList from './PropertyOptionList';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
-import { cn } from '@ui-next/lib/utils';
+import { cn } from '@ui/lib/utils';
 import { request, errorMessage } from './bridge';
 import { normalizePropertyTag, tagKey } from './inline-tags';
 
 type View = {
-  TagColorMenu: ComponentType<ComponentProps<typeof import("@ui-next/business/property-editors")["TagColorMenu"]>>;
+  TagColorMenu: ComponentType<ComponentProps<typeof import("@ui/business/property-editors")["TagColorMenu"]>>;
   X: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
-  Button: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/button")["Button"]>, "render">>;
-  TagPill: ComponentType<Omit<ComponentProps<typeof import("@ui-next/business/property-editors")["TagPill"]>, "variant" | "render">>;
-  Tooltip: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["Tooltip"]>>;
-  TooltipContent: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["TooltipContent"]>>;
-  TooltipProvider: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["TooltipProvider"]>>;
-  TooltipTrigger: ComponentType<ComponentProps<typeof import("@ui-next/components/tooltip")["TooltipTrigger"]>>;
+  Button: ComponentType<Omit<ComponentProps<typeof import("@ui/components/button")["Button"]>, "render">>;
+  TagPill: ComponentType<Omit<ComponentProps<typeof import("@ui/business/property-editors")["TagPill"]>, "variant" | "render">>;
+  Tooltip: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["Tooltip"]>>;
+  TooltipContent: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["TooltipContent"]>>;
+  TooltipProvider: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["TooltipProvider"]>>;
+  TooltipTrigger: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["TooltipTrigger"]>>;
 };
 
 export function createTagPropertyEditor(view: View) {

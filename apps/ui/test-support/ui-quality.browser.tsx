@@ -1,22 +1,22 @@
 import { afterEach, expect, test } from "vitest";
 import { commands, page, userEvent } from "vitest/browser";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
-import { ComponentDocs } from "../ui-next/ComponentDocs";
-import { componentDocs, type ComponentKey } from "../ui-next/component-docs.data";
-import { Button } from "../ui-next/components/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui-next/components/sheet";
-import { PreviewModeProvider } from "../ui-next/preview-mode";
-import { loadPreviewFonts } from "../ui-next/preview-fonts";
+import { ComponentDocs } from "../ui/ComponentDocs";
+import { componentDocs, type ComponentKey } from "../ui/component-docs.data";
+import { Button } from "../ui/components/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/components/sheet";
+import { PreviewModeProvider } from "../ui/preview-mode";
+import { loadPreviewFonts } from "../ui/preview-fonts";
 import { useNoteImage } from "../src/use-note-image";
 import { setStorybookBrowserAssets } from "./bridge";
-import "../.storybook-next/preview.css";
-import "../ui-next/preview-appearance.css";
+import "../.storybook/preview.css";
+import "../ui/preview-appearance.css";
 
 afterEach(async () => {
   cleanup();
   await commands.setReducedMotion("no-preference");
   await commands.setFontsOffline(false);
-  document.documentElement.removeAttribute("data-ui-next-appearance");
+  document.documentElement.removeAttribute("data-ui-appearance");
   document.documentElement.removeAttribute("data-ui-theme");
   document.documentElement.removeAttribute("style");
 });
@@ -69,7 +69,7 @@ test("Properties retains its input and Code view across tabs and appearance chan
   expect((field as HTMLInputElement).value).toBe("保留属性预览");
   expect(within(properties).getByRole("tab", { name: "Code" }).getAttribute("aria-selected")).toBe("true");
   const link = within(properties).getByRole("link", { name: "在 Canvas 中打开" });
-  expect(link.getAttribute("href")).toContain("ui-next-input--example");
+  expect(link.getAttribute("href")).toContain("ui-input--example");
   expect(link.getAttribute("href")).toContain("theme:dark;radius:none;headingFont:noto-serif;bodyFont:noto-sans");
   expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(321);
   expect(field.getBoundingClientRect().width).toBeGreaterThan(0);
