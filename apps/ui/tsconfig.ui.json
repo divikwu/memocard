@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@ui/*": [
+        "./ui/*"
+      ]
+    }
+  },
+  "include": [
+    "ui",
+    ".storybook",
+    "vite.storybook.config.ts",
+    "vite.preview.config.ts"
+  ]
+}

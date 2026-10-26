@@ -5,11 +5,11 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { componentPath, defaultBaseline, readBaseline, rebaseImports } from "./benchmark-sidebar-tags.mjs";
+import { componentPath, defaultBaseline, historicalComponentPath, readBaseline, rebaseImports } from "./benchmark-sidebar-tags.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
-test("reads the exact requested revision and clearly rejects pre-UI-next sources", t => {
+test("reads exact revisions at both component paths and prefers the current path", t => {
   const repository = mkdtempSync(join(tmpdir(), "memocard-benchmark-git-"));
   t.after(() => rmSync(repository, { recursive: true, force: true }));
   const git = args => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
@@ -24,11 +24,14 @@ test("reads the exact requested revision and clearly rejects pre-UI-next sources
   git(["config", "user.email", "test@example.com"]);
   git(["config", "user.name", "Benchmark Test"]);
   const legacy = commit("apps/ui/src/components/tag-navigation.tsx", "legacy implementation\n");
+  const historicalSource = 'export const TagNavigation = "historical source";\n';
+  const historical = commit(historicalComponentPath, historicalSource);
   const source = 'export const TagNavigation = "published source";\n';
   const published = commit(componentPath, source);
   commit(componentPath, 'export const TagNavigation = "newer source";\n');
+  assert.deepEqual(readBaseline(historical, repository), { commit: historical, source: historicalSource });
   assert.deepEqual(readBaseline(published, repository), { commit: published, source });
-  assert.throws(() => readBaseline(legacy, repository), /compares UI-next component sources.*Legacy UI dependencies are not restored/);
+  assert.throws(() => readBaseline(legacy, repository), /compares MemoCard UI component sources.*Legacy UI dependencies are not restored/);
   assert.throws(() => readBaseline("missing-baseline", repository), /Cannot resolve baseline.*Fetch that commit/);
   assert.equal(defaultBaseline, "de51cec");
 });

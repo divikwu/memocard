@@ -2,8 +2,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppSidebar, type AppSidebarProps } from "@ui-next/business/sidebar";
-import { SidebarProvider } from "@ui-next/components/sidebar";
+import { AppSidebar, type AppSidebarProps } from "@ui/business/sidebar";
+import { SidebarProvider } from "@ui/components/sidebar";
 
 const createProps = (overrides: Partial<AppSidebarProps> = {}): AppSidebarProps => ({
   view: "notes", tag: null, tags: [{ name: "生活", count: 2 }, { name: "工作", count: 1 }],

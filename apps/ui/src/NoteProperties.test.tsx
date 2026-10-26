@@ -3,11 +3,11 @@ import { act, within, cleanup, fireEvent, render, screen, waitFor } from '@testi
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { Note } from '@memocard/contracts';
-import NoteProperties from '@ui-next/business/NoteProperties';
+import NoteProperties from '@ui/business/NoteProperties';
 import { request } from './bridge';
 vi.mock('./bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
 // Keep cold calendar compilation outside the property interaction deadline.
-beforeAll(async()=>{await import('@ui-next/business/property-editors');},15000);
+beforeAll(async()=>{await import('@ui/business/property-editors');},15000);
 const note = {id:'note',contentHash:'hash',updatedAt:'2026-10-10T00:00:00Z'} as Note;
 const properties = [
  {name:'摘要',type:'text',value:'原值',editable:true},

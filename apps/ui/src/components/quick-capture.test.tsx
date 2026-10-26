@@ -1,17 +1,17 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { swipeSheet } from '@ui-next/components/sheet-swipe.test-utils';
+import { swipeSheet } from '@ui/components/sheet-swipe.test-utils';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { noteEditor, replaceCaptureText } from '../editor-test-utils';
 import type { Note } from '@memocard/contracts';
-import { QuickCapture } from '@ui-next/business/QuickCapture';
+import { QuickCapture } from '@ui/business/QuickCapture';
 import { createQuickCaptureDraftProtection, readQuickCaptureDraft, writeQuickCaptureDraft } from '../quick-capture-draft';
 import { useQuickCapture } from '../hooks/use-quick-capture';
 
 const bridge=vi.hoisted(()=>({request:vi.fn()}));
 vi.mock('../bridge',()=>({request:bridge.request,errorMessage:(cause:unknown)=>cause instanceof Error ? cause.message : '操作未完成'}));
-vi.mock('@ui-next/business/NoteMarkdown',()=>({VaultImage:({source,alt}:{source:string;alt:string})=><img src={source} alt={alt} />}));
+vi.mock('@ui/business/NoteMarkdown',()=>({VaultImage:({source,alt}:{source:string;alt:string})=><img src={source} alt={alt} />}));
 const note=(params:Record<string,unknown>):Note=>({id:params.id as string,title:'新内容',body:params.body as string,tags:params.inheritedTags as string[] ?? [],createdAt:'2026-10-14T08:00:00Z',updatedAt:'2026-10-14T08:00:00Z',contentHash:'saved',relativePath:'新内容.md',sourceUrl:'memocard://note/test'});
 function changeCaptureInput(element:HTMLElement, event:{target:{value:string;selectionStart?:number;selectionEnd?:number}}) {
   replaceCaptureText(element,event.target.value,event.target.selectionStart ?? event.target.value.length,event.target.selectionEnd ?? event.target.selectionStart ?? event.target.value.length);

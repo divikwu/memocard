@@ -11,8 +11,8 @@
 
 相关入口：
 
-- [旧版 reference Story](https://github.com/divikwu/memocard/blob/6214317638dd5590ddafe1874e943d8ceab8c4ad/apps/ui/stories/sidebar10-workspace-reference.stories.tsx) / [新版 Web & H5 Story](../apps/ui/ui-next/stories/web-workspace.stories.tsx)。
-- [共享内存夹具](../apps/ui/ui-next/web/workspace-fixture.ts)：6 条种子笔记；编辑器追加任务、代码、8 列宽表、普通链接、Wiki 链接和长文；回收站种子包含长标题/深路径并固定 deletedAt。加载、错误、异常记录和后台刷新有独立、成对的场景。
+- [旧版 reference Story](https://github.com/divikwu/memocard/blob/6214317638dd5590ddafe1874e943d8ceab8c4ad/apps/ui/stories/sidebar10-workspace-reference.stories.tsx) / [新版 Web & H5 Story](../apps/ui/ui/stories/web-workspace.stories.tsx)。
+- [共享内存夹具](../apps/ui/ui/web/workspace-fixture.ts)：6 条种子笔记；编辑器追加任务、代码、8 列宽表、普通链接、Wiki 链接和长文；回收站种子包含长标题/深路径并固定 deletedAt。加载、错误、异常记录和后台刷新有独立、成对的场景。
 - 两版均隔离本次 Story 的 localStorage；刷新、关闭或切换场景会重置，不影响真实笔记库或用户偏好。
 
 | 模块 | 相同 scenario / 初始 route | 可见旧版 | 可见新版 |

@@ -10,7 +10,7 @@
 
 ## 排版与布局
 
-UI 字体、字号、字重、行高由 [theme.css](../apps/ui/ui-next/theme.css) 拥有。笔记默认正文 Noto Sans、标题跟随正文、代码 Geist Mono；正文配置只影响阅读与编辑区域。原生使用系统字体与现有 Dynamic Type 映射。详见 [Typography](typography.md) 和[原生排版](native-typography.md)。
+UI 字体、字号、字重、行高由 [theme.css](../apps/ui/ui/theme.css) 拥有。笔记默认正文 Noto Sans、标题跟随正文、代码 Geist Mono；正文配置只影响阅读与编辑区域。原生使用系统字体与现有 Dynamic Type 映射。详见 [Typography](typography.md) 和[原生排版](native-typography.md)。
 
 间距基础为 `.25rem`，控件高度、图标视觉框、触摸命中目标和容器留白分别维护。常规控件圆角可选 0 / 7.2 / 8 / 10 / 14px 的 16px 根字号基准；旧设备圆角仅作兼容值保留。实际圆角由角色派生，不能把所有菜单、按钮和内容卡片都视为同一形状。
 

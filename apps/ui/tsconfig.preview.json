@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.ui.json",
+  "include": ["ui/preview", "ui-state-fixtures", "mascot-fixtures", "vite.preview.config.ts"]
+}

@@ -19,7 +19,7 @@ const publicDeclaration = declaration => {
   const owner = declaration.parent;
   return owner.type === 'atrule' && owner.name === 'theme'
     || owner.type === 'rule' && owner.selectors.some(selector => selector.replace(/\[[^\]]*\]/g, '').replace(/:(?:is|where|not)\(([^()]*)\)/g, '$1').split(',')
-      .some(part => /^(?::root|html|body|\.dark|\.light|\.ui-next-theme)(?=$|[.#:])/.test(part.trim()) && !/[\s>+~]/.test(part.trim())));
+      .some(part => /^(?::root|html|body|\.dark|\.light|\.ui-theme)(?=$|[.#:])/.test(part.trim()) && !/[\s>+~]/.test(part.trim())));
 };
 const context = declaration => { const parts = []; for (let node = declaration.parent; node?.type !== 'root'; node = node.parent) parts.unshift(node.selector ?? `@${node.name} ${node.params}`); return parts.join(' / '); };
 
@@ -208,7 +208,7 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
   for (const source of documents.keys()) if (!reached.has(resolve(root, source)) && !optionalPaths.has(resolve(root, source))) throw new Error(`Unreachable token CSS: ${source}`);
   for (const source of reached) if (!registered.has(source) && !ownedSources.has(source)) throw new Error(`Unowned production stylesheet: ${relative(root, source)}`);
   for (const entry of registry.runtimeSources) if (!graph.has(entry.source) && !(entry.format === 'swift-javascript' && /^apps\/apple\/Sources\/[^/]+\.swift$/.test(entry.source))) throw new Error(`Unreachable runtime token writer: ${entry.source}`);
-  for (const directory of ['apps/ui/src', 'apps/ui/ui-next']) for (const path of await cssFiles(resolve(root, directory))) {
+  for (const directory of ['apps/ui/src', 'apps/ui/ui']) for (const path of await cssFiles(resolve(root, directory))) {
     if (reached.has(path) && !registered.has(path)) checkPublicPlacement(await readFile(path, 'utf8'), relative(root, path));
   }
   const portable = [];

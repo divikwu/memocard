@@ -24,8 +24,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/sidebar.css",
-          "scope": ".next-sidebar-emoji",
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": ".ui-sidebar-emoji",
           "value": "\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif"
         }
       ]
@@ -36,7 +36,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/preview-fonts.ts",
+          "source": "apps/ui/ui/preview-fonts.ts",
           "scope": "line 36",
           "value": "\"Noto Sans SC Variable\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
         }
@@ -48,8 +48,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
           "variable": "--font-family-body"
         }
@@ -61,7 +61,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/preview-fonts.ts",
+          "source": "apps/ui/ui/preview-fonts.ts",
           "scope": "line 37",
           "value": "\"PingFang SC\", \"Noto Sans SC Variable\", system-ui, sans-serif"
         }
@@ -73,7 +73,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/preview-fonts.ts",
+          "source": "apps/ui/ui/preview-fonts.ts",
           "scope": "line 38",
           "value": "\"Songti SC\", \"STSong\", \"Noto Serif SC Variable\", serif"
         }
@@ -85,72 +85,72 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-inline textarea",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-tag-search",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-open",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-open",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-editor-content",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-drag-preview), :where(.next-rich-ui) :is(.block-drag-preview)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu kbd), :where(.next-rich-ui) :is(.block-menu kbd)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu-filter), :where(.next-rich-ui) :is(.block-menu-filter)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-insert-search input), :where(.next-rich-ui) :is(.rich-insert-search input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-table-tools select",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-table-tools select",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(kbd)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre code)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "inherit",
           "variable": "--typeset-font-body"
@@ -163,13 +163,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/preview-fonts.ts",
+          "source": "apps/ui/ui/preview-fonts.ts",
           "scope": "line 31",
           "value": "ui-monospace, \"SF Mono\", Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "ui-monospace, \"SF Mono\", Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
           "variable": "--font-family-code"
         }
@@ -183,148 +183,148 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
-          "scope": ".note-markdown-next .typeset-scroll[data-overflow=\"true\"]::after",
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-markdown .typeset-scroll[data-overflow=\"true\"]::after",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-title",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-title",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading h2",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading h2",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading time, .next-note-list-date",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading time, .ui-note-list-date",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-list-heading",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-list-heading",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteMarkdown.tsx",
+          "source": "apps/ui/ui/business/NoteMarkdown.tsx",
           "scope": "line 77",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+          "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "font-sans",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/PageNotice.css",
-          "scope": ".next-page-notice",
+          "source": "apps/ui/ui/business/PageNotice.css",
+          "scope": ".ui-page-notice",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu), :where(.next-rich-ui) :is(.block-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu), :where(.ui-rich-ui) :is(.block-menu)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-menu), :where(.next-rich-ui) :is(.rich-format-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-inline-tools), :where(.next-rich-ui) :is(.rich-inline-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-math-input), :where(.next-rich-ui) :is(.rich-math-input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.next-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-preserved-label), :where(.next-rich-ui) :is(.rich-preserved-label)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-properties), :where(.next-rich-ui) :is(.rich-properties)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-table-tools), :where(.next-rich-ui) :is(.rich-table-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-tag-suggestions), :where(.next-rich-ui) :is(.rich-tag-suggestions)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui.callout-icon-picker",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui.callout-icon-picker",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui.rich-editor",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui.rich-editor",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.css",
-          "scope": ".next-business-sidebar .next-sidebar-brand",
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": ".ui-business-sidebar .ui-sidebar-brand",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/styles.css",
-          "scope": "@layer base → .ui-next-theme",
+          "source": "apps/ui/ui/styles.css",
+          "scope": "@layer base → .ui-theme",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/styles.css",
+          "source": "apps/ui/ui/styles.css",
           "scope": "@layer base → body",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "var(--font-family-body)",
           "variable": "--font-family-heading"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-body",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-large",
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui-next/typeset-theme.css",
+          "source": "apps/ui/ui/typeset-theme.css",
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-body)",
           "variable": "--typeset-font-body"
@@ -337,38 +337,38 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-mermaid-source pre",
           "value": "var(--font-family-code)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-formula input), :where(.next-rich-ui) :is(.rich-formula input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-formula input), :where(.ui-rich-ui) :is(.rich-formula input)",
           "value": "var(--font-family-code)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-math-input input), :where(.next-rich-ui) :is(.rich-math-input input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-math-input input), :where(.ui-rich-ui) :is(.rich-math-input input)",
           "value": "var(--font-family-code)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash-open .next-trash-path",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-open .ui-trash-path",
           "value": "var(--font-family-code)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-code",
           "value": "var(--font-family-code)"
         },
         {
-          "source": "apps/ui/ui-next/typeset-theme.css",
+          "source": "apps/ui/ui/typeset-theme.css",
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-code)",
           "variable": "--typeset-font-mono"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-code)",
           "variable": "--typeset-font-mono"
@@ -383,124 +383,124 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-page-title",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .note-page-title",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-confirm > h2",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .next-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-format-header h2,\n.next-rich-ui.rich-properties .rich-format-header h2",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-format-header h2,\n.ui-rich-ui.rich-properties .rich-format-header h2",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash h1",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash h1",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash-open h2",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-open h2",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/components/card.tsx",
+          "source": "apps/ui/ui/components/card.tsx",
           "scope": "font-heading",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/components/dialog.tsx",
+          "source": "apps/ui/ui/components/dialog.tsx",
           "scope": "font-heading",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "font-heading",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.tsx",
+          "source": "apps/ui/ui/components/sheet.tsx",
           "scope": "font-heading",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-1",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-2",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-3",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-1",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-3",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-4",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-5",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-6",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/typeset-theme.css",
+          "source": "apps/ui/ui/typeset-theme.css",
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-heading)",
           "variable": "--typeset-font-heading"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-heading)",
           "variable": "--typeset-font-heading"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-collection-heading h1",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-drafts-list h3",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
           "value": "var(--font-family-heading)"
         }
@@ -512,13 +512,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact]",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--note-body-font, var(--font-family-body))"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-markdown-next.typeset-memocard",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
           "value": "var(--note-body-font, var(--font-family-body))",
           "variable": "--typeset-font-body"
         }
@@ -530,13 +530,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-editor-next textarea.note-page-title",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-editor textarea.note-page-title",
           "value": "var(--note-heading-font, var(--font-family-heading))"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-markdown-next.typeset-memocard",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
           "value": "var(--note-heading-font, var(--font-family-heading))",
           "variable": "--typeset-font-heading"
         }
@@ -548,13 +548,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-markdown-next .note-mermaid-source pre",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown .note-mermaid-source pre",
           "value": "var(--note-mono-font, var(--font-family-code))"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-markdown-next.typeset-memocard",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
           "value": "var(--note-mono-font, var(--font-family-code))",
           "variable": "--typeset-font-mono"
         }
@@ -566,7 +566,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--typeset-font-body)"
         }
@@ -578,7 +578,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h1, h2, h3, h4, h5, h6)",
           "value": "var(--typeset-font-heading)"
         }
@@ -590,12 +590,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(:not(pre) > code)",
           "value": "var(--typeset-font-mono)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre)",
           "value": "var(--typeset-font-mono)"
         }
@@ -603,26 +603,26 @@
     },
     {
       "property": "font-family",
-      "value": "var(--ui-next-preview-body)",
+      "value": "var(--ui-preview-body)",
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/preview-appearance.css",
-          "scope": ":root[data-ui-next-appearance],\n:root[data-ui-next-appearance] .ui-next-theme",
-          "value": "var(--ui-next-preview-body)",
+          "source": "apps/ui/ui/preview-appearance.css",
+          "scope": ":root[data-ui-appearance],\n:root[data-ui-appearance] .ui-theme",
+          "value": "var(--ui-preview-body)",
           "variable": "--font-family-body"
         }
       ]
     },
     {
       "property": "font-family",
-      "value": "var(--ui-next-preview-heading)",
+      "value": "var(--ui-preview-heading)",
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/preview-appearance.css",
-          "scope": ":root[data-ui-next-appearance],\n:root[data-ui-next-appearance] .ui-next-theme",
-          "value": "var(--ui-next-preview-heading)",
+          "source": "apps/ui/ui/preview-appearance.css",
+          "scope": ":root[data-ui-appearance],\n:root[data-ui-appearance] .ui-theme",
+          "value": "var(--ui-preview-heading)",
           "variable": "--font-family-heading"
         }
       ]
@@ -633,7 +633,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(sup, sub)",
           "value": "0.75em"
         }
@@ -645,7 +645,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h6)",
           "value": "0.8125em"
         }
@@ -657,12 +657,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(:not(pre) > code)",
           "value": "0.85em"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(kbd)",
           "value": "0.85em"
         }
@@ -674,22 +674,22 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(.footnotes, [data-footnotes])",
           "value": "0.875em"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(figcaption, caption)",
           "value": "0.875em"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h5)",
           "value": "0.875em"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre)",
           "value": "0.875em"
         }
@@ -701,7 +701,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4) :is(code))",
           "value": "0.9em"
         }
@@ -713,22 +713,22 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
           "value": "1em"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h4)",
           "value": "1em"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(table)",
           "value": "1em"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "1em",
           "variable": "--typeset-size"
@@ -741,7 +741,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h3)",
           "value": "1.125em"
         }
@@ -753,7 +753,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h2)",
           "value": "1.25em"
         }
@@ -765,7 +765,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h1)",
           "value": "1.75em"
         }
@@ -777,8 +777,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": ".75rem",
           "variable": "--font-size-xs"
         }
@@ -792,7 +792,7 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "text-[0.8rem]",
           "value": "0.8rem"
         }
@@ -804,8 +804,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": ".875rem",
           "variable": "--font-size-sm"
         }
@@ -817,8 +817,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1rem",
           "variable": "--font-size-base"
         }
@@ -830,8 +830,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.125rem",
           "variable": "--font-size-lg"
         }
@@ -843,8 +843,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.25rem",
           "variable": "--font-size-xl"
         }
@@ -856,8 +856,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.5rem",
           "variable": "--font-size-2xl"
         }
@@ -869,8 +869,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.875rem",
           "variable": "--font-size-3xl"
         }
@@ -882,8 +882,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "2rem",
           "variable": "--font-size-note-title"
         }
@@ -895,8 +895,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "2.25rem",
           "variable": "--font-size-4xl"
         }
@@ -908,8 +908,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "3rem",
           "variable": "--font-size-5xl"
         }
@@ -921,7 +921,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "calc(var(--typeset-size) * 1.125)"
         }
@@ -933,57 +933,57 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-name",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-inline textarea",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-open",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-open",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-editor-content",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-drag-preview), :where(.next-rich-ui) :is(.block-drag-preview)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu kbd), :where(.next-rich-ui) :is(.block-menu kbd)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu-filter), :where(.next-rich-ui) :is(.block-menu-filter)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-insert-search input), :where(.next-rich-ui) :is(.rich-insert-search input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-table-tools select",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-table-tools select",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre code)",
           "value": "inherit"
         }
@@ -995,22 +995,22 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h1",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h1",
           "value": "var(--font-size-2xl)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": "@media (max-width: 767px) → .next-trash h1",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": "@media (max-width: 767px) → .ui-trash h1",
           "value": "var(--font-size-2xl)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-1",
           "value": "var(--font-size-2xl)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-collection-heading h1",
           "value": "var(--font-size-2xl)"
         }
@@ -1022,12 +1022,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash h1",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash h1",
           "value": "var(--font-size-3xl)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-3",
           "value": "var(--font-size-3xl)"
         }
@@ -1039,7 +1039,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-2",
           "value": "var(--font-size-4xl)"
         }
@@ -1051,7 +1051,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-1",
           "value": "var(--font-size-5xl)"
         }
@@ -1065,168 +1065,168 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h4",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h4",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/MobileTagActions.tsx",
+          "source": "apps/ui/ui/business/MobileTagActions.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-confirm > h2",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": "@media (max-width: 767px) → :is(.note-property-popup, .note-property-inline, .note-property-option-menu, .mobile-tag-menu, .name-editor-popup) :is(input, textarea, select),\n  .note-tag-search",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .next-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
-          "value": "var(--font-size-base)"
-        },
-        {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": "@media (max-width: 767px) → .note-properties .note-property-edit:not([aria-haspopup])",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-input",
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(h1,h2)",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-input",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading h2",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-sheet .next-capture-editor-content",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading h2",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": "@media (max-width: 767px) → .next-capture-editor-content, .next-capture-editor[data-empty]::before",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-sheet .ui-capture-editor-content",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-header h2), :where(.next-rich-ui) :is(.rich-format-header h2)",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": "@media (max-width: 767px) → .ui-capture-editor-content, .ui-capture-editor[data-empty]::before",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": "@media (max-width: 767px) → .next-rich-ui :is(input, textarea, select),\n  .next-rich-ui:is(input, textarea, select)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": "@media (max-width: 767px) → .next-rich-ui.rich-insert-menu input",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": "@media (max-width: 767px) → .ui-rich-ui :is(input, textarea, select),\n  .ui-rich-ui:is(input, textarea, select)",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.css",
-          "scope": "@media (max-width: 767px) → .next-sidebar-vault-menu-item",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": "@media (max-width: 767px) → .ui-rich-ui.rich-insert-menu input",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.tsx",
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": "@media (max-width: 767px) → .ui-sidebar-vault-menu-item",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/components/card.tsx",
+          "source": "apps/ui/ui/components/card.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/components/dialog.tsx",
+          "source": "apps/ui/ui/components/dialog.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/components/input.tsx",
+          "source": "apps/ui/ui/components/input.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/components/popover.tsx",
+          "source": "apps/ui/ui/components/popover.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.css",
-          "scope": "@media (max-width: 767px) → .next-sheet-swipe[data-side=\"bottom\"] [data-slot=\"sheet-title\"]",
+          "source": "apps/ui/ui/components/sheet.css",
+          "scope": "@media (max-width: 767px) → .ui-sheet-swipe[data-side=\"bottom\"] [data-slot=\"sheet-title\"]",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.tsx",
+          "source": "apps/ui/ui/components/sheet.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/components/textarea.tsx",
+          "source": "apps/ui/ui/components/textarea.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/styles.css",
-          "scope": "@layer base → .ui-next-theme",
+          "source": "apps/ui/ui/styles.css",
+          "scope": "@layer base → .ui-theme",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-body",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-code",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-4",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-label",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/typeset-theme.css",
+          "source": "apps/ui/ui/typeset-theme.css",
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-size-base)",
           "variable": "--typeset-size"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
-          "scope": "@media (max-width: 767px) → .web-app .next-note-search-input",
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": "@media (max-width: 767px) → .web-app .ui-collection-search-input",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": "@media (max-width: 767px) → .web-settings select",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": "@media (max-width: 767px) → .web-appearance-fields [data-slot=select-trigger]",
           "value": "var(--font-size-base)"
         }
@@ -1240,27 +1240,27 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h3",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h3",
           "value": "var(--font-size-lg)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash-open h2",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-open h2",
           "value": "var(--font-size-lg)"
         },
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-lg",
           "value": "var(--font-size-lg)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-3",
           "value": "var(--font-size-lg)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-large",
           "value": "var(--font-size-lg)"
         }
@@ -1272,8 +1272,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-page-title",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .note-page-title",
           "value": "var(--font-size-note-title)"
         }
       ]
@@ -1320,409 +1320,409 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/CalloutIconPicker.tsx",
+          "source": "apps/ui/ui/business/CalloutIconPicker.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h5",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h5",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next table",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown table",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/MobileTagActions.tsx",
+          "source": "apps/ui/ui/business/MobileTagActions.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-image-message",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
-          "scope": ".note-markdown-next[data-compact]",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui-next/business/note-content.css",
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-mermaid-source pre",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-preview-ellipsis",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-markdown[data-compact]",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-date-time-option",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-action",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-edit",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-create",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-tag-color-option",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-tag-option",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-tag-search",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".rich-inline-tag, .note-tag-pill",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown",
           "value": "var(--font-size-sm)",
           "variable": "--typeset-size"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(h3,h4,h5)",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h3,h4,h5)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(kbd,:not(pre) > code,pre,figcaption,caption,.footnotes,[data-footnotes])",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(kbd,:not(pre) > code,pre,figcaption,caption,.footnotes,[data-footnotes])",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-card .next-note-tags .next-note-tag",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-card .ui-note-tags .ui-note-tag",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-list-heading",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-list-heading",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact]",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteDeleteDialog.tsx",
+          "source": "apps/ui/ui/business/NoteDeleteDialog.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteMarkdown.tsx",
+          "source": "apps/ui/ui/business/NoteMarkdown.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+          "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/PageNotice.css",
-          "scope": ".next-page-notice",
+          "source": "apps/ui/ui/business/PageNotice.css",
+          "scope": ".ui-page-notice",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-editor-content",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-editor-content",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-editor[data-empty]::before",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-editor[data-empty]::before",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-error",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-error",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu), :where(.next-rich-ui) :is(.block-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu), :where(.ui-rich-ui) :is(.block-menu)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-footnote), :where(.next-rich-ui) :is(.rich-footnote)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-footnote), :where(.ui-rich-ui) :is(.rich-footnote)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-menu), :where(.next-rich-ui) :is(.rich-format-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-inline-tools), :where(.next-rich-ui) :is(.rich-inline-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-math-input), :where(.next-rich-ui) :is(.rich-math-input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.next-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-properties), :where(.next-rich-ui) :is(.rich-properties)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-table-tools), :where(.next-rich-ui) :is(.rich-table-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-tag-suggestion-empty), :where(.next-rich-ui) :is(.rich-tag-suggestion-empty)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestion-empty), :where(.ui-rich-ui) :is(.rich-tag-suggestion-empty)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-tag-suggestions), :where(.next-rich-ui) :is(.rich-tag-suggestions)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui.callout-icon-picker",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui.callout-icon-picker",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.css",
-          "scope": ".next-business-sidebar .next-sidebar-row",
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": ".ui-business-sidebar .ui-sidebar-row",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation.tsx",
+          "source": "apps/ui/ui/business/tag-navigation.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash-open p",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-open p",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/business/TrashPage.tsx",
+          "source": "apps/ui/ui/business/TrashPage.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/breadcrumb.tsx",
+          "source": "apps/ui/ui/components/breadcrumb.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/button.tsx",
+          "source": "apps/ui/ui/components/button.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/card.tsx",
+          "source": "apps/ui/ui/components/card.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/dialog.tsx",
+          "source": "apps/ui/ui/components/dialog.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/dropdown-menu.tsx",
+          "source": "apps/ui/ui/components/dropdown-menu.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-sm/relaxed",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/input-group.tsx",
+          "source": "apps/ui/ui/components/input-group.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/input.tsx",
+          "source": "apps/ui/ui/components/input.tsx",
           "scope": "file:text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/input.tsx",
+          "source": "apps/ui/ui/components/input.tsx",
           "scope": "md:text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/label.tsx",
+          "source": "apps/ui/ui/components/label.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/popover.tsx",
+          "source": "apps/ui/ui/components/popover.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/select.tsx",
+          "source": "apps/ui/ui/components/select.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.tsx",
+          "source": "apps/ui/ui/components/sheet.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "data-[size=md]:text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/tabs.tsx",
+          "source": "apps/ui/ui/components/tabs.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/components/textarea.tsx",
+          "source": "apps/ui/ui/components/textarea.tsx",
           "scope": "md:text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-5",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-supporting",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-drafts-list p",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-toast",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-appearance-fields label",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-file-status dl",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-file-status p",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-file-status summary",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-font-status",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-setting-description",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-search-next-preview-content .note-markdown-next.typeset-memocard",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-search-preview-content .ui-note-markdown.typeset-memocard",
           "value": "var(--font-size-sm)",
           "variable": "--typeset-size"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
+          "source": "apps/ui/ui/web/web-typography.css",
           "scope": ".web-note-style-preview > header",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/WebAppView.tsx",
+          "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/WebSettings.tsx",
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui-next/web/WebTypographySettings.tsx",
+          "source": "apps/ui/ui/web/WebTypographySettings.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         }
@@ -1736,27 +1736,27 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h2",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h2",
           "value": "var(--font-size-xl)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-title",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-title",
           "value": "var(--font-size-xl)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-callout-icon), :where(.next-rich-ui) :is(.rich-callout-icon)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-callout-icon), :where(.ui-rich-ui) :is(.rich-callout-icon)",
           "value": "var(--font-size-xl)"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-xl",
           "value": "var(--font-size-xl)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
           "value": "var(--font-size-xl)"
         }
@@ -1807,207 +1807,207 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/CalloutColorsMenu.tsx",
+          "source": "apps/ui/ui/business/CalloutColorsMenu.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .mobile-save-status",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .mobile-save-status",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h6",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h6",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
-          "scope": ".note-markdown-next .typeset-scroll[data-overflow=\"true\"]::after",
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-markdown .typeset-scroll[data-overflow=\"true\"]::after",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-type-label",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(sup,sub)",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(sup,sub)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next h6",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown h6",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-cards .next-note-tags .next-note-tag",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-cards .ui-note-tags .ui-note-tag",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading time, .next-note-list-date",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading time, .ui-note-list-date",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-tag-count",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-tag-count",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.tsx",
+          "source": "apps/ui/ui/business/NoteCollection.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+          "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-save-status",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-save-status",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-tag-options > p",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-tag-options > p",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.tsx",
+          "source": "apps/ui/ui/business/QuickCapture.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu kbd), :where(.next-rich-ui) :is(.block-menu kbd)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu-label), :where(.next-rich-ui) :is(.block-menu-label)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu-label), :where(.ui-rich-ui) :is(.block-menu-label)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-block-menu-note), :where(.next-rich-ui) :is(.rich-block-menu-note)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-block-menu-note), :where(.ui-rich-ui) :is(.rich-block-menu-note)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-callout-color-label), :where(.next-rich-ui) :is(.rich-callout-color-label)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-callout-color-label), :where(.ui-rich-ui) :is(.rich-callout-color-label)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-hint, .rich-format-error), :where(.next-rich-ui) :is(.rich-format-hint, .rich-format-error)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-hint, .rich-format-error), :where(.ui-rich-ui) :is(.rich-format-hint, .rich-format-error)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-preview), :where(.next-rich-ui) :is(.rich-format-preview)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-preview), :where(.ui-rich-ui) :is(.rich-format-preview)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-link-results small), :where(.next-rich-ui) :is(.rich-link-results small)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-link-results small), :where(.ui-rich-ui) :is(.rich-link-results small)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-preserved-label), :where(.next-rich-ui) :is(.rich-preserved-label)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-tag-suggestion-hint), :where(.next-rich-ui) :is(.rich-tag-suggestion-hint)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestion-hint), :where(.ui-rich-ui) :is(.rich-tag-suggestion-hint)",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.css",
-          "scope": ".next-sidebar-tree-row .next-sidebar-row-actions > [data-sidebar=\"menu-badge\"]",
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": ".ui-sidebar-tree-row .ui-sidebar-row-actions > [data-sidebar=\"menu-badge\"]",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.tsx",
+          "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation.tsx",
+          "source": "apps/ui/ui/business/tag-navigation.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash-open .next-trash-path",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-open .ui-trash-path",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/badge.tsx",
+          "source": "apps/ui/ui/components/badge.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/button.tsx",
+          "source": "apps/ui/ui/components/button.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "[&>span]:text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/dropdown-menu.tsx",
+          "source": "apps/ui/ui/components/dropdown-menu.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/select.tsx",
+          "source": "apps/ui/ui/components/select.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "data-[size=sm]:text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/components/tooltip.tsx",
+          "source": "apps/ui/ui/components/tooltip.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-6",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings-working",
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui-next/web/WebAppView.tsx",
+          "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         }
@@ -2019,13 +2019,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown",
           "value": "var(--note-size, var(--font-size-base))"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-markdown-next.typeset-memocard:not([data-compact])",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard:not([data-compact])",
           "value": "var(--note-size, var(--font-size-base))",
           "variable": "--typeset-size"
         }
@@ -2037,13 +2037,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *)) → @media (min-width: 48rem), print",
           "value": "var(--typeset-size)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-markdown-next.typeset-memocard:not([data-compact])",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard:not([data-compact])",
           "value": "var(--typeset-size)"
         }
       ]
@@ -2054,8 +2054,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "400",
           "variable": "--font-weight-normal"
         }
@@ -2084,147 +2084,147 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-date-picker .note-date-today",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-action",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-name",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-create .note-property-type-option",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".rich-inline-tag, .note-tag-pill",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next pre",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown pre",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-card .next-note-tags .next-note-tag",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-card .ui-note-tags .ui-note-tag",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-entry",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-entry",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-footer > button",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-footer > button",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-tag-options > button",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-tag-options > button",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-menu), :where(.next-rich-ui) :is(.rich-format-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-inline-tools), :where(.next-rich-ui) :is(.rich-inline-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-math-input), :where(.next-rich-ui) :is(.rich-math-input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.next-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-preserved-label), :where(.next-rich-ui) :is(.rich-preserved-label)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-properties), :where(.next-rich-ui) :is(.rich-properties)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-table-tools), :where(.next-rich-ui) :is(.rich-table-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-tag-suggestions), :where(.next-rich-ui) :is(.rich-tag-suggestions)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.css",
-          "scope": ".next-sidebar-vault-menu-item",
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": ".ui-sidebar-vault-menu-item",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/components/breadcrumb.tsx",
+          "source": "apps/ui/ui/components/breadcrumb.tsx",
           "scope": "font-normal",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "font-normal",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/styles.css",
-          "scope": "@layer base → .ui-next-theme",
+          "source": "apps/ui/ui/styles.css",
+          "scope": "@layer base → .ui-theme",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-body",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-1",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-2",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-3",
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-supporting",
           "value": "var(--font-weight-normal)"
         }
@@ -2236,8 +2236,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "500",
           "variable": "--font-weight-medium"
         }
@@ -2253,232 +2253,232 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/MobileTagActions.tsx",
+          "source": "apps/ui/ui/business/MobileTagActions.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-confirm > h2",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next h5",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown h5",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next h6",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown h6",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading h2",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading h2",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-list-heading",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-list-heading",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact] :is(strong, b)",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(strong, b)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+          "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/PageNotice.css",
-          "scope": ".next-page-notice-title",
+          "source": "apps/ui/ui/business/PageNotice.css",
+          "scope": ".ui-page-notice-title",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-footer .next-capture-submit",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-footer .ui-capture-submit",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.tsx",
+          "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash-open h2",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-open h2",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/badge.tsx",
+          "source": "apps/ui/ui/components/badge.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/button.tsx",
+          "source": "apps/ui/ui/components/button.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/card.tsx",
+          "source": "apps/ui/ui/components/card.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/dialog.tsx",
+          "source": "apps/ui/ui/components/dialog.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/dropdown-menu.tsx",
+          "source": "apps/ui/ui/components/dropdown-menu.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/input-group.tsx",
+          "source": "apps/ui/ui/components/input-group.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/input.tsx",
+          "source": "apps/ui/ui/components/input.tsx",
           "scope": "file:font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/label.tsx",
+          "source": "apps/ui/ui/components/label.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/popover.tsx",
+          "source": "apps/ui/ui/components/popover.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/select.tsx",
+          "source": "apps/ui/ui/components/select.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.tsx",
+          "source": "apps/ui/ui/components/sheet.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "data-active:font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/components/tabs.tsx",
+          "source": "apps/ui/ui/components/tabs.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-label",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(a)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(dt)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h5)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h6)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(kbd)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(summary)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(sup a)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(tbody th, tfoot th)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(thead th)",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-drafts-list h3",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": "@media (max-width: 767px) → .web-header-breadcrumb [data-slot=breadcrumb-page]",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
+          "source": "apps/ui/ui/web/web-typography.css",
           "scope": ".web-note-style-preview > header > p:first-child",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/web/WebAppView.tsx",
+          "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui-next/web/WebSettings.tsx",
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         }
@@ -2490,8 +2490,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "600",
           "variable": "--font-weight-semibold"
         }
@@ -2515,107 +2515,107 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-page-title",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .note-page-title",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .next-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(h1,h2)",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-title",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-title",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+          "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu-label), :where(.next-rich-ui) :is(.block-menu-label)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu-label), :where(.ui-rich-ui) :is(.block-menu-label)",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-callout-swatch), :where(.next-rich-ui) :is(.rich-callout-swatch)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-callout-swatch), :where(.ui-rich-ui) :is(.rich-callout-swatch)",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-editor-content tr[data-footer]), :where(.next-rich-ui) :is(.rich-editor-content tr[data-footer])",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-editor-content tr[data-footer]), :where(.ui-rich-ui) :is(.rich-editor-content tr[data-footer])",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-header h2), :where(.next-rich-ui) :is(.rich-format-header h2)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.tsx",
+          "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/business/trash.css",
-          "scope": ".next-trash h1",
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash h1",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.css",
-          "scope": "@media (max-width: 767px) → .next-sheet-swipe[data-side=\"bottom\"] [data-slot=\"sheet-title\"]",
+          "source": "apps/ui/ui/components/sheet.css",
+          "scope": "@media (max-width: 767px) → .ui-sheet-swipe[data-side=\"bottom\"] [data-slot=\"sheet-title\"]",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-1",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-5",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-6",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-large",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4) :is(strong, b))",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h1, h2, h3, h4, h5, h6)",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(strong, b)",
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-collection-heading h1",
           "value": "var(--font-weight-semibold)"
         }
@@ -2627,8 +2627,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "700",
           "variable": "--font-weight-bold"
         }
@@ -2640,12 +2640,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-3",
           "value": "var(--font-weight-bold)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-4",
           "value": "var(--font-weight-bold)"
         }
@@ -2657,52 +2657,52 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-inline textarea",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-open",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-open",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-editor-content",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-drag-preview), :where(.next-rich-ui) :is(.block-drag-preview)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu kbd), :where(.next-rich-ui) :is(.block-menu kbd)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu-filter), :where(.next-rich-ui) :is(.block-menu-filter)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-insert-search input), :where(.next-rich-ui) :is(.rich-insert-search input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-table-tools select",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-table-tools select",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4, h5, h6) :is(a))",
           "value": "inherit"
         }
@@ -2714,7 +2714,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-mermaid-source pre",
           "value": "normal"
         }
@@ -2726,7 +2726,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(sup, sub)",
           "value": "0"
         }
@@ -2740,22 +2740,22 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-callout-icon), :where(.next-rich-ui) :is(.rich-callout-icon)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-callout-icon), :where(.ui-rich-ui) :is(.rich-callout-icon)",
           "value": "1"
         },
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "leading-none",
           "value": "1"
         },
         {
-          "source": "apps/ui/ui-next/components/dialog.tsx",
+          "source": "apps/ui/ui/components/dialog.tsx",
           "scope": "leading-none",
           "value": "1"
         },
         {
-          "source": "apps/ui/ui-next/components/label.tsx",
+          "source": "apps/ui/ui/components/label.tsx",
           "scope": "leading-none",
           "value": "1"
         }
@@ -2767,13 +2767,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-title",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-title",
           "value": "1.2"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.2",
           "variable": "--text-note-subheading-leading"
         }
@@ -2785,8 +2785,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.2381",
           "variable": "--text-display-1-leading"
         }
@@ -2798,8 +2798,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.2414",
           "variable": "--text-display-3-leading"
         }
@@ -2811,8 +2811,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.25",
           "variable": "--text-note-title-leading"
         }
@@ -2824,8 +2824,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.2571",
           "variable": "--text-display-2-leading"
         }
@@ -2837,7 +2837,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h1)",
           "value": "1.3"
         }
@@ -2849,8 +2849,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.3333",
           "variable": "--text-heading-1-leading"
         }
@@ -2862,13 +2862,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.4",
           "variable": "--text-heading-2-leading"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h2)",
           "value": "1.4"
         }
@@ -2880,14 +2880,14 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.4118",
           "variable": "--text-heading-3-leading"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.4118",
           "variable": "--text-large-leading"
         }
@@ -2899,14 +2899,14 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.4286",
           "variable": "--text-body-leading"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.4286",
           "variable": "--text-heading-4-leading"
         }
@@ -2918,7 +2918,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h3)",
           "value": "1.45"
         }
@@ -2930,37 +2930,37 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next table",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown table",
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(h1,h2)",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h4)",
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h5)",
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h6)",
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre)",
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(table)",
           "value": "1.5"
         }
@@ -2979,7 +2979,7 @@
           "value": "var(--leading-normal)"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "leading-normal",
           "value": "var(--leading-normal)"
         }
@@ -2991,8 +2991,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.5556",
           "variable": "--text-note-large-leading"
         }
@@ -3004,14 +3004,14 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.6",
           "variable": "--text-heading-6-leading"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.6",
           "variable": "--text-note-body-leading"
         }
@@ -3025,7 +3025,7 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-sm/relaxed",
           "value": "var(--leading-relaxed)"
         }
@@ -3037,14 +3037,14 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.6667",
           "variable": "--text-supporting-leading"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.6667",
           "variable": "--text-heading-5-leading"
         }
@@ -3056,13 +3056,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "1.75",
           "variable": "--text-reading-leading"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "1.75",
           "variable": "--typeset-leading"
@@ -3075,8 +3075,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
-          "scope": ":root,\n.ui-next-theme",
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
           "value": "0.25rem",
           "variable": "--spacing-1"
         }
@@ -3088,17 +3088,17 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-inline textarea",
           "value": "calc(var(--spacing-1) * 5)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-tag-search",
           "value": "calc(var(--spacing-1) * 5)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": "@media (max-width: 767px) → .note-properties .note-property-edit:not([aria-haspopup])",
           "value": "calc(var(--spacing-1) * 5)"
         }
@@ -3110,53 +3110,53 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-inline textarea",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-open",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-open",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-editor-content",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-drag-preview), :where(.next-rich-ui) :is(.block-drag-preview)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu kbd), :where(.next-rich-ui) :is(.block-menu kbd)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu-filter), :where(.next-rich-ui) :is(.block-menu-filter)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-insert-search input), :where(.next-rich-ui) :is(.rich-insert-search input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-table-tools select",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-table-tools select",
           "value": "inherit"
         }
       ]
@@ -3167,8 +3167,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown",
           "value": "var(--note-leading, var(--text-note-body-leading))",
           "variable": "--typeset-leading"
         }
@@ -3180,8 +3180,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-markdown-next.typeset-memocard:not([data-compact])",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard:not([data-compact])",
           "value": "var(--note-leading, var(--text-reading-leading))",
           "variable": "--typeset-leading"
         }
@@ -3193,193 +3193,193 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h5",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h5",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next pre",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown pre",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-action",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-edit",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-create",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".rich-inline-tag, .note-tag-pill",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .next-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(:not(pre) > code,pre)",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(:not(pre) > code,pre)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next :is(h3,h4,h5)",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h3,h4,h5)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-card .next-note-tags .next-note-tag",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-card .ui-note-tags .ui-note-tag",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading h2",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading h2",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading time",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading time",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-list-heading",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-list-heading",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact]",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-preview .note-markdown-next[data-compact]",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--text-body-leading)",
           "variable": "--typeset-leading"
         },
         {
-          "source": "apps/ui/ui-next/business/PageNotice.css",
-          "scope": ".next-page-notice",
+          "source": "apps/ui/ui/business/PageNotice.css",
+          "scope": ".ui-page-notice",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-editor-content",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-editor-content",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-error",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-error",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.block-menu), :where(.next-rich-ui) :is(.block-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu), :where(.ui-rich-ui) :is(.block-menu)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-footnote), :where(.next-rich-ui) :is(.rich-footnote)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-footnote), :where(.ui-rich-ui) :is(.rich-footnote)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-header h2), :where(.next-rich-ui) :is(.rich-format-header h2)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-hint, .rich-format-error), :where(.next-rich-ui) :is(.rich-format-hint, .rich-format-error)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-hint, .rich-format-error), :where(.ui-rich-ui) :is(.rich-format-hint, .rich-format-error)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-format-menu), :where(.next-rich-ui) :is(.rich-format-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-inline-tools), :where(.next-rich-ui) :is(.rich-inline-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-math-input), :where(.next-rich-ui) :is(.rich-math-input)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.next-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-properties), :where(.next-rich-ui) :is(.rich-properties)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-table-tools), :where(.next-rich-ui) :is(.rich-table-tools)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-tag-suggestions), :where(.next-rich-ui) :is(.rich-tag-suggestions)",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.css",
-          "scope": ".next-business-sidebar .next-sidebar-row",
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": ".ui-business-sidebar .ui-sidebar-row",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.css",
-          "scope": "@media (max-width: 767px) → .next-sheet-swipe[data-side=\"bottom\"] [data-slot=\"sheet-title\"]",
+          "source": "apps/ui/ui/components/sheet.css",
+          "scope": "@media (max-width: 767px) → .ui-sheet-swipe[data-side=\"bottom\"] [data-slot=\"sheet-title\"]",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/styles.css",
-          "scope": "@layer base → .ui-next-theme",
+          "source": "apps/ui/ui/styles.css",
+          "scope": "@layer base → .ui-theme",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-body",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-code",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-label",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-font-status",
           "value": "var(--text-body-leading)"
         }
@@ -3391,7 +3391,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-1",
           "value": "var(--text-display-1-leading)"
         }
@@ -3403,7 +3403,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-2",
           "value": "var(--text-display-2-leading)"
         }
@@ -3415,7 +3415,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-3",
           "value": "var(--text-display-3-leading)"
         }
@@ -3427,12 +3427,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h1",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h1",
           "value": "var(--text-heading-1-leading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-1",
           "value": "var(--text-heading-1-leading)"
         }
@@ -3444,12 +3444,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
           "value": "var(--text-heading-2-leading)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-app.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-collection-heading h1",
           "value": "var(--text-heading-2-leading)"
         }
@@ -3461,7 +3461,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-3",
           "value": "var(--text-heading-3-leading)"
         }
@@ -3473,12 +3473,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/note-properties.css",
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-confirm > h2",
           "value": "var(--text-heading-4-leading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-4",
           "value": "var(--text-heading-4-leading)"
         }
@@ -3490,7 +3490,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-5",
           "value": "var(--text-heading-5-leading)"
         }
@@ -3502,7 +3502,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-6",
           "value": "var(--text-heading-6-leading)"
         }
@@ -3514,7 +3514,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-large",
           "value": "var(--text-large-leading)"
         }
@@ -3526,8 +3526,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": "@media (max-width: 767px) → .next-capture-editor-content, .next-capture-editor[data-empty]::before",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": "@media (max-width: 767px) → .ui-capture-editor-content, .ui-capture-editor[data-empty]::before",
           "value": "var(--text-note-body-leading)"
         }
       ]
@@ -3538,8 +3538,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h3",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h3",
           "value": "var(--text-note-large-leading)"
         }
       ]
@@ -3550,8 +3550,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h2",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h2",
           "value": "var(--text-note-subheading-leading)"
         }
       ]
@@ -3562,8 +3562,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-page-title",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .note-page-title",
           "value": "var(--text-note-title-leading)"
         }
       ]
@@ -3574,7 +3574,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/typeset-theme.css",
+          "source": "apps/ui/ui/typeset-theme.css",
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--text-reading-leading)",
           "variable": "--typeset-leading"
@@ -3587,79 +3587,79 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .mobile-save-status",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .mobile-save-status",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h6",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h6",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
-          "scope": ".note-markdown-next .typeset-scroll[data-overflow=\"true\"]::after",
-          "value": "var(--text-supporting-leading)"
-        },
-        {
-          "source": "apps/ui/ui-next/business/note-content.css",
-          "scope": ".note-markdown-next[data-compact]",
-          "value": "var(--text-supporting-leading)"
-        },
-        {
-          "source": "apps/ui/ui-next/business/note-content.css",
-          "scope": ".note-markdown-next[data-compact]",
-          "value": "var(--text-supporting-leading)",
-          "variable": "--typeset-leading"
-        },
-        {
-          "source": "apps/ui/ui-next/business/note-content.css",
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-mermaid-source pre",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-content.css",
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-preview-ellipsis",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ":is(.note-search-next-dialog,.note-search-next-sheet) .text-xs",
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-markdown .typeset-scroll[data-overflow=\"true\"]::after",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/note-search.css",
-          "scope": ".note-search-next-preview-content .note-markdown-next h6",
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-markdown[data-compact]",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.css",
-          "scope": ".next-note-heading time, .next-note-list-date",
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-markdown[data-compact]",
+          "value": "var(--text-supporting-leading)",
+          "variable": "--typeset-leading"
+        },
+        {
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ":is(.ui-note-search-dialog,.ui-note-search-sheet) .text-xs",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.css",
-          "scope": ".next-capture-save-status",
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-content .ui-note-markdown h6",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ":where(.next-rich-ui):is(.rich-preserved-label), :where(.next-rich-ui) :is(.rich-preserved-label)",
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading time, .ui-note-list-date",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/business/rich-editor.css",
-          "scope": ".next-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-save-status",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/theme.css",
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
+          "value": "var(--text-supporting-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
+          "value": "var(--text-supporting-leading)"
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-supporting",
           "value": "var(--text-supporting-leading)"
         },
         {
-          "source": "apps/ui/ui-next/web/web-typography.css",
-          "scope": ":root[data-web-typography] .note-search-next-preview-content .note-markdown-next.typeset-memocard",
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-search-preview-content .ui-note-markdown.typeset-memocard",
           "value": "var(--text-supporting-leading)",
           "variable": "--typeset-leading"
         }
@@ -3673,42 +3673,42 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/MobileTagActions.tsx",
+          "source": "apps/ui/ui/business/MobileTagActions.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.tsx",
+          "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/card.tsx",
+          "source": "apps/ui/ui/components/card.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/dialog.tsx",
+          "source": "apps/ui/ui/components/dialog.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/input.tsx",
+          "source": "apps/ui/ui/components/input.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/popover.tsx",
+          "source": "apps/ui/ui/components/popover.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.tsx",
+          "source": "apps/ui/ui/components/sheet.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/textarea.tsx",
+          "source": "apps/ui/ui/components/textarea.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
         }
@@ -3722,7 +3722,7 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-lg",
           "value": "var(--tw-leading, var(--text-lg--line-height))"
         }
@@ -3769,147 +3769,147 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/CalloutIconPicker.tsx",
+          "source": "apps/ui/ui/business/CalloutIconPicker.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/MobileTagActions.tsx",
+          "source": "apps/ui/ui/business/MobileTagActions.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteDeleteDialog.tsx",
+          "source": "apps/ui/ui/business/NoteDeleteDialog.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteMarkdown.tsx",
+          "source": "apps/ui/ui/business/NoteMarkdown.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+          "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation.tsx",
+          "source": "apps/ui/ui/business/tag-navigation.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/TrashPage.tsx",
+          "source": "apps/ui/ui/business/TrashPage.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/breadcrumb.tsx",
+          "source": "apps/ui/ui/components/breadcrumb.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/button.tsx",
+          "source": "apps/ui/ui/components/button.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/card.tsx",
+          "source": "apps/ui/ui/components/card.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/dialog.tsx",
+          "source": "apps/ui/ui/components/dialog.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/dropdown-menu.tsx",
+          "source": "apps/ui/ui/components/dropdown-menu.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/empty.tsx",
+          "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/input-group.tsx",
+          "source": "apps/ui/ui/components/input-group.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/input.tsx",
+          "source": "apps/ui/ui/components/input.tsx",
           "scope": "file:text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/input.tsx",
+          "source": "apps/ui/ui/components/input.tsx",
           "scope": "md:text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/label.tsx",
+          "source": "apps/ui/ui/components/label.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/popover.tsx",
+          "source": "apps/ui/ui/components/popover.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/select.tsx",
+          "source": "apps/ui/ui/components/select.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/sheet.tsx",
+          "source": "apps/ui/ui/components/sheet.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "data-[size=md]:text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/tabs.tsx",
+          "source": "apps/ui/ui/components/tabs.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/textarea.tsx",
+          "source": "apps/ui/ui/components/textarea.tsx",
           "scope": "md:text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/web/WebAppView.tsx",
+          "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/web/WebSettings.tsx",
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/web/WebTypographySettings.tsx",
+          "source": "apps/ui/ui/web/WebTypographySettings.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         }
@@ -3923,7 +3923,7 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-xl",
           "value": "var(--tw-leading, var(--text-xl--line-height))"
         }
@@ -3974,82 +3974,82 @@
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/CalloutColorsMenu.tsx",
+          "source": "apps/ui/ui/business/CalloutColorsMenu.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteCollection.tsx",
+          "source": "apps/ui/ui/business/NoteCollection.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+          "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/QuickCapture.tsx",
+          "source": "apps/ui/ui/business/QuickCapture.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/sidebar.tsx",
+          "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/business/tag-navigation.tsx",
+          "source": "apps/ui/ui/business/tag-navigation.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/badge.tsx",
+          "source": "apps/ui/ui/components/badge.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/button.tsx",
+          "source": "apps/ui/ui/components/button.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/calendar.tsx",
+          "source": "apps/ui/ui/components/calendar.tsx",
           "scope": "[&>span]:text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/dropdown-menu.tsx",
+          "source": "apps/ui/ui/components/dropdown-menu.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/select.tsx",
+          "source": "apps/ui/ui/components/select.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "data-[size=sm]:text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/sidebar.tsx",
+          "source": "apps/ui/ui/components/sidebar.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/components/tooltip.tsx",
+          "source": "apps/ui/ui/components/tooltip.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/ui-next/web/WebAppView.tsx",
+          "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         }
@@ -4061,12 +4061,12 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui-next/business/Editor.css",
-          "scope": ".note-editor-next .note-markdown-next h4",
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown h4",
           "value": "var(--typeset-leading)"
         },
         {
-          "source": "apps/ui/ui-next/typeset.css",
+          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--typeset-leading)"
         }
@@ -4077,151 +4077,151 @@
     {
       "property": "font-family",
       "expression": "`\"Figtree Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 10"
     },
     {
       "property": "font-family",
       "expression": "`\"Roboto Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 11"
     },
     {
       "property": "font-family",
       "expression": "`\"Raleway Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 12"
     },
     {
       "property": "font-family",
       "expression": "`\"DM Sans Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 13"
     },
     {
       "property": "font-family",
       "expression": "`\"Public Sans Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 14"
     },
     {
       "property": "font-family",
       "expression": "`\"Outfit Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 15"
     },
     {
       "property": "font-family",
       "expression": "`\"Oxanium Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 16"
     },
     {
       "property": "font-family",
       "expression": "`\"Manrope Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 17"
     },
     {
       "property": "font-family",
       "expression": "`\"Space Grotesk Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 18"
     },
     {
       "property": "font-family",
       "expression": "`\"Montserrat Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 19"
     },
     {
       "property": "font-family",
       "expression": "`\"IBM Plex Sans Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 20"
     },
     {
       "property": "font-family",
       "expression": "`\"Source Sans 3 Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 21"
     },
     {
       "property": "font-family",
       "expression": "`\"Instrument Sans Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 22"
     },
     {
       "property": "font-family",
       "expression": "`\"Geist Mono Variable\", ${monoFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 23"
     },
     {
       "property": "font-family",
       "expression": "`\"JetBrains Mono Variable\", ${monoFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 24"
     },
     {
       "property": "font-family",
       "expression": "`\"Noto Serif Variable\", ${serifFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 25"
     },
     {
       "property": "font-family",
       "expression": "`\"Roboto Slab Variable\", ${serifFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 26"
     },
     {
       "property": "font-family",
       "expression": "`\"Merriweather Variable\", ${serifFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 27"
     },
     {
       "property": "font-family",
       "expression": "`\"Lora Variable\", ${serifFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 28"
     },
     {
       "property": "font-family",
       "expression": "`\"Playfair Display Variable\", ${serifFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 29"
     },
     {
       "property": "font-family",
       "expression": "`\"EB Garamond Variable\", ${serifFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 30"
     },
     {
       "property": "font-family",
       "expression": "`\"Geist Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 6"
     },
     {
       "property": "font-family",
       "expression": "`\"Inter Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 7"
     },
     {
       "property": "font-family",
       "expression": "`\"Noto Sans Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 8"
     },
     {
       "property": "font-family",
       "expression": "`\"Nunito Sans Variable\", ${sansFallback}`",
-      "source": "apps/ui/ui-next/preview-fonts.ts",
+      "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 9"
     }
   ],

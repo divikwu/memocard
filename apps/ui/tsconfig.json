@@ -25,14 +25,14 @@
       "@/*": [
         "./src/*"
       ],
-      "@ui-next/*": [
-        "./ui-next/*"
+      "@ui/*": [
+        "./ui/*"
       ]
     }
   },
   "include": [
     "src",
-    "ui-next",
+    "ui",
     "test-support",
     "ui-state-fixtures",
     "vite.config.ts"

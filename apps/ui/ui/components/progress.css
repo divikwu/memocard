@@ -1,0 +1,12 @@
+.ui-progress-indicator[data-indeterminate] {
+  width: 33.333333%;
+  animation: ui-progress-indeterminate calc(var(--duration-slow) * 2) var(--ease-standard) infinite;
+}
+
+@keyframes ui-progress-indeterminate {
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-progress-indicator[data-indeterminate] { animation: none; }
+}

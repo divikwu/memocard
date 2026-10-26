@@ -5,7 +5,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 
 export default tseslint.config(
-  { ignores: ["dist", "dist-web-next", "storybook-static", "storybook-next-static", "preview-next-static"] },
+  // Retired build outputs can remain in existing checkouts after the UI rename.
+  { ignores: ["dist", "storybook-static", "preview-static", "dist-web-next", "storybook-next-static", "preview-next-static"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -19,7 +20,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["ui-next/**/*.{ts,tsx}"],
+    files: ["ui/**/*.{ts,tsx}"],
     languageOptions: { globals: globals.browser },
     plugins: { "react-hooks": reactHooks },
     rules: {

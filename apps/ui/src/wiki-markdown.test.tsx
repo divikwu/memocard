@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { NoteMarkdown as Markdown } from "@ui-next/business/NoteMarkdown";
+import { NoteMarkdown as Markdown } from "@ui/business/NoteMarkdown";
 import { request } from "./bridge";
 vi.mock("./bridge", () => ({ request: vi.fn() }));
 vi.mock("./client-mode", () => ({ isBrowserVault: false, isLocalWeb: true }));

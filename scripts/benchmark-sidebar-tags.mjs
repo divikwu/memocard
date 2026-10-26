@@ -6,16 +6,20 @@ import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 export const defaultBaseline = "de51cec";
-export const componentPath = "apps/ui/ui-next/business/tag-navigation.tsx";
+export const componentPath = "apps/ui/ui/business/tag-navigation.tsx";
+export const historicalComponentPath = "apps/ui/ui-next/business/tag-navigation.tsx";
 const hash = source => createHash("sha256").update(source).digest("hex");
 
 export function readBaseline(ref = defaultBaseline, repository = root) {
   const git = args => execFileSync("git", args, { cwd: repository, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   let commit;
   try { commit = git(["rev-parse", "--verify", "--end-of-options", `${ref}^{commit}`]).trim(); }
-  catch { throw new Error(`Cannot resolve baseline ${ref}. Fetch that commit or use the published UI-next baseline ${defaultBaseline}.`); }
-  try { return { commit, source: git(["show", `${commit}:${componentPath}`]) }; }
-  catch { throw new Error(`Baseline ${ref} has no ${componentPath}. This benchmark compares UI-next component sources; use ${defaultBaseline} or a later UI-next revision. Legacy UI dependencies are not restored.`); }
+  catch { throw new Error(`Cannot resolve baseline ${ref}. Fetch that commit or use the published MemoCard UI baseline ${defaultBaseline}.`); }
+  for (const path of [componentPath, historicalComponentPath]) {
+    try { return { commit, source: git(["show", `${commit}:${path}`]) }; }
+    catch { /* Older revisions keep the component at its historical path. */ }
+  }
+  throw new Error(`Baseline ${ref} has no ${componentPath} or ${historicalComponentPath}. This benchmark compares MemoCard UI component sources; use ${defaultBaseline} or a later MemoCard UI revision. Legacy UI dependencies are not restored.`);
 }
 
 export function rebaseImports(source, repository = root) {
@@ -25,7 +29,7 @@ export function rebaseImports(source, repository = root) {
   return source.replace(/\b(from\s*|import\s*\(\s*|import\s*)(["'])(\.[^"']+)\2/g, (_match, prefix, _quote, specifier) => {
     const target = resolve(directory, specifier);
     if (!["", ".ts", ".tsx", ".js", ".jsx"].some(suffix => existsSync(target + suffix))) {
-      throw new Error(`Historical dependency ${specifier} no longer exists at ${target}. Choose a compatible UI-next baseline.`);
+      throw new Error(`Historical dependency ${specifier} no longer exists at ${target}. Choose a compatible MemoCard UI baseline.`);
     }
     return prefix + JSON.stringify(target.replaceAll("\\", "/"));
   });

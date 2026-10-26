@@ -52,7 +52,7 @@ export function checkCurrentStylesheet(css, asset) {
   const stylesheet = postcss.parse(css, { from: asset });
   stylesheet.walkDecls(declaration => {
     const owner = declaration.parent;
-    if (owner.type !== "rule" || !owner.selectors.some(selector => /^(?::root|:host|html|body|\.ui-next-theme)(?:$|[.#:\[])/.test(selector.trim()))) return;
+    if (owner.type !== "rule" || !owner.selectors.some(selector => /^(?::root|:host|html|body|\.ui-theme)(?:$|[.#:\[])/.test(selector.trim()))) return;
     if (/^--(?:radius|sidebar-(?:desktop-row-height|mobile-row-min-height|icon-size|content-gap|row-gap|logo-size|mobile-font-size|desktop-font-size|toggle-visual-size|touch-target-size|horizontal-padding))$/.test(declaration.prop)) {
       throw new Error(`Retired Web token in ${asset}: ${declaration.prop}`);
     }
@@ -98,15 +98,15 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   const metrics = [];
   for (const route of [
     { name: "list", entries: [], raw: 1120, gzip: 330 },
-    { name: "list with card previews", entries: ["ui-next/business/NotePreview.tsx"], raw: 1780, gzip: 525 },
-    { name: "home with quick capture", entries: ["ui-next/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
-    { name: "home with capture and card previews", entries: ["ui-next/business/QuickCapture.tsx", "ui-next/business/NotePreview.tsx"], raw: 2140, gzip: 645 },
-    { name: "iOS home with native chrome", entries: ["ui-next/native/IOSAppChrome.tsx", "ui-next/business/QuickCapture.tsx"], raw: 1520, gzip: 455 },
-    { name: "mobile home with swipe capture", entries: ["ui-next/business/QuickCapture.tsx", "ui-next/components/sheet-swipe.tsx"], raw: 1510, gzip: 450 },
-    { name: "search", entries: ["ui-next/business/NoteSearchDialog.tsx"], raw: 1800, gzip: 530 },
-    { name: "trash", entries: ["ui-next/business/TrashPage.tsx"], raw: 1800, gzip: 535 },
-    { name: "settings", entries: ["ui-next/web/WebSettings.tsx"], raw: 1850, gzip: 545 },
-    { name: "detail with preserved Markdown", entries: ["ui-next/business/Editor.tsx", "ui-next/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
+    { name: "list with card previews", entries: ["ui/business/NotePreview.tsx"], raw: 1780, gzip: 525 },
+    { name: "home with quick capture", entries: ["ui/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
+    { name: "home with capture and card previews", entries: ["ui/business/QuickCapture.tsx", "ui/business/NotePreview.tsx"], raw: 2140, gzip: 645 },
+    { name: "iOS home with native chrome", entries: ["ui/native/IOSAppChrome.tsx", "ui/business/QuickCapture.tsx"], raw: 1520, gzip: 455 },
+    { name: "mobile home with swipe capture", entries: ["ui/business/QuickCapture.tsx", "ui/components/sheet-swipe.tsx"], raw: 1510, gzip: 450 },
+    { name: "search", entries: ["ui/business/NoteSearchDialog.tsx"], raw: 1800, gzip: 530 },
+    { name: "trash", entries: ["ui/business/TrashPage.tsx"], raw: 1800, gzip: 535 },
+    { name: "settings", entries: ["ui/web/WebSettings.tsx"], raw: 1850, gzip: 545 },
+    { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";

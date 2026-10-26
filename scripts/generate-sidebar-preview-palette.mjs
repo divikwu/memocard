@@ -13,7 +13,7 @@ export async function sampleSidebarPreviewPalette() {
   const { chromium } = require("playwright");
   const server = await createServer({
     root: uiRoot,
-    configFile: path.join(uiRoot, "ui-next/native/vite.palette.config.ts"),
+    configFile: path.join(uiRoot, "ui/native/vite.palette.config.ts"),
     logLevel: "error",
     server: { host: "127.0.0.1", port: 0, strictPort: false, open: false },
   });
@@ -25,7 +25,7 @@ export async function sampleSidebarPreviewPalette() {
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage({ colorScheme: "light" });
     await page.route("**/*", route => new URL(route.request().url()).hostname === "127.0.0.1" ? route.continue() : route.abort());
-    await page.goto(`http://127.0.0.1:${address.port}/ui-next/native/palette.html`);
+    await page.goto(`http://127.0.0.1:${address.port}/ui/native/palette.html`);
     await page.waitForFunction(() => window.sidebarPaletteSampler);
     const palettes = {};
     let rowRadius;
@@ -37,8 +37,8 @@ export async function sampleSidebarPreviewPalette() {
         document.getElementById("palette-theme").dataset.uiTheme = mode;
         root.dataset.webPalette = appearance.palette;
         root.dataset.webNeutral = appearance.neutralPalette;
-        root.dataset.uiNextAppearance = "";
-        root.style.setProperty("--ui-next-preview-radius", radius);
+        root.dataset.uiAppearance = "";
+        root.style.setProperty("--ui-preview-radius", radius);
         root.style.colorScheme = mode;
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         const palette = readIOSPalette();

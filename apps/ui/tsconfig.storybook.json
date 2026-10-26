@@ -1,4 +1,4 @@
 {
-  "extends": "./tsconfig.ui-next.json",
-  "include": [".storybook-next", "ui-next", "test-support", "vite.storybook-next.config.ts", "vitest.storybook.config.ts"]
+  "extends": "./tsconfig.ui.json",
+  "include": [".storybook", "ui", "test-support", "vite.storybook.config.ts", "vitest.storybook.config.ts"]
 }

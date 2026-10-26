@@ -44,7 +44,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium firefox webkit
       - run: pnpm verify:design
-      - run: pnpm verify:ui-next
+      - run: pnpm verify:ui
   release-web:
     needs: changes
     if: needs.changes.outputs.full == 'true'

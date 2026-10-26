@@ -2,9 +2,9 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { MobileTagActions } from "@ui-next/business/MobileTagActions";
-import { TagNavigation } from "@ui-next/business/tag-navigation";
-import { SidebarProvider } from "@ui-next/components/sidebar";
+import { MobileTagActions } from "@ui/business/MobileTagActions";
+import { TagNavigation } from "@ui/business/tag-navigation";
+import { SidebarProvider } from "@ui/components/sidebar";
 
 const props = { tag:"工作/设计", vaultId:"tag-actions-test", onRename:vi.fn() };
 beforeEach(() => {

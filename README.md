@@ -9,7 +9,7 @@
 
 iOS 主导航使用 UIKit 自定义侧栏容器，展开时保持主页面原宽度并整体右移，内部使用与 H5 对齐的 SwiftUI 自定义布局（固定品牌栏、导航与折叠标签树统一滚动）；笔记库与设置入口按最新反馈移至 Logo 右侧的设置齿轮。App 与 H5 移动端侧栏不再重复显示搜索和新建笔记，继续使用底部入口及页面操作菜单；桌面端保留原侧栏入口。顶部导航、底部操作栏、页面菜单，以及笔记库、草稿和标签编辑弹层继续使用 SwiftUI 原生控件。搜索使用始终贴边的 SwiftUI 底部弹层，快速记录使用键盘上方的浮动输入卡片与系统模糊背景；两者按确认的移动端 UI 定制内容，复用共享查询、草稿和保存逻辑。系统工具栏与玻璃按钮在支持的系统上采用 Liquid Glass；最低目标仍为 iOS 17。列表内容、设置正文和笔记编辑器继续复用共享 Web 实现。原生替换以保持既有样式和交互为约束，无合适组件时保留原实现或自定义。范围、桥接机制与验证记录见 [iOS 原生外壳](docs/IOS_NATIVE_CHROME.md)。
 
-界面统一使用 **shadcn Luma / Base UI + Tailwind CSS 4**，保留 Sidebar-10 页面骨架。`apps/ui/src/main.tsx` 是唯一生产入口，`ui-next` 保存当前视图与控件，`src` 保存共享业务、文件/宿主桥接和编辑器内核；Web、H5、macOS / iOS WebView、本机服务均消费 `apps/ui/dist`。默认浅色、黑白强调色、Neutral、Noto Sans 与 8px 圆角；设置支持明暗/系统、8 种强调色、2 种中性色、字体与圆角、独立的正文风格。已有旧字体/圆角偏好兼容保留，常规新选项以当前设置页为准。iOS 导航与系统表面通过新版适配器继续使用原生实现。迁移范围和验证限制见 [旧 UI 清理记录](design/ui-retirement-2026-10-25.md)。
+界面统一使用 **shadcn Luma / Base UI + Tailwind CSS 4**，保留 Sidebar-10 页面骨架。`apps/ui/src/main.tsx` 是唯一生产入口，`ui` 保存当前视图与控件，`src` 保存共享业务、文件/宿主桥接和编辑器内核；Web、H5、macOS / iOS WebView、本机服务均消费 `apps/ui/dist`。默认浅色、黑白强调色、Neutral、Noto Sans 与 8px 圆角；设置支持明暗/系统、8 种强调色、2 种中性色、字体与圆角、独立的正文风格。已有旧字体/圆角偏好兼容保留，常规新选项以当前设置页为准。iOS 导航与系统表面通过当前适配器继续使用原生实现。迁移范围和验证限制见 [旧 UI 清理记录](design/ui-retirement-2026-10-25.md)。
 
 唯一执行依据：[PROJECT_PLAN.md](PROJECT_PLAN.md)。当前证据与限制：[实施状态](docs/IMPLEMENTATION_STATUS.md)。
 
@@ -47,7 +47,7 @@ pnpm build:ios
 
 `build:mac` / `build:ios` 先构建 React 静态资源，再复制进应用并生成 Xcode 工程。页面通过 `memocard-ui://app` 加载，应用运行不依赖 Vite。`scripts/generate-project.py` 只使用 Python 标准库，不依赖 xcodegen；工程变更应编辑该脚本后重新生成。
 
-`pnpm verify:release` 本地保留完整检查：工程漂移、Web/核心验证、服务测试、侧栏索引、真实模拟器探针、macOS/iOS/服务构建与签名。CI 将平台无关 Web 验证放在 Ubuntu，与原生核心/协议测试及独立模拟器探针并行；Web 成功后，三个独立 macOS runner 校验并消费绑定本次提交 SHA 和文件哈希的同一份 Web 产物，分别构建 macOS、iOS 和 Service。详见 [CI 验证与耗时](docs/CI_VERIFICATION.md)。本地 `pnpm verify` 已成功构建本次 Web 资源，后续三个原生构建用 `MEMOCARD_USE_PREBUILT_UI=1` 复用同一份 `apps/ui/dist`。该模式要求非空入口文件，只用于同一工作区中已成功构建且源码未改变的资源；单独运行构建命令仍默认重新编译 Web。CI 仅对 PR 的完整累计差异启用快速通道；main push 始终完整验证，避免后续文档 push 取消尚未完成的生产验证后跳过原生检查。PR 中，只有 `README.md`、`docs/` 下的 Markdown/PNG/JPEG/WebP、`design/README.md` / `component-inventory.md` / `token-consumption.md`，以及 `apps/ui/ui-next/stories/`、`apps/ui/.storybook-next/` 下的 TS/TSX/CSS/HTML/Markdown/MDX 允许快速通道。它仍执行完整 `verify:design`（含 Storybook/文档目录 lint、夹具单测、类型、构建和浏览器交互）；跳过 release-web、原生测试与原生构建。生产代码、token（含生成文件）、依赖、共享构建/测试配置与脚本、工作流、未知或混合改动保持完整验证；空差异、缺少提交、超大/无法读取差异也按完整验证处理。重命名按删除和新增两端检查，符号链接不走快速通道。`release` 汇总检查始终运行，要求 design 成功，并核对 Web、原生核心测试、独立探针及全部原生构建确实按分类成功或跳过；本地 `verify:release` 始终完整运行。
+`pnpm verify:release` 本地保留完整检查：工程漂移、Web/核心验证、服务测试、侧栏索引、真实模拟器探针、macOS/iOS/服务构建与签名。CI 将平台无关 Web 验证放在 Ubuntu，与原生核心/协议测试及独立模拟器探针并行；Web 成功后，三个独立 macOS runner 校验并消费绑定本次提交 SHA 和文件哈希的同一份 Web 产物，分别构建 macOS、iOS 和 Service。详见 [CI 验证与耗时](docs/CI_VERIFICATION.md)。本地 `pnpm verify` 已成功构建本次 Web 资源，后续三个原生构建用 `MEMOCARD_USE_PREBUILT_UI=1` 复用同一份 `apps/ui/dist`。该模式要求非空入口文件，只用于同一工作区中已成功构建且源码未改变的资源；单独运行构建命令仍默认重新编译 Web。CI 仅对 PR 的完整累计差异启用快速通道；main push 始终完整验证，避免后续文档 push 取消尚未完成的生产验证后跳过原生检查。PR 中，只有 `README.md`、`docs/` 下的 Markdown/PNG/JPEG/WebP、`design/README.md` / `component-inventory.md` / `token-consumption.md`，以及 `apps/ui/ui/stories/`、`apps/ui/.storybook/` 下的 TS/TSX/CSS/HTML/Markdown/MDX 允许快速通道。它仍执行完整 `verify:design`（含 Storybook/文档目录 lint、夹具单测、类型、构建和浏览器交互）；跳过 release-web、原生测试与原生构建。生产代码、token（含生成文件）、依赖、共享构建/测试配置与脚本、工作流、未知或混合改动保持完整验证；空差异、缺少提交、超大/无法读取差异也按完整验证处理。重命名按删除和新增两端检查，符号链接不走快速通道。`release` 汇总检查始终运行，要求 design 成功，并核对 Web、原生核心测试、独立探针及全部原生构建确实按分类成功或跳过；本地 `verify:release` 始终完整运行。
 
 Simulator 首次 runtime 枚举包含 CoreSimulator 初始化，限时 180 秒；后续环境查询/工程读取 30 秒，创建设备 60 秒；既有 runtime cache / boot / install / spawn 与业务断言预算不变，不重试。每条命令记录阶段、命令、期限、耗时和退出状态，环境失败后执行有界诊断。CI 在探针内完成一次 Simulator 启动和就绪检查，不再预检后关闭重启；上传环境阶段日志、探针标准输出/错误、源文件 SHA256 与断言结果，保留 7 天（失败阶段尚未产生的文件可能缺失），不上传整个 App/DerivedData。
 
@@ -75,7 +75,7 @@ pnpm --filter @memocard/ui dev
 
 打开 <http://127.0.0.1:5180/>。不要直接用 `file://` 打开 `apps/ui/index.html`，源码入口需要 Vite 处理。此地址现在是独立 Web：受支持浏览器可以直接授权并读写本机文件夹。不支持目录访问的浏览器会显示兼容性说明。
 
-唯一 Storybook 使用当前生产组件，启动 `pnpm --filter @memocard/ui storybook` 后访问 <http://127.0.0.1:6016/>；整页状态与流程入口使用 `pnpm --filter @memocard/ui dev:states`，地址为 <http://127.0.0.1:5182/>。Storybook 配置位于 `.storybook-next`，故事位于 `ui-next/stories`；旧组件与旧 Storybook 已退出维护。生产资源只输出 `apps/ui/dist`，状态预览和 Storybook 构建各自隔离。
+唯一 Storybook 使用当前生产组件，启动 `pnpm --filter @memocard/ui storybook` 后访问 <http://127.0.0.1:6016/>；整页状态与流程入口使用 `pnpm --filter @memocard/ui dev:states`，地址为 <http://127.0.0.1:5182/>。Storybook 配置位于 `.storybook`，故事位于 `ui/stories`；旧组件与旧 Storybook 已退出维护。生产资源只输出 `apps/ui/dist`，状态预览和 Storybook 构建各自隔离。
 
 ### 语义富文本编辑
 

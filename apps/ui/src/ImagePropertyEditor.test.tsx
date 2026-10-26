@@ -2,7 +2,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { ImagePropertyEditor } from "@ui-next/business/property-editors";
+import { ImagePropertyEditor } from "@ui/business/property-editors";
 import { request } from './bridge';
 vi.mock('./bridge', () => ({request:vi.fn(),errorMessage:(cause:Error) => cause.message}));
 vi.mock('./note-image', () => ({bindNoteImage:(image:HTMLImageElement,source:string) => { image.src = source; return () => {}; }}));

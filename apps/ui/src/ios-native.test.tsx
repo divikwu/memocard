@@ -3,13 +3,13 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const bridge=vi.hoisted(()=>{window.__memocardNativeChrome=true;return {request:vi.fn()};});
 vi.mock("./bridge",()=>({request:bridge.request,errorMessage:(e:unknown)=>e instanceof Error ? e.message : "失败"}));
-vi.mock("../ui-next/business/NoteMarkdown",()=>({NoteMarkdown:({body,notePath}:{body:string;notePath:string})=><div data-testid="rich-trash-preview" data-path={notePath}>{body}</div>}));
+vi.mock("../ui/business/NoteMarkdown",()=>({NoteMarkdown:({body,notePath}:{body:string;notePath:string})=><div data-testid="rich-trash-preview" data-path={notePath}>{body}</div>}));
 import { useIOSSurface, type NativeSurface } from "./ios-native";
-import { QuickCapture } from "../ui-next/business/QuickCapture";
-import { NoteDeleteDialog } from "../ui-next/business/NoteDeleteDialog";
-import { NoteSearchDialog } from "../ui-next/business/NoteSearchDialog";
+import { QuickCapture } from "../ui/business/QuickCapture";
+import { NoteDeleteDialog } from "../ui/business/NoteDeleteDialog";
+import { NoteSearchDialog } from "../ui/business/NoteSearchDialog";
 import { readQuickCaptureDraft } from "./quick-capture-draft";
-import { TrashPage } from "../ui-next/business/TrashPage";
+import { TrashPage } from "../ui/business/TrashPage";
 
 type Published=NativeSurface & {id:string;instance:string;remove?:boolean};
 const surface=(id:string):Published=>bridge.request.mock.calls.filter(([op,p])=>op === "updateNativeSurface" && p.id === id && !p.remove).at(-1)![1];

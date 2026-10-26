@@ -18,10 +18,10 @@ export type EditorProps = {
   onCommitted?: (note: Note) => void; onTitleChange?: (title: string | undefined) => void; handle?: React.RefObject<EditorHandle | null>;
 };
 export type EditorUI = {
-  Button: ComponentType<Omit<ComponentProps<typeof import('@ui-next/components/button').Button>, 'render'>>;
-  PageNotice: ComponentType<ComponentProps<typeof import('../ui-next/business/PageNotice').PageNotice>>;
-  NoteProperties: ComponentType<ComponentProps<typeof import('../ui-next/business/NoteProperties').default>>;
-  RichMarkdownEditor: typeof import('../ui-next/business/RichMarkdownEditor').RichMarkdownEditor;
+  Button: ComponentType<Omit<ComponentProps<typeof import('@ui/components/button').Button>, 'render'>>;
+  PageNotice: ComponentType<ComponentProps<typeof import('../ui/business/PageNotice').PageNotice>>;
+  NoteProperties: ComponentType<ComponentProps<typeof import('../ui/business/NoteProperties').default>>;
+  RichMarkdownEditor: typeof import('../ui/business/RichMarkdownEditor').RichMarkdownEditor;
   className?: string;
   contentClassName?: string;
 };

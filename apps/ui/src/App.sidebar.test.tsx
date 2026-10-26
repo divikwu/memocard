@@ -5,7 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import type { Note, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import { App } from "./App";
 import { noteEditor, readEditorText, replaceCaptureText } from "./editor-test-utils";
-import { swipeSheet } from "@ui-next/components/sheet-swipe.test-utils";
+import { swipeSheet } from "@ui/components/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("./bridge", () => ({
@@ -30,7 +30,7 @@ const status: VaultStatus = {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("@ui-next/business/NoteCollection"), import("@ui-next/business/NoteSearchDialog"), import("@ui-next/business/Editor")]);
+  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/NoteSearchDialog"), import("@ui/business/Editor")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -684,7 +684,7 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   expect(cardTag.getAttribute("data-slot")).toBe("badge");
   expect(cardTag.getAttribute("data-variant")).toBe("secondary");
   expect(cardTag.className).toContain("text-xs");
-  expect(cardTag.className).toContain("next-note-tag");
+  expect(cardTag.className).toContain("ui-note-tag");
   expect(cardTag.getAttribute("data-tag")).toBe(encodeURIComponent("生活"));
   expect(cardTag.className).toContain("h-5");
   expect(cardTag.className).toContain("py-0");
