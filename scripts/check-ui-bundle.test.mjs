@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { routeFiles, checkCurrentManifest, checkCurrentStylesheet } from "./check-ui-bundle.mjs";
+import { routeFiles, startupFiles, firstListFiles, checkCurrentManifest, checkCurrentStylesheet } from "./check-ui-bundle.mjs";
 
 test("route costs include transitive shared JS/CSS once and keep optional dynamic routes separate", () => {
   const manifest = {
@@ -11,6 +11,46 @@ test("route costs include transitive shared JS/CSS once and keep optional dynami
   assert.deepEqual([...routeFiles(manifest)].sort(), ["entry.css", "entry.js", "shared.css", "shared.js"]);
   assert.deepEqual([...routeFiles(manifest, ["editor", "editor"])].sort(), ["editor.css", "editor.js", "entry.css", "entry.js", "shared.css", "shared.js"]);
   assert.throws(() => routeFiles(manifest, ["removed"]), /Missing route asset/);
+});
+
+test("browser startup includes its awaited storage runtime while native and local Web exclude it", () => {
+  const manifest = {
+    "index.html": { file: "entry.js", imports: ["shared"], dynamicImports: ["src/browser-vault.ts"] },
+    shared: { file: "shared.js" },
+    "src/browser-vault.ts": { file: "storage.js", imports: ["shared", "file-io"], dynamicImports: ["formats"] },
+    "file-io": { file: "file-io.js" },
+    formats: { file: "formats.js" },
+  };
+  assert.deepEqual([...startupFiles(manifest, "browser")].sort(), ["entry.js", "file-io.js", "shared.js", "storage.js"]);
+  for (const mode of ["native", "local-web"]) assert.deepEqual([...startupFiles(manifest, mode)].sort(), ["entry.js", "shared.js"]);
+  assert.throws(() => startupFiles({ "index.html": { file: "entry.js" } }, "browser"), /Missing route asset/);
+});
+
+test("a bound browser first list includes format parsing and filters even when loaded after mount", () => {
+  const fonts = {
+    "node_modules/@fontsource-variable/noto-sans/wght-italic.css": { file: "sans-italic.css" },
+    "node_modules/@fontsource-variable/geist-mono/wght.css": { file: "mono.css" },
+    "node_modules/@fontsource-variable/geist-mono/wght-italic.css": { file: "mono-italic.css" },
+  };
+  const manifest = {
+    ...fonts,
+    "index.html": { file: "entry.js", imports: ["shared"] },
+    shared: { file: "shared.js" },
+    "src/browser-vault.ts": { file: "storage.js", imports: ["shared"] },
+    "src/browser-files.ts": { file: "formats.js", imports: ["yaml"] },
+    yaml: { file: "yaml.js" },
+    "src/note-filters.ts": { file: "filters.js", imports: ["shared"] },
+    cards: { file: "cards.js", imports: ["yaml"] },
+  };
+  const fontFiles = Object.values(fonts).map(font => font.file);
+  assert.deepEqual([...firstListFiles(manifest, "browser")].sort(), ["entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js", ...fontFiles].sort());
+  assert.deepEqual([...firstListFiles(manifest, "browser", ["cards"])].sort(), ["cards.js", "entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js", ...fontFiles].sort());
+  for (const mode of ["native", "local-web"]) assert.deepEqual([...firstListFiles(manifest, mode)].sort(), ["entry.js", "shared.js", ...fontFiles].sort());
+  delete manifest["node_modules/@fontsource-variable/geist-mono/wght.css"];
+  assert.throws(() => firstListFiles(manifest, "browser"), /Missing default typography asset/);
+  Object.assign(manifest, fonts);
+  delete manifest["src/browser-files.ts"];
+  assert.throws(() => firstListFiles(manifest, "browser"), /Missing route asset/);
 });
 
 test("production manifests reject retired UI and development stories while accepting shared cores", () => {

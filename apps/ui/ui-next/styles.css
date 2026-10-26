@@ -1,7 +1,5 @@
 @import "@fontsource-variable/noto-sans";
 @import "@fontsource-variable/noto-sans-sc";
-@import "@fontsource-variable/noto-serif";
-@import "@fontsource-variable/noto-serif-sc";
 @import "tailwindcss" source(none) theme(static);
 @source "./components";
 @source "./business";

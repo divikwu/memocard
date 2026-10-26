@@ -7,6 +7,8 @@ import { Button } from "../ui-next/components/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui-next/components/sheet";
 import { PreviewModeProvider } from "../ui-next/preview-mode";
 import { loadPreviewFonts } from "../ui-next/preview-fonts";
+import { useNoteImage } from "../src/use-note-image";
+import { setStorybookBrowserAssets } from "./bridge";
 import "../.storybook-next/preview.css";
 import "../ui-next/preview-appearance.css";
 
@@ -99,4 +101,53 @@ test("real reduced-motion media removes Sheet transition and Escape restores foc
   await userEvent.keyboard("{Escape}");
   await expect.element(trigger).toHaveFocus();
   await expect.element(page.getByRole("dialog", { name: "动效验收" })).not.toBeInTheDocument();
+});
+
+function LazyVaultImage() {
+  const { ref, state, onLoaded, onFailed } = useNoteImage("memocard-asset://vault/assets/clipped.png", true);
+  return <span data-image-state={state} style={{ display: "block", width: 80, height: 40 }}>
+    <img ref={ref} alt="裁切图片" width={80} height={40} loading="lazy" onLoad={onLoaded} onError={onFailed} />
+  </span>;
+}
+
+test("lazy vault images wait for every ancestor clip and read once after nested scrolling", async () => {
+  await page.viewport(800, 600);
+  const canvas = document.createElement("canvas");
+  canvas.width = 16; canvas.height = 8;
+  canvas.getContext("2d")!.fillRect(0, 0, 16, 8);
+  const blob = await new Promise<Blob>(resolve => canvas.toBlob(value => resolve(value!), "image/png"));
+  let reads = 0;
+  const releaseAssets = setStorybookBrowserAssets({ get "assets/clipped.png"() { reads++; return blob; } });
+  const view = render(<div data-testid="outer-clip" style={{ width: 320, height: 140, overflow: "auto" }}>
+    <div style={{ height: 500, paddingTop: 200 }}>
+      <div data-testid="inner-clip" style={{ height: 120, overflow: "auto" }}>
+        <div style={{ height: 400 }}><div style={{ height: 180 }} />
+          <LazyVaultImage />
+        </div>
+      </div>
+    </div>
+  </div>);
+  const outer = view.getByTestId("outer-clip"), inner = view.getByTestId("inner-clip");
+  const image = view.getByRole("img", { name: "裁切图片" }) as HTMLImageElement;
+  const intersecting = () => new Promise<boolean>(resolve => {
+    const observer = new IntersectionObserver(([entry]) => { observer.disconnect(); resolve(entry.isIntersecting); }, { root: null });
+    observer.observe(image.closest("[data-image-state]")!);
+  });
+  try {
+    expect(await intersecting()).toBe(false);
+    expect(reads).toBe(0);
+    inner.scrollTop = 180;
+    expect(await intersecting()).toBe(false);
+    expect(reads).toBe(0);
+    outer.scrollTop = 200;
+    expect(await intersecting()).toBe(true);
+    await waitFor(() => { expect(reads).toBe(1); expect(image.naturalWidth).toBe(16); });
+    expect(image.getAttribute("width")).toBe("80");
+    expect(image.getAttribute("height")).toBe("40");
+    outer.scrollTop = 0;
+    expect(await intersecting()).toBe(false);
+    outer.scrollTop = 200;
+    expect(await intersecting()).toBe(true);
+    expect(reads).toBe(1);
+  } finally { view.unmount(); releaseAssets(); }
 });

@@ -22,6 +22,23 @@ export function routeFiles(manifest, entries = []) {
   return files;
 }
 
+export function startupFiles(manifest, mode) {
+  return routeFiles(manifest, mode === "browser" ? ["src/browser-vault.ts"] : []);
+}
+
+export function firstListFiles(manifest, mode, entries = []) {
+  // A bound browser vault needs parsers and filtering before showing its first
+  // list, even though the application shell mounts before those imports finish.
+  const browser = mode === "browser" ? ["src/browser-vault.ts", "src/browser-files.ts", "src/note-filters.ts"] : [];
+  // Both appearance providers request these default font styles after mount.
+  const fonts = ["noto-sans/wght-italic.css", "geist-mono/wght.css", "geist-mono/wght-italic.css"].map(font => {
+    const key = Object.keys(manifest).find(key => key.endsWith(`/@fontsource-variable/${font}`));
+    if (!key) throw new Error(`Missing default typography asset: ${font}`);
+    return key;
+  });
+  return routeFiles(manifest, [...browser, ...fonts, ...entries]);
+}
+
 export function checkCurrentManifest(manifest) {
   for (const key of Object.keys(manifest)) {
     if (/^src\/(?:components\/(?!name-editor\.core)|generated\/design-tokens\.(?:css|ts)$|(?:Editor|RichMarkdownEditor|NoteProperties|NotePreview|markdown)\.tsx|features\/theme\/Theme)/.test(key)
@@ -54,19 +71,30 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   if (!assets.length) throw new Error("UI build does not reference an initial JS or CSS asset.");
   const manifest = JSON.parse(await readFile(resolve(root, ".vite/manifest.json"), "utf8"));
   checkCurrentManifest(manifest);
-  // Current theme and bundled font faces are shared once in the entry CSS.
+  // Measure default typography. Other font choices load their own faces on
+  // selection; all packaged font binaries retain the separate limits below.
   // Retain the 600 KiB single-JS cap. The measured 2026-10-25 entry is
   // 393,846 CSS bytes / 316,274 combined gzip bytes; caps reserve 4% / 7%.
   // Font package limits reflect all 26 current choices, including normal and
   // italic subsets plus both Chinese companions; these are not initial transfers.
   const limits = { js: 600 * 1024, css: 400 * 1024, gzip: 330 * 1024, normalFonts: 3.75 * 1024 * 1024, italicFonts: 3.75 * 1024 * 1024, cjkFonts: 10.5 * 1024 * 1024 };
-  let compressed = 0;
-  for (const asset of routeFiles(manifest)) {
-    const bytes = await readFile(resolve(root, asset)), suffix = asset.split(".").pop();
-    if (bytes.length > limits[suffix]) throw new Error(`${asset} is ${bytes.length} bytes; the initial ${suffix.toUpperCase()} budget is ${limits[suffix]} bytes.`);
-    compressed += gzipSync(bytes).length;
+  const startup = {}, firstList = {};
+  for (const mode of ["native", "local-web", "browser"]) {
+    let compressed = 0;
+    for (const asset of startupFiles(manifest, mode)) {
+      const bytes = await readFile(resolve(root, asset)), suffix = asset.split(".").pop();
+      if (bytes.length > limits[suffix]) throw new Error(`${asset} is ${bytes.length} bytes; the initial ${suffix.toUpperCase()} budget is ${limits[suffix]} bytes.`);
+      compressed += gzipSync(bytes).length;
+    }
+    if (compressed > limits.gzip) throw new Error(`${mode} startup JS and CSS gzip size is ${compressed} bytes; budget is ${limits.gzip} bytes.`);
+    startup[mode] = compressed;
+    console.log(`${mode} startup shell: ${compressed} gzip bytes.`);
+    let listCompressed = 0;
+    for (const asset of firstListFiles(manifest, mode)) listCompressed += gzipSync(await readFile(resolve(root, asset))).length;
+    if (listCompressed > limits.gzip) throw new Error(`${mode} first list JS and CSS gzip size is ${listCompressed} bytes; budget is ${limits.gzip} bytes.`);
+    firstList[mode] = listCompressed;
+    console.log(`${mode} first list: ${listCompressed} gzip bytes.`);
   }
-  if (compressed > limits.gzip) throw new Error(`Initial JS and CSS gzip size is ${compressed} bytes; budget is ${limits.gzip} bytes.`);
   const metrics = [];
   for (const route of [
     { name: "list", entries: [], raw: 1120, gzip: 330 },
@@ -81,7 +109,8 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "detail with preserved Markdown", entries: ["ui-next/business/Editor.tsx", "ui-next/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
   ]) {
     let raw = 0, gzip = 0;
-    for (const file of routeFiles(manifest, route.entries)) {
+    const mode = route.name === "iOS home with native chrome" ? "native" : "browser";
+    for (const file of firstListFiles(manifest, mode, route.entries)) {
       const bytes = await readFile(resolve(root, file));
       raw += bytes.length; gzip += gzipSync(bytes).length;
     }
@@ -103,8 +132,8 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   // The existing 26 UI font choices package normal/italic subsets; both Chinese
   // companions have separate limits and are fetched only for matching glyphs.
   for (const group of Object.keys(fonts)) if (fonts[group] > limits[`${group}Fonts`]) throw new Error(`Packaged ${group} fonts are ${fonts[group]} bytes; budget is ${limits[`${group}Fonts`]} bytes.`);
-  console.log(`UI bundle budget passed: ${compressed} initial gzip bytes; fonts ${JSON.stringify(fonts)}.`);
-  return { initialGzip: compressed, routes: metrics, fonts };
+  console.log(`UI bundle budget passed: ${startup.native} static initial gzip bytes; fonts ${JSON.stringify(fonts)}.`);
+  return { initialGzip: startup.native, startup, firstList, routes: metrics, fonts };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await checkUIBundle();

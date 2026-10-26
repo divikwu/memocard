@@ -9,6 +9,7 @@ it("renders the multiline story diagram with the real renderer and semantic them
   const source = "graph TD\nA[捕捉]-->B[整理]\nB-->C[回顾]";
   render(<NoteMarkdown body={`\`\`\`mermaid\n${source}\n\`\`\``} />);
   await screen.findByRole("button", { name: "放大 Mermaid 图表" });
+  await waitFor(() => expect(screen.getByRole("img", { name: "Mermaid 图表" }).shadowRoot?.querySelector("svg")).toBeTruthy());
   const diagram = screen.getByRole("img", { name: "Mermaid 图表" }).shadowRoot!;
   expect(diagram.textContent).toContain("捕捉");
   expect(diagram.textContent).toContain("整理");

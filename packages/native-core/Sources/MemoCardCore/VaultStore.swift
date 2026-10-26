@@ -565,6 +565,8 @@ public actor VaultStore {
         var result = Snapshot()
         var sources: [(path: String, data: Data?, modified: Date, hash: String, stamp: SourceStamp?)] = []
         var scannedPaths = Set<String>()
+        var observedPaths = Set<String>()
+        var unavailableFolders = Set<String>()
         var enumerationFailed = false
         var directories: [String: DirectoryIndex] = [:]
         var enumerator: FileManager.DirectoryEnumerator?
@@ -606,8 +608,9 @@ public actor VaultStore {
             state.directories[relative(notesURL, root: root)] = DirectoryIndex(stamp: stamp, names: [])
         }
         state.enumerator = fm.enumerator(at: notesURL, includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles], errorHandler: { [weak state] _, _ in
+            options: [.skipsHiddenFiles], errorHandler: { [weak state] url, _ in
                 state?.enumerationFailed = true
+                state?.unavailableFolders.insert(self.relative(url, root: root))
                 return true
             })
         guard state.enumerator != nil else { throw VaultError(code: "SCAN_FAILED", message: "无法读取笔记目录。", retryable: true) }
@@ -625,6 +628,7 @@ public actor VaultStore {
                 state.deferredURL = url
                 return false
             }
+            state.observedPaths.insert(relative(url, root: root))
             do {
                 state.directories[relative(url.deletingLastPathComponent(), root: root)]?.names.insert(url.lastPathComponent)
                 try validate(url, inside: root)
@@ -699,8 +703,15 @@ public actor VaultStore {
         let root = state.root, metadata = state.metadata
         if !state.identitiesPrepared {
             state.identitiesPrepared = true
-            let paths = Set(state.sources.map { $0.path })
-            state.missingByHash = Dictionary(grouping: identities.filter { !paths.contains($0.path) }, by: \.hash)
+            let missing = identities.filter { item in
+                guard !state.observedPaths.contains(item.path),
+                      !state.unavailableFolders.contains(where: { $0.isEmpty || item.path == $0 || item.path.hasPrefix($0 + "/") }) else { return false }
+                let url = root.appendingPathComponent(item.path)
+                guard (try? validate(url, inside: root)) != nil else { return false }
+                var info = stat()
+                return lstat(url.path, &info) != 0 && errno == ENOENT
+            }
+            state.missingByHash = Dictionary(grouping: missing, by: \.hash)
             state.newByHash = Dictionary(grouping: state.sources.filter { state.existingByPath[$0.path] == nil }, by: \.hash)
         }
         let started = DispatchTime.now().uptimeNanoseconds
@@ -742,6 +753,13 @@ public actor VaultStore {
         while try !advanceIdentities(state, limit: Int.max) {}
         if compatible, !state.enumerationFailed, state.result.coverage.issues == 0, state.result.coverage.pending == 0 {
             try persistIdentities(state.nextIdentities)
+        } else if compatible {
+            // Partial coverage cannot retire or rebind unknown sources. Persist only
+            // new readable identities so the notes already shown can still be opened.
+            let knownIDs = Set(identities.map(\.id))
+            let readableIDs = Set(state.resolvedNotes.map { $0.note.id })
+            let additions = state.nextIdentities.filter { !knownIDs.contains($0.id) && readableIDs.contains($0.id) }
+            if !additions.isEmpty { try persistIdentities(identities + additions) }
         }
         parsedCache = parsedCache.filter { state.scannedPaths.contains($0.key) }
         var result = state.result

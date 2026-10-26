@@ -982,6 +982,46 @@ it("creates readable plain Markdown and serializes simultaneous first scans", as
   expect((await root.getFileHandle(note.relativePath)).text).toBe("# 我的记录\n\n正文");
 });
 
+it.each(['invalid', 'pending', 'enumeration'] as const)('keeps readable compatible note IDs stable through an incomplete %s scan', async failure => {
+  const root = new TestDirectory('shared'), h = harness(root);
+  root.children.set('Readable.md', new TestFile('Readable.md', 'Readable body'));
+  const unavailable = new TestDirectory('Unavailable');
+  root.children.set('Unavailable', unavailable);
+  const file = new TestFile('Other.md', failure === 'invalid' ? '---\nbroken: [unclosed\n---\nBody' : 'Other body');
+  unavailable.children.set('Other.md', file);
+  if (failure === 'pending') file.readError = 'NotReadableError';
+  if (failure === 'enumeration') unavailable.enumerationError = true;
+  await call(h.core, 'selectVault');
+  const first = await call<NotePage>(h.core, 'queryNotes');
+  expect(first.coverage.complete).toBe(false);
+  const readable = first.notes.find(note => note.relativePath === 'Readable.md')!;
+  expect(readable).toBeTruthy();
+  const reopened = harness(root, h.storage);
+  const next = await call<NotePage>(reopened.core, 'queryNotes');
+  expect(next.notes.find(note => note.relativePath === 'Readable.md')?.id).toBe(readable.id);
+  expect(await call(reopened.core, 'getNote', {id: readable.id})).toMatchObject({id: readable.id, body: 'Readable body'});
+  await expect(call(reopened.core, 'saveNote', {id: readable.id, body: 'Edited', tags: [], baseHash: readable.contentHash})).rejects.toMatchObject({code: 'SCAN_INCOMPLETE'});
+});
+
+it.each(['pending', 'enumeration'] as const)('retains unknown compatible identities without mistaking an unreadable %s source for a move', async failure => {
+  const root = new TestDirectory('shared'), h = harness(root);
+  const folder = await root.getDirectoryHandle('Unavailable', {create: true});
+  const original = new TestFile('Original.md', 'Same body');
+  folder.children.set('Original.md', original);
+  await call(h.core, 'selectVault');
+  const first = (await call<NotePage>(h.core, 'queryNotes')).notes[0];
+  if (failure === 'pending') original.readError = 'NotReadableError';
+  else folder.enumerationError = true;
+  root.children.set('New.md', new TestFile('New.md', 'Same body'));
+  const added = (await call<NotePage>(h.core, 'queryNotes')).notes[0];
+  expect(added.relativePath).toBe('New.md');
+  expect(added.id).not.toBe(first.id);
+  original.readError = undefined; folder.enumerationError = false;
+  const reopened = harness(root, h.storage), page = await call<NotePage>(reopened.core, 'queryNotes');
+  expect(page.notes.find(note => note.relativePath === 'Unavailable/Original.md')?.id).toBe(first.id);
+  expect(page.notes.find(note => note.relativePath === 'New.md')?.id).toBe(added.id);
+});
+
 it("indexes both sources without rewriting YAML when the body is saved", async () => {
   const root = new TestDirectory("shared"), h = harness(root);
   const file = new TestFile("A.md", '---\r\n# header\r\ntags: [old]\r\ncustom: "keep spelling"\r\n---\r\nBody #inline');

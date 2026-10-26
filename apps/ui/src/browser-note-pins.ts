@@ -1,5 +1,6 @@
 import type { Note, NotePins } from '@memocard/contracts';
-import { BrowserVaultError, canonicalId, parseDate, readBytes, safeParts, sha256, type BrowserDirectoryHandle, type ParsedBrowserNote } from './browser-files';
+import { BrowserVaultError, canonicalId, parseDate, readBytes, safeParts, sha256, type BrowserDirectoryHandle } from './browser-file-io';
+import type { ParsedBrowserNote } from './browser-files';
 
 async function read(root: BrowserDirectoryHandle) {
   try { return await readBytes(await (await root.getDirectoryHandle('.memocard')).getFileHandle('pins.json')); }

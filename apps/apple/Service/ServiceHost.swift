@@ -12,6 +12,7 @@ final class ServiceHost {
     private var vaultURL: URL?
     private var vaultID: String?
     private var vaultGeneration = UUID()
+    private var vaultAttempt = UUID()
     private var presenter: ServiceVaultPresenter?
     private var webServer: LocalWebServer?
     private var startingWebServer: LocalWebServer?
@@ -26,6 +27,7 @@ final class ServiceHost {
     private var mcpSelection = UUID()
     // Tests can suspend a host start without depending on actor or listener timing.
     var mcpStartCheckpoint: (@MainActor () async -> Void)?
+    var vaultRestoreCheckpoint: (@MainActor (VaultStore) async throws -> Void)?
     var stateChanged: (() -> Void)?
 
     init(defaults: UserDefaults = .standard, localDataURL: URL? = nil,
@@ -37,7 +39,8 @@ final class ServiceHost {
         store = try VaultStore(localDataURL: self.localDataURL)
         let records = (defaults.data(forKey: "vaultBookmarks").flatMap { try? JSONDecoder().decode([StoredVaultRecord].self, from: $0) }) ?? []
         vaultRegistry = VaultRegistry(records: records, activeID: defaults.string(forKey: "activeVaultID"))
-        restoreTask = Task { [weak self] in await self?.restoreVault() }
+        let attempt = vaultAttempt
+        restoreTask = Task { [weak self] in await self?.restoreVault(attempt: attempt) }
     }
 
     var currentVaultName: String { vaultURL?.lastPathComponent ?? "未选择笔记库" }
@@ -75,6 +78,7 @@ final class ServiceHost {
     }
 
     func shutdown() {
+        vaultAttempt = UUID()
         stopMCP()
         stopWeb()
         if let presenter { NSFileCoordinator.removeFilePresenter(presenter) }
@@ -92,21 +96,28 @@ final class ServiceHost {
         _ = try await activateVault(id: id, reconnect: false)
     }
 
-    private func restoreVault() async {
+    private func restoreVault(attempt: UUID) async {
+        guard attempt == vaultAttempt else { return }
         let record = vaultRegistry.activeID.flatMap { vaultRegistry.record(id: $0) }
         let bookmark = record?.bookmark ?? defaults.data(forKey: "vaultBookmark")
         guard let bookmark else { return }
         var restored: URL?
+        var pendingStore: VaultStore?
         do {
             let url = try restore(bookmark)
             restored = url
             let candidate = try VaultStore(localDataURL: localDataURL)
+            pendingStore = candidate
             let generation = UUID()
             try await candidate.open(url: url, create: false, binding: generation)
+            try await vaultRestoreCheckpoint?(candidate)
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库恢复已被新的选择取代") }
             let status = try await status(of: candidate, binding: generation)
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库恢复已被新的选择取代") }
             guard let id = status["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
             let previous = store
             store = candidate
+            pendingStore = nil
             vaultGeneration = generation
             vaultURL = url
             vaultID = id
@@ -114,10 +125,13 @@ final class ServiceHost {
             restored = nil
             watch(url)
             await previous.close()
+            guard attempt == vaultAttempt else { return }
             stateChanged?()
             await restoreMCP()
         } catch {
+            if let pendingStore { await pendingStore.close() }
             restored?.stopAccessingSecurityScopedResource()
+            guard attempt == vaultAttempt else { return }
             defaults.removeObject(forKey: "vaultBookmark")
             defaults.removeObject(forKey: "activeVaultID")
             vaultRegistry.clearActive()
@@ -202,7 +216,7 @@ final class ServiceHost {
             let generation = vaultGeneration
             let data: Any
             if operation == "getStatus" {
-                var value = try await status(of: selectedStore, binding: vaultURL == nil ? nil : generation)
+                var value = try await status(of: selectedStore, binding: vaultURL == nil ? nil : generation, background: params["background"] as? Bool ?? false)
                 value["capabilities"] = (value["capabilities"] as? [String] ?? []).filter { webOperations.contains($0) }
                     + ["selectVault", "createVault", "listVaults", "activateVault", "pickImage", "openExternal"]
                 data = value
@@ -244,12 +258,16 @@ final class ServiceHost {
             throw error
         }
         let candidateGeneration = UUID()
+        let attempt = UUID()
+        vaultAttempt = attempt
         do {
             try await candidate.open(url: selected, create: create, binding: candidateGeneration)
             let candidateStatus = try await status(of: candidate, binding: candidateGeneration)
             guard let id = candidateStatus["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
 
             let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
             let previousStore = store
             let previousURL = vaultURL
             stopMCP()
@@ -284,11 +302,15 @@ final class ServiceHost {
         do { candidate = try VaultStore(localDataURL: localDataURL) }
         catch { selected.stopAccessingSecurityScopedResource(); throw error }
         let candidateGeneration = UUID()
+        let attempt = UUID()
+        vaultAttempt = attempt
         do {
             try await candidate.open(url: selected, create: false, binding: candidateGeneration)
             let candidateStatus = try await status(of: candidate, binding: candidateGeneration)
             guard candidateStatus["vaultId"] as? String == id else { throw fault("UNAUTHORIZED", "笔记库身份已经变化，请重新打开文件夹") }
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
             let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
             let previousStore = store
             let previousURL = vaultURL
             stopMCP()
@@ -462,8 +484,9 @@ final class ServiceHost {
         return url
     }
 
-    private func status(of store: VaultStore, binding: UUID?) async throws -> [String: Any] {
-        let data = try await store.perform(operation: "getStatus", params: Data("{}".utf8), expectedBinding: binding)
+    private func status(of store: VaultStore, binding: UUID?, background: Bool = true) async throws -> [String: Any] {
+        let params = try JSONSerialization.data(withJSONObject: ["background": background])
+        let data = try await store.perform(operation: "getStatus", params: params, expectedBinding: binding)
         return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
     }
 

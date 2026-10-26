@@ -62,7 +62,7 @@ const loaders = {
   "instrument-sans": () => Promise.all([import("@fontsource-variable/instrument-sans/wght.css"), import("@fontsource-variable/instrument-sans/wght-italic.css")]),
   "geist-mono": () => Promise.all([import("@fontsource-variable/geist-mono/wght.css"), import("@fontsource-variable/geist-mono/wght-italic.css")]),
   "jetbrains-mono": () => Promise.all([import("@fontsource-variable/jetbrains-mono/wght.css"), import("@fontsource-variable/jetbrains-mono/wght-italic.css")]),
-  "noto-serif": () => import("@fontsource-variable/noto-serif/wght-italic.css"),
+  "noto-serif": () => Promise.all([import("@fontsource-variable/noto-serif/wght.css"), import("@fontsource-variable/noto-serif/wght-italic.css")]),
   "roboto-slab": () => import("@fontsource-variable/roboto-slab/wght.css"),
   merriweather: () => Promise.all([import("@fontsource-variable/merriweather/wght.css"), import("@fontsource-variable/merriweather/wght-italic.css")]),
   lora: () => Promise.all([import("@fontsource-variable/lora/wght.css"), import("@fontsource-variable/lora/wght-italic.css")]),
@@ -104,14 +104,18 @@ function retryFailedFontFaces(families: string[]) {
 
 export function loadPreviewFonts(fonts: PreviewFont[], includeChineseCompanion = true): Promise<unknown[]> {
   return Promise.all([...new Set(fonts)].map(font => {
-    if (font === "system-mono" || font === "pingfang" || font === "songti") return Promise.resolve();
+    if (font === "system-mono" || font === "pingfang" || font === "songti" && !includeChineseCompanion) return Promise.resolve();
     const key = `${font}:${includeChineseCompanion}`;
     let request = pending.get(key);
     if (!request) {
       const option = getPreviewFont(font);
-      request = loaders[font]().then(async () => {
-        const stack = option.fontFamily.split(",").map(family => family.trim().replace(/["']/g, ""));
-        const families = [...new Set([stack[0], ...(includeChineseCompanion ? stack.filter(family => family.endsWith(" SC Variable")) : [])])];
+      const stack = option.fontFamily.split(",").map(family => family.trim().replace(/["']/g, ""));
+      const companions = includeChineseCompanion ? stack.filter(family => family.endsWith(" SC Variable")) : [];
+      const families = [...new Set([...(font === "songti" ? [] : [stack[0]]), ...companions])];
+      request = Promise.all([
+        font === "songti" ? Promise.resolve() : loaders[font](),
+        ...(companions.includes("Noto Serif SC Variable") ? [import("@fontsource-variable/noto-serif-sc/wght.css")] : []),
+      ]).then(async () => {
         retryFailedFontFaces(families);
         const faces = await Promise.all(families.map(async family => {
           // Common punctuation overlaps many CJK subsets; use Han characters only.

@@ -467,7 +467,7 @@ Base UI Positioner 提供浮层可用空间、锚点宽度与变换原点，不�
 
 ## 生产源码消费索引
 
-扫描 main.tsx 的 168 个可达模块、22 份可达 CSS 和全部 Apple Sources。以下是逐文件的直接引用、局部覆盖和由锁定 Tailwind 编译器解析的工具类变量依赖，包含产品变量、生成尺寸、上游定位变量及实际引用的 Tailwind 原始标尺；上游名称不计入前述产品静态定义数。主题源内部的别名引用也保留，以便追踪依赖链。样式类及模板的有界前后缀列出可能消费集合；原生 palette 的无界键由显式契约及测试核对。已内联为固定值的断点/度量继续由所有权契约登记。静态可达不等于每个运行分支都被执行。
+扫描 main.tsx 的 170 个可达模块、22 份可达 CSS 和全部 Apple Sources。以下是逐文件的直接引用、局部覆盖和由锁定 Tailwind 编译器解析的工具类变量依赖，包含产品变量、生成尺寸、上游定位变量及实际引用的 Tailwind 原始标尺；上游名称不计入前述产品静态定义数。主题源内部的别名引用也保留，以便追踪依赖链。样式类及模板的有界前后缀列出可能消费集合；原生 palette 的无界键由显式契约及测试核对。已内联为固定值的断点/度量继续由所有权契约登记。静态可达不等于每个运行分支都被执行。
 
 | 来源 | 直接引用 | 工具类解析依赖 | 样式类依赖（可能集） | 同名定义或局部覆盖 |
 | --- | --- | --- | --- | --- |
@@ -550,6 +550,7 @@ Base UI Positioner 提供浮层可用空间、锚点宽度与变换原点，不�
 | [apps/ui/ui-next/components/input.tsx](../apps/ui/ui-next/components/input.tsx) | — | `--border-width`, `--color-background-control`, `--color-error`, `--color-text-control-secondary`, `--color-text-primary`, `--duration-fast`, `--ease-standard`, `--focus-outline-color`, `--focus-outline-offset`, `--focus-outline-style`, `--focus-outline-width`, `--font-size-base`, `--font-size-sm`, `--font-weight-medium`, `--radius-control`, `--size-element-md`, `--spacing-1`, `--text-base--line-height`, `--text-sm--line-height` | — | — |
 | [apps/ui/ui-next/components/label.tsx](../apps/ui/ui-next/components/label.tsx) | — | `--font-size-sm`, `--font-weight-medium`, `--spacing-1`, `--text-sm--line-height` | — | — |
 | [apps/ui/ui-next/components/popover.tsx](../apps/ui/ui-next/components/popover.tsx) | `--transform-origin` | `--border-width`, `--color-background-popover`, `--color-border`, `--color-text-primary`, `--color-text-secondary`, `--duration-fast-min`, `--ease-standard`, `--font-size-base`, `--font-size-sm`, `--font-weight-medium`, `--radius-popover`, `--shadow-high`, `--spacing-1`, `--text-base--line-height`, `--text-sm--line-height`, `--transform-origin` | — | — |
+| [apps/ui/ui-next/components/recoverable-lazy.tsx](../apps/ui/ui-next/components/recoverable-lazy.tsx) | — | `--spacing-1` | — | — |
 | [apps/ui/ui-next/components/select.tsx](../apps/ui/ui-next/components/select.tsx) | `--anchor-width`, `--available-height`, `--spacing-1`, `--transform-origin` | `--anchor-width`, `--available-height`, `--border-width`, `--color-accent-muted`, `--color-background-control`, `--color-background-popover`, `--color-border`, `--color-divider`, `--color-error`, `--color-text-accent`, `--color-text-control-secondary`, `--color-text-primary`, `--color-text-secondary`, `--duration-fast`, `--duration-fast-min`, `--ease-standard`, `--focus-outline-color`, `--focus-outline-offset`, `--focus-outline-style`, `--focus-outline-width`, `--font-size-sm`, `--font-size-xs`, `--font-weight-medium`, `--radius-control`, `--radius-item`, `--radius-select-popover`, `--shadow-high`, `--size-element-md`, `--size-element-sm`, `--spacing-1`, `--text-sm--line-height`, `--text-xs--line-height`, `--transform-origin` | `--text-supporting-leading` | — |
 | [apps/ui/ui-next/components/separator.tsx](../apps/ui/ui-next/components/separator.tsx) | — | `--color-divider` | — | — |
 | [apps/ui/ui-next/components/sheet-swipe.css](../apps/ui/ui-next/components/sheet-swipe.css) | `--color-text-secondary`, `--duration-medium`, `--duration-medium-min`, `--ease-standard`, `--radius-full`, `--spacing-1` | — | — | `opacity` |

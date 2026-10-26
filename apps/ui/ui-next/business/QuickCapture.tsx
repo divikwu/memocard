@@ -1,5 +1,6 @@
+import { recoverableLazy } from "../components/recoverable-lazy";
 import { isIOSNative } from "../../src/ios-native";
-import { lazy, Suspense, useRef } from "react";
+import { Suspense, useRef } from "react";
 import { EditorContent, type Editor } from "@tiptap/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Add01Icon from "@hugeicons/core-free-icons/Add01Icon";
@@ -22,7 +23,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton } from "../components/inp
 import { Popover, PopoverContent, PopoverTrigger } from "../components/popover";
 import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
 import "./QuickCapture.css";
-const VaultImage = lazy(() => import("./NoteMarkdown").then(module => ({ default: module.VaultImage })));
+const VaultImage = recoverableLazy(() => import("./NoteMarkdown").then(module => ({ default: module.VaultImage })), "图片");
 
 export type { QuickCaptureHandle, QuickCaptureMemory, QuickCaptureProps } from "../../src/hooks/use-quick-capture";
 

@@ -5,7 +5,7 @@ import { errorMessage, request, type Attachment, type Draft } from '../bridge';
 import { createId } from '../uuid';
 import { inlineTags, normalizePropertyTag } from '../inline-tags';
 import { commitQuickCapture } from '../quick-capture-operation';
-import { hasCapture, readQuickCaptureDraft, writeQuickCaptureDraft, type Capture } from '../quick-capture-draft';
+import { createQuickCaptureDraftProtection, hasCapture, type Capture } from '../quick-capture-draft';
 import { insertCaptureTag, removeCaptureTags, restoreCaptureTags } from '../quick-capture-tags';
 import { useIsMobile } from './use-mobile';
 import { isIOSNative, useIOSSurface } from '../ios-native';
@@ -36,16 +36,17 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
     return ()=>{viewport.removeEventListener('resize',place);viewport.removeEventListener('scroll',place);};
   },[docked,expanded]);
   const blank = useCallback(():Capture => {const id=createId(); return {id,text:'',tags:[],images:[],relativePath:`${rootNotes ? '' : 'notes/'}${id}.md`};}, [rootNotes]);
+  const [protection] = useState(() => createQuickCaptureDraftProtection(vaultId));
   const [restored] = useState(() => {
     const cached=memory?.current;
-    if (cached?.vaultId === vaultId && cached.vaultBinding === vaultBinding && hasCapture(cached.capture)) return {capture:cached.capture,error:'',cached:true};
-    try { return {capture:isMobile ? readQuickCaptureDraft(vaultId) : null,error:'',cached:false}; }
-    catch { return {capture:null,error:'无法恢复本机草稿，请保持页面打开。',cached:false}; }
+    if (cached?.vaultId === vaultId && cached.vaultBinding === vaultBinding && hasCapture(cached.capture)) return {capture:cached.capture,error:'',cached:true,unprotected:false};
+    try { return {capture:isMobile ? protection.read() : null,error:'',cached:false,unprotected:protection.unprotected}; }
+    catch { return {capture:null,error:'无法恢复本机草稿，请保持页面打开。',cached:false,unprotected:false}; }
   });
   const [capture, setCapture] = useState(() => restoreCaptureTags(restored.capture ?? blank()));
   const captureCurrent = useRef(capture);
   captureCurrent.current = capture;
-  const [draftError, setDraftError] = useState(restored.error);
+  const [draftError, setDraftError] = useState(restored.error || (restored.unprotected ? '草稿保护暂不可用，请保持页面打开。' : ''));
   const [restoreFailed, setRestoreFailed] = useState(Boolean(restored.error));
   const [recordedLocally, setRecordedLocally] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -72,23 +73,29 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
   const mounted = useRef(true);
   const recorded = useRef(onRecorded);
   const wasMobile = useRef(isMobile && !restored.cached);
+  const pendingCompletion = useRef<Capture | null>(null);
   useEffect(()=>{if(memory && !restoreFailed)memory.current={vaultId,vaultBinding,capture};},[memory,vaultId,vaultBinding,capture,restoreFailed]);
-  const protect = useCallback((next:Capture) => {
-    try { writeQuickCaptureDraft(vaultId,next); setDraftError(''); return true; }
+  const protect = useCallback((next:Capture, completed?:Capture) => {
+    try {
+      if (completed) { protection.complete(completed); pendingCompletion.current = null; }
+      else protection.write(next);
+      setDraftError(''); return true;
+    }
     catch { setDraftError('草稿保护暂不可用，请保持页面打开。'); return false; }
-  }, [vaultId]);
+  }, [protection]);
   function changeCapture(next:Capture) {
+    pendingCompletion.current=null;
     next={...next,tags:inlineTags(next.text)};
     captureCurrent.current=next;
     setCapture(next); setRecordedLocally(false); setRestoreFailed(false);
     if (isMobile) protect(next);
   }
   function retryProtection() {
-    if (!restoreFailed) { protect(capture); return; }
+    if (!restoreFailed) { protect(capture, pendingCompletion.current ?? undefined); return; }
     try {
-      const draft=readQuickCaptureDraft(vaultId);
+      const draft=protection.read();
       if (draft) setCapture(restoreCaptureTags(draft));
-      setRestoreFailed(false); setDraftError('');
+      setRestoreFailed(false); setDraftError(protection.unprotected ? '草稿保护暂不可用，请保持页面打开。' : '');
     } catch { /* Keep the unreadable draft for another recovery attempt. */ }
   }
   useEffect(() => {
@@ -114,7 +121,8 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
       if (!mounted.current) return;
       const next=blank();
       setCapture(next); setTagQuery('');
-      const cleaned=(!isMobile && !restored.cached) || protect(next);
+      let cleaned=true;
+      if (isMobile || restored.cached) { pendingCompletion.current=current; cleaned=protect(next,current); }
       if (isMobile) setRecordedLocally(true);
       recorded.current(saved);
       if (docked) { if(cleaned)setExpanded(false); }
@@ -132,7 +140,8 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
       if (saved.revision) snapshot.recoveredFrom={draftKey:saved.draftKey ?? snapshot.id,revision:saved.revision};
       if (!mounted.current) return;
       const next=blank();
-      if (!protect(next)) return;
+      pendingCompletion.current=current;
+      if (!protect(next,current)) return;
       continuing.current=true;
       setCapture(next); setTagQuery(''); setExpanded(false);
       onContinue(snapshot);

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useId, useRef, type ReactNode } from "react";
+import { Suspense, useId, useRef, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles } from "../../src/note-filter-labels";
 import { errorMessage } from "../../src/error-messages";
@@ -26,14 +26,15 @@ import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon";
 import { usePreviewMode } from "../preview-mode";
 import { WebTypographyProvider } from "./WebTypographyProvider";
+import { recoverableLazy } from "../components/recoverable-lazy";
 import "./web-app.css";
 
-const WebSettings = lazy(() => import("./WebSettings").then(module => ({ default: module.WebSettings })));
-const Editor = lazy(() => import("../business/Editor").then(module => ({ default: module.Editor })));
-const QuickCapture = lazy(() => import("../business/QuickCapture").then(module => ({ default: module.QuickCapture })));
-const NoteSearchDialog = lazy(() => import("../business/NoteSearchDialog").then(module => ({ default: module.NoteSearchDialog })));
-const TrashPage = lazy(() => import("../business/TrashPage").then(module => ({ default: module.TrashPage })));
-const NoteDeleteDialog = lazy(() => import("../business/NoteDeleteDialog").then(module => ({ default: module.NoteDeleteDialog })));
+const WebSettings = recoverableLazy(() => import("./WebSettings").then(module => ({ default: module.WebSettings })), "设置");
+const Editor = recoverableLazy(() => import("../business/Editor").then(module => ({ default: module.Editor })), "笔记编辑器");
+const QuickCapture = recoverableLazy(() => import("../business/QuickCapture").then(module => ({ default: module.QuickCapture })), "快速记录");
+const NoteSearchDialog = recoverableLazy(() => import("../business/NoteSearchDialog").then(module => ({ default: module.NoteSearchDialog })), "搜索");
+const TrashPage = recoverableLazy(() => import("../business/TrashPage").then(module => ({ default: module.TrashPage })), "回收站");
+const NoteDeleteDialog = recoverableLazy(() => import("../business/NoteDeleteDialog").then(module => ({ default: module.NoteDeleteDialog })), "删除确认");
 
 export const preloadWebEditor = () => import("../business/Editor");
 export const renderWebApp = (state: AppViewState) => <WebTypographyProvider><WebAppView state={state} /></WebTypographyProvider>;
@@ -87,7 +88,7 @@ function WorkspaceContent({ state: s }: { state: AppViewState }) {
   </>;
 }
 
-const IOSAppChrome = lazy(() => import("../native/IOSAppChrome").then(module => ({ default: module.IOSAppChrome })));
+const IOSAppChrome = recoverableLazy(() => import("../native/IOSAppChrome").then(module => ({ default: module.IOSAppChrome })), "导航");
 
 export function WebAppView({ state: s }: { state: AppViewState }) {
   const mode = usePreviewMode();
