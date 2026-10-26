@@ -9,7 +9,7 @@ import type { EditorHandle, EditorProps } from "./editor-core";
 import type { NoteDeleteProps, NoteDeleteTarget } from "./hooks/use-note-delete";
 import type { QuickCaptureHandle, QuickCaptureMemory, QuickCaptureProps } from "./hooks/use-quick-capture";
 import type { TrashPageProps } from "./hooks/use-trash";
-import type { NoteSearchProps } from "./use-note-search";
+import type { NoteSearchProps, NoteSearchSession } from "./use-note-search";
 import type { AppSidebarProps } from "../ui-next/business/sidebar";
 import type { NoteCollectionProps } from "../ui-next/business/NoteCollection";
 import type { IOSAppChromeProps } from "../ui-next/native/IOSAppChrome";
@@ -82,6 +82,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     });
   }, []);
   const [searchOpen, setSearchOpen] = useState(false);
+  const searchSession = useRef<NoteSearchSession | null>(null);
   const searchReturnFocus = useRef<HTMLElement | null>(null);
   const searchPageScroll = useRef(0);
   const searchNoteReturn = useRef<string | null>(null);
@@ -771,7 +772,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     onOpen: id => void openNote(id), onSelectTag: name => navigate("notes", name), onLoadMore: () => void loadMore(), onError: setError, formatDate,
   };
   const searchProps: NoteSearchProps = {
-    open: searchOpen, preserveSession: isMobile, onOpenChange: changeSearchOpen, vaultName: status?.vaultName || "笔记库",
+    open: searchOpen, preserveSession: isMobile, sessionRef: searchSession, onOpenChange: changeSearchOpen, vaultName: status?.vaultName || "笔记库",
     available: searchAvailable, returnFocus: searchReturnFocus,
     onOpenNote: id => { searchNoteReturn.current = isMobile ? status?.vaultId ?? null : null; setSearchOpen(false); void openNote(id); },
   };
@@ -783,6 +784,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       const target = noteToDelete; setNoteToDelete(null);
       if (editingRef.current?.id !== target.id || loadedVaultId.current !== target.vaultId) return;
       setNotes(items => items.filter(item => item.id !== target.id));
+      searchSession.current?.removeNote(target.id);
       loadedPages.current = 1; setNotice("笔记已移入回收目录");
       if (refreshCount.current > 0 || loadingMore.current) pendingRefresh.current = true;
       finishEditing(undefined, true);

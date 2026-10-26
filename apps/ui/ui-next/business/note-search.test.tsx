@@ -2,7 +2,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { createRef } from "react";
 import type { Note } from "@memocard/contracts";
+import type { NoteSearchSession } from "../../src/use-note-search";
 import { NoteSearchDialog } from "./NoteSearchDialog";
 import { swipeSheet } from "../components/sheet-swipe.test-utils";
 
@@ -18,6 +20,37 @@ function setup() {
   const view = render(<NoteSearchDialog {...props} />);
   return { ...view, props, onOpenNote, onOpenChange };
 }
+
+it("retries a failed deletion refresh from fresh cursors while retaining the mobile search session", async () => {
+  vi.stubGlobal("innerWidth", 390);
+  window.matchMedia = vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+  let deleted = false, fail = true;
+  const third = { ...note, id: "third", title: "仍在下一页" };
+  bridge.request.mockImplementation((_operation, params) => {
+    if (deleted && !params.cursor && fail) { fail = false; return Promise.reject(new Error("刷新暂时失败")); }
+    if (params.cursor === "old-page") return Promise.resolve({ notes: [second], nextCursor: "old-tail", coverage });
+    if (params.cursor === "fresh-page") return Promise.resolve({ notes: [third], nextCursor: null, coverage });
+    return Promise.resolve({ notes: [note], nextCursor: deleted ? "fresh-page" : "old-page", coverage });
+  });
+  const sessionRef = createRef<NoteSearchSession>();
+  const props = { open: true, preserveSession: true, sessionRef, available: true, vaultName: "测试库", returnFocus: { current: null }, onOpenChange: vi.fn(), onOpenNote: vi.fn() };
+  const view = render(<NoteSearchDialog {...props} />);
+  fireEvent.change(screen.getByRole("combobox"), { target: { value: "保留搜索词" } });
+  await userEvent.setup().click(await screen.findByRole("button", { name: "加载更多结果" }));
+  await screen.findByRole("option", { name: second.title });
+  fireEvent.scroll(screen.getByRole("listbox").parentElement!, { target: { scrollTop: 275 } });
+  view.rerender(<NoteSearchDialog {...props} open={false} />);
+  deleted = true;
+  act(() => sessionRef.current!.removeNote(second.id));
+  view.rerender(<NoteSearchDialog {...props} />);
+  await screen.findByRole("alert");
+  await userEvent.setup().click(screen.getByRole("button", { name: "重试" }));
+  await screen.findByRole("option", { name: third.title });
+  expect(screen.queryByRole("option", { name: second.title })).toBeNull();
+  expect(screen.getByRole("combobox")).toHaveProperty("value", "保留搜索词");
+  expect(screen.getByRole("listbox").parentElement!.scrollTop).toBe(275);
+  expect(bridge.request.mock.calls.at(-1)?.[1]).toEqual({ query: "保留搜索词", tags: [], sort: "updatedAt", limit: 30, cursor: "fresh-page" });
+});
 beforeEach(() => {
   bridge.request.mockReset();
   bridge.request.mockResolvedValue({ notes: [note, second], nextCursor: null, coverage });

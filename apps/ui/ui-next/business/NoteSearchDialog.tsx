@@ -23,9 +23,9 @@ function Highlight({ text, query }: { text: string; query: string }) {
   return index < 0 ? text : <>{text.slice(0, index)}<mark className="note-search-next-mark rounded-inner">{text.slice(index, index + query.length)}</mark>{text.slice(index + query.length)}</>;
 }
 
-export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession = false }: NoteSearchDialogProps) {
+export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession = false, sessionRef }: NoteSearchDialogProps) {
   const isMobile = useIsMobile() || isIOSNative;
-  const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, keyboardFocus, setKeyboardFocus, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, setRetry, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, isMobile });
+  const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, keyboardFocus, setKeyboardFocus, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, retrySearch, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, sessionRef, isMobile });
   const SearchContent = isMobile ? SheetContent : DialogContent;
   useIOSSurface("search", () => ({
     kind:"search",title:"搜索笔记",presented:open,loading:loading || paging,error,
@@ -41,7 +41,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
     if(action === "query")setQuery(value ?? "");
     if(action.startsWith("note:") && !loading && available)onOpenNote(action.slice(5));
     if(action === "more")await loadMore();
-    if(action === "retry"){if(page?.nextCursor)await loadMore();else setRetry(value=>value+1);}
+    if(action === "retry")await retrySearch();
     if(action === "up" || action === "down")moveSelection(action === "up" ? -1 : 1);
   });
   if(isIOSNative)return null;
@@ -73,7 +73,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
                 </button>)}
               </div>)}
             </div>
-            {error && <div role="alert" className="space-y-2 px-3 py-4 text-sm"><p className="text-error">{error}</p><Button variant="outline" size="sm" className="note-search-next-control" onClick={() => page?.nextCursor ? void loadMore() : setRetry(value => value + 1)}>重试</Button></div>}
+            {error && <div role="alert" className="space-y-2 px-3 py-4 text-sm"><p className="text-error">{error}</p><Button variant="outline" size="sm" className="note-search-next-control" onClick={() => void retrySearch()}>重试</Button></div>}
             {page?.nextCursor && !error && <div className="p-3 text-center"><Button variant="ghost" size="sm" className="note-search-next-control" disabled={paging} onClick={() => void loadMore()}>{paging ? "正在加载…" : "加载更多结果"}</Button></div>}
             {page && !page.coverage.complete && <p className="px-3 py-3 text-xs text-secondary">部分文件尚未读入，搜索结果可能不完整。</p>}
           </div>

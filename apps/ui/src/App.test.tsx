@@ -1360,6 +1360,37 @@ it('confirms deletion of one exact draft, retains failures, and updates the draf
 });
 
 
+it('removes a deleted mobile search result while retaining the query and other results', async () => {
+  vi.stubGlobal('innerWidth', 390);
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({ matches: query.includes('767px'), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const implementation = bridge.request.getMockImplementation()!;
+  const searched = { ...note, title: '搜索后删除' };
+  const kept = { ...note, id: 'bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee', title: '仍保留的结果' };
+  let deleted = false;
+  bridge.request.mockImplementation((operation, params) => {
+    if (operation === 'getStatus') return { ...status, capabilities: [...status.capabilities, 'deleteNote'] };
+    if (operation === 'queryNotes') return { notes: deleted ? [kept] : [searched, kept], nextCursor: null, coverage: status.coverage };
+    if (operation === 'getNote') return params?.id === kept.id ? kept : searched;
+    if (operation === 'deleteNote') { deleted = true; return {}; }
+    return implementation(operation, params);
+  });
+  const user = userEvent.setup(); render(<App />);
+  await screen.findByRole('button', { name: '打开 搜索后删除' });
+  await user.click(screen.getByRole('button', { name: '搜索全部笔记' }));
+  await user.type(await screen.findByRole('combobox', { name: '搜索笔记' }), '散步');
+  await user.click(await screen.findByRole('option', { name: searched.title }));
+  await screen.findByRole('textbox', { name: '笔记内容' });
+  await user.click(screen.getByRole('button', { name: '页面操作' }));
+  await user.click(await screen.findByRole('menuitem', { name: '移入回收站' }));
+  await user.click(await screen.findByRole('button', { name: '移入回收站' }));
+  const search = await screen.findByRole('dialog', { name: '搜索笔记' });
+  expect(within(search).getByRole('combobox')).toHaveProperty('value', '散步');
+  await waitFor(() => expect(within(search).queryByRole('option', { name: searched.title })).toBeNull());
+  expect(within(search).getByRole('option', { name: kept.title })).toBeTruthy();
+  await user.keyboard('{Enter}');
+  await waitFor(() => expect(bridge.request.mock.calls.filter(([operation]) => operation === 'getNote').at(-1)?.[1]).toEqual({ id: kept.id }));
+});
+
 it.each(['cancel','retry'] as const)('handles note deletion %s after flushing edits without losing content',async flow=>{
   window.history.replaceState(null,'','#/home');
   const implementation=bridge.request.getMockImplementation()!;

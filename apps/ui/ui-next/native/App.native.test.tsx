@@ -85,6 +85,25 @@ it("keeps the native capture mounted and saves text into the controller's refres
   await waitFor(() => expect(document.querySelector(`[data-note-id="${saved.id}"]`)).not.toBeNull());
 });
 
+it("routes a native search retry through the shared search controller without clearing its query", async () => {
+  await mount();
+  const implementation = bridge.request.getMockImplementation()!;
+  let fail = true;
+  bridge.request.mockImplementation(async (operation, params = {}) => {
+    if (operation === "queryNotes" && params.query === "原生重试" && fail) { fail = false; throw new Error("搜索暂时失败"); }
+    return implementation(operation, params);
+  });
+  send("chrome", "search");
+  await waitFor(() => expect(surface("search")?.presented).toBe(true));
+  send("search", "query", "原生重试");
+  await waitFor(() => expect(surface("search")?.error).toBe("搜索暂时失败"));
+  send("search", "retry");
+  await waitFor(() => expect(surface("search")?.error).toBe(""));
+  await waitFor(() => expect(surface("search")?.loading).toBe(false));
+  expect(surface("search")?.sections?.[0].fields?.[0].value).toBe("原生重试");
+  expect(bridge.request.mock.calls.filter(([operation, params]) => operation === "queryNotes" && params.query === "原生重试")).toHaveLength(2);
+});
+
 
 it("follows system appearance in both the Web document and native chrome", async () => {
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ theme: "system", radius: "large" }));
