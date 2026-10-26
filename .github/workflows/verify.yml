@@ -42,6 +42,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Prefer Ubuntu archive for browser dependencies
+        run: |
+          sudo sed -i \
+            -e '/azure\.archive\.ubuntu\.com/s/priority:1/priority:2/' \
+            -e '/^https:\/\/archive\.ubuntu\.com/s/priority:2/priority:1/' \
+            /etc/apt/apt-mirrors.txt
+          cat /etc/apt/apt-mirrors.txt
       - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium firefox webkit
       - run: pnpm verify:design
       - run: pnpm verify:ui
@@ -61,6 +68,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
+      - name: Prefer Ubuntu archive for browser dependencies
+        run: |
+          sudo sed -i \
+            -e '/azure\.archive\.ubuntu\.com/s/priority:1/priority:2/' \
+            -e '/^https:\/\/archive\.ubuntu\.com/s/priority:2/priority:1/' \
+            /etc/apt/apt-mirrors.txt
+          cat /etc/apt/apt-mirrors.txt
       - name: Install default UI browser verification
         run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium webkit
       - run: pnpm verify:web
