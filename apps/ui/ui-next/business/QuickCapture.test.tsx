@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { swipeSheet } from '../../src/components/ui/sheet-swipe.test-utils';
+import { swipeSheet } from '../components/sheet-swipe.test-utils';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { noteEditor, replaceCaptureText } from '../../src/editor-test-utils';
 import type { Note } from '@memocard/contracts';

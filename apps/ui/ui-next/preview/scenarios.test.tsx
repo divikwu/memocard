@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { App } from "../../src/App";
 import { errorMessage } from "../../src/error-messages";
-import { resetStorybookBridge, setStorybookClientMode, setStorybookRequestHandler } from "../../.storybook/bridge";
+import { resetStorybookBridge, setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { createStateFixture } from "../../ui-state-fixtures/state-fixture";
 import { scenarios as sharedScenarios } from "../../ui-state-fixtures/catalog";
 import { WebAppearanceProvider } from "../web/WebAppearance";

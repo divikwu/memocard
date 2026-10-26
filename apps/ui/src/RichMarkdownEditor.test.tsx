@@ -2,14 +2,14 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest';
 import type { Editor } from '@tiptap/react';
-import { RichMarkdownEditor, type RichEditorProps } from './RichMarkdownEditor';
+import { RichMarkdownEditor, type RichEditorProps } from '@ui-next/business/RichMarkdownEditor';
 import userEvent from '@testing-library/user-event';
 import { canWrapCallout, unwrapCallout, wrapCallout } from './rich-callout';
 import { applyImageTransaction, arrangeImageRows, imageMoveTransaction, setImageWidths, splitImageRow } from './rich-image-layout';
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
 vi.mock('./bridge', () => ({ request: vi.fn() }));
 // Compile the shared picker before timing editor interactions on cold CI workers.
-beforeAll(async()=>{await import('./components/tag-emoji-picker');},15000);
+beforeAll(async()=>{await import('@ui-next/business/tag-navigation-editor');},15000);
 beforeEach(() => {
  vi.stubGlobal('DragEvent', MouseEvent);
  vi.stubGlobal('PointerEvent', class extends MouseEvent { pointerId=1; pointerType='mouse'; });
@@ -154,7 +154,7 @@ it('filters common emoji, applies one immediately and supports removing and addi
  fireEvent.click(screen.getByRole('button',{name:'警告、小心'}));
  expect(field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('⚠️');
  fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
- await screen.findByRole('textbox',{name:'搜索 Emoji'});fireEvent.click(screen.getByRole('button',{name:'清除'}));
+ await screen.findByRole('textbox',{name:'搜索 Emoji'});fireEvent.click(screen.getByRole('button',{name:'清除图标'}));
  expect(field.querySelector('aside')?.hasAttribute('data-callout-icon')).toBe(false);
  fireEvent.click(screen.getByRole('button',{name:'添加标注图标'}));
  fireEvent.change(await screen.findByRole('textbox',{name:'搜索 Emoji'}),{target:{value:'灯泡'}});fireEvent.click(screen.getByRole('button',{name:/灯泡/}));
@@ -264,7 +264,7 @@ it('previews Mermaid while preserving editable fences and ordinary code through 
  expect(field.querySelector('pre code.language-mermaid')?.textContent).toBe(code);
  const contentDOM=field.querySelector('pre code.language-mermaid');
  fireEvent.click(screen.getByRole('tab',{name:'仅图形'}));
- expect(contentDOM?.closest<HTMLElement>('.mermaid-source')?.hidden).toBe(true);
+ expect(contentDOM?.closest<HTMLElement>('.note-mermaid-source')?.hidden).toBe(true);
  fireEvent.click(screen.getByRole('tab',{name:'仅源码'}));
  expect(screen.queryByRole('img',{name:'Mermaid 图表'})).toBeNull();
  const user=userEvent.setup();
@@ -477,7 +477,7 @@ it('drags an image surface without opening the viewer and preserves a fresh sing
  const original='开头\n\n'+layoutImages+'\n\n![丙](../assets/c.png)';
  const {editor,field,change}=await setup(original);
  field.getBoundingClientRect=()=>new DOMRect(0,0,700,900);
- const source=screen.getByRole('button',{name:'查看大图 乙'}),target=screen.getByRole('button',{name:'查看大图 丙'}).closest('.rich-image')!;
+ const source=screen.getByRole<HTMLImageElement>('img',{name:'乙'}),target=screen.getByRole('button',{name:'查看大图 丙'}).closest('.rich-image')!;
  target.getBoundingClientRect=()=>new DOMRect(0,600,300,200);
  const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
  expect(source.draggable).toBe(true);
@@ -500,9 +500,9 @@ it('hides layout controls and refuses layout writes in a disabled editor',async(
  expect(screen.queryByRole('button',{name:'图片布局 甲'})).toBeNull();expect(screen.queryByRole('separator',{name:'调整第 1、2 列宽度'})).toBeNull();
  expect(splitImageRow(editor,imagePos(editor,'甲'))).toBe(false);expect(setImageWidths(editor,editor.state.doc.firstChild!.nodeSize,[50,50])).toBe(false);
  expect(field.querySelectorAll('figure img')).toHaveLength(2);expect(change).not.toHaveBeenCalled();
- expect(screen.getByRole('button',{name:'查看大图 甲'}).draggable).toBe(false);
- act(()=>editor.setEditable(true));expect(screen.getByRole('button',{name:'查看大图 甲'}).draggable).toBe(true);
- act(()=>editor.setEditable(false));expect(screen.getByRole('button',{name:'查看大图 甲'}).draggable).toBe(false);
+ expect(screen.getByRole('img',{name:'甲'}).draggable).toBe(false);
+ act(()=>editor.setEditable(true));expect(screen.getByRole('img',{name:'甲'}).draggable).toBe(true);
+ act(()=>editor.setEditable(false));expect(screen.getByRole('img',{name:'甲'}).draggable).toBe(false);
 });
 it('uses the left block handle for a hovered grouped image and can drag the whole row with Alt',async()=>{
  const original='开头\n\n'+layoutImages+'\n\n![丙](../assets/c.png)';

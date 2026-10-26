@@ -15,6 +15,12 @@ const statuses = ['active', 'alias', 'reserved', 'component-owned', 'platform-ow
 const axes = ['mode', 'palette', 'neutral', 'radius', 'font', 'typography', 'state', 'density'];
 const references = value => [...value.matchAll(/var\(\s*(--[\w-]+)/g)].map(match => match[1]);
 const properties = css => { const names = new Set(); postcss.parse(css).walkDecls(declaration => { if (declaration.prop.startsWith('--')) names.add(declaration.prop); }); return names; };
+const publicDeclaration = declaration => {
+  const owner = declaration.parent;
+  return owner.type === 'atrule' && owner.name === 'theme'
+    || owner.type === 'rule' && owner.selectors.some(selector => selector.replace(/\[[^\]]*\]/g, '').replace(/:(?:is|where|not)\(([^()]*)\)/g, '$1').split(',')
+      .some(part => /^(?::root|html|body|\.dark|\.light|\.ui-next-theme)(?=$|[.#:])/.test(part.trim()) && !/[\s>+~]/.test(part.trim())));
+};
 const context = declaration => { const parts = []; for (let node = declaration.parent; node?.type !== 'root'; node = node.parent) parts.unshift(node.selector ?? `@${node.name} ${node.params}`); return parts.join(' / '); };
 
 export async function checkSourcePath(path) {
@@ -24,6 +30,7 @@ export async function checkSourcePath(path) {
 }
 
 function validateEntry(entry) {
+  if (entry.overrides !== undefined && (!Array.isArray(entry.overrides) || new Set(entry.overrides).size !== entry.overrides.length || entry.overrides.some(path => typeof path !== 'string' || !path.trim() || path === entry.source))) throw new Error(`Invalid CSS override sources: ${entry.id}`);
   if (typeof entry.id !== 'string' || !entry.id || typeof entry.description !== 'string' || !entry.description
     || !Array.isArray(entry.consumers) || !entry.consumers.length || entry.consumers.some(path => typeof path !== 'string' || !path.trim()) || !Array.isArray(entry.axes)
     || !categories.includes(entry.category) || !layers.includes(entry.layer) || !types.includes(entry.type)
@@ -60,14 +67,15 @@ export function inspectCSSTokens(families, documents, externalNames = []) {
     postcss.parse(css, { from: source }).walkDecls(declaration => {
       if (!declaration.prop.startsWith('--')) return;
       const name = declaration.prop;
-      const owners = families.filter(family => family.source === source && new RegExp(family.pattern).test(name));
+      const owners = families.filter(family => (family.source === source || family.overrides?.includes(source)) && new RegExp(family.pattern).test(name));
+      if (!owners.length && !publicDeclaration(declaration)) return;
       if (owners.length !== 1) throw new Error(`${owners.length ? 'Ambiguous' : 'Unregistered'} CSS token: ${source} ${name}`);
       const family = owners[0], scope = context(declaration), key = `${source}:${scope}:${name}`;
       if (definitions.has(key)) throw new Error(`Duplicate CSS definition: ${key}`);
       definitions.add(key); matched.add(family.id);
       const record = records.get(name) ?? { name, family, declarations: [] };
       if (record.family.id !== family.id) throw new Error(`Multiple CSS owners: ${name}`);
-      record.declarations.push({ scope, value: declaration.value, line: declaration.source.start.line });
+      record.declarations.push({ source, scope, value: declaration.value, line: declaration.source.start.line });
       records.set(name, record);
     });
   }
@@ -79,7 +87,7 @@ export function inspectCSSTokens(families, documents, externalNames = []) {
   // Check default aliases and each authored scope. This does not simulate CSS specificity or combined preference axes.
   const scopes = new Set([...records.values()].flatMap(record => record.declarations.map(declaration => declaration.scope)));
   for (const scope of scopes) {
-    const graph = new Map([...records].map(([name, record]) => [name, references((record.declarations.find(declaration => declaration.scope === scope) ?? record.declarations[0]).value)]));
+    const graph = new Map([...records].map(([name, record]) => [name, references((record.declarations.find(declaration => declaration.scope === scope) ?? record.declarations[0]).value).filter(reference => reference !== name || !scope.startsWith('@theme reference inline'))]));
     const active = new Set(), done = new Set();
     function visit(name) {
       if (active.has(name)) throw new Error(`Cyclic CSS alias in ${scope}: ${name}`);
@@ -96,11 +104,7 @@ export function checkPublicPlacement(css, path) {
   ast.walkAtRules('property', rule => { throw new Error(`Public CSS token outside registered sources: ${path} ${rule.params}`); });
   ast.walkDecls(declaration => {
     if (!declaration.prop.startsWith('--')) return;
-    const owner = declaration.parent;
-    const global = owner.type === 'atrule' && owner.name === 'theme'
-      || owner.type === 'rule' && owner.selectors.some(selector => selector.replace(/\[[^\]]*\]/g, '').replace(/:(?:is|where|not)\(([^()]*)\)/g, '$1').split(',')
-        .some(part => /^(?::root|html|body|\.dark|\.light)(?=$|[.#:])/.test(part.trim()) && !/[\s>+~]/.test(part.trim())));
-    if (global) throw new Error(`Public CSS token outside registered sources: ${path} ${declaration.prop}`);
+    if (publicDeclaration(declaration)) throw new Error(`Public CSS token outside registered sources: ${path} ${declaration.prop}`);
   });
 }
 
@@ -138,7 +142,7 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
     ids.add(entry.id); covered.add(entry.category);
     if (entry.source && (typeof entry.source !== 'string' || typeof entry.pattern !== 'string' || !entry.pattern.startsWith('^--') || !entry.pattern.endsWith('$'))) throw new Error(`Unbounded token pattern: ${entry.id}`);
     if (!entry.source && (!Array.isArray(entry.sources) || !entry.sources.length || entry.sources.some(path => typeof path !== 'string' || !path.trim()))) throw new Error(`Missing owning sources: ${entry.id}`);
-    for (const path of [...(entry.source ? [entry.source] : entry.sources), ...entry.consumers]) await checkSourcePath(resolve(root, path));
+    for (const path of [...(entry.source ? [entry.source, ...(entry.overrides ?? [])] : entry.sources), ...entry.consumers]) await checkSourcePath(resolve(root, path));
   }
   const runtime = [], runtimeNames = new Set();
   for (const entry of registry.runtimeSources) {
@@ -151,7 +155,7 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
     }
   }
   const documents = new Map();
-  for (const source of new Set(registry.families.map(family => family.source))) documents.set(source, await readFile(resolve(root, source), 'utf8'));
+  for (const source of new Set(registry.families.flatMap(family => [family.source, ...(family.overrides ?? [])]))) documents.set(source, await readFile(resolve(root, source), 'utf8'));
   const externalNames = new Set(runtimeNames);
   for (const source of [...registry.upstreamSources, ...registry.generatedSources]) for (const name of properties(await readFile(resolve(root, source), 'utf8'))) externalNames.add(name);
   for (const entry of registry.externalSources ?? []) {
@@ -204,7 +208,9 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
   for (const source of documents.keys()) if (!reached.has(resolve(root, source)) && !optionalPaths.has(resolve(root, source))) throw new Error(`Unreachable token CSS: ${source}`);
   for (const source of reached) if (!registered.has(source) && !ownedSources.has(source)) throw new Error(`Unowned production stylesheet: ${relative(root, source)}`);
   for (const entry of registry.runtimeSources) if (!graph.has(entry.source) && !(entry.format === 'swift-javascript' && /^apps\/apple\/Sources\/[^/]+\.swift$/.test(entry.source))) throw new Error(`Unreachable runtime token writer: ${entry.source}`);
-  for (const path of await cssFiles(resolve(root, 'apps/ui/src'))) if (!registered.has(path)) checkPublicPlacement(await readFile(path, 'utf8'), relative(root, path));
+  for (const directory of ['apps/ui/src', 'apps/ui/ui-next']) for (const path of await cssFiles(resolve(root, directory))) {
+    if (reached.has(path) && !registered.has(path)) checkPublicPlacement(await readFile(path, 'utf8'), relative(root, path));
+  }
   const portable = [];
   for (const entry of registry.portableSources) {
     await checkTokenConsumption({ tokenPath: resolve(root, entry.source), mappingPath: resolve(root, entry.consumption) });
@@ -259,8 +265,8 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
     ...registry.families.map(family => `| ${family.id} | ${family.axes.join(', ') || '固定'} | ${family.description} | ${family.consumers.map(link).join('<br>')} |`), '',
     '## 生产源码消费索引', '',
     `扫描 main.tsx 的 ${consumption.modules} 个可达模块、${consumption.stylesheets} 份可达 CSS 和全部 Apple Sources。以下是逐文件的直接引用、局部覆盖和由锁定 Tailwind 编译器解析的工具类变量依赖，包含产品变量、生成尺寸、上游定位变量及实际引用的 Tailwind 原始标尺；上游名称不计入前述产品静态定义数。主题源内部的别名引用也保留，以便追踪依赖链。样式类及模板的有界前后缀列出可能消费集合；原生 palette 的无界键由显式契约及测试核对。已内联为固定值的断点/度量继续由所有权契约登记。静态可达不等于每个运行分支都被执行。`, '',
-    '| 来源 | 直接引用 | 工具类解析依赖 | 样式类依赖（可能集） | 同名定义或局部覆盖 | TS 可移植消费 |', '| --- | --- | --- | --- | --- | --- |',
-    ...consumption.rows.map(row => `| ${link(row.source)} | ${row.direct.map(name => `\`${name}\``).join(', ') || '—'} | ${row.utilities.map(name => `\`${name}\``).join(', ') || '—'} | ${row.styles.map(name => `\`${name}\``).join(', ') || '—'} | ${row.overrides.map(name => `\`${name}\``).join(', ') || '—'} | ${row.portable.map(name => `\`${name}\``).join(', ') || '—'} |`), '',
+    '| 来源 | 直接引用 | 工具类解析依赖 | 样式类依赖（可能集） | 同名定义或局部覆盖 |', '| --- | --- | --- | --- | --- |',
+    ...consumption.rows.map(row => `| ${link(row.source)} | ${row.direct.map(name => `\`${name}\``).join(', ') || '—'} | ${row.utilities.map(name => `\`${name}\``).join(', ') || '—'} | ${row.styles.map(name => `\`${name}\``).join(', ') || '—'} | ${row.overrides.map(name => `\`${name}\``).join(', ') || '—'} |`), '',
     '| Apple 来源（含 DEBUG 预览） | 生成尺寸引用与 CSS 输出 |', '| --- | --- |',
     ...consumption.native.map(row => `| ${link(row.source)} | ${[...row.tokens, ...row.outputs].map(name => `\`${name}\``).join(', ')} |`), '',
     '## 组件 平台 与上游所有权', '',

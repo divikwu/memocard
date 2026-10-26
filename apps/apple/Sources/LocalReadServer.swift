@@ -79,12 +79,13 @@ final class LocalReadServer: @unchecked Sendable {
             guard let self, error == nil else { connection.cancel(); return }
             var accumulated = buffer
             if let bytes { accumulated.append(bytes) }
-            drain(connection, buffer: accumulated, count: count, complete: complete)
+            drain(connection, buffer: accumulated, count: count, complete: complete, searchedBytes: buffer.count)
         }
     }
-    private func drain(_ connection: NWConnection, buffer: Data, count: Int, complete: Bool) {
+    private func drain(_ connection: NWConnection, buffer: Data, count: Int, complete: Bool, searchedBytes: Int = 0) {
         // EOF ends input, not already buffered requests. Limit each JSON frame, excluding its newline.
-        if let newline = buffer.firstIndex(of: 10) {
+        // receive only resumes after the existing prefix has no newline; search newly received bytes once.
+        if let newline = buffer.dropFirst(searchedBytes).firstIndex(of: 10) {
             guard count < 32, buffer.distance(from: buffer.startIndex, to: newline) <= maxRequestBytes else { connection.cancel(); return }
             let line = Data(buffer[..<newline]), tail = Data(buffer[buffer.index(after: newline)...])
             Task { [self] in

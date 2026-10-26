@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { App } from "../../src/App";
-import { setStorybookClientMode, setStorybookRequestHandler } from "../../.storybook/bridge";
+import { expect, within } from "storybook/test";
+import { setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { StorybookAppearanceBridge } from "../web/StorybookAppearanceBridge";
-import { preloadWebEditor, renderWebApp } from "../web/WebAppView";
 import { createWorkspaceFixture } from "../web/workspace-fixture";
 
 function WorkspaceExample({ scenario = "loading", initialRoute = "#/home" }: { scenario?: string; initialRoute?: string }) {
@@ -31,12 +31,16 @@ function WorkspaceExample({ scenario = "loading", initialRoute = "#/home" }: { s
     });
     return () => { active = false; detach?.(); restoreMode(); Object.defineProperty(window, "localStorage", originalStorage); history.replaceState(null, "", originalUrl); };
   }, [scenario, initialRoute, exampleKey]);
-  return <StorybookAppearanceBridge>{preparedScenario === exampleKey ? <App key={exampleKey} renderView={renderWebApp} preloadEditor={preloadWebEditor} /> : <p role="status">正在准备示例笔记库…</p>}</StorybookAppearanceBridge>;
+  return <StorybookAppearanceBridge>{preparedScenario === exampleKey ? <App key={exampleKey} /> : <p role="status">正在准备示例笔记库…</p>}</StorybookAppearanceBridge>;
 }
 const meta = { title: "pages/Web & H5", id: "ui-next-web", component: WorkspaceExample, parameters: { layout: "fullscreen", docs: { description: { component: "使用真实页面控制器与新版业务组件。示例笔记只存于内存，关闭或切换示例即重置，不连接你的笔记库。" } } } } satisfies Meta<typeof WorkspaceExample>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-export const Workspace: Story = {};
+export const Workspace: Story = { play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement);
+  await expect(await canvas.findByRole("heading", { name: "主页", level: 1 })).toBeVisible();
+  await expect(await canvas.findByRole("textbox", { name: "快速输入内容" })).toBeVisible();
+} };
 export const NoVault: Story = { args: { scenario: "folder-cancel" } };
 export const SaveFailure: Story = { args: { scenario: "save-error" } };
 export const DraftRecovery: Story = { args: { scenario: "draft-many" } };
@@ -46,7 +50,7 @@ export const LocalServiceDisconnected: Story = { args: { scenario: "disconnected
 export const UnsupportedBrowser: Story = { args: { scenario: "unsupported" } };
 export const DraftVersions: Story = { args: { scenario: "draft-versions" } };
 
-// Paired review routes use the identical in-memory fixture in both Storybooks.
+// Review routes preserve the existing in-memory fixture and state coverage.
 export const EditorReview: Story = { args: { scenario: "review-editor", initialRoute: "#/notes/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee" } };
 export const SearchReview: Story = { args: { scenario: "review-search", initialRoute: "#/notes" } };
 export const SearchLoading: Story = { args: { scenario: "review-search-loading", initialRoute: "#/notes" } };

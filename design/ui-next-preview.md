@@ -1,37 +1,41 @@
-# 新版 UI 状态 Preview
+# 整页状态与吉祥物 Preview
 
-唯一状态 Preview 入口为 <http://127.0.0.1:5182/>，`dev:states` 与 `dev:states:ui-next` 均启动新版：
+当前状态 Preview 入口为 <http://127.0.0.1:5182/>；唯一产品入口仍是 [src/main.tsx](../apps/ui/src/main.tsx)，产品、Storybook 与 Preview 共用 Luma 主题及生产业务视图。名称中的 `next` 不代表另一套待上线 UI。
 
 ```sh
-pnpm --filter @memocard/ui dev:states:ui-next
+pnpm --filter @memocard/ui dev:states
 ```
 
-首页包含异常状态 45 项、空状态 3 项和吉祥物 13 项。外壳、场景内页面和吉祥物页面使用 UI-next token、Base UI 组件及 Hugeicons。场景复用真实 `App` 控制器，通过 `renderWebApp` 加载新版业务视图和新版编辑器；不维护一份仿制的业务页面。
+`dev:states:ui-next` 是同一命令的兼容名称。首页包含异常、空状态与吉祥物目录；实际数量和场景 ID 以 [catalog.ts](../apps/ui/ui-state-fixtures/catalog.ts) 与[角色目录](../apps/ui/mascot-fixtures/catalog.ts)为准。
 
-场景可在下拉框按组选择、前后切换和重置，支持浅色／深色、桌面／375px 内容视口、正常／2 秒延迟读取。URL 保留场景、主题、尺寸及延迟，支持浏览器前后导航。外层空间小于 375px 时，iframe 收缩到可用宽度。吉祥物页保留全部角色、原素材、两项渐隐变体、鼠标跟随以及点击／键盘表情互动。
+## 真实视图与隔离
 
-## 场景和隔离
+[ScenarioView](../apps/ui/ui-next/preview/ScenarioView.tsx) 驱动共享 App 控制器，使用当前页面、编辑器、属性、搜索和确认组件。场景与操作说明位于 [scenarios.ts](../apps/ui/ui-next/preview/scenarios.ts)，基础故障位于 [mock.ts](../apps/ui/ui-state-fixtures/mock.ts)，页面状态补充位于 [state-fixture.ts](../apps/ui/ui-state-fixtures/state-fixture.ts)。
 
-- `apps/ui/ui-state-fixtures/catalog.ts` 维护共享 48 个场景 ID；新版 `preview/scenarios.ts` 调整新版实际入口、日期格式及操作说明。图片慢速加载直接打开详情，确保显示实际图片组件。
-- `ui-state-fixtures/mock.ts` 维护基础故障；`state-fixture.ts` 补充新版页面实际消费的固定与标签偏好及筛选。空笔记库允许新建后回到列表；清除搜索或图片筛选恢复内容；属性保存失败可经重试恢复。每次创建场景都获得独立内存。
-- `preview/ScenarioView.tsx` 用真实控制器打开草稿、触发授权取消、搜索／筛选空态和刷新超时。属性／确认场景自动展开真实属性面板；后续操作使用真实组件。
-- Vite 在模块加载前替换 `src/bridge`、`src/client-mode`、`src/browser-runtime`；未知操作明确拒绝，不回退到真实文件、服务或原生调用。`/api/` 在开发服务返回 403，页面 CSP 限定本地资源；旧 `src` CSS 通过既有 `uiNextStyleBoundary` 隔离。
-- iframe 内的 localStorage、sessionStorage、草稿和设置均为内存数据，重置场景即丢弃。外观存储失败通过拒绝存储写入注入，字体失败通过拒绝实际 `document.fonts.load` 注入。字体场景故意产生带“模拟字体加载失败”的控制台错误；不能把该预期错误当作启动失败。
+场景可按组选择、前后切换和重置，支持浅/深色、桌面/375px 内容视口和读取延迟。URL 保留选择并支持浏览器前后导航；容器更窄时 iframe 收缩。吉祥物页使用实际 sprite、指针跟随、点击和键盘反应。
+
+[Vite Preview 配置](../apps/ui/vite.preview-next.config.ts) 在加载前替换共享 bridge、client-mode 和 browser-runtime；未知操作明确失败，`/api/` 返回 403，不能回落用户文件、原生调用或本机服务。存储、草稿和设置都在该场景内隔离，重置即丢弃；生产不需要旧样式隔离插件。
+
+字体/外观故障通过显式 fixture 注入；预期的“模拟字体加载失败”错误须与意外 console error 区分。Preview 不进入生产依赖图，也不改变生产外观偏好。
 
 ## 检查命令
 
 ```sh
 pnpm --filter @memocard/ui typecheck:states:ui-next
 pnpm --filter @memocard/ui test:states:ui-next
-pnpm --filter @memocard/ui exec vitest run --config vite.storybook-next.config.ts web/workspace-fixture.test.ts --maxWorkers=3
-pnpm --filter @memocard/ui exec vitest run ui-state-fixtures/ --exclude 'ui-next/**' --maxWorkers=3
-pnpm --filter @memocard/ui exec eslint ui-next/preview ui-state-fixtures mascot-fixtures/catalog.ts vite.preview-next.config.ts
 pnpm --filter @memocard/ui build:states:ui-next
+pnpm verify:ui-next
 ```
 
-`preview-next-static` 为独立三入口构建产物，已忽略；不会写入 `dist`、`dist-web-next` 或原生 Web 资源。专项类型检查覆盖新版 Preview 及其真实依赖；清理后在独立 main 基础上同时通过整个 UI-next 与生产 Web 类型检查。工作区其他编辑器改动未纳入本次提交。
+静态输出为 `apps/ui/preview-next-static`，包含首页、场景 iframe 与吉祥物三入口，与产品 `apps/ui/dist`、Storybook 输出和 Apple Web 资源分离。共享场景控制器回归现位于 [app-controller-states.test.tsx](../apps/ui/ui-state-fixtures/app-controller-states.test.tsx)。
 
-## 2026-10-25 本机验证
+## 验收边界
+
+入口遍历和无溢出检查只证明所测视口可加载，不证明每个场景的全部交互已人工验收。隔离内存保存不能代替真实 vault、系统 picker、iCloud、IME、键盘、手势或安全区验收；原生 Preview 与 surface probe 是另一个验收面。
+
+当前产品迁移与完整验证记录见[旧 UI 清理记录](ui-retirement-2026-10-25.md)。下列结果保留为当时 Preview 迁移证据，不代表当前完整回归计数。
+
+## 历史验收：2026-10-25 Preview 迁移批次
 
 - 新版真实页面、隔离策略与退役约束共 42 项测试通过；共享 fixture 与生产默认视图回归共 68 项通过。补充的类型确认取消、有损转换拒绝、删除属性确认均使用真实新版弹层验证。新版专项类型检查、修改范围 ESLint、diff 空白检查和三入口静态构建通过。
 - 在实际应用内浏览器，45 个异常场景分别完成桌面浅色和 375px 深色的入口加载检查：真实新视图均可见，页面无横向溢出，未渲染 Lucide 图标。该遍历是入口与布局冒烟检查，不等于每个场景的所有操作都逐项人工验收。
@@ -42,10 +46,6 @@ pnpm --filter @memocard/ui build:states:ui-next
 
 本机辅助证据位于 ignored `build/verification/ui-next-preview/`（首页截图与浏览器遍历记录）；这些本机证据不代替远程 CI 或其他设备复验。
 
-## 旧 Preview 清理
+## 历史素材与入口
 
-旧 `apps/ui/preview` 目录、`vite.preview.config.ts`、5178 开发入口和过时原型页面已删除；`dev:states` 转向新版。共享场景及 mock 回归迁入 `ui-state-fixtures`；仍需验证生产默认视图的回归保留为 `legacy-app-states.test.tsx`，不再提供旧 Preview 页面。组件维护表中的验收路径和 CI 新版构建检查同步更新。
-
-13 个角色实际消费的 22 张 sprite 与许可证留在 `mascot-fixtures`；19 张历史候选转入设计归档。215 份角色创作源文件转入 `design/mascots/characters`，生成脚本和说明路径同步调整；两个旧原型仅保留设计说明。归档入口见[角色创作和原型归档](mascots/README.md)。运行时素材及创作源图片均与迁移前逐字节核对。
-
-此次只删除旧 Preview，生产默认视图和原生 App 仍使用共享 `src/App.tsx`。删除整套旧生产 UI 前仍需处理默认渲染器和组件类型依赖；不能据此删除共享业务核心。此 Preview 不替代真实笔记库、iCloud 双设备同步、iOS 键盘／手势／安全区或原生 App 验收。
+旧状态预览和原型已退役，现有组件与共享状态 fixture 均使用本页入口。角色创作源和未采用候选保存在[素材归档](mascots/README.md)，运行时素材目录只保留实际消费的 sprite 和许可。历史截图、端口和旧文件名不再是当前维护接口。

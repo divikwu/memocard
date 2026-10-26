@@ -1,6 +1,34 @@
 import type { ReactNode } from "react";
-import type { NoteQuickFilter } from "@memocard/contracts";
-import type { AppSidebarProps } from "../../src/components/app-sidebar";
+import type { NoteFilterCounts, NoteQuickFilter } from "@memocard/contracts";
+import type { RegisteredVault } from "../../src/bridge";
+type SidebarView = "home" | "notes" | "settings" | "trash";
+export interface AppSidebarProps {
+  view: SidebarView;
+  tag: string | null;
+  quickFilter?: NoteQuickFilter | null;
+  filterCounts?: NoteFilterCounts;
+  tags: { name: string; count: number }[];
+  loadingTags?: boolean;
+  vaultName: string;
+  vaultId?: string | null;
+  registeredVaults?: RegisteredVault[];
+  onRenameTag?: (from: string, to: string) => Promise<void>;
+  connected?: boolean;
+  canTrash?: boolean;
+  vaultStatusText: string;
+  hasVaultIssue: boolean;
+  canCreate: boolean;
+  canChooseVault: boolean;
+  canCreateVault: boolean;
+  needsPermission: boolean;
+  working: boolean;
+  onNavigate: (view: SidebarView, tag?: string | null, quickFilter?: NoteQuickFilter | null) => void;
+  onNewNote: () => void;
+  onSearch: () => void;
+  onSelectVault: (create: boolean) => void;
+  onActivateVault: (vaultId: string) => void;
+  onReauthorize: () => void;
+}
 import { Button } from "../components/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Separator } from "../components/separator";
@@ -12,7 +40,6 @@ import { SidebarTreeItem } from "./sidebar-tree-item";
 import { TagNavigation } from "./tag-navigation";
 import "./sidebar.css";
 
-export type { AppSidebarProps };
 
 const filters: { id: NoteQuickFilter; label: string; icon: "hash" | "image" | "link" }[] = [
   { id: "untagged", label: "无标签", icon: "hash" },
@@ -37,8 +64,8 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
       {!isMobile && registeredVaults.length > 1 && index < 9 && <DropdownMenuShortcut aria-hidden="true">⌥{index + 1}</DropdownMenuShortcut>}
     </VaultMenuItem>)}
     {isMobile ? <Separator className="my-2" /> : <DropdownMenuSeparator />}
-    {canChooseVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={action(() => onSelectVault(false))}><span className="next-sidebar-vault-icon"><SidebarIcon name="folder" /></span><span>打开已有笔记库</span></VaultMenuItem>}
-    {canCreateVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={action(() => onSelectVault(true))}><span className="next-sidebar-vault-icon"><SidebarIcon name="folderAdd" /></span><span>创建新笔记库</span></VaultMenuItem>}
+    {canChooseVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(false)}><span className="next-sidebar-vault-icon"><SidebarIcon name="folder" /></span><span>打开已有笔记库</span></VaultMenuItem>}
+    {canCreateVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(true)}><span className="next-sidebar-vault-icon"><SidebarIcon name="folderAdd" /></span><span>创建新笔记库</span></VaultMenuItem>}
     {needsPermission && <VaultMenuItem mobile={isMobile} disabled={working} onClick={action(onReauthorize)}><span className="next-sidebar-vault-icon"><SidebarIcon name="shield" /></span><span>重新授权文件夹</span></VaultMenuItem>}
     <VaultMenuItem mobile={isMobile} onClick={() => navigate("settings")}><span className="next-sidebar-vault-icon"><SidebarIcon name="settings" /></span><span>笔记库设置</span></VaultMenuItem>
     <VaultMenuItem mobile={isMobile} disabled={!connected || !canTrash} aria-current={view === "trash" ? "page" : undefined} onClick={() => navigate("trash")}><span className="next-sidebar-vault-icon"><SidebarIcon name="trash" /></span><span>回收站</span></VaultMenuItem>

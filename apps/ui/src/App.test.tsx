@@ -17,7 +17,6 @@ vi.mock("./bridge", () => ({
   get isConnectedClient() { return bridge.native || bridge.web || bridge.browser; },
   errorMessage: (cause: unknown) => cause instanceof Error ? cause.message : "操作未完成",
 }));
-vi.mock("@/features/theme/ThemeSettings", () => ({ ThemeSettings: () => <section aria-label="外观设置" /> }));
 
 const note: Note = {
   id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", body: "周末散步时想到的记录", tags: ["生活"],
@@ -31,9 +30,23 @@ const status: VaultStatus = {
 };
 let pendingDrafts: Draft[] = [];
 
+async function openRetainedDrafts() {
+  fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
+  fireEvent.click(await screen.findByRole("menuitem", { name: /^保留草稿/ }));
+}
+
+async function createNote() {
+  const entry = screen.queryByRole("button", { name: "新建" });
+  if (entry) fireEvent.click(entry);
+  else {
+    fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "新建笔记" }));
+  }
+}
+
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("./components/note-collection"), import("./components/app-sidebar"), import("./components/quick-capture"), import("./components/home-mascot"), import("./Editor")]);
+  await Promise.all([import("@ui-next/business/NoteCollection"), import("@ui-next/business/sidebar"), import("@ui-next/business/QuickCapture"), import("@ui-next/business/HomeMascot"), import("@ui-next/business/Editor")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -154,7 +167,7 @@ describe("note workspace", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByRole("button", {name:/^打开 /});
-    await user.click(screen.getByRole("button", {name:"新建笔记"}));
+    await createNote();
     const pin = await screen.findByRole("button", {name:"固定到主页"});
     expect(pin.hasAttribute("disabled")).toBe(true);
     await user.click(pin);
@@ -255,7 +268,7 @@ describe("note workspace", () => {
     await user.keyboard(' ');
     await waitFor(() => expect(screen.queryByText(`${note.id}.md`)).toBeNull());
     expect(bridge.request.mock.calls.some(([op]) => op === 'saveNote' || op === 'saveDraft')).toBe(false);
-    await user.click(screen.getByRole('button', {name:'新建笔记'}));
+    await createNote();
     await screen.findByRole('region', {name:'新建笔记'});
     await user.click(screen.getByRole('button', {name:'属性'}));
     const unsaved = screen.getByLabelText('笔记属性');
@@ -264,32 +277,20 @@ describe("note workspace", () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(bridge.request.mock.calls.some(([op]) => op === 'saveNote' || op === 'saveDraft')).toBe(false);
   });
-  it("renders notes as an equal-height card grid", async () => {
+  it("renders note cards with open, tag and date affordances", async () => {
     render(<App />);
     const pageTitle = await screen.findByRole("heading", { name: "所有笔记", level: 1 });
-    expect(pageTitle.className).toContain("type-title");
     expect(pageTitle.closest(".sr-only")).toBeNull();
-    const contentScroll = pageTitle.parentElement?.parentElement?.parentElement;
-    expect(contentScroll?.className).toContain("px-4");
-    expect(contentScroll?.className).toContain("page-list-scroll");
-    expect(contentScroll?.className).not.toContain("xl:px-16");
+    expect(pageTitle.closest(".web-page-content")).not.toBeNull();
     const list = await screen.findByRole("list", { name: "笔记列表" });
-    expect(list.className).toContain("grid");
+    expect(list.getAttribute("data-layout")).toBe("cards");
+    expect(list.className).toContain("next-note-cards");
     const card = list.querySelector('[data-slot="card"]');
-    expect(card?.className).toContain("h-64");
-    expect(card?.className).toContain("border-border");
-    expect(card?.className).not.toContain("border-border/60");
-    expect(card?.className).not.toContain("border-0");
-    expect(card?.className).toContain("bg-card");
-    expect(card?.className).not.toContain("bg-[#fbfbfb]");
-    expect(card?.className).not.toContain("bg-muted/50");
-    expect(card?.className).toContain("shadow-md");
-    expect(card?.className).not.toContain("shadow-none");
-    expect(screen.getByText("新内容").className).toContain("text-base");
-    expect(card?.querySelector("time")?.className).toContain("text-xs");
-    expect(screen.getByRole("button", { name: "筛选标签 生活" }).className).toContain("text-xs");
+    expect(card?.className).toContain("next-note-card");
+    expect(within(card as HTMLElement).getByRole("button", { name: "打开 新内容" })).toBeTruthy();
+    expect(within(card as HTMLElement).getByRole("button", { name: "筛选标签 生活" })).toBeTruthy();
+    expect(card?.querySelector("time")?.getAttribute("dateTime")).toBe(note.updatedAt);
     expect(screen.queryByText("编辑")).toBeNull();
-    expect(screen.getByRole("button", { name: /^打开 / }).className).toContain("flex-1");
   });
 
   it("waits for the native vault before showing notes and searches with the typed query", async () => {
@@ -338,7 +339,7 @@ describe("note workspace", () => {
     render(<App />);
     await screen.findByText(note.body);
     fireEvent.click(screen.getByRole("button", { name: /^打开 / }));
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("不能被旧响应覆盖的新想法");
 
@@ -360,7 +361,8 @@ describe("note workspace", () => {
     await screen.findByText(note.body);
     fireEvent.click(screen.getByRole("button", { name: /^打开 / }));
     fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
-    fireEvent.click(await screen.findByRole("button", { name: /恢复内容/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /查看草稿/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /^继续编辑：/ }));
 
     await act(async () => { rejectNote(new Error("迟到的读取错误")); });
 
@@ -377,7 +379,7 @@ describe("note workspace", () => {
     render(<App />);
     await screen.findByText(note.body);
     act(() => { window.dispatchEvent(new CustomEvent("memocard:open-note", { detail: { id: note.id } })); });
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("先完成当前想法");
     await act(async () => { resolveNote(note); });
@@ -395,7 +397,7 @@ describe("note workspace", () => {
 
   it("flushes current input before opening a received deep link", async () => {
     render(<App />); await screen.findByText(note.body);
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" }); replaceEditorText("正在输入");
     act(() => { window.dispatchEvent(new CustomEvent("memocard:open-note", { detail: { id: note.id } })); });
     await screen.findByRole("textbox", { name: "笔记内容" });
@@ -440,6 +442,7 @@ describe("note workspace", () => {
   });
 
   it("uses the mobile Sheet for navigation and dismisses it after navigation or Escape", async () => {
+    vi.stubGlobal("innerWidth", 390);
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query.includes("767px"), media: query, onchange: null,
       addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
@@ -448,17 +451,17 @@ describe("note workspace", () => {
     render(<App />);
     await screen.findByText(note.body);
     await user.click(screen.getByRole("button", { name: "打开导航" }));
-    const sheet = await screen.findByRole("dialog", { name: "记忆卡导航" });
+    const sheet = await screen.findByRole("dialog", { name: "笔记导航" });
 
     await user.click(within(sheet).getByRole("button", { name: "所有笔记" }));
-    expect(screen.queryByRole("button", { name: "草稿" })).toBeNull();
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+    expect(screen.queryByRole("button", { name: "保留的草稿" })).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "笔记导航" })).toBeNull());
     expect(window.location.hash).toBe("#/notes");
 
     await user.click(screen.getByRole("button", { name: "打开导航" }));
-    await screen.findByRole("dialog", { name: "记忆卡导航" });
+    await screen.findByRole("dialog", { name: "笔记导航" });
     await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "笔记导航" })).toBeNull());
     expect(screen.getByRole("heading", { name: "所有笔记", level: 1 })).toBeTruthy();
   });
 
@@ -468,10 +471,10 @@ describe("note workspace", () => {
     bridge.request.mockImplementation((operation, params) => operation === "getEnvironment" ? Promise.resolve({ platform: "web", phase: "browser", mcpEnabled: false, capabilities: [] }) : operation === "getStatus" ? Promise.resolve({ ...status, connected: false, capabilities: [] }) : implementation(operation, params));
     render(<App />);
 
-    expect(await screen.findByText("需要启动 MemoCard 本机服务")).toBeTruthy();
+    expect(await screen.findByText("通过本机服务连接笔记库")).toBeTruthy();
     expect(screen.getByText(/此浏览器无法直接读写文件夹/)).toBeTruthy();
     expect(screen.queryByRole("link", { name: "打开本机 Web" })).toBeNull();
-    expect(await screen.findByRole("heading", { name: "需要启动 MemoCard 本机服务" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "通过本机服务连接笔记库" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "打开已有笔记库" })).toBeNull();
     expect(screen.queryByRole("combobox", { name: "搜索笔记" })).toBeNull();
     expect(screen.queryByText(note.body)).toBeNull();
@@ -512,7 +515,7 @@ describe("note workspace", () => {
     expect(await screen.findByText("正在打开笔记库")).toBeTruthy();
     await act(async () => { finish({ cancelled: true, diagnostic: "选择文件夹并授权 / AbortError" }); });
     expect(await screen.findByText("文件夹授权未完成")).toBeTruthy();
-    expect(screen.getByText("重新选择笔记文件夹，并允许访问。")).toBeTruthy();
+    expect(screen.getByText(/选择文件夹并授权 \/ AbortError/)).toBeTruthy();
     expect(screen.getByText(/选择文件夹并授权 \/ AbortError/)).toBeTruthy();
     expect(screen.queryByText("正在打开笔记库")).toBeNull();
   });
@@ -562,7 +565,7 @@ describe("note workspace", () => {
     });
     render(<App />);
     await screen.findByText(note.body);
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("重新授权前保留的想法");
     permitted = false;
@@ -584,7 +587,7 @@ describe("note workspace", () => {
     bridge.request.mockImplementation((operation, params) => operation === "getEnvironment" ? Promise.resolve({ platform: "web", phase: "browser", vaultBinding: "current-browser-vault", mcpEnabled: false, capabilities: ["selectVault", "createVault"] }) : implementation(operation, params));
     render(<App />);
     await screen.findByRole("button", { name: "切换笔记库" });
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("仅写入当前笔记库");
     expect(screen.queryByRole("button", { name: "切换笔记库" })).toBeNull();
@@ -600,7 +603,7 @@ describe("note workspace", () => {
     await screen.findByText(note.body);
     expect(bridge.request).not.toHaveBeenCalledWith("uiReady");
     expect(screen.queryByText("浏览器预览")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("浏览器中新建的记录");
     expect(screen.queryByRole("button", { name: "添加本地图片" })).toBeNull();
@@ -655,7 +658,7 @@ describe("note workspace", () => {
     render(<App />);
     await screen.findByText(note.body);
 
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     fireEvent.keyDown(screen.getByRole("textbox", { name: "笔记内容" }), { altKey: true, code: "Digit2", key: "™" });
     expect(bridge.request).not.toHaveBeenCalledWith("activateVault", expect.anything());
@@ -669,7 +672,7 @@ describe("note workspace", () => {
     bridge.native = false; bridge.web = true;
     render(<App />);
     await screen.findByText(note.body);
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("断开时还在编辑的内容");
     const implementation = bridge.request.getMockImplementation()!;
@@ -680,7 +683,9 @@ describe("note workspace", () => {
     expect(screen.getByText("连接已断开")).toBeTruthy();
     expect(screen.getByRole("link", { name: "重新打开", hidden: true }).getAttribute("href")).toBe("memocard-service://open-web");
     expect(screen.queryByRole("button", { name: "重试", hidden: true })).toBeNull();
-    expect((screen.getByRole("button", { name: "新建笔记", hidden: true }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
+    expect(await screen.findByRole("menuitem", { name: "新建笔记" })).toHaveProperty("ariaDisabled", "true");
+    await userEvent.keyboard("{Escape}");
     fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
     await waitFor(() => expect(within(screen.getByRole("region", { name: "新建笔记" })).getByText(disconnected.message)).toBeTruthy());
     expect(readEditorText()).toBe("断开时还在编辑的内容");
@@ -710,7 +715,7 @@ describe("note workspace", () => {
     expect(screen.queryByText(note.body)).toBeNull();
     expect(screen.queryByText(second.body)).toBeNull();
     expect(within(screen.getByRole("list", {name:"笔记列表"})).getAllByRole("listitem")).toHaveLength(2);
-    expect(screen.getByText("发现 1 条未保存内容")).toBeTruthy();
+    expect(screen.getByText("有尚未完成的草稿")).toBeTruthy();
     expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({cursor:"fresh-page-two"}));
   });
 
@@ -813,7 +818,7 @@ describe("note workspace", () => {
     await screen.findByText(note.body);
     const row = screen.getByText(note.body).closest("li")!;
     let container = row.parentElement!;
-    while (!container.classList.contains("overflow-y-auto")) container = container.parentElement!;
+    while (!container.classList.contains("web-app-scroll")) container = container.parentElement!;
     container.scrollTop = 100;
     vi.spyOn(container,"getBoundingClientRect").mockReturnValue(new DOMRect(0,0,600,700));
     vi.spyOn(row,"getBoundingClientRect").mockImplementation(() => new DOMRect(0,Array.from(row.parentElement!.children).indexOf(row)*100,600,100));
@@ -876,7 +881,7 @@ it("offers recovery without auto-committing it or exposing a drafts route", asyn
   pendingDrafts = [{ id: note.id, body: "旧内容", tags: [], baseHash: "old-hash" }];
   render(<App />); await screen.findByText(note.body);
   expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
-  expect(screen.queryByText(/发现 .* 条未保存内容/)).toBeNull();
+  expect(screen.queryByText(/有尚未完成的草稿/)).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: /^打开 / }));
   // The editor region mounts before Tiptap creates its deferred content textbox.
   await screen.findByRole("textbox", { name: "笔记内容" }); expect(readEditorText()).toBe("旧内容");
@@ -890,9 +895,9 @@ it('opens source notes and exposes individual recovery issues while keeping good
   render(<App />);await screen.findByRole('textbox',{name:'笔记内容'});
   expect(readEditorText()).toBe(note.body);expect(screen.getByText('/local/drafts/broken.json')).toBeTruthy();
   fireEvent.click(screen.getByRole('button',{name:'返回笔记列表'}));
-  await screen.findByText('发现 2 条未保存内容');
-  fireEvent.click(screen.getByRole('button',{name:'恢复内容'}));
-  const dialog=await screen.findByRole('dialog',{name:'草稿'});
+  await screen.findByText('有尚未完成的草稿');
+  fireEvent.click(screen.getByRole('button',{name:'查看草稿'}));
+  const dialog=await screen.findByRole('dialog',{name:'保留的草稿'});
   expect(within(dialog).getByRole('button',{name:'继续编辑：Good A'})).toBeTruthy();expect(within(dialog).getByRole('button',{name:'继续编辑：Good B'})).toBeTruthy();
 });
 it('does not block a source deep link when the entire recovery request fails',async()=>{
@@ -913,17 +918,17 @@ it('retains historical drafts after dismissing reminders and keeps their recover
     if(op==='dismissDraftReminder'){dismissed=true;return {reminderDismissed:true};}
     return implementation(op,params);
   });
-  render(<App />);await screen.findByText('发现 1 条历史草稿');
+  render(<App />);await screen.findByText('有尚未完成的草稿');
   fireEvent.click(screen.getByRole('button',{name:'查看草稿'}));
-  const dialog=await screen.findByRole('dialog',{name:'草稿'});
-  expect(within(dialog).getByText('所属库待确认')).toBeTruthy();
+  const dialog=await screen.findByRole('dialog',{name:'保留的草稿'});
+  expect(within(dialog).getByText('所属笔记库待确认')).toBeTruthy();
   fireEvent.click(within(dialog).getByRole('button',{name:'不再提醒'}));
   await waitFor(()=>expect(within(dialog).getByText('已关闭提醒')).toBeTruthy());
   expect(bridge.request).toHaveBeenCalledWith('dismissDraftReminder',{id:note.id,draftKey:note.id,revision:'original-version',unscoped:true});
   cleanup();render(<App />);await screen.findByText(note.body);
-  expect(screen.queryByText('发现 1 条历史草稿')).toBeNull();
-  fireEvent.click(screen.getByRole('button',{name:'保留草稿（1）'}));
-  const retained=await screen.findByRole('dialog',{name:'草稿'});
+  expect(screen.queryByText('有尚未完成的草稿')).toBeNull();
+  await openRetainedDrafts();
+  const retained=await screen.findByRole('dialog',{name:'保留的草稿'});
   fireEvent.click(within(retained).getByRole('button',{name:/Historical changed body/}));
   await screen.findByRole('textbox',{name:'笔记内容'});
   expect(readEditorText()).toBe(historical.body);
@@ -937,13 +942,13 @@ it('keeps historical reminders visible and drafts recoverable when saving the re
     if(op==='dismissDraftReminder')return Promise.reject(new Error('提醒设置未能保存，请重试'));
     return implementation(op,params);
   });
-  render(<App />);await screen.findByText('发现 1 条历史草稿');
+  render(<App />);await screen.findByText('有尚未完成的草稿');
   fireEvent.click(screen.getByRole('button',{name:'查看草稿'}));
-  const dialog=await screen.findByRole('dialog',{name:'草稿'});
+  const dialog=await screen.findByRole('dialog',{name:'保留的草稿'});
   fireEvent.click(within(dialog).getByRole('button',{name:'不再提醒'}));
   expect((await within(dialog).findByRole('alert')).textContent).toContain('提醒设置未能保存，请重试');
   expect(within(dialog).queryByText('已关闭提醒')).toBeNull();
-  expect(screen.getByText('发现 1 条历史草稿')).toBeTruthy();
+  expect(screen.getByText('有尚未完成的草稿')).toBeTruthy();
   fireEvent.click(within(dialog).getByRole('button',{name:/Historical recovery/}));
   await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe('Historical recovery');
 });
@@ -953,48 +958,48 @@ it('requires explicit selection of an old unscoped draft instead of restoring it
   render(<App />);await screen.findByText(note.body);
   fireEvent.click(screen.getByRole('button',{name:/^打开 /}));
   await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe(note.body);
-  fireEvent.click(screen.getByRole('button',{name:'返回笔记列表'}));await screen.findByText('发现 1 条历史草稿');
+  fireEvent.click(screen.getByRole('button',{name:'返回笔记列表'}));await screen.findByText('有尚未完成的草稿');
   fireEvent.click(screen.getByRole('button',{name:'查看草稿'}));
-  const dialog=await screen.findByRole('dialog',{name:'草稿'});
-  expect(within(dialog).getByText('所属库待确认')).toBeTruthy();
+  const dialog=await screen.findByRole('dialog',{name:'保留的草稿'});
+  expect(within(dialog).getByText('所属笔记库待确认')).toBeTruthy();
   fireEvent.click(within(dialog).getByRole('button',{name:/Old unassigned recovery/}));
   await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe('Old unassigned recovery');
 });
 it('ignores empty cleanup records when opening the saved source',async()=>{
   pendingDrafts=[{id:note.id,title:'',body:'',tags:[],baseHash:null,draftKey:'empty-cleanup',updatedAt:'2026-10-12T00:00:00Z'}];
   render(<App />);await screen.findByText(note.body);
-  expect(screen.queryByText(/发现 .* 条未保存内容/)).toBeNull();
+  expect(screen.queryByText(/有尚未完成的草稿/)).toBeNull();
   fireEvent.click(screen.getByRole('button',{name:/^打开 /}));
   await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe(note.body);
   expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
 });
 it('keeps multiple client versions selectable instead of automatically choosing one',async()=>{
   pendingDrafts=['Window A unsaved','Window B unsaved'].map((body,index)=>({id:note.id,body,tags:[],baseHash:'old-hash',draftKey:`client-${index}`,revision:`revision-${index}`}));
-  render(<App />);await screen.findByText('发现 2 条未保存内容');
+  render(<App />);await screen.findByText('有尚未完成的草稿');
   fireEvent.click(screen.getByRole('button',{name:/^打开 /}));
   await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe(note.body);
   expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
   fireEvent.click(screen.getByRole('button',{name:'返回笔记列表'}));
   await screen.findByRole('list',{name:'笔记列表'});
-  fireEvent.click(screen.getByRole('button',{name:'恢复内容'}));
-  const dialog=await screen.findByRole('dialog',{name:'草稿'});
+  fireEvent.click(screen.getByRole('button',{name:'查看草稿'}));
+  const dialog=await screen.findByRole('dialog',{name:'保留的草稿'});
   expect(within(dialog).getByRole('button',{name:'继续编辑：Window A unsaved'})).toBeTruthy();
   fireEvent.click(within(dialog).getByRole('button',{name:'继续编辑：Window B unsaved'}));
   await screen.findByRole('textbox',{name:'笔记内容'});expect(readEditorText()).toBe('Window B unsaved');
 });
 it('distinguishes recovered versions with the same title and body by pending property values',async()=>{
   pendingDrafts=['Client A pending','Client B pending'].map((value,index)=>({id:note.id,title:'Same title',body:note.body,tags:[],baseHash:'old-hash',draftKey:`client-${index}`,revision:`revision-${index}`,updatedAt:`2026-10-12T06:07:4${index}.000Z`,pendingProperties:[{name:'summary',type:'text',value}]}));
-  render(<App />);await screen.findByText('发现 2 条未保存内容');
-  fireEvent.click(screen.getByRole('button',{name:'恢复内容'}));
-  const dialog=await screen.findByRole('dialog',{name:'草稿'});
-  expect(within(dialog).getByText('summary：Client A pending')).toBeTruthy();
-  expect(within(dialog).getByText('summary：Client B pending')).toBeTruthy();
+  render(<App />);await screen.findByText('有尚未完成的草稿');
+  fireEvent.click(screen.getByRole('button',{name:'查看草稿'}));
+  const dialog=await screen.findByRole('dialog',{name:'保留的草稿'});
+  expect(within(dialog).getByText(/summary：Client A pending/)).toBeTruthy();
+  expect(within(dialog).getByText(/summary：Client B pending/)).toBeTruthy();
 });
 it("creates independent pages with different identities and returns to the list", async () => {
   render(<App />); await screen.findByText(note.body);
   expect(screen.queryByRole("textbox", { name: "笔记内容" })).toBeNull();
   for (const text of ["第一条随手记", "第二条随手记"]) {
-    fireEvent.click(screen.getByRole("button", { name: "新建笔记" }));
+    await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     expect(window.location.hash).toBe('#/notes/new');
     replaceEditorText(text); fireEvent.click(screen.getByRole("button", { name: "返回笔记列表" }));
@@ -1006,7 +1011,7 @@ it("creates independent pages with different identities and returns to the list"
 });
 it('returns from a blank new page to the list without saving a file or recovery', async () => {
   render(<App />); await screen.findByText(note.body);
-  fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
+  await createNote();
   await screen.findByRole('textbox', { name: '页面标题' });
   fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
   await screen.findByRole('list', { name: '笔记列表' });
@@ -1034,20 +1039,20 @@ it('keeps a refreshed note route in the detail loading view until recovery and t
   const address = `#/notes/${note.id}`;
   window.history.replaceState(null, '', address);
   render(<App />);
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   expect(screen.queryByRole('heading', { name: '所有笔记' })).toBeNull();
   await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('getDrafts'));
   expect(bridge.request).toHaveBeenCalledWith('getNote', { id: note.id });
   expect(screen.queryByRole('textbox', { name: '笔记内容' })).toBeNull();
   await act(async () => { resolveRecovery({ drafts: [recovery] }); });
   await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('getNote', { id: note.id }));
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   expect(screen.queryByRole('list', { name: '笔记列表' })).toBeNull();
   expect(screen.queryByRole('heading', { name: '所有笔记' })).toBeNull();
   expect(window.location.hash).toBe(address);
   await act(async () => { resolveNote(note); });
   await screen.findByRole('textbox', { name: '笔记内容' });
-  expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
+  expect(screen.queryByRole('status', { name: '正在读取内容' })).toBeNull();
   expect(readEditorText()).toBe(recovery.body);
   expect(window.location.hash).toBe(address);
 });
@@ -1057,14 +1062,14 @@ it('exits detail loading and shows the error when a direct note cannot be read',
   window.history.replaceState(null, '', `#/notes/${note.id}`);
   render(<App />);
   await screen.findByText('笔记不存在');
-  expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
+  expect(screen.queryByRole('status', { name: '正在读取内容' })).toBeNull();
   expect(screen.queryByRole('list', { name: '笔记列表' })).toBeNull();
-  expect(screen.getByRole('button', { name: '返回笔记列表' })).toBeTruthy();
+  expect(screen.getAllByRole('button', { name: '返回笔记列表' })[0]).toBeTruthy();
   expect(window.location.hash).toBe(`#/notes/${note.id}`);
 });
 it('flushes a hash navigation and keeps the requested route after first-save URL replacement', async () => {
   render(<App />); await screen.findByText(note.body);
-  fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
+  await createNote();
   await screen.findByRole('textbox', { name: '笔记内容' }); replaceEditorText('返回前保存');
   act(() => { window.history.replaceState(null, '', '#/settings'); window.dispatchEvent(new HashChangeEvent('hashchange')); });
   await screen.findByRole('heading', { name: '设置', level: 1 });
@@ -1073,7 +1078,7 @@ it('flushes a hash navigation and keeps the requested route after first-save URL
 });
 it('restores the editor address and input when navigation cannot save', async () => {
   render(<App />); await screen.findByText(note.body);
-  fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
+  await createNote();
   await screen.findByRole('textbox', { name: '笔记内容' });
   const address = window.location.hash;
   const implementation = bridge.request.getMockImplementation()!;
@@ -1088,9 +1093,9 @@ it('restores the editor address and input when navigation cannot save', async ()
 it("dismisses unfiled recovery for this visit without deleting it", async () => {
   pendingDrafts = [{ id: "unfiled", body: "待恢复内容", tags: [], baseHash: null }];
   render(<App />);
-  await screen.findByText("发现 1 条未保存内容");
+  await screen.findByText("有尚未完成的草稿");
   fireEvent.click(screen.getByRole("button", { name: "稍后处理" }));
-  expect(screen.queryByRole("button", { name: "恢复内容" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "查看草稿" })).toBeNull();
   expect(bridge.request).not.toHaveBeenCalledWith("saveDraft", expect.anything());
   expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
 });
@@ -1102,8 +1107,9 @@ it('ignores blank new-page recovery while retaining title-only and cleared exist
     { id: note.id, title: '', body: '', tags: [], baseHash: 'old-hash' },
   ];
   render(<App />);
-  await screen.findByText('发现 1 条未保存内容');
-  fireEvent.click(screen.getByRole('button', { name: '恢复内容' }));
+  await screen.findByText('有尚未完成的草稿');
+  fireEvent.click(screen.getByRole('button', { name: '查看草稿' }));
+  fireEvent.click(await screen.findByRole('button', { name: /^继续编辑：/ }));
   const title = await screen.findByRole('textbox', { name: '页面标题' });
   expect((title as HTMLTextAreaElement).value).toBe('保留标题');
   fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
@@ -1116,7 +1122,7 @@ it('ignores blank new-page recovery while retaining title-only and cleared exist
 it('keeps the breadcrumb in sync with unsaved page titles and empty-title fallback', async () => {
   render(<App />);
   await screen.findByText(note.body);
-  fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
+  await createNote();
   const title = await screen.findByRole('textbox', { name: '页面标题' });
   const breadcrumb = screen.getByRole('navigation', { name: '当前位置' });
   expect(breadcrumb.textContent).toBe('新内容');
@@ -1129,7 +1135,7 @@ it('leaves an untouched page created under a tag without writing a note or recov
   render(<App />); await screen.findByText(note.body);
   fireEvent.click(screen.getByRole('button', { name: '生活' }));
   await screen.findByRole('heading', { name: '# 生活', level: 1 });
-  fireEvent.click(screen.getByRole('button', { name: '新建笔记' }));
+  await createNote();
   const title = await screen.findByRole('textbox', { name: '页面标题' });
   expect((title as HTMLTextAreaElement).value).toBe('');
   expect(readEditorText()).toBe('');
@@ -1149,14 +1155,14 @@ it('enters detail loading immediately on a list click and edits only the latest 
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: /^打开 / }));
   expect(window.location.hash).toBe(`#/notes/${note.id}`);
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   expect(screen.queryByRole('list', { name: '笔记列表' })).toBeNull();
   expect(screen.queryByRole('textbox', { name: '笔记内容' })).toBeNull();
   expect(bridge.request).not.toHaveBeenCalledWith('saveDraft', expect.anything());
   await act(async () => { resolveNote({ ...note, body: '读取后的最新正文', contentHash: 'latest-hash' }); });
   await screen.findByRole('textbox', { name: '笔记内容' });
   expect(readEditorText()).toBe('读取后的最新正文');
-  expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
+  expect(screen.queryByRole('status', { name: '正在读取内容' })).toBeNull();
   replaceEditorText('继续编辑最新正文');
   fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
   await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('saveNote', expect.objectContaining({ body: '继续编辑最新正文', baseHash: 'latest-hash' })));
@@ -1170,11 +1176,11 @@ it.each(['success', 'failure'])('cancels a loading detail on return and ignores 
   bridge.request.mockImplementation((operation, params) => operation === 'getNote' ? result : implementation(operation, params));
   render(<App />);
   const card = await screen.findByRole('button', { name: /^打开 / });
-  const scroll = card.closest('.overflow-y-auto') as HTMLElement;
+  const scroll = card.closest('.web-app-scroll') as HTMLElement;
   scroll.scrollTop = 480;
   card.focus();
   fireEvent.click(card);
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
   const returned = await screen.findByRole('button', { name: /^打开 / });
   expect(window.location.hash).toBe('#/notes');
@@ -1202,7 +1208,7 @@ it('keeps the second list selection when the first read finishes after returning
   await screen.findByText(other.body);
   fireEvent.click(screen.getAllByRole('button', { name: /^打开 / })[1]);
   expect(window.location.hash).toBe(`#/notes/${other.id}`);
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   await act(async () => { resolveNew(other); });
   await screen.findByRole('textbox', { name: '笔记内容' });
   replaceEditorText('第二篇尚未提交的输入');
@@ -1218,7 +1224,7 @@ it('cancels a loading list selection on browser back without reopening after the
   bridge.request.mockImplementation((operation, params) => operation === 'getNote' ? result : implementation(operation, params));
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: /^打开 / }));
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   act(() => { window.history.replaceState(null, '', '#/notes'); window.dispatchEvent(new HashChangeEvent('hashchange')); });
   await screen.findByRole('button', { name: /^打开 / });
   await act(async () => { resolveNote(note); });
@@ -1239,12 +1245,12 @@ it('shows a readable detail failure and retries the same latest read without ref
   const listReads = bridge.request.mock.calls.filter(([op]) => op === 'queryNotes').length;
   await act(async () => { rejectNote(new Error('源文件暂时不可读')); });
   expect(await screen.findByText('源文件暂时不可读')).toBeTruthy();
-  expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
+  expect(screen.queryByRole('status', { name: '正在读取内容' })).toBeNull();
   expect(screen.queryByRole('list', { name: '笔记列表' })).toBeNull();
   expect(screen.queryByRole('textbox', { name: '笔记内容' })).toBeNull();
-  expect(screen.getByRole('button', { name: '返回笔记列表' })).toBeTruthy();
+  expect(screen.getAllByRole('button', { name: '返回笔记列表' })[0]).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '重试' }));
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   await act(async () => { resolveRetry({ ...note, body: '重试后取得最新正文' }); });
   await screen.findByRole('textbox', { name: '笔记内容' });
   expect(readEditorText()).toBe('重试后取得最新正文');
@@ -1260,7 +1266,7 @@ it('recovers a delayed draft with its original base hash and keeps it editable a
   bridge.request.mockImplementation((operation, params) => operation === 'getNote' ? result : operation === 'saveNote' ? Promise.reject(Object.assign(new Error('外部内容已变化'), { code: 'HASH_CONFLICT' })) : implementation(operation, params));
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: /^打开 / }));
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   expect(screen.queryByRole('textbox', { name: '笔记内容' })).toBeNull();
   await act(async () => { resolveNote({ ...note, body: '外部最新正文', contentHash: 'external-hash' }); });
   await screen.findByRole('textbox', { name: '笔记内容' });
@@ -1287,10 +1293,10 @@ it('opens the newest hash route while the previous list read is pending and igno
   fireEvent.click(await screen.findByRole('button', { name: /^打开 / }));
   act(() => { window.history.replaceState(null, '', `#/notes/${other.id}`); window.dispatchEvent(new HashChangeEvent('hashchange')); });
   await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('getNote', { id: other.id }));
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   expect(window.location.hash).toBe(`#/notes/${other.id}`);
   await act(async () => { rejectOld(new Error('过时的文件读取失败')); });
-  expect(screen.getByRole('status', { name: '正在打开笔记' })).toBeTruthy();
+  expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   expect(screen.queryByText('过时的文件读取失败')).toBeNull();
   await act(async () => { resolveNew(other); });
   await screen.findByRole('textbox', { name: '笔记内容' });
@@ -1304,11 +1310,11 @@ it('returns from a failed detail without saving or leaving the list disabled', a
   render(<App />);
   fireEvent.click(await screen.findByRole('button', { name: /^打开 / }));
   await screen.findByText('无法读取目标笔记');
-  fireEvent.click(screen.getByRole('button', { name: '返回笔记列表' }));
+  fireEvent.click(screen.getAllByRole('button', { name: '返回笔记列表' })[0]);
   const card = await screen.findByRole('button', { name: /^打开 / });
   expect(card.hasAttribute('disabled')).toBe(false);
   expect(screen.queryByText('无法读取目标笔记')).toBeNull();
-  expect(screen.queryByRole('status', { name: '正在打开笔记' })).toBeNull();
+  expect(screen.queryByRole('status', { name: '正在读取内容' })).toBeNull();
   expect(window.location.hash).toBe('#/notes');
   expect(bridge.request).not.toHaveBeenCalledWith('saveNote', expect.anything());
 });
@@ -1330,7 +1336,7 @@ it('confirms deletion of one exact draft, retains failures, and updates the draf
     return implementation(op,params);
   });
   const user=userEvent.setup();render(<App />);
-  await user.click(await screen.findByRole('button',{name:'恢复内容'}));
+  await user.click(await screen.findByRole('button',{name:'查看草稿'}));
   await user.click(await screen.findByRole('button',{name:'删除草稿：Delete this draft'}));
   expect(await screen.findByRole('heading',{name:'删除这条草稿？'})).toBeTruthy();
   await user.click(screen.getByRole('button',{name:'取消'}));
@@ -1338,7 +1344,7 @@ it('confirms deletion of one exact draft, retains failures, and updates the draf
   expect(bridge.request.mock.calls.filter(([op])=>op==='deleteDraft')).toHaveLength(0);
   await user.click(screen.getByRole('button',{name:'删除草稿：Delete this draft'}));
   await user.click(screen.getByRole('button',{name:'确认删除'}));
-  expect(await screen.findByRole('alert')).toHaveProperty('textContent','草稿已变化，请刷新草稿后重试。');
+  expect((await screen.findByRole('alert')).textContent).toContain('草稿已变化，请刷新草稿后重试。');
   expect(screen.getByRole('button',{name:'继续编辑：Delete this draft'})).toBeTruthy();
   fail=false;
   await user.click(screen.getByRole('button',{name:'删除草稿：Delete this draft'}));
@@ -1349,9 +1355,41 @@ it('confirms deletion of one exact draft, retains failures, and updates the draf
   expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
   await user.keyboard('{Escape}');
   await user.click(screen.getByRole('button',{name:'稍后处理'}));
-  expect(await screen.findByRole('button',{name:'保留草稿（1）'})).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
+  expect(await screen.findByRole("menuitem", { name: "保留草稿（1）" })).toBeTruthy();
 });
 
+
+it('removes a deleted mobile search result while retaining the query and other results', async () => {
+  vi.stubGlobal('innerWidth', 390);
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({ matches: query.includes('767px'), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  const implementation = bridge.request.getMockImplementation()!;
+  const searched = { ...note, title: '搜索后删除' };
+  const kept = { ...note, id: 'bbbbbbbb-bbbb-4ccc-8ddd-eeeeeeeeeeee', title: '仍保留的结果' };
+  let deleted = false;
+  bridge.request.mockImplementation((operation, params) => {
+    if (operation === 'getStatus') return { ...status, capabilities: [...status.capabilities, 'deleteNote'] };
+    if (operation === 'queryNotes') return { notes: deleted ? [kept] : [searched, kept], nextCursor: null, coverage: status.coverage };
+    if (operation === 'getNote') return params?.id === kept.id ? kept : searched;
+    if (operation === 'deleteNote') { deleted = true; return {}; }
+    return implementation(operation, params);
+  });
+  const user = userEvent.setup(); render(<App />);
+  await screen.findByRole('button', { name: '打开 搜索后删除' });
+  await user.click(screen.getByRole('button', { name: '搜索全部笔记' }));
+  await user.type(await screen.findByRole('combobox', { name: '搜索笔记' }), '散步');
+  await user.click(await screen.findByRole('option', { name: searched.title }));
+  await screen.findByRole('textbox', { name: '笔记内容' });
+  await user.click(screen.getByRole('button', { name: '页面操作' }));
+  await user.click(await screen.findByRole('menuitem', { name: '移入回收站' }));
+  await user.click(await screen.findByRole('button', { name: '移入回收站' }));
+  const search = await screen.findByRole('dialog', { name: '搜索笔记' });
+  expect(within(search).getByRole('combobox')).toHaveProperty('value', '散步');
+  await waitFor(() => expect(within(search).queryByRole('option', { name: searched.title })).toBeNull());
+  expect(within(search).getByRole('option', { name: kept.title })).toBeTruthy();
+  await user.keyboard('{Enter}');
+  await waitFor(() => expect(bridge.request.mock.calls.filter(([operation]) => operation === 'getNote').at(-1)?.[1]).toEqual({ id: kept.id }));
+});
 
 it.each(['cancel','retry'] as const)('handles note deletion %s after flushing edits without losing content',async flow=>{
   window.history.replaceState(null,'','#/home');
@@ -1373,14 +1411,14 @@ it.each(['cancel','retry'] as const)('handles note deletion %s after flushing ed
   await screen.findByRole('textbox',{name:'笔记内容'});
   replaceEditorText('删除前的新修改');
   await user.click(screen.getByRole('button',{name:'页面操作'}));
-  await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
+  await user.click(await screen.findByRole('menuitem',{name:'移入回收站'}));
   if(flow==='cancel'){
     await user.click(await screen.findByRole('button',{name:'取消'}));
     expect(bridge.request.mock.calls.filter(([op])=>op==='deleteNote')).toHaveLength(0);
     await user.click(screen.getByRole('button',{name:'页面操作'}));
-    await user.click(await screen.findByRole('menuitem',{name:'删除笔记'}));
+    await user.click(await screen.findByRole('menuitem',{name:'移入回收站'}));
   }
-  await user.click(await screen.findByRole('button',{name:'确认删除'}));
+  await user.click(await screen.findByRole('button',{name:'移入回收站'}));
   expect(await screen.findByRole('alert')).toHaveProperty('textContent','回收目录暂不可写');
   expect(deleted).toBe(false);
   if(flow==='cancel'){
@@ -1389,7 +1427,7 @@ it.each(['cancel','retry'] as const)('handles note deletion %s after flushing ed
     return;
   }
   fail=false;
-  await user.click(await screen.findByRole('button',{name:'确认删除'}));
+  await user.click(await screen.findByRole('button',{name:'移入回收站'}));
   await waitFor(()=>expect(window.location.hash).toBe('#/home'));
   await waitFor(()=>expect(screen.queryByRole('button',{name:'打开 新内容'})).toBeNull());
   expect(bridge.request).toHaveBeenCalledWith('deleteNote',{id:note.id,baseHash:'latest-hash',vaultId:status.vaultId});
@@ -1427,7 +1465,7 @@ it("keeps migrated MCP read access unchecked until explicit write consent", asyn
     return implementation(operation, params);
   });
   render(<App />);
-  const control = await screen.findByRole("switch", { name: "MCP 本机读写" });
+  const control = await screen.findByRole("switch", { name: "允许本机工具读写" });
   expect(control.getAttribute("aria-checked")).toBe("false");
   expect(screen.getByText("当前仅读取。")).toBeTruthy();
   expect(bridge.request.mock.calls.some(([op]) => op === "setMCPEnabled")).toBe(false);

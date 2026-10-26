@@ -2,8 +2,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppSidebar, type AppSidebarProps } from "./app-sidebar";
-import { SidebarProvider } from "./ui/sidebar";
+import { AppSidebar, type AppSidebarProps } from "@ui-next/business/sidebar";
+import { SidebarProvider } from "@ui-next/components/sidebar";
 
 const createProps = (overrides: Partial<AppSidebarProps> = {}): AppSidebarProps => ({
   view: "notes", tag: null, tags: [{ name: "生活", count: 2 }, { name: "工作", count: 1 }],
@@ -38,7 +38,7 @@ describe("AppSidebar", () => {
     expect(trash.getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("menuitem", { name: "帮助" }).getAttribute("aria-disabled")).toBe("true");
     await userEvent.click(trash);
-    expect(props.onNavigate).toHaveBeenCalledExactlyOnceWith("trash");
+    expect(props.onNavigate).toHaveBeenCalledExactlyOnceWith("trash", undefined, undefined);
     await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
   });
 
@@ -72,7 +72,7 @@ describe("AppSidebar", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     await waitFor(() => expect(screen.queryByRole("button", { name: "有图片" })).toBeNull());
     fireEvent.click(screen.getByRole("button", { name: "所有笔记" }));
-    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", null);
+    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", null, undefined);
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     toggle.focus();
     await userEvent.keyboard("{Enter}");
@@ -90,9 +90,9 @@ describe("AppSidebar", () => {
     expect(props.onSearch).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: /草稿/ })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "生活" }));
-    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", "生活");
+    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", "生活", undefined);
     fireEvent.click(screen.getByRole("button", { name: "所有笔记" }));
-    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", null);
+    expect(props.onNavigate).toHaveBeenLastCalledWith("notes", null, undefined);
   });
 
   it("invokes the directory picker directly in the menu click before yielding user activation", async () => {
@@ -138,7 +138,7 @@ describe("AppSidebar", () => {
     expect(props.onReauthorize).toHaveBeenCalledOnce();
     await userEvent.click(screen.getByRole("button", { name: "笔记库：我的笔记" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "笔记库设置" }));
-    expect(props.onNavigate).toHaveBeenCalledWith("settings");
+    expect(props.onNavigate).toHaveBeenCalledWith("settings", undefined, undefined);
   });
 
   it("prevents vault changes during an operation and returns keyboard focus after Escape", async () => {
@@ -174,9 +174,9 @@ it("navigates and collapses three-level tags without a directory section", async
   renderSidebar(props);
   expect(screen.queryByRole("navigation", { name: "目录" })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "工作/项目/设计" }));
-  expect(props.onNavigate).toHaveBeenCalledWith("notes", "工作/项目/设计");
+  expect(props.onNavigate).toHaveBeenCalledWith("notes", "工作/项目/设计", undefined);
   await userEvent.click(screen.getByRole("button", { name: "展开或收起标签 工作/项目" }));
   await waitFor(() => expect(screen.queryByRole("button", { name: "工作/项目/设计" })).toBeNull());
   await userEvent.click(screen.getByRole("button", { name: "工作" }));
-  expect(props.onNavigate).toHaveBeenLastCalledWith("notes", "工作");
+  expect(props.onNavigate).toHaveBeenLastCalledWith("notes", "工作", undefined);
 });

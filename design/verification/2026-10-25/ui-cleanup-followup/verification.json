@@ -1,0 +1,308 @@
+{
+  "date": "2026-10-25",
+  "sourceBaseRevision": "c0c57e688e1bfa858aa36bd5cb8988a4568bc72c",
+  "scope": "Follow-up cleanup on the local retirement branch; no push, merge, product installation or real user vault access.",
+  "retiredSourceAbsent": [
+    "apps/ui/src/lib/utils.ts",
+    "apps/ui/src/generated/design-tokens.css",
+    "apps/ui/src/generated/design-tokens.ts",
+    "apps/ui/src/components/ui",
+    "apps/ui/.storybook",
+    "apps/ui/stories"
+  ],
+  "productionBundle": {
+    "initialGzip": 315924,
+    "routes": [
+      {
+        "name": "list",
+        "raw": 1073947,
+        "gzip": 315924
+      },
+      {
+        "name": "list with card previews",
+        "raw": 1702977,
+        "gzip": 506348
+      },
+      {
+        "name": "home with quick capture",
+        "raw": 1446424,
+        "gzip": 432498
+      },
+      {
+        "name": "home with capture and card previews",
+        "raw": 2075454,
+        "gzip": 622922
+      },
+      {
+        "name": "iOS home with native chrome",
+        "raw": 1457177,
+        "gzip": 437039
+      },
+      {
+        "name": "mobile home with swipe capture",
+        "raw": 1449563,
+        "gzip": 433819
+      },
+      {
+        "name": "search",
+        "raw": 1717693,
+        "gzip": 511446
+      },
+      {
+        "name": "trash",
+        "raw": 1730357,
+        "gzip": 514643
+      },
+      {
+        "name": "settings",
+        "raw": 1753559,
+        "gzip": 524091
+      },
+      {
+        "name": "detail with preserved Markdown",
+        "raw": 2637543,
+        "gzip": 793487
+      }
+    ],
+    "fonts": {
+      "normal": 3604528,
+      "italic": 3565356,
+      "cjk": 10531532
+    }
+  },
+  "resourceParity": {
+    "apps/ui/dist": {
+      "files": 587,
+      "matchesProduction": true
+    },
+    "apps/apple/Resources/Web": {
+      "files": 587,
+      "matchesProduction": true
+    },
+    "build/apple/Build/Products/Debug/MemoCard.app/Contents/Resources/Web": {
+      "files": 587,
+      "matchesProduction": true
+    },
+    "build/apple/Build/Products/Debug-iphonesimulator/MemoCard.app/Web": {
+      "files": 587,
+      "matchesProduction": true
+    },
+    "build/local-service/MemoCardService.app/Contents/Resources/Web": {
+      "files": 587,
+      "matchesProduction": true
+    }
+  },
+  "localCleanup": {
+    "removedRebuildable": [
+      {
+        "path": "apps/ui/node_modules/.cache/storybook",
+        "fileBytesBefore": 164133964
+      },
+      {
+        "path": "build/apple-device",
+        "fileBytesBefore": 240122398
+      },
+      {
+        "path": "build/apple-search-capture-release",
+        "fileBytesBefore": 387001159
+      },
+      {
+        "path": "build/service-check",
+        "fileBytesBefore": 260096953
+      },
+      {
+        "path": "build/service-debug",
+        "fileBytesBefore": 259830877
+      }
+    ],
+    "retainedRecovery": [
+      "build/service-backups",
+      "build/mcp-trash-install.oOjstc"
+    ],
+    "dependencyInstall": "pnpm install --frozen-lockfile --offline pruned 17 obsolete packages"
+  },
+  "sidebarBenchmark": {
+    "baselineCommit": "de51cecff717aa972996bf882d62b03cdb258b9d",
+    "workingTreeHead": "c0c57e688e1bfa858aa36bd5cb8988a4568bc72c",
+    "component": "apps/ui/ui-next/business/tag-navigation.tsx",
+    "baselineSourceSHA256": "ef15463cff9657b03bee9f502e3d97b8f01a6205131f48e320357da01ad85067",
+    "sourceSHA256": {
+      "apps/ui/ui-next/business/tag-navigation.tsx": "f77652b67cb22e3bd8a69fad99fda6a95ea27f0ce42ed44259b385699bdf0600",
+      "apps/ui/src/components/tag-tree-index.ts": "48036edf73e47a7854c2b9c6355b870ba717b9ca6e21e6d77f307fa4c64148e5",
+      "apps/ui/benchmarks/tag-navigation.performance.tsx": "eafa7355b297f3ee7e71765c0a70eb2afa1c2e497cf2a75fc925aa194b5e7b84",
+      "apps/ui/benchmarks/vitest.config.ts": "9b4ddbde3677a4ea4b8070a65176f7d36b40c83dc1589097deb72e543961dcef"
+    },
+    "scope": "Historical/current TagNavigation module sources with current shared dependencies and identical mocked presentation/storage; serial SSR cold mounts exclude DOM/layout, do not compare complete historical apps and are not frame-rate measurements.",
+    "reports": [
+      {
+        "label": "baseline",
+        "warmup": 2,
+        "results": [
+          {
+            "shape": "flat",
+            "size": 1000,
+            "samples": 11,
+            "medianMs": 10.432,
+            "p95Ms": 11.362
+          },
+          {
+            "shape": "flat",
+            "size": 5000,
+            "samples": 11,
+            "medianMs": 52.887,
+            "p95Ms": 110.22
+          },
+          {
+            "shape": "flat",
+            "size": 10000,
+            "samples": 11,
+            "medianMs": 101.606,
+            "p95Ms": 175.493
+          },
+          {
+            "shape": "branches",
+            "size": 1000,
+            "samples": 11,
+            "medianMs": 10.448,
+            "p95Ms": 11.07
+          },
+          {
+            "shape": "branches",
+            "size": 5000,
+            "samples": 11,
+            "medianMs": 51.37,
+            "p95Ms": 105.636
+          },
+          {
+            "shape": "branches",
+            "size": 10000,
+            "samples": 11,
+            "medianMs": 105.222,
+            "p95Ms": 158.305
+          },
+          {
+            "shape": "missing-parents",
+            "size": 1000,
+            "samples": 11,
+            "medianMs": 3.209,
+            "p95Ms": 3.25
+          },
+          {
+            "shape": "missing-parents",
+            "size": 5000,
+            "samples": 11,
+            "medianMs": 15.965,
+            "p95Ms": 70.599
+          },
+          {
+            "shape": "missing-parents",
+            "size": 10000,
+            "samples": 11,
+            "medianMs": 31.608,
+            "p95Ms": 32.166
+          }
+        ]
+      },
+      {
+        "label": "current",
+        "warmup": 2,
+        "results": [
+          {
+            "shape": "flat",
+            "size": 1000,
+            "samples": 11,
+            "medianMs": 10.699,
+            "p95Ms": 11.673
+          },
+          {
+            "shape": "flat",
+            "size": 5000,
+            "samples": 11,
+            "medianMs": 51.589,
+            "p95Ms": 112.094
+          },
+          {
+            "shape": "flat",
+            "size": 10000,
+            "samples": 11,
+            "medianMs": 102.632,
+            "p95Ms": 176.967
+          },
+          {
+            "shape": "branches",
+            "size": 1000,
+            "samples": 11,
+            "medianMs": 10.493,
+            "p95Ms": 11.392
+          },
+          {
+            "shape": "branches",
+            "size": 5000,
+            "samples": 11,
+            "medianMs": 51.541,
+            "p95Ms": 107.524
+          },
+          {
+            "shape": "branches",
+            "size": 10000,
+            "samples": 11,
+            "medianMs": 105.425,
+            "p95Ms": 158.834
+          },
+          {
+            "shape": "missing-parents",
+            "size": 1000,
+            "samples": 11,
+            "medianMs": 3.242,
+            "p95Ms": 3.934
+          },
+          {
+            "shape": "missing-parents",
+            "size": 5000,
+            "samples": 11,
+            "medianMs": 15.986,
+            "p95Ms": 16.744
+          },
+          {
+            "shape": "missing-parents",
+            "size": 10000,
+            "samples": 11,
+            "medianMs": 32.449,
+            "p95Ms": 32.955
+          }
+        ]
+      }
+    ],
+    "interpretation": "Sources are distinct. Timings are similar; this repairs the comparison workflow and does not establish an application or frame-rate improvement."
+  },
+  "validation": {
+    "sharedTests": 1022,
+    "currentUITests": 401,
+    "storybookBrowserTests": 136,
+    "defaultBrowserFlows": 2,
+    "currentDocs": 18,
+    "swiftCoreTests": 133,
+    "loopbackTests": 11,
+    "localWebTests": 14,
+    "nativeSidebarTests": 6,
+    "nativeSurfacePythonTests": 13,
+    "nativeSurfaceProbe": "passed and uninstalled",
+    "builds": [
+      "Web",
+      "isolated states",
+      "Storybook",
+      "macOS",
+      "iOS Simulator",
+      "MemoCardService"
+    ],
+    "signatures": [
+      "MemoCardService"
+    ]
+  },
+  "boundaries": [
+    "Local Storybook retains ResizeObserver, hidden-chart and Base UI animation diagnostics.",
+    "Firefox remains unverified on this host because of the previously recorded startup profile error; CI still requires its browser matrix.",
+    "Real devices, system pickers and iCloud synchronization require separate acceptance.",
+    "Recovery backups, historical evidence and installed clients were retained."
+  ]
+}

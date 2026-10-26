@@ -116,3 +116,15 @@ test('requires the six maintenance fields and refuses silent nonliteral dynamic 
   await put('apps/ui/src/Lazy.tsx', 'const target = "./Visible"; export const load = () => import(target);');
   await assert.rejects(checkInventory({ root }), /Nonliteral runtime import needs explicit inventory support/);
 });
+
+test('tracks the sole entry through current UI adapters and back into shared src cores', async t => {
+  const { root, put, paths } = await fixture(t);
+  await put('apps/ui/src/Lazy.tsx', 'export { CurrentView as default } from "../ui-next/CurrentView";');
+  await put('apps/ui/ui-next/CurrentView.tsx', 'import { Visible } from "../src/Visible"; import type { Preview } from "./Preview"; export const CurrentView = Visible;');
+  await put('apps/ui/ui-next/Preview.tsx', 'export interface Preview {}');
+  await assert.rejects(checkInventory({ root }), /Unlisted production TSX: apps\/ui\/ui-next\/CurrentView.tsx/);
+  await put('design/component-inventory.md', [...paths, 'apps/ui/ui-next/CurrentView.tsx'].map(row).join('\n'));
+  assert.deepEqual(await checkInventory({ root }), { productionModules: 4, entries: 4 });
+  await put('design/component-inventory.md', [...paths, 'apps/ui/ui-next/CurrentView.tsx', 'apps/ui/ui-next/Preview.tsx'].map(row).join('\n'));
+  await assert.rejects(checkInventory({ root }), /Inventory TSX is not production-reachable: apps\/ui\/ui-next\/Preview.tsx/);
+});

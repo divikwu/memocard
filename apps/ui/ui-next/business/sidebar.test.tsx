@@ -242,6 +242,10 @@ it("supports a controlled H5 drawer, closes on navigation and exposes the vault 
   const vaultSheet = await screen.findByRole("dialog", { name: "笔记库" });
   await user.click(within(vaultSheet).getByRole("button", { name: "创建新笔记库" }));
   expect(args.onSelectVault).toHaveBeenCalledWith(true);
+  expect(change).not.toHaveBeenCalled();
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "笔记库" })).toBeNull());
+  expect(screen.getByRole("dialog", { name: "笔记导航" })).toBe(drawer);
+  await user.click(within(drawer).getByRole("button", { name: "所有笔记" }));
   expect(change).toHaveBeenCalledWith(false);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });

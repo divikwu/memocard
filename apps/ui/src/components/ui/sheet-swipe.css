@@ -1,7 +1,0 @@
-[data-sheet-swipe] { translate: 0 var(--sheet-swipe-y, 0px); transition: translate var(--motion-duration-normal) var(--motion-ease-rebound); }
-[data-sheet-dragging] { transition: none; }
-[data-sheet-swipe] :is([data-slot="sheet-handle"], [data-slot="sheet-header"]) { touch-action: none; user-select: none; cursor: grab; }
-[data-sheet-swipe][data-swipe-disabled] :is([data-slot="sheet-handle"], [data-slot="sheet-header"]) { cursor: default; }
-[data-slot="sheet-handle"] { order: -1; display: flex; height: 24px; flex-shrink: 0; align-items: center; justify-content: center; margin-block: -18px; }
-[data-slot="sheet-handle"]::before { content: ""; width: 36px; height: 4px; border-radius: 9999px; background: var(--muted-foreground); opacity: .25; }
-@media (prefers-reduced-motion: reduce) { [data-sheet-swipe] { transition: none; } }

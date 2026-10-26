@@ -2,10 +2,11 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import TagColorMenu from './TagColorMenu';
+import { TagColorMenu } from "@ui-next/business/property-editors";
 import { changeTagSettings } from './tag-settings';
 import { parseTagColors, readTagColors, setTagColor } from './tag-colors';
 
+beforeEach(() => { vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }))); });
 beforeEach(() => { localStorage.clear(); vi.stubGlobal('ResizeObserver',class {observe() {} unobserve() {} disconnect() {}}); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it('saves a normalized name using Enter and does not choose a color', async () => {

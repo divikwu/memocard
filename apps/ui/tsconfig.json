@@ -24,12 +24,17 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@ui-next/*": [
+        "./ui-next/*"
       ]
     }
   },
   "include": [
     "src",
-    "vite.config.ts",
-    "ui-state-fixtures"
+    "ui-next",
+    "test-support",
+    "ui-state-fixtures",
+    "vite.config.ts"
   ]
 }

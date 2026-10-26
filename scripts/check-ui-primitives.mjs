@@ -9,10 +9,10 @@ async function filesAt(directory) {
   }))).flat();
 }
 
-const files = ["apps/ui/package.json", "pnpm-lock.yaml", ...(await filesAt("apps/ui/src"))];
+const files = ["apps/ui/package.json", "pnpm-lock.yaml", ...(await filesAt("apps/ui/src")), ...(await filesAt("apps/ui/ui-next"))];
 for (const file of files.filter(file => /\.(?:json|yaml|tsx?|css)$/.test(file))) {
   if (/radix/i.test(await readFile(file, "utf8"))) throw new Error(`Radix reference in active UI: ${file}`);
 }
 const config = JSON.parse(await readFile("apps/ui/components.json", "utf8"));
-if (!config.style.startsWith("base-")) throw new Error("shadcn must generate Base UI components.");
+if (config.style !== "base-luma" || config.tailwind.css !== "ui-next/styles.css" || config.aliases.ui !== "@ui-next/components" || config.aliases.utils !== "@ui-next/lib/utils") throw new Error("shadcn must generate the current Luma components and theme.");
 console.log("UI primitives passed: Base UI only; no Radix in source, dependencies or lockfile.");

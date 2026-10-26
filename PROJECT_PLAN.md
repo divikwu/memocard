@@ -2,6 +2,8 @@
 
 更新：2026-09-28。状态：M0 工程已落地，M1 Mac 实测与自动化检查通过部分条件；实体 iPhone 不可用，真机同步关卡未通过，完整 M2–M5 尚未启动。详见 docs/IMPLEMENTATION_STATUS.md。
 
+UI 维护补充（2026-10-25）：当前只有 Luma / Base UI 一套视图和 Storybook，唯一生产入口为 `apps/ui/src/main.tsx`，共用 `apps/ui/dist`；默认浅色 / 黑白强调色 / Neutral / Noto Sans / 8px。现行规范见 [design/README.md](design/README.md)，迁移证据见 [UI 清理记录](design/ui-retirement-2026-10-25.md)。下文按日期保留的早期 UI 授权只说明演进，不覆盖本条当前规则，也不改变 M0/M1 真机关卡和后续业务里程碑。
+
 本文件整体替换原 Web/PWA + 服务端 SQLite 方案，是唯一执行依据。实现进度与证据记录在 docs/IMPLEMENTATION_STATUS.md；未验收能力不能标为已交付。
 
 2026-09-28 历史授权：支持本机 Web 查看、新建、编辑笔记及图片，复用当前 React 界面和 Swift 文件核心。最初由 Mac 应用提供 loopback 服务；该宿主方式已被 2026-09-29 的统一菜单栏服务授权取代。文件存储和只读 MCP 边界不变，当前实现见 docs/LOCAL_WEB.md。
@@ -35,7 +37,7 @@
 | 同步 | 系统 iCloud Drive；应用处理文件访问、状态、冲突与恢复 |
 | 外部编辑 | 支持其他编辑器修改、重命名和新增 Markdown 文件 |
 | Becoming | 项目内读取脚本；首版不增加页面或 AI 复盘入口 |
-| 视觉 | sidebar-10 导航布局，白色内容区与浅灰侧栏；沿用 Becoming 的主题选项，默认浅色 / Blue / Neutral / Geist / 10px，支持设备级外观设置 |
+| 视觉 | Sidebar-10 页面骨架，Luma / Base UI；默认浅色 / 黑白强调色 / Neutral / Noto Sans / 8px，保留设备级外观和兼容偏好 |
 | 安装 | 本机编译 Mac 应用；iPhone 通过免费 Xcode 账号验证 |
 | 后续功能 | AI 洞察、分享扩展、快捷记录、语音、公开分发另行规划 |
 
@@ -56,7 +58,7 @@
 | apps/mcp | Node MCP 协议适配 |
 | tests/fixtures | 合成笔记、附件、错误格式、冲突数据 |
 
-- React、TypeScript、Vite、Tailwind、Base UI/shadcn、Lucide、Recharts 按需引入；编辑用 CodeMirror 6 同区实时排版，列表展示用 react-markdown；Swift YAML 用 Yams；索引用系统 SQLite。
+- React、TypeScript、Vite、Tailwind、Luma/Base UI、Hugeicons 和 Recharts 按需引入；编辑使用 Tiptap / ProseMirror 共享内核，阅读使用安全 react-markdown 管线；原生侧栏沿用既有 Lucide 资源，Swift YAML 使用 Yams。SQLite 仍按下文里程碑规划，不将界面迁移视为数据库交付。
 - 开发环境 Node 24.18.0、pnpm 10.34.1、Xcode 27.0；独立锁文件，不升级 Becoming 依赖。最低 macOS 14、iOS 17，M1 核对实际设备。
 - 运行数据、授权、令牌、构建产物不提交 Git。
 - SwiftUI + WKWebView + 共享 React 页面；本机 Web 只由菜单栏服务加载同一份打包页面，经独立的鉴权 HTTP 接口调用 Swift 核心。Mac App 的浏览器入口委托菜单栏服务，不创建 HTTP listener。独立 Web 使用浏览器文件适配器直接读写已授权目录；原生与本机 Web 仍经过 Swift 核心，Node、Becoming 不直接写笔记。
@@ -66,11 +68,11 @@
 - UI 可选库、CRUD、附件、删除恢复、统计、冲突和备份；MCP 只有只读子集。
 - 原生桥只接受应用自身主页面。Markdown 不执行 HTML/脚本；附件只在授权库内，拒绝越界与 symlink。外链交系统浏览器。
 
-页面：全部笔记、标签与搜索、统计、回收站、设置；有异常才展示待处理入口。Mac 侧栏，iPhone 单列与独立编辑页。输入保存本机草稿，按钮或 Mac ⌘Enter 提交，文件成功后清草稿。根据 2026-09-28 用户要求，取消编辑/预览切换，改为同一编辑区实时显示标题、强调和图片，光标所在段落可见 Markdown 标记；原始文本是保存来源，不做全文富文本往返转换。系统图片选择器导入相对引用。创建时间倒序，编辑不移动位置。
+页面：全部笔记、标签与搜索、统计、回收站、设置；有异常才展示待处理入口。Mac 侧栏，iPhone 单列与独立编辑页。输入保存本机草稿，按钮或 Mac ⌘Enter 提交，文件成功后清草稿。当前编辑器以 Tiptap / ProseMirror 语义 DOM 在同一编辑区呈现标题、强调、列表、表格、公式和本地图片；保存通过共享 Markdown 解析/序列化和版本保护处理，未支持语法保留原格式。早期“光标段落显示源码标记”的 CodeMirror 体验属于历史要求，已由现行编辑器替代；不据此承诺任意 Markdown 扩展无损结构化编辑。系统图片选择器导入相对引用。创建时间倒序，编辑不移动位置。
 
-设置：笔记库、同步状态、重建索引、备份恢复、外观；Mac 另有 MCP 开关/配置导出。根据 2026-09-28 最新要求，取消固定绿色，沿用 Becoming 实际入口默认 light/blue/neutral/Geist+系统中文/10px。支持浅色、深色、跟随系统，以及与 Becoming 相同的 8 种强调色、2 种中性色、27 种标题/正文字体选项、7 档圆角；按设备独立保存，一键恢复上述默认值。25 个非系统字体本地打包，中文使用系统回退。图表与状态语义色独立。首版无自由 HEX、背景图和逐组件改色。
+设置：笔记库、同步状态、重建索引、备份恢复、外观；Mac 另有 MCP 开关/配置导出。业务入口按实际已实现能力展示，未交付的计划不因 UI 迁移视为完成。现行外观支持浅色/深色/系统、8 种强调色、2 种中性色、标题/正文字体和常规 0/7.2/8/10/14px 圆角；默认采用 Luma 浅色/黑白/Neutral/Noto Sans/8px。旧合法字体与圆角兼容恢复，当前选项与字体资源以设置页及源码白名单为准。正文内容风格独立；首版无自由 HEX、背景图和逐组件改色。
 
-界面以 shadcn/ui new-york-v4 原模板为视觉源码，交互适配 Base UI，并使用 Tailwind CSS 4；交互组件源码存放在 apps/ui/src/components/ui。sidebar-10 改版采用紧凑控件样式，保留 Base UI 交互基础；不因此将 M1 真机关卡或完整 M3 标记为通过。
+界面保留 Sidebar-10 页面骨架，使用 shadcn Luma / Base UI 与 Tailwind CSS 4；现行控件、业务视图和页面在 `apps/ui/ui-next`，共享控制器与文件/宿主桥接在 `apps/ui/src`。Web、H5、macOS/iOS WebView 和本机服务消费同一生产构建；Storybook 和状态预览使用隔离数据。这不将 M1 真机关卡或完整 M3 标记为通过。
 
 ## 3. 文件契约、同步与可靠性
 

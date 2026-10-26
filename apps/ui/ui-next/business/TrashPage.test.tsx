@@ -6,7 +6,7 @@ import type { Note, TrashItem, TrashList } from "@memocard/contracts";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { resetStorybookBridge, setStorybookRequestHandler } from "../../.storybook/bridge";
+import { resetStorybookBridge, setStorybookRequestHandler } from "../../test-support/bridge";
 import { TrashPage } from "./TrashPage";
 
 let detach: (() => void) | undefined;

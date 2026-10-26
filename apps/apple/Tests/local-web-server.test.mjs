@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 
 let buildDirectory;
 let executable;
+const staticFontBytes = Buffer.from([0x77, 0x4f, 0x46, 0x32, 0, 0xff, 1]);
 before(async () => {
   assert.equal(process.platform, 'darwin');
   buildDirectory = await mkdtemp(join(tmpdir(), 'memocard-web-network-'));
@@ -32,8 +33,13 @@ async function webHost(t) {
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 </head><body>MemoCard</body></html>`);
   await writeFile(join(resources, 'bundle.js'), 'window.memocardTest = true;');
+  await mkdir(join(resources, 'assets'));
+  for (const suffix of ['woff', 'woff2']) {
+    await writeFile(join(resources, `assets/test-font-12345678.${suffix}`), staticFontBytes);
+  }
   await writeFile(join(directory, 'private.js'), 'not public');
   await symlink(join(directory, 'private.js'), join(resources, 'escape.js'));
+  await symlink(join(directory, 'private.js'), join(resources, 'assets/escape.woff2'));
   const configFile = join(directory, 'connection.json');
   const host = spawn(executable, [configFile, resources], { stdio: ['pipe', 'pipe', 'pipe'] });
   let stderr = '';
@@ -136,6 +142,45 @@ test('serves production files with Web marker, matching CSP and no fallback or s
   for (const path of ['/../private.js', '/%2e%2e/private.js', '//bundle.js']) {
     assert.equal((await call(host.config, { method: 'GET', path, body: null })).status, 400);
   }
+});
+
+test('static font retry cachebusters preserve the original HTTP bytes and headers', async t => {
+  const host = await webHost(t);
+  for (const suffix of ['woff', 'woff2']) {
+    const path = `/assets/test-font-12345678.${suffix}`;
+    const original = await call(host.config, { method: 'GET', path, body: null });
+    assert.equal(original.status, 200);
+    assert.equal(original.headers['content-type'], `font/${suffix}`);
+    assert.deepEqual(original.body, staticFontBytes);
+    for (const attempt of ['1', '2']) {
+      const retry = await call(host.config, { method: 'GET', path: `${path}?font-retry=${attempt}`, body: null });
+      assert.equal(retry.status, 200);
+      assert.deepEqual(retry.body, original.body);
+      assert.deepEqual(retry.headers, original.headers);
+    }
+  }
+  assert.equal((await call(host.config, { method: 'GET', path: '/assets/escape.woff2?font-retry=1', body: null })).status, 404);
+});
+
+test('font retry exception rejects other queries, routes, methods and malformed counters', async t => {
+  const host = await webHost(t);
+  const cookie = await authenticate(host);
+  const font = '/assets/test-font-12345678.woff2';
+  for (const query of ['', 'other=1', 'font-retry', 'font-retry=', 'font-retry=0', 'font-retry=-1', 'font-retry=+1',
+    'font-retry=01', 'font-retry=1.5', 'font-retry=1e3', 'font-retry=9223372036854775808', 'font-retry=%31',
+    '%66ont-retry=1', 'font-retry=1&other=1', 'other=1&font-retry=1', 'font-retry=1&font-retry=2', 'font-retry=1&', 'font-retry=1%26other=1']) {
+    assert.equal((await call(host.config, { method: 'GET', path: `${font}?${query}`, body: null })).status, 400, query);
+  }
+  for (const path of ['/', '/index.html', '/bundle.js', '/assets/theme.css', '/assets/image.png', '/test-font.woff2', '/api/session', '/api/bridge', '/api/assets/assets/image.woff2']) {
+    assert.equal((await call(host.config, { method: 'GET', path: `${path}?font-retry=1`, body: null, headers: { Cookie: cookie } })).status, 400, path);
+  }
+  for (const path of ['/assets/../test-font-12345678.woff2', '/assets/%2e%2e/test-font-12345678.woff2', '/assets/%2ftest-font-12345678.woff2']) {
+    assert.equal((await call(host.config, { method: 'GET', path: `${path}?font-retry=1`, body: null })).status, 400, path);
+  }
+  assert.equal((await call(host.config, { method: 'GET', path: `${font}?font-retry=1#fragment`, body: null })).status, 400);
+  assert.equal((await call(host.config, { method: 'GET', path: `${font}?font-retry=1`, body: null, headers: { Host: 'evil.example' } })).status, 403);
+  assert.equal((await call(host.config, { path: `${font}?font-retry=1` })).status, 400);
+  assert.equal((await call(host.config, { path: `${font}?font-retry=1`, headers: { Origin: 'http://evil.example' } })).status, 403);
 });
 
 test('authenticates one-use launch token and cookies before any bridge or asset dispatch', async t => {

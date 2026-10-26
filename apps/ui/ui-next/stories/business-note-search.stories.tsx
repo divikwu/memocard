@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useRef, useState } from "react";
 import { expect, fn, userEvent, waitFor, within } from "storybook/test";
-import { setStorybookRequestHandler } from "../../.storybook/bridge";
-import { createSearchFixture, type SearchFixtureMode } from "../../stories/note-search.fixtures";
+import { setStorybookRequestHandler } from "../../test-support/bridge";
+import { createSearchFixture, type SearchFixtureMode } from "../../test-support/note-search.fixtures";
 import { NoteSearchDialog } from "../business/NoteSearchDialog";
 import { Button } from "../components/button";
 import { usePreviewMode } from "../preview-mode";

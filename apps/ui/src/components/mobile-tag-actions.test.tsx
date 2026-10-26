@@ -2,13 +2,13 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { MobileTagActions } from "./mobile-tag-actions";
-import { TagNavigation } from "./tag-navigation";
-import { SidebarProvider } from "./ui/sidebar";
+import { MobileTagActions } from "@ui-next/business/MobileTagActions";
+import { TagNavigation } from "@ui-next/business/tag-navigation";
+import { SidebarProvider } from "@ui-next/components/sidebar";
 
-vi.mock("./tag-emoji-picker", () => ({ default: ({ onSelect }: { onSelect: (emoji: string) => void }) => <button onClick={() => onSelect("🎨")}>选择画板</button> }));
 const props = { tag:"工作/设计", vaultId:"tag-actions-test", onRename:vi.fn() };
 beforeEach(() => {
+  vi.stubGlobal("innerWidth", 390);
   localStorage.clear(); props.onRename.mockReset().mockResolvedValue(undefined);
   vi.stubGlobal("matchMedia", () => ({matches:true,addEventListener() {},removeEventListener() {}}));
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
@@ -42,7 +42,8 @@ it("edits the name and icon in a sheet and migrates the shared preferences", asy
   expect(screen.getByRole("button", {name:"选择 Emoji"}).getAttribute("aria-expanded")).toBe("true");
   await waitFor(() => expect(document.activeElement).toBe(input));
   await user.clear(input); await user.type(input, "工作/界面");
-  await user.click(await screen.findByRole("button", {name:"选择画板"}));
+  await user.type(screen.getByRole("textbox", {name:"搜索 Emoji"}), "🎨");
+  await user.click(await screen.findByRole("button", {name:/调色板/}));
   await user.click(screen.getByRole("button", {name:"保存"}));
   await waitFor(() => expect(screen.queryByRole("dialog", {name:"编辑标签"})).toBeNull());
   expect(props.onRename).toHaveBeenCalledWith(props.tag, "工作/界面");

@@ -5,7 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vite
 import type { Note, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import { App } from "./App";
 import { noteEditor, readEditorText, replaceCaptureText } from "./editor-test-utils";
-import { swipeSheet } from "./components/ui/sheet-swipe.test-utils";
+import { swipeSheet } from "@ui-next/components/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("./bridge", () => ({
@@ -16,7 +16,6 @@ vi.mock("./bridge", () => ({
   isConnectedClient: true,
   errorMessage: (cause: unknown) => cause instanceof Error ? cause.message : "操作未完成",
 }));
-vi.mock("@/features/theme/ThemeSettings", () => ({ ThemeSettings: () => <section aria-label="外观设置" /> }));
 
 const note: Note = {
   id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", body: "周末散步时想到的记录", tags: ["生活"],
@@ -31,7 +30,7 @@ const status: VaultStatus = {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("./components/note-collection"), import("./components/note-search-dialog"), import("./Editor")]);
+  await Promise.all([import("@ui-next/business/NoteCollection"), import("@ui-next/business/NoteSearchDialog"), import("@ui-next/business/Editor")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -105,8 +104,8 @@ describe("sidebar workspace actions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
-    await waitFor(() => expect((screen.getByRole("button", { name: "新建笔记" }) as HTMLButtonElement).disabled).toBe(false));
-    await user.click(screen.getByRole("button", { name: "新建笔记" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "新建" }) as HTMLButtonElement).disabled).toBe(false));
+    await user.click(screen.getByRole("button", { name: "新建" }));
     const title = await screen.findByRole("textbox", { name: "页面标题" });
     await user.type(title, "未保存的标题");
     const route = window.location.hash;
@@ -132,7 +131,7 @@ describe("sidebar workspace actions", () => {
     const search = await screen.findByRole("textbox", { name: "搜索当前视图笔记" });
     await user.type(search, "不存在");
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在", tags: ["生活"], limit: 30 }));
-    expect(await screen.findByRole("heading", { name: "没有找到相关笔记" })).toBeTruthy();
+    expect(await screen.findByText("没有找到相关笔记")).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "搜索当前视图笔记" })).toBe(search);
     expect(document.activeElement).toBe(search);
     expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
@@ -158,7 +157,7 @@ describe("sidebar workspace actions", () => {
     expect(screen.getByRole("status", { name: "正在读取笔记库" })).toBeTruthy();
     expect(screen.queryByText("在笔记中插入图片后，会自动出现在这里。")).toBeNull();
     await act(async () => finishQuery({ notes: [], nextCursor: null, coverage: status.coverage }));
-    expect(await screen.findByRole("heading", { name: "还没有包含图片的笔记" })).toBeTruthy();
+    expect(await screen.findByText("还没有包含图片的笔记")).toBeTruthy();
   });
 
   it("retains quick filters in search and paging, clears them for tags and all notes, and explains empty results", async () => {
@@ -181,12 +180,12 @@ describe("sidebar workspace actions", () => {
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({ quickFilter: "images", cursor: "image-page-2" })));
     const queryCount = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").length;
     const loadedCount = screen.getByRole("list", { name: "笔记列表" }).children.length;
-    await user.click(screen.getByRole("tab", { name: "列表布局" }));
+    await user.click(screen.getByRole("button", { name: "列表布局" }));
     expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("list");
     expect(screen.getByRole("list", { name: "笔记列表" }).children).toHaveLength(loadedCount);
     expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
     expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes")).toHaveLength(queryCount);
-    await user.click(screen.getByRole("tab", { name: "卡片布局" }));
+    await user.click(screen.getByRole("button", { name: "卡片布局" }));
     await user.type(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), "散步");
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({ quickFilter: "images", query: "散步" })));
     expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
@@ -266,11 +265,11 @@ describe("sidebar workspace actions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
-    await user.click(screen.getByRole("button", { name: "切换侧栏" }));
+    await user.click(screen.getByRole("button", { name: "切换笔记导航" }));
     expect(screen.queryByRole("navigation", { name: "主要导航" })).toBeNull();
     fireEvent.keyDown(window, { key: "b", ctrlKey: true });
     expect(screen.getByRole("navigation", { name: "主要导航" })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "新建笔记" }));
+    await user.click(screen.getByRole("button", { name: "新建" }));
     const input = await screen.findByRole("textbox", { name: "笔记内容" });
     await user.click(input);
     fireEvent.keyDown(input, { key: "b", ctrlKey: true });
@@ -291,6 +290,7 @@ describe("sidebar workspace actions", () => {
   });
 
   it("returns from mobile settings to home before opening bottom search", async () => {
+    vi.stubGlobal("innerWidth", 390);
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query.includes("767px"), media: query, onchange: null,
       addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
@@ -301,18 +301,19 @@ describe("sidebar workspace actions", () => {
     await user.click(screen.getByRole("button", { name: "页面操作" }));
     await user.click(await screen.findByRole("menuitem", { name: "设置" }));
     await user.click(screen.getByRole("button", { name: "打开导航" }));
-    const sheet = await screen.findByRole("dialog", { name: "记忆卡导航" });
+    const sheet = await screen.findByRole("dialog", { name: "笔记导航" });
 
     expect(within(sheet).queryByRole("button", { name: "搜索" })).toBeNull();
     await user.click(within(sheet).getByRole("button", { name: "主页" }));
 
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "笔记导航" })).toBeNull());
     await user.click(screen.getByRole("button", { name: "搜索全部笔记" }));
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "搜索笔记" })));
     expect(window.location.hash).toBe("#/home");
   });
 
   it("opens the new note editor from the mobile page menu", async () => {
+    vi.stubGlobal("innerWidth", 390);
     window.matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query.includes("767px"), media: query, onchange: null,
       addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
@@ -321,17 +322,17 @@ describe("sidebar workspace actions", () => {
     render(<App />);
     await screen.findByText(note.body);
     await user.click(screen.getByRole("button", { name: "打开导航" }));
-    const sheet = await screen.findByRole("dialog", { name: "记忆卡导航" });
+    const sheet = await screen.findByRole("dialog", { name: "笔记导航" });
 
     expect(within(sheet).queryByRole("button", { name: "新建笔记" })).toBeNull();
     await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "笔记导航" })).toBeNull());
     await user.click(screen.getByRole("button", { name: "页面操作" }));
     await user.click(await screen.findByRole("menuitem", { name: "新建笔记" }));
 
     const editor = await screen.findByRole("region", { name: "新建笔记" });
     expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
-    await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "笔记导航" })).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(within(editor).getByRole("textbox", { name: "页面标题" })));
   });
 });
@@ -354,15 +355,15 @@ describe('mobile page navigation',()=>{
     const search=within(bar).getByRole('button',{name:'搜索全部笔记'});
     expect(within(bar).getByRole('button',{name:'打开快速记录'})).toBeTruthy();
     await user.click(screen.getByRole('button',{name:'打开导航'}));
-    const sheet=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    const sheet=await screen.findByRole('dialog',{name:'笔记导航'});
     expect(within(sheet).queryByRole('button',{name:'搜索'})).toBeNull();
     expect(within(sheet).queryByRole('button',{name:'新建笔记'})).toBeNull();
     await user.keyboard('{Escape}');
-    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记导航'})).toBeNull());
     await user.click(search);
     const input=await screen.findByRole('combobox',{name:'搜索笔记'});
     await waitFor(()=>expect(document.activeElement).toBe(input));
-    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记导航'})).toBeNull());
   });
 
   it('omits the mobile close button and dismisses navigation with the backdrop or Escape',async()=>{
@@ -370,14 +371,14 @@ describe('mobile page navigation',()=>{
     await screen.findByText(note.body);
     const trigger=screen.getByRole('button',{name:'打开导航'});
     await user.click(trigger);
-    const navigation=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    const navigation=await screen.findByRole('dialog',{name:'笔记导航'});
     expect(within(navigation).queryByRole('button',{name:'关闭导航'})).toBeNull();
     await user.click(document.querySelector('[data-slot="sheet-overlay"]') as HTMLElement);
-    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记导航'})).toBeNull());
     await user.click(trigger);
-    await screen.findByRole('dialog',{name:'记忆卡导航'});
+    await screen.findByRole('dialog',{name:'笔记导航'});
     await user.keyboard('{Escape}');
-    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记导航'})).toBeNull());
     expect(document.activeElement).toBe(trigger);
   });
 
@@ -387,10 +388,10 @@ describe('mobile page navigation',()=>{
     expect(screen.queryByRole('button',{name:'标签操作 生活'})).toBeNull();
     await user.click(screen.getByRole('button',{name:'打开导航'}));
     await screen.findByRole('button',{name:'笔记库：侧栏测试库'});
-    const navigation=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    const navigation=await screen.findByRole('dialog',{name:'笔记导航'});
     expect(within(navigation).queryByRole('button',{name:'标签操作 生活'})).toBeNull();
     await user.click(await within(navigation).findByRole('button',{name:'生活'}));
-    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记导航'})).toBeNull());
     const title=await screen.findByRole('button',{name:'标签操作 生活'});
     await user.click(title);
     const menu=await screen.findByRole('menu',{name:'标签操作 生活'});
@@ -400,7 +401,7 @@ describe('mobile page navigation',()=>{
     await user.click(screen.getByRole('button',{name:'打开导航'}));
     await user.click(screen.getByRole('button',{name:'展开或收起快捷筛选'}));
     await user.click(screen.getByRole('button',{name:'无标签'}));
-    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记导航'})).toBeNull());
     expect(screen.queryByRole('button',{name:'标签操作 生活'})).toBeNull();
   });
 
@@ -484,7 +485,7 @@ describe('mobile page navigation',()=>{
     const user=userEvent.setup();render(<App />);
     await screen.findByText(note.body);
     await user.click(screen.getByRole('button',{name:'打开导航'}));
-    const navigation=await screen.findByRole('dialog',{name:'记忆卡导航'});
+    const navigation=await screen.findByRole('dialog',{name:'笔记导航'});
     const trigger=within(navigation).getByRole('button',{name:'笔记库：侧栏测试库'});
     await user.click(trigger);
     const sheet=await screen.findByRole('dialog',{name:'笔记库'});
@@ -496,13 +497,13 @@ describe('mobile page navigation',()=>{
     await waitFor(()=>expect(sheet.hasAttribute('data-swipe-ready')).toBe(true));
     swipeSheet(within(sheet).getByRole('heading',{name:'笔记库'}),160);
     await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记库'})).toBeNull());
-    expect(screen.getByRole('dialog',{name:'记忆卡导航'})).toBe(navigation);
+    expect(screen.getByRole('dialog',{name:'笔记导航'})).toBe(navigation);
     expect(document.activeElement).toBe(trigger);
     await user.click(trigger);
     await screen.findByRole('dialog',{name:'笔记库'});
     await user.keyboard('{Escape}');
     await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记库'})).toBeNull());
-    expect(screen.getByRole('dialog',{name:'记忆卡导航'})).toBe(navigation);
+    expect(screen.getByRole('dialog',{name:'笔记导航'})).toBe(navigation);
     expect(document.activeElement).toBe(trigger);
   });
 
@@ -510,11 +511,11 @@ describe('mobile page navigation',()=>{
     const user=userEvent.setup();render(<App />);
     await screen.findByText(note.body);
     await user.click(screen.getByRole('button',{name:'打开导航'}));
-    await user.click(within(await screen.findByRole('dialog',{name:'记忆卡导航'})).getByRole('button',{name:'笔记库：侧栏测试库'}));
+    await user.click(within(await screen.findByRole('dialog',{name:'笔记导航'})).getByRole('button',{name:'笔记库：侧栏测试库'}));
     await user.click(within(await screen.findByRole('dialog',{name:'笔记库'})).getByRole('button',{name:label}));
     await waitFor(()=>expect(bridge.request).toHaveBeenCalledWith('selectVault',{create}));
     await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记库'})).toBeNull());
-    expect(screen.getByRole('dialog',{name:'记忆卡导航'})).toBeTruthy();
+    expect(screen.getByRole('dialog',{name:'笔记导航'})).toBeTruthy();
     expect(screen.getByRole('button',{name:'笔记库：侧栏测试库'})).toBeTruthy();
   });
 
@@ -522,7 +523,7 @@ describe('mobile page navigation',()=>{
     const user=userEvent.setup();render(<App />);
     await screen.findByText(note.body);
     await user.click(screen.getByRole('button',{name:'打开导航'}));
-    await user.click(within(await screen.findByRole('dialog',{name:'记忆卡导航'})).getByRole('button',{name:'笔记库：侧栏测试库'}));
+    await user.click(within(await screen.findByRole('dialog',{name:'笔记导航'})).getByRole('button',{name:'笔记库：侧栏测试库'}));
     await user.click(within(await screen.findByRole('dialog',{name:'笔记库'})).getByRole('button',{name:'笔记库设置'}));
     await screen.findByRole('heading',{name:'设置',level:1});
     await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
@@ -555,7 +556,7 @@ describe('mobile page navigation',()=>{
     await screen.findByText(note.body);
     const bar=screen.getByRole('contentinfo',{name:'快捷记录'});
     const search=within(bar).getByRole('button',{name:'搜索全部笔记'});
-    const page=screen.getByRole('main').querySelector<HTMLElement>('.overflow-y-auto')!;
+    const page=screen.getByRole('main').querySelector<HTMLElement>('.web-app-scroll')!;
     page.scrollTop=420;
     await waitFor(()=>expect((search as HTMLButtonElement).disabled).toBe(false));
     await user.click(search);
@@ -601,8 +602,8 @@ describe('mobile page navigation',()=>{
     await user.click(screen.getByRole('button',{name:'收起快速记录'}));
     await waitFor(()=>expect(document.activeElement).toBe(entry));
     await user.click(screen.getByRole('button',{name:'打开导航'}));
-    await user.click(within(await screen.findByRole('dialog',{name:'记忆卡导航'})).getByRole('button',{name:/^所有笔记$/}));
-    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'记忆卡导航'})).toBeNull());
+    await user.click(within(await screen.findByRole('dialog',{name:'笔记导航'})).getByRole('button',{name:/^所有笔记$/}));
+    await waitFor(()=>expect(screen.queryByRole('dialog',{name:'笔记导航'})).toBeNull());
     await user.click(screen.getByRole('button',{name:'打开快速记录'}));
     expect(await screen.findByRole('textbox',{name:'快速输入内容'})).toHaveProperty('textContent','尚未提交的首页想法');
     expect(bridge.request.mock.calls.some(([operation])=>operation==='saveNote')).toBe(false);
@@ -683,7 +684,7 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   expect(cardTag.getAttribute("data-slot")).toBe("badge");
   expect(cardTag.getAttribute("data-variant")).toBe("secondary");
   expect(cardTag.className).toContain("text-xs");
-  expect(cardTag.className).toContain("note-tag-pill");
+  expect(cardTag.className).toContain("next-note-tag");
   expect(cardTag.getAttribute("data-tag")).toBe(encodeURIComponent("生活"));
   expect(cardTag.className).toContain("h-5");
   expect(cardTag.className).toContain("py-0");
@@ -711,25 +712,26 @@ it("preserves quick capture through both responsive layouts", async () => {
   render(<App />);
   const desktop = await screen.findByRole("textbox", { name: "快速输入内容" });
   await user.type(desktop, "跨尺寸草稿");
-  act(() => { mobile = true; listeners.forEach(listener => listener()); });
+  act(() => { vi.stubGlobal("innerWidth",390); mobile = true; listeners.forEach(listener => listener()); });
   await user.click(await screen.findByRole("button", { name: "打开快速记录" }));
   const phone = await screen.findByRole("textbox", { name: "快速输入内容" });
   expect(phone).toHaveProperty("textContent", "跨尺寸草稿");
   await waitFor(() => expect(document.activeElement).toBe(phone));
   act(() => { const editor=noteEditor(phone);editor.commands.setTextSelection(editor.state.doc.content.size); });
   await user.keyboard("补充");
-  act(() => { mobile = false; listeners.forEach(listener => listener()); });
+  act(() => { vi.stubGlobal("innerWidth",1024); mobile = false; listeners.forEach(listener => listener()); });
   expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("textContent", "跨尺寸草稿补充");
   expect(bridge.request.mock.calls.some(([operation]) => operation === "saveNote")).toBe(false);
   await user.click(screen.getByRole("button", { name: "记录" }));
   await waitFor(() => expect(screen.getByRole("textbox", { name: "快速输入内容" })).toHaveProperty("textContent", ""));
   expect(localStorage.getItem("memocard:quick-capture:v1:test-vault")).toBeNull();
-  act(() => { mobile = true; listeners.forEach(listener => listener()); });
+  act(() => { vi.stubGlobal("innerWidth",390); mobile = true; listeners.forEach(listener => listener()); });
   await user.click(await screen.findByRole("button", { name: "打开快速记录" }));
   expect(await screen.findByRole("textbox", { name: "快速输入内容" })).toHaveProperty("textContent", "");
 });
 
 it("dismisses the mobile sheet at the desktop breakpoint without reopening on return", async () => {
+  vi.stubGlobal("innerWidth",390);
   let mobile = true;
   const listeners = new Set<() => void>();
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -742,12 +744,12 @@ it("dismisses the mobile sheet at the desktop breakpoint without reopening on re
   render(<App />);
   await screen.findByText(note.body);
   await user.click(screen.getByRole("button", { name: "打开导航" }));
-  expect(await screen.findByRole("dialog", { name: "记忆卡导航" })).toBeTruthy();
-  act(() => { mobile = false; listeners.forEach(listener => listener()); });
-  await waitFor(() => expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull());
+  expect(await screen.findByRole("dialog", { name: "笔记导航" })).toBeTruthy();
+  act(() => { vi.stubGlobal("innerWidth",1024); mobile = false; listeners.forEach(listener => listener()); });
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "笔记导航" })).toBeNull());
   expect(screen.getByRole("button", { name: "收起侧栏" })).toBeTruthy();
-  act(() => { mobile = true; listeners.forEach(listener => listener()); });
-  expect(screen.queryByRole("dialog", { name: "记忆卡导航" })).toBeNull();
+  act(() => { vi.stubGlobal("innerWidth",390); mobile = true; listeners.forEach(listener => listener()); });
+  expect(screen.queryByRole("dialog", { name: "笔记导航" })).toBeNull();
   expect(screen.getByRole("button", { name: "打开导航" }).getAttribute("aria-expanded")).toBe("false");
 });
 

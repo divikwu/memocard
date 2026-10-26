@@ -19,15 +19,6 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/components/ui/*.{ts,tsx}"],
-    rules: {
-      "react-refresh/only-export-components": ["warn", {
-        allowConstantExport: true,
-        allowExportNames: ["buttonVariants", "badgeVariants", "tabsListVariants", "useSidebar"],
-      }],
-    },
-  },
-  {
     files: ["ui-next/**/*.{ts,tsx}"],
     languageOptions: { globals: globals.browser },
     plugins: { "react-hooks": reactHooks },

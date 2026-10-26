@@ -5,9 +5,9 @@ import { formatPropertyDate, parsePropertyDate, propertyDateString, propertyDate
 
 type View = {
   DayPicker: ComponentType<ComponentProps<typeof import("react-day-picker")["DayPicker"]>>;
-  Button: ComponentType<Omit<ComponentProps<typeof import("@/components/ui/button")["Button"]>, "render">>;
-  Input: ComponentType<ComponentProps<typeof import("@/components/ui/input")["Input"]>>;
-  Switch: ComponentType<ComponentProps<typeof import("@/components/ui/switch")["Switch"]>>;
+  Button: ComponentType<Omit<ComponentProps<typeof import("@ui-next/components/button")["Button"]>, "render">>;
+  Input: ComponentType<ComponentProps<typeof import("@ui-next/components/input")["Input"]>>;
+  Switch: ComponentType<ComponentProps<typeof import("@ui-next/components/switch")["Switch"]>>;
 };
 
 export function createDatePropertyPicker(view: View) {

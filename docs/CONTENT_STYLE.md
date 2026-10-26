@@ -1,38 +1,35 @@
 # 内容风格与 Typeset
 
-设置 → 内容风格提供 Typeset 的七项配置：行宽 60/70/80/90ch，标题字体（含跟随正文）、正文字体、等宽字体，字号 14/15/16/18px，行高 1.6/1.75/1.9，段落间距 1/1.25/2em，以及随机搭配和恢复默认。字体清单与 Typeset 当前清单一致，复用现有本地字体资源；中文使用系统回退。
+设置 → 内容风格维护笔记阅读与编辑的七项偏好，独立于导航、工具栏和通用 UI 外观。当前设置由 [WebTypographySettings](../apps/ui/ui-next/web/WebTypographySettings.tsx)、[preferences](../apps/ui/src/features/typography/preferences.ts) 和 [TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx) 实现。
 
-默认保留原先选择的 90ch、Roboto Slab / Noto Sans / Geist Mono、16px、1.6、1em。设置以 `memocard.typography.v1` 保存在当前浏览器/宿主的 localStorage，不跨浏览器或设备同步，也不写入 Markdown 或笔记库。相同来源的标签页响应 storage 变化；值经过白名单校验；保存或字体加载失败显示提示。
+## 当前默认与存储
 
-`apps/ui/src/typeset.css` 为 shadcn/ui 官方 Typeset 完整样式，保留 MIT 授权（同目录 `typeset.LICENSE`）。来源：https://github.com/shadcn-ui/ui/blob/main/apps/v4/app/(app)/(typeset)/typeset.css 。选项来源同目录 `lib/search-params.ts`、`lib/fonts.ts`，核对日期 2026-09-29。
+| 配置 | 默认值 | 可选范围 |
+| --- | --- | --- |
+| 标题字体 | 跟随正文 | 跟随正文及当前标题字体清单 |
+| 正文字体 | Noto Sans | 当前字体白名单 |
+| 等宽字体 | Geist Mono | Mono 字体清单；旧非等宽值仅兼容恢复 |
+| 字号基准 | 16px | 14 / 15 / 16 / 18px |
+| 行高 | 1.6 | 1.6 / 1.75 / 1.9 |
+| 段落间距 | 1em | 1 / 1.25 / 2em |
+| 行宽档位 | 90（默认字号下 720px） | 60 / 70 / 80 / 90 |
 
-阅读渲染支持 Markdown / GFM 标题 H1–H6、段落、强调、删除线、嵌套列表与任务、链接、引用、代码、分割线、表格、脚注、本地图片，以及经过白名单清洗的 HTML 语义元素：mark、abbr、kbd、sup/sub、details/summary、dl/dt/dd、figure/figcaption 等。公式由 remark-math + KaTeX 输出原生 MathML。表格保留语义并提供可键盘聚焦的横向滚动容器；脚注往返链接保持清洗后的目标一致。
+行宽 ID 按字号基准乘以 28 / 33 / 37 / 45 计算，不是 CSS `ch`。恢复默认使用本表当前值；保留合法旧偏好，不自动重置用户已选字体和阅读节奏。
 
-安全边界：清洗原始 HTML 后才渲染公式；禁用脚本、事件、任意样式和嵌入框架；图片仍只能使用已授权本地附件。完整样式包含 video 等选择器，但本次未增加音视频导入或播放器，不放开远程媒体。
+配置以 `memocard.typography.v1` 保存在当前浏览器/宿主的 localStorage，不写 Markdown、笔记库或跨设备同步数据。同源标签页响应 storage 变化；非法值回退默认。保存或字体加载失败提供提示，当前会话仍可继续使用。随机搭配使用当前有效选项。
 
-CodeMirror 延续源码实时预览，不承诺所有 HTML、表格和公式所见即所得。字体、字号、行高、空段间距与六级标题层级使用同一配置；表格源码使用等宽背景，引用与分割线提供结构样式。复杂内容可在阅读卡片或展开全文中查看完整排版。配置不改变 Markdown 源文件，不重建编辑器，也不影响导航和工具栏字体。摘要字号比正文小 1px（最小 14px），段距保持 .75em。
+## 当前渲染与编辑
 
-验证：配置校验、选择/持久化/重挂载、恢复默认、跨标签页、存储失败；完整格式渲染、HTML 清洗、附件和 Wiki 链接、脚注往返均有自动化覆盖。`pnpm verify` 执行全量回归。
+阅读样式为 [typeset.css](../apps/ui/ui-next/typeset.css) 和 [Typeset 主题](../apps/ui/ui-next/typeset-theme.css)，设置通过 [web-typography.css](../apps/ui/ui-next/web/web-typography.css) 映射到正文、笔记标题和代码。来源与许可见 [typeset.LICENSE](../apps/ui/src/typeset.LICENSE)。卡片摘要和搜索预览保留自己的紧凑密度；设置不改变导航或工具栏。
 
-## 编辑页基础元素展示对齐（2026-09-30）
+[NoteMarkdown](../apps/ui/ui-next/business/NoteMarkdown.tsx) 复用安全 Markdown 管线，支持 GFM、任务、标题、链接、Wiki 链接、脚注、授权本地图片、表格、公式及允许的 HTML 语义元素。表格提供可聚焦的横向滚动区域。原始 HTML 经过白名单清洗，不执行脚本、事件或任意样式；图片继续受库内附件边界限制。
 
-未编辑行将 Markdown 无序列表标记显示为随嵌套层级变化的圆点／空心圆／方点，有序列表显示数字标记；换行正文使用悬挂缩进。待办项隐藏额外的列表横线，引用隐藏 `>`，分割线隐藏 `---` 的源码行高。光标进入对应行后恢复可编辑标记。所有替换仅为 CodeMirror 装饰，保存、复制、撤销仍使用原始 Markdown。
+编辑器使用 [RichMarkdownEditor](../apps/ui/ui-next/business/RichMarkdownEditor.tsx) 和共享 [rich-editor-core](../apps/ui/src/rich-editor-core.tsx) 的 Tiptap / ProseMirror 语义 DOM。表格、公式、图片、Callout、链接、脚注和格式菜单各保留版本、撤销及 Markdown 保护契约；未支持语法保留原格式，不承诺任意第三方 Markdown 扩展都可结构化编辑。
 
-这一步改善基础元素展示，未将编辑器替换为完整 HTML 阅读渲染：表格、公式及原始 HTML 在编辑页仍为源码。用户的字体、行宽、字号、行高和间距配置保留，不自动改成 Typeset 网站当前默认值。
+保存、草稿、附件与属性更新仍由共享业务内核处理。内容风格只改变显示，不改变 Markdown 源文件或保存位置；图片导入、未知格式和复杂表格的实际支持以当前编辑器回归为准。音视频导入/播放器未由 Typeset 样式选择器自动获得。
 
+## 检查与历史边界
 
-## 所见即所得编辑（2026-09-30）
+`pnpm verify:design` 覆盖当前文档与组件，`pnpm verify:web` 覆盖产品类型、回归、构建、浏览器沙盒流程和资源门禁。内容风格的选择、恢复默认、存储失败与重载由当前 `WebTypography` / `WebSettings` 测试验证；真实 vault、中文 IME、系统选择器和跨设备同步另验。
 
-默认编辑器现使用语义 DOM 并复用 `.markdown.typeset`；活动标题、强调、列表和引用不再显示 Markdown 标记。表格单元格直接编辑，公式点击打开表达式与即时预览面板。表头因 ProseMirror 使用 tbody，使用局部适配规则匹配 Typeset 的 thead 间距；块公式输出 `math[display=block]`，与阅读视图相同。配置数值和原有字体选择不被重置。
-
-支持 Wiki 链接、单行脚注定义及常见安全 HTML 元素（mark/abbr/kbd/sup/sub/details/summary/figure/figcaption/dl/dt/dd）；链接用 Cmd/Ctrl+点击打开，图片仍只能从授权库解析。未识别内容保留原格式块；这不等于可以编辑任意 HTML 或任意第三方 Markdown 扩展。
-
-## 格式入口补齐（2026-09-30）
-
-行宽现在按官方选项映射 60→28em、70→33em、80→37em、90→42em，结合正文选定字号计算实际宽度，避免把平均字符行宽误当成 CSS ch。保留用户已选配置。
-
-“格式与属性”提供高亮、上/下标、键盘标记、缩写说明、链接地址和 Wiki 笔记搜索、折叠内容、定义列表、脚注、图片属性与原格式编辑。表格增加对齐、表头范围、合并/拆分、表尾行和表题。带表题/表尾或合并单元格的表格以 Markdown 文件中的安全 HTML 保存；普通表格继续输出 GFM。表尾切换限制在末行，避免保存后重排。
-
-多段脚注按完整定义处理，支持编号更新（同时修改引用）、插入唯一编号和跳转/返回。公式在正文原位展开表达式输入与实时预览，应用形成一次撤销操作，Esc 取消。图片可修改替代文字、调用原本授权导入流程替换、包裹成 figure 并直接编辑说明。
-
-未知语法仍按原文保护，但可主动通过“编辑原格式内容”修改其源码。该入口不是任意扩展语法的结构化所见即所得；音视频导入/播放依然不在本次范围。
+2026-09-29 至 09-30 的 CodeMirror 源码装饰、早期字体默认和语义编辑迁移属于历史批次，不能作为当前实现说明。历史验收见 [内容页演进记录](CONTENT_PAGE_POLISH_ACCEPTANCE.md)；当前排版与平台职责以 [Typography](../design/typography.md)和[设计维护入口](../design/README.md)为准。

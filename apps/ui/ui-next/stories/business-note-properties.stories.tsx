@@ -2,8 +2,8 @@ import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, fn, userEvent, within } from "storybook/test";
 import type { NoteProperties as Properties, PropertyChange } from "@memocard/contracts";
-import { setStorybookRequestHandler } from "../../.storybook/bridge";
-import { editorNote } from "../../stories/editor.fixture";
+import { setStorybookRequestHandler } from "../../test-support/bridge";
+import { editorNote } from "../../test-support/editor-note";
 import { NoteProperties } from "../business/NoteProperties";
 import TagColorStyles from "../business/TagColorStyles";
 import { TagColorProvider } from "../../src/TagColorProvider";
@@ -67,4 +67,4 @@ export const Editable: Story = { play: async ({ canvasElement, args }) => {
 } };
 export const ReadOnly: Story = { args: { canEdit: false } };
 export const Updating: Story = { args: { busy: true } };
-export const Mobile: Story = { globals: { viewport: { value: "mobile1", isRotated: false } } };
+export const Mobile: Story = { tags: ["mobile"], globals: { viewport: { value: "mobile", isRotated: false } } };

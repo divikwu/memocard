@@ -13,7 +13,7 @@ export async function productionGraph(root = repository) {
   const config = ts.readConfigFile(resolve(root, 'apps/ui/tsconfig.json'), ts.sys.readFile);
   if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
   const options = ts.parseJsonConfigFileContent(config.config, ts.sys, resolve(root, 'apps/ui')).options;
-  const sourceRoot = resolve(root, 'apps/ui/src') + sep;
+  const sourceRoots = ['apps/ui/src', 'apps/ui/ui-next'].map(path => resolve(root, path) + sep);
   const visited = new Set();
   const graph = new Map();
   async function visit(file) {
@@ -40,7 +40,7 @@ export async function productionGraph(root = repository) {
     const local = [];
     for (const specifier of imports) {
       const target = ts.resolveModuleName(specifier, file, options, ts.sys).resolvedModule?.resolvedFileName;
-      if (target?.startsWith(sourceRoot) && /\.tsx?$/.test(target) && !target.endsWith('.d.ts') && !excluded(target)) {
+      if (target && sourceRoots.some(sourceRoot => target.startsWith(sourceRoot)) && /\.tsx?$/.test(target) && !target.endsWith('.d.ts') && !excluded(target)) {
         local.push(target);
       }
     }
@@ -71,7 +71,7 @@ export async function checkInventory({ root = repository, inventory = 'design/co
   const production = [...graph.keys()].filter(path => path.endsWith('.tsx')).sort();
   for (const path of production) if (!entries.has(path)) errors.push(`Unlisted production TSX: ${path}`);
   for (const path of entries) {
-    if (path.startsWith('apps/ui/src/') && path.endsWith('.tsx') && !graph.has(path)) {
+    if (/^apps\/ui\/(?:src|ui-next)\//.test(path) && path.endsWith('.tsx') && !graph.has(path)) {
       errors.push(`Inventory TSX is not production-reachable: ${path}`);
     }
   }

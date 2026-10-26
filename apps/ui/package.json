@@ -18,24 +18,20 @@
     "preview": "vite preview --host 127.0.0.1",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --maxWorkers=4 --exclude 'ui-next/**'",
+    "test": "pnpm test:shared && pnpm test:ui-next",
     "test:ui-next": "vitest run --config vite.storybook-next.config.ts --maxWorkers=4",
-    "storybook": "storybook dev --host 127.0.0.1 --port 6006 --no-open --disable-telemetry",
+    "storybook": "storybook dev --config-dir .storybook-next --host 127.0.0.1 --port 6016 --exact-port --no-open --disable-telemetry",
     "prestorybook": "pnpm -w tokens:build && pnpm -w icons:build && pnpm -w spacing:build && pnpm -w typography:build",
-    "build:storybook": "storybook build --output-dir storybook-static --disable-telemetry",
+    "build:storybook": "storybook build --config-dir .storybook-next --output-dir storybook-next-static --disable-telemetry",
     "prebuild:storybook": "pnpm -w tokens:build && pnpm -w icons:build && pnpm -w spacing:build && pnpm -w typography:build",
     "test:storybook": "vitest run --config vitest.storybook.config.ts",
     "typecheck:storybook": "tsc --project tsconfig.storybook.json --noEmit",
-    "dev:web-next": "vite --config vite.web-next.config.ts",
-    "build:web-next": "tsc --project tsconfig.ui-next.json --noEmit && vite build --config vite.web-next.config.ts"
+    "dev:web-next": "pnpm dev",
+    "build:web-next": "pnpm build",
+    "test:shared": "vitest run --maxWorkers=4 --exclude 'ui-next/**'"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
-    "@codemirror/commands": "6.11.1",
-    "@codemirror/lang-markdown": "6.5.2",
-    "@codemirror/language": "6.12.4",
-    "@codemirror/state": "6.7.6",
-    "@codemirror/view": "6.43.13",
     "@fontsource-variable/dm-sans": "^5.3.0",
     "@fontsource-variable/eb-garamond": "^5.3.0",
     "@fontsource-variable/figtree": "^5.3.0",
@@ -79,7 +75,6 @@
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "katex": "^0.18.9",
-    "lucide-react": "^1.31.0",
     "micromark-util-decode-string": "2.0.1",
     "page-mascot": "^0.1.0",
     "react": "^19.2.6",
@@ -122,6 +117,7 @@
     "typescript": "~6",
     "typescript-eslint": "^8",
     "vite": "^8",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "lucide-react": "^1.31.0"
   }
 }

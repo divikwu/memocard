@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MobileTagActions } from "./MobileTagActions";
-import { swipeSheet } from "../../src/components/ui/sheet-swipe.test-utils";
+import { swipeSheet } from "../components/sheet-swipe.test-utils";
 
 const vaultId = "ui-next-mobile-tag-actions-test";
 const key = `memocard:tags:${vaultId}`;

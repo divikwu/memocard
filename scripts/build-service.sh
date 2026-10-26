@@ -13,7 +13,8 @@ mkdir -p apps/apple/Resources/Web
 rsync -a --delete apps/ui/dist/ apps/apple/Resources/Web/
 python3 scripts/generate-project.py
 
-memocard_xcode_args=(-project apps/apple/MemoCard.xcodeproj -scheme MemoCardService -configuration Release -destination 'platform=macOS' -derivedDataPath build/service-apple)
+# Keep Release permissions declared in Service.entitlements without Xcode's debug entitlement.
+memocard_xcode_args=(-project apps/apple/MemoCard.xcodeproj -scheme MemoCardService -configuration Release -destination 'platform=macOS' -derivedDataPath build/service-apple 'CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO')
 if [[ -n "${MEMOCARD_TEAM_ID:-}" ]]; then
   memocard_xcode_args+=("DEVELOPMENT_TEAM=$MEMOCARD_TEAM_ID" 'CODE_SIGN_IDENTITY=Apple Development')
 else

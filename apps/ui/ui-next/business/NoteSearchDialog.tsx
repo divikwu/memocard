@@ -4,6 +4,7 @@ import ArrowUp01Icon from "@hugeicons/core-free-icons/ArrowUp01Icon";
 import ArrowUpRight01Icon from "@hugeicons/core-free-icons/ArrowUpRight01Icon";
 import ArrowTurnDownIcon from "@hugeicons/core-free-icons/ArrowTurnDownIcon";
 import { useNoteSearch, type NoteSearchProps } from "../../src/use-note-search";
+import { isIOSNative, useIOSSurface } from "../../src/ios-native";
 import { useIsMobile } from "../../src/hooks/use-mobile";
 import { Button } from "../components/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../components/dialog";
@@ -22,10 +23,28 @@ function Highlight({ text, query }: { text: string; query: string }) {
   return index < 0 ? text : <>{text.slice(0, index)}<mark className="note-search-next-mark rounded-inner">{text.slice(index, index + query.length)}</mark>{text.slice(index + query.length)}</>;
 }
 
-export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession = false }: NoteSearchDialogProps) {
-  const isMobile = useIsMobile();
-  const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, keyboardFocus, setKeyboardFocus, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, setRetry, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, isMobile });
+export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession = false, sessionRef }: NoteSearchDialogProps) {
+  const isMobile = useIsMobile() || isIOSNative;
+  const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, keyboardFocus, setKeyboardFocus, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, retrySearch, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, sessionRef, isMobile });
   const SearchContent = isMobile ? SheetContent : DialogContent;
+  useIOSSurface("search", () => ({
+    kind:"search",title:"搜索笔记",presented:open,loading:loading || paging,error,
+    message:!available ? "请先连接笔记库，再搜索内容。" : loading ? "正在搜索笔记…" : !notes.length ? searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记" : undefined,
+    sections:[{id:"query",fields:[{id:"query",title:`在 ${vaultName} 中搜索…`,value:query,disabled:!available}]},
+      ...Array.from(groups,([label,items])=>({id:label,title:label,actions:items.map(({note,index})=>({id:`note:${note.id}`,title:note.title?.trim() || "新内容",selected:selected === index,disabled:loading || !available}))})),
+      {id:"more",message:page && !page.coverage.complete ? "部分文件尚未读入，搜索结果可能不完整。" : undefined,actions:[
+        ...(error ? [{id:"retry",title:"重试"}] : page?.nextCursor ? [{id:"more",title:paging ? "正在加载…" : "加载更多结果",disabled:paging}] : []),
+        {id:"up",title:"上一条",disabled:loading || !notes.length},{id:"down",title:"下一条",disabled:loading || !notes.length},
+      ]}],
+  }),async(action,value)=>{
+    if(action === "close")onOpenChange(false);
+    if(action === "query")setQuery(value ?? "");
+    if(action.startsWith("note:") && !loading && available)onOpenNote(action.slice(5));
+    if(action === "more")await loadMore();
+    if(action === "retry")await retrySearch();
+    if(action === "up" || action === "down")moveSelection(action === "up" ? -1 : 1);
+  });
+  if(isIOSNative)return null;
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className={isMobile ? "note-search-next-sheet gap-4 overflow-hidden" : "note-search-next-dialog flex flex-col gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 ring-0 dark:ring-0"}>
       {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle className="font-sans font-semibold">搜索笔记</SheetTitle><SheetCloseButton aria-label="退出搜索" /></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}
@@ -54,7 +73,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
                 </button>)}
               </div>)}
             </div>
-            {error && <div role="alert" className="space-y-2 px-3 py-4 text-sm"><p className="text-error">{error}</p><Button variant="outline" size="sm" className="note-search-next-control" onClick={() => page?.nextCursor ? void loadMore() : setRetry(value => value + 1)}>重试</Button></div>}
+            {error && <div role="alert" className="space-y-2 px-3 py-4 text-sm"><p className="text-error">{error}</p><Button variant="outline" size="sm" className="note-search-next-control" onClick={() => void retrySearch()}>重试</Button></div>}
             {page?.nextCursor && !error && <div className="p-3 text-center"><Button variant="ghost" size="sm" className="note-search-next-control" disabled={paging} onClick={() => void loadMore()}>{paging ? "正在加载…" : "加载更多结果"}</Button></div>}
             {page && !page.coverage.complete && <p className="px-3 py-3 text-xs text-secondary">部分文件尚未读入，搜索结果可能不完整。</p>}
           </div>

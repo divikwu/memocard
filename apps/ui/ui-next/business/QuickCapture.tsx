@@ -1,3 +1,4 @@
+import { isIOSNative } from "../../src/ios-native";
 import { lazy, Suspense, useRef } from "react";
 import { EditorContent, type Editor } from "@tiptap/react";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -31,6 +32,7 @@ function Icon({ name, className }: { name: keyof typeof icons; className?: strin
 export function QuickCapture(props: QuickCaptureProps) {
   const { tags: options, canImage, onContinue, draftCount = 0, onOpenDrafts, docked = false, active = true } = props;
   const { expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
+  if (isIOSNative) return null;
   const form = <form className="next-quick-capture" aria-label="快速输入" aria-busy={busy} onSubmit={event => { event.preventDefault(); void record(); }}>
     <InputGroup className="next-capture-group border-border-subtle bg-surface shadow-sm">
       <CaptureEditor value={capture.text} tags={options} resetKey={capture.id} disabled={blocked} field={textarea} editorRef={editorRef} onChange={text => changeCapture({ ...captureCurrent.current, text })} onSave={() => void record()} />

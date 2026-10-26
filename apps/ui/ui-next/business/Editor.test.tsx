@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { createRef } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { Note, NoteProperties, PropertyChange } from '@memocard/contracts';
-import { setStorybookRequestHandler, resetStorybookBridge } from '../../.storybook/bridge';
+import { setStorybookRequestHandler, resetStorybookBridge } from '../../test-support/bridge';
 import { noteEditor, readEditorText } from '../../src/editor-test-utils';
 import { Editor, type EditorHandle } from './Editor';
 import { RichMarkdownEditor, type RichEditorProps } from './RichMarkdownEditor';

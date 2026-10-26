@@ -82,7 +82,7 @@ pnpm test:native-surfaces
 pnpm verify:design
 ```
 
-前两个命令默认对比已知旧提交 `a53fb0a`，也接受显式旧 ref；新克隆需要先取得该提交。基准运行时暂停 Preview、编译、浏览器测试及其它性能进程。macOS `verify:release` 运行 Swift 索引语义和真实 Host probe，设计 CI 检查 Storybook；它们对确定性操作/通知和行为断言设门槛，不对机器相关的毫秒值设门槛。
+当前 `bench:sidebar:web` 默认比较已发布 UI-next 起点 `de51cec` 与工作树 TagNavigation 模块；可用 `node scripts/benchmark-sidebar-tags.mjs [baseline-ref] [output-directory]` 指定来源，显式 ref 必须包含该 UI-next 模块。两组统一使用当前共享 helpers 与展示层/存储 mock，执行 SSR 冷挂载；不重建完整历史 App，也不测 DOM/FPS。`bench:sidebar:native` 仍默认比较旧提交 `a53fb0a`，支持显式 ref；需要先取得对应提交。上文 Web 表格保留其当时旧算法基线，不能作为当前默认命令的新结果。基准运行时暂停 Preview、编译、浏览器测试及其它性能进程。macOS `verify:release` 运行 Swift 索引语义和真实 Host probe，设计 CI 检查 Storybook；它们对确定性操作/通知和行为断言设门槛，不对机器相关的毫秒值设门槛。
 
 本轮未测真机、旧 OS、功耗、SwiftUI body 次数、真实大库 DOM/布局与帧率，也未实现虚拟滚动。1 万节点 Web SSR 仍约 111–114ms，不能据此承诺交互帧预算。默认外观、原生控件、手势与动作协议保持原实现。
 

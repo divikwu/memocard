@@ -10,7 +10,6 @@ import type { AppViewState } from "../../src/App";
 import { noteEditor } from "../../src/editor-test-utils";
 import { defaults, options, STORAGE_KEY } from "../../src/features/typography/preferences";
 import { FONT_FAMILIES } from "../../src/lib/font-options";
-import { loadFonts as legacyLoadFonts } from "../../src/features/theme/font-loader";
 import { RichMarkdownEditor } from "../business/RichMarkdownEditor";
 import { NoteMarkdown } from "../business/NoteMarkdown";
 import { loadPreviewFonts } from "../preview-fonts";
@@ -19,7 +18,6 @@ import { WebSettings } from "./WebSettings";
 import { WebTypographyProvider } from "./WebTypographyProvider";
 
 vi.mock("../preview-fonts", async original => ({ ...await original<typeof import("../preview-fonts")>(), loadPreviewFonts: vi.fn().mockResolvedValue([]) }));
-vi.mock("../../src/features/theme/font-loader", () => ({ loadFonts: vi.fn().mockResolvedValue([]) }));
 
 const state = () => ({ status: { connected: false, coverage: {} }, sidebar: {}, capabilities: new Set(), environment: null, unsupportedBrowser: true } as unknown as AppViewState);
 let style: HTMLStyleElement;
@@ -37,7 +35,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup(); style.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals();
-  vi.mocked(loadPreviewFonts).mockClear(); vi.mocked(legacyLoadFonts).mockClear();
+  vi.mocked(loadPreviewFonts).mockClear();
   document.documentElement.removeAttribute("style");
 });
 
@@ -84,7 +82,6 @@ it("restores all seven existing note preferences and applies the CSS-free shared
   expect(computed.getPropertyValue("--typeset-leading")).toContain("--note-leading");
   expect(computed.getPropertyValue("--typeset-flow")).toContain("--note-flow");
   await waitFor(() => expect(loadPreviewFonts).toHaveBeenCalledWith(["inter", "lora", "jetbrains-mono"], false));
-  expect(legacyLoadFonts).not.toHaveBeenCalled();
 });
 
 it("persists note styles independently, retains a live editor and undo history, and restores the same choices on remount", async () => {

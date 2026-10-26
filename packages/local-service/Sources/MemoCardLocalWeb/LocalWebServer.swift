@@ -201,12 +201,21 @@ public final class LocalWebServer: @unchecked Sendable {
         let actual = data.count - separator.upperBound
         guard actual <= length else { return .invalid(400) }
         guard actual == length else { return .incomplete }
-        let rawPath = String(fields[1])
-        guard !rawPath.contains("?"), !rawPath.contains("#"), let path = rawPath.removingPercentEncoding,
+        let target = String(fields[1])
+        let parts = target.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false)
+        guard !target.contains("#"), let path = String(parts[0]).removingPercentEncoding,
               !path.contains("\\"), !path.contains("\0"),
               path.split(separator: "/", omittingEmptySubsequences: false).dropFirst().allSatisfy({ !$0.isEmpty || path == "/" }) else { return .invalid(400) }
         let segments = path.split(separator: "/")
         guard !segments.contains("."), !segments.contains(".."), !path.hasPrefix("//") else { return .invalid(400) }
+        if parts.count == 2 {
+            // Only static font retries use a query; keep all API and other resource queries forbidden.
+            let query = String(parts[1])
+            guard method == "GET", path.hasPrefix("/assets/"),
+                  ["woff", "woff2"].contains((path as NSString).pathExtension.lowercased()),
+                  query.range(of: #"^font-retry=[1-9][0-9]*$"#, options: .regularExpression) != nil,
+                  Int(query.dropFirst("font-retry=".count)) != nil else { return .invalid(400) }
+        }
         return .ready(Request(method: method, path: path, headers: headers, body: Data(data[separator.upperBound...])))
     }
 

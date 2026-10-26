@@ -1,0 +1,430 @@
+{
+  "date": "2026-10-25",
+  "baselineRevision": "6214317",
+  "comparison": "Same installed dependencies; baseline source extracted from HEAD and built in an isolated temporary directory; current working-copy default entry built to apps/ui/dist. Sum gzip of deduplicated JS/CSS static manifest closures; not a browser network or timing measurement.",
+  "baseline": {
+    "initial": {
+      "entries": [],
+      "raw": 655064,
+      "gzip": 194987,
+      "files": 15
+    },
+    "routes": {
+      "Editor": {
+        "entries": [
+          "src/Editor.tsx"
+        ],
+        "raw": 1781739,
+        "gzip": 546332,
+        "files": 47
+      },
+      "home": {
+        "entries": [
+          "src/components/quick-capture.tsx",
+          "src/components/home-mascot.tsx",
+          "src/components/note-collection.tsx"
+        ],
+        "raw": 1702549,
+        "gzip": 515712,
+        "files": 39
+      },
+      "detail": {
+        "entries": [
+          "src/Editor.tsx"
+        ],
+        "raw": 1781739,
+        "gzip": 546332,
+        "files": 47
+      },
+      "detailMarkdown": {
+        "entries": [
+          "src/Editor.tsx",
+          "src/markdown.tsx"
+        ],
+        "raw": 2126728,
+        "gzip": 651810,
+        "files": 49
+      },
+      "list": {
+        "entries": [
+          "src/components/note-collection.tsx"
+        ],
+        "raw": 1316752,
+        "gzip": 395008,
+        "files": 26
+      }
+    },
+    "initialAssets": [
+      [
+        "assets/index-Co_QHYpo.js",
+        60486,
+        19019
+      ],
+      [
+        "assets/rolldown-runtime-Dd_uD5pT.js",
+        1106,
+        627
+      ],
+      [
+        "assets/ui-primitives-DMQGOD3L.js",
+        229802,
+        74089
+      ],
+      [
+        "assets/vendor-BvRez5hX.js",
+        212941,
+        66343
+      ],
+      [
+        "assets/app-runtime-Dse0KqRB.js",
+        8349,
+        3829
+      ],
+      [
+        "assets/inline-tags-B_WYqOra.js",
+        1185,
+        633
+      ],
+      [
+        "assets/shared-tag-preferences-BPa4K9I3.js",
+        2677,
+        1284
+      ],
+      [
+        "assets/TagColorProvider-CiIP4jV_.js",
+        308,
+        229
+      ],
+      [
+        "assets/rename-tag-C6H4-bNh.js",
+        151,
+        149
+      ],
+      [
+        "assets/note-filter-labels-qfwVG38Q.js",
+        208,
+        162
+      ],
+      [
+        "assets/page-notice-DES-adpS.js",
+        1836,
+        800
+      ],
+      [
+        "assets/note-collection-layout-K-37bRme.js",
+        489,
+        354
+      ],
+      [
+        "assets/loading-states-B3r_PAQj.js",
+        9746,
+        2763
+      ],
+      [
+        "assets/ThemeProvider-DXP9CkI4.js",
+        9932,
+        3794
+      ],
+      [
+        "assets/index-DhxFYrTA.css",
+        115848,
+        20912
+      ]
+    ],
+    "fonts": {
+      "normal": 908432,
+      "italic": 836504,
+      "cjk": 4500544
+    }
+  },
+  "current": {
+    "initial": {
+      "entries": [],
+      "raw": 1075522,
+      "gzip": 316274,
+      "files": 34
+    },
+    "routes": {
+      "detailMarkdown": {
+        "entries": [
+          "ui-next/business/Editor.tsx",
+          "ui-next/business/NoteMarkdown.tsx"
+        ],
+        "raw": 2639123,
+        "gzip": 793883,
+        "files": 54
+      },
+      "homeCards": {
+        "entries": [
+          "ui-next/business/QuickCapture.tsx",
+          "ui-next/business/NotePreview.tsx"
+        ],
+        "raw": 2077029,
+        "gzip": 623272,
+        "files": 47
+      },
+      "mobileHome": {
+        "entries": [
+          "ui-next/business/QuickCapture.tsx",
+          "ui-next/components/sheet-swipe.tsx"
+        ],
+        "raw": 1451138,
+        "gzip": 434169,
+        "files": 45
+      },
+      "nativeHome": {
+        "entries": [
+          "ui-next/business/QuickCapture.tsx",
+          "ui-next/native/IOSAppChrome.tsx"
+        ],
+        "raw": 1458752,
+        "gzip": 437391,
+        "files": 45
+      },
+      "listCards": {
+        "entries": [
+          "ui-next/business/NotePreview.tsx"
+        ],
+        "raw": 1704552,
+        "gzip": 506698,
+        "files": 38
+      },
+      "QuickCapture": {
+        "entries": [
+          "ui-next/business/QuickCapture.tsx"
+        ],
+        "raw": 1447999,
+        "gzip": 432848,
+        "files": 43
+      },
+      "Editor": {
+        "entries": [
+          "ui-next/business/Editor.tsx"
+        ],
+        "raw": 2639052,
+        "gzip": 793797,
+        "files": 53
+      },
+      "NoteSearchDialog": {
+        "entries": [
+          "ui-next/business/NoteSearchDialog.tsx"
+        ],
+        "raw": 1719268,
+        "gzip": 511796,
+        "files": 41
+      },
+      "TrashPage": {
+        "entries": [
+          "ui-next/business/TrashPage.tsx"
+        ],
+        "raw": 1731932,
+        "gzip": 514993,
+        "files": 43
+      },
+      "WebSettings": {
+        "entries": [
+          "ui-next/web/WebSettings.tsx"
+        ],
+        "raw": 1755134,
+        "gzip": 524441,
+        "files": 43
+      },
+      "IOSAppChrome": {
+        "entries": [
+          "ui-next/native/IOSAppChrome.tsx"
+        ],
+        "raw": 1087165,
+        "gzip": 321341,
+        "files": 37
+      }
+    },
+    "initialAssets": [
+      [
+        "assets/index-DKltRGzB.js",
+        85153,
+        25239
+      ],
+      [
+        "assets/rolldown-runtime-Dd_uD5pT.js",
+        1106,
+        627
+      ],
+      [
+        "assets/initial-vendor-CMcLwvQw.js",
+        496005,
+        157683
+      ],
+      [
+        "assets/uuid-BVRCCgdi.js",
+        330,
+        238
+      ],
+      [
+        "assets/preload-helper-uBIymjUX.js",
+        1233,
+        685
+      ],
+      [
+        "assets/bridge-Cek_wSxg.js",
+        6131,
+        2921
+      ],
+      [
+        "assets/error-messages-Bd--XK7l.js",
+        1860,
+        908
+      ],
+      [
+        "assets/inline-tags-B_WYqOra.js",
+        1185,
+        633
+      ],
+      [
+        "assets/utils-COQ_gxcn.js",
+        3271,
+        1563
+      ],
+      [
+        "assets/rename-tag-C6H4-bNh.js",
+        151,
+        149
+      ],
+      [
+        "assets/tag-colors-B2lniBLM.js",
+        1230,
+        670
+      ],
+      [
+        "assets/use-collection-layout-CHS_U2I2.js",
+        2962,
+        1519
+      ],
+      [
+        "assets/button-Cp5fqAqh.js",
+        2500,
+        1023
+      ],
+      [
+        "assets/showcase-icons-Cev8Rwu1.js",
+        1626,
+        859
+      ],
+      [
+        "assets/dialog-CFBc6YfM.js",
+        2507,
+        1025
+      ],
+      [
+        "assets/badge-Co862HBO.js",
+        8050,
+        2058
+      ],
+      [
+        "assets/empty-P4tshHLS.js",
+        1549,
+        614
+      ],
+      [
+        "assets/use-mobile-wj2QP4Vo.js",
+        387,
+        274
+      ],
+      [
+        "assets/sheet-BO5pVxKD.js",
+        4364,
+        1597
+      ],
+      [
+        "assets/skeleton-C_9gfIkp.js",
+        255,
+        206
+      ],
+      [
+        "assets/tooltip-Dh82xhzA.js",
+        2405,
+        876
+      ],
+      [
+        "assets/spinner-B5DDOifW.js",
+        433,
+        302
+      ],
+      [
+        "assets/sidebar-icons-DQeZ-m24.js",
+        576,
+        397
+      ],
+      [
+        "assets/card-CRtyKoZw.js",
+        755,
+        415
+      ],
+      [
+        "assets/icons-Bi2ifX9k.js",
+        3115,
+        1114
+      ],
+      [
+        "assets/WebAppearance-DUGIyChF.js",
+        14315,
+        4181
+      ],
+      [
+        "assets/TypographyProvider-DEzX2yI6.js",
+        5381,
+        2215
+      ],
+      [
+        "assets/use-mobile-3sCcsjf4.js",
+        371,
+        269
+      ],
+      [
+        "assets/ios-mode-b7hXEErm.js",
+        75,
+        90
+      ],
+      [
+        "assets/utils-KD9IPL69.css",
+        16287,
+        3142
+      ],
+      [
+        "assets/sheet-B7QyfZDl.css",
+        1574,
+        509
+      ],
+      [
+        "assets/WebAppearance-CodVjGdG.css",
+        5067,
+        771
+      ],
+      [
+        "assets/index-01s5KJcq.css",
+        393846,
+        99590
+      ],
+      [
+        "assets/sidebar-BnCPVSJv.css",
+        9467,
+        1912
+      ]
+    ],
+    "fonts": {
+      "normal": 3604528,
+      "italic": 3565356,
+      "cjk": 10531532
+    }
+  },
+  "fontBoundary": "Packaged assets include every current normal/italic font subset and both SC companions. Unicode-range and chosen fonts govern actual requests; packaged totals are not initial downloaded bytes.",
+  "budgets": {
+    "singleInitialJavaScriptBytes": 614400,
+    "singleInitialCssBytes": 409600,
+    "initialStaticClosureGzipBytes": 337920,
+    "fontBytes": {
+      "normalNonCJK": 3932160,
+      "italicNonCJK": 3932160,
+      "CJK": 11010048
+    }
+  }
+}

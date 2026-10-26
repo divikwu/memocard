@@ -85,7 +85,9 @@ export const NestedAlignment: Story = {
         const iconBox = icon.getBoundingClientRect();
         const labelBox = label.getBoundingClientRect();
         const textBox = range.getBoundingClientRect();
-        await expect(row.getBoundingClientRect().height).toBeCloseTo(mobile ? 48 : 32, 0);
+        // Rows can grow with the current line-height while retaining their hit target.
+        await expect(row.getBoundingClientRect().height).toBeGreaterThanOrEqual(mobile ? 48 : 32);
+        await expect(row.getBoundingClientRect().height).toBeGreaterThan(textBox.height);
         await expect(iconBox.width).toBeGreaterThan(0);
         await expect(getComputedStyle(row).textAlign).toBe("left");
         await expect(getComputedStyle(label).textAlign).toBe("left");
@@ -112,6 +114,7 @@ export const NestedAlignment: Story = {
   },
 };
 export const MobileVaultGeometry: Story = {
+  tags: ["mobile"], globals: { viewport: { value: "mobile", isRotated: false } },
   play: async ({ canvasElement }) => {
     if (window.innerWidth >= 768) return;
     const page = within(canvasElement.ownerDocument.body);

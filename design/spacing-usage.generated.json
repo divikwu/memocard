@@ -56,20 +56,12 @@
       "value": "calc(var(--spacing) * 8)"
     },
     {
-      "step": "10",
-      "value": "calc(var(--spacing) * 10)"
+      "step": "8.5",
+      "value": "calc(var(--spacing) * 8.5)"
     },
     {
       "step": "12",
       "value": "calc(var(--spacing) * 12)"
-    },
-    {
-      "step": "14",
-      "value": "calc(var(--spacing) * 14)"
-    },
-    {
-      "step": "16",
-      "value": "calc(var(--spacing) * 16)"
     }
   ],
   "usage": [
@@ -78,7 +70,7 @@
       "step": "1.5",
       "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/tag-navigation.tsx"
+        "apps/ui/ui-next/business/tag-navigation.tsx"
       ]
     },
     {
@@ -86,60 +78,55 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/components/tag-emoji-picker.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/select.tsx"
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
-      "utility": "-mx-3",
-      "step": "3",
-      "value": "3",
+      "utility": "-mx-1.5",
+      "step": "1.5",
+      "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/tag-editor.tsx",
-        "apps/ui/src/components/tag-emoji-picker.tsx"
+        "apps/ui/ui-next/components/dropdown-menu.tsx"
       ]
     },
     {
-      "utility": "-mx-4",
-      "step": "4",
-      "value": "4",
+      "utility": "[.border-b]:pb-(--card-spacing)",
+      "step": null,
+      "value": "var(--card-spacing)",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx"
+        "apps/ui/ui-next/components/card.tsx"
       ]
     },
     {
-      "utility": "[.border-b]:pb-2",
-      "step": "2",
-      "value": "2",
+      "utility": "[.border-b]:pb-3.5",
+      "step": "3.5",
+      "value": "3.5",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "[.border-b]:pb-6",
+      "utility": "[.border-t]:pt-(--card-spacing)",
+      "step": null,
+      "value": "var(--card-spacing)",
+      "consumers": [
+        "apps/ui/ui-next/components/card.tsx"
+      ]
+    },
+    {
+      "utility": "[.border-t]:pt-3.5",
+      "step": "3.5",
+      "value": "3.5",
+      "consumers": [
+        "apps/ui/ui-next/components/input-group.tsx"
+      ]
+    },
+    {
+      "utility": "[&>[data-slot=dialog-header]]:pr-6",
       "step": "6",
       "value": "6",
       "consumers": [
-        "apps/ui/src/components/ui/card.tsx"
-      ]
-    },
-    {
-      "utility": "[.border-t]:pt-2",
-      "step": "2",
-      "value": "2",
-      "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
-      ]
-    },
-    {
-      "utility": "[.border-t]:pt-6",
-      "step": "6",
-      "value": "6",
-      "consumers": [
-        "apps/ui/src/components/ui/card.tsx"
+        "apps/ui/ui-next/components/dialog.tsx"
       ]
     },
     {
@@ -147,31 +134,39 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/ui/select.tsx"
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
-      "utility": "*:data-[slot=select-value]:gap-2",
-      "step": "2",
-      "value": "2",
+      "utility": "*:data-[slot=select-value]:gap-1.5",
+      "step": "1.5",
+      "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/ui/select.tsx"
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
-      "utility": "data-[inset]:pl-8",
-      "step": "8",
-      "value": "8",
+      "utility": "**:data-[slot=kbd]:px-1.5",
+      "step": "1.5",
+      "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/ui/dropdown-menu.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "first:pt-0",
-      "step": "0",
-      "value": "0",
+      "utility": "data-inset:pl-8.5",
+      "step": "8.5",
+      "value": "8.5",
       "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/components/dropdown-menu.tsx"
+      ]
+    },
+    {
+      "utility": "gap-(--card-spacing)",
+      "step": null,
+      "value": "var(--card-spacing)",
+      "consumers": [
+        "apps/ui/ui-next/components/card.tsx"
       ]
     },
     {
@@ -179,12 +174,18 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection-layout.ts",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/web/WebSettings.tsx",
+        "apps/ui/ui-next/web/WebTypographySettings.tsx"
+      ]
+    },
+    {
+      "utility": "gap-0.5",
+      "step": "0.5",
+      "value": "0.5",
+      "consumers": [
+        "apps/ui/ui-next/business/sidebar-tree-item.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -192,18 +193,16 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/mobile-tag-actions.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/tag-emoji-picker.tsx",
-        "apps/ui/src/components/tag-navigation.tsx",
-        "apps/ui/src/components/ui/alert.tsx",
-        "apps/ui/src/components/ui/badge.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/popover.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/MobileTagActions.tsx",
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/badge.tsx",
+        "apps/ui/ui-next/components/button.tsx",
+        "apps/ui/ui-next/components/calendar.tsx",
+        "apps/ui/ui-next/components/input-group.tsx",
+        "apps/ui/ui-next/components/popover.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx",
+        "apps/ui/ui-next/components/tabs.tsx",
+        "apps/ui/ui-next/web/WebTypographySettings.tsx"
       ]
     },
     {
@@ -211,12 +210,14 @@
       "step": "1.5",
       "value": "1.5",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/ui/breadcrumb.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/components/ui/sheet.tsx",
-        "apps/ui/src/components/ui/tabs.tsx"
+        "apps/ui/ui-next/components/breadcrumb.tsx",
+        "apps/ui/ui-next/components/button.tsx",
+        "apps/ui/ui-next/components/calendar.tsx",
+        "apps/ui/ui-next/components/card.tsx",
+        "apps/ui/ui-next/components/dialog.tsx",
+        "apps/ui/ui-next/components/select.tsx",
+        "apps/ui/ui-next/components/sheet.tsx",
+        "apps/ui/ui-next/components/tooltip.tsx"
       ]
     },
     {
@@ -224,26 +225,31 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/NoteProperties.core.tsx",
-        "apps/ui/src/components/app-sidebar.tsx",
-        "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
-        "apps/ui/src/components/nav-actions.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-delete-dialog.tsx",
-        "apps/ui/src/components/page-notice.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/components/ui/card.tsx",
-        "apps/ui/src/components/ui/dialog.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/select.tsx",
-        "apps/ui/src/components/ui/sheet.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx",
-        "apps/ui/src/components/ui/tabs.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteCollection.tsx",
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+        "apps/ui/ui-next/business/tag-navigation.tsx",
+        "apps/ui/ui-next/components/dialog.tsx",
+        "apps/ui/ui-next/components/dropdown-menu.tsx",
+        "apps/ui/ui-next/components/empty.tsx",
+        "apps/ui/ui-next/components/input-group.tsx",
+        "apps/ui/ui-next/components/label.tsx",
+        "apps/ui/ui-next/components/select.tsx",
+        "apps/ui/ui-next/components/sheet.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx",
+        "apps/ui/ui-next/components/tabs.tsx",
+        "apps/ui/ui-next/web/WebAppView.tsx"
+      ]
+    },
+    {
+      "utility": "gap-2.5",
+      "step": "2.5",
+      "value": "2.5",
+      "consumers": [
+        "apps/ui/ui-next/components/dropdown-menu.tsx",
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
@@ -251,13 +257,9 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/page-notice.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/components/tabs.tsx"
       ]
     },
     {
@@ -265,13 +267,11 @@
       "step": "4",
       "value": "4",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection-layout.ts",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/ui/dialog.tsx",
-        "apps/ui/src/components/ui/sheet.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/calendar.tsx",
+        "apps/ui/ui-next/components/empty.tsx",
+        "apps/ui/ui-next/components/popover.tsx",
+        "apps/ui/ui-next/web/WebSettings.tsx"
       ]
     },
     {
@@ -279,33 +279,7 @@
       "step": "6",
       "value": "6",
       "consumers": [
-        "apps/ui/src/components/ui/card.tsx"
-      ]
-    },
-    {
-      "utility": "gap-x-3",
-      "step": "3",
-      "value": "3",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/ui/tabs.tsx"
-      ]
-    },
-    {
-      "utility": "gap-y-0.5",
-      "step": "0.5",
-      "value": "0.5",
-      "consumers": [
-        "apps/ui/src/components/ui/alert.tsx"
-      ]
-    },
-    {
-      "utility": "gap-y-1",
-      "step": "1",
-      "value": "1",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/ui/tabs.tsx"
+        "apps/ui/ui-next/components/dialog.tsx"
       ]
     },
     {
@@ -313,7 +287,7 @@
       "step": "8",
       "value": "8",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -321,7 +295,7 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -329,39 +303,39 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
-      "utility": "group-data-[variant=line]/tabs-list:px-0.5",
-      "step": "0.5",
-      "value": "0.5",
+      "utility": "group-data-[variant=line]/tabs-list:px-1",
+      "step": "1",
+      "value": "1",
       "consumers": [
-        "apps/ui/src/components/ui/tabs.tsx"
+        "apps/ui/ui-next/components/tabs.tsx"
       ]
     },
     {
-      "utility": "group-data-[variant=line]/tabs-list:py-0.5",
-      "step": "0.5",
-      "value": "0.5",
+      "utility": "group-data-vertical/tabs:py-1.5",
+      "step": "1.5",
+      "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/ui/tabs.tsx"
+        "apps/ui/ui-next/components/tabs.tsx"
       ]
     },
     {
-      "utility": "group-has-[>input]/input-group:pb-2",
-      "step": "2",
-      "value": "2",
+      "utility": "group-has-[>input]/input-group:pb-3.5",
+      "step": "3.5",
+      "value": "3.5",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "group-has-[>input]/input-group:pt-2",
-      "step": "2",
-      "value": "2",
+      "utility": "group-has-[>input]/input-group:pt-3.5",
+      "step": "3.5",
+      "value": "3.5",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -369,15 +343,7 @@
       "step": "8",
       "value": "8",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
-      ]
-    },
-    {
-      "utility": "group-not-has-[>[data-align^=block]]/input-group:py-0",
-      "step": "0",
-      "value": "0",
-      "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -385,7 +351,7 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -393,7 +359,7 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -401,7 +367,7 @@
       "step": "1.5",
       "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -409,47 +375,55 @@
       "step": "1.5",
       "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "has-[>button]:ml-[-0.3rem]",
-      "step": null,
-      "value": "-0.3rem",
+      "utility": "has-[>[data-slot=select-group]]:p-0",
+      "step": "0",
+      "value": "0",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
-      "utility": "has-[>button]:mr-[-0.3rem]",
-      "step": null,
-      "value": "-0.3rem",
+      "utility": "has-[>button]:-ml-1",
+      "step": "1",
+      "value": "1",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "has-[>kbd]:ml-[-0.15rem]",
-      "step": null,
-      "value": "-0.15rem",
+      "utility": "has-[>button]:-mr-1",
+      "step": "1",
+      "value": "1",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "has-[>kbd]:mr-[-0.15rem]",
-      "step": null,
-      "value": "-0.15rem",
+      "utility": "has-[>img:first-child]:pt-0",
+      "step": "0",
+      "value": "0",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/card.tsx"
       ]
     },
     {
-      "utility": "has-[>svg]:gap-x-3",
-      "step": "3",
-      "value": "3",
+      "utility": "has-[>kbd]:-ml-1",
+      "step": "1",
+      "value": "1",
       "consumers": [
-        "apps/ui/src/components/ui/alert.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
+      ]
+    },
+    {
+      "utility": "has-[>kbd]:-mr-1",
+      "step": "1",
+      "value": "1",
+      "consumers": [
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -457,49 +431,87 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "has-[>svg]:px-1.5",
+      "utility": "has-data-[icon=inline-end]:pr-1.5",
       "step": "1.5",
       "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/ui/button.tsx"
+        "apps/ui/ui-next/components/badge.tsx"
       ]
     },
     {
-      "utility": "has-[>svg]:px-2.5",
+      "utility": "has-data-[icon=inline-end]:pr-2",
+      "step": "2",
+      "value": "2",
+      "consumers": [
+        "apps/ui/ui-next/components/button.tsx"
+      ]
+    },
+    {
+      "utility": "has-data-[icon=inline-end]:pr-2.5",
       "step": "2.5",
       "value": "2.5",
       "consumers": [
-        "apps/ui/src/components/ui/button.tsx"
+        "apps/ui/ui-next/components/button.tsx"
       ]
     },
     {
-      "utility": "has-[>svg]:px-3",
+      "utility": "has-data-[icon=inline-end]:pr-3",
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/components/ui/button.tsx"
+        "apps/ui/ui-next/components/button.tsx"
       ]
     },
     {
-      "utility": "has-[>svg]:px-4",
-      "step": "4",
-      "value": "4",
+      "utility": "has-data-[icon=inline-start]:pl-1.5",
+      "step": "1.5",
+      "value": "1.5",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx"
+        "apps/ui/ui-next/components/badge.tsx"
       ]
     },
     {
-      "utility": "last:pb-0",
-      "step": "0",
-      "value": "0",
+      "utility": "has-data-[icon=inline-start]:pl-2",
+      "step": "2",
+      "value": "2",
       "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/components/button.tsx"
+      ]
+    },
+    {
+      "utility": "has-data-[icon=inline-start]:pl-2.5",
+      "step": "2.5",
+      "value": "2.5",
+      "consumers": [
+        "apps/ui/ui-next/components/button.tsx"
+      ]
+    },
+    {
+      "utility": "has-data-[icon=inline-start]:pl-3",
+      "step": "3",
+      "value": "3",
+      "consumers": [
+        "apps/ui/ui-next/components/button.tsx"
+      ]
+    },
+    {
+      "utility": "has-data-[slot=kbd]:pr-1.5",
+      "step": "1.5",
+      "value": "1.5",
+      "consumers": [
+        "apps/ui/ui-next/components/tooltip.tsx"
+      ]
+    },
+    {
+      "utility": "mb-0.5",
+      "step": "0.5",
+      "value": "0.5",
+      "consumers": [
+        "apps/ui/ui-next/business/tag-navigation.tsx"
       ]
     },
     {
@@ -507,9 +519,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/emoji-picker-panel.tsx",
-        "apps/ui/src/components/tag-emoji-picker.tsx",
-        "apps/ui/src/components/tag-navigation.tsx"
+        "apps/ui/ui-next/components/empty.tsx"
       ]
     },
     {
@@ -517,25 +527,8 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/NotePreview.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx"
-      ]
-    },
-    {
-      "utility": "mb-4",
-      "step": "4",
-      "value": "4",
-      "consumers": [
-        "apps/ui/src/App.tsx"
-      ]
-    },
-    {
-      "utility": "mb-5",
-      "step": "5",
-      "value": "5",
-      "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/business/NotePreview.tsx",
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -543,7 +536,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -551,7 +544,7 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -559,23 +552,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
-      ]
-    },
-    {
-      "utility": "md:px-16",
-      "step": "16",
-      "value": "16",
-      "consumers": [
-        "apps/ui/src/App.tsx"
-      ]
-    },
-    {
-      "utility": "md:py-8",
-      "step": "8",
-      "value": "8",
-      "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -583,13 +560,9 @@
       "step": null,
       "value": "auto",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/PropertyOptionMenu.core.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/dropdown-menu.tsx"
       ]
     },
     {
@@ -597,8 +570,8 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/components/note-filter-navigation.tsx",
-        "apps/ui/src/components/tag-navigation.tsx"
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/business/tag-navigation.tsx"
       ]
     },
     {
@@ -606,7 +579,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/web/WebAppView.tsx"
       ]
     },
     {
@@ -614,9 +587,8 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/tag-navigation.tsx"
+        "apps/ui/ui-next/business/tag-navigation.tsx",
+        "apps/ui/ui-next/web/WebAppView.tsx"
       ]
     },
     {
@@ -624,12 +596,12 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/ImagePropertyEditor.core.tsx",
-        "apps/ui/src/NotePreview.tsx",
         "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/PropertyOptionMenu.core.tsx",
-        "apps/ui/src/components/loading-states.tsx"
+        "apps/ui/ui-next/business/CalloutIconPicker.tsx",
+        "apps/ui/ui-next/business/NotePreview.tsx",
+        "apps/ui/ui-next/components/calendar.tsx"
       ]
     },
     {
@@ -637,26 +609,8 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/tag-editor.tsx"
-      ]
-    },
-    {
-      "utility": "mt-4",
-      "step": "4",
-      "value": "4",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx"
-      ]
-    },
-    {
-      "utility": "mt-5",
-      "step": "5",
-      "value": "5",
-      "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/business/NoteCollection.tsx",
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -664,16 +618,7 @@
       "step": "6",
       "value": "6",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx"
-      ]
-    },
-    {
-      "utility": "mt-8",
-      "step": "8",
-      "value": "8",
-      "consumers": [
-        "apps/ui/src/components/loading-states.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -681,7 +626,7 @@
       "step": null,
       "value": "auto",
       "consumers": [
-        "apps/ui/src/components/ui/sheet.tsx"
+        "apps/ui/ui-next/components/sheet.tsx"
       ]
     },
     {
@@ -689,7 +634,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -697,7 +642,7 @@
       "step": "3.5",
       "value": "3.5",
       "consumers": [
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -705,9 +650,7 @@
       "step": null,
       "value": "auto",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -715,9 +658,16 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/DatePropertyPicker.core.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/select.tsx"
+        "apps/ui/src/DatePropertyPicker.core.tsx"
+      ]
+    },
+    {
+      "utility": "my-1.5",
+      "step": "1.5",
+      "value": "1.5",
+      "consumers": [
+        "apps/ui/ui-next/components/dropdown-menu.tsx",
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
@@ -725,17 +675,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/app-sidebar.tsx"
-      ]
-    },
-    {
-      "utility": "p-[3px]",
-      "step": null,
-      "value": "3px",
-      "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/ui/tabs.tsx"
+        "apps/ui/ui-next/business/sidebar.tsx"
       ]
     },
     {
@@ -744,14 +684,22 @@
       "value": "0",
       "consumers": [
         "apps/ui/src/ImagePropertyEditor.core.tsx",
-        "apps/ui/src/components/app-sidebar.tsx",
-        "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/quick-capture.tsx",
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/business/QuickCapture.tsx",
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+        "apps/ui/ui-next/components/calendar.tsx",
+        "apps/ui/ui-next/components/input-group.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
+      ]
+    },
+    {
+      "utility": "p-0.5",
+      "step": "0.5",
+      "value": "0.5",
+      "consumers": [
+        "apps/ui/ui-next/components/tabs.tsx"
       ]
     },
     {
@@ -759,9 +707,25 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/components/nav-actions.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/select.tsx"
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/components/select.tsx",
+        "apps/ui/ui-next/components/tabs.tsx"
+      ]
+    },
+    {
+      "utility": "p-1.5",
+      "step": "1.5",
+      "value": "1.5",
+      "consumers": [
+        "apps/ui/ui-next/components/dropdown-menu.tsx"
+      ]
+    },
+    {
+      "utility": "p-12",
+      "step": "12",
+      "value": "12",
+      "consumers": [
+        "apps/ui/ui-next/components/empty.tsx"
       ]
     },
     {
@@ -770,9 +734,9 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/ImagePropertyEditor.core.tsx",
-        "apps/ui/src/components/app-sidebar.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -780,9 +744,9 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/calendar.tsx"
       ]
     },
     {
@@ -790,10 +754,8 @@
       "step": "4",
       "value": "4",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/ui/popover.tsx",
-        "apps/ui/src/components/ui/sheet.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/popover.tsx"
       ]
     },
     {
@@ -801,7 +763,7 @@
       "step": "5",
       "value": "5",
       "consumers": [
-        "apps/ui/src/components/note-search-dialog.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -809,15 +771,8 @@
       "step": "6",
       "value": "6",
       "consumers": [
-        "apps/ui/src/components/ui/dialog.tsx"
-      ]
-    },
-    {
-      "utility": "pb-[env(safe-area-inset-bottom)]",
-      "step": null,
-      "value": "env(safe-area-inset-bottom)",
-      "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/components/dialog.tsx",
+        "apps/ui/ui-next/components/sheet.tsx"
       ]
     },
     {
@@ -825,14 +780,9 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/ChoicePropertyEditor.core.tsx",
         "apps/ui/src/ImagePropertyEditor.core.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/tag-emoji-picker.tsx",
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -840,17 +790,7 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx"
-      ]
-    },
-    {
-      "utility": "pb-4",
-      "step": "4",
-      "value": "4",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/note-collection.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -858,23 +798,7 @@
       "step": "8",
       "value": "8",
       "consumers": [
-        "apps/ui/src/components/note-search-dialog.tsx"
-      ]
-    },
-    {
-      "utility": "pl-[env(safe-area-inset-left)]",
-      "step": null,
-      "value": "env(safe-area-inset-left)",
-      "consumers": [
-        "apps/ui/src/App.tsx"
-      ]
-    },
-    {
-      "utility": "pl-0",
-      "step": "0",
-      "value": "0",
-      "consumers": [
-        "apps/ui/src/components/tag-navigation.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -882,28 +806,16 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/tag-navigation.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/select.tsx"
+        "apps/ui/ui-next/components/dropdown-menu.tsx"
       ]
     },
     {
-      "utility": "pl-8",
-      "step": "8",
-      "value": "8",
+      "utility": "pl-3",
+      "step": "3",
+      "value": "3",
       "consumers": [
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx"
-      ]
-    },
-    {
-      "utility": "pr-[env(safe-area-inset-right)]",
-      "step": null,
-      "value": "env(safe-area-inset-right)",
-      "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/business/MobileTagActions.tsx",
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -911,27 +823,24 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/components/note-filter-navigation.tsx",
-        "apps/ui/src/components/tag-navigation.tsx"
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/business/tag-navigation.tsx"
       ]
     },
     {
-      "utility": "pr-2",
-      "step": "2",
-      "value": "2",
+      "utility": "pr-1",
+      "step": "1",
+      "value": "1",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/business/MobileTagActions.tsx"
       ]
     },
     {
-      "utility": "pr-6",
-      "step": "6",
-      "value": "6",
+      "utility": "pr-3",
+      "step": "3",
+      "value": "3",
       "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -939,18 +848,15 @@
       "step": "8",
       "value": "8",
       "consumers": [
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/sidebar-tree-item.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/select.tsx"
+        "apps/ui/ui-next/components/dropdown-menu.tsx"
       ]
     },
     {
-      "utility": "pt-[env(safe-area-inset-top)]",
-      "step": null,
-      "value": "env(safe-area-inset-top)",
+      "utility": "pt-0",
+      "step": "0",
+      "value": "0",
       "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/business/tag-navigation.tsx"
       ]
     },
     {
@@ -958,7 +864,7 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/components/tag-navigation.tsx"
+        "apps/ui/ui-next/business/tag-navigation.tsx"
       ]
     },
     {
@@ -966,9 +872,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/ImagePropertyEditor.core.tsx",
-        "apps/ui/src/components/tag-emoji-picker.tsx",
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/src/ImagePropertyEditor.core.tsx"
       ]
     },
     {
@@ -976,19 +880,24 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/tag-editor.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
-      "utility": "pt-4",
-      "step": "4",
-      "value": "4",
+      "utility": "px-(--card-spacing)",
+      "step": null,
+      "value": "var(--card-spacing)",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx"
+        "apps/ui/ui-next/components/card.tsx"
+      ]
+    },
+    {
+      "utility": "px-(--cell-size)",
+      "step": null,
+      "value": "var(--cell-size)",
+      "consumers": [
+        "apps/ui/ui-next/components/calendar.tsx"
       ]
     },
     {
@@ -997,9 +906,7 @@
       "value": "0",
       "consumers": [
         "apps/ui/src/TagPropertyEditor.core.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/trash-page.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -1007,13 +914,9 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/components/emoji-picker-panel.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/mobile-tag-actions.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/tag-emoji-picker.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/business/tag-navigation-editor.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -1021,10 +924,7 @@
       "step": "1.5",
       "value": "1.5",
       "consumers": [
-        "apps/ui/src/components/app-sidebar.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/ui/input-group.tsx"
+        "apps/ui/ui-next/components/input-group.tsx"
       ]
     },
     {
@@ -1032,18 +932,12 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/PropertyOptionMenu.core.tsx",
-        "apps/ui/src/components/app-sidebar.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/tag-navigation.tsx",
-        "apps/ui/src/components/ui/badge.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/select.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx",
-        "apps/ui/src/components/ui/tabs.tsx"
+        "apps/ui/ui-next/business/tag-navigation.tsx",
+        "apps/ui/ui-next/components/badge.tsx",
+        "apps/ui/ui-next/components/dropdown-menu.tsx",
+        "apps/ui/ui-next/components/select.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -1051,8 +945,8 @@
       "step": "2.5",
       "value": "2.5",
       "consumers": [
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/button.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -1060,18 +954,19 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/ChoicePropertyEditor.core.tsx",
-        "apps/ui/src/NoteImage.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/tag-editor.tsx",
-        "apps/ui/src/components/tag-emoji-picker.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/components/ui/input.tsx",
-        "apps/ui/src/components/ui/select.tsx",
-        "apps/ui/src/components/ui/textarea.tsx",
-        "apps/ui/src/components/ui/tooltip.tsx"
+        "apps/ui/ui-next/business/MobileTagActions.tsx",
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/components/button.tsx",
+        "apps/ui/ui-next/components/input-group.tsx",
+        "apps/ui/ui-next/components/input.tsx",
+        "apps/ui/ui-next/components/select.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx",
+        "apps/ui/ui-next/components/tabs.tsx",
+        "apps/ui/ui-next/components/textarea.tsx",
+        "apps/ui/ui-next/components/tooltip.tsx"
       ]
     },
     {
@@ -1079,34 +974,16 @@
       "step": "4",
       "value": "4",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/trash-page.tsx",
-        "apps/ui/src/components/ui/alert.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/button.tsx"
       ]
     },
     {
-      "utility": "px-5",
-      "step": "5",
-      "value": "5",
+      "utility": "py-(--card-spacing)",
+      "step": null,
+      "value": "var(--card-spacing)",
       "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
-      ]
-    },
-    {
-      "utility": "px-6",
-      "step": "6",
-      "value": "6",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/components/ui/card.tsx"
+        "apps/ui/ui-next/components/card.tsx"
       ]
     },
     {
@@ -1114,12 +991,9 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection-layout.ts",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/TrashPage.tsx",
+        "apps/ui/ui-next/web/WebSettings.tsx",
+        "apps/ui/ui-next/web/WebTypographySettings.tsx"
       ]
     },
     {
@@ -1127,8 +1001,8 @@
       "step": "0.5",
       "value": "0.5",
       "consumers": [
-        "apps/ui/src/components/ui/badge.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx"
+        "apps/ui/ui-next/components/badge.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -1138,11 +1012,9 @@
       "consumers": [
         "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/PropertyOptionMenu.core.tsx",
-        "apps/ui/src/components/app-sidebar.tsx",
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/input.tsx",
-        "apps/ui/src/components/ui/select.tsx",
-        "apps/ui/src/components/ui/tabs.tsx"
+        "apps/ui/ui-next/components/input.tsx",
+        "apps/ui/ui-next/components/select.tsx",
+        "apps/ui/ui-next/components/tabs.tsx"
       ]
     },
     {
@@ -1151,35 +1023,7 @@
       "value": "1.5",
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
-        "apps/ui/src/components/ui/dropdown-menu.tsx",
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/select.tsx",
-        "apps/ui/src/components/ui/sidebar.tsx",
-        "apps/ui/src/components/ui/tooltip.tsx"
-      ]
-    },
-    {
-      "utility": "py-10",
-      "step": "10",
-      "value": "10",
-      "consumers": [
-        "apps/ui/src/App.tsx"
-      ]
-    },
-    {
-      "utility": "py-12",
-      "step": "12",
-      "value": "12",
-      "consumers": [
-        "apps/ui/src/App.tsx"
-      ]
-    },
-    {
-      "utility": "py-14",
-      "step": "14",
-      "value": "14",
-      "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/components/tooltip.tsx"
       ]
     },
     {
@@ -1187,15 +1031,14 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/NoteImage.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/tag-navigation.tsx",
-        "apps/ui/src/components/ui/button.tsx",
-        "apps/ui/src/components/ui/input-group.tsx",
-        "apps/ui/src/components/ui/select.tsx",
-        "apps/ui/src/components/ui/textarea.tsx"
+        "apps/ui/ui-next/business/MobileTagActions.tsx",
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/business/sidebar.tsx",
+        "apps/ui/ui-next/business/tag-navigation.tsx",
+        "apps/ui/ui-next/components/dropdown-menu.tsx",
+        "apps/ui/ui-next/components/input-group.tsx",
+        "apps/ui/ui-next/components/select.tsx",
+        "apps/ui/ui-next/components/sidebar.tsx"
       ]
     },
     {
@@ -1203,7 +1046,10 @@
       "step": "2.5",
       "value": "2.5",
       "consumers": [
-        "apps/ui/src/components/note-search-dialog.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/dropdown-menu.tsx",
+        "apps/ui/ui-next/components/input-group.tsx",
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
@@ -1211,13 +1057,8 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/emoji-picker-panel.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/components/trash-page.tsx",
-        "apps/ui/src/components/ui/alert.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx",
+        "apps/ui/ui-next/components/textarea.tsx"
       ]
     },
     {
@@ -1225,22 +1066,15 @@
       "step": "4",
       "value": "4",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     },
     {
-      "utility": "py-6",
-      "step": "6",
-      "value": "6",
+      "utility": "scroll-my-1",
+      "step": "1",
+      "value": "1",
       "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/ui/card.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
+        "apps/ui/ui-next/components/select.tsx"
       ]
     },
     {
@@ -1248,53 +1082,7 @@
       "step": "2.5",
       "value": "2.5",
       "consumers": [
-        "apps/ui/src/components/ui/breadcrumb.tsx"
-      ]
-    },
-    {
-      "utility": "sm:gap-6",
-      "step": "6",
-      "value": "6",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
-      ]
-    },
-    {
-      "utility": "sm:p-8",
-      "step": "8",
-      "value": "8",
-      "consumers": [
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
-      ]
-    },
-    {
-      "utility": "sm:py-16",
-      "step": "16",
-      "value": "16",
-      "consumers": [
-        "apps/ui/src/App.tsx"
-      ]
-    },
-    {
-      "utility": "space-y-1",
-      "step": "1",
-      "value": "1",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx"
-      ]
-    },
-    {
-      "utility": "space-y-1.5",
-      "step": "1.5",
-      "value": "1.5",
-      "consumers": [
-        "apps/ui/src/App.tsx"
+        "apps/ui/ui-next/components/breadcrumb.tsx"
       ]
     },
     {
@@ -1302,42 +1090,9 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/App.tsx",
         "apps/ui/src/NoteProperties.core.tsx",
-        "apps/ui/src/components/loading-states.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
-        "apps/ui/src/components/note-search-dialog.tsx"
-      ]
-    },
-    {
-      "utility": "space-y-3",
-      "step": "3",
-      "value": "3",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/trash-page.tsx",
-        "apps/ui/src/features/theme/ThemeSettings.tsx",
-        "apps/ui/src/features/typography/TypographySettings.tsx"
-      ]
-    },
-    {
-      "utility": "space-y-4",
-      "step": "4",
-      "value": "4",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx",
-        "apps/ui/src/components/note-collection.tsx"
-      ]
-    },
-    {
-      "utility": "space-y-8",
-      "step": "8",
-      "value": "8",
-      "consumers": [
-        "apps/ui/src/App.tsx",
-        "apps/ui/src/components/loading-states.tsx"
+        "apps/ui/ui-next/business/NoteSearchDialog.tsx"
       ]
     }
   ]

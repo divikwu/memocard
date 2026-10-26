@@ -1,53 +1,33 @@
 # 侧栏规格
 
-## 已有默认外观
+当前 Web 侧栏由 [sidebar.tsx](../../apps/ui/ui-next/business/sidebar.tsx)、[标签导航](../../apps/ui/ui-next/business/tag-navigation.tsx)、[树行](../../apps/ui/ui-next/business/sidebar-tree-item.tsx)和[sidebar.css](../../apps/ui/ui-next/business/sidebar.css)维护。iOS 使用 [NativeSidebar](../../apps/apple/Sources/NativeSidebar.swift) 与 UIKit 推移容器，两端共享业务含义而保留平台度量。
+
+## 当前度量
 
 | 项目 | 桌面 Web / macOS | H5 | iOS 自定义侧栏 |
 | --- | --- | --- | --- |
-| 标准行 | 32px，保留 sm/lg 变体 | 48px | 最小 48pt，随文字增长 |
-| 标准图标 | 16px | 16px | 16pt 基准，随文字缩放 |
-| 正文 | 14px | 16px | 系统字体 16pt 基准 |
-| 品牌文字 | 原有 16px | 沿用既有布局 | 原有 14pt 基准 |
+| 行最小高度 | 36px 基准，允许按行盒增长 | 44px 基准，允许按行盒增长 | 48pt 基准，随 Dynamic Type 增长 |
+| 图标视觉框 | 16px | 16px | 16pt 基准，随文字缩放 |
+| 文字 | 14px 基准，Noto Sans | 沿用当前 14px 行文字 | 系统 16pt 正文基准 |
 | Logo | 36px | 36px | 28pt |
-| 图文间距 | 8px | 8px | 8pt |
-| 标签缩进 | 保留 margin / border / padding 组合 | 保留现有组合 | 每级 24pt |
-| 圆角 | 用户选择 | 用户选择 | 通过现有 rowRadius 桥接 |
+| 图文间距 | 8px 基准 | 8px 基准 | 8pt 基准 |
+| 标签缩进 | 组件管理 margin / border / padding | 组件管理触摸层级留白 | 每级 24pt 基准 |
+| 圆角 | 当前侧栏行使用 full 胶囊角色 | 同一胶囊角色 | 从实际主题 `rowRadius` 接收 |
 
-原生品牌区、系统容器边距、滚动边缘、主页面按钮对齐和抽屉宽度保留现状。仅将具有共享意义的值迁移，局部几何继续由组件管理。
+Web 行高公式为 `max(--next-sidebar-row-min, 1lh + --spacing-1 × 3)`；桌面最小值引用 `--size-element-md`，H5 引用 `--size-element-lg + --spacing-1`。不要把原生尺寸 JSON 的 32/48 基准当作当前 Web 消费。
 
-## 行高、视觉尺寸与命中区
+H5 展开控件视觉框 40px，伪元素扩展到 44px 命中区；原生沿用 40pt 视觉框与 44pt 命中区。图标视觉框、按钮命中目标和整行高度独立，系统控件遵循平台规则。导航断点为 768px。
 
-Web 桌面默认行高取 `max(32px, 1lh + .75rem)`，H5 最小行高取 `max(48px, 1lh + .75rem)`。默认文字下仍为 32 / 48px，放大文字后为行盒和垂直内边距留出空间；原单行截断与 768px 断点不变。
+## 状态与行为
 
-移动展开控件的视觉框为 40px，通过伪元素扩展到 44px 命中区；与 16px 图标视觉尺寸分别维护。原生侧栏沿用 44pt 命中目标和已有 Dynamic Type 布局。不要将图标大小、按钮命中区和整行高度合并为同一尺寸。
+行点击执行导航/筛选，独立展开按钮只展开/收起。三级标签使用完整路径导航，保留 Emoji、置顶顺序、搜索和切库重置；日历等未实现入口继续禁用。桌面保留悬停替换、键盘焦点、菜单 Escape 与回焦；H5 操作从顶部标题菜单进入。
 
-Storybook 的 `sidebar/full sidebar` Docs 展示当前平台基准；完整跨端映射见 [消费映射](../token-consumption.md)，字号与系统缩放见 [原生排版工程说明](../native-typography.md)。这些规则由现有侧栏组件拥有，不新增全局密度档位。
+iOS 保留边缘展开、主页面推移、侧滑/点击关闭和系统安全区；原生底部搜索与捕获、设置/笔记库及草稿动作经共享控制器投影。文字放大允许内容增长，VoiceOver 获得完整路径。
 
-## 状态清单
+当前 Storybook 为 [business/sidebar](../../apps/ui/ui-next/stories/business-sidebar.stories.tsx) 与[基础 sidebar](../../apps/ui/ui-next/stories/luma-sidebar.stories.tsx)，默认/选中/禁用/展开/长名/层级/加载等场景使用生产实现。Debug 原生 palette 和默认圆角由当前 CSS 采样，不拥有另一套主题。
 
-默认、选中、禁用、按下、展开/收起、键盘焦点、嵌套三级、Emoji、徽标、长标题、加载、空标签、无匹配、异常提示。Web Storybook 与原生 Preview 使用同名语义场景，避免所有维度的笛卡尔积。
+## 验证与性能
 
-浅/深色及常用圆角有独立预览；其他强调色和中性色在浏览器矩阵与运行 App 中验证。原生 Preview palette 由生产 CSS 与同一 readIOSPalette 自动采样，仅作为 Debug fixture；它不拥有主题，也不作为实际 bridge 验收的替代。
+执行 `pnpm verify:design`、`pnpm test:sidebar-native`、`pnpm test:native-surfaces` 和相关产品回归。真实浏览器检查宽窄屏、焦点、触摸关闭和主题；Xcode Preview、Simulator probe 与完整 App 手势分开记录，不能互相替代。
 
-## 交互契约
-
-- 行点击继续执行原导航/筛选 action；独立展开按钮只展开/收起，不触发导航。
-- 三级标签使用完整路径导航，保留 Emoji、置顶顺序、搜索和笔记库切换后的状态重置。
-- iOS 原生边缘滑入、侧滑关闭、点击主页面关闭及设置/笔记库往返继续有效。
-- Web 保留悬停替换、键盘焦点、菜单 Escape 及焦点恢复；触摸展开命中区与文字区分离。
-- 日历等未开放入口继续禁用，不因 token 迁移获得动作。
-- 默认尺寸保持；大字模式可增长布局，文字截断规则与 VoiceOver 完整路径保持。
-
-## 自动检查与实机验收
-
-1. token 类型、引用解析、单源修改影响双端、生成物漂移检查。
-2. 现有侧栏、标签、主题设置和 bridge 测试；同一 light/dark 内切强调色和中性色也须更新 palette。
-3. Storybook 真实组件浏览器交互：主行/展开不串动作、长文本和窄屏、主题与圆角。
-   Canvas 的 desktop / mobile 故事使用显式命名视口，自动测试逐项断言实际 1024×900 / 390×844，并覆盖 767px ↔ 768px 转换。Docs 示例仍按文档容器响应式显示；交互式 manager 可见高度受附加面板和缩放影响，验收应读取真实 frame 尺寸。
-4. Xcode 浅/深、独立行、大字和加载/空/错误预览；逐元素源码选择与 Live 交互分别验证。
-5. iPhone 与 iPad 模拟器验证导航、搜索/中文输入、设置往返、开合和手势；macOS 验证共用 Web 侧栏。
-6. 既有 Release 开合/滚动用例检查回归。记录设备、系统、QA 数据和跳过项，不把 XCTest 墙钟时间当作动画时长或 FPS。
-
-## 回退
-
-规范/生成管线、组件接入、预览、无障碍适配可分别回退。恢复组件引用后重新生成工程；不涉及用户数据或偏好迁移。保留既有工作区基线，不能用仓库 HEAD 覆盖实施前已经存在的原生功能。
+当前 Web 基准命令为 `pnpm bench:sidebar:web`，默认比较已发布 UI-next 起点 `de51cec` 与工作树的 TagNavigation 模块，统一共享 helpers、展示层/存储 mock 和 SSR 冷挂载测量。它不是完整历史 App、DOM 布局、动画、FPS 或真机性能。历史算法及原生测量与复跑边界见[性能记录](../performance.md)。

@@ -2,7 +2,7 @@ import { lazy, Suspense, useId, useRef, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles } from "../../src/note-filter-labels";
 import { errorMessage } from "../../src/error-messages";
-import { HomeMascot } from "../../src/components/home-mascot";
+import { HomeMascot } from "../business/HomeMascot";
 import { Button } from "../components/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "../components/breadcrumb";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/dialog";
@@ -25,10 +25,10 @@ import PinIcon from "@hugeicons/core-free-icons/PinIcon";
 import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon";
 import { usePreviewMode } from "../preview-mode";
-import { WebSettings } from "./WebSettings";
 import { WebTypographyProvider } from "./WebTypographyProvider";
 import "./web-app.css";
 
+const WebSettings = lazy(() => import("./WebSettings").then(module => ({ default: module.WebSettings })));
 const Editor = lazy(() => import("../business/Editor").then(module => ({ default: module.Editor })));
 const QuickCapture = lazy(() => import("../business/QuickCapture").then(module => ({ default: module.QuickCapture })));
 const NoteSearchDialog = lazy(() => import("../business/NoteSearchDialog").then(module => ({ default: module.NoteSearchDialog })));
@@ -71,9 +71,10 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
 function WorkspaceContent({ state: s }: { state: AppViewState }) {
   if (s.openingNote) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed ? <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="flex flex-wrap justify-center gap-2">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty> : s.error ? null : <PageLoading />}</>;
   if (s.editor) return <><h1 className="sr-only">{s.title}</h1><Suspense fallback={<PageLoading />}><Editor key={s.editor.initial.id} {...s.editor} /></Suspense></>;
-  if (s.view === "settings") return <WebSettings state={s} />;
+  if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
   if (s.connectionState) return <WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : "重新授权笔记文件夹后，可继续读取与保存。"}>
+    {s.selectionNotice && <details><summary>查看详情</summary><p className="break-words">{s.selectionNotice}</p></details>}
     {s.localWebReconnectRequired ? <Button role="link" nativeButton={false} render={<a href="memocard-service://open-web" />}>重新打开</Button> : <Button onClick={s.needsPermission ? s.sidebar.onReauthorize : () => s.sidebar.onSelectVault(false)} disabled={s.working}>{s.needsPermission ? "重新授权" : "重新选择文件夹"}</Button>}
   </WorkspaceEmpty>;
   if (s.listTimeout === "initial") return <WorkspaceEmpty role="alert" connection title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button onClick={s.onRefresh} disabled={s.refreshingPages || s.switchingVault}>重试</Button></WorkspaceEmpty>;
@@ -86,16 +87,19 @@ function WorkspaceContent({ state: s }: { state: AppViewState }) {
   </>;
 }
 
+const IOSAppChrome = lazy(() => import("../native/IOSAppChrome").then(module => ({ default: module.IOSAppChrome })));
+
 export function WebAppView({ state: s }: { state: AppViewState }) {
   const mode = usePreviewMode();
   const menuDelete = useRef(false);
-  return <div className="ui-next-theme web-app sb-unstyled" data-ui-theme={mode}>
+  return <div className="ui-next-theme web-app sb-unstyled" data-ui-theme={mode} data-native-chrome={s.nativeChrome ? "true" : undefined}>
     <TagColorStyles />
+    {s.nativeChrome && <Suspense fallback={null}><IOSAppChrome {...s.nativeChrome} /></Suspense>}
     <a className="web-skip-link" href="#web-main-content" onClick={event => { event.preventDefault(); s.scrollContainer.current?.focus(); }}>跳到笔记内容</a>
     <SidebarProvider open={s.sidebarOpen} onOpenChange={s.onSidebarOpenChange} openMobile={s.menuOpen} onOpenMobileChange={s.onMenuOpenChange} persistState={false} className="web-app-shell">
-      <AppSidebar {...s.sidebar} />
+      {!s.nativeChrome && <AppSidebar {...s.sidebar} />}
       <SidebarInset className="web-app-main">
-        <header className="web-app-header">
+        {!s.nativeChrome && <header className="web-app-header">
           <div className="web-header-leading">{s.detailView && <Button variant="ghost" size="icon-sm" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft01Icon} aria-hidden="true" /></Button>}
             {(s.isMobile ? !s.detailView : !s.sidebarOpen) && <><SidebarTrigger className="web-header-icon" />{!s.isMobile && <Separator orientation="vertical" className="web-header-separator" />}</>}
             <Breadcrumb aria-label="当前位置" className="web-header-breadcrumb" data-detail={s.detailView || undefined}><BreadcrumbList><BreadcrumbItem>{s.isMobile && !s.detailView && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem></BreadcrumbList></Breadcrumb>
@@ -109,7 +113,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
               <DropdownMenuSeparator /><DropdownMenuItem onClick={() => void s.onNavigate("settings")}><SettingsIcon aria-hidden="true" />设置</DropdownMenuItem>
             </DropdownMenuContent></DropdownMenu>
           </div>
-        </header>
+        </header>}
         <div ref={s.scrollContainer} id="web-main-content" tabIndex={-1} className={`web-app-scroll${s.detailView ? " note-page-scroll" : ""}`} data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined}><div className="web-page-content" data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined} data-view={s.view}>
           {s.switchingVault && <Notice title="正在打开笔记库"><Spinner aria-hidden="true" className="mr-2 inline" />首次读取可能需要一些时间。</Notice>}
           {Boolean(s.error) && !s.detailReadFailed && !(s.connectionState && s.localWebReconnectRequired) && <Notice title={s.localWebReconnectRequired ? "连接已断开" : "操作未完成"} error action={s.localWebReconnectRequired ? <Button role="link" nativeButton={false} variant="outline" size="sm" render={<a href="memocard-service://open-web" />}>重新打开</Button> : s.retryableError && <Button variant="outline" size="sm" disabled={!s.canRefresh || s.switchingVault} onClick={s.openingNote ? s.onRetryDetail : s.onRefresh}>重试</Button>}>{errorMessage(s.error)}</Notice>}
@@ -124,12 +128,13 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           {!s.detailView && s.view !== "settings" && s.view !== "trash" && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}><h1>{s.title}</h1></div>)}
           <WorkspaceContent state={s} />
         </div></div>
-        {s.isMobile && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录"><Button variant="outline" size="icon-lg" disabled={!s.search.available} onClick={s.onSearch} aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={s.search.open}><SearchIcon aria-hidden="true" /></Button><div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
+        {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录"><Button variant="outline" size="icon-lg" disabled={!s.search.available} onClick={s.onSearch} aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={s.search.open}><SearchIcon aria-hidden="true" /></Button><div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
       </SidebarInset>
     </SidebarProvider>
     {s.searchMounted && <Suspense fallback={null}><NoteSearchDialog key={s.status?.vaultId} {...s.search} /></Suspense>}
     {s.deletion && <Suspense fallback={null}><NoteDeleteDialog {...s.deletion} /></Suspense>}
-    <Drafts state={s} />
+    {!s.nativeChrome && <Drafts state={s} />}
+    {s.nativeChrome && s.capture && <Suspense fallback={null}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
     {s.notice && <div className="web-toast" data-record-bar={s.isMobile && !s.detailView && (s.view === "home" || s.view === "notes") || undefined} role="status"><CheckIcon aria-hidden="true" />{s.notice}</div>}
   </div>;
 }

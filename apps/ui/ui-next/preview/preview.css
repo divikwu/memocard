@@ -1,3 +1,5 @@
+@source "./";
+
 .preview-next { min-height: 100dvh; }
 .preview-next-workbench { display: flex; height: 100dvh; flex-direction: column; }
 .preview-next-header {

@@ -61,6 +61,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
+      - name: Install default UI browser verification
+        run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium webkit
       - run: pnpm verify:web
       - name: Bind Web resources to this revision
         run: node scripts/verified-web.mjs create apps/ui/dist build/verified-web

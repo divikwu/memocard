@@ -155,7 +155,7 @@
 .note-date-picker .note-date-today { width: 100%; margin-top: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-normal); }
 .note-date-time-option { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 2); margin-top: calc(var(--spacing-1) * 2); min-height: var(--size-element-sm); font-size: var(--font-size-sm); }
 .note-date-time-input { margin-top: calc(var(--spacing-1) * 2); font-variant-numeric: tabular-nums; }
-.mobile-tag-menu { max-height: min(90dvh, var(--mobile-sheet-max-height, 90dvh)); overflow-y: auto; overscroll-behavior: contain; }
+.mobile-tag-menu { max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; }
 
 :root, .ui-next-theme { --tag-bg-opacity: 8%; --tag-default-bg: color-mix(in oklab, var(--tag-default-fg) var(--tag-bg-opacity), transparent); --tag-default-fg: var(--color-text-gray); --tag-brown-bg: color-mix(in oklab, var(--tag-brown-fg) var(--tag-bg-opacity), transparent); --tag-brown-fg: color-mix(in oklch, var(--color-text-orange) 60%, var(--color-text-gray)); }
 :root, .ui-next-theme { --tag-orange-bg: color-mix(in oklab, var(--tag-orange-fg) var(--tag-bg-opacity), transparent); --tag-orange-fg: var(--color-text-orange); }

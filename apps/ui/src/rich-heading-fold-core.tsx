@@ -12,7 +12,7 @@ export function unfoldRichHeadings(editor: Editor) {
   if (folding.getState(editor.state)?.size) editor.view.dispatch(editor.state.tr.setMeta(folding, 'expandAll'));
 }
 
-export function createRichHeadingFolding(RichHeadingFoldButton: ComponentType<ComponentProps<typeof import('./RichHeadingFoldButton').RichHeadingFoldButton>>) {
+export function createRichHeadingFolding(RichHeadingFoldButton: ComponentType<ComponentProps<ReturnType<typeof import('./rich-heading-fold-button-core').createRichHeadingFoldButton>>>) {
 return Extension.create({
   name: 'headingFolding',
   addProseMirrorPlugins() {

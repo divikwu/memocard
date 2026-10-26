@@ -2,7 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createRef, useState } from 'react';
-import { Editor, type EditorHandle } from './Editor';
+import { Editor, type EditorHandle } from '@ui-next/business/Editor';
 import { noteEditor, readEditorText, replaceEditorText } from './editor-test-utils';
 import { request, type Draft } from './bridge';
 import type { Note, NoteProperties, PropertyChange } from '@memocard/contracts';

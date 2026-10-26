@@ -43,7 +43,7 @@ test('production catalog is reachable, deterministic and read-only on drift', as
     assert.equal(catalog.upstream.version, require('tailwindcss/package.json').version);
     assert.ok(catalog.usage.every(row => row.consumers.every(path => path.endsWith('.css') || graph.has(path))));
     assert.ok(catalog.usage.every(row => row.consumers.every(path => !/stories|\.(?:test|spec)\./.test(path))));
-    assert.ok(catalog.usage.find(row => row.utility === 'p-[3px]').consumers.includes('apps/ui/src/components/ui/tabs.tsx'));
+    assert.ok(catalog.usage.find(row => row.utility === 'p-1').consumers.includes('apps/ui/ui-next/components/tabs.tsx'));
     assert.deepEqual(catalog.scale.map(row => row.step).sort(), [...new Set(catalog.usage.map(row => row.step).filter(step => step !== null))].sort());
     await utimes(outputPath, new Date('2001-01-01'), new Date('2001-01-01'));
     const mtime = (await stat(outputPath)).mtimeMs;

@@ -18,6 +18,7 @@ async function fixture(t, script) {
 import { appendFileSync, mkdirSync, writeFileSync, cpSync } from 'node:fs';
 const command = ${JSON.stringify(command)};
 appendFileSync(process.env.TEST_BUILD_TRACE, command + '\\n');
+appendFileSync(process.env.TEST_BUILD_TRACE + '.jsonl', JSON.stringify({ command, args: process.argv.slice(2) }) + '\\n');
 if (command === 'pnpm') {
   mkdirSync('apps/ui/dist', { recursive: true });
   writeFileSync('apps/ui/dist/index.html', 'fresh Web bundle');
@@ -50,9 +51,22 @@ if (command === 'swift') {
       });
     },
     commands: () => readFile(trace, 'utf8').then(text => text.trim().split('\n')),
+    invocations: () => readFile(trace + '.jsonl', 'utf8').then(text => text.trim().split('\n').map(line => JSON.parse(line))),
     staged: () => readFile(join(root, 'apps/apple/Resources/Web/index.html'), 'utf8'),
   };
 }
+
+test('service Release signing excludes injected debug entitlements without overriding its permissions', async t => {
+  const f = await fixture(t, 'build-service.sh');
+  await f.bundle('verified Web bundle');
+  const result = f.run([], true);
+  assert.equal(result.status, 0, result.stderr);
+  const { args } = (await f.invocations()).find(invocation => invocation.command === 'xcodebuild');
+  assert.equal(args[args.indexOf('-configuration') + 1], 'Release');
+  assert.ok(args.includes('CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO'));
+  assert.ok(!args.some(arg => arg.startsWith('CODE_SIGN_ENTITLEMENTS=')));
+  assert.ok(!args.includes('CODE_SIGNING_ALLOWED=NO'));
+});
 
 for (const [name, script, args] of [
   ['macOS', 'build-apple.sh', ['mac']],

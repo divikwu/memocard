@@ -1,5 +1,8 @@
 # Web/H5 新旧 UI 同状态复核
 
+> 历史范围（2026-10-25 标记）：本页保留2026-10-23 的新旧 UI 同状态对照批次，旧端口、源码路径、默认外观及主题 API 不再作为现行维护契约。当前规则见[现行规范](ui-retirement-2026-10-25.md)。被删除的源文件可用 `git show 6214317:<仓库相对路径>` 查看迁移前快照；本机 ignored 证据路径不保证在新克隆中存在。
+
+
 2026-10-23。**状态：本轮同状态对照、差异修复与浏览器复验完成。** 本页延续 [Sidebar-10 对齐基线](ui-next-sidebar10.md)，核对编辑器、搜索、设置、回收站及卡片/列表；不改变页面骨架、导航结构或原有业务契约。
 
 ## 对照方法与基线
@@ -8,7 +11,7 @@
 
 相关入口：
 
-- [旧版 reference Story](../apps/ui/stories/sidebar10-workspace-reference.stories.tsx) / [新版 Web & H5 Story](../apps/ui/ui-next/stories/web-workspace.stories.tsx)。
+- [旧版 reference Story](https://github.com/divikwu/memocard/blob/6214317638dd5590ddafe1874e943d8ceab8c4ad/apps/ui/stories/sidebar10-workspace-reference.stories.tsx) / [新版 Web & H5 Story](../apps/ui/ui-next/stories/web-workspace.stories.tsx)。
 - [共享内存夹具](../apps/ui/ui-next/web/workspace-fixture.ts)：6 条种子笔记；编辑器追加任务、代码、8 列宽表、普通链接、Wiki 链接和长文；回收站种子包含长标题/深路径并固定 deletedAt。加载、错误、异常记录和后台刷新有独立、成对的场景。
 - 两版均隔离本次 Story 的 localStorage；刷新、关闭或切换场景会重置，不影响真实笔记库或用户偏好。
 

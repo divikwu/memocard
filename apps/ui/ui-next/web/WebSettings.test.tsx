@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import type { AppViewState } from "../../src/App";
-import { resetStorybookBridge, setStorybookClientMode } from "../../.storybook/bridge";
+import { resetStorybookBridge, setStorybookClientMode } from "../../test-support/bridge";
 import { WebSettings } from "./WebSettings";
 
 afterEach(() => { cleanup(); resetStorybookBridge(); });

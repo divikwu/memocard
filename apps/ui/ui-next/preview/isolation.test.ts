@@ -16,14 +16,6 @@ it("replaces every supported bridge spelling before the real transport loads", (
   expect(resolve("./unrelated", importer)).toBeUndefined();
 });
 
-it("drops legacy view CSS while keeping the new component CSS", async () => {
-  const boundary = plugins.find(plugin => plugin.name === "ui-next-style-boundary")!;
-  const load = boundary.load as (id: string) => string | undefined;
-  expect(load(path.join(uiRoot, "src/styles.css"))).toBe("");
-  expect(load(path.join(uiRoot, "src/Editor.css?direct"))).toBe("");
-  expect(load(path.join(uiRoot, "ui-next/business/Editor.css"))).toBeUndefined();
-});
-
 it("blocks data API requests and adds a local content security policy", () => {
   let middleware: (req: { url: string }, res: { statusCode?: number; setHeader: (key: string, value: string) => void; end: (body: string) => void }, next: () => void) => void;
   const configure = isolated.configureServer as (server: unknown) => void;

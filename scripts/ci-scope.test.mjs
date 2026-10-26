@@ -9,10 +9,10 @@ import { classifyDiff, gatePasses, scopeForEvent } from './ci-scope.mjs';
 
 const entry = (path, status = 'M', from = '100644', to = '100644') => `:${from} ${to} ${'a'.repeat(40)} ${'b'.repeat(40)} ${status}\0${path}\0`;
 
-for (const path of ['README.md', 'docs/LOCAL_WEB.md', 'docs/example image.png', 'design/component-inventory.md', 'design/token-consumption.md', 'apps/ui/.storybook/preview.tsx', 'apps/ui/.storybook/preview.css', 'apps/ui/stories/button-docs.tsx', 'apps/ui/stories/button.stories.tsx']) {
+for (const path of ['README.md', 'docs/LOCAL_WEB.md', 'docs/example image.png', 'design/component-inventory.md', 'design/token-consumption.md', 'apps/ui/.storybook-next/preview.tsx', 'apps/ui/.storybook-next/preview.css', 'apps/ui/ui-next/stories/button-docs.tsx', 'apps/ui/ui-next/stories/button.stories.tsx']) {
   test(`documentation-only: ${path}`, () => assert.equal(classifyDiff(entry(path)).full, false));
 }
-for (const path of ['apps/ui/src/components/ui/button.tsx', 'apps/apple/Sources/NativeChrome.swift', 'design/tokens/sidebar.tokens.json', 'design/TOKENS.generated.md', 'apps/ui/src/generated/tokens.css', 'package.json', 'pnpm-lock.yaml', 'apps/ui/package.json', 'scripts/build-apple.sh', 'apps/ui/vite.storybook.config.ts', '.github/workflows/verify.yml', 'docs/ui-reference/button.json', 'apps/ui/public/logo.png', 'new-unknown-file.md', 'apps/ui/stories/../src/app.tsx']) {
+for (const path of ['apps/ui/src/components/ui/button.tsx', 'apps/apple/Sources/NativeChrome.swift', 'design/tokens/sidebar.tokens.json', 'design/TOKENS.generated.md', 'apps/ui/src/generated/tokens.css', 'package.json', 'pnpm-lock.yaml', 'apps/ui/package.json', 'scripts/build-apple.sh', 'apps/ui/vite.storybook-next.config.ts', '.github/workflows/verify.yml', 'docs/ui-reference/button.json', 'apps/ui/public/logo.png', 'new-unknown-file.md', 'apps/ui/ui-next/stories/../src/app.tsx']) {
   test(`full validation: ${path}`, () => assert.equal(classifyDiff(entry('README.md') + entry(path)).full, true));
 }
 test('empty, malformed, truncated, symlink and unsupported status fail closed', () => {

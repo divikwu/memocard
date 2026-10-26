@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest";
-import * as bridge from "../../.storybook/bridge";
+import * as bridge from "../../test-support/bridge";
 
 afterEach(() => bridge.resetStorybookBridge());
 

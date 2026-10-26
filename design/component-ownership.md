@@ -1,18 +1,22 @@
 # 组件归属
 
-| 表面 | 实现 | 共享内容 | 平台拥有的内容 | 预览与验证 |
-| --- | --- | --- | --- | --- |
-| 桌面 Web / 本机 Web / macOS 侧栏 | React + Base UI / shadcn | token、图标、导航与状态语义 | DOM、键盘、焦点、悬停、密度与响应式 | Storybook、原有业务预览、macOS App |
-| H5 侧栏 | 同一组 Web 组件与触摸样式 | 同上 | Sheet、触摸布局与关闭、safe area | Storybook 窄屏、浏览器流程 |
-| iOS 自定义侧栏 | SwiftUI + UIKit 推移容器 | 尺寸基准、Lucide、palette、rowRadius、action ID | 系统字体缩放、命中区、safe area、系统边距、推移与手势 | Xcode Preview、iPhone / iPad 模拟器 |
-| iOS 工具栏、系统菜单、确认框、文件选择 | SwiftUI / UIKit 系统组件 | 操作含义、文案、危险与禁用状态 | 系统度量、材质、内部布局、SF Symbols、焦点与手势 | 原生 Preview（适用时）、真实 App |
-| 搜索、快速记录的自定义内容区 | SwiftUI / UIKit + bridge | 已有业务状态与主题语义 | 系统搜索输入框、键盘、图片选择与容器适配 | 本轮只做侧栏关联回归，后续单独迁移 |
-| 笔记编辑器、卡片、内容排版 | React / WebView | 既有主题和业务语义 | 编辑器及排版设置体系 | 原有整页 fixture 与业务回归，后续迁移 |
+唯一生产入口为 `apps/ui/src/main.tsx`；Web、H5、macOS WebView、iOS 内嵌内容和本机服务消费同一 `apps/ui/dist`。目录中的 `ui-next` 是现行实现路径。
 
-## API 与持久化边界
+| 表面 | 当前实现 | 共享契约 | 平台职责与验证 |
+| --- | --- | --- | --- |
+| 桌面 Web / 本机 Web / macOS 导航与页面 | `ui-next/components`、`ui-next/business`、`ui-next/web` | 主题、导航、草稿、保存、查询和文件桥接 | DOM、键盘、焦点、悬停和响应式；Storybook、产品浏览器及 macOS App |
+| H5 | 同一组 Web 视图 | 同一业务控制器与本机偏好 | Sheet、触摸关闭、软键盘与 safe area；窄屏浏览器和真实设备 |
+| iOS 自定义侧栏 | [NativeSidebar](../apps/apple/Sources/NativeSidebar.swift) 与 UIKit 推移容器 | 原生尺寸基准、Lucide、palette、rowRadius、action ID | 系统字体缩放、命中区、安全区和手势；Xcode Preview、Simulator、真机 |
+| iOS 导航、菜单、草稿、确认框 | [NativeChrome](../apps/apple/Sources/NativeChrome.swift)、[IOSAppChrome](../apps/ui/ui-next/native/IOSAppChrome.tsx) | 共享 App 状态与 native surface 协议 | SwiftUI / UIKit 控件、材质、焦点、确认和系统选择器 |
+| iOS 搜索 / 快速记录 | [NativeDesignedPanel](../apps/apple/Sources/NativeDesignedPanel.swift) 与当前 Web producer | 共享搜索会话、捕获草稿与保存逻辑 | 原生输入、键盘、系统图片选择、ACK 与展示；协议和真实 App 分别验收 |
+| 笔记编辑器、集合、属性、回收站、排版 | 当前 `ui-next/business` + `src` 共享内核 | Markdown、撤销、版本检查、附件、属性与恢复 | WebView 内复用；原生返回/固定/删除经 surface 分发 |
 
-本轮保持 `NativeSurface.palette / rowRadius` 和所有业务 action 的协议形状，保持用户外观与标签偏好存储。静态 token 生成器不决定运行时主题，也不处理业务状态。系统原生组件不消费 Web 菜单的内部尺寸和阴影。
+## 数据、外观与预览
 
-## 历史文档
+业务内核与存储桥继续保存在 `apps/ui/src`，不能把该目录当作可整体删除的视图目录。原生 `NativeSurface.palette / rowRadius` 和 action/instance 形状保持；实际颜色与圆角从 Luma CSS 解析，不使用另一套默认 Web 主题。
 
-`docs/BASE_UI_MIGRATION.md`、`docs/IOS_NATIVE_CHROME.md` 是迁移、实现和历史验收记录。现行跨端维护规则以本目录为准；历史尺寸差异须通过组件规格说明，不能静默把某次旧验收当成当前规范。编辑器菜单等不属于侧栏试点，现状差异只登记，不顺带改样式。
+外观和内容风格按设备/来源存储；标签偏好、固定和正式笔记各按既有协议维护。主题生成和文档索引不写用户数据。系统控件不消费 Web 菜单的内部尺寸或阴影。
+
+Storybook 与状态 Preview 用显式内存 fixture；原生 Preview 使用隔离 Host，禁止加载真实 WebView、vault 或服务。真实浏览器沙盒、Simulator probe 与用户 QA 库验收分别报告。
+
+现行维护见[设计入口](README.md)、[组件维护表](component-inventory.md)和[清理记录](ui-retirement-2026-10-25.md)。[Base UI 迁移](../docs/BASE_UI_MIGRATION.md)与[iOS 外壳记录](../docs/IOS_NATIVE_CHROME.md)保留其历史批次和验收日期，不作为当前源码路径表。

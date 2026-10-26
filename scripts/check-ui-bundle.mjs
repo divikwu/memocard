@@ -1,57 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import { gzipSync } from "node:zlib";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import postcss from "postcss";
 
-const root = resolve("apps/ui/dist");
-const html = await readFile(resolve(root, "index.html"), "utf8");
-const assets = [...html.matchAll(/(?:src|href)="\.\/([^"?#]+\.(?:js|css))"/g)].map((match) => match[1]);
-if (!assets.length) throw new Error("UI build does not reference an initial JS or CSS asset.");
-
-// Utilities are emitted once in the entry CSS so lazy routes cannot override responsive rules.
-// Reserve 4 KiB gzip for the shared layout-matched loading shells.
-// Reserve 1 KiB gzip for the mobile capture sheet and its shared styles.
-// Shared backdrop blur utilities add less than 2 KiB CSS.
-// Mobile home and collection layout controls share full-width responsive styles.
-// Shared typography roles, scale and compatibility aliases reserve 7 KiB raw CSS;
-// Status, icon and surface color roles reserve 1 KiB combined initial gzip.
-// Semantic element sizes, border width and composed validation insets reserve
-// 3 KiB raw CSS and 1 KiB combined initial gzip; base route and font limits stay fixed.
-// Public hue roles and their Tailwind ramps add 8,632 entry CSS bytes and
-// 1,162 initial gzip bytes in the verified build: reserve 9 KiB raw / 2 KiB gzip.
-const limits = { js: 600 * 1024, css: 114 * 1024, gzip: 192 * 1024, fonts: 1024 * 1024 };
-let compressed = 0;
-for (const asset of assets) {
-  const bytes = await readFile(resolve(root, asset));
-  const suffix = asset.split(".").pop();
-  if ((suffix === "js" || suffix === "css") && bytes.length > limits[suffix]) {
-    throw new Error(`${asset} is ${bytes.length} bytes; the initial ${suffix.toUpperCase()} budget is ${limits[suffix]} bytes.`);
-  }
-  compressed += gzipSync(bytes).length;
-}
-if (compressed > limits.gzip) throw new Error(`Initial JS and CSS gzip size is ${compressed} bytes; budget is ${limits.gzip} bytes.`);
-// Include static dependencies of lazy routes; index.html alone misses editor and preview cost.
-const manifest = JSON.parse(await readFile(resolve(root, ".vite/manifest.json"), "utf8"));
-for (const route of [
-  // Editable page-style tags share Tiptap's caret/history engine: 340 KiB raw / 110 KiB gzip above plain capture.
-  { name: "home with quick capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1640 * 1024, gzip: 510 * 1024 },
-  // The new native route includes view models and tag color styles: 16 KiB raw / 2 KiB gzip above Web home.
-  { name: "iOS home with native chrome", entries: ["src/components/ios-app-chrome.tsx", "src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx"], raw: 1656 * 1024, gzip: 512 * 1024 },
-  // Reserve 2 KiB raw for the shared mobile header and vault-backed tag preferences; gzip budgets stay unchanged.
-  { name: "mobile home with title layout menu", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1645 * 1024, gzip: 510 * 1024 },
-  { name: "mobile home with swipe capture", entries: ["src/components/quick-capture.tsx", "src/components/home-mascot.tsx", "src/components/note-collection.tsx", "src/components/mobile-tag-actions.tsx", "src/components/ui/sheet-swipe.tsx"], raw: 1648 * 1024, gzip: 512 * 1024 },
-  // Reserve 9 KiB for mobile navigation, shared saved layout state, optional swipe loading, and overlays.
-  { name: "list", entries: ["src/components/note-collection.tsx"], raw: 1263 * 1024, gzip: 383 * 1024 },
-  { name: "mobile list with quick capture", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx"], raw: 1640 * 1024, gzip: 510 * 1024 },
-  { name: "mobile tag with actions", entries: ["src/components/note-collection.tsx", "src/components/quick-capture.tsx", "src/components/mobile-tag-actions.tsx"], raw: 1642 * 1024, gzip: 510 * 1024 },
-  // Shared capture sheet styles and optional swipe loading add less than 2 KiB gzip to the detail entry.
-  // Restoring legacy entry modules under the same CSS measures a 1,894 / 1,931
-  // gzip-byte delta at the shared adapter boundary. Reserve 2 KiB only here;
-  // see design/verification/2026-10-23/dual-ui-submission/README.md.
-  { name: "detail", entries: ["src/Editor.tsx"], raw: 1750 * 1024, gzip: 529 * 1024 },
-  { name: "detail with preserved Markdown", entries: ["src/Editor.tsx", "src/markdown.tsx"], raw: 2100 * 1024, gzip: 632 * 1024 },
-]) {
-  const visited = new Set();
-  const files = new Set();
+// Static dependency closures include the entry, shared chunks and their CSS.
+// Dynamic children are measured explicitly in the routes that use them.
+export function routeFiles(manifest, entries = []) {
+  const visited = new Set(), files = new Set();
   function collect(key) {
     if (visited.has(key)) return;
     visited.add(key);
@@ -62,46 +18,93 @@ for (const route of [
     for (const dependency of entry.imports ?? []) collect(dependency);
   }
   collect("index.html");
-  for (const entry of route.entries) collect(entry);
-  let raw = 0, gzip = 0;
-  for (const file of files) {
-    const bytes = await readFile(resolve(root, file));
-    raw += bytes.length; gzip += gzipSync(bytes).length;
-  }
-  // Shared scale/compatibility CSS and the real-italic font loader add at most
-  // 12 KiB raw / 2 KiB gzip to the existing route budgets. Semantic sizing, border
-  // and state-shadow definitions add 6 KiB shared raw / 1 KiB gzip allowance
-  // across initial CSS and the shared component class strings.
-  // Public hue definitions share an additional 9 KiB raw / 2 KiB gzip.
-  // Applying definitions adds a small root-style lifecycle and native theme observer.
-  // Reserve 1 KiB shared raw; initial, gzip and font limits stay fixed.
-  if (raw > route.raw + 28 * 1024 || gzip > route.gzip + 5 * 1024) throw new Error(`${route.name} exceeds its route budget: ${raw} raw / ${gzip} gzip bytes.`);
-  console.log(`${route.name}: ${raw} raw / ${gzip} gzip bytes.`);
+  for (const entry of entries) collect(entry);
+  return files;
 }
-const fontFiles = (await readdir(resolve(root, "assets"), { withFileTypes: true }))
-  .filter((entry) => entry.isFile() && /\.woff2?$/.test(entry.name));
-let fonts = 0;
-let cjkFonts = 0;
-let italicFonts = 0;
-for (const entry of fontFiles) {
-  const size = (await readFile(resolve(root, "assets", entry.name))).length;
-  if (entry.name.startsWith("noto-sans-sc-")) cjkFonts += size;
-  else if (entry.name.includes("-italic-")) italicFonts += size;
-  else fonts += size;
-}
-// Optional, locally packaged SC subsets have their own budget. The existing
-// Latin budget stays fixed; unicode-range keeps unused subsets off the network.
-if (cjkFonts > 5 * 1024 * 1024) throw new Error(`Optional Noto Sans SC fonts exceed 5 MiB: ${cjkFonts} bytes.`);
-// Italic faces are optional and downloaded only when rendered. Keep normal-font limits fixed.
-if (italicFonts > 1024 * 1024) throw new Error(`Optional italic fonts exceed 1 MiB: ${italicFonts} bytes.`);
-if (fonts > limits.fonts) throw new Error(`Packaged fonts are ${fonts} bytes; the font budget is ${limits.fonts} bytes.`);
-for (const entry of await readdir(resolve(root, "assets"))) {
-  if (entry.endsWith(".css") && !assets.includes(`assets/${entry}`)
-      && /@layer\s+utilities\s*\{/.test(await readFile(resolve(root, "assets", entry), "utf8"))) {
-    throw new Error(`Lazy CSS ${entry} emits global utilities that can override responsive styles.`);
-  }
-  if (/\.(?:js|css)$/.test(entry) && /radix/i.test(await readFile(resolve(root, "assets", entry), "utf8"))) {
-    throw new Error(`Radix reference in shipped UI asset: ${entry}`);
+
+export function checkCurrentManifest(manifest) {
+  for (const key of Object.keys(manifest)) {
+    if (/^src\/(?:components\/(?!name-editor\.core)|generated\/design-tokens\.(?:css|ts)$|(?:Editor|RichMarkdownEditor|NoteProperties|NotePreview|markdown)\.tsx|features\/theme\/Theme)/.test(key)
+      || /(?:^|\/)(?:\.storybook(?:-next)?|stories|preview|test-support|ui-state-fixtures|mascot-fixtures)\//.test(key)) {
+      throw new Error(`Retired or development-only UI module in production manifest: ${key}`);
+    }
   }
 }
-console.log(`UI bundle budget passed: ${assets.join(", ")} (${compressed} initial gzip bytes, ${fonts} normal Latin font bytes, ${italicFonts} optional italic font bytes, ${cjkFonts} optional SC font bytes).`);
+
+export function checkCurrentStylesheet(css, asset) {
+  const stylesheet = postcss.parse(css, { from: asset });
+  stylesheet.walkDecls(declaration => {
+    const owner = declaration.parent;
+    if (owner.type !== "rule" || !owner.selectors.some(selector => /^(?::root|:host|html|body|\.ui-next-theme)(?:$|[.#:\[])/.test(selector.trim()))) return;
+    if (/^--(?:radius|sidebar-(?:desktop-row-height|mobile-row-min-height|icon-size|content-gap|row-gap|logo-size|mobile-font-size|desktop-font-size|toggle-visual-size|touch-target-size|horizontal-padding))$/.test(declaration.prop)) {
+      throw new Error(`Retired Web token in ${asset}: ${declaration.prop}`);
+    }
+  });
+  stylesheet.walkRules(rule => {
+    const selector = rule.selector.replace(/\\(.)/g, "$1");
+    if (selector.includes(".grid-cols-[repeat(auto-fill,minmax(min(100%,320px),1fr))]")) {
+      throw new Error(`Retired collection layout utility in ${asset}: ${rule.selector}`);
+    }
+  });
+}
+
+export async function checkUIBundle(root = resolve("apps/ui/dist")) {
+  const html = await readFile(resolve(root, "index.html"), "utf8");
+  const assets = [...html.matchAll(/(?:src|href)="\.\/([^"?#]+\.(?:js|css))"/g)].map(match => match[1]);
+  if (!assets.length) throw new Error("UI build does not reference an initial JS or CSS asset.");
+  const manifest = JSON.parse(await readFile(resolve(root, ".vite/manifest.json"), "utf8"));
+  checkCurrentManifest(manifest);
+  // Current theme and bundled font faces are shared once in the entry CSS.
+  // Retain the 600 KiB single-JS cap. The measured 2026-10-25 entry is
+  // 393,846 CSS bytes / 316,274 combined gzip bytes; caps reserve 4% / 7%.
+  // Font package limits reflect all 26 current choices, including normal and
+  // italic subsets plus both Chinese companions; these are not initial transfers.
+  const limits = { js: 600 * 1024, css: 400 * 1024, gzip: 330 * 1024, normalFonts: 3.75 * 1024 * 1024, italicFonts: 3.75 * 1024 * 1024, cjkFonts: 10.5 * 1024 * 1024 };
+  let compressed = 0;
+  for (const asset of routeFiles(manifest)) {
+    const bytes = await readFile(resolve(root, asset)), suffix = asset.split(".").pop();
+    if (bytes.length > limits[suffix]) throw new Error(`${asset} is ${bytes.length} bytes; the initial ${suffix.toUpperCase()} budget is ${limits[suffix]} bytes.`);
+    compressed += gzipSync(bytes).length;
+  }
+  if (compressed > limits.gzip) throw new Error(`Initial JS and CSS gzip size is ${compressed} bytes; budget is ${limits.gzip} bytes.`);
+  const metrics = [];
+  for (const route of [
+    { name: "list", entries: [], raw: 1120, gzip: 330 },
+    { name: "list with card previews", entries: ["ui-next/business/NotePreview.tsx"], raw: 1780, gzip: 525 },
+    { name: "home with quick capture", entries: ["ui-next/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
+    { name: "home with capture and card previews", entries: ["ui-next/business/QuickCapture.tsx", "ui-next/business/NotePreview.tsx"], raw: 2140, gzip: 645 },
+    { name: "iOS home with native chrome", entries: ["ui-next/native/IOSAppChrome.tsx", "ui-next/business/QuickCapture.tsx"], raw: 1520, gzip: 455 },
+    { name: "mobile home with swipe capture", entries: ["ui-next/business/QuickCapture.tsx", "ui-next/components/sheet-swipe.tsx"], raw: 1510, gzip: 450 },
+    { name: "search", entries: ["ui-next/business/NoteSearchDialog.tsx"], raw: 1800, gzip: 530 },
+    { name: "trash", entries: ["ui-next/business/TrashPage.tsx"], raw: 1800, gzip: 535 },
+    { name: "settings", entries: ["ui-next/web/WebSettings.tsx"], raw: 1850, gzip: 545 },
+    { name: "detail with preserved Markdown", entries: ["ui-next/business/Editor.tsx", "ui-next/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
+  ]) {
+    let raw = 0, gzip = 0;
+    for (const file of routeFiles(manifest, route.entries)) {
+      const bytes = await readFile(resolve(root, file));
+      raw += bytes.length; gzip += gzipSync(bytes).length;
+    }
+    if (raw > route.raw * 1024 || gzip > route.gzip * 1024) throw new Error(`${route.name} exceeds its route budget: ${raw} raw / ${gzip} gzip bytes.`);
+    metrics.push({ name: route.name, raw, gzip });
+    console.log(`${route.name}: ${raw} raw / ${gzip} gzip bytes.`);
+  }
+  const fonts = { normal: 0, italic: 0, cjk: 0 };
+  for (const entry of await readdir(resolve(root, "assets"))) {
+    const bytes = await readFile(resolve(root, "assets", entry));
+    if (/\.woff2?$/.test(entry)) {
+      const group = /^noto-(?:sans|serif)-sc-/.test(entry) ? "cjk" : entry.includes("-italic-") ? "italic" : "normal";
+      fonts[group] += bytes.length;
+    }
+    if (entry.endsWith(".css") && !assets.includes(`assets/${entry}`) && /@layer\s+utilities\s*\{/.test(bytes.toString("utf8"))) throw new Error(`Lazy CSS ${entry} emits global utilities that can override responsive styles.`);
+    if (entry.endsWith(".css")) checkCurrentStylesheet(bytes.toString("utf8"), entry);
+    if (/\.(?:js|css)$/.test(entry) && /radix/i.test(bytes.toString("utf8"))) throw new Error(`Radix reference in shipped UI asset: ${entry}`);
+  }
+  // The existing 26 UI font choices package normal/italic subsets; both Chinese
+  // companions have separate limits and are fetched only for matching glyphs.
+  for (const group of Object.keys(fonts)) if (fonts[group] > limits[`${group}Fonts`]) throw new Error(`Packaged ${group} fonts are ${fonts[group]} bytes; budget is ${limits[`${group}Fonts`]} bytes.`);
+  console.log(`UI bundle budget passed: ${compressed} initial gzip bytes; fonts ${JSON.stringify(fonts)}.`);
+  return { initialGzip: compressed, routes: metrics, fonts };
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await checkUIBundle();

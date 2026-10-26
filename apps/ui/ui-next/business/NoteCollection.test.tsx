@@ -119,7 +119,7 @@ it("switches recent and pinned home tabs with an independent persisted layout", 
     return <NoteCollection {...options} home={{ tab, pinnedCount: 2, onTabChange: next => { tabChange(next); setTab(next); } }} />;
   }
   const view = render(<HomeFixture />);
-  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("cards");
+  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("list");
   expect(screen.getByText(note.updatedAt)).toBeTruthy();
   await user.click(screen.getByRole("tab", { name: /已固定/ }));
   expect(tabChange).toHaveBeenLastCalledWith("pinned");
@@ -127,13 +127,13 @@ it("switches recent and pinned home tabs with an independent persisted layout", 
   await user.keyboard("{ArrowLeft}");
   expect(tabChange).toHaveBeenLastCalledWith("recent");
   expect(screen.getByRole("tab", { name: /最近更新/ }).getAttribute("aria-selected")).toBe("true");
-  await user.click(screen.getByRole("button", { name: "列表布局" }));
-  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("list");
-  expect(localStorage.getItem("memocard:home-layout")).toBe("list");
+  await user.click(screen.getByRole("button", { name: "卡片布局" }));
+  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("cards");
+  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
   expect(localStorage.getItem("memocard:note-layout")).toBeNull();
   view.unmount();
   render(<HomeFixture />);
-  expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByRole("button", { name: "卡片布局" }).getAttribute("aria-pressed")).toBe("true");
 });
 
 it("keeps existing results while loading and preserves caller empty and error feedback", () => {
