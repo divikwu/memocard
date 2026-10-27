@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { App, type AppViewState } from "../../src/App";
 import { replaceCaptureText, replaceEditorText } from "../../src/editor-test-utils";
-import { resetStorybookBridge, setStorybookRequestHandler } from "../../test-support/bridge";
+import { resetStorybookBridge, setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { createWorkspaceFixture } from "./workspace-fixture";
 import { WebAppearanceProvider } from "./WebAppearance";
 import { preloadWebEditor, renderWebApp } from "./WebAppView";
@@ -188,16 +188,18 @@ it("offers folder reauthorization even while cached results remain visible", asy
   expect(onReauthorize).toHaveBeenCalledOnce();
 });
 
-it("restores incomplete-scan details and refreshes without discarding the current result", async () => {
+it("shows incomplete-scan diagnostics directly and refreshes without discarding the current result", async () => {
   const user = userEvent.setup();
   const { request } = await mount("partial");
   const note = await screen.findByRole("button", { name: "打开 模拟笔记 · 产品验收" });
-  const details = screen.getByRole("button", { name: "查看详情" });
-  await user.click(details);
-  expect(details.getAttribute("aria-expanded")).toBe("true");
-  const region = document.getElementById(details.getAttribute("aria-controls")!)!;
-  expect(region.textContent).toContain("已读入笔记");
-  expect(region.textContent).toContain("待读取文件3");
+  const notice = screen.getByText("部分文件暂时无法读取").closest("[role=status]") as HTMLElement;
+  expect(notice.textContent).toMatch(/已读入\s*2/);
+  expect(notice.textContent).toMatch(/待读取\s*3/);
+  expect(notice.textContent).toMatch(/需要处理\s*0/);
+  expect(within(notice).getByText(/当前未提供具体文件和失败原因/)).toBeDefined();
+  expect(within(notice).getByText(/请确认笔记文件夹可访问/)).toBeDefined();
+  expect(within(notice).queryByRole("button", { name: "查看详情" })).toBeNull();
+  expect(notice.querySelector("details, summary")).toBeNull();
   const before = request.mock.calls.filter(([operation]) => operation === "getStatus").length;
   await user.click(screen.getByRole("button", { name: "重新读取" }));
   await waitFor(() => expect(request.mock.calls.filter(([operation]) => operation === "getStatus").length).toBeGreaterThan(before));
@@ -249,13 +251,24 @@ it("offers the right exit from an empty quick filter instead of implying the vau
 
 it("gives the folder onboarding a page heading and a skip link that leaves the route unchanged", async () => {
   const user = userEvent.setup();
-  await mount("folder-cancel");
+  await mount("folder-cancel", false, state => ({ ...state, sidebar: { ...state.sidebar, canCreateVault: true } }));
   await screen.findByRole("heading", { level: 2, name: "打开你的笔记文件夹" });
   expect(screen.getByRole("heading", { level: 1, name: "所有笔记" })).toBeDefined();
+  expect(screen.getByRole("button", { name: "创建笔记库" })).toBeDefined();
+  expect(screen.getByRole("button", { name: "打开已有笔记库" })).toBeDefined();
+  expect(screen.getByText("只访问你授权的文件夹")).toBeDefined();
   const hash = location.hash;
   await user.click(screen.getByRole("link", { name: "跳到笔记内容" }));
   expect(location.hash).toBe(hash);
   expect(document.activeElement?.id).toBe("web-main-content");
+});
+
+it("keeps the local-service instructions without a folder-permission hint in unsupported browsers", async () => {
+  setStorybookClientMode("browser");
+  await mount("unsupported");
+  await screen.findByRole("heading", { level: 2, name: "通过本机服务连接笔记库" });
+  expect(screen.getByText("此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或使用 memocard serve。")).toBeDefined();
+  expect(screen.queryByText("只访问你授权的文件夹")).toBeNull();
 });
 
 it("does not keep announcing loading after a terminal disconnect while opening a note", async () => {

@@ -32,7 +32,15 @@
 | 控件底色与悬停 | `--color-background-control`、`--color-overlay-hover` | `bg-control`、`hover:bg-overlay-hover` |
 | 边框与焦点 | `--color-border`、`--focus-outline-*` | `border-border`、`focus-visible:focus-ring` |
 | 颜色状态 | `--color-success`、`--color-warning`、`--color-error` 及各自弱化/前景角色 | `text-error` 等当前组件消费 |
-| 表面层级 | `--shadow-low`、`--shadow-med`、`--shadow-high` | `shadow-sm`、`shadow-md`、`shadow-lg` |
+| 阴影基础标尺 | `--shadow-scale-empty`、`--shadow-scale-xxs`、`--shadow-scale-xs`、`--shadow-scale-sm`、`--shadow-scale-md`、`--shadow-scale-sr`、`--shadow-scale-doc`、`--shadow-scale-inner` | 由组件语义角色消费 |
+| 表面层级 | `--shadow-low`、`--shadow-med`、`--shadow-high` | `shadow-sm`、`shadow-med`、`shadow-lg` / `shadow-xl` |
+| 控件与专用表面 | `--shadow-control`、`--shadow-floating`、`--shadow-document`、`--shadow-card-hover` | `shadow-control`、`shadow-floating`、`shadow-document`、`shadow-card-hover` |
+
+阴影标尺参考 2026-10-27 直接核对的 Craft Web CSS，浅色黑色外投影透明度降至 Craft 参考值的 75%（降低 25%），深色保留对应参考值，两种模式的几何参数保持原样。`xxs / xs / sm / md / sr / doc` 去掉原有 1px 外缘层，组件继续使用独立 border；`empty` 保留六层透明值，`inner` 保留独立白色内侧高光（浅色 88%、深色 4%）。`low → xs`、`med → sm`、`high → md`；控件使用 `xxs + inner`，浮动工具条使用 `sr`，独立文档预览使用 `doc`。笔记集合卡片默认使用 `empty`，hover 使用单独的 0 10px 20px 投影（浅色 black / 3%、深色按本项目表面校准为 black / 12%）；普通全屏编辑区保持平面。Storybook 的 [Elevation](../apps/ui/ui/stories/elevation.stories.tsx) 提供完整参数与浅深色真实组件对照，示例内容不连接真实笔记库。
+
+浮层轮廓通过 `--color-border-floating` 和 `--surface-edge-floating` 单独拥有，`surface-floating` utility 将轮廓与 `high` 投影组合。浅色保留既有边框；深色使用黑色 12% 外缘和白色 4% 内缘，布局边框保持 1px 透明，不再叠加白色 10% 描边。菜单、Popover、Select、Combobox、Dialog、Sheet、编辑器弹层与快速记录建议框共用该配方；文档弹窗保留 `document` 投影并组合相同轮廓。输入、按钮和普通卡片保留原边框，焦点环独立。
+
+原生自定义表面的平台阴影由 `NativeSurfaceState.swift` 中的 `NativeElevation` 集中管理，并登记为 `platform.elevation`：快速记录浅色/深色透明度为 9%/12%，半径 24pt、偏移 (0, 8)pt；侧栏抽屉为 11.25%/15%，半径 20pt、偏移 (-8, 0)pt，最终透明度乘展开进度。原生深色保留当前强度、浅色减淡 25%，通过 SwiftUI 的实际 colorScheme 跟随主题，不解析 CSS 多层投影。系统 Sheet、菜单外观仍由 Apple 负责。
 
 悬停、按下、选中、键盘焦点、禁用、只读和校验错误分别表达。使用 Base UI / 原生控件的真实 ARIA、disabled 和焦点机制，不能从颜色推断保存成功或同步完成。图表、syntax 和 brand 角色的登记不证明业务页面已接入；brand 未配置。
 

@@ -1,5 +1,7 @@
 .ui-note-editor { display: block; min-width: 0; width: 100%; color: var(--color-text-primary); font-family: var(--font-family-body); }
 .ui-note-editor > * + * { margin-top: calc(var(--spacing-1) * 5); }
+.ui-note-editor > .ui-page-notice + .ui-page-notice { margin-top: calc(var(--spacing-1) * 2); }
+.ui-note-editor > .ui-page-notice + .note-page-title { margin-top: calc(var(--spacing-1) * 8); }
 .ui-note-editor > .note-properties { margin-top: calc(var(--spacing-1) * 2); }
 .ui-note-editor > [data-slot=alert] { margin-block: 0 calc(var(--spacing-1) * 8); }
 .ui-note-editor > [data-slot=alert]:has(+ [data-slot=alert]) { margin-block-end: calc(var(--spacing-1) * 2); }

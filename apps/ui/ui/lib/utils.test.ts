@@ -9,6 +9,16 @@ test.each([
   ["duration-fast-max", "duration-medium-min"],
   ["duration-medium-min", "duration-100"],
   ["shadow-med", "shadow-none"],
+  ["shadow-control", "shadow-none"],
+  ["shadow-floating", "shadow-none"],
+  ["shadow-document", "shadow-none"],
+  ["shadow-card-hover", "shadow-none"],
+  ["shadow-input-focus", "shadow-none"],
+  ["shadow-xl", "shadow-document"],
+  ["shadow-med", "shadow-floating"],
+  ["shadow-floating", "shadow-control"],
+  ["surface-floating", "shadow-none"],
+  ["shadow-lg", "surface-floating"],
   ["ease-standard", "ease-linear"],
 ])("caller utility %s is replaced by %s", (base, override) => {
   expect(cn(base, override)).toBe(override);
@@ -16,6 +26,14 @@ test.each([
 
 test("border width overrides preserve the caller's independent color", () => {
   expect(cn("border-(length:--border-width) border-border", "border-0")).toBe("border-border border-0");
+});
+
+test("floating surface overrides keep the layout border", () => {
+  expect(cn("surface-floating border", "shadow-none")).toBe("border shadow-none");
+});
+
+test.each(["control", "floating", "document", "card-hover", "input-focus"])("semantic shadow-%s preserves an independent shadow color", role => {
+  expect(cn(`shadow-${role}`, "shadow-red-500")).toBe(`shadow-${role} shadow-red-500`);
 });
 
 test("state callbacks use the same semantic override rules without losing their state", () => {

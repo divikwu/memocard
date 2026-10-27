@@ -74,6 +74,7 @@ struct NativeChrome: View {
 }
 
 private struct NativeSidebarContainer: UIViewControllerRepresentable {
+    @Environment(\.colorScheme) private var colorScheme
     let host: NativeHost
     @ObservedObject private var presentation: NativeSurfacePresentationState
     @ObservedObject private var appearance: NativeSurfaceAppearanceState
@@ -88,7 +89,8 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: SidebarController, context: Context) {
         controller.update(open: presentation.value.navigationOpen,
                           canOpen: presentation.value.canOpenNavigation,
-                          background: appearance.value.palette?["sidebar"])
+                          background: appearance.value.palette?["sidebar"],
+                          shadow: NativeElevation.drawer(dark: colorScheme == .dark))
     }
 
     final class SidebarController: UIViewController, UIGestureRecognizerDelegate {
@@ -106,6 +108,7 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
         private var dragging = false
         private var modelOpen = false
         private var canOpen = false
+        private var drawerShadow = NativeElevation.drawer(dark: false)
         private var drawerWidth: CGFloat {
             // Use the stable container margins; a translated child can lose its offscreen trailing margin.
             // Align the two native 44-point toolbar button centers.
@@ -130,8 +133,6 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
             sidebar.didMove(toParent: self)
             view.addSubview(card)
             card.layer.shadowColor = UIColor.black.cgColor
-            card.layer.shadowOffset = CGSize(width: -8, height: 0)
-            card.layer.shadowRadius = 20
             card.addSubview(cardContent)
             cardContent.clipsToBounds = true
             cardContent.layer.cornerCurve = .continuous
@@ -164,8 +165,12 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
             applyProgress(progress)
         }
 
-        func update(open: Bool, canOpen: Bool, background: [Double]?) {
+        func update(open: Bool, canOpen: Bool, background: [Double]?, shadow: NativeElevation.Shadow) {
             loadViewIfNeeded()
+            drawerShadow = shadow
+            card.layer.shadowOffset = CGSize(width: shadow.x, height: shadow.y)
+            card.layer.shadowRadius = shadow.radius
+            card.layer.shadowOpacity = Float(shadow.opacity * progress)
             if let rgba = background, rgba.count == 4 {
                 view.backgroundColor = UIColor(red: rgba[0] / 255, green: rgba[1] / 255, blue: rgba[2] / 255, alpha: rgba[3] / 255)
             }
@@ -192,7 +197,7 @@ private struct NativeSidebarContainer: UIViewControllerRepresentable {
             progress = min(1, max(0, value))
             card.transform = CGAffineTransform(translationX: drawerWidth * progress, y: 0)
             cardContent.layer.cornerRadius = 32 * progress
-            card.layer.shadowOpacity = Float(0.15 * progress)
+            card.layer.shadowOpacity = Float(drawerShadow.opacity * progress)
             dismissArea.backgroundColor = UIColor.black.withAlphaComponent(0.04 * progress)
             updateInteraction()
         }

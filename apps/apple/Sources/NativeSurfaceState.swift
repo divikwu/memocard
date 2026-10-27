@@ -1,5 +1,25 @@
 #if os(iOS)
 import Combine
+import CoreGraphics
+
+// Platform adaptations of the shared capture / floating-navigation roles.
+// Light opacity follows the softer 75% treatment; native geometry stays in points.
+enum NativeElevation {
+    struct Shadow: Equatable {
+        let opacity: Double
+        let radius: CGFloat
+        let x: CGFloat
+        let y: CGFloat
+    }
+
+    static func capture(dark: Bool) -> Shadow {
+        Shadow(opacity: dark ? 0.12 : 0.09, radius: 24, x: 0, y: 8)
+    }
+
+    static func drawer(dark: Bool) -> Shadow {
+        Shadow(opacity: dark ? 0.15 : 0.1125, radius: 20, x: -8, y: 0)
+    }
+}
 
 @MainActor
 final class NativeSurfaceState: ObservableObject {

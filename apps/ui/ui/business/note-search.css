@@ -1,6 +1,6 @@
 .ui-note-search-dialog { height: min(680px,calc(100dvh - 2rem)); max-width: min(60rem,calc(100% - 2rem)); border-radius: var(--radius-container); }
 :is([data-slot="dialog-overlay"]:has(~ .ui-note-search-dialog), [data-slot="sheet-overlay"]:has(~ .ui-note-search-sheet)) { background: color-mix(in oklab, var(--color-background-body) 80%, transparent); }
-.ui-note-search-dialog, .ui-note-search-sheet { border-color: var(--color-border); box-shadow: var(--shadow-high); }
+.ui-note-search-dialog, .ui-note-search-sheet { border-color: var(--color-border-floating); box-shadow: var(--shadow-high), var(--surface-edge-floating); }
 .ui-note-search-field .ui-note-search-input:focus { background-color: transparent; }
 .ui-note-search-input { font-size: var(--font-size-base); }
 .ui-note-search-input:focus-visible { outline: none; }

@@ -41,7 +41,7 @@
   --color-divider: var(--color-border);
   --color-border-emphasized: var(--color-neutral-500);
   --color-skeleton: var(--color-neutral-100);
-  --color-shadow: rgb(25 25 25);
+  --color-shadow: var(--color-black);
   --color-tint-hover: var(--color-black);
   --color-on-dark: var(--color-white);
   --color-on-light: var(--color-neutral-950);
@@ -264,11 +264,29 @@
   --duration-card-hover: 600ms;
   --ease-standard: cubic-bezier(0.24, 1, 0.4, 1);
   --ease-card-hover: cubic-bezier(0.22, 1, 0.36, 1);
-  --shadow-low: 0 4px 12px -4px color-mix(in srgb, var(--color-shadow) 4%, transparent), 0 1px 2px color-mix(in srgb, var(--color-shadow) 2%, transparent);
-  --shadow-med: 0 12px 16px -12px color-mix(in srgb, var(--color-shadow) 12%, transparent), 0 2px 6px -2px color-mix(in srgb, var(--color-shadow) 3%, transparent);
-  --shadow-high: 0 20px 24px -20px color-mix(in srgb, var(--color-shadow) 20%, transparent), 0 4px 8px -4px color-mix(in srgb, var(--color-shadow) 4%, transparent);
-  --shadow-card-hover: 0 16px 32px -24px color-mix(in srgb, var(--color-black) 24%, transparent);
-  --shadow-input-focus: 0 6px 20px color-mix(in srgb, var(--color-neutral-900) 6%, transparent), 0 1px 3px color-mix(in srgb, var(--color-neutral-900) 3%, transparent);
+  /* Craft Web shadow scale, inspected 2026-10-27:
+     https://docs.craft.do/static/css/vendor-excalidraw.css.tkYuNB5W.css
+     External 1px edge layers are supplied by border roles instead.
+     Light outer opacity is 75% of the Craft reference; dark is retained.
+     Transparent layers are retained; inner is an opt-in control highlight. */
+  --shadow-scale-empty: 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-xxs: 0px 1px 1.5px 0px color-mix(in srgb, var(--color-shadow) 4.5%, transparent), 0px 2.5px 4px 0px color-mix(in srgb, var(--color-shadow) 4.5%, transparent);
+  --shadow-scale-xs: 0px 1px 1px 0px color-mix(in srgb, var(--color-shadow) 3%, transparent), 0px 3px 3px 0px color-mix(in srgb, var(--color-shadow) 3%, transparent), 0px 6px 4px 0px color-mix(in srgb, var(--color-shadow) 1.5%, transparent), 0px 11px 4px 0px color-mix(in srgb, var(--color-shadow) 0.75%, transparent), 0px 17px 5px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-sm: 0px 2px 4px 0px color-mix(in srgb, var(--color-shadow) 5.25%, transparent), 0px 8px 8px 0px color-mix(in srgb, var(--color-shadow) 4.5%, transparent), 0px 18px 11px 0px color-mix(in srgb, var(--color-shadow) 3%, transparent), 0px 32px 13px 0px color-mix(in srgb, var(--color-shadow) 0.75%, transparent), 0px 51px 14px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-md: 0px 4px 9px 0px color-mix(in srgb, var(--color-shadow) 5.25%, transparent), 0px 16px 16px 0px color-mix(in srgb, var(--color-shadow) 4.5%, transparent), 0px 36px 22px 0px color-mix(in srgb, var(--color-shadow) 3%, transparent), 0px 65px 26px 0px color-mix(in srgb, var(--color-shadow) 0.75%, transparent), 0px 101px 28px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-sr: 0px 1px 2px 0px color-mix(in srgb, var(--color-shadow) 3.75%, transparent), 0px 4px 4px 0px color-mix(in srgb, var(--color-shadow) 3%, transparent), 0px 9px 5px 0px color-mix(in srgb, var(--color-shadow) 2.25%, transparent), 0px 16px 6px 0px color-mix(in srgb, var(--color-shadow) 0.75%, transparent), 0px 25px 7px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-doc: 0px 1px 1px -.5px color-mix(in srgb, var(--color-shadow) 4.5%, transparent), 0px 3px 3px -1.5px color-mix(in srgb, var(--color-shadow) 4.5%, transparent), 0px 6px 6px -3px color-mix(in srgb, var(--color-shadow) 4.5%, transparent), 0px 12px 12px -6px color-mix(in srgb, var(--color-shadow) 3%, transparent), 0px 24px 24px -12px color-mix(in srgb, var(--color-shadow) 2.25%, transparent);
+  --shadow-scale-inner: inset color-mix(in srgb, var(--color-white) 88%, transparent) 0px 0px 0px 1px;
+  --shadow-low: var(--shadow-scale-xs);
+  --shadow-med: var(--shadow-scale-sm);
+  --shadow-high: var(--shadow-scale-md);
+  --shadow-control: var(--shadow-scale-xxs), var(--shadow-scale-inner);
+  --shadow-floating: var(--shadow-scale-sr);
+  --shadow-document: var(--shadow-scale-doc);
+  --shadow-card-hover: 0 10px 20px color-mix(in srgb, var(--color-shadow) 3%, transparent);
+  --shadow-input-focus: var(--shadow-med);
+  --color-border-floating: var(--color-border);
+  --surface-edge-floating: 0 0 0 0 transparent, inset 0 0 0 0 transparent;
   /* State rings remain separate from elevation and outline focus. */
   --shadow-inset-hover: inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 30%, transparent);
   --shadow-inset-selected: inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 50%, transparent);
@@ -393,10 +411,17 @@
   --color-data-gray-2: var(--color-neutral-200);
   --color-data-gray-1: var(--color-neutral-50);
 
-  --shadow-low: 0 2px 4px -1px color-mix(in srgb, var(--color-shadow) 16%, transparent);
-  --shadow-med: 0 4px 12px -3px color-mix(in srgb, var(--color-shadow) 24%, transparent);
-  --shadow-high: 0 14px 28px -7px color-mix(in srgb, var(--color-shadow) 36%, transparent), 0 2px 4px -1px color-mix(in srgb, var(--color-shadow) 24%, transparent);
-  --shadow-input-focus: 0 6px 20px color-mix(in srgb, var(--color-black) 28%, transparent), 0 1px 3px color-mix(in srgb, var(--color-black) 18%, transparent);
+  --shadow-scale-empty: 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-xxs: 0px 1px 1.5px 0px color-mix(in srgb, var(--color-shadow) 14%, transparent), 0px 2.5px 4px 0px color-mix(in srgb, var(--color-shadow) 16%, transparent);
+  --shadow-scale-xs: 0px 1px 1px 0px color-mix(in srgb, var(--color-shadow) 8%, transparent), 0px 3px 3px 0px color-mix(in srgb, var(--color-shadow) 7%, transparent), 0px 6px 4px 0px color-mix(in srgb, var(--color-shadow) 4%, transparent), 0px 11px 4px 0px color-mix(in srgb, var(--color-shadow) 1%, transparent), 0px 17px 5px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-sm: 0px 2px 4px 0px color-mix(in srgb, var(--color-shadow) 10%, transparent), 0px 8px 8px 0px color-mix(in srgb, var(--color-shadow) 9%, transparent), 0px 18px 11px 0px color-mix(in srgb, var(--color-shadow) 5%, transparent), 0px 32px 13px 0px color-mix(in srgb, var(--color-shadow) 1%, transparent), 0px 51px 14px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-md: 0px 4px 9px 0px color-mix(in srgb, var(--color-shadow) 12%, transparent), 0px 16px 16px 0px color-mix(in srgb, var(--color-shadow) 10%, transparent), 0px 36px 22px 0px color-mix(in srgb, var(--color-shadow) 6%, transparent), 0px 65px 26px 0px color-mix(in srgb, var(--color-shadow) 2%, transparent), 0px 101px 28px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-sr: 0px 1px 2px 0px color-mix(in srgb, var(--color-shadow) 9%, transparent), 0px 4px 4px 0px color-mix(in srgb, var(--color-shadow) 8%, transparent), 0px 9px 5px 0px color-mix(in srgb, var(--color-shadow) 5%, transparent), 0px 16px 6px 0px color-mix(in srgb, var(--color-shadow) 1%, transparent), 0px 25px 7px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent);
+  --shadow-scale-doc: 0px 1px 1px -.5px color-mix(in srgb, var(--color-shadow) 10%, transparent), 0px 3px 3px -1.5px color-mix(in srgb, var(--color-shadow) 10%, transparent), 0px 6px 6px -3px color-mix(in srgb, var(--color-shadow) 10%, transparent), 0px 12px 12px -6px color-mix(in srgb, var(--color-shadow) 8%, transparent), 0px 24px 24px -12px color-mix(in srgb, var(--color-shadow) 8%, transparent);
+  --shadow-scale-inner: inset color-mix(in srgb, var(--color-white) 4%, transparent) 0px 0px 0px 1px;
+  --shadow-card-hover: 0 10px 20px color-mix(in srgb, var(--color-shadow) 12%, transparent);
+  --color-border-floating: transparent;
+  --surface-edge-floating: 0 0 0 var(--border-width) color-mix(in srgb, var(--color-black) 12%, transparent), inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent);
 }
 
 /* Register aliases without overwriting the system variables they reference. */
@@ -620,6 +645,9 @@
   --shadow-xl: var(--shadow-high);
   --shadow-card-hover: var(--shadow-card-hover);
   --shadow-input-focus: var(--shadow-input-focus);
+  --shadow-control: var(--shadow-control);
+  --shadow-floating: var(--shadow-floating);
+  --shadow-document: var(--shadow-document);
   --shadow-inset-hover: var(--shadow-inset-hover);
   --shadow-inset-selected: var(--shadow-inset-selected);
   --shadow-inset-success: var(--shadow-inset-success);
@@ -632,6 +660,12 @@
 }
 
 @custom-variant dark (&:where([data-ui-theme="dark"], [data-ui-theme="dark"] *));
+
+/* Keep the layout border while composing decorative edges with elevation. */
+@utility surface-floating {
+  border-color: var(--color-border-floating);
+  box-shadow: var(--shadow-high), var(--surface-edge-floating);
+}
 
 @utility focus-ring {
   outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color);

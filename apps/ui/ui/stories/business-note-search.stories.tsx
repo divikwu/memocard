@@ -49,7 +49,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const DesktopResults: Story = {
+export const DesktopResults: Story = {};
+
+export const DesktopResultsRegression: Story = {
+  ...DesktopResults,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const { body, search } = await searchDialog(canvasElement);
@@ -84,7 +88,12 @@ export const DesktopResults: Story = {
 };
 
 export const Loading: Story = {
-  parameters: { searchFixture: "loading", docs: { description: { story: "首次最近笔记请求保持加载；输入“计划”即可完成新查询。play 还会释放晚到的首次响应，验证它不会覆盖当前查询。" } } },
+  parameters: { searchFixture: "loading", docs: { description: { story: "首次最近笔记请求保持加载；手动输入“计划”即可完成新查询。晚到响应保护由隐藏回归测试验证。" } } },
+};
+
+export const LoadingRegression: Story = {
+  ...Loading,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const { search, input } = await searchDialog(canvasElement);
     await waitFor(() => expect(fixture.calls).toHaveLength(1));
@@ -109,6 +118,11 @@ export const Loading: Story = {
 
 export const Empty: Story = {
   parameters: { searchFixture: "empty" },
+};
+
+export const EmptyRegression: Story = {
+  ...Empty,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const { search, input } = await searchDialog(canvasElement);
     await search.findByText("笔记库中还没有笔记");
@@ -136,6 +150,11 @@ export const Unavailable: Story = {
 
 export const RetryAndPagination: Story = {
   parameters: { searchFixture: "retry-paging" },
+};
+
+export const RetryAndPaginationRegression: Story = {
+  ...RetryAndPagination,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const { search } = await searchDialog(canvasElement);
     await expect(await search.findByRole("alert")).toHaveTextContent("示例搜索读取失败");
@@ -163,6 +182,11 @@ export const MobilePreservedSession: Story = {
   globals: { viewport: { value: "mobile", isRotated: false } },
   args: { preserveSession: true },
   parameters: { searchFixture: "paging", docs: { story: { height: "844px" } } },
+};
+
+export const MobilePreservedSessionRegression: Story = {
+  ...MobilePreservedSession,
+  tags: ["mobile", "!dev", "!autodocs"],
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
     const { body, search, input } = await searchDialog(canvasElement);

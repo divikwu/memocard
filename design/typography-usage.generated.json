@@ -4232,7 +4232,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeChrome.swift",
-          "line": 496
+          "line": 501
         }
       ]
     },
@@ -4242,7 +4242,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeChrome.swift",
-          "line": 318
+          "line": 323
         }
       ]
     },
@@ -4252,7 +4252,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeChrome.swift",
-          "line": 587
+          "line": 592
         }
       ]
     },
@@ -4262,7 +4262,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeChrome.swift",
-          "line": 318
+          "line": 323
         }
       ]
     },
@@ -4272,7 +4272,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeChrome.swift",
-          "line": 562
+          "line": 567
         }
       ]
     },
@@ -4282,7 +4282,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 274
+          "line": 276
         }
       ]
     },
@@ -4292,7 +4292,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 196
+          "line": 198
         }
       ]
     },
@@ -4302,19 +4302,19 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 192
+          "line": 194
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 216
+          "line": 218
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 261
+          "line": 263
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 345
+          "line": 347
         }
       ]
     },
@@ -4324,7 +4324,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 316
+          "line": 318
         }
       ]
     },
@@ -4334,11 +4334,11 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 199
+          "line": 201
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 307
+          "line": 309
         }
       ]
     },
@@ -4348,23 +4348,23 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 191
+          "line": 193
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 210
+          "line": 212
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 214
+          "line": 216
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 275
+          "line": 277
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 342
+          "line": 344
         }
       ]
     },
@@ -4374,11 +4374,11 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 242
+          "line": 244
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 245
+          "line": 247
         }
       ]
     },
@@ -4388,15 +4388,15 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 283
+          "line": 285
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 287
+          "line": 289
         },
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 297
+          "line": 299
         }
       ]
     },
@@ -4470,7 +4470,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeChrome.swift",
-          "line": 475
+          "line": 480
         }
       ]
     },
@@ -4500,7 +4500,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeDesignedPanel.swift",
-          "line": 242
+          "line": 244
         }
       ]
     }

@@ -53,7 +53,10 @@ function CollectionFixture({ home = false, empty = false, loading: initialLoadin
 const meta = { title: "business/note collection", id: "ui-business-note-collection", component: CollectionFixture, parameters: { layout: "fullscreen" } } satisfies Meta<typeof CollectionFixture>;
 export default meta;
 type Story = StoryObj<typeof meta>;
-export const Desktop: Story = {
+export const Desktop: Story = {};
+export const DesktopRegression: Story = {
+  ...Desktop,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const input = within(canvasElement).getByRole("textbox", { name: "搜索当前视图笔记" });
     await userEvent.tab();
@@ -77,6 +80,10 @@ export const ColoredTags: Story = {
     localStorage.setItem(key, JSON.stringify({ "area/coffee": "blue" }));
     return () => { if (previous === null) localStorage.removeItem(key); else localStorage.setItem(key, previous); };
   },
+};
+export const ColoredTagsRegression: Story = {
+  ...ColoredTags,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const tag = await within(canvasElement).findByRole("button", { name: "筛选标签 area/coffee" });
     const probe = canvasElement.ownerDocument.createElement("span");

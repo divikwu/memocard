@@ -16,6 +16,10 @@ const meta = {
 export default meta;
 export const Example: StoryObj<typeof meta> = {
   render: () => <LumaStoryFrame><AccordionExample /></LumaStoryFrame>,
+};
+export const ExampleRegression: StoryObj<typeof meta> = {
+  ...Example,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const trigger = canvas.getByRole("button", { name: "圆角基准是多少？" });

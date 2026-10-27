@@ -73,6 +73,7 @@ it.each([
   ["index-writing", "正在建立索引"],
   ["draft-corrupt", "部分草稿无法读取"],
   ["draft-directory", "此恢复目录暂时无法读取，原记录已保留。"],
+  ["combined", "部分草稿无法读取"],
   ["save-error", "文件操作未完成，请检查目录权限和文件可用性。"],
   ["draft-save-error", "本机草稿暂时无法保存，请检查本机目录权限和可用空间。"],
   ["conflict", "文件已在其他位置修改，原文未被覆盖。请保留草稿并重新读取。"],
@@ -87,6 +88,14 @@ it.each([
   expect((await screen.findAllByText(text => text.includes(errorMessage(new Error(message))), {}, { timeout: 4000 })).length).toBeGreaterThan(0);
   expect(document.querySelector(".web-app")).not.toBeNull();
   expect(document.querySelector(".ui-theme")).not.toBeNull();
+  if (["draft-corrupt", "draft-directory", "combined"].includes(id)) {
+    const notice = screen.getByText("部分草稿无法读取").closest("[role=status]") as HTMLElement;
+    const reason = id === "draft-directory" ? "此恢复目录暂时无法读取，原记录已保留。" : "此草稿无法读取或格式无效，原文件已保留，可从此路径检查或备份。";
+    expect(within(notice).getByText(reason)).toBeDefined();
+    expect(within(notice).getByText(/\/模拟目录\/MemoCard\/drafts\//)).toBeDefined();
+    expect(notice.querySelector("details, summary")).toBeNull();
+    expect(within(notice).queryByText("查看详情")).toBeNull();
+  }
 });
 
 it("recovers a failed detail read into the new editor without an early write", async () => {
@@ -155,13 +164,18 @@ it("starts in the images filter and returns to the unfiltered notes", async () =
   await screen.findByRole("list", { name: "笔记列表" });
 });
 
-it("runs folder selection before showing cancellation and can reselect in memory", async () => {
+it("shows folder diagnostics in the state description and can reselect in memory", async () => {
   const user = userEvent.setup();
   const { fixture, request } = await show("folder-cancel");
   await screen.findByRole("heading", { name: "文件夹授权未完成" });
   expect(request.mock.calls.some(([operation]) => operation === "selectVault")).toBe(true);
+  const state = screen.getByRole("status");
+  const reason = within(state).getByText(/模拟：未授予文件夹访问权限/);
+  expect(reason.closest('[data-slot="empty-description"]')).not.toBeNull();
+  expect(state.querySelector("details, summary")).toBeNull();
+  const action = screen.getByRole("button", { name: "重新选择文件夹" });
   fixture.retry();
-  await user.click(screen.getByRole("button", { name: "重新选择文件夹" }));
+  await user.click(action);
   await screen.findByRole("list", { name: "笔记列表" });
 });
 

@@ -19,7 +19,7 @@
 .ui-capture-tag-options > button { width: 100%; height: auto; min-height: var(--size-element-md); justify-content: flex-start; padding-inline: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
 .ui-capture-tag-options > button > span { min-width: 0; flex: 1; overflow-wrap: anywhere; text-align: start; }
 .ui-capture-tag-options > p { padding: calc(var(--spacing-1) * 2); font-size: var(--font-size-xs); color: var(--color-text-secondary); }
-.ui-capture-suggestions { position: absolute; z-index: 60; display: grid; gap: var(--spacing-1); width: min(15rem, 100%); padding: var(--spacing-1); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-popover); background: var(--color-background-popover); box-shadow: var(--shadow-high); }
+.ui-capture-suggestions { position: absolute; z-index: 60; display: grid; gap: var(--spacing-1); width: min(15rem, 100%); padding: var(--spacing-1); border: var(--border-width) solid var(--color-border-floating); border-radius: var(--radius-popover); background: var(--color-background-popover); box-shadow: var(--shadow-high), var(--surface-edge-floating); }
 .ui-capture-suggestions > button { width: 100%; min-width: 0; justify-content: space-between; padding-inline: calc(var(--spacing-1) * 2); border-radius: var(--radius-item); text-align: start; }
 .ui-capture-suggestions > button > span:first-child { overflow: hidden; text-overflow: ellipsis; }
 .ui-capture-suggestions > p { padding: calc(var(--spacing-1) * 2); }
