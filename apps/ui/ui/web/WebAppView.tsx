@@ -1,10 +1,10 @@
 import { Suspense, useRef, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
-import { noteFilterEmptyTitles } from "../../src/note-filter-labels";
+import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-labels";
 import { errorMessage } from "../../src/error-messages";
 import { HomeMascot } from "../business/HomeMascot";
 import { Button } from "../components/button";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "../components/breadcrumb";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/breadcrumb";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/empty";
@@ -20,7 +20,7 @@ import { NoteCollection } from "../business/NoteCollection";
 import { PageNotice } from "../business/PageNotice";
 import { AddIcon, CheckIcon, DeleteIcon, DocumentIcon, FolderIcon, SearchIcon, SettingsIcon } from "../icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon";
+import ArrowLeft02Icon from "@hugeicons/core-free-icons/ArrowLeft02Icon";
 import MoreHorizontalIcon from "@hugeicons/core-free-icons/MoreHorizontalIcon";
 import PinIcon from "@hugeicons/core-free-icons/PinIcon";
 import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
@@ -93,6 +93,8 @@ const IOSAppChrome = recoverableLazy(() => import("../native/IOSAppChrome").then
 export function WebAppView({ state: s }: { state: AppViewState }) {
   const mode = usePreviewMode();
   const menuDelete = useRef(false);
+  const tagParts = s.sidebar.tag?.split("/") ?? [];
+  const detailBreadcrumbs = s.view === "home" ? ["主页"] : ["所有笔记", ...tagParts, ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : [])];
   return <div className="ui-theme web-app sb-unstyled" data-ui-theme={mode} data-native-chrome={s.nativeChrome ? "true" : undefined}>
     <TagColorStyles />
     {s.nativeChrome && <Suspense fallback={null}><IOSAppChrome {...s.nativeChrome} /></Suspense>}
@@ -101,12 +103,14 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
       {!s.nativeChrome && <AppSidebar {...s.sidebar} />}
       <SidebarInset className="web-app-main">
         {!s.nativeChrome && <header className="web-app-header">
-          <div className="web-header-leading">{s.detailView && <Button variant="ghost" size="icon-sm" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft01Icon} aria-hidden="true" /></Button>}
-            {(s.isMobile ? !s.detailView : !s.sidebarOpen) && <><SidebarTrigger className="web-header-icon" />{!s.isMobile && <Separator orientation="vertical" className="web-header-separator" />}</>}
-            <Breadcrumb aria-label="当前位置" className="web-header-breadcrumb" data-detail={s.detailView || undefined}><BreadcrumbList><BreadcrumbItem>{s.isMobile && !s.detailView && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem></BreadcrumbList></Breadcrumb>
+          <div className="web-header-leading">
+            {(s.isMobile ? !s.detailView : !s.sidebarOpen) && <SidebarTrigger className="web-header-icon" />}
+            {s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
+            {!s.isMobile && !s.sidebarOpen && <Separator orientation="vertical" className="web-header-separator" />}
+            <Breadcrumb aria-label="当前位置" className="web-crumb" data-detail={s.detailView || undefined}><BreadcrumbList>{s.detailView ? detailBreadcrumbs.map((label, index) => <BreadcrumbItem key={index}>{index > 0 && <span aria-hidden="true">/</span>}<BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? tagParts.slice(0, index).join("/") : null)}>{label}</BreadcrumbLink></BreadcrumbItem>) : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>
           </div>
           <div className="web-header-actions">
-            {s.editor && s.capabilities.has("setNotePinned") && <TooltipProvider><Tooltip><TooltipTrigger render={<span className="web-pin-tooltip-trigger" tabIndex={s.pinDisabled ? 0 : undefined} />}><Button variant="ghost" size="icon-sm" className={`web-header-icon${s.pinned ? " text-accent" : ""}`} aria-label={s.pinned ? "取消固定" : "固定到主页"} aria-description={!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : undefined} aria-pressed={s.pinned} disabled={s.pinDisabled} onClick={s.onTogglePin}><HugeiconsIcon icon={PinIcon} fill={s.pinned ? "currentColor" : "none"} aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>{!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : s.pinned ? "取消固定" : "固定到主页"}</TooltipContent></Tooltip></TooltipProvider>}
+            {s.editor && s.capabilities.has("setNotePinned") && <TooltipProvider><Tooltip><TooltipTrigger render={<span className="web-pin-tooltip-trigger" tabIndex={s.pinDisabled ? 0 : undefined} />}><Button variant="ghost" size="icon" className={`web-header-icon${s.pinned ? " text-accent" : ""}`} aria-label={s.pinned ? "取消固定" : "固定到主页"} aria-description={!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : undefined} aria-pressed={s.pinned} disabled={s.pinDisabled} onClick={s.onTogglePin}><HugeiconsIcon icon={PinIcon} fill={s.pinned ? "currentColor" : "none"} aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>{!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : s.pinned ? "取消固定" : "固定到主页"}</TooltipContent></Tooltip></TooltipProvider>}
             <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="web-header-icon" aria-label="页面操作" />}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56" finalFocus={() => { if (menuDelete.current) { menuDelete.current = false; s.onRequestDelete?.(); return false; } return true; }}>
               <DropdownMenuItem disabled={!s.canCreate} onClick={() => void s.onNew()}><AddIcon aria-hidden="true" />新建笔记</DropdownMenuItem><DropdownMenuItem disabled={!s.canRefresh} onClick={s.onRefresh}><HugeiconsIcon icon={RefreshIcon} className={s.loading ? "animate-spin motion-reduce:animate-none" : undefined} aria-hidden="true" />刷新笔记库</DropdownMenuItem>
               {s.onRequestDelete && <DropdownMenuItem variant="destructive" disabled={!s.canDeleteNote} onClick={() => { menuDelete.current = true; }}><DeleteIcon aria-hidden="true" />移入回收站</DropdownMenuItem>}

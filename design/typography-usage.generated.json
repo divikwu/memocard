@@ -1400,11 +1400,6 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".rich-inline-tag, .note-tag-pill",
-          "value": "var(--font-size-sm)"
-        },
-        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown",
           "value": "var(--font-size-sm)"
@@ -1543,6 +1538,11 @@
         {
           "source": "apps/ui/ui/business/tag-navigation.tsx",
           "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/tag.css",
+          "scope": ".rich-inline-tag, .note-tag-pill",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2104,11 +2104,6 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".rich-inline-tag, .note-tag-pill",
-          "value": "var(--font-weight-normal)"
-        },
-        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown",
           "value": "var(--font-weight-normal)"
@@ -2186,6 +2181,11 @@
         {
           "source": "apps/ui/ui/business/sidebar.css",
           "scope": ".ui-sidebar-vault-menu-item",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/tag.css",
+          "scope": ".rich-inline-tag, .note-tag-pill",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2459,7 +2459,7 @@
         },
         {
           "source": "apps/ui/ui/web/web-app.css",
-          "scope": "@media (max-width: 767px) → .web-header-breadcrumb [data-slot=breadcrumb-page]",
+          "scope": "@media (max-width: 767px) → .web-crumb [data-slot=breadcrumb-page]",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -3224,11 +3224,6 @@
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".rich-inline-tag, .note-tag-pill",
-          "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-properties.css",
           "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
           "value": "var(--text-body-leading)"
         },
@@ -3351,6 +3346,11 @@
         {
           "source": "apps/ui/ui/business/sidebar.css",
           "scope": ".ui-business-sidebar .ui-sidebar-row",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/tag.css",
+          "scope": ".rich-inline-tag, .note-tag-pill",
           "value": "var(--text-body-leading)"
         },
         {

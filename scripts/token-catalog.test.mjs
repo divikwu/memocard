@@ -33,6 +33,12 @@ test('rejects unregistered names, overlapping owners, duplicate definitions and 
   assert.throws(() => inspect(':root { color: red; }'), /Empty token family/);
 });
 
+test('theme namespace resets are compiler configuration while runtime wildcards still fail registration', () => {
+  assert.deepEqual(inspect(':root { --surface: white; } @theme reference inline { --shadow-*: initial; }').map(record => record.name), ['--surface']);
+  assert.throws(() => inspect(':root { --surface: white; --shadow-*: initial; }'), /Unregistered CSS token/);
+  assert.throws(() => inspect(':root { --surface: white; } @theme reference inline { --shadow-*: white; }'), /Unregistered CSS token/);
+});
+
 test('rejects unknown references and cycles in the defaults or an authored mode', () => {
   assert.throws(() => inspect(':root { --surface: var(--typo); }'), /Unknown CSS reference/);
   assert.throws(() => inspect(':root { --surface: var(--text); --text: var(--surface); }'), /Cyclic CSS alias/);
@@ -151,14 +157,23 @@ test('explicit stylesheet overrides keep one owner and reference aliases do not 
   assert.throws(() => checkPublicPlacement('.ui-theme {--forgotten:red;}', 'current.css'), /outside registered sources/);
 });
 
-test('current semantic utilities compile from the sole theme and keep standard Tailwind fallbacks', async () => {
+test('current semantic utilities compile while retired aliases and primitive scales stay private', async () => {
   const require = createRequire(new URL('../apps/ui/package.json', import.meta.url));
   const { compile } = require('tailwindcss');
   const source = (await Promise.all([require.resolve('tailwindcss/theme.css'), fileURLToPath(new URL('../apps/ui/ui/theme.css', import.meta.url))].map(path => readFile(path, 'utf8')))).join('\n');
   const compiler = await compile(`${source}\n@tailwind utilities;`);
   const names = ['bg-body','text-primary','text-control-secondary','font-sans','font-heading','font-mono','font-bold','text-sm','text-3xl','text-4xl','rounded-element','rounded-container','p-4','gap-2','transition-colors','duration-fast','ease-standard'];
-  const output = compiler.build(names);
+  names.push('shadow-flat','shadow-low','shadow-med','shadow-high','shadow-control','shadow-floating','shadow-document','shadow-card-hover','shadow-input-focus');
+  const retired = ['2xs','xs','sm','md','lg','xl','2xl'].map(size => `shadow-${size}`);
+  const primitives = [0, 1, 2, 3, 4].map(level => `shadow-scale-${level}`);
+  const reserved = ['hover', 'selected', 'success', 'warning', 'error'].map(state => `shadow-inset-${state}`);
+  const output = compiler.build([...names, ...retired, ...primitives, ...reserved]);
   for (const name of names) assert.ok(output.includes(`.${name} {`), `${name} compiles`);
+  for (const name of retired) {
+    assert.ok(!output.includes(`.${name} {`), `${name} cannot fall back to Tailwind defaults`);
+    assert.ok(!output.includes(`--${name}:`), `${name} has no theme alias`);
+  }
+  for (const name of [...primitives, ...reserved]) assert.ok(!output.includes(`.${name} {`), `${name} stays outside the component API`);
   assert.ok(output.includes('font-family: var(--font-family-code)'));
   assert.ok(output.includes('transition-duration: var(--duration-fast)'));
   assert.ok(output.includes('background-color: var(--color-background-body)'));

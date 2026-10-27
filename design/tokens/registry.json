@@ -277,7 +277,7 @@
     {
       "id": "effects.shadow-scale",
       "source": "apps/ui/ui/theme.css",
-      "pattern": "^--shadow-scale-[a-z]+$",
+      "pattern": "^--shadow-scale-[0-4]$",
       "category": "effects",
       "layer": "primitive",
       "type": "shadow",
@@ -285,10 +285,27 @@
       "axes": [
         "mode"
       ],
-      "description": "Eight Craft-derived shadow levels in light and dark; external edge layers remain owned by border roles.",
+      "description": "Five increasing multi-layer elevation levels (0–4) with theme-specific opacity and built-in 1px decorative outer edges; highlights, structural borders and focus remain independent.",
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx",
         "apps/ui/ui/stories/elevation.stories.tsx"
+      ]
+    },
+    {
+      "id": "effects.control-highlight",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--surface-highlight-control$",
+      "category": "effects",
+      "layer": "semantic",
+      "type": "shadow",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "Independent white inset highlight composed with the control elevation role; outside the outer-shadow scale.",
+      "consumers": [
+        "apps/ui/ui/components/switch.tsx",
+        "apps/ui/ui/components/slider.tsx"
       ]
     },
     {
@@ -302,7 +319,7 @@
       "axes": [
         "mode"
       ],
-      "description": "Decorative floating-surface edges, composed by components independently of elevation and layout borders.",
+      "description": "Independent inset highlight for floating surfaces; decorative outer edges are supplied by the selected elevation recipe.",
       "consumers": [
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/business/rich-editor.css"
@@ -311,7 +328,7 @@
     {
       "id": "effects.elevation",
       "source": "apps/ui/ui/theme.css",
-      "pattern": "^--shadow-(?!scale-)[a-z-]+$",
+      "pattern": "^--shadow-(?!scale-|inset-)[a-z-]+$",
       "category": "effects",
       "layer": "semantic",
       "type": "shadow",
@@ -320,10 +337,27 @@
         "mode",
         "state"
       ],
-      "description": "Component roles map the Craft-derived scale to controls, surfaces, floating tools and documents; card hover and state feedback remain explicit.",
+      "description": "Semantic elevation roles for flat, low, med, high, controls, floating tools, documents, card hover and input focus; components consume roles rather than primitive scales.",
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx",
         "apps/ui/ui/stories/theme.stories.tsx"
+      ]
+    },
+    {
+      "id": "effects.state-feedback",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--shadow-inset-[a-z-]+$",
+      "category": "effects",
+      "layer": "semantic",
+      "type": "shadow",
+      "status": "reserved",
+      "axes": [
+        "state"
+      ],
+      "description": "Reserved inset hover, selection and validation feedback; no current production consumer. Independent from surface elevation, decorative edges and keyboard focus outlines.",
+      "consumers": [
+        "apps/ui/ui/theme.css",
+        "apps/ui/ui/TokenPage.tsx"
       ]
     },
     {
@@ -360,7 +394,7 @@
     },
     {
       "id": "color.tags",
-      "source": "apps/ui/ui/business/note-properties.css",
+      "source": "apps/ui/ui/business/tag.css",
       "pattern": "^--tag-(?:default|brown|orange|yellow|green|blue|purple|pink|red)-(?:bg|fg)$",
       "category": "color",
       "layer": "semantic",
@@ -377,7 +411,7 @@
     },
     {
       "id": "effects.tag-opacity",
-      "source": "apps/ui/ui/business/note-properties.css",
+      "source": "apps/ui/ui/business/tag.css",
       "pattern": "^--tag-bg-opacity$",
       "category": "effects",
       "layer": "semantic",
@@ -571,6 +605,43 @@
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/components/dropdown-menu.tsx"
+      ]
+    },
+    {
+      "id": "effects.card-interaction",
+      "category": "effects",
+      "layer": "component",
+      "type": "policy",
+      "status": "component-owned",
+      "axes": [
+        "state"
+      ],
+      "description": "Independent card hover shadow and scale capabilities; collection cards and Preview links explicitly compose them, Elevation demonstrates shadow alone. Fine-pointer desktop only and reduced-motion aware.",
+      "sources": [
+        "apps/ui/ui/components/card-hover.css"
+      ],
+      "consumers": [
+        "apps/ui/ui/business/NoteCollection.tsx",
+        "apps/ui/ui/preview/Preview.tsx",
+        "apps/ui/ui/ElevationShowcase.tsx"
+      ]
+    },
+    {
+      "id": "interaction.input-focus",
+      "category": "effects",
+      "layer": "component",
+      "type": "policy",
+      "status": "component-owned",
+      "axes": [
+        "state"
+      ],
+      "description": "Page-wide pointer versus keyboard input focus policy; grouped controls delegate the outline, and validation feedback stays independent.",
+      "sources": [
+        "apps/ui/ui/components/input-focus.css"
+      ],
+      "consumers": [
+        "apps/ui/ui/preview-mode.tsx",
+        "apps/ui/ui/input-modality.ts"
       ]
     }
   ],

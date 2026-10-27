@@ -3,8 +3,6 @@
 .ui-note-search-dialog, .ui-note-search-sheet { border-color: var(--color-border-floating); box-shadow: var(--shadow-high), var(--surface-edge-floating); }
 .ui-note-search-field .ui-note-search-input:focus { background-color: transparent; }
 .ui-note-search-input { font-size: var(--font-size-base); }
-.ui-note-search-input:focus-visible { outline: none; }
-:is(.ui-note-search-dialog,.ui-note-search-sheet)[data-keyboard-focus] .ui-note-search-input:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 :is(.ui-note-search-dialog,.ui-note-search-sheet) .text-xs { line-height: var(--text-supporting-leading); }
 .ui-note-search-control { border-radius: var(--radius-full); }
 .ui-note-search-control:hover { background-color: var(--color-overlay-hover); color: var(--color-text-primary); }

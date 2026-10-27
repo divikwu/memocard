@@ -24,11 +24,15 @@
 .token-document .token-toc a[aria-current] { color: var(--color-text-primary); border-left-color: var(--color-text-primary); }
 .token-document a:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); border-radius: var(--radius-inner); }
 .token-table-wrap { max-width: 100%; margin-block: 20px; overflow: hidden; border: 1px solid var(--color-border); border-radius: var(--radius-container); }
+.token-table-wrap:has(.token-shadow-preview) { overflow-x: auto; }
+.token-table-wrap:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .token-document .token-table { display: table; width: 100%; table-layout: fixed; margin: 0; border: 0; border-collapse: collapse; text-align: left; font-size: 14px; line-height: 21px; }
+.token-document .token-table:has(.token-shadow-preview) { min-width: 640px; }
 .token-document .token-table :is(th, td) { padding: 12px 16px; border: 0; border-bottom: 1px solid var(--color-border); vertical-align: middle; overflow-wrap: anywhere; }
 .token-document .token-table thead th { font-weight: 500; color: var(--color-text-secondary); }
 .token-table tbody th { font-weight: 400; text-align: left; }
 .token-table :is(th, td):first-child { width: 40%; }
+.token-document .token-table:has(.token-shadow-preview) :is(th, td):first-child { width: 30%; }
 .token-document .token-table tbody tr:last-child :is(th, td) { border-bottom: 0; }
 .sbdocs .sbdocs-content .token-document code, .token-document code { padding: 0; border: 0; background: transparent; color: inherit; font-family: var(--font-family-code); font-size: 14px; line-height: 1.65; white-space: normal; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .token-interface { display: block; margin-top: 4px; font-size: 12px; color: var(--color-text-secondary); }
@@ -38,9 +42,11 @@
 .token-pending { color: var(--color-text-secondary); }
 .token-swatch { display: inline-block; flex: 0 0 28px; width: 28px; height: 28px; border: 1px solid var(--color-border-emphasized); border-radius: var(--radius-element); }
 .token-value { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-.token-value:has(> .token-shadow-preview) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.token-value:has(> .token-shadow-stage) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px; }
 .token-radius-preview { display: inline-block; width: 44px; height: 40px; flex: 0 0 auto; border: 1px solid var(--color-border-emphasized); background: var(--color-background-muted); }
-.token-shadow-preview { display: inline-block; width: 64px; height: 40px; margin: 8px; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-element); background: var(--color-background-surface); }
+/* Keep the largest outer shadow inside the table frame without narrowing its definition. */
+.token-shadow-stage { display: grid; justify-self: end; place-items: center; padding: 64px 48px; border-radius: var(--radius-element); background: var(--color-background-muted); }
+.token-shadow-preview { display: inline-block; width: 64px; height: 40px; border-radius: var(--radius-element); background: var(--color-background-surface); }
 .token-font-preview { display: block; width: 100%; font-size: 14px; line-height: 1.5; }
 .token-document .token-note { margin-top: 24px; color: var(--color-text-secondary); font-size: 12px; line-height: 1.7; }
 .token-document .token-note a { color: inherit; text-underline-offset: 4px; }

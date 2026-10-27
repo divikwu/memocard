@@ -1330,6 +1330,34 @@ it('follows the hovered task from the page margin outside the editor box',async(
  fireEvent.mouseMove(surface,{clientX:-80,clientY:10});expect(grip.parentElement!.style.top).toBe('113px');
  expect(change).not.toHaveBeenCalled();
 });
+it.each([
+ {heading:false,height:60,padding:6,expected:118},
+ {heading:true,height:60,padding:6,expected:118},
+ {heading:false,height:20,padding:6,expected:110},
+ {heading:false,height:10,padding:16,expected:110},
+])('anchors the block handle to the visible first line with padding ($heading, $height)',async({heading,height,padding,expected})=>{
+ const {editor,field,change}=await setup(`开头\n\n${heading?'## 标题':'正文'}`);
+ const root=field.closest('.rich-editor')!,pos=editor.state.doc.firstChild!.nodeSize;
+ const block=editor.view.nodeDOM(pos) as HTMLElement;
+ block.style.cssText=`padding:${padding}px 0;line-height:24px`;
+ vi.spyOn(root,'getBoundingClientRect').mockReturnValue(new DOMRect(0,100,720,300));
+ vi.spyOn(block,'getBoundingClientRect').mockReturnValue(new DOMRect(8,200,704,height));
+ act(()=>{editor.commands.setTextSelection(pos+1);});
+ expect(screen.getByRole('button',{name:'内容块操作'}).parentElement!.style.top).toBe(`${expected}px`);
+ expect(change).not.toHaveBeenCalled();
+});
+it('keeps the image block handle anchored to its existing image geometry',async()=>{
+ const {editor,field,change}=await setup('开头\n\n![图片](../assets/a.png)');
+ const root=field.closest('.rich-editor')!,pos=editor.state.doc.firstChild!.nodeSize;
+ const block=editor.view.nodeDOM(pos) as HTMLElement;
+ block.style.cssText='padding:6px;line-height:24px';
+ vi.spyOn(root,'getBoundingClientRect').mockReturnValue(new DOMRect(0,100,720,300));
+ vi.spyOn(block,'getBoundingClientRect').mockReturnValue(new DOMRect(8,200,704,60));
+ act(()=>{editor.commands.setNodeSelection(pos);});
+ const controls=screen.getByRole('button',{name:'内容块操作'}).parentElement!;
+ expect(controls.style.top).toBe('112px');expect(controls.style.left).toBe('-20px');
+ expect(change).not.toHaveBeenCalled();
+});
 it('targets the hovered block when opening its properties from a different caret',async()=>{
  const {editor,field}=await setup('first\n\nsecond');
  act(()=>{editor.commands.setTextSelection(2);});

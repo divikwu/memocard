@@ -1,13 +1,18 @@
 import { afterEach, expect, test } from "vitest";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
-import { commands, page, userEvent } from "vitest/browser";
+import { commands, page, server, userEvent } from "vitest/browser";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
+import { InputFocusFixture } from "./input-focus-fixture";
 import { ComponentDocs } from "../ui/ComponentDocs";
 import { componentDocs, type ComponentKey } from "../ui/component-docs.data";
 import { Button } from "../ui/components/button";
+import { Card } from "../ui/components/card";
+import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "../ui/components/popover";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/components/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/components/dialog";
 import { NoteProperties } from "../ui/business/NoteProperties";
+import { NoteCollection } from "../ui/business/NoteCollection";
+import { QuickCapture } from "../ui/business/QuickCapture";
 import { PropertyConfirmationPopup } from "../ui/business/property-confirmation";
 import { PreviewModeProvider } from "../ui/preview-mode";
 import { loadPreviewFonts } from "../ui/preview-fonts";
@@ -16,15 +21,337 @@ import { setStorybookBrowserAssets, setStorybookRequestHandler } from "./bridge"
 import { editorNote } from "./editor-note";
 import "../.storybook/preview.css";
 import "../ui/preview-appearance.css";
+import "../ui/business/NoteCollection.css";
 
 afterEach(async () => {
   cleanup();
   await commands.setReducedMotion("no-preference");
+  await commands.setForcedColors("none");
   await commands.setFontsOffline(false);
   document.documentElement.removeAttribute("data-ui-appearance");
   document.documentElement.removeAttribute("data-ui-theme");
   document.documentElement.removeAttribute("style");
 });
+
+// Canvas resolves computed oklch/system colors and composites alpha as painted.
+function paintedContrast(foreground: string, background: string) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2; canvas.height = 1;
+  const context = canvas.getContext("2d")!;
+  context.fillStyle = background; context.fillRect(0, 0, 2, 1);
+  context.fillStyle = foreground; context.fillRect(0, 0, 1, 1);
+  const data = context.getImageData(0, 0, 2, 1).data;
+  const luminance = (offset: number) => [0.2126, 0.7152, 0.0722].reduce((sum, weight, index) => {
+    const value = data[offset + index] / 255;
+    return sum + weight * (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  }, 0);
+  const a = luminance(0), b = luminance(4);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+for (const mode of ["light", "dark"] as const) {
+  test(`all editable controls distinguish pointer and keyboard navigation in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><InputFocusFixture mode={mode} /></PreviewModeProvider>);
+    const canvas = within(view.container);
+    for (const label of ["单行输入", "密码", "多行输入", "复合输入", "复合多行", "搜索选择", "多选输入", "编辑器搜索", "富文本输入", "无效输入"]) {
+      const field = canvas.getByLabelText(label, { exact: true });
+      const surface = field.closest('[data-slot="input-group"], [data-slot="combobox-chips"]') ?? field;
+      await userEvent.click(field);
+      expect(getComputedStyle(surface).outlineStyle, label + " pointer").toBe("none");
+      const invalidShadow = getComputedStyle(field).boxShadow;
+      await userEvent.keyboard("a");
+      expect(getComputedStyle(surface).outlineStyle, label + " editing").toBe("none");
+      if (label === "无效输入") {
+        expect(field.getAttribute("aria-invalid")).toBe("true");
+        expect(getComputedStyle(field).boxShadow).toBe(invalidShadow);
+        expect(invalidShadow).not.toBe("none");
+      }
+      await userEvent.tab();
+      await userEvent.tab({ shift: true });
+      expect(document.activeElement, label + " keyboard target").toBe(field);
+      expect(getComputedStyle(surface).outlineStyle, label + " keyboard").toBe("solid");
+      if (surface !== field) expect(getComputedStyle(field).outlineStyle, label + " single ring").toBe("none");
+      await userEvent.click(field);
+      expect(getComputedStyle(surface).outlineStyle, label + " pointer again").toBe("none");
+      await userEvent.keyboard("{Escape}");
+    }
+  });
+
+  test(`select and portalled autofocus follow the opening method in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><InputFocusFixture mode={mode} /></PreviewModeProvider>);
+    const canvas = within(view.container);
+    for (const label of ["原生选择", "选择器"]) {
+      const select = canvas.getByLabelText(label, { exact: true });
+      await userEvent.click(select);
+      expect(getComputedStyle(select).outlineStyle, label + " pointer").toBe("none");
+      // Base UI opens pointer-triggered selects on the next animation frame.
+      const menu = select.getAttribute("data-slot") === "select-trigger" ? await within(document.body).findByRole("listbox") : null;
+      if (menu) {
+        await expect.element(menu).toBeVisible();
+        await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
+      }
+      await userEvent.keyboard("{Escape}");
+      // Base UI hides its retained portal after exit animations, then restores focus.
+      if (menu) {
+        await waitFor(() => expect(select.getAttribute("aria-expanded")).toBe("false"));
+        const popup = menu.closest<HTMLElement>('[data-slot="select-content"]')!;
+        await Promise.all(popup.getAnimations().map(animation => animation.finished));
+        await expect.element(menu).not.toBeVisible();
+        await expect.element(select).toHaveFocus();
+      }
+      await userEvent.tab();
+      await userEvent.tab({ shift: true });
+      expect(document.activeElement).toBe(select);
+      expect(getComputedStyle(select).outlineStyle, label + " keyboard").toBe("solid");
+      await userEvent.keyboard("{Escape}");
+      if (select.getAttribute("data-slot") === "select-trigger") await waitFor(() => expect(select.getAttribute("aria-expanded")).toBe("false"));
+    }
+    view.unmount();
+    const dialogView = render(<PreviewModeProvider mode={mode}><InputFocusFixture mode={mode} /></PreviewModeProvider>);
+    const trigger = within(dialogView.container).getByRole("button", { name: "打开自动聚焦输入" });
+    for (const keyboard of [false, true]) {
+      if (keyboard) { trigger.focus(); await userEvent.keyboard("{Enter}"); }
+      else await userEvent.click(trigger);
+      const input = await within(document.body).findByRole("textbox", { name: "弹窗输入" });
+      await waitFor(() => expect(document.activeElement).toBe(input));
+      expect(getComputedStyle(input).outlineStyle).toBe(keyboard ? "solid" : "none");
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(input.isConnected).toBe(false));
+      expect(document.activeElement).toBe(trigger);
+    }
+  });
+
+  test(`product card and capture keyboard focus stays visible independently of elevation in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
+      <NoteCollection notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+      <Button>键盘焦点起点</Button>
+      <QuickCapture vaultId="shadow-focus-test" rootNotes tags={[]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
+    </main></PreviewModeProvider>);
+    const canvas = within(view.container);
+    await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+    const open = canvas.getByRole("button", { name: `打开 ${editorNote.title}` });
+    const card = open.closest(".ui-note-card")!;
+    const restingShadow = getComputedStyle(card).boxShadow;
+    canvas.getByRole("button", { name: "新建" }).focus();
+    if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
+    else await userEvent.tab();
+    expect(open.matches(":focus-visible"), document.activeElement?.outerHTML).toBe(true);
+    const background = getComputedStyle(view.container.querySelector("main")!).backgroundColor;
+    expect(paintedContrast(getComputedStyle(card).outlineColor, background)).toBeGreaterThanOrEqual(3);
+    expect(getComputedStyle(card).outlineStyle).toBe("solid");
+    expect(getComputedStyle(card).boxShadow).toBe(restingShadow);
+    expect(getComputedStyle(card).transform).toBe("none");
+    await userEvent.hover(card);
+    await waitFor(() => expect(getComputedStyle(card).boxShadow).not.toBe(restingShadow));
+    await userEvent.unhover(card);
+    await waitFor(() => expect(getComputedStyle(card).boxShadow).toBe(restingShadow));
+    const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
+    const group = field.closest('[data-slot="input-group"]')!;
+    const restingCaptureShadow = getComputedStyle(group).boxShadow;
+    expect(getComputedStyle(group).borderTopColor).toBe("rgba(0, 0, 0, 0)");
+    canvas.getByRole("button", { name: "键盘焦点起点" }).focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(field);
+    await waitFor(() => expect(getComputedStyle(group).outlineStyle).toBe("solid"));
+    await userEvent.click(field);
+    expect(getComputedStyle(group).outlineStyle).toBe("none");
+    expect(getComputedStyle(group).boxShadow).not.toBe(restingCaptureShadow);
+    await userEvent.type(field, "Pointer draft");
+    expect(getComputedStyle(group).outlineStyle).toBe("none");
+    await userEvent.tab();
+    await userEvent.tab({ shift: true });
+    expect(field.matches(":focus-visible")).toBe(true);
+    await waitFor(() => expect(getComputedStyle(group).outlineStyle).toBe("solid"));
+    expect(paintedContrast(getComputedStyle(group).outlineColor, background)).toBeGreaterThanOrEqual(3);
+    expect(getComputedStyle(group).boxShadow).not.toBe(restingCaptureShadow);
+    await userEvent.click(field);
+    expect(getComputedStyle(group).outlineStyle).toBe("none");
+    expect(field.textContent).toBe("Pointer draft");
+    await userEvent.click(canvas.getByRole("button", { name: "新建" }));
+    await waitFor(() => expect(getComputedStyle(group).boxShadow).toBe(restingCaptureShadow));
+  });
+
+  test(`mobile capture distinguishes pointer and keyboard focus in ${mode}`, async () => {
+    await page.viewport(390, 844);
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode}>
+      <QuickCapture vaultId={`mobile-focus-${mode}`} rootNotes docked tags={[]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
+    </main></PreviewModeProvider>);
+    await userEvent.click(within(view.container).getByRole("button", { name: "打开快速记录" }));
+    const field = await within(document.body).findByRole("textbox", { name: "快速输入内容" });
+    const group = field.closest('[data-slot="input-group"]')!;
+    expect(getComputedStyle(group).outlineStyle).toBe("none");
+    expect(getComputedStyle(group).boxShadow).toBe("none");
+    await userEvent.tab();
+    await userEvent.tab({ shift: true });
+    expect(document.activeElement).toBe(field);
+    expect(getComputedStyle(group).outlineStyle).toBe("solid");
+    await userEvent.click(field);
+    expect(getComputedStyle(group).outlineStyle).toBe("none");
+    await userEvent.click(within(document.body).getByRole("button", { name: "收起快速记录" }));
+  });
+
+  // WebKit emulates the media query but not forced-color painting.
+  test.skipIf(server.browser === "webkit")(`forced colors preserves popup borders and keyboard focus without shadows in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("reduce");
+    await commands.setForcedColors("active");
+    expect(matchMedia("(forced-colors: active)").matches).toBe(true);
+    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
+      <Card className="ui-card-hover-shadow" data-testid="forced-card">高对比卡片</Card>
+      <Card data-testid="forced-raised-card">高对比浮起卡片</Card>
+      <QuickCapture vaultId="shadow-forced-colors-test" rootNotes tags={[]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
+      <Popover><PopoverTrigger render={<Button />}>打开高对比浮层</PopoverTrigger>
+        <PopoverContent className="ui-theme" data-ui-theme={mode}><PopoverTitle>高对比浮层</PopoverTitle><Button>前一项</Button><Button>焦点项</Button></PopoverContent>
+      </Popover>
+    </main></PreviewModeProvider>);
+    const card = within(view.container).getByTestId("forced-card");
+    await userEvent.hover(card);
+    const field = within(view.container).getByRole("textbox", { name: "快速输入内容" });
+    for (const surface of [card, within(view.container).getByTestId("forced-raised-card"), field.closest('[data-slot="input-group"]')!]) {
+      const style = getComputedStyle(surface);
+      expect(style.boxShadow).toBe("none");
+      expect(paintedContrast(style.borderTopColor, style.backgroundColor)).toBeGreaterThanOrEqual(3);
+    }
+    await userEvent.click(field);
+    const captureGroup = field.closest('[data-slot="input-group"]')!;
+    expect(getComputedStyle(captureGroup).outlineStyle).toBe("none");
+    await userEvent.tab();
+    await userEvent.tab({ shift: true });
+    expect(getComputedStyle(captureGroup).outlineStyle).toBe("solid");
+    expect(paintedContrast(getComputedStyle(captureGroup).outlineColor, getComputedStyle(captureGroup).backgroundColor)).toBeGreaterThanOrEqual(3);
+    await userEvent.click(within(view.container).getByRole("button", { name: "打开高对比浮层" }));
+    const popup = await within(document.body).findByRole("dialog", { name: "高对比浮层" });
+    const style = getComputedStyle(popup);
+    expect(style.boxShadow).toBe("none");
+    expect(style.borderTopStyle).toBe("solid");
+    expect(parseFloat(style.borderTopWidth)).toBeGreaterThan(0);
+    expect(paintedContrast(style.borderTopColor, style.backgroundColor)).toBeGreaterThanOrEqual(3);
+    await userEvent.click(within(popup).getByRole("button", { name: "前一项" }));
+    await userEvent.tab();
+    const focused = within(popup).getByRole("button", { name: "焦点项" });
+    expect(focused.matches(":focus-visible")).toBe(true);
+    expect(getComputedStyle(focused).outlineStyle).toBe("solid");
+    expect(paintedContrast(getComputedStyle(focused).outlineColor, style.backgroundColor)).toBeGreaterThanOrEqual(3);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(popup.isConnected).toBe(false));
+    expect(within(view.container).getByRole("button", { name: "打开高对比浮层" })).toBe(document.activeElement);
+  });
+
+  test(`nested floating surfaces reuse high elevation and restore focus in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body" data-ui-theme={mode}>
+      <Dialog><DialogTrigger render={<Button />}>打开外层</DialogTrigger><DialogContent><DialogHeader><DialogTitle>外层对话框</DialogTitle><DialogDescription>验证内外浮层可以使用同一投影等级。</DialogDescription></DialogHeader>
+        <Popover><PopoverTrigger render={<Button />}>打开内层</PopoverTrigger><PopoverContent><PopoverTitle>内层浮层</PopoverTitle><Button>内部操作</Button></PopoverContent></Popover>
+      </DialogContent></Dialog>
+    </main></PreviewModeProvider>);
+    const outerTrigger = within(view.container).getByRole("button", { name: "打开外层" });
+    await userEvent.click(outerTrigger);
+    const outer = await within(document.body).findByRole("dialog", { name: "外层对话框" });
+    const innerTrigger = within(outer).getByRole("button", { name: "打开内层" });
+    await userEvent.click(innerTrigger);
+    const inner = await within(document.body).findByRole("dialog", { name: "内层浮层" });
+    expect(outer.classList.contains("shadow-high")).toBe(true);
+    expect(inner.classList.contains("shadow-high")).toBe(true);
+    expect(getComputedStyle(inner).boxShadow).toBe(getComputedStyle(outer).boxShadow);
+    const bounds = inner.getBoundingClientRect();
+    expect(inner.contains(document.elementFromPoint(bounds.left + bounds.width / 2, bounds.top + bounds.height / 2))).toBe(true);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(inner.isConnected).toBe(false));
+    expect(outer.isConnected).toBe(true);
+    expect(document.activeElement).toBe(innerTrigger);
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(outer.isConnected).toBe(false));
+    expect(document.activeElement).toBe(outerTrigger);
+  });
+
+  for (const elevation of ["shadow-low", "shadow-none", "shadow-flat", "shadow-document"]) {
+    test(`floating boundaries survive ${elevation} in ${mode}`, async () => {
+      await page.viewport(1024, 900);
+      await commands.setReducedMotion("reduce");
+      const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode}>
+        <div data-testid="default-surface" className="surface-floating border shadow-high" />
+        <div data-testid="target-surface" className={`surface-floating border ${elevation}`} />
+        <Popover defaultOpen><PopoverTrigger render={<Button />}>打开阴影测试</PopoverTrigger>
+          <PopoverContent className={`ui-theme ${elevation}`} data-ui-theme={mode} data-testid="overridden-popover"><PopoverTitle>浮层投影覆盖</PopoverTitle></PopoverContent>
+        </Popover>
+      </main></PreviewModeProvider>);
+      const popup = await within(document.body).findByTestId("overridden-popover");
+      const baseline = getComputedStyle(within(view.container).getByTestId("default-surface"));
+      const target = getComputedStyle(within(view.container).getByTestId("target-surface"));
+      await waitFor(() => {
+        const actual = getComputedStyle(popup);
+        expect(actual.borderTopColor).toBe(target.borderTopColor);
+        if (elevation !== "shadow-none" && elevation !== "shadow-flat") expect(actual.borderTopColor).toBe("rgba(0, 0, 0, 0)");
+        else expect(actual.borderTopColor).not.toBe("rgba(0, 0, 0, 0)");
+        expect(actual.borderTopWidth).toBe("1px");
+        expect(actual.boxShadow).toBe(target.boxShadow);
+        expect(actual.getPropertyValue("--tw-inset-shadow")).toBe(baseline.getPropertyValue("--tw-inset-shadow"));
+        expect(popup.classList.contains("surface-floating")).toBe(true);
+        expect(popup.classList.contains("shadow-high")).toBe(false);
+      });
+      if (mode === "dark") expect(getComputedStyle(popup).boxShadow).toContain("1px inset");
+    });
+  }
+
+  for (const effect of ["shadow", "scale", "combined"] as const) for (const width of [375, 1024]) test(`independent card ${effect} preserves pointer and motion rules at ${width}px in ${mode}`, async () => {
+    await page.viewport(width, 900);
+    const shadowEnabled = effect !== "scale";
+    const scaleEnabled = effect !== "shadow";
+    const classes = [shadowEnabled && "ui-card-hover-shadow", scaleEnabled && "ui-card-hover-scale"].filter(Boolean).join(" ");
+    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode}>
+      <Button>焦点起点</Button>
+      <Card className={`ui-note-card ${classes}`} data-note-openable="true" data-testid="hover-card"><Button>打开笔记</Button></Card>
+      <a href="#preview-card" className={classes} data-testid="preview-card"><Card>预览入口</Card></a>
+    </main></PreviewModeProvider>);
+    const canvas = within(view.container);
+    const card = canvas.getByTestId("hover-card");
+    const restingShadow = getComputedStyle(card).boxShadow;
+    const wrapper = canvas.getByTestId("preview-card");
+    for (const [trigger, surface] of [[card, card], [wrapper, wrapper.querySelector('[data-slot="card"]')!]]) {
+      const restingSurfaceShadow = getComputedStyle(surface).boxShadow;
+      await userEvent.hover(trigger);
+      await Promise.all(surface.getAnimations().map(animation => animation.finished));
+      await waitFor(() => {
+        const actual = getComputedStyle(surface);
+        expect(actual.transform).toBe(width >= 768 && scaleEnabled ? "matrix(1.02, 0, 0, 1.02, 0, 0)" : "none");
+        if (width >= 768) expect(actual.transitionDuration.split(",").every(value => parseFloat(value) === 0.6)).toBe(true);
+        if (width >= 768 && shadowEnabled) {
+          expect(actual.boxShadow).not.toBe(restingSurfaceShadow);
+          expect(actual.borderTopColor).toBe("rgba(0, 0, 0, 0)");
+        }
+        else expect(actual.boxShadow).toBe(restingSurfaceShadow);
+      });
+      await userEvent.unhover(trigger);
+      await Promise.all(surface.getAnimations().map(animation => animation.finished));
+      await waitFor(() => {
+        expect(getComputedStyle(surface).boxShadow).toBe(restingSurfaceShadow);
+        const transform = getComputedStyle(surface).transform;
+        expect(transform === "none" || transform === "matrix(1, 0, 0, 1, 0, 0)").toBe(true);
+      });
+    }
+    await userEvent.click(canvas.getByRole("button", { name: "焦点起点" }));
+    await userEvent.tab();
+    expect(canvas.getByRole("button", { name: "打开笔记" }).matches(":focus-visible")).toBe(true);
+    expect(getComputedStyle(card).boxShadow).toBe(restingShadow);
+    expect(getComputedStyle(card).transform).toBe("none");
+    await userEvent.hover(card);
+    await commands.setReducedMotion("reduce");
+    await waitFor(() => {
+      expect(getComputedStyle(card).transform).toBe("none");
+      expect(parseFloat(getComputedStyle(card).transitionDuration)).toBe(0);
+      if (width >= 768 && shadowEnabled) expect(getComputedStyle(card).boxShadow).not.toBe(restingShadow);
+      else expect(getComputedStyle(card).boxShadow).toBe(restingShadow);
+    });
+  });
+}
 
 test("animated property confirmation reaches the viewport edge after opening completes", async () => {
   await page.viewport(320, 900);
@@ -34,7 +361,7 @@ test("animated property confirmation reaches the viewport edge after opening com
   const view = render(<PreviewModeProvider mode="light"><AlertDialog.Root onOpenChangeComplete={open => { if (open) finishOpening(); }}>
     <AlertDialog.Trigger render={<Button />}>打开属性确认</AlertDialog.Trigger>
     <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay" />
-      <PropertyConfirmationPopup className="note-property-confirm surface-floating" style={{ transitionDuration: "1.5s" }}>
+      <PropertyConfirmationPopup className="note-property-confirm surface-floating shadow-high" style={{ transitionDuration: "1.5s" }}>
         <AlertDialog.Title>删除属性？</AlertDialog.Title><AlertDialog.Description>验证普通入场动画结束后的布局。</AlertDialog.Description>
         <AlertDialog.Close render={<Button />}>取消</AlertDialog.Close>
       </PropertyConfirmationPopup>
@@ -59,7 +386,7 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       throw new Error(`Unexpected property operation: ${operation}`);
     });
     const view = render(<PreviewModeProvider mode={theme}><main className="ui-theme" data-ui-theme={theme}>
-      <div data-testid="floating-reference" className="surface-floating border" />
+      <div data-testid="floating-reference" className="surface-floating shadow-high border" />
       <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async change => { changes.push(change); }} onChangeTag={async (from, to) => { changes.push({ from, to }); }} savedProperties={{
         contentHash: editorNote.contentHash, writable: true,
         tagProperty: { name: "tags", type: "list", value: ["设计"], editable: true },

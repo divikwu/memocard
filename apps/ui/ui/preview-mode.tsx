@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useCallback, useState, type ReactNode } from "react";
 import { DEFAULT_PREVIEW_APPEARANCE, getPreviewRadius, type PreviewAppearance } from "./preview-appearance";
 import { getPreviewFont, loadPreviewFonts } from "./preview-fonts";
+import { useInputModality } from "./input-modality";
 
 const PreviewFontContext = createContext<{ status: "loading" | "ready" | "failed"; retry: () => void }>({ status: "ready", retry: () => {} });
 
 const PreviewModeContext = createContext<PreviewAppearance & { mode: "light" | "dark" }>({ ...DEFAULT_PREVIEW_APPEARANCE, mode: "light" });
 
 export function PreviewModeProvider({ mode, appearance = DEFAULT_PREVIEW_APPEARANCE, children }: { mode: "light" | "dark"; appearance?: PreviewAppearance; children: ReactNode }) {
+  useInputModality();
   const { radius, headingFont, bodyFont } = appearance;
   const resolvedHeading = headingFont === "inherit" ? bodyFont : headingFont;
   const [attempt, setAttempt] = useState(0);

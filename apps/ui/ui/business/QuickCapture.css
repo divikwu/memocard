@@ -1,10 +1,10 @@
 .ui-quick-capture { position: relative; z-index: 10; isolation: isolate; width: 100%; }
 .ui-capture-group { overflow: visible; border-radius: calc(var(--radius-element) * 3); }
-.ui-capture-group:focus-within { box-shadow: var(--shadow-med); }
+.ui-capture-group:focus-within { box-shadow: var(--shadow-input-focus); }
 .ui-capture-editor { position: relative; width: 100%; min-width: 0; }
 .ui-capture-editor-content { min-height: calc(var(--spacing-1) * 28); max-height: 20rem; overflow-y: auto; padding: calc(var(--spacing-1) * 4); white-space: pre-wrap; overflow-wrap: anywhere; outline: none; font: inherit; font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
 .ui-capture-editor[data-empty]::before { content: "记下此刻的想法…"; position: absolute; inset-block-start: calc(var(--spacing-1) * 4); inset-inline-start: calc(var(--spacing-1) * 4); color: var(--color-text-secondary); font-size: var(--font-size-sm); pointer-events: none; }
-.ui-capture-editor-content .rich-inline-tag { border-radius: var(--radius-inner); background: var(--tag-bg, var(--color-accent-muted)); color: var(--tag-fg, var(--color-text-accent)); }
+.ui-capture-editor-content .rich-inline-tag { border-radius: var(--radius-full); background: var(--tag-bg, var(--color-accent-muted)); color: var(--tag-fg, var(--color-text-accent)); }
 .ui-capture-footer { gap: var(--spacing-1); padding: var(--spacing-1) calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 2); cursor: default; }
 .ui-capture-footer > button { gap: var(--spacing-1); padding-inline: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-normal); }
 .ui-capture-footer .ui-capture-submit { margin-inline-start: auto; padding-inline: calc(var(--spacing-1) * 3); font-weight: var(--font-weight-medium); }
@@ -32,7 +32,7 @@
 .ui-capture-sheet .ui-capture-editor-content { min-height: 10rem; max-height: min(20rem, 40dvh); font-size: var(--font-size-base); }
 .ui-capture-continue { min-height: var(--size-element-lg); width: 100%; margin-top: calc(var(--spacing-1) * 2); }
 @media (max-width: 767px) {
-  .ui-capture-sheet .ui-capture-group { box-shadow: none; }
+  .ui-capture-sheet .ui-capture-group { border-color: var(--color-border-subtle); box-shadow: none; }
   .ui-capture-sheet .ui-capture-continue { border-color: var(--color-border-subtle); }
   .ui-capture-sheet .ui-capture-tool { width: calc(var(--size-element-lg) + var(--spacing-1)); padding-inline: 0; }
   .ui-capture-sheet .ui-capture-submit { min-width: calc(var(--size-element-lg) + var(--spacing-1)); padding-inline: 0; }
@@ -42,4 +42,8 @@
   .ui-capture-editor-content, .ui-capture-editor[data-empty]::before { font-size: var(--font-size-base); }
   .ui-capture-editor-content, .ui-capture-editor[data-empty]::before { line-height: var(--text-note-body-leading); }
   .ui-capture-sheet .ui-capture-continue { min-height: calc(var(--spacing-1) * 11); }
+}
+
+@media (forced-colors: active) {
+  .ui-capture-group { border-color: CanvasText; }
 }

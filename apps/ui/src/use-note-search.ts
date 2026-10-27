@@ -40,7 +40,6 @@ export function useNoteSearch({ open, available, preserveSession = false, sessio
   },[isMobile,open]);
   const listId = useId();
   const [query, setQuery] = useState("");
-  const [keyboardFocus, setKeyboardFocus] = useState(false);
   const [page, setPage] = useState<NotePage | null>(null);
   const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -176,5 +175,5 @@ export function useNoteSearch({ open, available, preserveSession = false, sessio
     else setRetry(value => value + 1);
   }
 
-  return { input, list, resultScroll, attachList, mobileViewport, listId, query, setQuery, keyboardFocus, setKeyboardFocus, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, searchQuery, notes, active, groups, loadMore, moveSelection, retrySearch };
+  return { input, list, resultScroll, attachList, mobileViewport, listId, query, setQuery, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, searchQuery, notes, active, groups, loadMore, moveSelection, retrySearch };
 }

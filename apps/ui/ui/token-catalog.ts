@@ -3,7 +3,7 @@ import themeCSS from "./theme.css?raw";
 export const categories = [
   { id: "all", name: "all tokens", title: "All tokens", story: "ui-theme", description: "MemoCard 的基础 token 目录：查阅颜色、间距、尺寸、圆角、阴影、字体与动效定义。" },
   { id: "colors", name: "colors", title: "Colors", story: "ui-colors", description: "保留 Astryx 语义命名，颜色主要按浅深色模式引用 Tailwind 基础色板；投影基色分别适配项目的浅深色背景。" },
-  { id: "elevation", name: "elevation", title: "Elevation", story: "ui-elevation", description: "参考 Craft 的八档浅深色阴影标尺，按控件、内容卡片、浮层与文档表面分配；描边和焦点独立维护。" },
+  { id: "elevation", name: "elevation", title: "Elevation", story: "ui-elevation", description: "从递增的基础尺度到语义角色，统一管理浅深色阴影及组件用法；高光、边框、焦点与动效独立维护。" },
   { id: "icons", name: "icons", title: "Icons", story: "ui-icons", description: "项目使用的 Hugeicons 图形、语义用途与 Tailwind 用法。" },
   { id: "illustrations", name: "illustrations", title: "Illustrations", story: "ui-illustrations", description: "插画的使用场景、风格与布局规范，不计入基础 token 数量。" },
   { id: "motion", name: "motion", title: "Motion", story: "ui-motion", description: "统一的时长和缓动标尺。减少动态效果时，主题将有效时长设置为 0ms。" },
@@ -72,7 +72,7 @@ function colorGroupOf(name: string) {
 function categoryOf(name: string): Exclude<TokenCategory, "all"> {
   if (name === "--spacing-reading-flow") return "typography";
   if (name.startsWith("--color-icon-")) return "icons";
-  if (name.startsWith("--surface-edge-") || name.startsWith("--shadow-") || name.startsWith("--blur-") || name === "--color-shadow") return "elevation";
+  if (name.startsWith("--surface-edge-") || name.startsWith("--surface-highlight-") || name.startsWith("--shadow-") || name.startsWith("--blur-") || name === "--color-shadow") return "elevation";
   if (name.startsWith("--color-")) return "colors";
   if (name.startsWith("--duration-") || name.startsWith("--ease-")) return "motion";
   if (name.startsWith("--radius-") || name.startsWith("--focus-") || name === "--border-width") return "shape";
@@ -93,7 +93,7 @@ function utilityFor(name: string) {
   const color = name.replace("--color-", "");
   if (color.startsWith("border")) return `border-${color}`;
   if (color === "focus") return "outline-focus";
-  if (color === "shadow") return "shadow-shadow";
+  if (color === "shadow") return "";
   if (color.startsWith("on-accent-overlay-")) return `bg-${color}`;
   if (new RegExp(`^(${hueNames})$`).test(color)) return `text-${color}`;
   if (color.startsWith("syntax-") && !["syntax-background", "syntax-added", "syntax-removed", "syntax-diff-header"].includes(color)) return `text-${color}`;
@@ -113,7 +113,7 @@ export const tokens = base.map(token => ({
   interfaces: [...new Set([
     ...aliases.filter(alias => alias.value.includes(`var(${token.name})`)).map(alias => utilityFor(alias.name)),
     ...utilities.filter(utility => utility.source.includes(`var(${token.name})`)).map(utility => utility.name),
-  ])],
+  ].filter(Boolean))],
 }));
 export type ThemeToken = (typeof tokens)[number];
 export const sourceRef = themeCSS.match(/[a-f0-9]{40}/)![0];

@@ -19,6 +19,9 @@ const qualityBrowsers = process.env.CI || process.env.STORYBOOK_FIREFOX === "1"
 const setReducedMotion: BrowserCommand<["reduce" | "no-preference"], void> = async ({ page }, reducedMotion) => {
   await page.emulateMedia({ reducedMotion });
 };
+const setForcedColors: BrowserCommand<["active" | "none"], void> = async ({ page }, forcedColors) => {
+  await page.emulateMedia({ forcedColors });
+};
 const setFontsOffline: BrowserCommand<[boolean], void> = async ({ page }, offline) => {
   if (offline) await page.route("**/*.woff2*", route => route.abort());
   else await page.unroute("**/*.woff2*");
@@ -51,10 +54,11 @@ export default mergeConfig(viteConfig, defineConfig({
       },
       {
         extends: true,
+        optimizeDeps: { include: ["@hugeicons/core-free-icons/ArrowUpRight01Icon", "@hugeicons/core-free-icons/HashIcon", "@hugeicons/core-free-icons/ImageAdd01Icon", "@hugeicons/core-free-icons/TelegramIcon", "@tiptap/pm/history", "@tiptap/pm/model", "@tiptap/pm/state", "@tiptap/pm/transform", "@tiptap/pm/view", "@tiptap/react"] },
         test: {
           name: "ui-quality",
           include: ["test-support/ui-quality.browser.tsx"],
-          browser: { enabled: true, provider: playwright(), commands: { setReducedMotion, setFontsOffline }, headless: true, instances: qualityBrowsers.map(browser => ({ browser })), viewport: desktop, screenshotDirectory },
+          browser: { enabled: true, provider: playwright(), commands: { setReducedMotion, setForcedColors, setFontsOffline }, headless: true, instances: qualityBrowsers.map(browser => ({ browser })), viewport: desktop, screenshotDirectory },
         },
       },
     ],

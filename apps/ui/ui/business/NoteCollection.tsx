@@ -71,7 +71,7 @@ export function NoteCollection({ home, notes, loading = false, searching = false
           const title = note.title?.trim() || "新内容";
           const date = home ? note.updatedAt : note.createdAt;
           return <li key={note.id} data-note-id={note.id}>
-            <Card className={cn("ui-note-card", !cards && "ui-note-list-card shadow-none ring-0")} data-note-openable={canOpen}>
+            <Card className={cn("ui-note-card", cards && canOpen && "ui-card-hover-shadow ui-card-hover-scale", !cards && "ui-note-list-card shadow-none ring-0")} data-note-openable={canOpen}>
               <CardContent className={cn("ui-note-content", !cards && "ui-note-list-content")}>
                 {cards ? <div className="ui-note-heading">
                   <h2><button type="button" className="ui-note-open" aria-label={`打开 ${title}`} disabled={!canOpen} onClick={() => onOpen(note.id)}>{title}</button></h2>

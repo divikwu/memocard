@@ -1,5 +1,6 @@
 .note-properties {
-  --property-label-width: min(160px, 40%);
+  --property-label-width: clamp(96px, 22%, 160px);
+  container-type: inline-size;
   padding: 0 calc(var(--spacing-1) * .5) calc(var(--spacing-1) * 3);
   border-bottom: var(--border-width) solid var(--color-border);
   font-family: var(--font-family-body);
@@ -37,7 +38,10 @@
   padding: calc(var(--spacing-1) * 1.5);
   overflow-wrap: anywhere;
 }
-.note-property-tags { display: flex; flex-wrap: wrap; align-items: flex-start; gap: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); }
+.note-property-tags { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--spacing-1); }
+@container (max-width: 28rem) {
+  .note-property-row:has(.note-property-tags) { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
 .note-property-popup.note-tag-popup { padding: 0; max-height: var(--available-height); overflow-y: auto; }
 .note-tag-options-wrap { position: relative; margin: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 1.5) 0; }
 .note-tag-options-wrap[data-overflow="true"]::after { content: ""; position: absolute; inset: auto 0 0; height: calc(var(--spacing-1) * 6); background: linear-gradient(to bottom, transparent, var(--color-background-popover)); pointer-events: none; }
@@ -157,17 +161,7 @@
 .note-date-time-input { margin-top: calc(var(--spacing-1) * 2); font-variant-numeric: tabular-nums; }
 .mobile-tag-menu { max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; }
 
-:root, .ui-theme { --tag-bg-opacity: 8%; --tag-default-bg: color-mix(in oklab, var(--tag-default-fg) var(--tag-bg-opacity), transparent); --tag-default-fg: var(--color-text-gray); --tag-brown-bg: color-mix(in oklab, var(--tag-brown-fg) var(--tag-bg-opacity), transparent); --tag-brown-fg: color-mix(in oklch, var(--color-text-orange) 60%, var(--color-text-gray)); }
-:root, .ui-theme { --tag-orange-bg: color-mix(in oklab, var(--tag-orange-fg) var(--tag-bg-opacity), transparent); --tag-orange-fg: var(--color-text-orange); }
-:root, .ui-theme { --tag-yellow-bg: color-mix(in oklab, var(--tag-yellow-fg) var(--tag-bg-opacity), transparent); --tag-yellow-fg: var(--color-text-yellow); }
-:root, .ui-theme { --tag-green-bg: color-mix(in oklab, var(--tag-green-fg) var(--tag-bg-opacity), transparent); --tag-green-fg: var(--color-text-green); }
-:root, .ui-theme { --tag-blue-bg: color-mix(in oklab, var(--tag-blue-fg) var(--tag-bg-opacity), transparent); --tag-blue-fg: var(--color-text-blue); }
-:root, .ui-theme { --tag-purple-bg: color-mix(in oklab, var(--tag-purple-fg) var(--tag-bg-opacity), transparent); --tag-purple-fg: var(--color-text-purple); }
-:root, .ui-theme { --tag-pink-bg: color-mix(in oklab, var(--tag-pink-fg) var(--tag-bg-opacity), transparent); --tag-pink-fg: var(--color-text-pink); }
-:root, .ui-theme { --tag-red-bg: color-mix(in oklab, var(--tag-red-fg) var(--tag-bg-opacity), transparent); --tag-red-fg: var(--color-text-red); }
-[data-ui-theme="dark"] { --tag-bg-opacity: 16%; }
-
-.rich-inline-tag, .note-tag-pill { max-width: 100%; min-height: calc(var(--spacing-1) * 5); border: 0; border-radius: var(--radius-item); padding: 0 calc(var(--spacing-1) * 1.5); background: var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); font-size: var(--font-size-sm); line-height: var(--text-body-leading); font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
+.note-properties .note-tag-pill { border-radius: var(--radius-full); }
 .note-tag-color-swatch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); border-radius: var(--radius-inner); background: var(--tag-bg); color: var(--tag-fg); border: var(--border-width) solid color-mix(in oklab, var(--tag-fg) 20%, transparent); }
 .note-tag-color-option { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-height: var(--size-element-md); padding: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); border-radius: var(--radius-item); font-size: var(--font-size-sm); outline: none; }
 .note-tag-color-option[data-checked] { background: var(--color-overlay-hover); }
@@ -178,15 +172,6 @@
 button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hover, :focus-visible) { background: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)), var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); }
 .note-tag-color-trigger { border-radius: var(--radius-full); color: var(--color-text-secondary); }
 .note-tag-color-trigger:is(:hover, :focus-visible, [data-popup-open]) { background: var(--color-overlay-hover); color: var(--color-text-primary); }
-.note-tag-color-default { --tag-bg: var(--tag-default-bg); --tag-fg: var(--tag-default-fg); }
-.note-tag-color-brown { --tag-bg: var(--tag-brown-bg); --tag-fg: var(--tag-brown-fg); }
-.note-tag-color-orange { --tag-bg: var(--tag-orange-bg); --tag-fg: var(--tag-orange-fg); }
-.note-tag-color-yellow { --tag-bg: var(--tag-yellow-bg); --tag-fg: var(--tag-yellow-fg); }
-.note-tag-color-green { --tag-bg: var(--tag-green-bg); --tag-fg: var(--tag-green-fg); }
-.note-tag-color-blue { --tag-bg: var(--tag-blue-bg); --tag-fg: var(--tag-blue-fg); }
-.note-tag-color-purple { --tag-bg: var(--tag-purple-bg); --tag-fg: var(--tag-purple-fg); }
-.note-tag-color-pink { --tag-bg: var(--tag-pink-bg); --tag-fg: var(--tag-pink-fg); }
-.note-tag-color-red { --tag-bg: var(--tag-red-bg); --tag-fg: var(--tag-red-fg); }
 
 /* Safari keeps the viewport stable when focusing editable property controls. */
 @media (max-width: 767px) {

@@ -25,7 +25,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 
 export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession = false, sessionRef }: NoteSearchDialogProps) {
   const isMobile = useIsMobile() || isIOSNative;
-  const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, keyboardFocus, setKeyboardFocus, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, retrySearch, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, sessionRef, isMobile });
+  const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, retrySearch, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, sessionRef, isMobile });
   const SearchContent = isMobile ? SheetContent : DialogContent;
   useIOSSurface("search", () => ({
     kind:"search",title:"搜索笔记",presented:open,loading:loading || paging,error,
@@ -46,7 +46,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   });
   if(isIOSNative)return null;
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} data-keyboard-focus={keyboardFocus || undefined} onKeyDownCapture={() => setKeyboardFocus(true)} onPointerDownCapture={() => setKeyboardFocus(false)} className={isMobile ? "ui-note-search-sheet gap-4 overflow-hidden" : "ui-note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 ring-0 dark:ring-0"}>
+    <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} className={isMobile ? "ui-note-search-sheet gap-4 overflow-hidden" : "ui-note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 ring-0 dark:ring-0"}>
       {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle className="font-sans font-semibold">搜索笔记</SheetTitle><SheetCloseButton aria-label="退出搜索" /></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}
       <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
       <div className="ui-note-search-field flex shrink-0 items-center gap-3 border-b px-4 py-2">

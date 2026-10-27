@@ -140,13 +140,12 @@ it("restarts from the first page when the vault changes during pagination", asyn
   expect(bridge.request.mock.calls.at(-1)).toEqual(["queryNotes", { query: "", tags: [], sort: "updatedAt", limit: 30 }]);
 });
 
-it("provides a dismissal action and tracks keyboard focus without a pointer background", async () => {
+it("provides a dismissal action and preserves input during focus navigation", async () => {
   const { onOpenChange } = setup();
   const input = screen.getByRole("combobox", { name: "搜索笔记" });
   fireEvent.keyDown(input, { key: "Tab" });
-  expect(screen.getByRole("dialog").hasAttribute("data-keyboard-focus")).toBe(true);
+  expect(input).toHaveProperty("value", "");
   fireEvent.pointerDown(input);
-  expect(screen.getByRole("dialog").hasAttribute("data-keyboard-focus")).toBe(false);
   await userEvent.setup().click(screen.getByRole("button", { name: "关闭搜索" }));
   expect(onOpenChange).toHaveBeenCalledWith(false);
 });
