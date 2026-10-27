@@ -97,7 +97,7 @@
   width: min(24rem, calc(100% - 2rem));
   transform: translate(-50%, -50%);
   padding: calc(var(--spacing-1) * 5);
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid var(--color-border-floating);
   background: var(--color-background-popover);
   color: var(--color-text-primary);
 }

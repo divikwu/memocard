@@ -5,10 +5,13 @@ import { ComponentDocs } from "../ui/ComponentDocs";
 import { componentDocs, type ComponentKey } from "../ui/component-docs.data";
 import { Button } from "../ui/components/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/components/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/components/dialog";
+import { NoteProperties } from "../ui/business/NoteProperties";
 import { PreviewModeProvider } from "../ui/preview-mode";
 import { loadPreviewFonts } from "../ui/preview-fonts";
 import { useNoteImage } from "../src/use-note-image";
-import { setStorybookBrowserAssets } from "./bridge";
+import { setStorybookBrowserAssets, setStorybookRequestHandler } from "./bridge";
+import { editorNote } from "./editor-note";
 import "../.storybook/preview.css";
 import "../ui/preview-appearance.css";
 
@@ -22,6 +25,75 @@ afterEach(async () => {
 });
 
 for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const) {
+  test(`property editing and confirmation surfaces stay consistent at ${width}px in ${theme}`, async () => {
+    await page.viewport(width, 900);
+    const changes: unknown[] = [];
+    const release = setStorybookRequestHandler(operation => {
+      if (operation === "getPropertyLabels") return { labels: {}, contentHash: "labels" };
+      if (operation === "listTags") return { tags: [{ name: "开发" }] };
+      throw new Error(`Unexpected property operation: ${operation}`);
+    });
+    const view = render(<PreviewModeProvider mode={theme}><main className="ui-theme" data-ui-theme={theme}>
+      <div data-testid="floating-reference" className="surface-floating border" />
+      <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async change => { changes.push(change); }} onChangeTag={async (from, to) => { changes.push({ from, to }); }} savedProperties={{
+        contentHash: editorNote.contentHash, writable: true,
+        tagProperty: { name: "tags", type: "list", value: ["设计"], editable: true },
+        properties: [
+          { name: "摘要", type: "text", value: "保留原值", editable: true },
+          { name: "得分", type: "number", value: "8.5", editable: true },
+          { name: "领域", type: "multiSelect", value: ["设计"], options: [{ name: "设计", color: "blue" }], editable: true },
+        ],
+      }} />
+    </main></PreviewModeProvider>);
+    const canvas = within(view.container), body = within(document.body);
+    try {
+      await userEvent.click(await canvas.findByRole("button", { name: /^属性$/ }));
+      for (const name of ["摘要", "得分"]) {
+        await userEvent.click(canvas.getByRole("button", { name: `编辑属性 ${name}` }));
+        const input = await body.findByRole("textbox", { name: "属性值" });
+        const style = getComputedStyle(input.closest("form")!);
+        expect(style.boxShadow).toBe("none");
+        expect(style.outlineStyle).toBe("solid");
+        await userEvent.keyboard("{Escape}");
+      }
+      const checkConfirmation = async () => {
+        const popup = await body.findByRole("alertdialog");
+        const reference = getComputedStyle(canvas.getByTestId("floating-reference"));
+        await waitFor(() => {
+          const style = getComputedStyle(popup), rect = popup.getBoundingClientRect();
+          expect(style.boxShadow).toBe(reference.boxShadow);
+          expect(style.borderTopColor).toBe(reference.borderTopColor);
+          expect(style.borderTopWidth).toBe("1px");
+          expect(rect.left).toBeGreaterThanOrEqual(-1);
+          expect(rect.right).toBeLessThanOrEqual(width + 1);
+          if (width < 768) expect(Math.abs(rect.bottom - window.innerHeight)).toBeLessThan(1);
+        });
+        if (width < 768) expect(popup.dataset.side).toBe("bottom");
+        await userEvent.click(within(popup).getByRole("button", { name: "取消" }));
+        await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull());
+      };
+      await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
+      await userEvent.click(await body.findByRole("menuitem", { name: "删除属性" }));
+      await checkConfirmation();
+      await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
+      const types = await body.findByRole("menuitem", { name: /^类型/ });
+      await userEvent.click(types);
+      await userEvent.click(await body.findByRole("menuitemradio", { name: "多选" }));
+      await checkConfirmation();
+      for (const kind of ["选项", "标签"]) {
+        await userEvent.click(canvas.getByRole("button", { name: kind === "选项" ? "编辑属性 领域" : "编辑标签" }));
+        await userEvent.click(await body.findByRole("button", { name: `管理${kind} ${kind === "选项" ? "设计" : "开发"}` }));
+        await userEvent.click(await body.findByRole("menuitem", { name: `删除${kind}` }));
+        await checkConfirmation();
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+      }
+      expect(changes).toEqual([]);
+    } finally {
+      release();
+    }
+  }, 20_000);
+
   test(`component Docs remain usable at ${width}px in ${theme}`, async () => {
     await page.viewport(width, 900);
     for (const component of Object.keys(componentDocs) as ComponentKey[]) {
@@ -37,6 +109,23 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       view.unmount();
     }
   }, 60_000);
+}
+
+for (const parentTheme of ["light", "dark"] as const) {
+  test(`Dialog overlay follows the local theme on a ${parentTheme} page`, async () => {
+    for (const theme of ["light", "dark"] as const) {
+      const view = render(<PreviewModeProvider mode={parentTheme}><Dialog><DialogTrigger render={<Button />}>打开局部主题</DialogTrigger>
+        <DialogContent className="ui-theme" data-ui-theme={theme}><DialogHeader><DialogTitle>局部主题</DialogTitle><DialogDescription>遮罩与弹窗共用主题。</DialogDescription></DialogHeader></DialogContent>
+      </Dialog></PreviewModeProvider>);
+      await userEvent.click(within(view.container).getByRole("button", { name: "打开局部主题" }));
+      const overlay = document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!;
+      expect(overlay.dataset.uiTheme).toBe(theme);
+      expect(getComputedStyle(overlay).backgroundColor).toContain(theme === "dark" ? "0.8" : "0.5");
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull());
+      view.unmount();
+    }
+  });
 }
 
 test("theme changes retain editable Docs state and real local Chinese/Latin fonts load", async () => {
