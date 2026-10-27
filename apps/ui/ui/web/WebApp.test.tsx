@@ -48,8 +48,12 @@ it("navigates a tag, edits and saves a note, then finds its committed body throu
   await user.click(within(tagNavigation).getByRole("button", { name: "设计" }));
   await user.click(await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" }));
   const field = await screen.findByRole("textbox", { name: "笔记内容" });
+  const breadcrumb = screen.getByRole("navigation", { name: "当前位置" });
+  expect(within(breadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "设计"]);
+  expect(breadcrumb.textContent).not.toContain("MemoCard");
+  expect(breadcrumb.textContent).not.toContain("让设计语言走进真实页面");
   replaceEditorText("跨组件集成验收唯一正文 #设计", field);
-  await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
+  await user.click(within(breadcrumb).getByRole("button", { name: "设计" }));
   await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" });
   expect(fixture.snapshot().notes.find(note => note.title === "让设计语言走进真实页面")?.body).toBe("跨组件集成验收唯一正文 #设计");
   await user.click(screen.getByRole("button", { name: "搜索" }));
@@ -59,6 +63,49 @@ it("navigates a tag, edits and saves a note, then finds its committed body throu
   expect(request.mock.calls.some(([operation, params = {}]) => operation === "queryNotes" && params.query === "集成验收唯一")).toBe(true);
   await user.click(within(dialog).getByRole("option", { name: "让设计语言走进真实页面" }));
   expect((await screen.findByRole("textbox", { name: "笔记内容" })).textContent).toContain("跨组件集成验收唯一正文");
+});
+
+it("keeps a home-opened note under the home breadcrumb", async () => {
+  history.replaceState(null, "", "#/home");
+  const user = userEvent.setup();
+  await mount();
+  await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
+  await screen.findByRole("textbox", { name: "笔记内容" });
+  const breadcrumb = screen.getByRole("navigation", { name: "当前位置" });
+  expect(within(breadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["主页"]);
+  await user.click(within(breadcrumb).getByRole("button", { name: "主页" }));
+  await screen.findByRole("button", { name: "打开 今天的手冲记录" });
+  expect(location.hash).toBe("#/home");
+});
+
+it("uses the selected tag hierarchy and blocks ancestor navigation when saving fails", async () => {
+  const user = userEvent.setup();
+  const { request } = await mount();
+  await user.click((await screen.findAllByRole("button", { name: "筛选标签 生活/咖啡" }))[0]);
+  await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
+  const field = await screen.findByRole("textbox", { name: "笔记内容" });
+  const breadcrumb = screen.getByRole("navigation", { name: "当前位置" });
+  expect(within(breadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活", "咖啡"]);
+  const detailHash = location.hash;
+  const implementation = request.getMockImplementation()!;
+  request.mockImplementation(async (operation, params) => {
+    if (operation === "saveNote") throw new Error("面包屑保存测试失败");
+    return implementation(operation, params);
+  });
+  replaceEditorText("通过面包屑返回前需要保存的正文 #生活/咖啡", field);
+  await user.click(within(breadcrumb).getByRole("button", { name: "生活" }));
+  await screen.findByText("面包屑保存测试失败");
+  expect(location.hash).toBe(detailHash);
+  expect(screen.getByRole("textbox", { name: "笔记内容" }).textContent).toContain("通过面包屑返回前需要保存的正文");
+  request.mockImplementation(implementation);
+  await user.click(within(breadcrumb).getByRole("button", { name: "生活" }));
+  await screen.findByRole("button", { name: "打开 在阳台上留一点绿色" });
+  expect(request.mock.calls.some(([operation, params]) => operation === "queryNotes" && JSON.stringify(params?.tags) === '["生活"]')).toBe(true);
+  await user.click(screen.getByRole("button", { name: "打开 今天的手冲记录" }));
+  await screen.findByRole("textbox", { name: "笔记内容" });
+  expect(within(breadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活"]);
+  await user.click(within(breadcrumb).getByRole("button", { name: "所有笔记" }));
+  await screen.findByRole("button", { name: "打开 Weekend reading list" });
 });
 
 it("preserves an H5 search session across detail navigation, then records a new capture into the refreshed list", async () => {

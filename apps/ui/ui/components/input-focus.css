@@ -1,0 +1,10 @@
+/* Editing text after a pointer click keeps pointer feedback until navigation. */
+:root:not([data-ui-input-modality="keyboard"]) :is(input, textarea, select, [contenteditable="true"], [data-slot="input-group"], [data-slot="combobox-chips"], [data-slot="select-trigger"], [data-slot="combobox-trigger"]):focus-within {
+  outline: none;
+}
+
+/* Grouped controls delegate their outline to their containing surface. */
+:root[data-ui-input-modality="keyboard"] :is(input, textarea, select, [contenteditable="true"]):not([data-slot="input-group-control"], [data-slot="combobox-chip-input"]):focus-visible {
+  outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color);
+  outline-offset: var(--focus-outline-offset);
+}

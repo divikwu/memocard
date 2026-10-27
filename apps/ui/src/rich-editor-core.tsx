@@ -333,8 +333,11 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     if (element instanceof HTMLElement) {
       toolbarTarget.current.position = from;
       const rect = element.getBoundingClientRect();
-      const line = parseFloat(getComputedStyle(element).lineHeight) || 26;
-      const top = rect.top - root.current.getBoundingClientRect().top + Math.min(rect.height, line) / 2;
+      const style = getComputedStyle(element);
+      const line = parseFloat(style.lineHeight) || 26;
+      const paddingTop = image ? 0 : Math.min(rect.height, parseFloat(style.paddingTop) || 0);
+      const contentHeight = image ? rect.height : Math.max(0, rect.height - paddingTop - (parseFloat(style.paddingBottom) || 0));
+      const top = rect.top - root.current.getBoundingClientRect().top + paddingTop + Math.min(contentHeight, line) / 2;
       const left = image ? rect.left - root.current.getBoundingClientRect().left - 28 : undefined;
       setToolbar(current => current.pos === from && current.top === top && current.left === left ? current : { pos: from, top, left });
     }

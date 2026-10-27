@@ -8,9 +8,20 @@
 .ui-note-editor .note-page-title { display: block; width: 100%; min-width: 0; min-height: 1.2em; padding: 0 calc(var(--spacing-1) * 2); resize: none; overflow: hidden; border: 0; border-radius: var(--radius-element); background: transparent; color: var(--color-text-primary); font-family: var(--font-family-heading); font-size: var(--font-size-note-title); font-weight: var(--font-weight-semibold); line-height: var(--text-note-title-leading); outline: none; }
 .ui-note-editor .note-page-title::placeholder { color: var(--color-text-secondary); }
 .ui-note-editor .note-page-title:focus-visible:not([data-pointer-focus]) { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
-.ui-note-editor .ui-editor-document { min-width: 0; margin-block-start: calc(var(--spacing-1) * 8); }
+.ui-note-editor .ui-editor-document { min-width: 0; margin-block-start: calc(var(--spacing-1) * 6); }
 .ui-note-editor .ui-note-markdown { --typeset-leading: var(--note-leading, var(--text-note-body-leading)); --typeset-flow: var(--note-flow, 1em); font-size: var(--note-size, var(--font-size-base)); }
 .ui-note-editor .ui-rich-ui.rich-editor { --editor-gutter: calc(var(--spacing-1) * 2); --editor-inset-right: calc(var(--spacing-1) * 2); }
+.ui-note-editor .rich-editor-content { --editor-block-space: calc(var(--spacing-1) * 1.5); --editor-selection-inset: calc(var(--spacing-1) * -1.5); }
+.ui-note-editor .rich-editor-content > p { margin-block: 0; padding-block: var(--editor-block-space); }
+.ui-note-editor .rich-editor-content > :is(h1, h2, h3, h4, h5, h6) { margin-block: calc(var(--typeset-flow) * 1.25) 0; padding-block: var(--editor-block-space); }
+.ui-note-editor .rich-editor-content > :is(ul, ol) { margin-block: 0; padding-block: var(--editor-block-space); }
+.ui-note-editor .rich-editor-content li { margin-block: 0; padding-block: calc(var(--spacing-1) * .5); }
+.ui-note-editor .rich-editor-content li > p, .ui-note-editor .rich-editor-content li > div > p { margin-block: 0; }
+.ui-note-editor .rich-editor-content li > p + p { margin-block-start: var(--spacing-1); }
+.ui-note-editor .rich-editor-content li :is(ul, ol) { margin-block: var(--spacing-1) 0; padding-block: 0; }
+.ui-note-editor .rich-editor-content > :first-child { margin-block-start: 0; }
+.ui-note-editor .rich-editor-content li:not([data-type="taskItem"]):is(.ProseMirror-selectednode, .rich-selected-block)::after { inset-inline-start: calc(-1.5em - var(--spacing-1) * 1.5); }
+.ui-note-editor .rich-editor-content > .rich-foldable-heading > .rich-heading-fold-widget { top: var(--editor-block-space); }
 .ui-note-editor .block-controls { gap: 0; left: calc(var(--editor-gutter) - var(--spacing-1) * 6); }
 /* Two 20px controls, a 2px gap, and 4px before the heading. */
 .ui-note-editor .block-controls[data-heading] { left: calc(var(--editor-gutter) - var(--spacing-1) * 11.5); }

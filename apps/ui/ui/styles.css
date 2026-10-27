@@ -9,6 +9,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./theme.css";
+@import "./components/card-hover.css";
+@import "./components/input-focus.css";
 @import "./typeset.css";
 @import "./typeset-theme.css";
 

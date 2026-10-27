@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { App } from "../../src/App";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, within } from "storybook/test";
 import { setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { StorybookAppearanceBridge } from "../web/StorybookAppearanceBridge";
 import { createWorkspaceFixture } from "../web/workspace-fixture";
@@ -40,6 +40,14 @@ export const Workspace: Story = { play: async ({ canvasElement }) => {
   const canvas = within(canvasElement);
   await expect(await canvas.findByRole("heading", { name: "主页", level: 1 })).toBeVisible();
   await expect(await canvas.findByRole("textbox", { name: "快速输入内容" })).toBeVisible();
+} };
+export const TagBreadcrumb: Story = { tags: ["!dev", "!autodocs"], args: { initialRoute: "#/notes" }, play: async ({ canvasElement }) => {
+  const canvas = within(canvasElement);
+  await userEvent.click((await canvas.findAllByRole("button", { name: "筛选标签 生活/咖啡" }))[0]);
+  await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
+  await canvas.findByRole("textbox", { name: "笔记内容" });
+  const breadcrumb = within(canvas.getByRole("navigation", { name: "当前位置" }));
+  await expect(breadcrumb.getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活", "咖啡"]);
 } };
 export const NoVault: Story = { args: { scenario: "folder-cancel" } };
 export const SaveFailure: Story = { args: { scenario: "save-error" } };

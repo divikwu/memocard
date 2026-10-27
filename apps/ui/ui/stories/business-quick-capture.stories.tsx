@@ -70,6 +70,44 @@ export const InlineRegression: Story = {
   },
 };
 export const Dark: Story = { globals: { theme: "dark" } };
+
+export const KeyboardFocusRegression: Story = {
+  ...Inline,
+  tags: ["!dev", "!autodocs"],
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
+    const group = field.closest('[data-slot="input-group"]')!;
+    const restingShadow = getComputedStyle(group).boxShadow;
+    await expect(field).toHaveTextContent("");
+    await userEvent.click(field);
+    await expect(getComputedStyle(group).outlineStyle).toBe("none");
+    await waitFor(() => expect(getComputedStyle(group).boxShadow).not.toBe(restingShadow));
+    await userEvent.tab();
+    await expect(canvas.getByRole("button", { name: "选择标签" })).toHaveFocus();
+    await userEvent.tab({ shift: true });
+    await expect(field).toHaveFocus();
+    await expect(field.matches(":focus-visible")).toBe(true);
+    await waitFor(() => expect(getComputedStyle(group).outlineStyle).toBe("solid"));
+    await expect(parseFloat(getComputedStyle(group).outlineWidth)).toBeGreaterThan(0);
+    await waitFor(() => expect(getComputedStyle(group).boxShadow).not.toBe(restingShadow));
+    await userEvent.click(field);
+    await expect(field).toHaveFocus();
+    await waitFor(() => expect(getComputedStyle(group).outlineStyle).toBe("none"));
+    await expect(getComputedStyle(group).boxShadow).not.toBe(restingShadow);
+    await userEvent.click(canvas.getByRole("heading", { name: "快速记录" }));
+    await waitFor(() => expect(getComputedStyle(group).outlineStyle).toBe("none"));
+    await waitFor(() => expect(getComputedStyle(group).boxShadow).toBe(restingShadow));
+    await expect(field).toHaveTextContent("");
+    await expect(canvas.getByRole("button", { name: "记录" })).toBeDisabled();
+    await expect(args.onRecorded).not.toHaveBeenCalled();
+  },
+};
+
+export const DarkKeyboardFocusRegression: Story = {
+  ...KeyboardFocusRegression,
+  globals: { theme: "dark" },
+};
 export const Disabled: Story = { args: { disabled: true } };
 export const SaveFailure: Story = {
   parameters: { captureFailure: true },

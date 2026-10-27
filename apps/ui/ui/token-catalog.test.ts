@@ -23,64 +23,77 @@ it("retains the stored Luma sidebar surface independently from body, card and mu
   expect(tokens.find(token => token.name === "--color-background-muted")).toMatchObject({ light: "var(--color-neutral-100)", dark: "var(--color-neutral-800)" });
 });
 
-const shadowScale = [
-  { name: "xxs", geometry: ["0px 1px 1.5px 0px", "0px 2.5px 4px 0px"], light: [4.5, 4.5], dark: [14, 16] },
-  { name: "xs", geometry: ["0px 1px 1px 0px", "0px 3px 3px 0px", "0px 6px 4px 0px", "0px 11px 4px 0px", "0px 17px 5px 0px"], light: [3, 3, 1.5, 0.75, 0], dark: [8, 7, 4, 1, 0] },
-  { name: "sm", geometry: ["0px 2px 4px 0px", "0px 8px 8px 0px", "0px 18px 11px 0px", "0px 32px 13px 0px", "0px 51px 14px 0px"], light: [5.25, 4.5, 3, 0.75, 0], dark: [10, 9, 5, 1, 0] },
-  { name: "md", geometry: ["0px 4px 9px 0px", "0px 16px 16px 0px", "0px 36px 22px 0px", "0px 65px 26px 0px", "0px 101px 28px 0px"], light: [5.25, 4.5, 3, 0.75, 0], dark: [12, 10, 6, 2, 0] },
-  { name: "sr", geometry: ["0px 1px 2px 0px", "0px 4px 4px 0px", "0px 9px 5px 0px", "0px 16px 6px 0px", "0px 25px 7px 0px"], light: [3.75, 3, 2.25, 0.75, 0], dark: [9, 8, 5, 1, 0] },
-  { name: "doc", geometry: ["0px 1px 1px -.5px", "0px 3px 3px -1.5px", "0px 6px 6px -3px", "0px 12px 12px -6px", "0px 24px 24px -12px"], light: [4.5, 4.5, 4.5, 3, 2.25], dark: [10, 10, 10, 8, 8] },
-];
+const shadowScale = tokens.filter(token => token.name.startsWith("--shadow-scale-"));
 
-it.each(shadowScale)("keeps $name geometry with softer light opacity and unchanged Craft dark opacity", ({ name, geometry, light, dark }) => {
-  const token = tokens.find(token => token.name === `--shadow-scale-${name}`)!;
-  expect(token.category).toBe("elevation");
-  for (const mode of ["light", "dark"] as const) {
-    const opacity = mode === "light" ? light : dark;
-    expect(token[mode]).toBe(geometry.map((layer, i) => `${layer} color-mix(in srgb, var(--color-shadow) ${opacity[i]}%, transparent)`).join(", "));
-    expect(token[mode]).not.toMatch(/0px 0px 0px 1px/);
-    expect(token[mode]).not.toContain("inset");
+function outerLayers(value: string) {
+  const matches = [...value.matchAll(/(-?[\d.]+)px (-?[\d.]+)px ([\d.]+)px (-?[\d.]+)px color-mix\(in srgb, var\(--color-shadow\) ([\d.]+)%, transparent\)/g)];
+  expect(matches.map(match => match[0]).join(", ")).toBe(value);
+  return matches.map(([, x, y, blur, spread, opacity]) => ({ geometry: [x, y, blur, spread].map(Number), opacity: Number(opacity) }));
+}
+
+it("exposes only five ordered outer-shadow levels without primitive utility interfaces", () => {
+  expect(shadowScale.map(token => token.name)).toEqual([0, 1, 2, 3, 4].map(level => `--shadow-scale-${level}`));
+  for (const token of shadowScale) {
+    expect(token.category).toBe("elevation");
+    expect(token.interfaces).toEqual([]);
+    expect(token.light).not.toContain("inset");
+    expect(token.dark).not.toContain("inset");
   }
 });
 
-it("exposes all eight scale levels and keeps transparent transitions and optional inner highlights", () => {
-  expect(tokens.filter(token => token.name.startsWith("--shadow-scale-")).map(token => token.name)).toEqual([
-    "--shadow-scale-empty", "--shadow-scale-xxs", "--shadow-scale-xs", "--shadow-scale-sm",
-    "--shadow-scale-md", "--shadow-scale-sr", "--shadow-scale-doc", "--shadow-scale-inner",
-  ]);
-  const empty = Array(6).fill("0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent)").join(", ");
-  expect(tokens.find(token => token.name === "--shadow-scale-empty")).toMatchObject({ light: empty, dark: empty });
-  expect(tokens.find(token => token.name === "--shadow-scale-inner")).toMatchObject({
+it("keeps multi-layer geometry and a single outer edge consistent across themes", () => {
+  const lightOpacity = [[0, 0, 0, 0, 0, 0], [4, 6, 6], [4, 4, 2, 1, 0, 6], [7, 6, 4, 1, 0, 6], [7, 6, 4, 1, 0, 3]];
+  const darkOpacity = [[0, 0, 0, 0, 0, 0], [12, 14, 16], [8, 7, 4, 1, 0, 12], [10, 9, 5, 1, 0, 12], [12, 10, 6, 2, 0, 12]];
+  let previousHeight = 0;
+  for (const [index, token] of shadowScale.entries()) {
+    const light = outerLayers(token.light);
+    const dark = outerLayers(token.dark);
+    expect(light).toHaveLength(index === 1 ? 3 : 6);
+    expect(dark.map(layer => layer.geometry)).toEqual(light.map(layer => layer.geometry));
+    expect(light.map(layer => layer.opacity)).toEqual(lightOpacity[index]);
+    expect(dark.map(layer => layer.opacity)).toEqual(darkOpacity[index]);
+    const edges = light.filter(layer => layer.geometry[3] === 1);
+    expect(edges).toHaveLength(index === 0 ? 0 : 1);
+    for (const edge of edges) expect(edge.geometry).toEqual([0, 0, 0, 1]);
+    if (index === 0) {
+      expect(light.every(layer => layer.geometry.every(value => value === 0))).toBe(true);
+    } else {
+      const height = Math.max(...light.filter(layer => layer.opacity > 0).map(layer => layer.geometry[1] + layer.geometry[2]));
+      expect(height).toBeGreaterThan(previousHeight);
+      previousHeight = height;
+    }
+  }
+});
+
+it("owns the control highlight separately from the elevation scale", () => {
+  expect(tokens.find(token => token.name === "--surface-highlight-control")).toMatchObject({
     light: "inset color-mix(in srgb, var(--color-white) 88%, transparent) 0px 0px 0px 1px",
     dark: "inset color-mix(in srgb, var(--color-white) 4%, transparent) 0px 0px 0px 1px",
+    category: "elevation",
+    interfaces: [],
   });
 });
 
 it.each([
-  ["low", "var(--shadow-scale-xs)", ["shadow-sm"]],
-  ["med", "var(--shadow-scale-sm)", ["shadow-med"]],
-  ["high", "var(--shadow-scale-md)", ["shadow-lg", "shadow-xl", "surface-floating"]],
-  ["control", "var(--shadow-scale-xxs), var(--shadow-scale-inner)", ["shadow-control"]],
-  ["floating", "var(--shadow-scale-sr)", ["shadow-floating"]],
-  ["document", "var(--shadow-scale-doc)", ["shadow-document"]],
+  ["flat", "var(--shadow-scale-0)", ["shadow-flat"]],
+  ["low", "var(--shadow-scale-2)", ["shadow-low"]],
+  ["med", "var(--shadow-scale-3)", ["shadow-med"]],
+  ["high", "var(--shadow-scale-4)", ["shadow-high"]],
+  ["control", "var(--shadow-scale-1), var(--surface-highlight-control)", ["shadow-control"]],
+  ["floating", "var(--shadow-scale-2)", ["shadow-floating"]],
+  ["document", "var(--shadow-scale-3)", ["shadow-document"]],
+  ["card-hover", "var(--shadow-low)", ["shadow-card-hover"]],
   ["input-focus", "var(--shadow-med)", ["shadow-input-focus"]],
 ])("maps %s to a component role in both themes", (name, value, interfaces) => {
   expect(tokens.find(token => token.name === `--shadow-${name}`)).toMatchObject({ light: value, dark: value, category: "elevation", interfaces });
 });
 
-it("keeps the independent card hover shadow visible in both modes", () => {
-  expect(tokens.find(token => token.name === "--shadow-card-hover")).toMatchObject({
-    light: "0 10px 20px color-mix(in srgb, var(--color-shadow) 3%, transparent)",
-    dark: "0 10px 20px color-mix(in srgb, var(--color-shadow) 12%, transparent)",
-  });
-});
-
 it("keeps border roles independent from shadows and preserves utility aliases", () => {
-  expect(tokens.find(token => token.name === "--color-shadow")).toMatchObject({ light: "var(--color-black)", dark: "var(--color-black)", valueSource: "project" });
+  expect(tokens.find(token => token.name === "--color-shadow")).toMatchObject({ light: "var(--color-black)", dark: "var(--color-black)", valueSource: "project", interfaces: [] });
   expect(tokens.find(token => token.name === "--color-border")).toMatchObject({
     light: "color-mix(in srgb, var(--color-black) 8%, transparent)",
     dark: "color-mix(in srgb, var(--color-white) 10%, transparent)",
-    category: "colors", colorGroup: "colors", projectExtension: false, valueSource: undefined, interfaces: ["border-border"],
+    category: "colors", colorGroup: "colors", projectExtension: false, valueSource: undefined, interfaces: ["border-border", "surface-floating"],
   });
   expect(tokens.find(token => token.name === "--color-divider")).toMatchObject({ light: "var(--color-border)", dark: "var(--color-border)" });
   expect(tokens.find(token => token.name === "--color-border-subtle")).toMatchObject({
@@ -92,27 +105,34 @@ it("keeps border roles independent from shadows and preserves utility aliases", 
   expect(aliases.find(alias => alias.name === "--color-border-elevated")).toBeUndefined();
   expect(tokens.flatMap(token => token.interfaces)).not.toContain("border-border-elevated");
   expect(aliases).toEqual(expect.arrayContaining([
-    { name: "--shadow-sm", value: "var(--shadow-low)" },
+    { name: "--shadow-flat", value: "var(--shadow-flat)" },
+    { name: "--shadow-low", value: "var(--shadow-low)" },
+    { name: "--shadow-high", value: "var(--shadow-high)" },
     { name: "--shadow-med", value: "var(--shadow-med)" },
-    { name: "--shadow-md", value: "initial" },
-    { name: "--shadow-lg", value: "var(--shadow-high)" },
-    { name: "--shadow-xl", value: "var(--shadow-high)" },
     { name: "--shadow-card-hover", value: "var(--shadow-card-hover)" },
     { name: "--shadow-input-focus", value: "var(--shadow-input-focus)" },
     { name: "--color-border", value: "var(--color-border)" },
     { name: "--color-border-subtle", value: "var(--color-border-subtle)" },
-    ...["hover", "selected", "success", "warning", "error"].map(state => ({ name: `--shadow-inset-${state}`, value: `var(--shadow-inset-${state})` })),
   ]));
 });
 
-it("limits Craft decorative edges to floating surfaces without changing shared borders or elevation", () => {
+it("keeps reserved state feedback outside the public shadow utility API", () => {
+  const reserved = tokens.filter(token => token.name.startsWith("--shadow-inset-"));
+  expect(reserved).toHaveLength(5);
+  for (const token of reserved) {
+    expect(token.interfaces).toEqual([]);
+    expect(aliases.find(alias => alias.name === token.name)).toBeUndefined();
+  }
+});
+
+it("does not duplicate the elevation edge in floating borders or highlights", () => {
   expect(tokens.find(token => token.name === "--color-border-floating")).toMatchObject({
-    light: "var(--color-border)", dark: "transparent", projectExtension: true,
+    light: "transparent", dark: "transparent", projectExtension: true,
   });
   expect(tokens.find(token => token.name === "--surface-edge-floating")).toMatchObject({
     light: "0 0 0 0 transparent, inset 0 0 0 0 transparent",
-    dark: "0 0 0 var(--border-width) color-mix(in srgb, var(--color-black) 12%, transparent), inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent)",
+    dark: "0 0 0 0 transparent, inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent)",
     category: "elevation",
   });
-  expect(tokens.find(token => token.name === "--shadow-high")).toMatchObject({ light: "var(--shadow-scale-md)", dark: "var(--shadow-scale-md)" });
+  expect(tokens.find(token => token.name === "--shadow-high")).toMatchObject({ light: "var(--shadow-scale-4)", dark: "var(--shadow-scale-4)" });
 });

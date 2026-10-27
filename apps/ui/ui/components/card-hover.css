@@ -1,0 +1,14 @@
+:is(.ui-card-hover-shadow, .ui-card-hover-scale)[data-slot="card"], :is(.ui-card-hover-shadow, .ui-card-hover-scale) > [data-slot="card"] { position: relative; transition: background-color var(--duration-fast) var(--ease-standard); }
+:is(.ui-card-hover-shadow[data-slot="card"], .ui-card-hover-shadow > [data-slot="card"]) { border-color: var(--color-border-subtle); box-shadow: var(--shadow-flat); }
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  :is(.ui-card-hover-shadow, .ui-card-hover-scale)[data-slot="card"], :is(.ui-card-hover-shadow, .ui-card-hover-scale) > [data-slot="card"] { transition: transform var(--duration-card-hover) var(--ease-card-hover), box-shadow var(--duration-card-hover) var(--ease-card-hover), border-color var(--duration-card-hover) var(--ease-card-hover); }
+  :is(.ui-card-hover-shadow[data-slot="card"]:hover, .ui-card-hover-shadow:hover > [data-slot="card"]) { z-index: 1; border-color: transparent; box-shadow: var(--shadow-card-hover); }
+  :is(.ui-card-hover-scale[data-slot="card"]:hover, .ui-card-hover-scale:hover > [data-slot="card"]) { z-index: 1; transform: scale(1.02); }
+}
+@media (forced-colors: active) {
+  :is(.ui-card-hover-shadow[data-slot="card"], .ui-card-hover-shadow > [data-slot="card"], .ui-card-hover-shadow[data-slot="card"]:hover, .ui-card-hover-shadow:hover > [data-slot="card"]) { border-color: CanvasText; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.ui-card-hover-shadow, .ui-card-hover-scale)[data-slot="card"], :is(.ui-card-hover-shadow, .ui-card-hover-scale) > [data-slot="card"] { transition-duration: 0ms; }
+  :is(.ui-card-hover-scale[data-slot="card"]:hover, .ui-card-hover-scale:hover > [data-slot="card"]) { transform: none; }
+}

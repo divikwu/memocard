@@ -1,0 +1,21 @@
+/* Shared tag colors and capsules used by collections, capture and the editor. */
+:root, .ui-theme { --tag-bg-opacity: 8%; --tag-default-bg: color-mix(in oklab, var(--tag-default-fg) var(--tag-bg-opacity), transparent); --tag-default-fg: var(--color-text-gray); --tag-brown-bg: color-mix(in oklab, var(--tag-brown-fg) var(--tag-bg-opacity), transparent); --tag-brown-fg: color-mix(in oklch, var(--color-text-orange) 60%, var(--color-text-gray)); }
+:root, .ui-theme { --tag-orange-bg: color-mix(in oklab, var(--tag-orange-fg) var(--tag-bg-opacity), transparent); --tag-orange-fg: var(--color-text-orange); }
+:root, .ui-theme { --tag-yellow-bg: color-mix(in oklab, var(--tag-yellow-fg) var(--tag-bg-opacity), transparent); --tag-yellow-fg: var(--color-text-yellow); }
+:root, .ui-theme { --tag-green-bg: color-mix(in oklab, var(--tag-green-fg) var(--tag-bg-opacity), transparent); --tag-green-fg: var(--color-text-green); }
+:root, .ui-theme { --tag-blue-bg: color-mix(in oklab, var(--tag-blue-fg) var(--tag-bg-opacity), transparent); --tag-blue-fg: var(--color-text-blue); }
+:root, .ui-theme { --tag-purple-bg: color-mix(in oklab, var(--tag-purple-fg) var(--tag-bg-opacity), transparent); --tag-purple-fg: var(--color-text-purple); }
+:root, .ui-theme { --tag-pink-bg: color-mix(in oklab, var(--tag-pink-fg) var(--tag-bg-opacity), transparent); --tag-pink-fg: var(--color-text-pink); }
+:root, .ui-theme { --tag-red-bg: color-mix(in oklab, var(--tag-red-fg) var(--tag-bg-opacity), transparent); --tag-red-fg: var(--color-text-red); }
+[data-ui-theme="dark"] { --tag-bg-opacity: 16%; }
+
+.rich-inline-tag, .note-tag-pill { max-width: 100%; min-height: calc(var(--spacing-1) * 5); border: 0; border-radius: var(--radius-full); padding: 0 calc(var(--spacing-1) * 1.5); background: var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); font-size: var(--font-size-sm); line-height: var(--text-body-leading); font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
+.note-tag-color-default { --tag-bg: var(--tag-default-bg); --tag-fg: var(--tag-default-fg); }
+.note-tag-color-brown { --tag-bg: var(--tag-brown-bg); --tag-fg: var(--tag-brown-fg); }
+.note-tag-color-orange { --tag-bg: var(--tag-orange-bg); --tag-fg: var(--tag-orange-fg); }
+.note-tag-color-yellow { --tag-bg: var(--tag-yellow-bg); --tag-fg: var(--tag-yellow-fg); }
+.note-tag-color-green { --tag-bg: var(--tag-green-bg); --tag-fg: var(--tag-green-fg); }
+.note-tag-color-blue { --tag-bg: var(--tag-blue-bg); --tag-fg: var(--tag-blue-fg); }
+.note-tag-color-purple { --tag-bg: var(--tag-purple-bg); --tag-fg: var(--tag-purple-fg); }
+.note-tag-color-pink { --tag-bg: var(--tag-pink-bg); --tag-fg: var(--tag-pink-fg); }
+.note-tag-color-red { --tag-bg: var(--tag-red-bg); --tag-fg: var(--tag-red-fg); }

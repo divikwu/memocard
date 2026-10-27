@@ -41,21 +41,31 @@
 
 ## 阴影标尺与组件职责
 
-八档基础标尺统一在 [theme.css](../apps/ui/ui/theme.css) 拥有浅色与深色定义，参考 2026-10-27 核对的 Craft Web CSS，浅色黑色外投影透明度为参考值的 75%（降低 25%），深色保留对应参考值，几何参数保持原样；组件通过语义角色消费，外投影不含原始 1px 边缘层。实际 border、内侧高光、键盘焦点与状态内环分别维护。
+五档基础尺度 `--shadow-scale-0` 至 `--shadow-scale-4` 统一在 [theme.css](../apps/ui/ui/theme.css) 拥有浅深色定义。0 为六层透明投影，1 为两层投影与一层 1px 外缘，2–4 为五层投影与一层 1px 外缘（包含透明占位层）。浅深色共享几何结构、分别定义各层透明度；完整参数由主题 CSS 拥有。组件通过语义角色选择高度；结构边框、内侧高光、键盘焦点与状态内环分别维护。
 
-| 基础标尺 | 语义角色 | 当前组件职责 |
+| 基础尺度 | 语义角色 | 当前组件职责 |
 | --- | --- | --- |
-| `empty` | `--shadow-scale-empty` | 笔记集合卡片默认平面；保留透明过渡层 |
-| `xxs` + `inner` | `--shadow-control` | Switch / Slider 滑块、小型圆形控件；inner 为白色内侧高光 |
-| `xs` | `--shadow-low` / `shadow-sm` | 轻浮起表面、PC 快速记录默认面板 |
-| `sm` | `--shadow-med` / `shadow-med` | Card 与快速记录聚焦表面；input-focus 映射同一角色 |
-| `md` | `--shadow-high` / `surface-floating` | 菜单、Popover、Dialog 等浮层；utility 另组合独立轮廓 |
-| `sr` | `--shadow-floating` | 富文本浮动工具条、Mermaid 切换工具条 |
-| `doc` | `--shadow-document` | 回收站笔记预览等独立文档表面；全屏编辑区保持平面 |
+| `0` | `--shadow-flat` / `shadow-flat` | 笔记集合卡片默认平面；保留透明过渡层 |
+| `1` + 控件高光 | `--shadow-control` / `shadow-control` | Switch / Slider 滑块、小型圆形控件；组合独立的 `--surface-highlight-control` |
+| `2` | `--shadow-low` / `shadow-low` | 轻浮起表面、PC 快速记录默认面板 |
+| `3` | `--shadow-med` / `shadow-med` | 通用 Card 表面 |
+| `3`（经 med） | `--shadow-input-focus` / `shadow-input-focus` | PC 快速记录与输入聚焦表面 |
+| `4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog 等浮层；显式搭配 surface-floating 保留边框和独立轮廓 |
+| `2` | `--shadow-floating` / `shadow-floating` | 富文本浮动工具条、Mermaid 切换工具条 |
+| `3` | `--shadow-document` / `shadow-document` | 回收站笔记预览等独立文档表面；全屏编辑区保持平面 |
+| `2`（经 low） | `--shadow-card-hover` / `shadow-card-hover` | 笔记卡片与 Preview 入口的鼠标悬停反馈 |
 
-`--surface-edge-floating` 独立管理浮层轮廓：浅色透明，不改变既有边框；深色为 black / 12% 外缘 + white / 4% 内缘，`--color-border-floating` 同时设为透明，保留原 1px 布局尺寸。原生 `NativeElevation` 由 SwiftUI / UIKit 消费，浅色采用原生深色基准的 75%，保留快速记录向下和抽屉向左、随进度变化的参数。
+组件只消费上表语义角色；基础尺度由主题与标尺示例引用。工具类仅开放同名语义角色；旧尺寸别名已移除，并通过 shadow 命名空间重置阻止 Tailwind 默认值回落。`shadow-none` 清除阴影，`shadow-flat` 保留透明过渡配方。inset 状态变量按 `reserved` 单独登记，不导出 `shadow-inset-*` 工具类，不代表生产组件已消费，也不提供与投影组合的公开接口。
 
-笔记卡片 hover 独立使用 `--shadow-card-hover`：0 10px 20px，浅色 black / 3%，深色在本项目表面使用 black / 12%。完整浅深色标尺与可交互组件示例见 [Elevation Storybook](../apps/ui/ui/stories/elevation.stories.tsx)。该示例仅使用内存与静态内容，不接入真实笔记库；Web CSS 接入不代表原生系统表面或全部设备已验收。
+z-index 管理前后顺序，阴影等级表达感知高度；嵌套菜单与弹层可复用同一档。嵌入式移动面板、表格与图片工具条保持平面，反色 Tooltip 依靠实心底色和箭头区分内容，不自动增加投影。
+
+`surface-floating` 承载透明布局边框和独立内侧高光，通过组合槽和 `shadow-high` 搭配；装饰外缘由投影提供。显式使用 `shadow-none` 或 `shadow-flat` 时恢复普通边框。投影颜色由主题 `--color-shadow` 管理，不提供 shadow-颜色 工具类契约。
+
+`--surface-edge-floating` 只补充深色 white / 4% 内侧高光，浅色为透明；`--color-border-floating` 在常规浅深色下均为透明，保留原 1px 布局尺寸，避免与投影内置外缘叠加。平面笔记卡片、移动端无投影输入面板保留弱边框，交互状态和键盘焦点独立。原生 `NativeElevation` 由 SwiftUI / UIKit 消费，浅色采用原生深色基准的 75%，保留快速记录向下和抽屉向左、随进度变化的参数。
+
+键盘焦点使用独立的 `--focus-outline-*`：2px 实线、向外偏移 2px，浅色为不透明 `neutral-600`，深色为不透明 `neutral-400`。强制颜色模式改用系统 `Highlight`，浮层布局边框使用 `CanvasText`，使浏览器清除投影后仍有边界。焦点与投影分别验证。
+
+控件白色 1px 内侧高光由 `--surface-highlight-control` 单独维护，浅色 / 深色透明度为 88% / 4%，不属于外投影高度。笔记卡片 hover 使用 `--shadow-card-hover → low → scale-2`，输入聚焦使用 `--shadow-input-focus → med → scale-3`；状态角色复用统一尺度，缩放独立维护。完整浅深色标尺与可交互组件示例见 [Elevation Storybook](../apps/ui/ui/stories/elevation.stories.tsx)。该示例仅使用内存与静态内容，不接入真实笔记库；Web CSS 接入不代表原生系统表面或全部设备已验收。
 
 ## 当前语义角色与运行时输出
 

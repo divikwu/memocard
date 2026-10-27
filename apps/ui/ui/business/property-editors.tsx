@@ -37,6 +37,7 @@ import { cn, cnState } from "../lib/utils";
 import { ImageViewer } from "./NoteMarkdown";
 import { richIcons } from "./rich-icons";
 import { PropertyConfirmationPopup } from "./property-confirmation";
+import "./tag.css";
 import "./note-properties.css";
 
 const icon = (data: HugeiconsIconProps["icon"]): RichIcon => props => <HugeiconsIcon icon={data} {...props} strokeWidth={Number(props.strokeWidth ?? 2)} />;

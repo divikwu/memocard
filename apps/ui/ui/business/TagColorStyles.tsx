@@ -1,3 +1,3 @@
 import { TagColorStyles } from "../../src/TagColorStyles.core";
-import "./note-properties.css";
+import "./tag.css";
 export default TagColorStyles;

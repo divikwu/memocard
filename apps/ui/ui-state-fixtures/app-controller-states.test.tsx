@@ -379,7 +379,7 @@ it.each([['detail-error','无法打开笔记'],['detail-missing','笔记不存�
   expect(card.className).toContain('web-workspace-empty');
   expect(screen.getAllByRole('alert')).toHaveLength(1);
   expect(within(card as HTMLElement).getByText(id === 'detail-missing'?'找不到此笔记。':'笔记文件暂时无法读取，请稍后重试。')).toBeTruthy();
-  await waitFor(()=>expect(screen.getByLabelText('当前位置').textContent).toBe('模拟笔记 · 产品验收'));
+  await waitFor(()=>expect(screen.getByLabelText('当前位置').textContent).toBe('所有笔记'));
   expect(within(card as HTMLElement).getByRole('button',{name:'返回笔记列表'})).toBeTruthy();
   expect(screen.queryByRole('textbox',{name:'笔记内容'})).toBeNull();
 });

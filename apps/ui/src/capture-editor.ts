@@ -36,7 +36,7 @@ export function useCaptureEditor({value,resetKey,disabled,field,editorRef,onChan
     content:{type:'doc',content:value ? [{type:'text',text:value}] : []},
     editable:!disabled,
     editorProps:{
-      attributes:{role:'textbox','aria-label':'快速输入内容','aria-multiline':'true',class:className},
+      attributes:{role:'textbox','aria-label':'快速输入内容','aria-multiline':'true','data-slot':'input-group-control',class:className},
       handleKeyDown(view,event){
         if(event.isComposing || event.keyCode===229 || view.composing)return false;
         if(!event.repeat && (event.metaKey || event.ctrlKey) && event.key==='Enter'){event.preventDefault();latest.current.onSave();return true;}

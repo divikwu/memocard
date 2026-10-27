@@ -925,7 +925,8 @@
       "consumers": [
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/tag-navigation-editor.tsx",
-        "apps/ui/ui/components/sidebar.tsx"
+        "apps/ui/ui/components/sidebar.tsx",
+        "apps/ui/ui/web/WebAppView.tsx"
       ]
     },
     {

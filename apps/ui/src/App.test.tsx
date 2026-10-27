@@ -1119,17 +1119,28 @@ it('ignores blank new-page recovery while retaining title-only and cleared exist
   expect(readEditorText()).toBe('');
 });
 
-it('keeps the breadcrumb in sync with unsaved page titles and empty-title fallback', async () => {
+it('uses all notes for a direct detail link instead of choosing a note tag', async () => {
+  window.history.replaceState(null, "", `#/notes/${note.id}`);
+  render(<App />);
+  await screen.findByRole('textbox', { name: '笔记内容' });
+  const breadcrumb = screen.getByRole('navigation', { name: '当前位置' });
+  expect(breadcrumb.textContent).toBe('所有笔记');
+  fireEvent.click(within(breadcrumb).getByRole('button', { name: '所有笔记' }));
+  await screen.findByRole('list', { name: '笔记列表' });
+  expect(window.location.hash).toBe('#/notes');
+});
+
+it('keeps the detail breadcrumb on its source while the page title changes', async () => {
   render(<App />);
   await screen.findByText(note.body);
   await createNote();
   const title = await screen.findByRole('textbox', { name: '页面标题' });
   const breadcrumb = screen.getByRole('navigation', { name: '当前位置' });
-  expect(breadcrumb.textContent).toBe('新内容');
+  expect(breadcrumb.textContent).toBe('所有笔记');
   fireEvent.change(title, { target: { value: '搜索' } });
-  expect(breadcrumb.textContent).toBe('搜索');
+  expect(breadcrumb.textContent).toBe('所有笔记');
   fireEvent.change(title, { target: { value: '' } });
-  expect(breadcrumb.textContent).toBe('新内容');
+  expect(breadcrumb.textContent).toBe('所有笔记');
 });
 it('leaves an untouched page created under a tag without writing a note or recovery', async () => {
   render(<App />); await screen.findByText(note.body);
@@ -1140,7 +1151,7 @@ it('leaves an untouched page created under a tag without writing a note or recov
   expect((title as HTMLTextAreaElement).value).toBe('');
   expect(readEditorText()).toBe('');
   expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
-  fireEvent.click(screen.getByRole('button', { name: '所有笔记' }));
+  fireEvent.click(within(screen.getByRole('navigation', { name: '主要导航' })).getByRole('button', { name: '所有笔记' }));
   await screen.findByRole('list', { name: '笔记列表' });
   expect(bridge.request).not.toHaveBeenCalledWith('saveNote', expect.anything());
   expect(bridge.request).not.toHaveBeenCalledWith('saveDraft', expect.anything());

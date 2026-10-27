@@ -67,6 +67,8 @@ export function inspectCSSTokens(families, documents, externalNames = []) {
     postcss.parse(css, { from: source }).walkDecls(declaration => {
       if (!declaration.prop.startsWith('--')) return;
       const name = declaration.prop;
+      // Tailwind namespace resets are compiler configuration, not runtime tokens.
+      if (declaration.parent.type === 'atrule' && declaration.parent.name === 'theme' && name.endsWith('-*') && declaration.value === 'initial') return;
       const owners = families.filter(family => (family.source === source || family.overrides?.includes(source)) && new RegExp(family.pattern).test(name));
       if (!owners.length && !publicDeclaration(declaration)) return;
       if (owners.length !== 1) throw new Error(`${owners.length ? 'Ambiguous' : 'Unregistered'} CSS token: ${source} ${name}`);

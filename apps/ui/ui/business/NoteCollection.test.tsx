@@ -60,6 +60,20 @@ it("persists layout changes without removing tags or dates from list mode", asyn
   expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
 });
 
+it("limits shared hover shadow and scale to openable cards", async () => {
+  const options = props({ canOpen: false });
+  const view = render(<NoteCollection {...options} />);
+  const card = screen.getByRole("button", { name: "打开 咖啡记录" }).closest('[data-slot="card"]')!;
+  expect(card.classList.contains("ui-card-hover-shadow")).toBe(false);
+  expect(card.classList.contains("ui-card-hover-scale")).toBe(false);
+  view.rerender(<NoteCollection {...options} canOpen />);
+  expect(card.classList.contains("ui-card-hover-shadow")).toBe(true);
+  expect(card.classList.contains("ui-card-hover-scale")).toBe(true);
+  await userEvent.click(screen.getByRole("button", { name: "列表布局" }));
+  expect(card.classList.contains("ui-card-hover-shadow")).toBe(false);
+  expect(card.classList.contains("ui-card-hover-scale")).toBe(false);
+});
+
 it("keeps list opening permission-aware and tag actions independent", async () => {
   const user = userEvent.setup();
   localStorage.setItem("memocard:home-layout", "list");

@@ -319,3 +319,7 @@ import { TooltipProvider, Tooltip, TooltipTrigger,
 };
 
 export const componentDocs: Record<ComponentKey, ComponentDoc> = { ...coreComponentDocs, ...additionalComponentDocs };
+
+for (const key of ["input", "textarea", "input-group", "select", "native-select", "combobox"] as const) {
+  componentDocs[key] = { ...componentDocs[key], accessibility: [...componentDocs[key].accessibility, { title: "焦点反馈", description: "鼠标或触控聚焦不显示焦点框；Tab 导航和选项键盘导航时显示统一焦点框。输入文字、换行和移动光标保持当前输入方式，错误描边独立保留。" }] };
+}

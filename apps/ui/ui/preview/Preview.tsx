@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { HugeiconsIcon } from "@hugeicons/react";
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon";
-import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon";
+import ArrowLeft02Icon from "@hugeicons/core-free-icons/ArrowLeft02Icon";
 import ArrowRight01Icon from "@hugeicons/core-free-icons/ArrowRight01Icon";
+import ArrowRight02Icon from "@hugeicons/core-free-icons/ArrowRight02Icon";
 import Home01Icon from "@hugeicons/core-free-icons/Home01Icon";
 import InboxIcon from "@hugeicons/core-free-icons/InboxIcon";
 import Moon02Icon from "@hugeicons/core-free-icons/Moon02Icon";
 import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import RoboticIcon from "@hugeicons/core-free-icons/RoboticIcon";
-import Shield01Icon from "@hugeicons/core-free-icons/Shield01Icon";
 import Sun03Icon from "@hugeicons/core-free-icons/Sun03Icon";
 import { scenarios } from "./scenarios";
 import { Badge } from "../components/badge";
@@ -69,18 +69,17 @@ function Preview() {
   return <PreviewModeProvider mode={theme}>
     <div className={cn("ui-theme ui-preview", category ? "ui-preview-workbench" : "ui-preview-home")} data-ui-theme={theme}>
       <header className="ui-preview-header">
-        <div className="ui-preview-brand"><img src="/favicon.png" alt="" className="size-7 shrink-0 object-contain" /><Badge variant="secondary">MemoCard UI</Badge></div>
+        <div className="ui-preview-brand">{category ? <><Button role="link" nativeButton={false} variant="outline" size="icon" render={<a href={homeUrl} />} aria-label="返回验收首页" title="返回验收首页"><HugeiconsIcon icon={Home01Icon} strokeWidth={2} aria-hidden="true" /></Button><h1 id="ui-preview-title" className="text-base font-medium">{category.title}验收</h1></> : <><img src="/favicon.png" alt="" className="size-7 shrink-0 object-contain" /><span className="text-base">MemoCard UI</span></>}</div>
         <div className="flex items-center gap-2">
-          <span className="ui-preview-isolation"><HugeiconsIcon icon={Shield01Icon} strokeWidth={2} aria-hidden="true" className="size-4 shrink-0" /><span>纯模拟数据<span className="hidden sm:inline"> · 不连接真实笔记库</span></span></span>
           <Button variant="ghost" size="icon-sm" aria-label={theme === "light" ? "切换深色主题" : "切换浅色主题"} title={theme === "light" ? "切换深色主题" : "切换浅色主题"} onClick={() => update({ theme: theme === "light" ? "dark" : "light" })}><HugeiconsIcon icon={theme === "light" ? Moon02Icon : Sun03Icon} strokeWidth={2} aria-hidden="true" /></Button>
         </div>
       </header>
       {category && scenario ? <>
         <section className="ui-preview-controls" aria-labelledby="ui-preview-title">
-          <div className="flex min-w-0 items-center gap-2">
-            <Button role="link" nativeButton={false} variant="ghost" size="icon-sm" render={<a href={homeUrl} />} aria-label="返回验收首页" title="返回验收首页"><HugeiconsIcon icon={Home01Icon} strokeWidth={2} aria-hidden="true" /></Button>
-            <h1 id="ui-preview-title" className="text-balance text-lg font-medium">{category.title}验收</h1>
-            <Badge variant="outline" className="ml-auto tabular-nums">{index + 1} / {category.scenarios.length}</Badge>
+          <div className="flex items-center gap-1" role="group" aria-label="场景导航">
+            <Button variant="outline" size="icon" aria-label="上一项" title="上一项" disabled={index === 0} onClick={() => update({ scenario: category.scenarios[index - 1] })}><HugeiconsIcon icon={ArrowLeft02Icon} strokeWidth={2} aria-hidden="true" /></Button>
+            <Button variant="outline" size="icon" aria-label="下一项" title="下一项" disabled={index === category.scenarios.length - 1} onClick={() => update({ scenario: category.scenarios[index + 1] })}><HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" /></Button>
+            <Button variant="outline" size="icon" aria-label="重置场景" title="重置场景" onClick={() => setRevision(value => value + 1)}><HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" /></Button>
           </div>
           <div className="ui-preview-toolbar">
             <div className="ui-preview-scenario-select">
@@ -91,15 +90,9 @@ function Preview() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex items-center gap-1" role="group" aria-label="场景导航">
-              <Button variant="outline" size="icon" aria-label="上一项" title="上一项" disabled={index === 0} onClick={() => update({ scenario: category.scenarios[index - 1] })}><HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} aria-hidden="true" /></Button>
-              <Button variant="outline" size="icon" aria-label="下一项" title="下一项" disabled={index === category.scenarios.length - 1} onClick={() => update({ scenario: category.scenarios[index + 1] })}><HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" /></Button>
-              <Button variant="ghost" size="icon" aria-label="重置场景" title="重置场景" onClick={() => setRevision(value => value + 1)}><HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" /></Button>
-            </div>
             <Select items={viewportItems} value={viewport} onValueChange={value => { if (value) update({ viewport: value }); }}><SelectTrigger aria-label="预览尺寸" className="ui-preview-viewport-select"><SelectValue /></SelectTrigger><SelectContent>{viewportItems.map(item => <SelectItem value={item.value} key={item.value}>{item.label}</SelectItem>)}</SelectContent></Select>
             <Select items={delayItems} value={delay} onValueChange={value => { if (value) update({ delay: value }); }}><SelectTrigger aria-label="读取速度" className="ui-preview-delay-select"><SelectValue /></SelectTrigger><SelectContent>{delayItems.map(item => <SelectItem value={item.value} key={item.value}>{item.label}</SelectItem>)}</SelectContent></Select>
           </div>
-          <div className="ui-preview-instructions" aria-live="polite"><p className="text-pretty text-sm">{scenario.instructions}</p>{scenario.note ? <p className="text-pretty text-xs text-secondary">{scenario.note}</p> : null}</div>
         </section>
         <main className="ui-preview-stage" aria-label="MemoCard UI 场景预览">
           <iframe key={`${scenario.id}:${revision}:${viewport}:${theme}:${delay}`} title={`模拟场景：${scenario.label}`} className={cn("ui-preview-frame", viewport === "mobile" && "ui-preview-frame-mobile")} sandbox="allow-scripts allow-same-origin allow-modals" src={frameUrl} />
@@ -107,15 +100,15 @@ function Preview() {
       </> : <main className="ui-preview-home-content">
         <div className="space-y-2"><h1 className="text-balance text-2xl font-medium">UI 验收</h1><p className="text-pretty text-sm text-secondary">选择状态，检查界面和操作。</p></div>
         <nav aria-label="验收页面" className="ui-preview-category-grid">
-          {categories.map(item => <a key={item.id} href={`/?category=${item.id}&theme=${theme}`} aria-label={`${item.title}，${item.scenarios.length} 个场景`} className="ui-preview-category-link">
-            <Card size="sm" className="h-full gap-4">
+          {categories.map(item => <a key={item.id} href={`/?category=${item.id}&theme=${theme}`} aria-label={`${item.title}，${item.scenarios.length} 个场景`} className="ui-preview-category-link ui-card-hover-shadow ui-card-hover-scale">
+            <Card size="sm" className="h-full gap-4 shadow-none">
               <CardHeader><div className="flex min-w-0 items-center gap-3"><span className="ui-preview-category-icon"><HugeiconsIcon icon={item.icon} strokeWidth={2} aria-hidden="true" /></span><h2 className="text-balance text-base font-medium">{item.title}</h2><Badge variant="secondary" className="ml-auto tabular-nums">{item.scenarios.length} 个场景</Badge></div></CardHeader>
               <CardContent><CardDescription className="text-pretty leading-relaxed">{item.description}</CardDescription></CardContent>
               <CardFooter className="mt-auto justify-between border-t text-sm font-medium"><span>开始验收</span><HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" className="size-4" /></CardFooter>
             </Card>
           </a>)}
-          <a href={`/mascots.html?theme=${theme}`} aria-label="吉祥物，13 个角色" className="ui-preview-category-link">
-            <Card size="sm" className="h-full gap-4"><CardHeader><div className="flex min-w-0 items-center gap-3"><span className="ui-preview-category-icon"><HugeiconsIcon icon={RoboticIcon} strokeWidth={2} aria-hidden="true" /></span><h2 className="text-balance text-base font-medium">吉祥物</h2><Badge variant="secondary" className="ml-auto tabular-nums">13 个角色</Badge></div></CardHeader><CardContent><CardDescription className="text-pretty leading-relaxed">预览 MemoCard 与机器人角色的鼠标跟随和点击反应。</CardDescription></CardContent><CardFooter className="mt-auto justify-between border-t text-sm font-medium"><span>打开预览</span><HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" className="size-4" /></CardFooter></Card>
+          <a href={`/mascots.html?theme=${theme}`} aria-label="吉祥物，13 个角色" className="ui-preview-category-link ui-card-hover-shadow ui-card-hover-scale">
+            <Card size="sm" className="h-full gap-4 shadow-none"><CardHeader><div className="flex min-w-0 items-center gap-3"><span className="ui-preview-category-icon"><HugeiconsIcon icon={RoboticIcon} strokeWidth={2} aria-hidden="true" /></span><h2 className="text-balance text-base font-medium">吉祥物</h2><Badge variant="secondary" className="ml-auto tabular-nums">13 个角色</Badge></div></CardHeader><CardContent><CardDescription className="text-pretty leading-relaxed">预览 MemoCard 与机器人角色的鼠标跟随和点击反应。</CardDescription></CardContent><CardFooter className="mt-auto justify-between border-t text-sm font-medium"><span>打开预览</span><HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} aria-hidden="true" className="size-4" /></CardFooter></Card>
           </a>
         </nav>
       </main>}
