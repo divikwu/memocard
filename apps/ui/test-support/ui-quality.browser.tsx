@@ -89,17 +89,20 @@ for (const mode of ["light", "dark"] as const) {
       await userEvent.click(select);
       expect(getComputedStyle(select).outlineStyle, label + " pointer").toBe("none");
       // Base UI opens pointer-triggered selects on the next animation frame.
-      if (select.getAttribute("data-slot") === "select-trigger") {
-        const menu = await within(document.body).findByRole("listbox");
+      const menu = select.getAttribute("data-slot") === "select-trigger" ? await within(document.body).findByRole("listbox") : null;
+      if (menu) {
         await expect.element(menu).toBeVisible();
         await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
       }
       await userEvent.keyboard("{Escape}");
-      // Finish dismissal and focus restoration before testing Tab navigation.
-      if (select.getAttribute("data-slot") === "select-trigger") await waitFor(() => {
-        expect(select.getAttribute("aria-expanded")).toBe("false");
-        expect(document.activeElement).toBe(select);
-      });
+      // Base UI hides its retained portal after exit animations, then restores focus.
+      if (menu) {
+        await waitFor(() => expect(select.getAttribute("aria-expanded")).toBe("false"));
+        const popup = menu.closest<HTMLElement>('[data-slot="select-content"]')!;
+        await Promise.all(popup.getAnimations().map(animation => animation.finished));
+        await expect.element(menu).not.toBeVisible();
+        await expect.element(select).toHaveFocus();
+      }
       await userEvent.tab();
       await userEvent.tab({ shift: true });
       expect(document.activeElement).toBe(select);
@@ -315,6 +318,7 @@ for (const mode of ["light", "dark"] as const) {
     for (const [trigger, surface] of [[card, card], [wrapper, wrapper.querySelector('[data-slot="card"]')!]]) {
       const restingSurfaceShadow = getComputedStyle(surface).boxShadow;
       await userEvent.hover(trigger);
+      await Promise.all(surface.getAnimations().map(animation => animation.finished));
       await waitFor(() => {
         const actual = getComputedStyle(surface);
         expect(actual.transform).toBe(width >= 768 && scaleEnabled ? "matrix(1.02, 0, 0, 1.02, 0, 0)" : "none");
@@ -326,6 +330,7 @@ for (const mode of ["light", "dark"] as const) {
         else expect(actual.boxShadow).toBe(restingSurfaceShadow);
       });
       await userEvent.unhover(trigger);
+      await Promise.all(surface.getAnimations().map(animation => animation.finished));
       await waitFor(() => {
         expect(getComputedStyle(surface).boxShadow).toBe(restingSurfaceShadow);
         const transform = getComputedStyle(surface).transform;
