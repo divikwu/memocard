@@ -1,4 +1,4 @@
-import { Suspense, useId, useRef, type ReactNode } from "react";
+import { Suspense, useRef, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles } from "../../src/note-filter-labels";
 import { errorMessage } from "../../src/error-messages";
@@ -17,6 +17,7 @@ import TagColorStyles from "../business/TagColorStyles";
 import { AppSidebar } from "../business/sidebar";
 import { MobileTagActions } from "../business/MobileTagActions";
 import { NoteCollection } from "../business/NoteCollection";
+import { PageNotice } from "../business/PageNotice";
 import { AddIcon, CheckIcon, DeleteIcon, DocumentIcon, FolderIcon, SearchIcon, SettingsIcon } from "../icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon";
@@ -40,7 +41,8 @@ export const preloadWebEditor = () => import("../business/Editor");
 export const renderWebApp = (state: AppViewState) => <WebTypographyProvider><WebAppView state={state} /></WebTypographyProvider>;
 
 export function Notice({ title, children, action, error = false }: { title: string; children?: ReactNode; action?: ReactNode; error?: boolean }) {
-  return <section className="web-notice" role={error ? "alert" : "status"} data-error={error || undefined}><div><p className="font-medium">{title}</p>{children && <div className="mt-1 text-sm text-secondary">{children}</div>}</div>{action && <div className="web-notice-actions">{action}</div>}</section>;
+  if (error) return <PageNotice title={title} actions={action}>{children}</PageNotice>;
+  return <section className="web-notice" role="status"><div><p className="font-medium">{title}</p>{children && <div className="mt-1 text-sm text-secondary">{children}</div>}</div>{action && <div className="web-notice-actions">{action}</div>}</section>;
 }
 
 function PageLoading() {
@@ -48,15 +50,14 @@ function PageLoading() {
 }
 
 function WorkspaceEmpty({ title, description, children, guide = false, role, connection = false }: { title: string; description: string; children?: ReactNode; guide?: boolean; role?: "alert" | "status"; connection?: boolean }) {
-  return <Empty className="web-workspace-empty" data-guide={guide || undefined} role={role}><EmptyHeader><EmptyMedia variant="icon">{connection ? <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" /> : <FolderIcon aria-hidden="true" />}</EmptyMedia><EmptyTitle><h2>{title}</h2></EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader>{children && <EmptyContent>{children}</EmptyContent>}{guide && <p className="text-xs text-secondary">只访问你授权的文件夹</p>}</Empty>;
+  return <Empty className="web-workspace-empty" data-guide={guide || undefined} role={role}><EmptyHeader><EmptyMedia variant="icon">{connection ? <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" /> : <FolderIcon aria-hidden="true" />}</EmptyMedia><EmptyTitle><h2>{title}</h2></EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader>{children && <EmptyContent>{children}</EmptyContent>}{guide && children && <p className="text-xs text-secondary">只访问你授权的文件夹</p>}</Empty>;
 }
 
 function CoverageNotice({ state: s }: { state: AppViewState }) {
-  const id = useId();
   const c = s.status!.coverage;
-  return <Notice title="部分文件暂时无法读取" action={<><Button variant="outline" size="sm" disabled={s.refreshingPages || s.switchingVault || s.collection.paging} onClick={() => void s.readCoverage.onReread()}>{s.readCoverage.rereading && <Spinner aria-hidden="true" />}重新读取</Button><Button variant="outline" size="sm" aria-expanded={s.readCoverage.open} aria-controls={id} onClick={() => s.readCoverage.onOpenChange(!s.readCoverage.open)}>查看详情</Button></>}>
-    <p>待读取 {c.pending} 项，需要处理 {c.issues} 项。列表和搜索结果可能不完整，已加载的笔记仍可使用。</p>
-    {s.readCoverage.open && <div id={id} className="web-coverage-details"><dl><div><dt>已读入笔记</dt><dd>{c.indexed}</dd></div><div><dt>待读取文件</dt><dd>{c.pending}</dd></div><div><dt>需要处理的文件</dt><dd>{c.issues}</dd></div></dl><p>当前未提供具体文件和失败原因。请确认笔记文件夹可访问、文件能在系统中正常打开，再重新读取。</p></div>}
+  return <Notice title="部分文件暂时无法读取" action={<Button variant="outline" size="sm" disabled={s.refreshingPages || s.switchingVault || s.collection.paging} onClick={() => void s.readCoverage.onReread()}>{s.readCoverage.rereading && <Spinner aria-hidden="true" />}重新读取</Button>}>
+    <p>已读入 {c.indexed} 篇笔记，待读取 {c.pending} 项，需要处理 {c.issues} 项。列表和搜索结果可能不完整，已加载的笔记仍可使用。</p>
+    <p className="mt-1">当前未提供具体文件和失败原因。请确认笔记文件夹可访问、文件能在系统中正常打开，再重新读取。</p>
   </Notice>;
 }
 
@@ -70,17 +71,16 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
 }
 
 function WorkspaceContent({ state: s }: { state: AppViewState }) {
-  if (s.openingNote) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed ? <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="flex flex-wrap justify-center gap-2">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty> : s.error ? null : <PageLoading />}</>;
+  if (s.openingNote) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed ? <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty> : s.error ? null : <PageLoading />}</>;
   if (s.editor) return <><h1 className="sr-only">{s.title}</h1><Suspense fallback={<PageLoading />}><Editor key={s.editor.initial.id} {...s.editor} /></Suspense></>;
   if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
-  if (s.connectionState) return <WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : "重新授权笔记文件夹后，可继续读取与保存。"}>
-    {s.selectionNotice && <details><summary>查看详情</summary><p className="break-words">{s.selectionNotice}</p></details>}
+  if (s.connectionState) return <WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
     {s.localWebReconnectRequired ? <Button role="link" nativeButton={false} render={<a href="memocard-service://open-web" />}>重新打开</Button> : <Button onClick={s.needsPermission ? s.sidebar.onReauthorize : () => s.sidebar.onSelectVault(false)} disabled={s.working}>{s.needsPermission ? "重新授权" : "重新选择文件夹"}</Button>}
   </WorkspaceEmpty>;
   if (s.listTimeout === "initial") return <WorkspaceEmpty role="alert" connection title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button onClick={s.onRefresh} disabled={s.refreshingPages || s.switchingVault}>重试</Button></WorkspaceEmpty>;
   if (!s.loading && !s.status?.connected && !s.collection.notes.length) return <WorkspaceEmpty guide title={s.unsupportedBrowser ? "通过本机服务连接笔记库" : "打开你的笔记文件夹"} description={s.unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或使用 memocard serve。" : "打开已有的 Markdown / Obsidian 文件夹，或创建一个新笔记库。内容保存在你授权的文件夹中。"}>
-    {!s.unsupportedBrowser && <div className="flex flex-wrap justify-center gap-2">{s.sidebar.canCreateVault && <Button disabled={s.working} onClick={() => s.sidebar.onSelectVault(true)}><AddIcon aria-hidden="true" />创建笔记库</Button>}<Button variant="outline" disabled={!s.sidebar.canChooseVault || s.working} onClick={() => s.sidebar.onSelectVault(false)}><FolderIcon aria-hidden="true" />打开已有笔记库</Button></div>}
+    {!s.unsupportedBrowser && <div className="web-workspace-actions">{s.sidebar.canCreateVault && <Button disabled={s.working} onClick={() => s.sidebar.onSelectVault(true)}><AddIcon aria-hidden="true" />创建笔记库</Button>}<Button variant="outline" disabled={!s.sidebar.canChooseVault || s.working} onClick={() => s.sidebar.onSelectVault(false)}><FolderIcon aria-hidden="true" />打开已有笔记库</Button></div>}
   </WorkspaceEmpty>;
   return <>
     {!s.isMobile && s.view === "home" && s.capture && <Suspense fallback={<PageLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
@@ -123,7 +123,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           {s.needsPermission && !s.connectionState && <Notice title="重新授权笔记文件夹" action={<Button variant="outline" size="sm" disabled={s.working} onClick={s.sidebar.onReauthorize}>重新授权</Button>}>文件夹访问权限已失效，请重新授权以读取和保存。</Notice>}
           {s.status?.indexing && <Notice title={s.status.indexing.phase === "reading" ? "正在读取笔记库" : "正在建立索引"}>已处理 {s.status.indexing.processed}{s.status.indexing.total === null ? "" : ` / ${s.status.indexing.total}`} 篇，可继续使用已加载的笔记。草稿先保存在本机，校验后写入文件；搜索和筛选会逐步补齐。</Notice>}
           {s.status?.connected && !s.status.indexing && !s.status.coverage.complete && <CoverageNotice state={s} />}
-          {s.drafts.issues.length > 0 && <Notice title="部分草稿无法读取"><details><summary>查看详情</summary>{s.drafts.issues.map((issue, i) => <p className="break-words" key={i}>{issue.message}{issue.path && <code className="block break-all">{issue.path}</code>}</p>)}</details></Notice>}
+          {s.drafts.issues.length > 0 && <Notice title="部分草稿无法读取">{s.drafts.issues.map((issue, i) => <p className="break-words not-last:mb-2" key={i}>{issue.message}{issue.path && <code className="block break-all">{issue.path}</code>}</p>)}</Notice>}
           {s.drafts.reminderVisible && !s.detailView && s.view !== "settings" && <Notice title="有尚未完成的草稿" action={<><Button variant="outline" size="sm" onClick={() => s.drafts.onOpenChange(true)}>查看草稿</Button><Button variant="ghost" size="sm" onClick={s.drafts.onDismissReminder}>稍后处理</Button></>}>可继续编辑，稍后处理不会删除草稿。</Notice>}
           {s.listTimeout === "refresh" && <Notice title="刷新超时" error action={<Button variant="outline" size="sm" disabled={s.refreshingPages || s.switchingVault} onClick={s.onRefreshBackground}>重试</Button>}>继续显示上次读取的内容。</Notice>}
           {!s.detailView && s.view !== "settings" && s.view !== "trash" && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}><h1>{s.title}</h1></div>)}

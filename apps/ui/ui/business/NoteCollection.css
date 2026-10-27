@@ -22,7 +22,7 @@
 .ui-note-items > li { min-width: 0; }
 .ui-note-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--spacing-1) * 80)), 1fr)); gap: calc(var(--spacing-1) * 3); }
 .ui-note-list { display: flex; flex-direction: column; gap: 0; }
-.ui-note-card { position: relative; min-width: 0; height: calc(var(--spacing-1) * 64); padding-block: 0; gap: 0; border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-card); box-shadow: none; }
+.ui-note-card { position: relative; min-width: 0; height: calc(var(--spacing-1) * 64); padding-block: 0; gap: 0; border: var(--border-width) solid var(--color-border-subtle); border-radius: var(--radius-card); box-shadow: var(--shadow-scale-empty); }
 .ui-note-card[data-note-openable="true"] { transition: background-color var(--duration-fast) var(--ease-standard); }
 .ui-note-card[data-note-openable="true"]:hover { background: var(--color-overlay-hover); }
 .ui-note-card:has(:focus-visible) { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }

@@ -40,7 +40,7 @@ function BusinessParityFixture() {
   }, []);
   return <div className="ui-theme sb-unstyled p-4" data-ui-theme={mode}>
     <h1 className="mb-2 type-heading-1">Sidebar-10 业务布局回归</h1>
-    <p className="mb-4 text-sm text-secondary">测试专用固定宽容器；在桌面视口运行自动断言。仅操作内存笔记，不连接真实笔记库。</p>
+    <p className="mb-4 text-sm text-secondary">可手动切换容器宽度，检查布局与卡片操作。仅操作内存笔记，不连接真实笔记库。</p>
     <div className="mb-4 flex flex-wrap gap-2">{[1280, 768, 767, 390, 320].map(value => <Button key={value} variant="outline" size="sm" onClick={() => setWidth(value)} aria-pressed={width === value}>宽度 {value}</Button>)}</div>
     {notes ? <>
       <div style={{ width, maxWidth: "none" }} data-testid="collection-width-fixture">
@@ -55,7 +55,10 @@ const meta = { title: "verification/Sidebar-10 business parity", id: "ui-sidebar
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const LayoutAndCardActions: Story = {
+export const LayoutAndCardActions: Story = {};
+export const LayoutAndCardActionsRegression: Story = {
+  ...LayoutAndCardActions,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const list = await canvas.findByRole("list", { name: "笔记列表" });

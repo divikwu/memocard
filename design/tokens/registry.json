@@ -275,9 +275,43 @@
       ]
     },
     {
+      "id": "effects.shadow-scale",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--shadow-scale-[a-z]+$",
+      "category": "effects",
+      "layer": "primitive",
+      "type": "shadow",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "Eight Craft-derived shadow levels in light and dark; external edge layers remain owned by border roles.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/elevation.stories.tsx"
+      ]
+    },
+    {
+      "id": "effects.surface-edge",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--surface-edge-[a-z-]+$",
+      "category": "effects",
+      "layer": "semantic",
+      "type": "shadow",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "Decorative floating-surface edges, composed by components independently of elevation and layout borders.",
+      "consumers": [
+        "apps/ui/ui/components/popover.tsx",
+        "apps/ui/ui/business/rich-editor.css"
+      ]
+    },
+    {
       "id": "effects.elevation",
       "source": "apps/ui/ui/theme.css",
-      "pattern": "^--shadow-[a-z-]+$",
+      "pattern": "^--shadow-(?!scale-)[a-z-]+$",
       "category": "effects",
       "layer": "semantic",
       "type": "shadow",
@@ -286,7 +320,7 @@
         "mode",
         "state"
       ],
-      "description": "Current elevation, input focus and state inset shadows.",
+      "description": "Component roles map the Craft-derived scale to controls, surfaces, floating tools and documents; card hover and state feedback remain explicit.",
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx",
         "apps/ui/ui/stories/theme.stories.tsx"
@@ -485,6 +519,24 @@
       "consumers": [
         "apps/apple/Sources/NativeSidebar.swift",
         "scripts/generate-sidebar-preview-palette.mjs"
+      ]
+    },
+    {
+      "id": "platform.elevation",
+      "category": "effects",
+      "layer": "adapter",
+      "type": "shadow",
+      "status": "platform-owned",
+      "axes": [
+        "mode"
+      ],
+      "description": "Native capture and floating navigation shadow profiles in logical points; light opacity is 75% of the native dark baseline, with drawer progress applied by UIKit.",
+      "sources": [
+        "apps/apple/Sources/NativeSurfaceState.swift"
+      ],
+      "consumers": [
+        "apps/apple/Sources/NativeDesignedPanel.swift",
+        "apps/apple/Sources/NativeChrome.swift"
       ]
     },
     {

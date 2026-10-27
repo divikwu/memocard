@@ -54,7 +54,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Editable: Story = { play: async ({ canvasElement, args }) => {
+export const Editable: Story = {};
+export const EditableRegression: Story = { ...Editable, tags: ["!dev", "!autodocs"], play: async ({ canvasElement, args }) => {
   const canvas = within(canvasElement), body = within(canvasElement.ownerDocument.body);
   await userEvent.click(await canvas.findByRole("button", { name: /^属性$/ }));
   await expect(canvas.getByRole("checkbox", { name: "切换属性 已验证" })).toBeChecked();

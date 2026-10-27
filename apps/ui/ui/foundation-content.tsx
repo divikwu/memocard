@@ -7,7 +7,7 @@ export type GuidanceRule = { kind: "do" | "dont"; text: string };
 export const overview: Partial<Record<TokenCategory, string>> = {
   all: "按用途查阅主题定义。源变量、间距派生标尺和合成文字样式分别维护，避免将展示行数当成独立 token 数量。",
   colors: "基础色阶保持固定，语义角色按浅深色模式选择引用。背景按 body → surface → card → popover 建立层次；文字、图标、强调填充与状态分别维护。",
-  elevation: "阴影表达表面与背景的距离，描边表达表面边界。low、med、high 在浅色沿用当前柔和投影，深色针对本项目背景校准；输入聚焦与控件状态反馈独立维护。",
+  elevation: "八档基础阴影参考 Craft Web，浅色黑色投影透明度降至参考值的 75%，深色保留参考值。组件通过 low、med、high、control、floating、document 等语义角色选择；外投影去掉原有边缘层，实际 border、内侧高光和焦点分别维护。",
   icons: "图标表达固定含义。使用 Hugeicons，按操作与内容语义选择图形，同一操作保持一致。",
   illustrations: "插画用于帮助理解空状态、引导和说明。此页维护使用与布局规范，插画资产不计入主题 token 数量。",
   motion: "动效帮助说明状态、方向和空间关系。时长与缓动来自主题标尺，是否播放则遵循用户偏好与当前交互需求。",
@@ -32,13 +32,13 @@ export const bestPractices: Partial<Record<TokenCategory, GuidanceRule[]>> = {
     { kind: "dont", text: "用 success、warning、error 表达与其业务状态无关的装饰强调。" },
   ],
   elevation: [
-    { kind: "do", text: "按表面的实际层级选择 shadow-none、shadow-sm、shadow-med 或 shadow-lg。" },
-    { kind: "do", text: "按当前模式使用对应的偏移、模糊、扩散、层数与透明度；浅深色参数分别维护，层数不作为层级编号。" },
+    { kind: "do", text: "按职责选择 shadow-control、shadow-sm、shadow-med、surface-floating、shadow-floating 或 shadow-document；嵌入内容保持无投影。" },
+    { kind: "do", text: "按当前模式使用对应的偏移、模糊、扩散、层数与透明度；浅色黑色投影透明度为 Craft 参考值的 75%，深色保留参考值，几何参数保持对应，层数不作为层级编号。" },
     { kind: "do", text: "一个表面只选一档悬浮阴影，重叠时让上层表面的等级更高。" },
-    { kind: "do", text: "1px 实际边框与投影独立：通用卡片、按钮与弹层使用 border border-border，分隔线使用 bg-divider，浅色为 black / 8%；笔记集合卡片与快速记录输入面板使用 border-border-subtle，浅色为 black / 6%。不叠加透明度，也不在投影里混入外缘。" },
+    { kind: "do", text: "1px 布局边框与投影独立：通用卡片、按钮使用 border border-border，笔记卡片和快速记录输入面板使用 border-border-subtle。浮层通过 surface-floating 组合 high 与独立轮廓，深色为黑色 12% 外缘 + 白色 4% 内缘；焦点另行维护。" },
     { kind: "do", text: "焦点使用统一的 focus-visible:focus-ring：1px solid、neutral-900 / 8%，偏移为描边宽度的负值（默认 -1px），绘制在控件内部；状态内环单独选择。" },
     { kind: "dont", text: "让普通嵌入内容无缘由地使用最高等级阴影。" },
-    { kind: "dont", text: "叠加多档悬浮阴影或用阴影模拟装饰边框；边框使用 border 角色。" },
+    { kind: "dont", text: "叠加多档悬浮阴影或把装饰边缘塞入基础阴影标尺；浮层轮廓由 surface-edge 角色独立组合。" },
   ],
   motion: [
     { kind: "do", text: "高频局部反馈优先 fast，较明显的空间进入与退出再选择 medium 或 slow。" },
@@ -79,7 +79,7 @@ export const bestPractices: Partial<Record<TokenCategory, GuidanceRule[]>> = {
 export const usage: Partial<Record<TokenCategory, string>> = {
   all: '<section className="bg-surface text-primary">\n  <h2 className="type-heading-2">标题</h2>\n  <p className="type-body text-secondary">说明内容</p>\n</section>',
   colors: '<div className="bg-surface text-primary border border-border">\n  <p className="text-accent">强调文字</p>\n  <span className="bg-warning-muted text-warning">需要留意的状态</span>\n</div>',
-  elevation: '<div className="bg-popover rounded-container border border-border shadow-lg">\n  弹层：投影与表面描边独立\n</div>',
+  elevation: '<div className="bg-popover rounded-container border surface-floating">\n  弹层：投影与独立轮廓组合\n</div>',
   icons: 'import { HugeiconsIcon } from "@hugeicons/react";\nimport Search01Icon from "@hugeicons/core-free-icons/Search01Icon";\nimport { Button } from "../components/button";\n\n<Button variant="ghost" size="icon" aria-label="搜索笔记">\n  <HugeiconsIcon icon={Search01Icon} aria-hidden="true" className="size-4 text-icon-primary" />\n</Button>',
   motion: '<div className="transition-opacity duration-fast ease-standard">\n  状态变化时使用主题时长与缓动\n</div>',
   shape: '<Card className="rounded-card">默认 20px 模块卡片</Card>\n<Button className="rounded-full">胶囊按钮</Button>\n<Input className="rounded-control" placeholder="全圆角输入" />\n<InputGroup className="rounded-control">单行复合输入</InputGroup>\n<Textarea className="rounded-textarea" placeholder="默认 12px 多行输入" />\n<SelectContent className="rounded-select-popover">默认 20px Select 弹层</SelectContent>\n<PopoverContent className="rounded-popover">默认 20px 弹层</PopoverContent>\n<SelectItem className="rounded-item px-2" value="default">默认 12px 列表选项</SelectItem>',
@@ -127,10 +127,14 @@ export function FoundationContent({ section }: { section: ContentSection }) {
   if (section === "elevation-levels") return <div className="token-table-wrap"><table className="foundation-table token-table" aria-label="Elevation level guidance">
     <thead><tr><th scope="col">Level</th><th scope="col">When to use</th></tr></thead>
     <tbody>{[
-      ["none · shadow-none", "平面、嵌入的页面内容，例如普通表单与文档区域。"],
-      ["low · shadow-sm", "轻微抬起的小控件，例如移动端圆形导航按钮与滑块，以及 PC 快速记录的默认表面。"],
-      ["med · shadow-med", "通用 Card、Luma 卡片与 PC 快速记录的聚焦表面。"],
-      ["high · shadow-lg", "脱离页面流的菜单、Popover 与对话框；模态遮罩单独定义。"],
+      ["empty · shadow-none", "笔记集合卡片的默认表面、平面与嵌入内容；empty 保留透明过渡层。"],
+      ["control · shadow-control", "Switch 与 Slider 滑块、小型圆形控件；xxs 投影和独立 inner 高光组合。"],
+      ["low · shadow-sm", "轻浮起表面，例如 PC 快速记录的默认输入面板；映射 xs。"],
+      ["med · shadow-med", "通用 Card、Luma 卡片与 PC 快速记录的聚焦表面；映射 sm。"],
+      ["high · surface-floating", "菜单、Popover 与对话框组合 md 和独立浮层轮廓，模态遮罩单独定义。"],
+      ["floating · shadow-floating", "富文本浮动工具条与图表切换工具条；映射 sr，不推断原缩写含义。"],
+      ["document · shadow-document", "回收站笔记预览等独立文档表面；映射 doc，普通全屏编辑器保持平面。"],
+      ["inner · --shadow-scale-inner", "1px 白色内侧高光，仅作为 control 配方的组成层；不替代 border 或键盘焦点。"],
       ["card hover · shadow-card-hover", "PC 笔记卡片的悬停反馈；默认无投影，独立于 low、med、high 三档表面层级。"],
     ].map(([level, text]) => <tr key={level}><th scope="row"><code>{level}</code></th><td>{text}</td></tr>)}</tbody>
   </table></div>;

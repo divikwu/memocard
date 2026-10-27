@@ -52,31 +52,50 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Inline: Story = { play: async ({ canvasElement, args }) => {
-  const canvas = within(canvasElement);
-  const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
-  await expect(field).toHaveTextContent("");
-  await userEvent.type(field, "把想到的事情记下来 #工作");
-  await userEvent.keyboard("{Escape}");
-  await userEvent.click(canvas.getByRole("button", { name: "记录" }));
-  await waitFor(() => expect(args.onRecorded).toHaveBeenCalledOnce());
-  await expect(field).toHaveTextContent("");
-  await expect(canvas.getByRole("region", { name: "已保存记录" })).toHaveTextContent("把想到的事情记下来 #工作");
-} };
+export const Inline: Story = {};
+
+export const InlineRegression: Story = {
+  ...Inline,
+  tags: ["!dev", "!autodocs"],
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
+    await expect(field).toHaveTextContent("");
+    await userEvent.type(field, "把想到的事情记下来 #工作");
+    await userEvent.keyboard("{Escape}");
+    await userEvent.click(canvas.getByRole("button", { name: "记录" }));
+    await waitFor(() => expect(args.onRecorded).toHaveBeenCalledOnce());
+    await expect(field).toHaveTextContent("");
+    await expect(canvas.getByRole("region", { name: "已保存记录" })).toHaveTextContent("把想到的事情记下来 #工作");
+  },
+};
 export const Dark: Story = { globals: { theme: "dark" } };
 export const Disabled: Story = { args: { disabled: true } };
-export const SaveFailure: Story = { parameters: { captureFailure: true }, play: async ({ canvasElement }) => {
-  const canvas = within(canvasElement);
-  const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
-  await expect(field).toHaveTextContent("");
-  await userEvent.type(field, "这条记录会保留");
-  await userEvent.click(canvas.getByRole("button", { name: "记录" }));
-  await expect(await canvas.findByRole("alert")).toHaveTextContent("示例保存失败");
-  await expect(field).toHaveTextContent("这条记录会保留");
-} };
+export const SaveFailure: Story = {
+  parameters: { captureFailure: true },
+};
+
+export const SaveFailureRegression: Story = {
+  ...SaveFailure,
+  tags: ["!dev", "!autodocs"],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
+    await expect(field).toHaveTextContent("");
+    await userEvent.type(field, "这条记录会保留");
+    await userEvent.click(canvas.getByRole("button", { name: "记录" }));
+    await expect(await canvas.findByRole("alert")).toHaveTextContent("示例保存失败");
+    await expect(field).toHaveTextContent("这条记录会保留");
+  },
+};
 export const Docked: Story = { args: { docked: true } };
 export const LongTag: Story = {
   args: { tags: [`project/${"longlabel".repeat(12)}`] },
+};
+
+export const LongTagRegression: Story = {
+  ...LongTag,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement, args }) => {
     await expect(await within(canvasElement).findByRole("textbox", { name: "快速输入内容" })).toHaveTextContent("");
     await userEvent.click(within(canvasElement).getByRole("button", { name: "选择标签" }));
@@ -96,6 +115,11 @@ export const ColoredInlineTag: Story = {
     localStorage.setItem(key, JSON.stringify({ "工作": "green" }));
     return () => { if (previous === null) localStorage.removeItem(key); else localStorage.setItem(key, previous); };
   },
+};
+
+export const ColoredInlineTagRegression: Story = {
+  ...ColoredInlineTag,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const field = await within(canvasElement).findByRole("textbox", { name: "快速输入内容" });
     await expect(field).toHaveTextContent("");

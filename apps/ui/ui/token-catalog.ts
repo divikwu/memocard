@@ -3,7 +3,7 @@ import themeCSS from "./theme.css?raw";
 export const categories = [
   { id: "all", name: "all tokens", title: "All tokens", story: "ui-theme", description: "MemoCard 的基础 token 目录：查阅颜色、间距、尺寸、圆角、阴影、字体与动效定义。" },
   { id: "colors", name: "colors", title: "Colors", story: "ui-colors", description: "保留 Astryx 语义命名，颜色主要按浅深色模式引用 Tailwind 基础色板；投影基色分别适配项目的浅深色背景。" },
-  { id: "elevation", name: "elevation", title: "Elevation", story: "ui-elevation", description: "低、中、高三档投影：浅色沿用当前柔和参数，深色针对本项目背景校准；输入聚焦与表面描边独立维护。" },
+  { id: "elevation", name: "elevation", title: "Elevation", story: "ui-elevation", description: "参考 Craft 的八档浅深色阴影标尺，按控件、内容卡片、浮层与文档表面分配；描边和焦点独立维护。" },
   { id: "icons", name: "icons", title: "Icons", story: "ui-icons", description: "项目使用的 Hugeicons 图形、语义用途与 Tailwind 用法。" },
   { id: "illustrations", name: "illustrations", title: "Illustrations", story: "ui-illustrations", description: "插画的使用场景、风格与布局规范，不计入基础 token 数量。" },
   { id: "motion", name: "motion", title: "Motion", story: "ui-motion", description: "统一的时长和缓动标尺。减少动态效果时，主题将有效时长设置为 0ms。" },
@@ -52,6 +52,7 @@ const projectColors = new Set([
   "--color-background-sidebar",
   "--color-text-control-secondary",
   "--color-border-subtle",
+  "--color-border-floating",
   "--color-success-fill", "--color-warning-fill", "--color-error-fill",
   "--color-on-accent-overlay-hover", "--color-on-accent-overlay-pressed",
 ]);
@@ -71,7 +72,7 @@ function colorGroupOf(name: string) {
 function categoryOf(name: string): Exclude<TokenCategory, "all"> {
   if (name === "--spacing-reading-flow") return "typography";
   if (name.startsWith("--color-icon-")) return "icons";
-  if (name.startsWith("--shadow-") || name.startsWith("--blur-") || name === "--color-shadow") return "elevation";
+  if (name.startsWith("--surface-edge-") || name.startsWith("--shadow-") || name.startsWith("--blur-") || name === "--color-shadow") return "elevation";
   if (name.startsWith("--color-")) return "colors";
   if (name.startsWith("--duration-") || name.startsWith("--ease-")) return "motion";
   if (name.startsWith("--radius-") || name.startsWith("--focus-") || name === "--border-width") return "shape";

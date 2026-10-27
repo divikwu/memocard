@@ -25,9 +25,11 @@ const baseSections: Section[] = [
   { id: "border", title: "Border Tokens", rows: select("--border-") },
   { id: "focus", title: "Focus Tokens", rows: select("--focus-") },
   { id: "radius", title: "Radius Scale", rows: select("--radius-") },
-  { id: "shadows", title: "Elevation Scale", description: "浅色三档均为 2 层，以不同偏移、模糊、负扩散和透明度区分表面层级。深色 low、med 为 1 层，high 为 2 层，保留各模式独立参数。1px 表面边界使用独立描边。", rows: tokens.filter(token => ["--shadow-low", "--shadow-med", "--shadow-high"].includes(token.name)) },
-  { id: "card-hover-shadow", title: "Card Hover", description: "PC 笔记卡片默认无投影，悬停时使用独立的 shadow-card-hover；仅定义阴影，缩放与动效参数单独维护。", rows: tokens.filter(token => token.name === "--shadow-card-hover") },
-  { id: "input-shadow", title: "Input Focus", description: "独立输入聚焦投影保留自身参数。PC 快速记录统一使用三档表面投影：默认 shadow-low（shadow-sm），聚焦 shadow-med；H5 弹窗保持无投影。键盘焦点继续使用独立描边。", rows: tokens.filter(token => token.name === "--shadow-input-focus") },
+  { id: "shadow-scale", title: "Shadow Scale", description: "参考 Craft Web 的 empty、xxs、xs、sm、md、sr、doc、inner 八档浅深色标尺。外投影去掉原有的 1px 边缘层，保留各层几何及透明过渡层；浅色黑色投影透明度为 Craft 参考值的 75%，深色保留参考值。inner 作为独立内侧高光，仅在控件配方中组合。", rows: select("--shadow-scale-") },
+  { id: "shadows", title: "Component Roles", description: "low → xs、med → sm、high → md；control 组合 xxs 与 inner，floating 使用 sr，document 使用 doc。组件按职责选择语义角色，表面 border 和键盘焦点保持独立。", rows: tokens.filter(token => ["--shadow-low", "--shadow-med", "--shadow-high", "--shadow-control", "--shadow-floating", "--shadow-document"].includes(token.name)) },
+  { id: "floating-edge", title: "Floating Surface Edge", description: "surface-floating 组合 high 投影和独立轮廓。浅色沿用普通边框；深色以黑色 12% 外缘和白色 4% 内缘替换白色 10% 描边，保留 1px 透明布局边框。输入、按钮、普通卡片和键盘焦点保持各自角色。", rows: tokens.filter(token => ["--color-border-floating", "--surface-edge-floating"].includes(token.name)) },
+  { id: "card-hover-shadow", title: "Card Hover", description: "PC 笔记卡片默认使用 empty；悬停投影参考 Craft 的 0 10px 20px，浅色 black / 3%，深色按本项目表面调整为 black / 12%。缩放与动效参数单独维护。", rows: tokens.filter(token => token.name === "--shadow-card-hover") },
+  { id: "input-shadow", title: "Input Focus", description: "输入聚焦角色映射到 med。PC 快速记录默认使用 low（shadow-sm），聚焦使用 med；H5 弹窗保持无投影。键盘焦点继续使用独立描边。", rows: tokens.filter(token => token.name === "--shadow-input-focus") },
   { id: "glass-blur", title: "Glass Blur", description: "页面顶部与底部毛玻璃遮罩的背景模糊半径；渐隐高度和表面颜色使用各自 token。", rows: select("--blur-") },
   { id: "state-rings", title: "Control State", description: "以下 2px 内环属于悬停、选中与校验反馈，不属于表面层级，也不用作 1px 装饰边框。", rows: select("--shadow-inset-") },
   { id: "duration", title: "Duration", rows: select("--duration-") },
@@ -49,7 +51,7 @@ function TokenTable({ rows, values, mode, title, showUsage }: { rows: ThemeToken
         <th scope="row"><code>{token.name}</code>{token.projectExtension && <span className="token-interface">项目扩展</span>}{showUsage && token.interfaces.length > 0 && <span className="token-interface">{token.interfaces.join(" · ")}</span>}</th>
         <td>{token.pending ? <span className="token-pending">待配置</span> : isColor(token) ? <><span className="token-color-value"><span aria-hidden="true" className="token-swatch" style={{ backgroundColor: value }} /><code>{value || "读取中…"}</code></span><span className="token-color-definition"><code>{definition}</code></span></>
           : <div className="token-value"><code>{value || "读取中…"}</code>
-            {token.name.startsWith("--shadow-") && <span aria-hidden="true" className="token-shadow-preview" style={{ boxShadow: value }} />}
+            {(token.name.startsWith("--shadow-") || token.name.startsWith("--surface-edge-")) && <span aria-hidden="true" className="token-shadow-preview" style={{ boxShadow: value }} />}
             {token.name.startsWith("--radius-") && <span aria-hidden="true" className="token-radius-preview" style={{ borderRadius: value }} />}
             {token.name.startsWith("--font-family-") && <span className="token-font-preview" style={{ fontFamily: value }}>中文 Aa · MemoCard 0123</span>}
             {token.name.startsWith("--font-size-") && <span className="token-font-preview" style={{ fontSize: value }}>中文 Aa · MemoCard 0123</span>}
@@ -99,7 +101,7 @@ function pageSections(category: TokenCategory, measurements: Measurements, globa
   switch (category) {
     case "all": result = [...colorSections, ...baseSections]; break;
     case "colors": result = colorSections; break;
-    case "elevation": result = [section("shadows"), content("elevation-levels"), section("card-hover-shadow"), section("input-shadow"), section("glass-blur"), { id: "surface-border", title: "Surface Border", description: "普通描边与分隔线使用 --color-border 和 --color-divider：浅色 black / 8%，深色 white / 10%。笔记集合卡片与快速记录输入面板使用 --color-border-subtle：浅色 black / 6%，深色 white / 5%。组件直接使用对应角色，不叠加透明度。1px 实际边框与投影独立组合；错误状态和焦点描边继续使用各自角色。", rows: tokens.filter(token => ["--color-border", "--color-border-subtle", "--color-divider"].includes(token.name)) }, { id: "shadow-color", title: "Shadow Color", description: "浅色三档投影使用不透明 rgb(25 25 25) 基色；深色使用 black 适配本项目背景，各层分别定义透明度。输入聚焦保留自身基色。", rows: tokens.filter(token => token.name === "--color-shadow") }, section("state-rings")]; break;
+    case "elevation": result = [{ id: "components", title: "Light & Dark Preview", content: <p><a href={`/?path=/story/ui-elevation--components&globals=${globalsParam}`} target="_top">打开浅深色阴影标尺与真实组件对照</a></p> }, section("shadow-scale"), section("shadows"), section("floating-edge"), content("elevation-levels"), section("card-hover-shadow"), section("input-shadow"), section("glass-blur"), { id: "surface-border", title: "Surface Border", description: "普通描边与分隔线使用 --color-border 和 --color-divider：浅色 black / 8%，深色 white / 10%。笔记集合卡片与快速记录输入面板使用 --color-border-subtle：浅色 black / 6%，深色 white / 5%。组件直接使用对应角色，不叠加透明度。1px 实际边框与投影独立组合；错误状态和焦点描边继续使用各自角色。", rows: tokens.filter(token => ["--color-border", "--color-border-subtle", "--color-divider"].includes(token.name)) }, { id: "shadow-color", title: "Shadow Color", description: "外投影使用统一阴影基色；浅色黑色投影透明度为 Craft 参考值的 75%，深色保留参考值。inner 使用白色内侧高光：浅色 88%，深色 4%；不取代组件边框或焦点。", rows: tokens.filter(token => token.name === "--color-shadow") }, section("state-rings")]; break;
     case "icons": result = [content("icon-usage")]; break;
     case "illustrations": result = [content("illustration-scenarios"), content("illustration-guidelines"), content("illustration-placement")]; break;
     case "motion": result = [section("duration"), section("easing"), content("motion-helps"), content("motion-hurts"), content("motion-preferences")]; break;
@@ -205,7 +207,7 @@ export function TokenPage({ category }: { category: TokenCategory }) {
       {section.rows && <TokenTable rows={section.rows} values={measurements.values} mode={mode} showUsage={category !== "all"} title={section.title} />}
       {section.content}
     </section>)}
-      <footer className="token-note">语义命名与尺度参考 <a href={`https://github.com/facebook/astryx/tree/${sourceRef}`} target="_blank" rel="noopener noreferrer">Astryx Neutral + Core · {sourceRef.slice(0, 7)}</a>；颜色主要引用 <a href="https://tailwindcss.com/docs/colors" target="_blank" rel="noopener noreferrer">Tailwind 基础色板</a>，三档浅色投影沿用 Notion BasSm／BasMd／BasLg 实测参数，深色根据本项目背景校准；视觉配置采用 <a href="https://ui.shadcn.com/create?preset=b5F2gjwQRE" target="_blank" rel="noopener noreferrer">shadcn Luma · b5F2gjwQRE</a>，正文默认使用 Noto Sans，标题默认跟随正文，图标使用 Hugeicons，圆角基准为 8px；当前预览由工具栏选择字体与圆角。brand 待配置；自适应字号与 domain 覆盖尚未接入。</footer>
+      <footer className="token-note">语义命名与尺度参考 <a href={`https://github.com/facebook/astryx/tree/${sourceRef}`} target="_blank" rel="noopener noreferrer">Astryx Neutral + Core · {sourceRef.slice(0, 7)}</a>；颜色主要引用 <a href="https://tailwindcss.com/docs/colors" target="_blank" rel="noopener noreferrer">Tailwind 基础色板</a>，阴影标尺参考 <a href="https://docs.craft.do/static/css/vendor-excalidraw.css.tkYuNB5W.css" target="_blank" rel="noopener noreferrer">Craft Web 样式实测 · 2026-10-27</a>，浅色黑色投影透明度降至参考值的 75%，深色标尺保留参考值，外投影边缘与组件描边分开；卡片 hover 深色透明度单独校准；视觉配置采用 <a href="https://ui.shadcn.com/create?preset=b5F2gjwQRE" target="_blank" rel="noopener noreferrer">shadcn Luma · b5F2gjwQRE</a>，正文默认使用 Noto Sans，标题默认跟随正文，图标使用 Hugeicons，圆角基准为 8px；当前预览由工具栏选择字体与圆角。brand 待配置；自适应字号与 domain 覆盖尚未接入。</footer>
     </div>
   </main>;
 }

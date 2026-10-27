@@ -48,6 +48,11 @@ export const Working: Story = { args: { working: true } };
 export const LongNames: Story = { args: { vaultName: "用于验证中文和英文字体以及长名称截断的笔记库 MemoCard Workspace", tags: [...tags, { name: "这是一个用于验证长标签名称截断和完整可访问名称的标签", count: 123456 }] } };
 export const NestedAlignment: Story = {
   args: { vaultId: "ui-sidebar-alignment-story", tag: "生活/咖啡", tags: [{ name: "生活", count: 8 }, { name: "生活/咖啡", count: 3 }, { name: "生活/植物", count: 5 }] },
+};
+
+export const NestedAlignmentRegression: Story = {
+  ...NestedAlignment,
+  tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const page = within(canvasElement.ownerDocument.body);
     const mobile = window.innerWidth < 768;
@@ -115,6 +120,11 @@ export const NestedAlignment: Story = {
 };
 export const MobileVaultGeometry: Story = {
   tags: ["mobile"], globals: { viewport: { value: "mobile", isRotated: false } },
+};
+
+export const MobileVaultGeometryRegression: Story = {
+  ...MobileVaultGeometry,
+  tags: ["mobile", "!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     if (window.innerWidth >= 768) return;
     const page = within(canvasElement.ownerDocument.body);

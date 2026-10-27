@@ -90,15 +90,13 @@ it('returns from a missing note without offering an invalid retry',async()=>{
   fireEvent.click(back);
   expect(await screen.findByRole('heading',{name:'所有笔记'})).toBeTruthy();
 });
-it('keeps diagnostic reasons and paths in an expandable section',async()=>{
+it('shows diagnostic reasons and paths directly',async()=>{
   await show('combined');
   const title=await screen.findByText('部分草稿无法读取');
   const alert=title.closest('[role="status"]')!;
-  const details=alert.querySelector('details')!;
-  expect(details.open).toBe(false);
-  expect(within(alert as HTMLElement).getByText('查看详情')).toBeTruthy();
-  fireEvent.click(within(alert as HTMLElement).getByText('查看详情'));
-  expect(details.open).toBe(true);
+  expect(alert.querySelector('details, summary')).toBeNull();
+  expect(within(alert as HTMLElement).queryByText('查看详情')).toBeNull();
+  expect(within(alert as HTMLElement).getByText('此草稿无法读取或格式无效，原文件已保留，可从此路径检查或备份。')).toBeTruthy();
   expect(within(alert as HTMLElement).getByText(/模拟目录/)).toBeTruthy();
 });
 it('refreshes a changed draft in the dialog and retains it if refreshing fails',async()=>{
@@ -304,7 +302,8 @@ it('shows an incomplete first authorization with diagnostics and can select agai
   const heading=await screen.findByRole('heading',{name:'文件夹授权未完成'});
   const card=heading.closest('[data-slot="empty"]')!;
   expect(screen.queryByText('打开你的笔记文件夹')).toBeNull();
-  expect(screen.getByText('模拟：未授予文件夹访问权限').closest('details')?.open).toBe(false);
+  expect(within(card as HTMLElement).getByText(/模拟：未授予文件夹访问权限/).closest('[data-slot="empty-description"]')).not.toBeNull();
+  expect(card.querySelector('details, summary')).toBeNull();
   expect(within(card as HTMLElement).getByRole('button',{name:'重新选择文件夹'}).className).toContain('bg-accent-bg');
   mock.retry();fireEvent.click(within(card as HTMLElement).getByRole('button',{name:'重新选择文件夹'}));
   expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
@@ -403,21 +402,17 @@ it('uses a new file request after a failed deep-link prefetch and displays loadi
 });
 
 
-it('guides partial reads with adjacent outline actions and honest details',async()=>{
+it('guides partial reads with visible statistics and honest recovery instructions',async()=>{
   const mock=await show('partial');
   const list=await screen.findByRole('list',{name:'笔记列表'});
   const before=mock.snapshot();
   const retry=screen.getByRole('button',{name:'重新读取'});
-  const details=screen.getByRole('button',{name:'查看详情'});
-  expect(retry.parentElement).toBe(details.parentElement);
   expect(retry.className).toContain('border-border');
-  expect(details.className).toContain('border-border');
+  expect(screen.queryByRole('button',{name:'查看详情'})).toBeNull();
   expect(screen.getByText(/已加载的笔记仍可使用/)).toBeTruthy();
-  fireEvent.click(details);
-  expect(details.getAttribute('aria-expanded')).toBe('true');
   expect(screen.getByText(/当前未提供具体文件和失败原因/)).toBeTruthy();
   expect(screen.getByText(/确认笔记文件夹可访问/)).toBeTruthy();
-  expect(screen.getByText('3', {selector:'dd'})).toBeTruthy();
+  expect(screen.getByText(/已读入\s*2\s*篇笔记，待读取\s*3\s*项，需要处理\s*0\s*项/)).toBeTruthy();
   expect(screen.queryByText(/iCloud/)).toBeNull();
   expect(screen.getByRole('list',{name:'笔记列表'})).toBe(list);
   expect(mock.snapshot()).toEqual(before);

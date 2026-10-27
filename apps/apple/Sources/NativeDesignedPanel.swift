@@ -5,6 +5,7 @@ import UIKit
 
 /// Native presentation with the same content hierarchy as the shared mobile components.
 struct NativeDesignedPanel: View {
+    @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var host: NativeHost
     @ObservedObject private var surfaceState: NativeSurfaceState
     @ObservedObject private var appearance: NativeSurfaceAppearanceState
@@ -60,6 +61,7 @@ struct NativeDesignedPanel: View {
         })
     }
     private var query: String { section("query")?.fields?.first.map { binding($0).wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines) } ?? "" }
+    private var captureShadow: NativeElevation.Shadow { NativeElevation.capture(dark: colorScheme == .dark) }
     private func content(extraTextHeight: CGFloat = 0) -> some View {
         VStack(spacing: 16) {
             if id == "search" {
@@ -102,7 +104,7 @@ struct NativeDesignedPanel: View {
                         .frame(height: displayedHeight)
                         .clipShape(RoundedRectangle(cornerRadius: 24))
                         .overlay(RoundedRectangle(cornerRadius: 24).stroke(color("border"), lineWidth: 1))
-                        .shadow(color: .black.opacity(0.12), radius: 24, y: 8)
+                        .shadow(color: .black.opacity(captureShadow.opacity), radius: captureShadow.radius, x: captureShadow.x, y: captureShadow.y)
                         .overlay(alignment: .top) {
                             Button { withAnimation(.easeOut(duration: 0.22)) { captureExpanded.toggle() } } label: {
                                 Capsule().fill(.secondary.opacity(0.3)).frame(width: 36, height: 5)

@@ -33,7 +33,7 @@ export type AppViewState = {
   needsPermission: boolean; unsupportedBrowser: boolean; localWebReconnectRequired: boolean;
   connectionState: boolean; detailReadFailed: boolean; canRetryDetail: boolean;
   retryableError: boolean; canRefresh: boolean; pinRetryDisabled: boolean;
-  readCoverage: { open: boolean; onOpenChange: (open: boolean) => void; rereading: boolean; onReread: () => Promise<void> };
+  readCoverage: { rereading: boolean; onReread: () => Promise<void> };
   listTimeout: false | "initial" | "refresh" | null; canCreate: boolean;
   sidebarOpen: boolean; onSidebarOpenChange: (open: boolean) => void;
   menuOpen: boolean; onMenuOpenChange: (open: boolean) => void;
@@ -111,7 +111,6 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const [notes, setNotes] = useState<Note[]>([]);
   const loadedVaultId = useRef<string | null>(null);
   const loadedListKey = useRef<string | null>(null);
-  const [readDetailsOpen, setReadDetailsOpen] = useState(false);
   const [rereading, setRereading] = useState(false);
   const [listTimeout, setListTimeout] = useState<"initial" | "refresh" | null>(null);
   useLayoutEffect(() => {
@@ -797,7 +796,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     localWebReconnectRequired, connectionState, detailReadFailed, canRetryDetail,
     retryableError, canRefresh: isConnectedClient && !loading && !working,
     pinRetryDisabled: pinWorking || refreshingPages || switchingVault,
-    readCoverage: { open: readDetailsOpen, onOpenChange: setReadDetailsOpen, rereading,
+    readCoverage: { rereading,
       onReread: async () => { setRereading(true); setError(""); try { await refresh(true); } finally { setRereading(false); } } },
     listTimeout: listTimeoutVisible || null, canCreate,
     sidebarOpen, onSidebarOpenChange: handleSidebarOpenChange, menuOpen, onMenuOpenChange: setMenuOpen, scrollContainer,
