@@ -816,7 +816,7 @@
 
 @media (forced-colors: active) {
   :root, .ui-theme {
-    --focus-outline-color: Highlight;
+    --focus-outline-color: CanvasText;
     --color-border-floating: CanvasText;
   }
 }

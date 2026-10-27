@@ -65,7 +65,7 @@ z-index 决定实际的前后顺序，阴影等级表达感知高度；嵌套菜
 
 阴影基色由主题的 `--color-shadow` 拥有，组件不使用 `shadow-red-500` 等自由染色类。工具类能共存不代表实际阴影支持染色，目录不把该变量宣传为颜色 utility 接口。几何与明暗透明度仍在基础尺度中维护。
 
-键盘焦点由 `--focus-outline-*` 独立维护：2px 实线、向外偏移 2px，浅色使用不透明 `neutral-600`，深色使用不透明 `neutral-400`。强制颜色模式使用系统 `Highlight` 焦点色，并将浮层布局边框设为 `CanvasText`，在浏览器移除投影后保留可辨识的边界；不使用投影作为唯一焦点提示。
+键盘焦点由 `--focus-outline-*` 独立维护：2px 实线、向外偏移 2px，浅色使用不透明 `neutral-600`，深色使用不透明 `neutral-400`。强制颜色模式的焦点与浮层布局边框使用系统前景色 `CanvasText`，与 `Canvas` 背景配对，在浏览器移除投影后保留可辨识的边界；不使用投影作为唯一焦点提示。
 
 输入焦点统一由 PreviewModeProvider（产品外观、Preview 与 Storybook 的共同入口）安装页面级输入方式检测。整个 document 只维护一组 keydown / pointerdown / focusin 捕获监听，兼容嵌套 provider 和 portal；最后一个 provider 卸载后清理监听并恢复原属性。鼠标与触控不显示焦点框，Tab、选择器选项导航、单行提交与 Escape 切换为键盘方式；文本输入、IME、文本光标移动和多行换行保留当前方式。单行、多行、复合、搜索、选择、富文本弹层及自动聚焦字段共享同一规则，复合字段只由容器绘制焦点框，校验边框与错误 ring 独立保留。快速记录的 contenteditable 保留 `data-slot=input-group-control`，pointer 聚焦继续增强 `input-focus` 投影。不能单靠 `:focus-visible` 区分输入方式，因为文本编辑区通过鼠标聚焦也可能匹配。
 

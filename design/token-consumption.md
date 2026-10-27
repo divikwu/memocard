@@ -63,7 +63,7 @@ z-index 管理前后顺序，阴影等级表达感知高度；嵌套菜单与弹
 
 `--surface-edge-floating` 只补充深色 white / 4% 内侧高光，浅色为透明；`--color-border-floating` 在常规浅深色下均为透明，保留原 1px 布局尺寸，避免与投影内置外缘叠加。平面笔记卡片、移动端无投影输入面板保留弱边框，交互状态和键盘焦点独立。原生 `NativeElevation` 由 SwiftUI / UIKit 消费，浅色采用原生深色基准的 75%，保留快速记录向下和抽屉向左、随进度变化的参数。
 
-键盘焦点使用独立的 `--focus-outline-*`：2px 实线、向外偏移 2px，浅色为不透明 `neutral-600`，深色为不透明 `neutral-400`。强制颜色模式改用系统 `Highlight`，浮层布局边框使用 `CanvasText`，使浏览器清除投影后仍有边界。焦点与投影分别验证。
+键盘焦点使用独立的 `--focus-outline-*`：2px 实线、向外偏移 2px，浅色为不透明 `neutral-600`，深色为不透明 `neutral-400`。强制颜色模式的焦点与浮层布局边框改用系统前景色 `CanvasText`，与 `Canvas` 背景配对，使浏览器清除投影后仍有边界。焦点与投影分别验证。
 
 控件白色 1px 内侧高光由 `--surface-highlight-control` 单独维护，浅色 / 深色透明度为 88% / 4%，不属于外投影高度。笔记卡片 hover 使用 `--shadow-card-hover → low → scale-2`，输入聚焦使用 `--shadow-input-focus → med → scale-3`；状态角色复用统一尺度，缩放独立维护。完整浅深色标尺与可交互组件示例见 [Elevation Storybook](../apps/ui/ui/stories/elevation.stories.tsx)。该示例仅使用内存与静态内容，不接入真实笔记库；Web CSS 接入不代表原生系统表面或全部设备已验收。
 

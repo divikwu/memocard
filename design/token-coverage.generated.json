@@ -8640,7 +8640,7 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (forced-colors: active) / :root, .ui-theme",
-          "value": "Highlight",
+          "value": "CanvasText",
           "line": 819
         }
       ]

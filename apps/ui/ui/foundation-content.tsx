@@ -37,7 +37,7 @@ export const bestPractices: Partial<Record<TokenCategory, GuidanceRule[]>> = {
     { kind: "do", text: "五档以多层投影表达递增高度，浅深色共用几何结构、分别设置各层透明度。等级 0 为六层透明值；1 使用两层投影与 1px 外缘；2–4 使用五层投影与 1px 外缘，其中透明占位层支持过渡。" },
     { kind: "do", text: "一个表面只选一档悬浮阴影。z-index 决定前后顺序，阴影等级表达感知高度；嵌套菜单与弹层可以复用同一等级。" },
     { kind: "do", text: "浮起表面的 1px 装饰外缘由阴影提供，保留透明布局边框，避免重复叠加。平面卡片与移动端无投影面板保留实际边框；浮层组合 surface-floating shadow-high，深色额外保留白色 4% 内侧高光。输入、按钮的状态边框及键盘焦点独立维护。" },
-    { kind: "do", text: "输入控件通过页面级输入方式检测区分指针与键盘；输入文字不会切换导航模式，Tab 与选项导航显示焦点框。键盘焦点使用统一的 focus-visible:focus-ring：2px solid、向外偏移 2px；浅色使用不透明 neutral-600，深色使用不透明 neutral-400。强制颜色模式使用系统 Highlight，浮层边框使用 CanvasText；焦点不依赖阴影。" },
+    { kind: "do", text: "输入控件通过页面级输入方式检测区分指针与键盘；输入文字不会切换导航模式，Tab 与选项导航显示焦点框。键盘焦点使用统一的 focus-visible:focus-ring：2px solid、向外偏移 2px；浅色使用不透明 neutral-600，深色使用不透明 neutral-400。强制颜色模式的焦点与浮层边框使用系统前景色 CanvasText，与 Canvas 背景配对；焦点不依赖阴影。" },
     { kind: "do", text: "嵌入式移动面板、表格与图片工具条保持平面；反色 Tooltip 通过实心底色与箭头区分内容。这些例外不因位置悬浮就自动增加投影。" },
     { kind: "dont", text: "让普通嵌入内容无缘由地使用最高等级阴影，或把预留 shadow-inset 状态变量当作已开放的组件工具类。" },
     { kind: "dont", text: "用 shadow-red-500 等工具类表达彩色投影；本项目的阴影颜色由主题 --color-shadow 统一拥有，状态与强调通过独立角色表达。" },
