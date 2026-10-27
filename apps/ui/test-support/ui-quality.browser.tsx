@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "vitest";
+import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { commands, page, userEvent } from "vitest/browser";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
 import { ComponentDocs } from "../ui/ComponentDocs";
@@ -7,6 +8,7 @@ import { Button } from "../ui/components/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/components/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/components/dialog";
 import { NoteProperties } from "../ui/business/NoteProperties";
+import { PropertyConfirmationPopup } from "../ui/business/property-confirmation";
 import { PreviewModeProvider } from "../ui/preview-mode";
 import { loadPreviewFonts } from "../ui/preview-fonts";
 import { useNoteImage } from "../src/use-note-image";
@@ -24,9 +26,32 @@ afterEach(async () => {
   document.documentElement.removeAttribute("style");
 });
 
+test("animated property confirmation reaches the viewport edge after opening completes", async () => {
+  await page.viewport(320, 900);
+  await commands.setReducedMotion("no-preference");
+  let finishOpening = () => {};
+  const opened = new Promise<void>(resolve => { finishOpening = resolve; });
+  const view = render(<PreviewModeProvider mode="light"><AlertDialog.Root onOpenChangeComplete={open => { if (open) finishOpening(); }}>
+    <AlertDialog.Trigger render={<Button />}>打开属性确认</AlertDialog.Trigger>
+    <AlertDialog.Portal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay" />
+      <PropertyConfirmationPopup className="note-property-confirm surface-floating" style={{ transitionDuration: "1.5s" }}>
+        <AlertDialog.Title>删除属性？</AlertDialog.Title><AlertDialog.Description>验证普通入场动画结束后的布局。</AlertDialog.Description>
+        <AlertDialog.Close render={<Button />}>取消</AlertDialog.Close>
+      </PropertyConfirmationPopup>
+    </AlertDialog.Portal>
+  </AlertDialog.Root></PreviewModeProvider>);
+  await userEvent.click(within(view.container).getByRole("button", { name: "打开属性确认" }));
+  const popup = await within(document.body).findByRole("alertdialog");
+  expect(parseFloat(getComputedStyle(popup).transitionDuration)).toBe(1.5);
+  await opened;
+  expect(popup.hasAttribute("data-starting-style")).toBe(false);
+  expect(Math.abs(popup.getBoundingClientRect().bottom - innerHeight)).toBeLessThan(1);
+}, 10_000);
+
 for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const) {
   test(`property editing and confirmation surfaces stay consistent at ${width}px in ${theme}`, async () => {
     await page.viewport(width, 900);
+    await commands.setReducedMotion("reduce");
     const changes: unknown[] = [];
     const release = setStorybookRequestHandler(operation => {
       if (operation === "getPropertyLabels") return { labels: {}, contentHash: "labels" };
