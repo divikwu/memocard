@@ -53,7 +53,7 @@ function DialogContent({
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay data-ui-theme={theme} />
+      <DialogOverlay className={theme ? "ui-theme" : undefined} data-ui-theme={theme} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         data-ui-theme={theme}
