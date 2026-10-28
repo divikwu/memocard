@@ -33,7 +33,7 @@ it("keeps file count units, zero values, full vault names and the same index tim
   expect(details.querySelector("time")?.getAttribute("dateTime")).toBe("2026-10-23T08:30:00Z");
   summary.focus();
   await user.tab();
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "随机搭配" }));
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "恢复默认风格" }));
   model.status!.coverage.indexedAt = "invalid";
   view.rerender(<WebSettings state={model} />);
   expect(within(details).getByText("时间未知")).toBeTruthy();

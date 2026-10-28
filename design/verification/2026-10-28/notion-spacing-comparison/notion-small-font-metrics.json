@@ -1,0 +1,22 @@
+[
+  {
+    "font": "14px",
+    "lineHeight": "21px",
+    "text": "第一段正文。观察文字起点、行高，以及段落上下的留白。"
+  },
+  {
+    "font": "26.25px",
+    "lineHeight": "34.125px",
+    "text": "一级标题"
+  },
+  {
+    "font": "21px",
+    "lineHeight": "27.3px",
+    "text": "二级标题"
+  },
+  {
+    "font": "17.5px",
+    "lineHeight": "22.75px",
+    "text": "三级标题"
+  }
+]

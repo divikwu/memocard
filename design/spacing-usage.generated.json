@@ -201,8 +201,7 @@
         "apps/ui/ui/components/input-group.tsx",
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/components/sidebar.tsx",
-        "apps/ui/ui/components/tabs.tsx",
-        "apps/ui/ui/web/WebTypographySettings.tsx"
+        "apps/ui/ui/components/tabs.tsx"
       ]
     },
     {

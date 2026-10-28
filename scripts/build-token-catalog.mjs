@@ -56,7 +56,8 @@ export function inspectRuntimeTokens(code, expected, source, format) {
   for (const name of found) if (!expected[name]) throw new Error(`Unregistered runtime token: ${source} ${name}`);
   for (const [name, token] of Object.entries(expected)) {
     if (!found.has(name)) throw new Error(`Missing runtime output: ${source} ${name}`);
-    if (!({ fontFamily: [null], number: [null], dimension: ['px', 'em', 'rem'] }[token.type]?.includes(token.unit))) throw new Error(`Invalid runtime token type/unit: ${name}`);
+    const units = token.type === 'dimension' && Array.isArray(token.unit) ? token.unit : [token.unit];
+    if (!units.length || new Set(units).size !== units.length || units.some(unit => !({ fontFamily: [null], number: [null], dimension: ['px', 'em', 'rem'] }[token.type]?.includes(unit)))) throw new Error(`Invalid runtime token type/unit: ${name}`);
   }
 }
 
@@ -252,7 +253,7 @@ export async function buildTokenCatalog({ root = repository, registryPath = 'des
     '## 运行时输出（偏好与原生安全区）', '',
     'Web 偏好默认选项、校验和存储由 preferences 拥有；数值转换与派生公式由输出源码拥有。与静态 CSS 同名的字体项为明确的偏好覆盖。原生安全区由 WebView 的 scrollInsets 写入，消费端 CSS 以 0px 回退。检查静态字符串键和 setProperty 的字面量参数，Swift 只提取 callAsyncJavaScript 的普通字符串，不解释任意动态代码。', '',
     '| 名称 | 类型与单位 | 契约 | 默认或回退来源 | 输出与派生 |', '| --- | --- | --- | --- | --- |',
-    ...runtime.map(token => `| \`${token.name}\` | ${token.type} / ${token.unit ?? '无单位'} | ${token.contract} | ${link(token.defaults)} | ${link(token.source)} |`), '',
+    ...runtime.map(token => `| \`${token.name}\` | ${token.type} / ${Array.isArray(token.unit) ? token.unit.join(' / ') : token.unit ?? '无单位'} | ${token.contract} | ${link(token.defaults)} | ${link(token.source)} |`), '',
     '## 上游运行时变量', '',
     'Base UI Positioner 提供浮层可用空间、锚点宽度与变换原点，不能当作全局固定默认值。逐项核对锁定安装包的声明；组件仅在 Positioner 后代作用域消费。', '',
     '| 名称 | 类型 | 契约 | 上游声明 |', '| --- | --- | --- | --- |',

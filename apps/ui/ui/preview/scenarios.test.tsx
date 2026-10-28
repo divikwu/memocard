@@ -55,7 +55,7 @@ async function show(id: string) {
 
 it("retains every shared scenario identity while providing instructions for the new view", () => {
   expect(scenarios.map(scenario => scenario.id)).toEqual(sharedScenarios.map(scenario => scenario.id));
-  expect(new Set(scenarios.map(scenario => scenario.id)).size).toBe(48);
+  expect(new Set(scenarios.map(scenario => scenario.id)).size).toBe(50);
   expect(scenarios.filter(scenario => scenario.group === "空状态")).toHaveLength(3);
   expect(getScenario("date-invalid").instructions).toContain("MM/DD/YYYY");
 });

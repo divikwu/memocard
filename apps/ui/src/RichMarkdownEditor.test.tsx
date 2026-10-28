@@ -6,6 +6,7 @@ import { RichMarkdownEditor, type RichEditorProps } from '@ui/business/RichMarkd
 import userEvent from '@testing-library/user-event';
 import { canWrapCallout, unwrapCallout, wrapCallout } from './rich-callout';
 import { applyImageTransaction, arrangeImageRows, imageMoveTransaction, setImageWidths, splitImageRow } from './rich-image-layout';
+import { blockSpacingBody } from '../ui-state-fixtures/block-spacing';
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
 vi.mock('./bridge', () => ({ request: vi.fn() }));
 // Compile the shared picker before timing editor interactions on cold CI workers.
@@ -156,7 +157,9 @@ it('filters common emoji, applies one immediately and supports removing and addi
  fireEvent.click(screen.getByRole('button',{name:'更改标注图标'}));
  await screen.findByRole('textbox',{name:'搜索 Emoji'});fireEvent.click(screen.getByRole('button',{name:'清除图标'}));
  expect(field.querySelector('aside')?.hasAttribute('data-callout-icon')).toBe(false);
- fireEvent.click(screen.getByRole('button',{name:'添加标注图标'}));
+ expect(screen.queryByRole('button',{name:'添加标注图标'})).toBeNull();
+ act(()=>editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize+2));
+ fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));fireEvent.click(screen.getByRole('menuitem',{name:'编辑图标'}));
  fireEvent.change(await screen.findByRole('textbox',{name:'搜索 Emoji'}),{target:{value:'灯泡'}});fireEvent.click(screen.getByRole('button',{name:/灯泡/}));
  expect(field.querySelector('aside')?.getAttribute('data-callout-icon')).toBe('💡');
  act(()=>editor.commands.undo());expect(field.querySelector('aside')?.hasAttribute('data-callout-icon')).toBe(false);
@@ -510,8 +513,11 @@ it('uses the left block handle for a hovered grouped image and can drag the whol
  expect(screen.queryByRole('button',{name:'拖动图片 乙'})).toBeNull();
  const second=screen.getByRole('button',{name:'查看大图 乙'}),dom=editor.view.nodeDOM(imagePos(editor,'乙')) as HTMLElement;
  dom.getBoundingClientRect=()=>new DOMRect(350,100,280,400);
+ second.getBoundingClientRect=()=>new DOMRect(350,100,280,400);
+ const controls=field.closest('.rich-editor')!.querySelector<HTMLElement>('.block-controls')!;
+ controls.getBoundingClientRect=()=>new DOMRect(0,0,20,28);
  fireEvent.mouseMove(second,{clientX:400,clientY:120});
- expect(field.closest('.rich-editor')!.querySelector<HTMLElement>('.block-controls')!.style.left).toBe('322px');
+ expect(controls.style.left).toBe('324px');
  const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
  fireEvent.dragStart(screen.getByRole('button',{name:'内容块操作'}),{dataTransfer:transfer,altKey:true});
  expect(editor.state.doc.nodeAt(editor.state.selection.from)?.type.name).toBe('figure');
@@ -959,6 +965,38 @@ it('drags only the heading by default, leaving its body and neighbors in place',
  expect(change).toHaveBeenLastCalledWith('- [ ] first\n- [ ] second\n\nend\n\n## 标题');
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith(original);
 });
+it('drags every remaining top-level block variant and restores the complete source with one undo',async()=>{
+ const {editor,field,change}=await setup(blockSpacingBody),root=field.closest('.rich-editor')!;
+ const original=editor.state.doc,seen=new Set<string>(),candidates:{pos:number;index:number}[]=[];
+ original.forEach((node,pos,index)=>{
+  const key=`${node.type.name}:${node.type.name==='heading'?node.attrs.level:node.type.name==='aside'?`${node.attrs.color}:${node.attrs.icon}`:node.type.name==='codeBlock'?node.attrs.language:node.type.name==='table'?pos:''}`;
+  if(!seen.has(key)){seen.add(key);candidates.push({pos,index});}
+ });
+ expect(candidates.length).toBeGreaterThan(20);
+ const hit=vi.spyOn(editor.view,'posAtCoords');
+ for(const {pos,index} of candidates){
+  const node=original.child(index);let last=0;original.forEach((_node,at)=>{last=at;});
+  act(()=>{editor.commands.setNodeSelection(pos);});
+  hit.mockReturnValue({pos,inside:pos});
+  fireEvent.mouseMove(root,{clientX:100,clientY:10});
+  const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
+  const grip=screen.getByRole('button',{name:'内容块操作'});
+  fireEvent.dragStart(grip,{dataTransfer:transfer});
+  expect(root.hasAttribute('data-dragging')||field.querySelector('.rich-image-dragging')!==null,node.type.name).toBe(true);
+  hit.mockReturnValue({pos:last+1,inside:last});
+  vi.spyOn(editor.view.nodeDOM(last) as HTMLElement,'getBoundingClientRect').mockReturnValue(new DOMRect(60,40,200,30));
+  fireEvent.drop(field,{dataTransfer:transfer,clientX:100,clientY:65});
+  fireEvent.dragEnd(grip);
+  expect(editor.state.doc.lastChild?.eq(node),node.type.name).toBe(true);
+  expect(editor.state.doc.childCount).toBe(original.childCount);
+  const expected=Array.from({length:original.childCount},(_,i)=>original.child(i)).filter((_node,i)=>i!==index).concat(node);
+  expect(editor.state.doc.content.content).toEqual(expected);
+  act(()=>{editor.commands.undo();});
+  expect(editor.state.doc.content.eq(original.content),node.type.name).toBe(true);
+  expect(change).toHaveBeenLastCalledWith(blockSpacingBody);
+  expect(root.querySelector('.block-drag-preview, .block-drop-indicator')).toBeNull();
+ }
+});
 it('drags an explicitly selected heading range without including unselected followers',async()=>{
  const {editor,field,change}=await setup('## 标题\n\nselected\n\nother');
  act(()=>{editor.commands.setNodeSelection(0);});fireEvent.keyDown(field,{key:'ArrowDown',shiftKey:true});
@@ -1052,11 +1090,24 @@ it.each([
  '<!-- original -->',
  '正文[^a]\n\n[^a]: first\n\n    second',
  '![描述](../assets/old.png)',
- '<details><summary>展开内容</summary><p>保留正文</p></details>',
- '<dl><dt>术语</dt><dd><p>释义</p></dd></dl>',
 ])('preserves existing advanced Markdown after removing its block-menu controls: %s',async content=>{
  const source=`# 标题\n\n${content}\n\n末尾`;
  const {editor,change}=await setup(source);
+ expect(change).not.toHaveBeenCalled();
+ act(()=>{editor.commands.insertContentAt(editor.state.doc.content.size-1,'新');});
+ expect(change).toHaveBeenLastCalledWith(`${source}新`);
+ act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith(source);
+});
+it.each([
+ '<details><summary>展开内容</summary><p>保留正文</p></details>',
+ '<dl><dt>术语</dt><dd><p>释义</p></dd></dl>',
+])('preserves removed HTML block types as inert source: %s',async content=>{
+ const source=`# 标题\n\n${content}\n\n末尾`;
+ const {editor,field,change}=await setup(source);
+ for(const type of ['details','summary','dl','dt','dd']) expect(editor.schema.nodes[type]).toBeUndefined();
+ expect(field.querySelector('details,summary,dl,dt,dd')).toBeNull();
+ expect(field.querySelector('.rich-preserved')?.textContent).toContain(content.includes('<dl>')?'术语释义':'展开内容保留正文');
+ expect(editor.state.doc.child(1).type.name).toBe('preservedMarkdown');
  expect(change).not.toHaveBeenCalled();
  act(()=>{editor.commands.insertContentAt(editor.state.doc.content.size-1,'新');});
  expect(change).toHaveBeenLastCalledWith(`${source}新`);
@@ -1346,16 +1397,18 @@ it.each([
  expect(screen.getByRole('button',{name:'内容块操作'}).parentElement!.style.top).toBe(`${expected}px`);
  expect(change).not.toHaveBeenCalled();
 });
-it('keeps the image block handle anchored to its existing image geometry',async()=>{
+it('keeps the image block handle 6px before the visible image without changing vertical geometry',async()=>{
  const {editor,field,change}=await setup('开头\n\n![图片](../assets/a.png)');
  const root=field.closest('.rich-editor')!,pos=editor.state.doc.firstChild!.nodeSize;
  const block=editor.view.nodeDOM(pos) as HTMLElement;
  block.style.cssText='padding:6px;line-height:24px';
  vi.spyOn(root,'getBoundingClientRect').mockReturnValue(new DOMRect(0,100,720,300));
  vi.spyOn(block,'getBoundingClientRect').mockReturnValue(new DOMRect(8,200,704,60));
- act(()=>{editor.commands.setNodeSelection(pos);});
+ vi.spyOn(block.querySelector<HTMLElement>('.ui-note-image')!,'getBoundingClientRect').mockReturnValue(new DOMRect(64,200,480,60));
  const controls=screen.getByRole('button',{name:'内容块操作'}).parentElement!;
- expect(controls.style.top).toBe('112px');expect(controls.style.left).toBe('-20px');
+ vi.spyOn(controls,'getBoundingClientRect').mockReturnValue(new DOMRect(0,0,20,28));
+ act(()=>{editor.commands.setNodeSelection(pos);});
+ expect(controls.style.top).toBe('112px');expect(controls.style.left).toBe('38px');
  expect(change).not.toHaveBeenCalled();
 });
 it('targets the hovered block when opening its properties from a different caret',async()=>{

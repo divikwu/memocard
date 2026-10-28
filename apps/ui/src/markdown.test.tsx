@@ -46,15 +46,20 @@ describe("safe note rendering", () => {
 });
 
 it('renders complete safe content formats including tables, footnotes and MathML', () => {
-  const html = renderToStaticMarkup(<Markdown body={'#### 四级\n\n##### 五级\n\n###### 六级\n\n| A | B |\n| --- | ---: |\n| 1 | 2 |\n\n说明[^1]\n\n[^1]: 脚注\n\n$E=mc^2$\n\n<details><summary>详情</summary><p><mark>重点</mark> <kbd>Enter</kbd> <abbr title="测试">T</abbr></p></details>\n\n<dl><dt>术语</dt><dd>定义</dd></dl>\n\n<figure><figcaption>图片说明</figcaption></figure>'} />);
-  for (const tag of ['h4', 'h5', 'h6', 'table', 'math', 'details', 'summary', 'mark', 'kbd', 'abbr', 'dl', 'dt', 'dd', 'figure', 'figcaption']) expect(html).toContain(`<${tag}`);
+  const html = renderToStaticMarkup(<Markdown body={'#### 四级\n\n##### 五级\n\n###### 六级\n\n| A | B |\n| --- | ---: |\n| 1 | 2 |\n\n说明[^1]\n\n[^1]: 脚注\n\n$E=mc^2$\n\n<p><mark>重点</mark> <kbd>Enter</kbd> <abbr title="测试">T</abbr></p>\n\n<figure><figcaption>图片说明</figcaption></figure>'} />);
+  for (const tag of ['h4', 'h5', 'h6', 'table', 'math', 'mark', 'kbd', 'abbr', 'figure', 'figcaption']) expect(html).toContain(`<${tag}`);
   expect(html).toContain('data-footnotes');
   expect(html).toContain('typeset-scroll');
 });
 it('sanitizes active HTML, styles, remote images and embedded content', () => {
-  const html = renderToStaticMarkup(<Markdown body={'<details onclick="alert(1)" style="position:fixed"><summary>安全内容</summary></details><iframe src="https://remote.test"></iframe><img src="https://remote.test/pixel" onerror="alert(1)"><svg onload="alert(1)"></svg>'} />);
-  expect(html).toContain('<details>');
+  const html = renderToStaticMarkup(<Markdown body={'<aside onclick="alert(1)" style="position:fixed"><p>安全内容</p></aside><iframe src="https://remote.test"></iframe><img src="https://remote.test/pixel" onerror="alert(1)"><svg onload="alert(1)"></svg>'} />);
+  expect(html).toContain('<aside');
   for (const unsafe of ['onclick', 'onerror', 'onload', '<iframe', '<svg', 'position:fixed', 'src="https://']) expect(html).not.toContain(unsafe);
+});
+it.each([true, false])('unwraps removed HTML block types without hiding their text (interactive: %s)', interactive => {
+  const html = renderToStaticMarkup(<Markdown interactive={interactive} body={'<details><summary>旧摘要</summary><p>旧正文</p></details>\n\n<dl><dt>旧术语</dt><dd><p>旧释义</p></dd></dl>'} />);
+  for (const tag of ['details', 'summary', 'dl', 'dt', 'dd']) expect(html).not.toContain(`<${tag}`);
+  for (const text of ['旧摘要', '旧正文', '旧术语', '旧释义']) expect(html).toContain(text);
 });
 it('renders validated image columns and callouts without accepting arbitrary styles', () => {
  const html=renderToStaticMarkup(<Markdown body={'<aside data-callout="blue" data-callout-icon="🧭" style="position:fixed"><p>第一段</p><p>第二段</p></aside>\n\n<figure data-image-columns="40,60" style="position:fixed"><img src="../assets/a.png" alt="第一张"><img src="../assets/b.png" alt="第二张"></figure>'} />);

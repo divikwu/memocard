@@ -83,6 +83,9 @@ test('checks runtime preference outputs without treating comments or plain strin
   const outputs = { '--note-size': { type: 'dimension', unit: 'px' }, '--app-font': { type: 'fontFamily', unit: null } };
   assert.doesNotThrow(() => inspectRuntimeTokens(code, outputs, 'preferences.tsx'));
   assert.doesNotThrow(() => inspectRuntimeTokens('root.style.setProperty("--note-leading", leading)', { '--note-leading': { type: 'number', unit: null } }, 'preferences.tsx'));
+  const flow = 'const vars = { "--note-flow": value };';
+  assert.doesNotThrow(() => inspectRuntimeTokens(flow, { '--note-flow': { type: 'dimension', unit: ['px', 'rem'] } }, 'preferences.tsx'));
+  for (const unit of [[], ['px', 'px'], ['rem', 'invalid']]) assert.throws(() => inspectRuntimeTokens(flow, { '--note-flow': { type: 'dimension', unit } }, 'preferences.tsx'), /Invalid runtime token type\/unit/);
   assert.throws(() => inspectRuntimeTokens(code, { '--note-size': outputs['--note-size'] }, 'preferences.tsx'), /Unregistered runtime token/);
   assert.throws(() => inspectRuntimeTokens(code, { ...outputs, '--unused': outputs['--note-size'] }, 'preferences.tsx'), /Missing runtime output/);
   assert.throws(() => inspectRuntimeTokens(code, { ...outputs, '--app-font': { type: 'fontFamily', unit: 'px' } }, 'preferences.tsx'), /Invalid runtime token type\/unit/);
@@ -95,7 +98,7 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     const result = await buildTokenCatalog(options);
     assert.equal(result.categories, 9);
     assert.equal(result.portable, 28);
-    assert.equal(result.runtime, 11);
+    assert.equal(result.runtime, 17);
     assert.ok(result.consumerFiles > 90);
     assert.equal(result.nativeConsumerFiles, 2);
     assert.ok(result.css > 300);
@@ -103,7 +106,9 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     const catalog = JSON.parse(await readFile(jsonPath, 'utf8'));
     assert.equal(catalog.css.length, result.css);
     assert.equal(catalog.runtime.length, result.runtime);
-    for (const name of ['--note-body-font', '--note-heading-font', '--note-mono-font']) assert.ok(!catalog.runtime.some(token => token.name === name));
+    assert.deepEqual(catalog.runtime.find(token => token.name === '--note-flow').unit, ['px', 'rem']);
+    for (const name of ['--note-body-font', '--note-heading-font', '--note-mono-font', '--note-scale']) assert.ok(!catalog.runtime.some(token => token.name === name));
+    for (const name of ['--note-line-height', ...[1, 2, 3].flatMap(level => [`--note-h${level}-size`, `--note-h${level}-line-height`])]) assert.ok(catalog.runtime.some(token => token.name === name));
     assert.equal(catalog.portable.length, result.portable);
     assert.equal(catalog.optionalStylesheets.length, 0);
     assert.ok(catalog.css.every(token => token.declarations.length && token.source.startsWith('apps/ui/ui/') && token.type));

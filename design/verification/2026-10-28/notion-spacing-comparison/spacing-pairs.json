@@ -1,0 +1,132 @@
+[
+  {
+    "pair": "正文→正文",
+    "Notion": 16.0,
+    "MemoCard": 12.0
+  },
+  {
+    "pair": "一级标题→正文",
+    "Notion": 16.0,
+    "MemoCard": 12.0
+  },
+  {
+    "pair": "正文→二级标题",
+    "Notion": 36.0,
+    "MemoCard": 37.0
+  },
+  {
+    "pair": "二级标题→正文",
+    "Notion": 16.0,
+    "MemoCard": 12.0
+  },
+  {
+    "pair": "正文→三级标题",
+    "Notion": 32.0,
+    "MemoCard": 34.5
+  },
+  {
+    "pair": "正文→无序列表首项",
+    "Notion": 16.0,
+    "MemoCard": 14.0
+  },
+  {
+    "pair": "无序列表相邻项",
+    "Notion": 6.0,
+    "MemoCard": 4.0
+  },
+  {
+    "pair": "任务列表相邻项",
+    "Notion": 6.0,
+    "MemoCard": 4.0
+  },
+  {
+    "pair": "正文→引用外框",
+    "Notion": 16.0,
+    "MemoCard": 22.0
+  },
+  {
+    "pair": "引用外框→正文",
+    "Notion": 15.61,
+    "MemoCard": 6.0
+  },
+  {
+    "pair": "正文→代码外框",
+    "Notion": 16.0,
+    "MemoCard": 22.0
+  },
+  {
+    "pair": "代码外框→正文",
+    "Notion": 15.82,
+    "MemoCard": 6.0
+  },
+  {
+    "pair": "引用→提示块",
+    "Notion": 16.0,
+    "MemoCard": 16.0
+  },
+  {
+    "pair": "提示块→代码",
+    "Notion": 16.0,
+    "MemoCard": 16.0
+  },
+  {
+    "pair": "代码→表格",
+    "Notion": 24.0,
+    "MemoCard": 6.0
+  },
+  {
+    "pair": "表格→正文",
+    "Notion": 40.0,
+    "MemoCard": 12.0
+  },
+  {
+    "pair": "正文→提示块",
+    "Notion": 16.0,
+    "MemoCard": 22.0
+  },
+  {
+    "pair": "相邻提示块",
+    "Notion": 16.0,
+    "MemoCard": 16.0
+  },
+  {
+    "pair": "提示块→正文",
+    "Notion": 16.0,
+    "MemoCard": 6.0
+  },
+  {
+    "pair": "正文→标准表格",
+    "Notion": 24.0,
+    "MemoCard": 12.0
+  },
+  {
+    "pair": "正文→单张图片",
+    "Notion": 16.0,
+    "MemoCard": 22
+  },
+  {
+    "pair": "单张图片→正文",
+    "Notion": 16.0,
+    "MemoCard": 22
+  },
+  {
+    "pair": "正文→分隔线",
+    "Notion": 14.0,
+    "MemoCard": 44.4
+  },
+  {
+    "pair": "分隔线→正文",
+    "Notion": 14.0,
+    "MemoCard": 6.0
+  },
+  {
+    "pair": "正文→可见块级公式",
+    "Notion": 36,
+    "MemoCard": 22.0
+  },
+  {
+    "pair": "可见块级公式→正文",
+    "Notion": 36.3,
+    "MemoCard": 6.0
+  }
+]

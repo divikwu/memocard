@@ -8,7 +8,11 @@ import "./sidebar.css";
 
 export function CalloutIconPicker({ editor, target, onClose }: { editor: Editor; target: CalloutIconTarget; onClose: () => void }) {
   const [error, setError] = useState("");
-  useEffect(() => { target.anchor.setAttribute("aria-expanded", "true"); return () => target.anchor.setAttribute("aria-expanded", "false"); }, [target]);
+  useEffect(() => {
+    // A block-menu action uses its persistent grip only as the popup anchor.
+    if (target.anchor.getAttribute("aria-haspopup") !== "dialog") return;
+    target.anchor.setAttribute("aria-expanded", "true"); return () => target.anchor.setAttribute("aria-expanded", "false");
+  }, [target]);
   function apply(icon: string | null) {
     const pos = target.getPos();
     if (!editor.isEditable || !target.anchor.isConnected || pos === undefined || editor.state.doc.nodeAt(pos)?.type.name !== "aside") { setError("标注已变化，请关闭后重新打开。"); return; }
@@ -16,7 +20,7 @@ export function CalloutIconPicker({ editor, target, onClose }: { editor: Editor;
   }
   const pos = target.getPos();
   const selected = pos === undefined ? "" : String(editor.state.doc.nodeAt(pos)?.attrs.icon ?? "");
-  return <PropertyPopover open onOpenChange={open => { if (!open) onClose(); }}><PropertyPopoverContent anchor={target.anchor} align="start" sideOffset={4} collisionPadding={12} aria-label="编辑标注图标" className="ui-rich-ui callout-icon-picker" initialFocus={false} finalFocus={type => type === "mouse" || type === "touch" ? false : target.anchor.isConnected ? target.anchor : editor.view.dom}>
+  return <PropertyPopover open onOpenChange={open => { if (!open) onClose(); }}><PropertyPopoverContent anchor={target.anchor} align="start" sideOffset={4} collisionPadding={12} aria-label="编辑标注图标" className="ui-rich-ui callout-icon-picker" initialFocus={false} finalFocus={type => type === "mouse" || type === "touch" ? false : target.anchor.isConnected && !target.anchor.hidden ? target.anchor : editor.view.dom}>
     <EmojiPicker selected={selected} disabled={!editor.isEditable} autoFocus onSelect={emoji => apply(emoji || null)} />{error && <p role="alert" className="mt-2 text-sm text-error">{error}</p>}
   </PropertyPopoverContent></PropertyPopover>;
 }

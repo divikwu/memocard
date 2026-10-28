@@ -12523,15 +12523,66 @@
     {
       "name": "--note-flow",
       "type": "dimension",
-      "unit": "em",
+      "unit": [
+        "px",
+        "rem"
+      ],
       "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
       "defaults": "apps/ui/src/features/typography/preferences.ts",
       "contract": "typography.note-preferences"
     },
     {
-      "name": "--note-scale",
-      "type": "number",
-      "unit": null,
+      "name": "--note-line-height",
+      "type": "dimension",
+      "unit": "rem",
+      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
+      "defaults": "apps/ui/src/features/typography/preferences.ts",
+      "contract": "typography.note-preferences"
+    },
+    {
+      "name": "--note-h1-size",
+      "type": "dimension",
+      "unit": "rem",
+      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
+      "defaults": "apps/ui/src/features/typography/preferences.ts",
+      "contract": "typography.note-preferences"
+    },
+    {
+      "name": "--note-h1-line-height",
+      "type": "dimension",
+      "unit": "rem",
+      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
+      "defaults": "apps/ui/src/features/typography/preferences.ts",
+      "contract": "typography.note-preferences"
+    },
+    {
+      "name": "--note-h2-size",
+      "type": "dimension",
+      "unit": "rem",
+      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
+      "defaults": "apps/ui/src/features/typography/preferences.ts",
+      "contract": "typography.note-preferences"
+    },
+    {
+      "name": "--note-h2-line-height",
+      "type": "dimension",
+      "unit": "rem",
+      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
+      "defaults": "apps/ui/src/features/typography/preferences.ts",
+      "contract": "typography.note-preferences"
+    },
+    {
+      "name": "--note-h3-size",
+      "type": "dimension",
+      "unit": "rem",
+      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
+      "defaults": "apps/ui/src/features/typography/preferences.ts",
+      "contract": "typography.note-preferences"
+    },
+    {
+      "name": "--note-h3-line-height",
+      "type": "dimension",
+      "unit": "rem",
       "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
       "defaults": "apps/ui/src/features/typography/preferences.ts",
       "contract": "typography.note-preferences"
@@ -12844,7 +12895,8 @@
       "description": "Shared note preferences, persistence and emitted reading variables.",
       "sources": [
         "apps/ui/src/features/typography/preferences.ts",
-        "apps/ui/src/features/typography/TypographyProvider.tsx"
+        "apps/ui/src/features/typography/TypographyProvider.tsx",
+        "apps/ui/src/features/typography/scale.ts"
       ],
       "consumers": [
         "apps/ui/ui/web/WebTypographyProvider.tsx",
@@ -12886,6 +12938,7 @@
         "apps/ui/ui/business/PageNotice.css",
         "apps/ui/ui/business/QuickCapture.css",
         "apps/ui/ui/business/note-content.css",
+        "apps/ui/ui/business/note-typography.css",
         "apps/ui/ui/business/note-properties.css",
         "apps/ui/ui/business/note-search.css",
         "apps/ui/ui/business/rich-editor.css",

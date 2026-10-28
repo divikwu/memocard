@@ -1,0 +1,4073 @@
+[
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 57.1875,
+      "height": 51.1875,
+      "top": 6,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 63.1875,
+      "height": 63.1875,
+      "top": 0,
+      "width": 704
+    },
+    "text": "这是用于检查内容块间距的模拟笔记。可以直接编辑、选中或拖动内容块；刷新页面会恢复初始样例。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 118.1875,
+      "height": 24,
+      "top": 94.1875,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 124.1875,
+      "height": 36,
+      "top": 88.1875,
+      "width": 704
+    },
+    "text": "01 · 正文与行内格式",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 155.78125,
+      "height": 25.59375,
+      "top": 130.1875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 161.78125,
+      "height": 37.59375,
+      "top": 124.1875,
+      "width": 704
+    },
+    "text": "第一段正文。观察文字起点、行高，以及段落上下的留白。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 218.96875,
+      "height": 51.1875,
+      "top": 167.78125,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 224.96875,
+      "height": 63.1875,
+      "top": 161.78125,
+      "width": 704
+    },
+    "text": "第二段正文稍长一些，用于检查自然换行。把窗口缩窄后，可以比较多行段落与单行段落的左右基线、上下间距，以及选中背景是否完整覆盖当前内容块。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 256.5625,
+      "height": 25.59375,
+      "top": 230.96875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 262.5625,
+      "height": 37.59375,
+      "top": 224.96875,
+      "width": 704
+    },
+    "text": "第三段包含 粗体、斜体、删除线、行内代码、链接文字、高亮文字、H2O 和 x2。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 317.5625,
+      "height": 24,
+      "top": 293.5625,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 323.5625,
+      "height": 36,
+      "top": 287.5625,
+      "width": 704
+    },
+    "text": "02 · 六级标题与正文",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.9992px",
+      "margin": "30px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 391.5546875,
+      "height": 31.9921875,
+      "top": 359.5625,
+      "width": 704
+    },
+    "kind": "h1",
+    "outer": {
+      "bottom": 397.5546875,
+      "height": 43.9921875,
+      "top": 353.5625,
+      "width": 704
+    },
+    "text": "一级标题",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 429.1484375,
+      "height": 25.59375,
+      "top": 403.5546875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 435.1484375,
+      "height": 37.59375,
+      "top": 397.5546875,
+      "width": 704
+    },
+    "text": "一级标题后的正文，用于比较标题与段落的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 490.1484375,
+      "height": 24,
+      "top": 466.1484375,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 496.1484375,
+      "height": 36,
+      "top": 460.1484375,
+      "width": 704
+    },
+    "text": "二级标题",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 527.7421875,
+      "height": 25.59375,
+      "top": 502.1484375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 533.7421875,
+      "height": 37.59375,
+      "top": 496.1484375,
+      "width": 704
+    },
+    "text": "二级标题后的正文，用于比较标题与段落的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "18px",
+      "lineHeight": "28.0008px",
+      "margin": "22.5px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 590.2421875,
+      "height": 28,
+      "top": 562.2421875,
+      "width": 704
+    },
+    "kind": "h3",
+    "outer": {
+      "bottom": 596.2421875,
+      "height": 40,
+      "top": 556.2421875,
+      "width": 704
+    },
+    "text": "三级标题",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 627.8359375,
+      "height": 25.59375,
+      "top": 602.2421875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 633.8359375,
+      "height": 37.59375,
+      "top": 596.2421875,
+      "width": 704
+    },
+    "text": "三级标题后的正文，用于比较标题与段落的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "20px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 685.4296875,
+      "height": 25.59375,
+      "top": 659.8359375,
+      "width": 704
+    },
+    "kind": "h4",
+    "outer": {
+      "bottom": 691.4296875,
+      "height": 37.59375,
+      "top": 653.8359375,
+      "width": 704
+    },
+    "text": "四级标题",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 723.0234375,
+      "height": 25.59375,
+      "top": 697.4296875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 729.0234375,
+      "height": 37.59375,
+      "top": 691.4296875,
+      "width": 704
+    },
+    "text": "四级标题后的正文，用于比较标题与段落的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "17.5px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 772.5234375,
+      "height": 20,
+      "top": 752.5234375,
+      "width": 704
+    },
+    "kind": "h5",
+    "outer": {
+      "bottom": 778.5234375,
+      "height": 32,
+      "top": 746.5234375,
+      "width": 704
+    },
+    "text": "五级标题",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 810.1171875,
+      "height": 25.59375,
+      "top": 784.5234375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 816.1171875,
+      "height": 37.59375,
+      "top": 778.5234375,
+      "width": 704
+    },
+    "text": "五级标题后的正文，用于比较标题与段落的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "12px",
+      "lineHeight": "20.0004px",
+      "margin": "15px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 857.1171875,
+      "height": 20,
+      "top": 837.1171875,
+      "width": 704
+    },
+    "kind": "h6",
+    "outer": {
+      "bottom": 863.1171875,
+      "height": 32,
+      "top": 831.1171875,
+      "width": 704
+    },
+    "text": "六级标题",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 894.7109375,
+      "height": 25.59375,
+      "top": 869.1171875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 900.7109375,
+      "height": 37.59375,
+      "top": 863.1171875,
+      "width": 704
+    },
+    "text": "六级标题后的正文，用于比较标题与段落的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 955.7109375,
+      "height": 24,
+      "top": 931.7109375,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 961.7109375,
+      "height": 36,
+      "top": 925.7109375,
+      "width": 704
+    },
+    "text": "03 · 普通列表与嵌套",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 993.3046875,
+      "height": 25.59375,
+      "top": 967.7109375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 999.3046875,
+      "height": 37.59375,
+      "top": 961.7109375,
+      "width": 704
+    },
+    "text": "无序列表之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1032.8984375,
+      "height": 25.59375,
+      "top": 1007.3046875,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1034.8984375,
+      "height": 29.59375,
+      "top": 1005.3046875,
+      "width": 680
+    },
+    "text": "第一项：检查列表标记与文字的距离",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1032.8984375,
+      "height": 25.59375,
+      "top": 1007.3046875,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1032.8984375,
+      "height": 25.59375,
+      "top": 1007.3046875,
+      "width": 673.6015625
+    },
+    "text": "第一项：检查列表标记与文字的距离",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1184.8671875,
+      "height": 147.96875,
+      "top": 1036.8984375,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1186.8671875,
+      "height": 151.96875,
+      "top": 1034.8984375,
+      "width": 680
+    },
+    "text": "第二项：这是一条较长的列表内容，用于观察换行后的文字是否对齐，以及相邻列表项的上下间距第二级第一项第二级第二项第三级内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1088.0859375,
+      "height": 51.1875,
+      "top": 1036.8984375,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1088.0859375,
+      "height": 51.1875,
+      "top": 1036.8984375,
+      "width": 673.6015625
+    },
+    "text": "第二项：这是一条较长的列表内容，用于观察换行后的文字是否对齐，以及相邻列表项的上下间距",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1119.6796875,
+      "height": 25.59375,
+      "top": 1094.0859375,
+      "width": 649.6015625
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1121.6796875,
+      "height": 29.59375,
+      "top": 1092.0859375,
+      "width": 649.6015625
+    },
+    "text": "第二级第一项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1119.6796875,
+      "height": 25.59375,
+      "top": 1094.0859375,
+      "width": 643.203125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1119.6796875,
+      "height": 25.59375,
+      "top": 1094.0859375,
+      "width": 643.203125
+    },
+    "text": "第二级第一项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1182.8671875,
+      "height": 59.1875,
+      "top": 1123.6796875,
+      "width": 649.6015625
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1184.8671875,
+      "height": 63.1875,
+      "top": 1121.6796875,
+      "width": 649.6015625
+    },
+    "text": "第二级第二项第三级内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1149.2734375,
+      "height": 25.59375,
+      "top": 1123.6796875,
+      "width": 643.203125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1149.2734375,
+      "height": 25.59375,
+      "top": 1123.6796875,
+      "width": 643.203125
+    },
+    "text": "第二级第二项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1180.8671875,
+      "height": 25.59375,
+      "top": 1155.2734375,
+      "width": 619.203125
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1182.8671875,
+      "height": 29.59375,
+      "top": 1153.2734375,
+      "width": 619.203125
+    },
+    "text": "第三级内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1180.8671875,
+      "height": 25.59375,
+      "top": 1155.2734375,
+      "width": 612.8046875
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1180.8671875,
+      "height": 25.59375,
+      "top": 1155.2734375,
+      "width": 612.8046875
+    },
+    "text": "第三级内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1214.4609375,
+      "height": 25.59375,
+      "top": 1188.8671875,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1216.4609375,
+      "height": 29.59375,
+      "top": 1186.8671875,
+      "width": 680
+    },
+    "text": "第三项：回到第一级",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1214.4609375,
+      "height": 25.59375,
+      "top": 1188.8671875,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1214.4609375,
+      "height": 25.59375,
+      "top": 1188.8671875,
+      "width": 673.6015625
+    },
+    "text": "第三项：回到第一级",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 1254.0546875,
+      "height": 25.59375,
+      "top": 1228.4609375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1260.0546875,
+      "height": 37.59375,
+      "top": 1222.4609375,
+      "width": 704
+    },
+    "text": "无序列表之后、有序列表之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1293.6484375,
+      "height": 25.59375,
+      "top": 1268.0546875,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1295.6484375,
+      "height": 29.59375,
+      "top": 1266.0546875,
+      "width": 680
+    },
+    "text": "第一步：收集信息",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1293.6484375,
+      "height": 25.59375,
+      "top": 1268.0546875,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1293.6484375,
+      "height": 25.59375,
+      "top": 1268.0546875,
+      "width": 673.6015625
+    },
+    "text": "第一步：收集信息",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1386.4296875,
+      "height": 88.78125,
+      "top": 1297.6484375,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1388.4296875,
+      "height": 92.78125,
+      "top": 1295.6484375,
+      "width": 680
+    },
+    "text": "第二步：整理内容嵌套步骤一嵌套步骤二",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1323.2421875,
+      "height": 25.59375,
+      "top": 1297.6484375,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1323.2421875,
+      "height": 25.59375,
+      "top": 1297.6484375,
+      "width": 673.6015625
+    },
+    "text": "第二步：整理内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1354.8359375,
+      "height": 25.59375,
+      "top": 1329.2421875,
+      "width": 649.6015625
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1356.8359375,
+      "height": 29.59375,
+      "top": 1327.2421875,
+      "width": 649.6015625
+    },
+    "text": "嵌套步骤一",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1354.8359375,
+      "height": 25.59375,
+      "top": 1329.2421875,
+      "width": 643.203125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1354.8359375,
+      "height": 25.59375,
+      "top": 1329.2421875,
+      "width": 643.203125
+    },
+    "text": "嵌套步骤一",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1384.4296875,
+      "height": 25.59375,
+      "top": 1358.8359375,
+      "width": 649.6015625
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1386.4296875,
+      "height": 29.59375,
+      "top": 1356.8359375,
+      "width": 649.6015625
+    },
+    "text": "嵌套步骤二",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1384.4296875,
+      "height": 25.59375,
+      "top": 1358.8359375,
+      "width": 643.203125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1384.4296875,
+      "height": 25.59375,
+      "top": 1358.8359375,
+      "width": 643.203125
+    },
+    "text": "嵌套步骤二",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1416.0234375,
+      "height": 25.59375,
+      "top": 1390.4296875,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1418.0234375,
+      "height": 29.59375,
+      "top": 1388.4296875,
+      "width": 680
+    },
+    "text": "第三步：检查结果",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1416.0234375,
+      "height": 25.59375,
+      "top": 1390.4296875,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1416.0234375,
+      "height": 25.59375,
+      "top": 1390.4296875,
+      "width": 673.6015625
+    },
+    "text": "第三步：检查结果",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 1455.6171875,
+      "height": 25.59375,
+      "top": 1430.0234375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1461.6171875,
+      "height": 37.59375,
+      "top": 1424.0234375,
+      "width": 704
+    },
+    "text": "有序列表之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 1516.6171875,
+      "height": 24,
+      "top": 1492.6171875,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 1522.6171875,
+      "height": 36,
+      "top": 1486.6171875,
+      "width": 704
+    },
+    "text": "04 · 任务列表",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 1554.2109375,
+      "height": 25.59375,
+      "top": 1528.6171875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1560.2109375,
+      "height": 37.59375,
+      "top": 1522.6171875,
+      "width": 704
+    },
+    "text": "任务列表之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1593.8046875,
+      "height": 25.59375,
+      "top": 1568.2109375,
+      "width": 704
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1595.8046875,
+      "height": 29.59375,
+      "top": 1566.2109375,
+      "width": 704
+    },
+    "text": "待办：未完成任务未完成任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1593.8046875,
+      "height": 25.59375,
+      "top": 1568.2109375,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1593.8046875,
+      "height": 25.59375,
+      "top": 1568.2109375,
+      "width": 673.6015625
+    },
+    "text": "未完成任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1623.3984375,
+      "height": 25.59375,
+      "top": 1597.8046875,
+      "width": 704
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1625.3984375,
+      "height": 29.59375,
+      "top": 1595.8046875,
+      "width": 704
+    },
+    "text": "待办：已完成任务已完成任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1623.3984375,
+      "height": 25.59375,
+      "top": 1597.8046875,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1623.3984375,
+      "height": 25.59375,
+      "top": 1597.8046875,
+      "width": 673.6015625
+    },
+    "text": "已完成任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1716.1796875,
+      "height": 88.78125,
+      "top": 1627.3984375,
+      "width": 704
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1718.1796875,
+      "height": 92.78125,
+      "top": 1625.3984375,
+      "width": 704
+    },
+    "text": "待办：包含子任务的父任务已完成的子任务较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进包含子任务的父任务待办：已完成的子任务已完成的子任务待办：较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1652.9921875,
+      "height": 25.59375,
+      "top": 1627.3984375,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1652.9921875,
+      "height": 25.59375,
+      "top": 1627.3984375,
+      "width": 673.6015625
+    },
+    "text": "包含子任务的父任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1684.5859375,
+      "height": 25.59375,
+      "top": 1658.9921875,
+      "width": 673.6015625
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1686.5859375,
+      "height": 29.59375,
+      "top": 1656.9921875,
+      "width": 673.6015625
+    },
+    "text": "待办：已完成的子任务已完成的子任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1684.5859375,
+      "height": 25.59375,
+      "top": 1658.9921875,
+      "width": 643.203125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1684.5859375,
+      "height": 25.59375,
+      "top": 1658.9921875,
+      "width": 643.203125
+    },
+    "text": "已完成的子任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1714.1796875,
+      "height": 25.59375,
+      "top": 1688.5859375,
+      "width": 673.6015625
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1716.1796875,
+      "height": 29.59375,
+      "top": 1686.5859375,
+      "width": 673.6015625
+    },
+    "text": "待办：较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1714.1796875,
+      "height": 25.59375,
+      "top": 1688.5859375,
+      "width": 643.203125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1714.1796875,
+      "height": 25.59375,
+      "top": 1688.5859375,
+      "width": 643.203125
+    },
+    "text": "较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 1745.7734375,
+      "height": 25.59375,
+      "top": 1720.1796875,
+      "width": 704
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 1747.7734375,
+      "height": 29.59375,
+      "top": 1718.1796875,
+      "width": 704
+    },
+    "text": "待办：最后一项任务最后一项任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1745.7734375,
+      "height": 25.59375,
+      "top": 1720.1796875,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1745.7734375,
+      "height": 25.59375,
+      "top": 1720.1796875,
+      "width": 673.6015625
+    },
+    "text": "最后一项任务",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 1785.3671875,
+      "height": 25.59375,
+      "top": 1759.7734375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1791.3671875,
+      "height": 37.59375,
+      "top": 1753.7734375,
+      "width": 704
+    },
+    "text": "任务列表之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 1846.3671875,
+      "height": 24,
+      "top": 1822.3671875,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 1852.3671875,
+      "height": 36,
+      "top": 1816.3671875,
+      "width": 704
+    },
+    "text": "05 · 引用",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 1883.9609375,
+      "height": 25.59375,
+      "top": 1858.3671875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1889.9609375,
+      "height": 37.59375,
+      "top": 1852.3671875,
+      "width": 704
+    },
+    "text": "引用块之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "0px 0px 0px 16px"
+    },
+    "frame": {
+      "bottom": 2048.3359375,
+      "height": 142.375,
+      "top": 1905.9609375,
+      "width": 704
+    },
+    "kind": "blockquote",
+    "outer": {
+      "bottom": 2048.3359375,
+      "height": 142.375,
+      "top": 1905.9609375,
+      "width": 704
+    },
+    "text": "引用的第一段，观察左侧竖线与文字之间的距离。引用的第二段，观察引用内部段落的间距。引用内的第一项列表引用内的第二项列表",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1931.5546875,
+      "height": 25.59375,
+      "top": 1905.9609375,
+      "width": 686
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1931.5546875,
+      "height": 25.59375,
+      "top": 1905.9609375,
+      "width": 686
+    },
+    "text": "引用的第一段，观察左侧竖线与文字之间的距离。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 1973.1484375,
+      "height": 25.59375,
+      "top": 1947.5546875,
+      "width": 686
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 1973.1484375,
+      "height": 25.59375,
+      "top": 1947.5546875,
+      "width": 686
+    },
+    "text": "引用的第二段，观察引用内部段落的间距。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 2016.7421875,
+      "height": 25.59375,
+      "top": 1991.1484375,
+      "width": 662
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 2018.7421875,
+      "height": 29.59375,
+      "top": 1989.1484375,
+      "width": 662
+    },
+    "text": "引用内的第一项列表",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2016.7421875,
+      "height": 25.59375,
+      "top": 1991.1484375,
+      "width": 655.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2016.7421875,
+      "height": 25.59375,
+      "top": 1991.1484375,
+      "width": 655.6015625
+    },
+    "text": "引用内的第一项列表",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 2046.3359375,
+      "height": 25.59375,
+      "top": 2020.7421875,
+      "width": 662
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 2048.3359375,
+      "height": 29.59375,
+      "top": 2018.7421875,
+      "width": 662
+    },
+    "text": "引用内的第二项列表",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2046.3359375,
+      "height": 25.59375,
+      "top": 2020.7421875,
+      "width": 655.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2046.3359375,
+      "height": 25.59375,
+      "top": 2020.7421875,
+      "width": 655.6015625
+    },
+    "text": "引用内的第二项列表",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2079.9296875,
+      "height": 25.59375,
+      "top": 2054.3359375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2085.9296875,
+      "height": 37.59375,
+      "top": 2048.3359375,
+      "width": 704
+    },
+    "text": "引用块之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2140.9296875,
+      "height": 24,
+      "top": 2116.9296875,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 2146.9296875,
+      "height": 36,
+      "top": 2110.9296875,
+      "width": 704
+    },
+    "text": "06 · 提示块",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2178.5234375,
+      "height": 25.59375,
+      "top": 2152.9296875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2184.5234375,
+      "height": 37.59375,
+      "top": 2146.9296875,
+      "width": 704
+    },
+    "text": "无图标提示块之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "12px 16px"
+    },
+    "frame": {
+      "bottom": 2283.7109375,
+      "height": 83.1875,
+      "top": 2200.5234375,
+      "width": 704
+    },
+    "kind": "aside",
+    "outer": {
+      "bottom": 2283.7109375,
+      "height": 83.1875,
+      "top": 2200.5234375,
+      "width": 704
+    },
+    "text": "+无图标提示块第二段内容，用于检查提示块内部的上下、左右留白。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2238.1171875,
+      "height": 25.59375,
+      "top": 2212.5234375,
+      "width": 672
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2238.1171875,
+      "height": 25.59375,
+      "top": 2212.5234375,
+      "width": 672
+    },
+    "text": "无图标提示块",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "8px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2271.7109375,
+      "height": 25.59375,
+      "top": 2246.1171875,
+      "width": 672
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2271.7109375,
+      "height": 25.59375,
+      "top": 2246.1171875,
+      "width": 672
+    },
+    "text": "第二段内容，用于检查提示块内部的上下、左右留白。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2315.3046875,
+      "height": 25.59375,
+      "top": 2289.7109375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2321.3046875,
+      "height": 37.59375,
+      "top": 2283.7109375,
+      "width": 704
+    },
+    "text": "带图标提示块之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "12px 16px 12px 48px"
+    },
+    "frame": {
+      "bottom": 2495.6796875,
+      "height": 158.375,
+      "top": 2337.3046875,
+      "width": 704
+    },
+    "kind": "aside",
+    "outer": {
+      "bottom": 2495.6796875,
+      "height": 158.375,
+      "top": 2337.3046875,
+      "width": 704
+    },
+    "text": "💡带图标提示块观察图标、正文起点及换行后的对齐。提示块内的列表第一项提示块内的列表第二项",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2374.8984375,
+      "height": 25.59375,
+      "top": 2349.3046875,
+      "width": 640
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2374.8984375,
+      "height": 25.59375,
+      "top": 2349.3046875,
+      "width": 640
+    },
+    "text": "带图标提示块",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "8px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2408.4921875,
+      "height": 25.59375,
+      "top": 2382.8984375,
+      "width": 640
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2408.4921875,
+      "height": 25.59375,
+      "top": 2382.8984375,
+      "width": 640
+    },
+    "text": "观察图标、正文起点及换行后的对齐。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 2452.0859375,
+      "height": 25.59375,
+      "top": 2426.4921875,
+      "width": 616
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 2454.0859375,
+      "height": 29.59375,
+      "top": 2424.4921875,
+      "width": 616
+    },
+    "text": "提示块内的列表第一项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2452.0859375,
+      "height": 25.59375,
+      "top": 2426.4921875,
+      "width": 609.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2452.0859375,
+      "height": 25.59375,
+      "top": 2426.4921875,
+      "width": 609.6015625
+    },
+    "text": "提示块内的列表第一项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 2481.6796875,
+      "height": 25.59375,
+      "top": 2456.0859375,
+      "width": 616
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 2483.6796875,
+      "height": 29.59375,
+      "top": 2454.0859375,
+      "width": 616
+    },
+    "text": "提示块内的列表第二项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2481.6796875,
+      "height": 25.59375,
+      "top": 2456.0859375,
+      "width": 609.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2481.6796875,
+      "height": 25.59375,
+      "top": 2456.0859375,
+      "width": 609.6015625
+    },
+    "text": "提示块内的列表第二项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "12px 16px 12px 48px"
+    },
+    "frame": {
+      "bottom": 2561.2734375,
+      "height": 49.59375,
+      "top": 2511.6796875,
+      "width": 704
+    },
+    "kind": "aside",
+    "outer": {
+      "bottom": 2561.2734375,
+      "height": 49.59375,
+      "top": 2511.6796875,
+      "width": 704
+    },
+    "text": "ℹ️相邻的第二个提示块，检查两个容器之间的距离。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2549.2734375,
+      "height": 25.59375,
+      "top": 2523.6796875,
+      "width": 640
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2549.2734375,
+      "height": 25.59375,
+      "top": 2523.6796875,
+      "width": 640
+    },
+    "text": "相邻的第二个提示块，检查两个容器之间的距离。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2592.8671875,
+      "height": 25.59375,
+      "top": 2567.2734375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2598.8671875,
+      "height": 37.59375,
+      "top": 2561.2734375,
+      "width": 704
+    },
+    "text": "提示块之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2653.8671875,
+      "height": 24,
+      "top": 2629.8671875,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 2659.8671875,
+      "height": 36,
+      "top": 2623.8671875,
+      "width": 704
+    },
+    "text": "07 · 代码块",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2691.4609375,
+      "height": 25.59375,
+      "top": 2665.8671875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2697.4609375,
+      "height": 37.59375,
+      "top": 2659.8671875,
+      "width": 704
+    },
+    "text": "代码块之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "16px 0px 0px",
+      "padding": "12px 16px"
+    },
+    "frame": {
+      "bottom": 2897.4609375,
+      "height": 184,
+      "top": 2713.4609375,
+      "width": 704
+    },
+    "kind": "pre",
+    "outer": {
+      "bottom": 2897.4609375,
+      "height": 184,
+      "top": 2713.4609375,
+      "width": 704
+    },
+    "text": "const title = \"内容块间距检查\";\nconst blocks = [\"正文\", \"标题\", \"列表\", \"引用\", \"表格\"];\n\nfunction inspectSpacing() {\n  return blocks.map(block => ({ block, checked: false }));\n}\nconst longLine = \"这是一条用于检查代码块横向滚动的长行，缩窄窗口后应在代码区域内部滚动，同时保持整个页面的阅读宽度和两侧基线稳定。\";",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 2929.0546875,
+      "height": 25.59375,
+      "top": 2903.4609375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 2935.0546875,
+      "height": 37.59375,
+      "top": 2897.4609375,
+      "width": 704
+    },
+    "text": "代码块之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "16px 0px 0px",
+      "padding": "12px 16px"
+    },
+    "frame": {
+      "bottom": 3015.0546875,
+      "height": 64,
+      "top": 2951.0546875,
+      "width": 704
+    },
+    "kind": "pre",
+    "outer": {
+      "bottom": 3015.0546875,
+      "height": 64,
+      "top": 2951.0546875,
+      "width": 704
+    },
+    "text": "没有语言标记的代码块\n第二行内容",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3070.0546875,
+      "height": 24,
+      "top": 3046.0546875,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 3076.0546875,
+      "height": 36,
+      "top": 3040.0546875,
+      "width": 704
+    },
+    "text": "08 · 表格",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3107.6484375,
+      "height": 25.59375,
+      "top": 3082.0546875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3113.6484375,
+      "height": 37.59375,
+      "top": 3076.0546875,
+      "width": 704
+    },
+    "text": "标准表头表格之前的正文。表头使用灰底，外框圆角为 8px。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3289.8359375,
+      "height": 170.1875,
+      "top": 3119.6484375,
+      "width": 704
+    },
+    "kind": "table",
+    "outer": {
+      "bottom": 3289.8359375,
+      "height": 170.1875,
+      "top": 3119.6484375,
+      "width": 704
+    },
+    "text": "内容块检查位置状态正文上下留白与左右基线待检查列表缩进、标记和换行待检查表格外围留白、表头灰底与圆角待检查",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3150.7421875,
+      "height": 21,
+      "top": 3129.7421875,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3150.7421875,
+      "height": 21,
+      "top": 3129.7421875,
+      "width": 147.5
+    },
+    "text": "内容块",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3150.7421875,
+      "height": 21,
+      "top": 3129.7421875,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3150.7421875,
+      "height": 21,
+      "top": 3129.7421875,
+      "width": 323
+    },
+    "text": "检查位置",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3150.7421875,
+      "height": 21,
+      "top": 3129.7421875,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3150.7421875,
+      "height": 21,
+      "top": 3129.7421875,
+      "width": 147.5
+    },
+    "text": "状态",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3192.3359375,
+      "height": 21,
+      "top": 3171.3359375,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3192.3359375,
+      "height": 21,
+      "top": 3171.3359375,
+      "width": 147.5
+    },
+    "text": "正文",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3192.3359375,
+      "height": 21,
+      "top": 3171.3359375,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3192.3359375,
+      "height": 21,
+      "top": 3171.3359375,
+      "width": 323
+    },
+    "text": "上下留白与左右基线",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3192.3359375,
+      "height": 21,
+      "top": 3171.3359375,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3192.3359375,
+      "height": 21,
+      "top": 3171.3359375,
+      "width": 147.5
+    },
+    "text": "待检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3235.3359375,
+      "height": 21,
+      "top": 3214.3359375,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3235.3359375,
+      "height": 21,
+      "top": 3214.3359375,
+      "width": 147.5
+    },
+    "text": "列表",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3235.3359375,
+      "height": 21,
+      "top": 3214.3359375,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3235.3359375,
+      "height": 21,
+      "top": 3214.3359375,
+      "width": 323
+    },
+    "text": "缩进、标记和换行",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3235.3359375,
+      "height": 21,
+      "top": 3214.3359375,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3235.3359375,
+      "height": 21,
+      "top": 3214.3359375,
+      "width": 147.5
+    },
+    "text": "待检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3278.3359375,
+      "height": 21,
+      "top": 3257.3359375,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3278.3359375,
+      "height": 21,
+      "top": 3257.3359375,
+      "width": 147.5
+    },
+    "text": "表格",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3278.3359375,
+      "height": 21,
+      "top": 3257.3359375,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3278.3359375,
+      "height": 21,
+      "top": 3257.3359375,
+      "width": 323
+    },
+    "text": "外围留白、表头灰底与圆角",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3278.3359375,
+      "height": 21,
+      "top": 3257.3359375,
+      "width": 147.5
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3278.3359375,
+      "height": 21,
+      "top": 3257.3359375,
+      "width": 147.5
+    },
+    "text": "待检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3327.4296875,
+      "height": 25.59375,
+      "top": 3301.8359375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3333.4296875,
+      "height": 37.59375,
+      "top": 3295.8359375,
+      "width": 704
+    },
+    "text": "无表头表格：每个单元格都是普通正文格。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3427.4296875,
+      "height": 88,
+      "top": 3339.4296875,
+      "width": 704
+    },
+    "kind": "table",
+    "outer": {
+      "bottom": 3427.4296875,
+      "height": 88,
+      "top": 3339.4296875,
+      "width": 704
+    },
+    "text": "第一行第一列第一行第二列第二行第一列第二行第二列",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3372.9296875,
+      "height": 21,
+      "top": 3351.9296875,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3372.9296875,
+      "height": 21,
+      "top": 3351.9296875,
+      "width": 323
+    },
+    "text": "第一行第一列",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3372.9296875,
+      "height": 21,
+      "top": 3351.9296875,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3372.9296875,
+      "height": 21,
+      "top": 3351.9296875,
+      "width": 323
+    },
+    "text": "第一行第二列",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3415.9296875,
+      "height": 21,
+      "top": 3394.9296875,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3415.9296875,
+      "height": 21,
+      "top": 3394.9296875,
+      "width": 323
+    },
+    "text": "第二行第一列",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3415.9296875,
+      "height": 21,
+      "top": 3394.9296875,
+      "width": 323
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3415.9296875,
+      "height": 21,
+      "top": 3394.9296875,
+      "width": 323
+    },
+    "text": "第二行第二列",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3465.0234375,
+      "height": 25.59375,
+      "top": 3439.4296875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3471.0234375,
+      "height": 37.59375,
+      "top": 3433.4296875,
+      "width": 704
+    },
+    "text": "标题列表格：左列为表头，检查左上角与左下角的灰底裁切。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3608.0234375,
+      "height": 131,
+      "top": 3477.0234375,
+      "width": 704
+    },
+    "kind": "table",
+    "outer": {
+      "bottom": 3608.0234375,
+      "height": 131,
+      "top": 3477.0234375,
+      "width": 704
+    },
+    "text": "项目内容块间距检查类型模拟数据状态等待人工检查",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3508.1171875,
+      "height": 21,
+      "top": 3487.1171875,
+      "width": 279.125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3508.1171875,
+      "height": 21,
+      "top": 3487.1171875,
+      "width": 279.125
+    },
+    "text": "项目",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3510.5234375,
+      "height": 21,
+      "top": 3489.5234375,
+      "width": 366.875
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3510.5234375,
+      "height": 21,
+      "top": 3489.5234375,
+      "width": 366.875
+    },
+    "text": "内容块间距检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3553.5234375,
+      "height": 21,
+      "top": 3532.5234375,
+      "width": 279.125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3553.5234375,
+      "height": 21,
+      "top": 3532.5234375,
+      "width": 279.125
+    },
+    "text": "类型",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3553.5234375,
+      "height": 21,
+      "top": 3532.5234375,
+      "width": 366.875
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3553.5234375,
+      "height": 21,
+      "top": 3532.5234375,
+      "width": 366.875
+    },
+    "text": "模拟数据",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3596.5234375,
+      "height": 21,
+      "top": 3575.5234375,
+      "width": 279.125
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3596.5234375,
+      "height": 21,
+      "top": 3575.5234375,
+      "width": 279.125
+    },
+    "text": "状态",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3596.5234375,
+      "height": 21,
+      "top": 3575.5234375,
+      "width": 366.875
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3596.5234375,
+      "height": 21,
+      "top": 3575.5234375,
+      "width": 366.875
+    },
+    "text": "等待人工检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3645.6171875,
+      "height": 25.59375,
+      "top": 3620.0234375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3651.6171875,
+      "height": 37.59375,
+      "top": 3614.0234375,
+      "width": 704
+    },
+    "text": "合并单元格表格：检查灰底和边框在合并格处的衔接。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3784.8046875,
+      "height": 127.1875,
+      "top": 3657.6171875,
+      "width": 704
+    },
+    "kind": "table",
+    "outer": {
+      "bottom": 3784.8046875,
+      "height": 127.1875,
+      "top": 3657.6171875,
+      "width": 704
+    },
+    "text": "合并的标题单元格状态左侧内容中间内容待检查合并的正文单元格待检查",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3688.7109375,
+      "height": 21,
+      "top": 3667.7109375,
+      "width": 440
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3688.7109375,
+      "height": 21,
+      "top": 3667.7109375,
+      "width": 440
+    },
+    "text": "合并的标题单元格",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3688.7109375,
+      "height": 21,
+      "top": 3667.7109375,
+      "width": 206
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3688.7109375,
+      "height": 21,
+      "top": 3667.7109375,
+      "width": 206
+    },
+    "text": "状态",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3730.3046875,
+      "height": 21,
+      "top": 3709.3046875,
+      "width": 206
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3730.3046875,
+      "height": 21,
+      "top": 3709.3046875,
+      "width": 206
+    },
+    "text": "左侧内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3730.3046875,
+      "height": 21,
+      "top": 3709.3046875,
+      "width": 206
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3730.3046875,
+      "height": 21,
+      "top": 3709.3046875,
+      "width": 206
+    },
+    "text": "中间内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3730.3046875,
+      "height": 21,
+      "top": 3709.3046875,
+      "width": 206
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3730.3046875,
+      "height": 21,
+      "top": 3709.3046875,
+      "width": 206
+    },
+    "text": "待检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3773.3046875,
+      "height": 21,
+      "top": 3752.3046875,
+      "width": 440
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3773.3046875,
+      "height": 21,
+      "top": 3752.3046875,
+      "width": 440
+    },
+    "text": "合并的正文单元格",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3773.3046875,
+      "height": 21,
+      "top": 3752.3046875,
+      "width": 206
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3773.3046875,
+      "height": 21,
+      "top": 3752.3046875,
+      "width": 206
+    },
+    "text": "待检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3822.3984375,
+      "height": 25.59375,
+      "top": 3796.8046875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3828.3984375,
+      "height": 37.59375,
+      "top": 3790.8046875,
+      "width": 704
+    },
+    "text": "表格之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3883.3984375,
+      "height": 24,
+      "top": 3859.3984375,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 3889.3984375,
+      "height": 36,
+      "top": 3853.3984375,
+      "width": 704
+    },
+    "text": "09 · 公式",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3920.9921875,
+      "height": 25.59375,
+      "top": 3895.3984375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3926.9921875,
+      "height": 37.59375,
+      "top": 3889.3984375,
+      "width": 704
+    },
+    "text": "行内公式 E=mc2E=mc^2 与普通文字放在同一段，观察基线和段落行高。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 3958.5859375,
+      "height": 25.59375,
+      "top": 3932.9921875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 3964.5859375,
+      "height": 37.59375,
+      "top": 3926.9921875,
+      "width": 704
+    },
+    "text": "块级公式之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 4046.7265625,
+      "height": 66.140625,
+      "top": 3980.5859375,
+      "width": 704
+    },
+    "kind": "div",
+    "outer": {
+      "bottom": 4046.7265625,
+      "height": 66.140625,
+      "top": 3980.5859375,
+      "width": 704
+    },
+    "text": "∑i=1ni=n(n+1)2\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 4078.3203125,
+      "height": 25.59375,
+      "top": 4052.7265625,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 4084.3203125,
+      "height": 37.59375,
+      "top": 4046.7265625,
+      "width": 704
+    },
+    "text": "块级公式之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 4139.3203125,
+      "height": 24,
+      "top": 4115.3203125,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 4145.3203125,
+      "height": 36,
+      "top": 4109.3203125,
+      "width": 704
+    },
+    "text": "10 · Mermaid 图形",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 4176.9140625,
+      "height": 25.59375,
+      "top": 4151.3203125,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 4182.9140625,
+      "height": 37.59375,
+      "top": 4145.3203125,
+      "width": 704
+    },
+    "text": "图形之前的正文。可以切换图形和代码，比较两个状态的内部留白。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "0px",
+      "padding": "12px 16px"
+    },
+    "frame": {
+      "bottom": 4302.9140625,
+      "height": 104,
+      "top": 4198.9140625,
+      "width": 704
+    },
+    "kind": "pre",
+    "outer": {
+      "bottom": 4302.9140625,
+      "height": 104,
+      "top": 4198.9140625,
+      "width": 704
+    },
+    "text": "flowchart LR\n  A[收集内容] --> B[整理格式]\n  B --> C[检查间距]\n  C --> D[完成验收]",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 4499.40625,
+      "height": 25.59375,
+      "top": 4473.8125,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 4505.40625,
+      "height": 37.59375,
+      "top": 4467.8125,
+      "width": 704
+    },
+    "text": "图形之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 4560.40625,
+      "height": 24,
+      "top": 4536.40625,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 4566.40625,
+      "height": 36,
+      "top": 4530.40625,
+      "width": 704
+    },
+    "text": "11 · 图片与并排图片",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 4598,
+      "height": 25.59375,
+      "top": 4572.40625,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 4604,
+      "height": 37.59375,
+      "top": 4566.40625,
+      "width": 704
+    },
+    "text": "单张图片之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 4860,
+      "height": 240,
+      "top": 4620,
+      "width": 480
+    },
+    "kind": "img",
+    "outer": {
+      "bottom": 4860,
+      "height": 240,
+      "top": 4620,
+      "width": 480
+    },
+    "text": "",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 4907.59375,
+      "height": 25.59375,
+      "top": 4882,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 4913.59375,
+      "height": 37.59375,
+      "top": 4876,
+      "width": 704
+    },
+    "text": "单张图片之后、并排图片之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5139.9921875,
+      "height": 210.3984375,
+      "top": 4929.59375,
+      "width": 704
+    },
+    "kind": "figure",
+    "outer": {
+      "bottom": 5139.9921875,
+      "height": 210.3984375,
+      "top": 4929.59375,
+      "width": 704
+    },
+    "text": "并排图片的共同说明：检查列间距、说明文字与下方正文的距离。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5101.59375,
+      "height": 172,
+      "top": 4929.59375,
+      "width": 344
+    },
+    "kind": "img",
+    "outer": {
+      "bottom": 5101.59375,
+      "height": 172,
+      "top": 4929.59375,
+      "width": 344
+    },
+    "text": "",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5101.59375,
+      "height": 172,
+      "top": 4929.59375,
+      "width": 344
+    },
+    "kind": "img",
+    "outer": {
+      "bottom": 5101.59375,
+      "height": 172,
+      "top": 4929.59375,
+      "width": 344
+    },
+    "text": "",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5171.5859375,
+      "height": 25.59375,
+      "top": 5145.9921875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5177.5859375,
+      "height": 37.59375,
+      "top": 5139.9921875,
+      "width": 704
+    },
+    "text": "并排图片之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5232.5859375,
+      "height": 24,
+      "top": 5208.5859375,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 5238.5859375,
+      "height": 36,
+      "top": 5202.5859375,
+      "width": 704
+    },
+    "text": "12 · 分隔线",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5270.1796875,
+      "height": 25.59375,
+      "top": 5244.5859375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5276.1796875,
+      "height": 37.59375,
+      "top": 5238.5859375,
+      "width": 704
+    },
+    "text": "分隔线之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "38.4px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5315.578125,
+      "height": 1,
+      "top": 5314.578125,
+      "width": 704
+    },
+    "kind": "hr",
+    "outer": {
+      "bottom": 5315.578125,
+      "height": 1,
+      "top": 5314.578125,
+      "width": 704
+    },
+    "text": "",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5347.171875,
+      "height": 25.59375,
+      "top": 5321.578125,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5353.171875,
+      "height": 37.59375,
+      "top": 5315.578125,
+      "width": 704
+    },
+    "text": "分隔线之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5408.171875,
+      "height": 24,
+      "top": 5384.171875,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 5414.171875,
+      "height": 36,
+      "top": 5378.171875,
+      "width": 704
+    },
+    "text": "13 · 脚注与原格式块",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5445.765625,
+      "height": 25.59375,
+      "top": 5420.171875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5451.765625,
+      "height": 37.59375,
+      "top": 5414.171875,
+      "width": 704
+    },
+    "text": "这段正文包含一个脚注引用spacing，用于检查编号的基线与脚注块的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "16px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5521.765625,
+      "height": 54,
+      "top": 5467.765625,
+      "width": 704
+    },
+    "kind": "div",
+    "outer": {
+      "bottom": 5521.765625,
+      "height": 54,
+      "top": 5467.765625,
+      "width": 704
+    },
+    "text": "脚注的第一段内容。脚注的第二段内容，观察内部段落的间距。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "14px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5487.265625,
+      "height": 19,
+      "top": 5468.265625,
+      "width": 126
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5487.265625,
+      "height": 19,
+      "top": 5468.265625,
+      "width": 126
+    },
+    "text": "脚注的第一段内容。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "14px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5521.765625,
+      "height": 20,
+      "top": 5501.765625,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5521.765625,
+      "height": 20,
+      "top": 5501.765625,
+      "width": 704
+    },
+    "text": "脚注的第二段内容，观察内部段落的间距。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5553.359375,
+      "height": 25.59375,
+      "top": 5527.765625,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5559.359375,
+      "height": 37.59375,
+      "top": 5521.765625,
+      "width": 704
+    },
+    "text": "原格式保留块之前的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5646.546875,
+      "height": 87.1875,
+      "top": 5559.359375,
+      "width": 704
+    },
+    "kind": "div",
+    "outer": {
+      "bottom": 5646.546875,
+      "height": 87.1875,
+      "top": 5559.359375,
+      "width": 704
+    },
+    "text": "原格式保留块的第一段内容。原格式保留块的第二段内容，用于检查保留标签、内部正文及块之间的距离。原格式内容 · 保留原文",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5584.953125,
+      "height": 25.59375,
+      "top": 5559.359375,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5584.953125,
+      "height": 25.59375,
+      "top": 5559.359375,
+      "width": 704
+    },
+    "text": "原格式保留块的第一段内容。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5626.546875,
+      "height": 25.59375,
+      "top": 5600.953125,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5626.546875,
+      "height": 25.59375,
+      "top": 5600.953125,
+      "width": 704
+    },
+    "text": "原格式保留块的第二段内容，用于检查保留标签、内部正文及块之间的距离。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5678.140625,
+      "height": 25.59375,
+      "top": 5652.546875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5684.140625,
+      "height": 37.59375,
+      "top": 5646.546875,
+      "width": 704
+    },
+    "text": "原格式保留块之后的正文。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "20px",
+      "lineHeight": "24px",
+      "margin": "25px 0px 0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5739.140625,
+      "height": 24,
+      "top": 5715.140625,
+      "width": 704
+    },
+    "kind": "h2",
+    "outer": {
+      "bottom": 5745.140625,
+      "height": 36,
+      "top": 5709.140625,
+      "width": 704
+    },
+    "text": "14 · 连续混排",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 5776.734375,
+      "height": 25.59375,
+      "top": 5751.140625,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5782.734375,
+      "height": 37.59375,
+      "top": 5745.140625,
+      "width": 704
+    },
+    "text": "这一组不插入额外的小标题，直接比较相邻内容块。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 5816.328125,
+      "height": 25.59375,
+      "top": 5790.734375,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 5818.328125,
+      "height": 29.59375,
+      "top": 5788.734375,
+      "width": 680
+    },
+    "text": "正文后紧接列表",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5816.328125,
+      "height": 25.59375,
+      "top": 5790.734375,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5816.328125,
+      "height": 25.59375,
+      "top": 5790.734375,
+      "width": 673.6015625
+    },
+    "text": "正文后紧接列表",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6.4px"
+    },
+    "frame": {
+      "bottom": 5845.921875,
+      "height": 25.59375,
+      "top": 5820.328125,
+      "width": 680
+    },
+    "kind": "li",
+    "outer": {
+      "bottom": 5847.921875,
+      "height": 29.59375,
+      "top": 5818.328125,
+      "width": 680
+    },
+    "text": "列表的第二项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5845.921875,
+      "height": 25.59375,
+      "top": 5820.328125,
+      "width": 673.6015625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5845.921875,
+      "height": 25.59375,
+      "top": 5820.328125,
+      "width": 673.6015625
+    },
+    "text": "列表的第二项",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "0px 0px 0px 16px"
+    },
+    "frame": {
+      "bottom": 5895.515625,
+      "height": 25.59375,
+      "top": 5869.921875,
+      "width": 704
+    },
+    "kind": "blockquote",
+    "outer": {
+      "bottom": 5895.515625,
+      "height": 25.59375,
+      "top": 5869.921875,
+      "width": 704
+    },
+    "text": "列表后紧接引用。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5895.515625,
+      "height": 25.59375,
+      "top": 5869.921875,
+      "width": 686
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5895.515625,
+      "height": 25.59375,
+      "top": 5869.921875,
+      "width": 686
+    },
+    "text": "列表后紧接引用。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "16px 0px 0px",
+      "padding": "12px 16px 12px 48px"
+    },
+    "frame": {
+      "bottom": 5961.109375,
+      "height": 49.59375,
+      "top": 5911.515625,
+      "width": 704
+    },
+    "kind": "aside",
+    "outer": {
+      "bottom": 5961.109375,
+      "height": 49.59375,
+      "top": 5911.515625,
+      "width": 704
+    },
+    "text": "💡引用后紧接提示块。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5949.109375,
+      "height": 25.59375,
+      "top": 5923.515625,
+      "width": 640
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 5949.109375,
+      "height": 25.59375,
+      "top": 5923.515625,
+      "width": 640
+    },
+    "text": "引用后紧接提示块。",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "20.0004px",
+      "margin": "16px 0px 0px",
+      "padding": "12px 16px"
+    },
+    "frame": {
+      "bottom": 6021.109375,
+      "height": 44,
+      "top": 5977.109375,
+      "width": 704
+    },
+    "kind": "pre",
+    "outer": {
+      "bottom": 6021.109375,
+      "height": 44,
+      "top": 5977.109375,
+      "width": 704
+    },
+    "text": "提示块后紧接代码块。",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6111.296875,
+      "height": 84.1875,
+      "top": 6027.109375,
+      "width": 704
+    },
+    "kind": "table",
+    "outer": {
+      "bottom": 6111.296875,
+      "height": 84.1875,
+      "top": 6027.109375,
+      "width": 704
+    },
+    "text": "代码块后的表格内容间距检查观察相邻块的留白",
+    "topLevel": true
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6058.203125,
+      "height": 21,
+      "top": 6037.203125,
+      "width": 304.5234375
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 6058.203125,
+      "height": 21,
+      "top": 6037.203125,
+      "width": 304.5234375
+    },
+    "text": "代码块后的表格",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6058.203125,
+      "height": 21,
+      "top": 6037.203125,
+      "width": 341.4765625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 6058.203125,
+      "height": 21,
+      "top": 6037.203125,
+      "width": 341.4765625
+    },
+    "text": "内容",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6099.796875,
+      "height": 21,
+      "top": 6078.796875,
+      "width": 304.5234375
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 6099.796875,
+      "height": 21,
+      "top": 6078.796875,
+      "width": 304.5234375
+    },
+    "text": "间距检查",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "21px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6099.796875,
+      "height": 21,
+      "top": 6078.796875,
+      "width": 341.4765625
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 6099.796875,
+      "height": 21,
+      "top": 6078.796875,
+      "width": 341.4765625
+    },
+    "text": "观察相邻块的留白",
+    "topLevel": false
+  },
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "6px 0px"
+    },
+    "frame": {
+      "bottom": 6148.890625,
+      "height": 25.59375,
+      "top": 6123.296875,
+      "width": 704
+    },
+    "kind": "p",
+    "outer": {
+      "bottom": 6154.890625,
+      "height": 37.59375,
+      "top": 6117.296875,
+      "width": 704
+    },
+    "text": "最后一段正文。可以选中单个块、跨块选择或拖动排序，再按撤销恢复。",
+    "topLevel": true
+  }
+]

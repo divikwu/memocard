@@ -1,12 +1,17 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Editor as TiptapEditor } from '@tiptap/react';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import type { Note, NoteProperties, PropertyChange, PropertyType } from '@memocard/contracts';
 import { setStorybookRequestHandler, setStorybookBrowserAssets } from '../../test-support/bridge';
 import { Editor, type EditorHandle } from '../business/Editor';
+import { NoteMarkdown } from '../business/NoteMarkdown';
 import { Button } from '../components/button';
 import { LumaStoryFrame } from '../LumaPage';
 import { editorContentReview } from '../../test-support/editor-content.fixture';
+import { blockSpacingBody } from '../../ui-state-fixtures/block-spacing';
+import { defaults } from '../../src/features/typography/preferences';
+import { resolveTypography } from '../../src/features/typography/TypographyProvider';
 
 const body = `## 把思考写进上下文
 
@@ -91,7 +96,7 @@ function EditorFixture({ readOnly = false, failSave = false, initialBody, initia
   const [saved, setSaved] = useState('');
   const handle = useRef<EditorHandle>(null);
   useLayoutEffect(() => {
-    const assets = setStorybookBrowserAssets({ 'assets/editor.png': editorImageBlob('#737373'), 'assets/editor-second.png': editorImageBlob('#3b82f6') });
+    const assets = setStorybookBrowserAssets({ 'assets/editor.png': editorImageBlob('#737373'), 'assets/editor-second.png': editorImageBlob('#3b82f6'), 'assets/spacing-wide.png': editorImageBlob('#e5e7eb'), 'assets/spacing-detail.png': editorImageBlob('#cbd5e1') });
     const requests = setStorybookRequestHandler(fixture.request);
     return () => { requests(); assets(); };
   }, [fixture]);
@@ -150,10 +155,55 @@ export const DetailLayoutMobile: Story = {
   globals: { viewport: { value: 'mobile', isRotated: false } },
   decorators: [Story => <div style={{ maxWidth: 390, marginInline: 'auto' }}><Story /></div>],
 };
+
+async function verifyHighlight(field: HTMLElement, block: HTMLElement, target = block) {
+  let color = '';
+  await waitFor(() => {
+    const svg = field.closest('.rich-editor')!.querySelector<SVGSVGElement>('.rich-block-highlights')!;
+    expect(svg).not.toBeNull();
+    const path = svg.querySelector('path')!;
+    const blocks = Array.from(field.querySelectorAll<HTMLElement>('.rich-selected-block, .ProseMirror-selectednode'))
+      .filter(element => !element.parentElement?.closest('.rich-selected-block, .ProseMirror-selectednode') && element.getClientRects().length);
+    const segments = path.getAttribute('d')!.match(/M[^M]+/g)!;
+    expect(segments).toHaveLength(blocks.length);
+    const segment = segments[blocks.indexOf(block)];
+    expect(segment).toBeDefined();
+    const sample = field.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
+    sample.setAttribute('d', segment); svg.append(sample);
+    const box = sample.getBBox(); sample.remove();
+    const origin = svg.getBoundingClientRect(), bounds = target.getBoundingClientRect(), style = getComputedStyle(target);
+    let { left, right, top, bottom } = bounds;
+    if (target.matches('p, h1, h2, h3, h4, h5, h6, ul, ol, li')) {
+      top += parseFloat(style.paddingTop) || 0; bottom -= parseFloat(style.paddingBottom) || 0;
+      if (target.matches('p, h1, h2, h3, h4, h5, h6')) {
+        left += parseFloat(style.paddingLeft) || 0; right -= parseFloat(style.paddingRight) || 0;
+      }
+      if (target.matches('li')) left = target.parentElement!.getBoundingClientRect().left;
+    }
+    if (target.matches('table')) {
+      const clip = target.closest('.tableWrapper')!.getBoundingClientRect();
+      left = Math.max(left, clip.left); right = Math.min(right, clip.right);
+    }
+    expect(Math.abs(left - (origin.left + box.x) - 4)).toBeLessThan(0.1);
+    expect(Math.abs(top - (origin.top + box.y) - 4)).toBeLessThan(0.1);
+    expect(Math.abs(origin.left + box.x + box.width - right - 4)).toBeLessThan(0.1);
+    expect(Math.abs(origin.top + box.y + box.height - bottom - 4)).toBeLessThan(0.1);
+    for (const corner of [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius]) {
+      const radius = Math.min((parseFloat(corner) || 0) + 4, box.width / 2, box.height / 2);
+      expect(segment).toContain(`A${radius} ${radius} `);
+    }
+    expect(getComputedStyle(svg).pointerEvents).toBe('none');
+    expect(svg.closest('.rich-editor-content')).toBeNull();
+    color = getComputedStyle(svg).fill;
+  });
+  return { backgroundColor: color };
+}
+
 export const DetailLayoutRegression: Story = {
   ...DetailLayout,
   name: '详情排版 · 块选区回归',
   tags: ['!dev', '!autodocs'],
+  decorators: [Story => <div className="note-page-scroll" style={{ height: '100vh', paddingInline: 16, overflowY: 'auto' }}><Story /></div>],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('textbox', { name: '页面标题' })).toHaveValue(detailLayoutTitle);
@@ -163,48 +213,204 @@ export const DetailLayoutRegression: Story = {
     await waitFor(() => expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1));
     await canvasElement.ownerDocument.fonts.ready;
     const field = canvas.getByRole('textbox', { name: '笔记内容' });
+    const richEditor = (field as HTMLElement & { editor: TiptapEditor }).editor;
+    const originalContent = richEditor.state.doc.content;
     const verifyBlockSelection = async (block: HTMLElement) => {
       block.scrollIntoView({ block: 'center' });
       const before = block.getBoundingClientRect(), text = block.textContent, background = getComputedStyle(block).backgroundColor, scrollWidth = block.scrollWidth;
       await userEvent.pointer({ target: block, coords: { clientX: before.left + 8, clientY: before.top + before.height / 2 } });
       await userEvent.click(canvas.getByRole('button', { name: '内容块操作' }));
+      const popup = await within(canvasElement.ownerDocument.body).findByRole('menu', { name: '内容块操作菜单' });
+      await expect(popup).toBeVisible();
+      await expect(['top', 'bottom']).toContain(popup.getAttribute('data-side'));
       await waitFor(() => expect(block.matches('.rich-selected-block, .ProseMirror-selectednode'), `选择 ${block.tagName}「${text?.slice(0, 20)}」`).toBe(true));
       await expect(block.textContent).toBe(text);
       const after = block.getBoundingClientRect();
       await expect(Math.abs(after.width - before.width)).toBeLessThan(0.5);
       await expect(Math.abs(after.height - before.height)).toBeLessThan(0.5);
       await expect(getComputedStyle(block).backgroundColor).toBe(background);
-      if (block.tagName === 'PRE') {
-        await expect(block.scrollWidth).toBe(scrollWidth);
-        await expect(getComputedStyle(block).boxShadow).toContain('inset');
-      } else await expect(getComputedStyle(block, '::after').pointerEvents).toBe('none');
+      await expect(block.scrollWidth).toBe(scrollWidth);
+      const overlay = await verifyHighlight(field, block, block.querySelector('table') ?? block);
       await userEvent.keyboard('{Escape}');
+      await waitFor(() => expect(within(canvasElement.ownerDocument.body).queryByRole('menu', { name: '内容块操作菜单' })).not.toBeInTheDocument());
       await waitFor(() => expect(field).toHaveFocus());
+      return overlay;
     };
-    await verifyBlockSelection(field.querySelectorAll<HTMLElement>(':scope > p')[1]);
+    const paragraph = field.querySelectorAll<HTMLElement>(':scope > p')[1];
+    const paragraphSelection = await verifyBlockSelection(paragraph);
     const code = Array.from(field.querySelectorAll('pre')).find(element => element.textContent?.includes('const message'))!;
     await verifyBlockSelection(code);
-    const table = field.querySelector('table')!, tableWrapper = table.closest<HTMLElement>('.tableWrapper')!;
+    const table = field.querySelector('table')!, tableWrapper = table.closest<HTMLElement>('.tableWrapper')!, tableBlock = table.closest<HTMLElement>('.rich-table-block')!;
+    const tableBlockSelection = await verifyBlockSelection(tableBlock);
+    await expect(tableBlockSelection).toEqual(paragraphSelection);
+    await expect(richEditor.state.selection.toJSON().type).toBe('node');
+    await expect(table.querySelectorAll('.selectedCell')).toHaveLength(0);
+    await expect(getComputedStyle(tableBlock).paddingBlock).toBe('6px');
+    await expect(getComputedStyle(tableBlock).paddingBlock).toBe(getComputedStyle(paragraph).paddingBlock);
     await waitFor(() => expect(tableWrapper.dataset.overflow).toBe(String(table.scrollWidth > tableWrapper.clientWidth + 1)));
     const overflowHint = getComputedStyle(tableWrapper, '::after').content;
     if (tableWrapper.dataset.overflow === 'true') await expect(overflowHint).toContain('左右滚动查看完整表格');
     table.scrollIntoView({ block: 'center' });
     const tableBefore = table.getBoundingClientRect(), tableText = table.textContent, tableBackground = getComputedStyle(table).backgroundColor, tableScrollWidth = tableWrapper.scrollWidth;
-    await userEvent.keyboard('{Control>}a{/Control}{Control>}a{/Control}');
-    await waitFor(() => expect(table.matches('.rich-selected-block') || tableWrapper.matches('.rich-selected-block')).toBe(true));
-    await expect(table.textContent).toBe(tableText);
-    const tableAfter = table.getBoundingClientRect();
-    await expect(Math.abs(tableAfter.width - tableBefore.width)).toBeLessThan(0.5);
-    await expect(Math.abs(tableAfter.height - tableBefore.height)).toBeLessThan(0.5);
-    await expect(getComputedStyle(table).backgroundColor).toBe(tableBackground);
-    await expect(tableWrapper.scrollWidth).toBe(tableScrollWidth);
-    for (const cell of table.querySelectorAll('td, th')) {
-      const selection = getComputedStyle(cell, '::after');
-      await expect(selection.pointerEvents).toBe('none');
-      await expect(selection.backgroundColor).not.toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+    const cells = Array.from(table.querySelectorAll('td, th'));
+    const cellsBefore = cells.map(cell => ({ padding: getComputedStyle(cell).padding, width: cell.getBoundingClientRect().width, height: cell.getBoundingClientRect().height }));
+    const verifyTableGeometry = async () => {
+      const after = table.getBoundingClientRect();
+      await expect(Math.abs(after.width - tableBefore.width)).toBeLessThan(0.5);
+      await expect(Math.abs(after.height - tableBefore.height)).toBeLessThan(0.5);
+      await expect(getComputedStyle(table).backgroundColor).toBe(tableBackground);
+      await expect(tableWrapper.scrollWidth).toBe(tableScrollWidth);
+      await expect(getComputedStyle(tableBlock).paddingBlock).toBe(getComputedStyle(paragraph).paddingBlock);
+      for (const [index, cell] of cells.entries()) {
+        const rect = cell.getBoundingClientRect();
+        await expect(getComputedStyle(cell).padding).toBe(cellsBefore[index].padding);
+        await expect(Math.abs(rect.width - cellsBefore[index].width)).toBeLessThan(0.5);
+        await expect(Math.abs(rect.height - cellsBefore[index].height)).toBeLessThan(0.5);
+      }
+      await expect(getComputedStyle(tableWrapper, '::after').content).toBe(overflowHint);
+      await expect(richEditor.state.doc.content.eq(originalContent)).toBe(true);
+    };
+    const verifyTableBlockOverlay = async () => {
+      const selection = await verifyHighlight(field, tableBlock, table);
+      await expect(selection.backgroundColor).toBe(paragraphSelection.backgroundColor);
+      await expect(table.querySelectorAll('.selectedCell')).toHaveLength(0);
+      for (const cell of cells) await expect(getComputedStyle(cell, '::after').backgroundColor).toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+      await verifyTableGeometry();
+    };
+    await verifyTableBlockOverlay();
+    if (tableWrapper.scrollWidth > tableWrapper.clientWidth + 1) {
+      tableWrapper.scrollLeft = tableWrapper.scrollWidth;
+      await waitFor(() => expect(tableWrapper.scrollLeft).toBeGreaterThan(0));
+      await verifyTableBlockOverlay();
+      tableWrapper.scrollLeft = 0;
+      await waitFor(() => expect(tableWrapper.scrollLeft).toBe(0));
+      await verifyTableBlockOverlay();
     }
-    await expect(getComputedStyle(tableWrapper, '::after').content).toBe(overflowHint);
-    await userEvent.keyboard('{ArrowRight}');
+    const followingBlock = tableBlock.nextElementSibling as HTMLElement;
+    await expect(followingBlock.tagName).toBe('P');
+    await userEvent.keyboard('{Shift>}{ArrowDown}{/Shift}');
+    await waitFor(() => expect(richEditor.state.selection.toJSON().type).toBe('blockRange'));
+    await expect(Array.from(field.querySelectorAll('.rich-selected-block'))).toEqual([tableBlock, followingBlock]);
+    const followingSelection = await verifyHighlight(field, followingBlock);
+    await expect(followingSelection.backgroundColor).toBe(paragraphSelection.backgroundColor);
+    await verifyTableBlockOverlay();
+    await userEvent.keyboard('{Shift>}{ArrowUp}{/Shift}');
+    await waitFor(() => expect(richEditor.state.selection.toJSON().type).toBe('node'));
+    await expect(field.querySelectorAll('.rich-selected-block')).toHaveLength(0);
+    await verifyTableBlockOverlay();
+
+    await userEvent.click(paragraph);
+    await userEvent.keyboard('{Control>}a{/Control}{Control>}a{/Control}');
+    await waitFor(() => expect(richEditor.state.selection.toJSON().type).toBe('all'));
+    await expect(tableBlock.matches('.rich-selected-block')).toBe(true);
+    await expect(table.textContent).toBe(tableText);
+    await verifyTableBlockOverlay();
+
+    const firstCell = table.rows[1].cells[0], lastCell = table.rows[2].cells[1];
+    const cellPosition = (cell: HTMLElement) => richEditor.view.posAtDOM(cell, 0) - 1;
+    for (const selected of [new Set([firstCell]), new Set([firstCell, table.rows[1].cells[1], table.rows[2].cells[0], lastCell])]) {
+      const head = selected.size === 1 ? firstCell : lastCell;
+      richEditor.commands.setCellSelection({ anchorCell: cellPosition(firstCell), headCell: cellPosition(head) });
+      richEditor.view.focus();
+      await waitFor(() => expect(table.querySelectorAll('.selectedCell')).toHaveLength(selected.size));
+      await expect(richEditor.state.selection.toJSON().type).toBe('cell');
+      await expect(tableBlock.matches('.rich-selected-block, .ProseMirror-selectednode')).toBe(false);
+      await expect(editor.querySelector('.rich-block-highlights')).toBeNull();
+      await expect(getComputedStyle(tableBlock, '::after').content).toBe('none');
+      for (const cell of cells) {
+        const selection = getComputedStyle(cell, '::after');
+        if (selected.has(cell as HTMLTableCellElement)) {
+          await expect(selection.backgroundColor).toBe(paragraphSelection.backgroundColor);
+          await expect(selection.inset).toBe('0px');
+          await expect(selection.pointerEvents).toBe('none');
+        } else await expect(selection.backgroundColor).toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+      }
+      await verifyTableGeometry();
+      await expect(await verifyBlockSelection(tableBlock)).toEqual(paragraphSelection);
+      await expect(richEditor.state.selection.toJSON().type).toBe('node');
+      await verifyTableBlockOverlay();
+    }
+    const cellText = firstCell.textContent!;
+    const textStart = cellPosition(firstCell) + 2;
+    richEditor.commands.setTextSelection({ from: textStart, to: textStart + cellText.length });
+    richEditor.view.focus();
+    await expect(richEditor.state.selection.empty).toBe(false);
+    await expect(await verifyBlockSelection(tableBlock)).toEqual(paragraphSelection);
+    await expect(richEditor.state.selection.toJSON().type).toBe('node');
+    await verifyTableBlockOverlay();
+    richEditor.commands.setTextSelection(textStart + cellText.length);
+    richEditor.view.focus();
+    await waitFor(() => expect(field).toHaveFocus());
+    await expect(table.querySelectorAll('.selectedCell')).toHaveLength(0);
+    await userEvent.keyboard(' audit');
+    await waitFor(() => expect(firstCell.textContent).toBe(`${cellText} audit`));
+    richEditor.commands.undo();
+    await waitFor(() => expect(firstCell.textContent).toBe(cellText));
+    await verifyTableGeometry();
+
+    const surface = field.closest<HTMLElement>('.note-page-scroll')!;
+    // Keep page coordinates while routing subsequent events through pointer capture.
+    const capturedRoot = field.closest<HTMLElement>('.rich-editor')!;
+    for (const selection of ['caret', 'cells', 'table'] as const) {
+      if (selection === 'table') await verifyBlockSelection(tableBlock);
+      else {
+        if (selection === 'cells') richEditor.commands.setCellSelection({ anchorCell: cellPosition(firstCell), headCell: cellPosition(lastCell) });
+        else richEditor.commands.setTextSelection(textStart);
+        richEditor.view.focus();
+      }
+      await waitFor(() => expect(field).toHaveFocus());
+      if (selection !== 'table') {
+        await expect(canvas.getByRole('group', { name: '表格操作' })).toBeVisible();
+        await expect(editor.querySelector('.rich-table-cell-outline')).not.toBeNull();
+      }
+      const bounds = firstCell.getBoundingClientRect();
+      const margin = { clientX: surface.getBoundingClientRect().left + 4, clientY: bounds.top + 8 };
+      await userEvent.pointer([{ keys: '[MouseLeft>]', target: surface, coords: margin }, { keys: '[/MouseLeft]', target: capturedRoot, coords: margin }]);
+      await waitFor(() => expect(field).not.toHaveFocus());
+      await waitFor(() => expect(richEditor.state.selection.empty).toBe(true));
+      await expect(canvas.queryByRole('group', { name: '表格操作' })).not.toBeInTheDocument();
+      await expect(editor.querySelector('.rich-table-cell-outline')).toBeNull();
+      await expect(table.querySelectorAll('.selectedCell')).toHaveLength(0);
+      await expect(tableBlock.matches('.rich-selected-block, .ProseMirror-selectednode')).toBe(false);
+      await verifyTableGeometry();
+    }
+    tableBlock.scrollIntoView({ block: 'center' });
+    const blockBounds = tableBlock.getBoundingClientRect(), followingBounds = followingBlock.getBoundingClientRect();
+    const dragStart = { clientX: surface.getBoundingClientRect().left + 4, clientY: blockBounds.top + 4 };
+    const dragEnd = { clientX: field.getBoundingClientRect().left + 24, clientY: followingBounds.bottom - 4 };
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: surface, coords: dragStart },
+      { target: capturedRoot, coords: dragEnd },
+      { keys: '[/MouseLeft]', target: capturedRoot, coords: dragEnd },
+    ]);
+    await waitFor(() => expect(richEditor.state.selection.toJSON().type).toBe('blockRange'));
+    await expect(Array.from(field.querySelectorAll('.rich-selected-block'))).toEqual([tableBlock, followingBlock]);
+    await expect(field).toHaveFocus();
+    await expect(editor.querySelector('.rich-selection-box')).toBeNull();
+    await verifyTableBlockOverlay();
+    const lastBlock = field.lastElementChild as HTMLElement;
+    lastBlock.scrollIntoView({ block: 'center' });
+    const lastBounds = lastBlock.getBoundingClientRect();
+    const bottomStart = { clientX: surface.getBoundingClientRect().left + 4, clientY: lastBounds.top + 2 };
+    const bottomEnd = { clientX: field.getBoundingClientRect().left + 24, clientY: field.getBoundingClientRect().bottom + 12 };
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: surface, coords: bottomStart },
+      { target: capturedRoot, coords: bottomEnd },
+      { keys: '[/MouseLeft]', target: capturedRoot, coords: bottomEnd },
+    ]);
+    await expect(richEditor.state.doc.content.eq(originalContent)).toBe(true);
+    await expect(lastBlock.matches('.rich-selected-block, .ProseMirror-selectednode')).toBe(true);
+    lastBlock.scrollIntoView({ block: 'center' });
+    const nextClick = { clientX: field.getBoundingClientRect().left + 24, clientY: field.getBoundingClientRect().bottom + 12 };
+    await userEvent.pointer([
+      { keys: '[MouseLeft>]', target: surface, coords: nextClick },
+      { keys: '[/MouseLeft]', target: surface, coords: nextClick },
+    ]);
+    await waitFor(() => expect(richEditor.state.doc.childCount).toBe(originalContent.childCount + 1));
+    await expect(richEditor.state.doc.lastChild?.type.name).toBe('paragraph');
+    await expect(richEditor.state.doc.lastChild?.content.size).toBe(0);
+    richEditor.commands.undo();
+    await waitFor(() => expect(richEditor.state.doc.content.eq(originalContent)).toBe(true));
     canvasElement.scrollIntoView({ block: 'start' });
   },
 };
@@ -213,5 +419,213 @@ export const DetailLayoutMobileRegression: Story = {
   name: '详情排版 · 窄屏块选区回归',
   tags: ['!dev', '!autodocs', 'mobile'],
   globals: DetailLayoutMobile.globals,
-  decorators: DetailLayoutMobile.decorators,
+  decorators: [Story => <div style={{ maxWidth: 390, marginInline: 'auto' }}><div className="note-page-scroll" style={{ height: '100vh', paddingInline: 16, overflowY: 'auto' }}><Story /></div></div>],
+};
+
+export const BlockSelectionGeometry: Story = {
+  name: '内容块 · 四周4px选中回归',
+  tags: ['!dev', '!autodocs'],
+  args: { initialTitle: '内容块间距检查', initialBody: blockSpacingBody },
+  decorators: DetailLayoutRegression.decorators,
+  play: async ({ canvasElement }) => {
+    const field = await within(canvasElement).findByRole('textbox', { name: '笔记内容' });
+    const editor = (field as HTMLElement & { editor: TiptapEditor }).editor;
+    await canvasElement.ownerDocument.fonts.ready;
+    await waitFor(() => expect(field.querySelectorAll('table')).toHaveLength(5));
+    const original = editor.state.doc.content, seen = new Set<string>();
+    const candidates: { pos: number; element: HTMLElement }[] = [];
+    const types = new Set(['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'listItem', 'taskItem', 'blockquote', 'aside', 'codeBlock', 'table', 'image', 'figure', 'blockMath', 'horizontalRule', 'footnoteDefinition', 'preservedMarkdown']);
+    editor.state.doc.descendants((node, pos) => {
+      if (!types.has(node.type.name) || node.type.name === 'paragraph' && editor.state.doc.resolve(pos).depth !== 0) return;
+      const variant = node.type.name === 'heading' ? node.attrs.level : node.type.name === 'aside' ? `${node.attrs.color}:${node.attrs.icon}` : node.type.name === 'codeBlock' ? node.attrs.language : node.type.name === 'table' ? pos : editor.state.doc.resolve(pos).depth;
+      const key = `${node.type.name}:${variant}`;
+      if (seen.has(key)) return;
+      const element = editor.view.nodeDOM(pos);
+      if (element instanceof HTMLElement) { seen.add(key); candidates.push({ pos, element }); }
+    });
+    expect(candidates.length).toBeGreaterThan(25);
+    for (const { pos, element } of candidates) {
+      element.scrollIntoView({ block: 'center' });
+      for (const image of element.querySelectorAll<HTMLImageElement>('img')) await waitFor(() => expect(image.complete && image.naturalWidth > 0).toBe(true));
+      const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? element;
+      const target = body.matches('.rich-table-block') ? body.querySelector<HTMLElement>('table')!
+        : body.matches('.rich-image') ? body.querySelector<HTMLElement>('.ui-note-image')! : body;
+      if (!target.matches('p, h1, h2, h3, h4, h5, h6, ul, ol, li, hr')) expect(getComputedStyle(target).borderRadius, `${element.tagName}.${element.className}`).toBe('8px');
+      const nodes = [element, ...element.querySelectorAll<HTMLElement>('p, li, pre, td, th, img, .rich-callout-content')];
+      const layout = () => nodes.map(node => ({ width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height, padding: getComputedStyle(node).padding, background: getComputedStyle(node).backgroundColor }));
+      const before = layout();
+      editor.commands.setNodeSelection(pos); editor.view.focus();
+      await verifyHighlight(field, element, target);
+      if (target.matches('pre') && target.scrollWidth > target.clientWidth + 1) {
+        target.scrollLeft = target.scrollWidth;
+        await waitFor(() => expect(target.scrollLeft).toBeGreaterThan(0));
+        await verifyHighlight(field, element, target);
+        target.scrollLeft = 0;
+      }
+      expect(layout()).toEqual(before);
+      expect(editor.state.doc.content.eq(original)).toBe(true);
+      expect(field.querySelector('.rich-block-highlights')).toBeNull();
+      const node = editor.state.doc.nodeAt(pos)!;
+      let textEnd: number | undefined;
+      if (!node.isAtom) node.descendants((child, offset) => {
+        if (child.isText && textEnd === undefined) textEnd = pos + 1 + offset + child.nodeSize;
+      });
+      if (textEnd !== undefined) {
+        editor.commands.setTextSelection(textEnd); editor.view.focus();
+        await userEvent.keyboard('检');
+        expect(editor.state.doc.content.eq(original)).toBe(false);
+        expect(field.closest('.rich-editor')!.querySelector('.rich-block-highlights')).toBeNull();
+        editor.commands.undo();
+        expect(editor.state.doc.content.eq(original)).toBe(true);
+        await waitFor(() => expect(layout()).toEqual(before));
+      }
+    }
+    editor.commands.setTextSelection(2); editor.view.focus();
+    await userEvent.keyboard('{Control>}a{/Control}{Control>}a{/Control}');
+    await waitFor(() => expect(editor.state.selection.toJSON().type).toBe('all'));
+    for (const element of Array.from(field.children) as HTMLElement[]) {
+      if (!element.matches('.rich-selected-block, .ProseMirror-selectednode')) continue;
+      const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? element;
+      const target = body.matches('.rich-table-block') ? body.querySelector<HTMLElement>('table')!
+        : body.matches('.rich-image') ? body.querySelector<HTMLElement>('.ui-note-image')! : body;
+      await verifyHighlight(field, element, target);
+    }
+    expect(field.closest('.rich-editor')!.querySelectorAll('.rich-block-highlights > path')).toHaveLength(1);
+    expect(editor.state.doc.content.eq(original)).toBe(true);
+    const surface = field.closest<HTMLElement>('.note-page-scroll')!, root = field.closest<HTMLElement>('.rich-editor')!;
+    field.firstElementChild!.scrollIntoView({ block: 'center' });
+    const point = { clientX: surface.getBoundingClientRect().left + 4, clientY: field.getBoundingClientRect().top + 12 };
+    await userEvent.pointer([{ target: surface, coords: point, keys: '[MouseLeft>]' }, { target: root, coords: point, keys: '[/MouseLeft]' }]);
+    await waitFor(() => expect(root.querySelector('.rich-block-highlights')).toBeNull());
+    expect(editor.state.doc.content.eq(original)).toBe(true);
+    canvasElement.scrollIntoView({ block: 'start' });
+  },
+};
+export const BlockSelectionGeometryMobile: Story = {
+  ...BlockSelectionGeometry,
+  name: '内容块 · 窄屏四周4px选中回归',
+  tags: ['!dev', '!autodocs', 'mobile'],
+  globals: DetailLayoutMobile.globals,
+  decorators: DetailLayoutMobileRegression.decorators,
+};
+
+const quoteRailBody = '> 单行引用。\n\n引用之间的正文。\n\n> 引用第一段。\n>\n> 引用第二段。\n>\n> > 嵌套引用。';
+export const QuoteRailRegression: Story = {
+  name: '引用 · 直线与圆角独立',
+  tags: ['!dev', '!autodocs'],
+  args: { initialTitle: '引用竖线检查', initialBody: quoteRailBody },
+  render: args => <><EditorFixture {...args} /><div className="p-6"><NoteMarkdown body={quoteRailBody} /></div></>,
+  play: async ({ canvasElement }) => {
+    const field = await within(canvasElement).findByRole('textbox', { name: '笔记内容' });
+    await canvasElement.ownerDocument.fonts.ready;
+    const quotes = Array.from(canvasElement.querySelectorAll<HTMLElement>('.ui-note-markdown blockquote'));
+    expect(quotes).toHaveLength(6);
+    for (const quote of quotes) {
+      const style = getComputedStyle(quote), rail = getComputedStyle(quote, '::before');
+      const bounds = quote.getBoundingClientRect(), first = quote.querySelector('p')!.getBoundingClientRect();
+      expect(style.borderRadius).toBe('8px');
+      expect(style.borderInlineStartColor).toBe('rgba(0, 0, 0, 0)');
+      expect(parseFloat(style.paddingInlineStart)).toBe(parseFloat(style.fontSize));
+      expect(first.left - bounds.left).toBeCloseTo(parseFloat(style.paddingInlineStart) + parseFloat(style.borderInlineStartWidth), 1);
+      expect(rail.position).toBe('absolute');
+      expect(rail.width).toBe(style.borderInlineStartWidth);
+      expect(parseFloat(rail.insetInlineStart)).toBe(-parseFloat(style.borderInlineStartWidth));
+      expect(rail.top).toBe('0px'); expect(rail.bottom).toBe('0px');
+      expect(parseFloat(rail.height)).toBeCloseTo(bounds.height, 1);
+      expect(rail.borderRadius).toBe('0px');
+      expect(rail.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+      expect(rail.pointerEvents).toBe('none');
+    }
+    const editor = (field as HTMLElement & { editor: TiptapEditor }).editor;
+    const original = editor.state.doc.content;
+    editor.commands.setNodeSelection(0); editor.view.focus();
+    await verifyHighlight(field, field.querySelector('blockquote')!);
+    expect(editor.state.doc.content.eq(original)).toBe(true);
+  },
+};
+export const QuoteRailMobileRegression: Story = {
+  ...QuoteRailRegression,
+  name: '引用 · 窄屏直线与圆角独立',
+  tags: ['!dev', '!autodocs', 'mobile'],
+  globals: DetailLayoutMobile.globals,
+};
+
+const noteRhythmRender = (size: '14' | '16') => (args: Parameters<typeof EditorFixture>[0]) => <div style={resolveTypography({ ...defaults, size }) as CSSProperties}>
+  <EditorFixture {...args} />
+  <div data-rhythm-reader className="mx-auto max-w-[var(--note-measure)] px-2"><NoteMarkdown body={blockSpacingBody} /></div>
+</div>;
+export const NoteRhythmRegression: Story = {
+  name: '排版 · 16px 编辑与阅读间距',
+  tags: ['!dev', '!autodocs'],
+  args: { initialTitle: '内容块间距检查', initialBody: blockSpacingBody },
+  render: noteRhythmRender('16'),
+  parameters: { typographySize: 16 },
+  play: async ({ canvasElement, parameters }) => {
+    const field = await within(canvasElement).findByRole('textbox', { name: '笔记内容' });
+    const size = Number(parameters.typographySize);
+    await canvasElement.ownerDocument.fonts.ready;
+    const reader = canvasElement.querySelector<HTMLElement>('[data-rhythm-reader] > .ui-note-markdown')!;
+    for (const root of [field, reader]) {
+      const editing = root === field;
+      expect(getComputedStyle(root).fontSize).toBe(`${size}px`);
+      expect(parseFloat(getComputedStyle(root).lineHeight)).toBe(size === 14 ? 22 : 24);
+      const find = (selector: string, text: string) => Array.from(root.querySelectorAll<HTMLElement>(selector)).find(n => n.textContent?.includes(text))!;
+      const bounds = (el: HTMLElement) => {
+        const r = el.getBoundingClientRect(), s = getComputedStyle(el);
+        return { top: r.top + (editing && el.matches('p,h1,h2,h3') ? parseFloat(s.paddingTop) : 0), bottom: r.bottom - (editing && el.matches('p,h1,h2,h3') ? parseFloat(s.paddingBottom) : 0) };
+      };
+      const gap = (a: HTMLElement, b: HTMLElement, expected = 16) => expect(bounds(b).top - bounds(a).bottom, `${editing ? '编辑' : '阅读'} ${a.tagName}→${b.tagName}`).toBeCloseTo(expected, 1);
+      gap(find(':scope > p', '第一段正文。'), find(':scope > p', '第二段正文稍长'));
+      for (const [level, expected, small, line, smallLine] of [[1, 30, 26, 40, 34], [2, 24, 22, 32, 28], [3, 20, 18, 26, 24]] as const) {
+        const heading = find(`h${level}`, `${['一级','二级','三级'][level - 1]}标题`);
+        expect(parseFloat(getComputedStyle(heading).fontSize)).toBe(size === 14 ? small : expected);
+        expect(parseFloat(getComputedStyle(heading).lineHeight)).toBe(size === 14 ? smallLine : line);
+        gap(heading, heading.nextElementSibling as HTMLElement);
+      }
+      gap(find(':scope > p', '一级标题后的正文'), find('h2', '二级标题'), 36);
+      gap(find(':scope > p', '二级标题后的正文'), find('h3', '三级标题'), 32);
+      const firstItem = find('li > p,li', '第一项：检查');
+      const secondItem = find('li > p,li', '第二项：这是一条');
+      gap(find(':scope > p', '无序列表之前'), firstItem.querySelector('p') ?? firstItem);
+      gap(firstItem.querySelector('p') ?? firstItem, secondItem.querySelector('p') ?? secondItem, 6);
+      for (const [selector, before, inside, after] of [
+        ['blockquote', '引用块之前', '引用的第一段', '引用块之后'],
+        ['aside', '无图标提示块之前', '无图标提示块', '带图标提示块之前'],
+        ['pre', '代码块之前', 'const title', '代码块之后'],
+        ['table', '标准表头表格之前', '内容块', '无表头表格：'],
+      ]) {
+        const block = find(selector, inside);
+        gap(find(':scope > p', before), block);
+        gap(block, find(':scope > p', after));
+      }
+      const image = root.querySelector<HTMLImageElement>('img[alt="单张模拟图片"]')!;
+      image.scrollIntoView({ block: 'center' });
+      await waitFor(() => expect(image.complete && image.naturalWidth > 0).toBe(true));
+      gap(find(':scope > p', '单张图片之前'), image);
+      gap(image, find(':scope > p', '单张图片之后'));
+      gap(find(':scope > p', '分隔线之前'), root.querySelector('hr')!);
+      gap(root.querySelector('hr')!, find(':scope > p', '分隔线之后'));
+      let math = root.querySelector<HTMLElement>(editing ? '.rich-math-block' : 'math[display="block"]')!;
+      if (!editing) while (math && math.parentElement !== root) math = math.parentElement!;
+      expect(!!math, `${editing ? '编辑' : '阅读'}公式块`).toBe(true);
+      gap(find(':scope > p', '块级公式之前'), math);
+      gap(math, find(':scope > p', '块级公式之后'));
+    }
+    expect(field.getBoundingClientRect().width).toBeGreaterThan(0);
+  },
+};
+export const NoteRhythmSmallRegression: Story = { ...NoteRhythmRegression, name: '排版 · 14px 编辑与阅读间距', render: noteRhythmRender('14'), parameters: { typographySize: 14 } };
+export const NoteRhythmMobileRegression: Story = { ...NoteRhythmRegression, name: '排版 · 窄屏16px间距', tags: ['!dev', '!autodocs', 'mobile'], globals: DetailLayoutMobile.globals };
+export const NoteRhythmSmallMobileRegression: Story = { ...NoteRhythmSmallRegression, name: '排版 · 窄屏14px间距', tags: ['!dev', '!autodocs', 'mobile'], globals: DetailLayoutMobile.globals };
+export const BlockSelectionSmallGeometry: Story = {
+  ...BlockSelectionGeometry,
+  name: '内容块 · 14px四周4px选中回归',
+  render: args => <div style={resolveTypography({ ...defaults, size: '14' }) as CSSProperties}><EditorFixture {...args} /></div>,
+};
+export const BlockSelectionSmallMobileGeometry: Story = {
+  ...BlockSelectionSmallGeometry,
+  name: '内容块 · 窄屏14px四周4px选中回归',
+  tags: ['!dev', '!autodocs', 'mobile'],
+  globals: DetailLayoutMobile.globals,
+  decorators: DetailLayoutMobileRegression.decorators,
 };
