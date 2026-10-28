@@ -156,7 +156,11 @@ export const DetailLayoutMobile: Story = {
   decorators: [Story => <div style={{ maxWidth: 390, marginInline: 'auto' }}><Story /></div>],
 };
 
-async function verifyHighlight(field: HTMLElement, block: HTMLElement, target = block) {
+function verifyHighlight(field: HTMLElement, block: HTMLElement, target = block) {
+  return verifyHighlights(field, [[block, target]]);
+}
+
+async function verifyHighlights(field: HTMLElement, targets: [HTMLElement, HTMLElement][]) {
   let color = '';
   await waitFor(() => {
     const svg = field.closest('.rich-editor')!.querySelector<SVGSVGElement>('.rich-block-highlights')!;
@@ -166,35 +170,39 @@ async function verifyHighlight(field: HTMLElement, block: HTMLElement, target = 
       .filter(element => !element.parentElement?.closest('.rich-selected-block, .ProseMirror-selectednode') && element.getClientRects().length);
     const segments = path.getAttribute('d')!.match(/M[^M]+/g)!;
     expect(segments).toHaveLength(blocks.length);
-    const segment = segments[blocks.indexOf(block)];
-    expect(segment).toBeDefined();
-    const sample = field.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-    sample.setAttribute('d', segment); svg.append(sample);
-    const box = sample.getBBox(); sample.remove();
-    const origin = svg.getBoundingClientRect(), bounds = target.getBoundingClientRect(), style = getComputedStyle(target);
-    let { left, right, top, bottom } = bounds;
-    if (target.matches('p, h1, h2, h3, h4, h5, h6, ul, ol, li')) {
-      top += parseFloat(style.paddingTop) || 0; bottom -= parseFloat(style.paddingBottom) || 0;
-      if (target.matches('p, h1, h2, h3, h4, h5, h6')) {
-        left += parseFloat(style.paddingLeft) || 0; right -= parseFloat(style.paddingRight) || 0;
-      }
-      if (target.matches('li')) left = target.parentElement!.getBoundingClientRect().left;
-    }
-    if (target.matches('table')) {
-      const clip = target.closest('.tableWrapper')!.getBoundingClientRect();
-      left = Math.max(left, clip.left); right = Math.min(right, clip.right);
-    }
-    expect(Math.abs(left - (origin.left + box.x) - 4)).toBeLessThan(0.1);
-    expect(Math.abs(top - (origin.top + box.y) - 4)).toBeLessThan(0.1);
-    expect(Math.abs(origin.left + box.x + box.width - right - 4)).toBeLessThan(0.1);
-    expect(Math.abs(origin.top + box.y + box.height - bottom - 4)).toBeLessThan(0.1);
-    for (const corner of [style.borderTopLeftRadius, style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius]) {
-      const radius = Math.min((parseFloat(corner) || 0) + 4, box.width / 2, box.height / 2);
-      expect(segment).toContain(`A${radius} ${radius} `);
-    }
+    const origin = svg.getBoundingClientRect();
     expect(getComputedStyle(svg).pointerEvents).toBe('none');
     expect(svg.closest('.rich-editor-content')).toBeNull();
     color = getComputedStyle(svg).fill;
+    for (const [block, target] of targets) {
+      const segment = segments[blocks.indexOf(block)];
+      expect(segment).toBeDefined();
+      const sample = field.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
+      sample.setAttribute('d', segment); svg.append(sample);
+      const box = sample.getBBox(); sample.remove();
+      const bounds = target.getBoundingClientRect(), style = getComputedStyle(target);
+      let { left, right, top, bottom } = bounds;
+      if (target.matches('p, h1, h2, h3, h4, h5, h6, ul, ol, li')) {
+        top += parseFloat(style.paddingTop) || 0; bottom -= parseFloat(style.paddingBottom) || 0;
+        if (target.matches('p, h1, h2, h3, h4, h5, h6')) {
+          left += parseFloat(style.paddingLeft) || 0; right -= parseFloat(style.paddingRight) || 0;
+        }
+        if (target.matches('li')) left = target.parentElement!.getBoundingClientRect().left;
+      }
+      if (target.matches('table')) {
+        const clip = target.closest('.tableWrapper')!.getBoundingClientRect();
+        left = Math.max(left, clip.left); right = Math.min(right, clip.right);
+      }
+      expect(Math.max(
+        Math.abs(left - (origin.left + box.x) - 4),
+        Math.abs(top - (origin.top + box.y) - 4),
+        Math.abs(origin.left + box.x + box.width - right - 4),
+        Math.abs(origin.top + box.y + box.height - bottom - 4),
+      )).toBeLessThan(0.1);
+      const radii = [style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius, style.borderTopLeftRadius]
+        .map(corner => Math.min((parseFloat(corner) || 0) + 4, box.width / 2, box.height / 2));
+      expect(Array.from(segment.matchAll(/A([\d.]+) ([\d.]+)/g), match => [Number(match[1]), Number(match[2])])).toEqual(radii.map(radius => [radius, radius]));
+    }
   });
   return { backgroundColor: color };
 }
@@ -483,13 +491,15 @@ export const BlockSelectionGeometry: Story = {
     editor.commands.setTextSelection(2); editor.view.focus();
     await userEvent.keyboard('{Control>}a{/Control}{Control>}a{/Control}');
     await waitFor(() => expect(editor.state.selection.toJSON().type).toBe('all'));
+    const selected: [HTMLElement, HTMLElement][] = [];
     for (const element of Array.from(field.children) as HTMLElement[]) {
       if (!element.matches('.rich-selected-block, .ProseMirror-selectednode')) continue;
       const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? element;
       const target = body.matches('.rich-table-block') ? body.querySelector<HTMLElement>('table')!
         : body.matches('.rich-image') ? body.querySelector<HTMLElement>('.ui-note-image')! : body;
-      await verifyHighlight(field, element, target);
+      selected.push([element, target]);
     }
+    await verifyHighlights(field, selected);
     expect(field.closest('.rich-editor')!.querySelectorAll('.rich-block-highlights > path')).toHaveLength(1);
     expect(editor.state.doc.content.eq(original)).toBe(true);
     const surface = field.closest<HTMLElement>('.note-page-scroll')!, root = field.closest<HTMLElement>('.rich-editor')!;
