@@ -4,7 +4,7 @@ import { semanticTags } from './rich-semantic';
 import { parser, GFM } from '@lezer/markdown';
 
 const markdownParser = parser.configure(GFM);
-const sourceTypes = ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'horizontalRule', 'image', 'wikiImage', 'table', 'blockMath', 'footnoteDefinition', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'aside'];
+const sourceTypes = ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'horizontalRule', 'image', 'wikiImage', 'table', 'blockMath', 'footnoteDefinition', 'figure', 'figcaption', 'aside'];
 export const SourceMetadata = Extension.create({
   name: 'sourceMetadata',
   addGlobalAttributes: () => [{ types: sourceTypes, attributes: {

@@ -1,6 +1,6 @@
 import { Table, TableRow, TableHeader, TableView } from '@tiptap/extension-table';
 import { DOMSerializer, DOMParser } from '@tiptap/pm/model';
-import { TableMap } from '@tiptap/pm/tables';
+import { CellSelection, TableMap } from '@tiptap/pm/tables';
 import { editRichStructure } from './rich-blocks';
 import type { Editor } from '@tiptap/react';
 import { observeTableOverflow } from './table-overflow';
@@ -9,10 +9,14 @@ class ScrollableTableView extends TableView {
   private dispose: () => void;
   constructor(...args: ConstructorParameters<typeof TableView>) {
     super(...args);
-    this.dom.setAttribute('role', 'region');
-    this.dom.setAttribute('aria-label', '表格，可左右滚动');
-    this.dom.tabIndex = 0;
-    this.dispose = observeTableOverflow(this.dom, this.table);
+    const scroller = this.dom;
+    this.dom = document.createElement('div');
+    this.dom.className = 'rich-table-block';
+    this.dom.append(scroller);
+    scroller.setAttribute('role', 'region');
+    scroller.setAttribute('aria-label', '表格，可左右滚动');
+    scroller.tabIndex = 0;
+    this.dispose = observeTableOverflow(scroller, this.table);
   }
   destroy() { this.dispose(); }
 }
@@ -30,7 +34,8 @@ export function richTable(getEditor: () => Editor | null) {
     },
     renderMarkdown(node, helpers, context) {
       const mixedAlignment = node.content?.some(row => row.content?.some((cell, index) => (cell.attrs?.align ?? null) !== (node.content?.[0]?.content?.[index]?.attrs?.align ?? null)));
-      const complex = mixedAlignment || node.attrs?.caption || node.content?.some(row => row.attrs?.footer || row.content?.some(cell => cell.attrs?.scope || Number(cell.attrs?.colspan ?? 1) > 1 || Number(cell.attrs?.rowspan ?? 1) > 1));
+      const mixedHeaders = node.content?.some((row, index) => row.content?.some(cell => (cell.type === 'tableHeader') !== (index === 0)));
+      const complex = mixedHeaders || mixedAlignment || node.attrs?.caption || node.content?.some(row => row.attrs?.footer || row.content?.some(cell => cell.attrs?.scope || Number(cell.attrs?.colspan ?? 1) > 1 || Number(cell.attrs?.rowspan ?? 1) > 1));
       if (!complex) return Table.config.renderMarkdown?.call(this, node, helpers, context) ?? '';
       const editor = getEditor();
       if (!editor) return '';
@@ -42,7 +47,7 @@ export function richTable(getEditor: () => Editor | null) {
       if (footer.childNodes.length) table.append(footer);
       return table.outerHTML;
     },
-  }).configure({ resizable: false, View: ScrollableTableView });
+  }).configure({ resizable: false, allowTableNodeSelection: true, View: ScrollableTableView });
 }
 export const RichTableRow = TableRow.extend({
   addAttributes() { return { ...this.parent?.(), footer: { default: false, parseHTML: element => element.parentElement?.tagName === 'TFOOT', renderHTML: attrs => attrs.footer ? { 'data-footer': '' } : {} } }; },
@@ -52,7 +57,8 @@ export const RichTableHeader = TableHeader.extend({
 });
 
 export function alignRichColumn(editor: Editor, align: string) {
-  const { $from } = editor.state.selection;
+  const selection = editor.state.selection;
+  const $from = selection instanceof CellSelection ? editor.state.doc.resolve(selection.$anchorCell.pos + 1) : selection.$from;
   let tableDepth = 0, cellDepth = 0;
   for (let d = $from.depth; d > 0; d--) {
     if (['tableCell', 'tableHeader'].includes($from.node(d).type.name)) cellDepth = d;

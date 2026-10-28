@@ -1,0 +1,42 @@
+/* Reading and editing share visible block gaps; search previews retain compact Typeset rules. */
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) {
+  --note-block-gap: var(--note-flow, 16px);
+  font-size: var(--note-size, var(--font-size-base));
+  line-height: var(--note-leading, 1.5);
+}
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :where(:not(.ProseMirror-gapcursor, .ProseMirror-widget)) {
+  --note-frame-inset: 0px;
+  --note-previous-inset: 0px;
+  --note-before: var(--note-block-gap);
+  /* Hit padding can exceed the chosen gap; compensate without changing that padding. */
+  margin-block: calc(var(--note-before) - var(--note-frame-inset) - var(--note-previous-inset)) 0;
+}
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :first-child { margin-block-start: 0; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h1 { font-size: var(--note-h1-size, 1.875rem); line-height: var(--note-h1-line-height, 2.5rem); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h2 { font-size: var(--note-h2-size, 1.5rem); line-height: var(--note-h2-line-height, 2rem); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h3 { font-size: var(--note-h3-size, 1.25rem); line-height: var(--note-h3-line-height, 1.625rem); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h4, h5, h6) { font-size: 1em; line-height: var(--note-leading, 1.5); letter-spacing: normal; text-transform: none; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > h1 { --note-before: 40px; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > h2 { --note-before: 36px; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > h3 { --note-before: 32px; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :is(h4, h5, h6) { --note-before: 24px; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) li { margin-block: 0; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) li + li { margin-block-start: 6px; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre { font-size: var(--font-size-sm); line-height: 1.25rem; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .rich-editor-content, .ui-note-search-preview-content *) table { font-size: var(--font-size-base); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, [data-footnotes]) { font-size: var(--font-size-sm); line-height: 1.25rem; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > span:has(math[display="block"]) { display: block; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > * > [data-node-view-wrapper],
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > .typeset-scroll > table,
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > p > .katex-display,
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > p > .katex-display > math,
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > .katex-display math,
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :has(math[display="block"]) math[display="block"] { margin-block: 0; }
+
+.ui-note-markdown.typeset-memocard.rich-editor-content > :is(p, h1, h2, h3, h4, h5, h6, .rich-table-block) { --note-frame-inset: var(--editor-block-space, 6px); }
+.ui-note-markdown.typeset-memocard.rich-editor-content > :is(ul, ol) { --note-frame-inset: calc(var(--editor-block-space, 6px) + var(--spacing-1) * .5); }
+.ui-note-markdown.typeset-memocard.rich-editor-content > :is(p, h1, h2, h3, h4, h5, h6, .rich-table-block) + * { --note-previous-inset: var(--editor-block-space, 6px); }
+.ui-note-markdown.typeset-memocard.rich-editor-content > :is(ul, ol) + * { --note-previous-inset: calc(var(--editor-block-space, 6px) + var(--spacing-1) * .5); }
+/* A folded section ends at a heading; its previous visible block is the folded heading. */
+.ui-note-markdown.typeset-memocard.rich-editor-content > .rich-folded-content + :is(h1, h2, h3, h4, h5, h6) { --note-previous-inset: var(--editor-block-space, 6px); }
+.ui-note-markdown.typeset-memocard.rich-editor-content li + li { margin-block-start: calc(6px - var(--spacing-1)); }

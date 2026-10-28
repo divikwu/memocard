@@ -54,10 +54,10 @@ export default mergeConfig(viteConfig, defineConfig({
       },
       {
         extends: true,
-        optimizeDeps: { include: ["@hugeicons/core-free-icons/ArrowUpRight01Icon", "@hugeicons/core-free-icons/HashIcon", "@hugeicons/core-free-icons/ImageAdd01Icon", "@hugeicons/core-free-icons/TelegramIcon", "@tiptap/pm/history", "@tiptap/pm/model", "@tiptap/pm/state", "@tiptap/pm/transform", "@tiptap/pm/view", "@tiptap/react"] },
+        optimizeDeps: { include: ["@hugeicons/core-free-icons/ArrowUpRight01Icon", "@hugeicons/core-free-icons/HashIcon", "@hugeicons/core-free-icons/ImageAdd01Icon", "@hugeicons/core-free-icons/TelegramIcon", "@hugeicons/core-free-icons/ArrowLeft02Icon", "@hugeicons/core-free-icons/Edit02Icon", "@hugeicons/core-free-icons/PinOffIcon", "@hugeicons/core-free-icons/RefreshIcon", "page-mascot", "@tiptap/pm/history", "@tiptap/pm/model", "@tiptap/pm/state", "@tiptap/pm/transform", "@tiptap/pm/view", "@tiptap/react"] },
         test: {
           name: "ui-quality",
-          include: ["test-support/ui-quality.browser.tsx"],
+          include: ["test-support/ui-quality.browser.tsx", "test-support/note-typography.browser.tsx"],
           browser: { enabled: true, provider: playwright(), commands: { setReducedMotion, setForcedColors, setFontsOffline }, headless: true, instances: qualityBrowsers.map(browser => ({ browser })), viewport: desktop, screenshotDirectory },
         },
       },

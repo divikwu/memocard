@@ -1,0 +1,4088 @@
+[
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 324,
+      "height": 48,
+      "tag": "DIV",
+      "top": 276,
+      "width": 708
+    },
+    "id": "63bcc85e-f8a2-415d-b3ed-db82503250bd",
+    "kind": "text",
+    "outer": {
+      "bottom": 332,
+      "height": 64,
+      "top": 268,
+      "width": 720
+    },
+    "parent": null,
+    "text": "这是用于检查内容块间距的模拟笔记。可以直接编辑、选中或拖动内容块；刷新页面会恢复初始样例。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 391.1953125,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 360,
+      "width": 708
+    },
+    "id": "5ffd23ce-d88c-4f40-9ca9-f74c9f49f4d6",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 399.1953125,
+      "height": 67.1953125,
+      "top": 332,
+      "width": 720
+    },
+    "parent": null,
+    "text": "01 · 正文与行内格式"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 431.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 407.1953125,
+      "width": 708
+    },
+    "id": "55bafb2d-87b5-4e5c-b7e3-2318918d697b",
+    "kind": "text",
+    "outer": {
+      "bottom": 439.1953125,
+      "height": 40,
+      "top": 399.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第一段正文。观察文字起点、行高，以及段落上下的留白。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 495.1953125,
+      "height": 48,
+      "tag": "DIV",
+      "top": 447.1953125,
+      "width": 708
+    },
+    "id": "4c66aad2-5705-473d-baf0-389a8d244e99",
+    "kind": "text",
+    "outer": {
+      "bottom": 503.1953125,
+      "height": 64,
+      "top": 439.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第二段正文稍长一些，用于检查自然换行。把窗口缩窄后，可以比较多行段落与单行段落的左右基线、上下间距，以及选中背景是否完整覆盖当前内容块。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 535.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 511.1953125,
+      "width": 708
+    },
+    "id": "5ebb9111-26da-4571-aeb2-04f3f3a01227",
+    "kind": "text",
+    "outer": {
+      "bottom": 543.1953125,
+      "height": 40,
+      "top": 503.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第三段包含 粗体、斜体、删除线、行内代码、链接文字、高亮文字、H2OH_2OH2​O 和 x2x^2x2。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 602.1953125,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 571,
+      "width": 708
+    },
+    "id": "6992c24b-fdb4-499e-810d-976c32d51b9b",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 610.1953125,
+      "height": 67.1953125,
+      "top": 543,
+      "width": 720
+    },
+    "parent": null,
+    "text": "02 · 六级标题与正文"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "30px",
+      "lineHeight": "39px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 681.1953125,
+      "height": 39,
+      "tag": "H2",
+      "top": 642.1953125,
+      "width": 708
+    },
+    "id": "25b14e24-b3e3-4b8d-bc39-9311d85b72be",
+    "kind": "header",
+    "outer": {
+      "bottom": 689.1953125,
+      "height": 79,
+      "top": 610.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "一级标题"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 721.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 697.1953125,
+      "width": 708
+    },
+    "id": "cb69f563-89fe-4307-afbf-0907714d88aa",
+    "kind": "text",
+    "outer": {
+      "bottom": 729.1953125,
+      "height": 40,
+      "top": 689.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "一级标题后的正文，用于比较标题与段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 788.390625,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 757.1953125,
+      "width": 708
+    },
+    "id": "8fbab621-7822-4cd3-b30f-bcb696298462",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 796.390625,
+      "height": 67.1953125,
+      "top": 729.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "二级标题"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 828.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 804.390625,
+      "width": 708
+    },
+    "id": "47abe5e7-7da6-4851-8298-217c3c79a50b",
+    "kind": "text",
+    "outer": {
+      "bottom": 836.390625,
+      "height": 40,
+      "top": 796.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "二级标题后的正文，用于比较标题与段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "20px",
+      "lineHeight": "26px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 886.390625,
+      "height": 26,
+      "tag": "H4",
+      "top": 860.390625,
+      "width": 708
+    },
+    "id": "6df02e82-c4bf-4432-af02-62710b39adf7",
+    "kind": "sub_sub_header",
+    "outer": {
+      "bottom": 894.390625,
+      "height": 58,
+      "top": 836.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "三级标题"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 926.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 902.390625,
+      "width": 708
+    },
+    "id": "74b71feb-dd32-4e82-a2ec-85c3040d9ab4",
+    "kind": "text",
+    "outer": {
+      "bottom": 934.390625,
+      "height": 40,
+      "top": 894.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "三级标题后的正文，用于比较标题与段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "20px",
+      "lineHeight": "26px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 984.390625,
+      "height": 26,
+      "tag": "H4",
+      "top": 958.390625,
+      "width": 708
+    },
+    "id": "05e61f5c-4f72-4823-af89-365027efee5d",
+    "kind": "sub_sub_header",
+    "outer": {
+      "bottom": 992.390625,
+      "height": 58,
+      "top": 934.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "四级标题"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1024.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1000.390625,
+      "width": 708
+    },
+    "id": "f6c70600-d565-406a-9d5f-a75ac5cd3cf3",
+    "kind": "text",
+    "outer": {
+      "bottom": 1032.390625,
+      "height": 40,
+      "top": 992.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "四级标题后的正文，用于比较标题与段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "20px",
+      "lineHeight": "26px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1082.390625,
+      "height": 26,
+      "tag": "H4",
+      "top": 1056.390625,
+      "width": 708
+    },
+    "id": "d3e609bd-cd0c-430b-bd2c-72a8f11f1dda",
+    "kind": "sub_sub_header",
+    "outer": {
+      "bottom": 1090.390625,
+      "height": 58,
+      "top": 1032.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "五级标题"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1122.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1098.390625,
+      "width": 708
+    },
+    "id": "a36d17db-c997-467c-bf01-3dc80a7c67dc",
+    "kind": "text",
+    "outer": {
+      "bottom": 1130.390625,
+      "height": 40,
+      "top": 1090.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "五级标题后的正文，用于比较标题与段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "20px",
+      "lineHeight": "26px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1180.390625,
+      "height": 26,
+      "tag": "H4",
+      "top": 1154.390625,
+      "width": 708
+    },
+    "id": "df305fa1-2d0c-4a82-9077-d3bc05c0cfdc",
+    "kind": "sub_sub_header",
+    "outer": {
+      "bottom": 1188.390625,
+      "height": 58,
+      "top": 1130.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "六级标题"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1220.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1196.390625,
+      "width": 708
+    },
+    "id": "e592035e-22d2-4ef1-a323-3e0e5ed60f2b",
+    "kind": "text",
+    "outer": {
+      "bottom": 1228.390625,
+      "height": 40,
+      "top": 1188.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "六级标题后的正文，用于比较标题与段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1287.5859375,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 1256.390625,
+      "width": 708
+    },
+    "id": "08d4482c-84c6-4eb9-8b02-fb99ddf01621",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 1295.5859375,
+      "height": 67.1953125,
+      "top": 1228.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "03 · 普通列表与嵌套"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1327.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1303.5859375,
+      "width": 708
+    },
+    "id": "5d7e946f-cba1-489d-ba20-7aab56fbed3a",
+    "kind": "text",
+    "outer": {
+      "bottom": 1335.5859375,
+      "height": 40,
+      "top": 1295.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "无序列表之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1367.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1343.5859375,
+      "width": 682
+    },
+    "id": "d8c8a8af-c602-4c44-87f4-dc4b99bd8443",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 1370.5859375,
+      "height": 35,
+      "top": 1335.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第一项：检查列表标记与文字的距离"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1421.5859375,
+      "height": 48,
+      "tag": "DIV",
+      "top": 1373.5859375,
+      "width": 682
+    },
+    "id": "d1035df5-6f17-4194-9f9f-8a2547b6048e",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 1514.5859375,
+      "height": 144,
+      "top": 1370.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第二项：这是一条较长的列表内容，用于观察换行后的文字是否对齐，以及相邻列表项的上下间距"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1451.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1427.5859375,
+      "width": 644
+    },
+    "id": "615e9bf8-357f-4612-b9a1-7b504ec343bd",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 1454.5859375,
+      "height": 31,
+      "top": 1423.5859375,
+      "width": 682
+    },
+    "parent": "d1035df5-6f17-4194-9f9f-8a2547b6048e",
+    "text": "第二级第一项"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1481.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1457.5859375,
+      "width": 644
+    },
+    "id": "9fd7efde-77d2-4d6b-952c-2e58e7254bd4",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 1513.5859375,
+      "height": 59,
+      "top": 1454.5859375,
+      "width": 682
+    },
+    "parent": "d1035df5-6f17-4194-9f9f-8a2547b6048e",
+    "text": "第二级第二项"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1511.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1487.5859375,
+      "width": 606
+    },
+    "id": "cee4aa50-1a2f-463c-ae6e-c58d35c054f1",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 1513.5859375,
+      "height": 30,
+      "top": 1483.5859375,
+      "width": 644
+    },
+    "parent": "9fd7efde-77d2-4d6b-952c-2e58e7254bd4",
+    "text": "第三级内容"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1541.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1517.5859375,
+      "width": 682
+    },
+    "id": "05f49b58-2943-48d7-a541-5d847193bfc3",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 1549.5859375,
+      "height": 35,
+      "top": 1514.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第三项：回到第一级"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1581.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1557.5859375,
+      "width": 708
+    },
+    "id": "5978f622-a131-401e-a284-0c209d8756e9",
+    "kind": "text",
+    "outer": {
+      "bottom": 1589.5859375,
+      "height": 40,
+      "top": 1549.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "无序列表之后、有序列表之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1621.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1597.5859375,
+      "width": 682
+    },
+    "id": "60caf5ea-9cd1-4af8-9d1c-2e1247b9d18c",
+    "kind": "numbered_list",
+    "outer": {
+      "bottom": 1624.5859375,
+      "height": 35,
+      "top": 1589.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第一步：收集信息"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1651,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1627,
+      "width": 682
+    },
+    "id": "f2428e7a-1f08-4d14-87e5-10e4713de80b",
+    "kind": "numbered_list",
+    "outer": {
+      "bottom": 1714,
+      "height": 90,
+      "top": 1624,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第二步：整理内容"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1681,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1657,
+      "width": 644
+    },
+    "id": "d84070a9-9829-45ea-b865-ec2021b88e38",
+    "kind": "numbered_list",
+    "outer": {
+      "bottom": 1684,
+      "height": 31,
+      "top": 1653,
+      "width": 682
+    },
+    "parent": "f2428e7a-1f08-4d14-87e5-10e4713de80b",
+    "text": "嵌套步骤一"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1711,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1687,
+      "width": 644
+    },
+    "id": "d2df3bc4-97b1-4e65-85a1-6d651b56ec5c",
+    "kind": "numbered_list",
+    "outer": {
+      "bottom": 1713,
+      "height": 29,
+      "top": 1684,
+      "width": 682
+    },
+    "parent": "f2428e7a-1f08-4d14-87e5-10e4713de80b",
+    "text": "嵌套步骤二"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1741,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1717,
+      "width": 682
+    },
+    "id": "dcc62a22-b10a-48d0-9c29-fa9a056a8f0e",
+    "kind": "numbered_list",
+    "outer": {
+      "bottom": 1749,
+      "height": 35,
+      "top": 1714,
+      "width": 720
+    },
+    "parent": null,
+    "text": "第三步：检查结果"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1781,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1757,
+      "width": 708
+    },
+    "id": "4156438c-44c7-40f6-8ec5-319acb150250",
+    "kind": "text",
+    "outer": {
+      "bottom": 1789,
+      "height": 40,
+      "top": 1749,
+      "width": 720
+    },
+    "parent": null,
+    "text": "有序列表之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1848.1953125,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 1817,
+      "width": 708
+    },
+    "id": "2d8a65c3-ef11-483d-9205-df9142642100",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 1856.1953125,
+      "height": 67.1953125,
+      "top": 1789,
+      "width": 720
+    },
+    "parent": null,
+    "text": "04 · 任务列表"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 1888.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1864.1953125,
+      "width": 708
+    },
+    "id": "9813d485-5ead-4a27-a498-46c69e291c15",
+    "kind": "text",
+    "outer": {
+      "bottom": 1896.1953125,
+      "height": 40,
+      "top": 1856.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "任务列表之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1928.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1904.1953125,
+      "width": 682
+    },
+    "id": "38498b20-e4cb-49a3-98ee-0b9f9286b879",
+    "kind": "to_do",
+    "outer": {
+      "bottom": 1931.1953125,
+      "height": 35,
+      "top": 1896.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "未完成任务"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1958.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1934.1953125,
+      "width": 682
+    },
+    "id": "4aa3d5b6-5124-4806-a022-c456a60b8833",
+    "kind": "to_do",
+    "outer": {
+      "bottom": 1961.1953125,
+      "height": 30,
+      "top": 1931.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "已完成任务"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 1988.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1964.1953125,
+      "width": 682
+    },
+    "id": "542f1dd1-0a8e-47eb-a14b-6d07b9e38d13",
+    "kind": "to_do",
+    "outer": {
+      "bottom": 2051.1953125,
+      "height": 90,
+      "top": 1961.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "包含子任务的父任务"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 2018.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 1994.1953125,
+      "width": 644
+    },
+    "id": "62ee192e-7ae6-41ab-86db-d1e0049c9794",
+    "kind": "to_do",
+    "outer": {
+      "bottom": 2021.1953125,
+      "height": 31,
+      "top": 1990.1953125,
+      "width": 682
+    },
+    "parent": "542f1dd1-0a8e-47eb-a14b-6d07b9e38d13",
+    "text": "已完成的子任务"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 2048.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2024.1953125,
+      "width": 644
+    },
+    "id": "e59c7b37-8980-48e3-b2b1-421017250cff",
+    "kind": "to_do",
+    "outer": {
+      "bottom": 2050.1953125,
+      "height": 29,
+      "top": 2021.1953125,
+      "width": 682
+    },
+    "parent": "542f1dd1-0a8e-47eb-a14b-6d07b9e38d13",
+    "text": "较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 2078.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2054.1953125,
+      "width": 682
+    },
+    "id": "e8b0b34c-c777-4eec-8944-4490546b901c",
+    "kind": "to_do",
+    "outer": {
+      "bottom": 2086.1953125,
+      "height": 35,
+      "top": 2051.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "最后一项任务"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2118.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2094.1953125,
+      "width": 708
+    },
+    "id": "c0ad4f15-001c-48e0-b193-8d9eb2025631",
+    "kind": "text",
+    "outer": {
+      "bottom": 2126.1953125,
+      "height": 40,
+      "top": 2086.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "任务列表之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2185.390625,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 2154.1953125,
+      "width": 708
+    },
+    "id": "75cc21a1-dc91-4c44-aa93-e4d1b11b903b",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 2193.390625,
+      "height": 67.1953125,
+      "top": 2126.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "05 · 引用"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2225.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2201.390625,
+      "width": 708
+    },
+    "id": "1b8182c4-ec39-4f73-8539-9a7a29828ae8",
+    "kind": "text",
+    "outer": {
+      "bottom": 2233.390625,
+      "height": 40,
+      "top": 2193.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "引用块之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "BLOCKQUOTE"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 2375.390625,
+      "height": 134,
+      "tag": "BLOCKQUOTE",
+      "top": 2241.390625,
+      "width": 704
+    },
+    "id": "b904dba2-ef38-46ad-b953-22e7c1d35e75",
+    "kind": "quote",
+    "outer": {
+      "bottom": 2383.390625,
+      "height": 150,
+      "top": 2233.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "引用的第一段，观察左侧竖线与文字之间的距离。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2297.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2273.390625,
+      "width": 661
+    },
+    "id": "8cdd4e74-6b30-4c56-9c2e-091c19404b56",
+    "kind": "text",
+    "outer": {
+      "bottom": 2305.390625,
+      "height": 40,
+      "top": 2265.390625,
+      "width": 673
+    },
+    "parent": "b904dba2-ef38-46ad-b953-22e7c1d35e75",
+    "text": "引用的第二段，观察引用内部段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 2337.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2313.390625,
+      "width": 635
+    },
+    "id": "af449097-2f69-472f-b19b-f2fd980c3a83",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 2340.390625,
+      "height": 35,
+      "top": 2305.390625,
+      "width": 673
+    },
+    "parent": "b904dba2-ef38-46ad-b953-22e7c1d35e75",
+    "text": "引用内的第一项列表"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 2367.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2343.390625,
+      "width": 635
+    },
+    "id": "cfeafdd1-cb6b-4b58-8a73-b0d3384d6b9e",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 2375.390625,
+      "height": 35,
+      "top": 2340.390625,
+      "width": 673
+    },
+    "parent": "b904dba2-ef38-46ad-b953-22e7c1d35e75",
+    "text": "引用内的第二项列表"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2415,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2391,
+      "width": 708
+    },
+    "id": "72507295-92c7-4b68-8c13-209d01abf6c9",
+    "kind": "text",
+    "outer": {
+      "bottom": 2423,
+      "height": 40,
+      "top": 2383,
+      "width": 720
+    },
+    "parent": null,
+    "text": "引用块之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2482.1953125,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 2451,
+      "width": 708
+    },
+    "id": "565a2827-d38d-44e3-8356-f615b23d05d6",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 2490.1953125,
+      "height": 67.1953125,
+      "top": 2423,
+      "width": 720
+    },
+    "parent": null,
+    "text": "06 · 提示块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2522.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2498.1953125,
+      "width": 708
+    },
+    "id": "a02034df-b941-4479-8716-81030c5fce7c",
+    "kind": "text",
+    "outer": {
+      "bottom": 2530.1953125,
+      "height": 40,
+      "top": 2490.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "无图标提示块之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "x78zum5",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "12px"
+    },
+    "frame": {
+      "bottom": 2644.1953125,
+      "height": 106,
+      "tag": "DIV",
+      "top": 2538.1953125,
+      "width": 704
+    },
+    "id": "01d4ec2e-c07c-45ce-acf0-2bdcd4cfcf7b",
+    "kind": "callout",
+    "outer": {
+      "bottom": 2652.1953125,
+      "height": 122,
+      "top": 2530.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "无图标提示块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2583.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2559.1953125,
+      "width": 666
+    },
+    "id": "4c7267c7-21e4-4c81-9777-638fb7107bfa",
+    "kind": "text",
+    "outer": {
+      "bottom": 2591.1953125,
+      "height": 40,
+      "top": 2551.1953125,
+      "width": 678
+    },
+    "parent": "01d4ec2e-c07c-45ce-acf0-2bdcd4cfcf7b",
+    "text": "无图标提示块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2623.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2599.1953125,
+      "width": 666
+    },
+    "id": "1f3c75b0-9a70-483f-94c5-69e047e45ccf",
+    "kind": "text",
+    "outer": {
+      "bottom": 2631.1953125,
+      "height": 40,
+      "top": 2591.1953125,
+      "width": 678
+    },
+    "parent": "01d4ec2e-c07c-45ce-acf0-2bdcd4cfcf7b",
+    "text": "第二段内容，用于检查提示块内部的上下、左右留白。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2684.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2660.1953125,
+      "width": 708
+    },
+    "id": "6fb0e440-ef2f-4e78-b52c-c78edbba18cd",
+    "kind": "text",
+    "outer": {
+      "bottom": 2692.1953125,
+      "height": 40,
+      "top": 2652.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "带图标提示块之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "x78zum5",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "12px"
+    },
+    "frame": {
+      "bottom": 2876.1953125,
+      "height": 176,
+      "tag": "DIV",
+      "top": 2700.1953125,
+      "width": 704
+    },
+    "id": "92411083-381b-496e-8577-4b932c7e72c9",
+    "kind": "callout",
+    "outer": {
+      "bottom": 2884.1953125,
+      "height": 192,
+      "top": 2692.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "带图标提示块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2745.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2721.1953125,
+      "width": 642
+    },
+    "id": "7399ba2d-7b84-4190-8459-81fa93a3e646",
+    "kind": "text",
+    "outer": {
+      "bottom": 2753.1953125,
+      "height": 40,
+      "top": 2713.1953125,
+      "width": 654
+    },
+    "parent": "92411083-381b-496e-8577-4b932c7e72c9",
+    "text": "带图标提示块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2785.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2761.1953125,
+      "width": 642
+    },
+    "id": "e795256e-13f8-4e8d-b2ca-450a3d8fce21",
+    "kind": "text",
+    "outer": {
+      "bottom": 2793.1953125,
+      "height": 40,
+      "top": 2753.1953125,
+      "width": 654
+    },
+    "parent": "92411083-381b-496e-8577-4b932c7e72c9",
+    "text": "观察图标、正文起点及换行后的对齐。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 2825.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2801.1953125,
+      "width": 616
+    },
+    "id": "0ea0a1dd-0088-4cec-8482-b446d39ba29d",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 2828.1953125,
+      "height": 35,
+      "top": 2793.1953125,
+      "width": 654
+    },
+    "parent": "92411083-381b-496e-8577-4b932c7e72c9",
+    "text": "提示块内的列表第一项"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 2855.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2831.1953125,
+      "width": 616
+    },
+    "id": "d6c14f78-97fa-41f1-ad69-2ec530d2322c",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 2863.1953125,
+      "height": 35,
+      "top": 2828.1953125,
+      "width": 654
+    },
+    "parent": "92411083-381b-496e-8577-4b932c7e72c9",
+    "text": "提示块内的列表第二项"
+  },
+  {
+    "children": [
+      {
+        "cls": "x78zum5",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "12px"
+    },
+    "frame": {
+      "bottom": 2958.1953125,
+      "height": 66,
+      "tag": "DIV",
+      "top": 2892.1953125,
+      "width": 704
+    },
+    "id": "9399539b-8c77-48ef-a500-dbb1da8bdad7",
+    "kind": "callout",
+    "outer": {
+      "bottom": 2966.1953125,
+      "height": 82,
+      "top": 2884.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "相邻的第二个提示块，检查两个容器之间的距离。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2937.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2913.1953125,
+      "width": 642
+    },
+    "id": "6651c0a3-cd89-4fab-b9e7-71588000c136",
+    "kind": "text",
+    "outer": {
+      "bottom": 2945.1953125,
+      "height": 40,
+      "top": 2905.1953125,
+      "width": 654
+    },
+    "parent": "9399539b-8c77-48ef-a500-dbb1da8bdad7",
+    "text": "相邻的第二个提示块，检查两个容器之间的距离。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 2998.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 2974.1953125,
+      "width": 708
+    },
+    "id": "78a37c13-7034-492c-961e-fb1556a95817",
+    "kind": "text",
+    "outer": {
+      "bottom": 3006.1953125,
+      "height": 40,
+      "top": 2966.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "提示块之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 3065.390625,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 3034.1953125,
+      "width": 708
+    },
+    "id": "2176c327-535c-4033-ba01-8a5de0bb6885",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 3073.390625,
+      "height": 67.1953125,
+      "top": 3006.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "07 · 代码块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 3105.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 3081.390625,
+      "width": 708
+    },
+    "id": "daa54183-b200-493d-8c04-84b42328fb05",
+    "kind": "text",
+    "outer": {
+      "bottom": 3113.390625,
+      "height": 40,
+      "top": 3073.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "代码块之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3336.1796875,
+      "height": 214.7890625,
+      "tag": "DIV",
+      "top": 3121.390625,
+      "width": 704
+    },
+    "id": "b6990f3b-2c5e-49b2-a869-ef97f3fe38a0",
+    "kind": "code",
+    "outer": {
+      "bottom": 3344.1796875,
+      "height": 230.7890625,
+      "top": 3113.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "const title = \"内容块间距检查\";\nconst blocks = [\"正文\", \"标题\", \"列表\", \"引用\", \"表格\"];\n\nfunction inspectSpacing() {\n  return blocks.map(block => ({ block, checked: false }));\n}\nconst longLine = \"这是一条用于检查代码块横向滚动的长行，缩窄窗口后应在代码区域内部滚动，同时保持整个页面的阅读宽度和两侧基线稳定。\";\n",
+    "textCSS": {
+      "font": "13.6px",
+      "lineHeight": "20.4px",
+      "padding": "0px"
+    }
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 3376,
+      "height": 24,
+      "tag": "DIV",
+      "top": 3352,
+      "width": 708
+    },
+    "id": "56b8da3f-70b9-45bf-930a-9a7c5ae2bd16",
+    "kind": "text",
+    "outer": {
+      "bottom": 3384,
+      "height": 40,
+      "top": 3344,
+      "width": 720
+    },
+    "parent": null,
+    "text": "代码块之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3504.796875,
+      "height": 112.796875,
+      "tag": "DIV",
+      "top": 3392,
+      "width": 704
+    },
+    "id": "2b392bac-791b-4335-b4da-1dd9de2a47cc",
+    "kind": "code",
+    "outer": {
+      "bottom": 3512.796875,
+      "height": 128.796875,
+      "top": 3384,
+      "width": 720
+    },
+    "parent": null,
+    "text": "没有语言标记的代码块\n第二行内容",
+    "textCSS": {
+      "font": "13.6px",
+      "lineHeight": "20.4px",
+      "padding": "0px"
+    }
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 3572.1953125,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 3541,
+      "width": 708
+    },
+    "id": "852ec601-1c0a-4746-810c-97549a16ba95",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 3580.1953125,
+      "height": 67.1953125,
+      "top": 3513,
+      "width": 720
+    },
+    "parent": null,
+    "text": "08 · 表格"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 3612.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 3588.1953125,
+      "width": 708
+    },
+    "id": "1cb3d1e5-c74f-4040-b03a-970ac54fd100",
+    "kind": "text",
+    "outer": {
+      "bottom": 3620.1953125,
+      "height": 40,
+      "top": 3580.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "标准表头表格之前的正文。表头使用灰底，外框圆角为 8px。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3777.1953125,
+      "height": 141,
+      "tag": "TABLE",
+      "top": 3636.1953125,
+      "width": 428
+    },
+    "id": "0f13c8e6-4de3-49da-9647-023aacc4c4c0",
+    "kind": "table",
+    "outer": {
+      "bottom": 3777.1953125,
+      "height": 141,
+      "top": 3636.1953125,
+      "width": 428
+    },
+    "parent": "0f13c8e6-4de3-49da-9647-023aacc4c4c0",
+    "text": "内容块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 3841.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 3817.1953125,
+      "width": 708
+    },
+    "id": "26adf69a-1a4d-4cf6-880a-4b284f93da30",
+    "kind": "text",
+    "outer": {
+      "bottom": 3849.1953125,
+      "height": 40,
+      "top": 3809.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "无表头表格：每个单元格都是普通正文格。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 3936.1953125,
+      "height": 71,
+      "tag": "TABLE",
+      "top": 3865.1953125,
+      "width": 241
+    },
+    "id": "d751940e-3c8e-4e16-ac3f-b68e32d1370e",
+    "kind": "table",
+    "outer": {
+      "bottom": 3936.1953125,
+      "height": 71,
+      "top": 3865.1953125,
+      "width": 241
+    },
+    "parent": "d751940e-3c8e-4e16-ac3f-b68e32d1370e",
+    "text": "第一行第一列"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4000.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 3976.1953125,
+      "width": 708
+    },
+    "id": "239760dd-bcf9-49b9-a484-2cbf23c3a75b",
+    "kind": "text",
+    "outer": {
+      "bottom": 4008.1953125,
+      "height": 40,
+      "top": 3968.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "标题列表格：左列为表头，检查左上角与左下角的灰底裁切。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 4130.1953125,
+      "height": 106,
+      "tag": "TABLE",
+      "top": 4024.1953125,
+      "width": 241
+    },
+    "id": "aeedabee-d788-4469-acef-d9b8476dee3f",
+    "kind": "table",
+    "outer": {
+      "bottom": 4130.1953125,
+      "height": 106,
+      "top": 4024.1953125,
+      "width": 241
+    },
+    "parent": "aeedabee-d788-4469-acef-d9b8476dee3f",
+    "text": "项目"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4194.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 4170.1953125,
+      "width": 708
+    },
+    "id": "c3d4c947-3f50-48b8-b672-5827381df8f6",
+    "kind": "text",
+    "outer": {
+      "bottom": 4202.1953125,
+      "height": 40,
+      "top": 4162.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "合并单元格表格：检查灰底和边框在合并格处的衔接。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 4324.1953125,
+      "height": 106,
+      "tag": "TABLE",
+      "top": 4218.1953125,
+      "width": 372
+    },
+    "id": "1ca08b16-acee-46a6-86e1-d21e16a2ba1e",
+    "kind": "table",
+    "outer": {
+      "bottom": 4324.1953125,
+      "height": 106,
+      "top": 4218.1953125,
+      "width": 372
+    },
+    "parent": "1ca08b16-acee-46a6-86e1-d21e16a2ba1e",
+    "text": "合并的标题单元格"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4388.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 4364.1953125,
+      "width": 708
+    },
+    "id": "4f8fe26c-ad0e-43d0-ab89-f85068b1f467",
+    "kind": "text",
+    "outer": {
+      "bottom": 4396.1953125,
+      "height": 40,
+      "top": 4356.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "表格之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4455.390625,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 4424.1953125,
+      "width": 708
+    },
+    "id": "2755e46b-0e1b-4316-8983-4cd246690b98",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 4463.390625,
+      "height": 67.1953125,
+      "top": 4396.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "09 · 公式"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4495,
+      "height": 24,
+      "tag": "DIV",
+      "top": 4471,
+      "width": 708
+    },
+    "id": "d42eb213-ac33-43ad-b924-36264384c55a",
+    "kind": "text",
+    "outer": {
+      "bottom": 4503,
+      "height": 40,
+      "top": 4463,
+      "width": 720
+    },
+    "parent": null,
+    "text": "行内公式 E=mc2E=mc^2E=mc2 与普通文字放在同一段，观察基线和段落行高。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4535,
+      "height": 24,
+      "tag": "DIV",
+      "top": 4511,
+      "width": 708
+    },
+    "id": "d4427650-b241-4bc8-926d-278fa964dcc8",
+    "kind": "text",
+    "outer": {
+      "bottom": 4543,
+      "height": 40,
+      "top": 4503,
+      "width": 720
+    },
+    "parent": null,
+    "text": "块级公式之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "16px 0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 4631.703125,
+      "height": 60.703125,
+      "tag": "SPAN",
+      "top": 4571,
+      "width": 688
+    },
+    "id": "f1da546e-5af1-43da-9b5d-c47846848922",
+    "kind": "equation",
+    "outer": {
+      "bottom": 4659.703125,
+      "height": 116.703125,
+      "top": 4543,
+      "width": 720
+    },
+    "parent": null,
+    "text": "∑i=1ni=n(n+1)2\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}i=1∑n​i=2n(n+1)​"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4692,
+      "height": 24,
+      "tag": "DIV",
+      "top": 4668,
+      "width": 708
+    },
+    "id": "cf4397f2-90a2-4a5e-a2d0-8ecad961086c",
+    "kind": "text",
+    "outer": {
+      "bottom": 4700,
+      "height": 40,
+      "top": 4660,
+      "width": 720
+    },
+    "parent": null,
+    "text": "块级公式之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4759.1953125,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 4728,
+      "width": 708
+    },
+    "id": "8ed962de-0004-454b-8d80-e076ce5c3d9d",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 4767.1953125,
+      "height": 67.1953125,
+      "top": 4700,
+      "width": 720
+    },
+    "parent": null,
+    "text": "10 · Mermaid 图形"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 4799.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 4775.1953125,
+      "width": 708
+    },
+    "id": "2d3dacd5-5bd1-4abd-9e3b-d60f1d1eb563",
+    "kind": "text",
+    "outer": {
+      "bottom": 4807.1953125,
+      "height": 40,
+      "top": 4767.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "图形之前的正文。可以切换图形和代码，比较两个状态的内部留白。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5022.7578125,
+      "height": 207.5625,
+      "tag": "DIV",
+      "top": 4815.1953125,
+      "width": 704
+    },
+    "id": "60384057-92ab-4a1f-9e8d-82cc5bd251d8",
+    "kind": "code",
+    "outer": {
+      "bottom": 5030.7578125,
+      "height": 223.5625,
+      "top": 4807.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "flowchart LR\n  A[收集内容] --> B[整理格式]\n  B --> C[检查间距]\n  C --> D[完成验收]\n",
+    "textCSS": {
+      "font": "13.6px",
+      "lineHeight": "20.4px",
+      "padding": "0px"
+    }
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5063.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5039.1953125,
+      "width": 708
+    },
+    "id": "e5848d0a-dc2c-4b68-9d49-6f4c819b56e3",
+    "kind": "text",
+    "outer": {
+      "bottom": 5071.1953125,
+      "height": 40,
+      "top": 5031.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "图形之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5130.390625,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 5099.1953125,
+      "width": 708
+    },
+    "id": "23d6f7cb-3d44-4c21-9377-6735d52b9926",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 5138.390625,
+      "height": 67.1953125,
+      "top": 5071.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "11 · 图片与并排图片"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5170.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5146.390625,
+      "width": 708
+    },
+    "id": "b7952c74-7c49-4735-91c4-2ea848e2c2bb",
+    "kind": "text",
+    "outer": {
+      "bottom": 5178.390625,
+      "height": 40,
+      "top": 5138.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "单张图片之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5426.390625,
+      "height": 240,
+      "tag": "IMG",
+      "top": 5186.390625,
+      "width": 480
+    },
+    "id": "8b47605d-fc2b-4227-b0a4-89cd7782f54e",
+    "kind": "image",
+    "outer": {
+      "bottom": 5434.390625,
+      "height": 256,
+      "top": 5178.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "",
+    "textCSS": null
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5466.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5442.390625,
+      "width": 708
+    },
+    "id": "74ec2c55-0299-4d1b-9af6-c8838b31e67a",
+    "kind": "text",
+    "outer": {
+      "bottom": 5474.390625,
+      "height": 40,
+      "top": 5434.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "单张图片之后、并排图片之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5674.890625,
+      "height": 200.5,
+      "tag": "DIV",
+      "top": 5474.390625,
+      "width": 720
+    },
+    "id": "24a744b7-8c2f-4d3a-8a09-27d83bcc48de",
+    "kind": "column_list",
+    "outer": {
+      "bottom": 5674.890625,
+      "height": 200.5,
+      "top": 5474.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": ""
+  },
+  {
+    "children": [
+      {
+        "cls": "notion-selectable notion-image-block",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5662.890625,
+      "height": 176.5,
+      "tag": "DIV",
+      "top": 5486.390625,
+      "width": 337
+    },
+    "id": "9c16031c-4812-4c16-a851-1184cf5d5065",
+    "kind": "column",
+    "outer": {
+      "bottom": 5662.890625,
+      "height": 176.5,
+      "top": 5486.390625,
+      "width": 337
+    },
+    "parent": "24a744b7-8c2f-4d3a-8a09-27d83bcc48de",
+    "text": ""
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5654.890625,
+      "height": 160.5,
+      "tag": "IMG",
+      "top": 5494.390625,
+      "width": 321
+    },
+    "id": "f6fa28a9-1dab-420c-9c95-5553c47b24b1",
+    "kind": "image",
+    "outer": {
+      "bottom": 5662.890625,
+      "height": 176.5,
+      "top": 5486.390625,
+      "width": 337
+    },
+    "parent": "9c16031c-4812-4c16-a851-1184cf5d5065",
+    "text": "",
+    "textCSS": null
+  },
+  {
+    "children": [
+      {
+        "cls": "notion-selectable notion-image-block",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5662.890625,
+      "height": 176.5,
+      "tag": "DIV",
+      "top": 5486.390625,
+      "width": 337
+    },
+    "id": "f62f617b-5734-457b-9d0e-59fcd54c8bc9",
+    "kind": "column",
+    "outer": {
+      "bottom": 5662.890625,
+      "height": 176.5,
+      "top": 5486.390625,
+      "width": 337
+    },
+    "parent": "24a744b7-8c2f-4d3a-8a09-27d83bcc48de",
+    "text": ""
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5654.890625,
+      "height": 160.5,
+      "tag": "IMG",
+      "top": 5494.390625,
+      "width": 321
+    },
+    "id": "5892ade3-f2ce-4ec2-b6a5-ce3ebe3cf59a",
+    "kind": "image",
+    "outer": {
+      "bottom": 5662.890625,
+      "height": 176.5,
+      "top": 5486.390625,
+      "width": 337
+    },
+    "parent": "f62f617b-5734-457b-9d0e-59fcd54c8bc9",
+    "text": "",
+    "textCSS": null
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5707.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5683.390625,
+      "width": 708
+    },
+    "id": "04b02d4b-58bc-4966-a665-0a44fb2c6aeb",
+    "kind": "text",
+    "outer": {
+      "bottom": 5715.390625,
+      "height": 40,
+      "top": 5675.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "并排图片的共同说明：检查列间距、说明文字与下方正文的距离。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5747.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5723.390625,
+      "width": 708
+    },
+    "id": "d6df2543-976f-45f3-b3cb-cf4455e491eb",
+    "kind": "text",
+    "outer": {
+      "bottom": 5755.390625,
+      "height": 40,
+      "top": 5715.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "并排图片之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5814.5859375,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 5783.390625,
+      "width": 708
+    },
+    "id": "9beb7ecd-f2d6-4c86-bf63-d8512f7e9e27",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 5822.5859375,
+      "height": 67.1953125,
+      "top": 5755.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "12 · 分隔线"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5854.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5830.5859375,
+      "width": 708
+    },
+    "id": "0302afed-8a95-4d3d-89d4-1992c393847c",
+    "kind": "text",
+    "outer": {
+      "bottom": 5862.5859375,
+      "height": 40,
+      "top": 5822.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "分隔线之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "x78zum5 x6s0dn4 xl56j7k x1c4vz4f x2lah0s xdl72j9 x67bb7w xh8yej3 notion-cursor-default",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5869.5859375,
+      "height": 1,
+      "tag": "DIV",
+      "top": 5868.5859375,
+      "width": 704
+    },
+    "id": "aaa8e8fc-15a8-46dd-af9e-49dbd8b2aa17",
+    "kind": "divider",
+    "outer": {
+      "bottom": 5875.5859375,
+      "height": 13,
+      "top": 5862.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "",
+    "textCSS": null
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5907.5859375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5883.5859375,
+      "width": 708
+    },
+    "id": "5ba4f8dc-b42e-4d42-85fd-3a3622f5d667",
+    "kind": "text",
+    "outer": {
+      "bottom": 5915.5859375,
+      "height": 40,
+      "top": 5875.5859375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "分隔线之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 5974.1953125,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 5943,
+      "width": 708
+    },
+    "id": "bd4a5ea7-88f6-4112-922c-7e881f1b1f57",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 5982.1953125,
+      "height": 67.1953125,
+      "top": 5915,
+      "width": 720
+    },
+    "parent": null,
+    "text": "13 · 脚注与原格式块"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6014.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 5990.1953125,
+      "width": 708
+    },
+    "id": "9e79f10b-4e27-4ea8-bdc5-98c746ccea4b",
+    "kind": "text",
+    "outer": {
+      "bottom": 6022.1953125,
+      "height": 40,
+      "top": 5982.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "这段正文包含一个脚注引用（spacing），用于检查编号的基线与脚注块的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6054.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6030.1953125,
+      "width": 708
+    },
+    "id": "b7bde92a-5713-4cb0-9cba-88b34dc6f309",
+    "kind": "text",
+    "outer": {
+      "bottom": 6062.1953125,
+      "height": 40,
+      "top": 6022.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "spacing. 脚注的第一段内容。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6094.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6070.1953125,
+      "width": 708
+    },
+    "id": "89e3b7fe-0573-444a-bee8-8a6dc8c3dac0",
+    "kind": "text",
+    "outer": {
+      "bottom": 6102.1953125,
+      "height": 40,
+      "top": 6062.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "脚注的第二段内容，观察内部段落的间距。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6134.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6110.1953125,
+      "width": 708
+    },
+    "id": "1f84c742-684b-45c2-9c09-3304839a262a",
+    "kind": "text",
+    "outer": {
+      "bottom": 6142.1953125,
+      "height": 40,
+      "top": 6102.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "原格式保留块之前的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6174.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6150.1953125,
+      "width": 708
+    },
+    "id": "f0613e7e-66ff-48e2-a063-fe82478de55a",
+    "kind": "text",
+    "outer": {
+      "bottom": 6182.1953125,
+      "height": 40,
+      "top": 6142.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "原格式保留块的第一段内容。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6214.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6190.1953125,
+      "width": 708
+    },
+    "id": "f71bb75e-30e7-4241-ad1e-fd4a0375f0a6",
+    "kind": "text",
+    "outer": {
+      "bottom": 6222.1953125,
+      "height": 40,
+      "top": 6182.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "原格式保留块的第二段内容，用于检查保留标签、内部正文及块之间的距离。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6254.1953125,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6230.1953125,
+      "width": 708
+    },
+    "id": "a70aad38-6168-4507-bf4d-dbaf85788741",
+    "kind": "text",
+    "outer": {
+      "bottom": 6262.1953125,
+      "height": 40,
+      "top": 6222.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "原格式保留块之后的正文。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6321.390625,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 6290.1953125,
+      "width": 708
+    },
+    "id": "5bf8bf80-93c0-4828-87a0-aec6bf145431",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 6329.390625,
+      "height": 67.1953125,
+      "top": 6262.1953125,
+      "width": 720
+    },
+    "parent": null,
+    "text": "14 · 连续混排"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6361.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6337.390625,
+      "width": 708
+    },
+    "id": "4101cb0b-78f9-40c7-a86f-fecb2f9a7910",
+    "kind": "text",
+    "outer": {
+      "bottom": 6369.390625,
+      "height": 40,
+      "top": 6329.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "这一组不插入额外的小标题，直接比较相邻内容块。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 6401.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6377.390625,
+      "width": 682
+    },
+    "id": "7780e0df-ed16-48eb-9f03-d929558d89de",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 6404.390625,
+      "height": 35,
+      "top": 6369.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "正文后紧接列表"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 6431.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6407.390625,
+      "width": 682
+    },
+    "id": "660d5e93-c2ee-47c4-bcb5-a4d4c9daaf30",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 6439.390625,
+      "height": 35,
+      "top": 6404.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "列表的第二项"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "BLOCKQUOTE"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6471.390625,
+      "height": 24,
+      "tag": "BLOCKQUOTE",
+      "top": 6447.390625,
+      "width": 704
+    },
+    "id": "bdc32ae4-453c-4d53-ad7c-3ea086143384",
+    "kind": "quote",
+    "outer": {
+      "bottom": 6479.390625,
+      "height": 40,
+      "top": 6439.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "列表后紧接引用。"
+  },
+  {
+    "children": [
+      {
+        "cls": "x78zum5",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "12px"
+    },
+    "frame": {
+      "bottom": 6553.390625,
+      "height": 66,
+      "tag": "DIV",
+      "top": 6487.390625,
+      "width": 704
+    },
+    "id": "f04a0879-c389-4267-87e7-cc126275042d",
+    "kind": "callout",
+    "outer": {
+      "bottom": 6561.390625,
+      "height": 82,
+      "top": 6479.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "引用后紧接提示块。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6532.390625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6508.390625,
+      "width": 642
+    },
+    "id": "79e079e8-4367-4ddb-9328-a0feff0e8437",
+    "kind": "text",
+    "outer": {
+      "bottom": 6540.390625,
+      "height": 40,
+      "top": 6500.390625,
+      "width": 654
+    },
+    "parent": "f04a0879-c389-4267-87e7-cc126275042d",
+    "text": "引用后紧接提示块。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6661.7890625,
+      "height": 92.3984375,
+      "tag": "DIV",
+      "top": 6569.390625,
+      "width": 704
+    },
+    "id": "3b378981-8f54-4780-8359-1111c365988c",
+    "kind": "code",
+    "outer": {
+      "bottom": 6669.7890625,
+      "height": 108.3984375,
+      "top": 6561.390625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "提示块后紧接代码块。",
+    "textCSS": {
+      "font": "13.6px",
+      "lineHeight": "20.4px",
+      "padding": "0px"
+    }
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6756.7890625,
+      "height": 71,
+      "tag": "TABLE",
+      "top": 6685.7890625,
+      "width": 252
+    },
+    "id": "445d18eb-a1bf-4bf8-baab-65c79436eeff",
+    "kind": "table",
+    "outer": {
+      "bottom": 6756.7890625,
+      "height": 71,
+      "top": 6685.7890625,
+      "width": 252
+    },
+    "parent": "445d18eb-a1bf-4bf8-baab-65c79436eeff",
+    "text": "代码块后的表格"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6820.7890625,
+      "height": 24,
+      "tag": "DIV",
+      "top": 6796.7890625,
+      "width": 708
+    },
+    "id": "ddb58540-4124-4dbe-a8ed-b4dd0bca6f67",
+    "kind": "text",
+    "outer": {
+      "bottom": 6828.7890625,
+      "height": 40,
+      "top": 6788.7890625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "最后一段正文。可以选中单个块、跨块选择或拖动排序，再按撤销恢复。"
+  },
+  {
+    "children": [
+      {
+        "cls": "x78zum5 x6s0dn4 xl56j7k x1c4vz4f x2lah0s xdl72j9 x67bb7w xh8yej3 notion-cursor-default",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 6835.7890625,
+      "height": 1,
+      "tag": "DIV",
+      "top": 6834.7890625,
+      "width": 704
+    },
+    "id": "d50d5b65-20cc-4976-a813-51e173f08c91",
+    "kind": "divider",
+    "outer": {
+      "bottom": 6841.7890625,
+      "height": 13,
+      "top": 6828.7890625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "",
+    "textCSS": null
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6900.984375,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 6869.7890625,
+      "width": 708
+    },
+    "id": "556aff7b-99d9-4321-8c46-289cd10617d4",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 6908.984375,
+      "height": 67.1953125,
+      "top": 6841.7890625,
+      "width": 720
+    },
+    "parent": null,
+    "text": "格式映射说明"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 6964.984375,
+      "height": 48,
+      "tag": "DIV",
+      "top": 6916.984375,
+      "width": 708
+    },
+    "id": "fd1a0df9-42f3-4529-97c7-9131f95d6f29",
+    "kind": "text",
+    "outer": {
+      "bottom": 6972.984375,
+      "height": 64,
+      "top": 6908.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "本页保留 MemoCard 模拟页的 14 组内容和原有顺序，以 Notion 原生块呈现，未额外插入空白块。原文中的“刷新页面恢复样例”等说明来自模拟环境。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 7028.984375,
+      "height": 48,
+      "tag": "DIV",
+      "top": 6980.984375,
+      "width": 682
+    },
+    "id": "bbc4a810-f3d5-4891-8381-7fdc6309f5cc",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 7031.984375,
+      "height": 59,
+      "top": 6972.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "四至六级标题在本页映射为三级标题，保留原标签文字；它们不能作为同级标题的直接几何对照。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 7058.984375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 7034.984375,
+      "width": 682
+    },
+    "id": "79986b93-3c07-4822-a131-7e4ac094c271",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 7061.984375,
+      "height": 30,
+      "top": 7031.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "HTML 高亮映射为文字高亮，行内上下标映射为行内公式。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 7088.984375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 7064.984375,
+      "width": 682
+    },
+    "id": "1aa300e3-84bc-4706-a941-bbcc09ab59ac",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 7091.984375,
+      "height": 30,
+      "top": 7061.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "合并单元格样例保留全部文字与三列结构，原跨两列的第二格留空；不将其视为真正合并表格。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 7118.984375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 7094.984375,
+      "width": 682
+    },
+    "id": "5a600c20-ad6a-4f07-ae2e-946f286c76d8",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 7121.984375,
+      "height": 30,
+      "top": 7091.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "脚注映射为引用标记与灰色正文；原格式保留块映射为普通段落。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 7148.984375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 7124.984375,
+      "width": 682
+    },
+    "id": "5c91dc47-28a9-449e-bc69-8ff9c436b0c3",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 7151.984375,
+      "height": 30,
+      "top": 7121.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "两张模拟图片从原页面导出后上传；并排图片用两列原生图片块及共同说明呈现。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 7178.984375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 7154.984375,
+      "width": 682
+    },
+    "id": "74b71e4c-2073-4203-bc60-184eabc30182",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 7181.984375,
+      "height": 30,
+      "top": 7151.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "Mermaid 使用相同源码的原生 Mermaid 代码块；图形渲染与内部尺寸可能不同。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "16px",
+      "lineHeight": "24px",
+      "margin": "0px",
+      "padding": "2px 0px 2px 6px"
+    },
+    "frame": {
+      "bottom": 7208.984375,
+      "height": 24,
+      "tag": "DIV",
+      "top": 7184.984375,
+      "width": 682
+    },
+    "id": "fae88783-ea7a-46f7-888f-4884c8c32f0d",
+    "kind": "bulleted_list",
+    "outer": {
+      "bottom": 7216.984375,
+      "height": 35,
+      "top": 7181.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "本页仅用于内容块间距对照，MemoCard 的圆角、灰底和编辑控件不强制复制到 Notion。"
+  },
+  {
+    "children": [
+      {
+        "cls": "",
+        "tag": "DIV"
+      }
+    ],
+    "css": {
+      "font": "24px",
+      "lineHeight": "31.2px",
+      "margin": "0px",
+      "padding": "2px"
+    },
+    "frame": {
+      "bottom": 7276.1796875,
+      "height": 31.1953125,
+      "tag": "H3",
+      "top": 7244.984375,
+      "width": 708
+    },
+    "id": "6c19a556-abd7-449a-9d39-f7a33d76cd9e",
+    "kind": "sub_header",
+    "outer": {
+      "bottom": 7284.1796875,
+      "height": 67.1953125,
+      "top": 7216.984375,
+      "width": 720
+    },
+    "parent": null,
+    "text": "原始内容备份"
+  }
+]

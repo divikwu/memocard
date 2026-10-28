@@ -25,8 +25,9 @@ it("preserves the full Markdown preview inside an inert region and keeps only th
   const content = preview.querySelector("[inert]")!;
   expect(content.querySelector("a")?.textContent).toBe("参考链接");
   expect(content.querySelector("a")).toHaveProperty("href", "https://example.com/");
-  expect(content.querySelector("details")).toHaveProperty("open", false);
-  expect(content.querySelector("summary")?.textContent).toBe("折叠说明");
+  expect(content.querySelector("details, summary")).toBeNull();
+  expect(content.textContent).toContain("折叠说明");
+  expect(content.textContent).toContain("折叠正文");
   expect(content.querySelector('input[type="checkbox"]')).toHaveProperty("checked", true);
   expect(content.querySelector('input[type="checkbox"]')).toHaveProperty("disabled", true);
   expect(content.querySelector("pre code")?.textContent).toContain("const answer = 42;");

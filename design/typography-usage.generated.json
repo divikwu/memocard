@@ -135,11 +135,6 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-ui .rich-table-tools select",
-          "value": "inherit"
-        },
-        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(kbd)",
           "value": "inherit"
@@ -692,6 +687,11 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h4, h5, h6)",
+          "value": "1em"
+        },
+        {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
           "value": "1em"
@@ -957,11 +957,6 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-ui .rich-table-tools select",
-          "value": "inherit"
-        },
-        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre code)",
           "value": "inherit"
@@ -973,11 +968,6 @@
       "value": "var(--font-size-2xl)",
       "utilities": [],
       "locations": [
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h1",
-          "value": "var(--font-size-2xl)"
-        },
         {
           "source": "apps/ui/ui/business/trash.css",
           "scope": "@media (max-width: 767px) → .ui-trash h1",
@@ -1044,11 +1034,6 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h4",
-          "value": "var(--font-size-base)"
-        },
-        {
           "source": "apps/ui/ui/business/MobileTagActions.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
@@ -1081,6 +1066,11 @@
         {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .rich-editor-content, .ui-note-search-preview-content *) table",
           "value": "var(--font-size-base)"
         },
         {
@@ -1219,11 +1209,6 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h3",
-          "value": "var(--font-size-lg)"
-        },
-        {
           "source": "apps/ui/ui/business/trash.css",
           "scope": ".ui-trash-open h2",
           "value": "var(--font-size-lg)"
@@ -1301,11 +1286,6 @@
         {
           "source": "apps/ui/ui/business/CalloutIconPicker.tsx",
           "scope": "text-sm",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h5",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1397,6 +1377,16 @@
         {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(kbd,:not(pre) > code,pre,figcaption,caption,.footnotes,[data-footnotes])",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, [data-footnotes])",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1715,11 +1705,6 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h2",
-          "value": "var(--font-size-xl)"
-        },
-        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-title",
           "value": "var(--font-size-xl)"
@@ -1793,11 +1778,6 @@
         {
           "source": "apps/ui/ui/business/Editor.css",
           "scope": ".ui-note-editor .mobile-save-status",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h6",
           "value": "var(--font-size-xs)"
         },
         {
@@ -1994,12 +1974,53 @@
     },
     {
       "property": "font-size",
+      "value": "var(--note-h1-size, 1.875rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h1",
+          "value": "var(--note-h1-size, 1.875rem)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--note-h2-size, 1.5rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h2",
+          "value": "var(--note-h2-size, 1.5rem)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--note-h3-size, 1.25rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h3",
+          "value": "var(--note-h3-size, 1.25rem)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
       "value": "var(--note-size, var(--font-size-base))",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/Editor.css",
           "scope": ".ui-note-editor .ui-note-markdown",
+          "value": "var(--note-size, var(--font-size-base))"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *)",
           "value": "var(--note-size, var(--font-size-base))"
         },
         {
@@ -2393,11 +2414,6 @@
         },
         {
           "source": "apps/ui/ui/typeset.css",
-          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(dt)",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h5)",
           "value": "var(--font-weight-medium)"
         },
@@ -2409,11 +2425,6 @@
         {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(kbd)",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/typeset.css",
-          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(summary)",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2676,11 +2687,6 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-ui .rich-table-tools select",
-          "value": "inherit"
-        },
-        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4, h5, h6) :is(a))",
           "value": "inherit"
@@ -2749,12 +2755,6 @@
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-title",
           "value": "1.2"
-        },
-        {
-          "source": "apps/ui/ui/theme.css",
-          "scope": ":root,\n.ui-theme",
-          "value": "1.2",
-          "variable": "--text-note-subheading-leading"
         }
       ]
     },
@@ -2909,11 +2909,6 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown table",
-          "value": "1.5"
-        },
-        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "1.5"
@@ -2961,19 +2956,6 @@
           "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "leading-normal",
           "value": "var(--leading-normal)"
-        }
-      ]
-    },
-    {
-      "property": "line-height",
-      "value": "1.5556",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/theme.css",
-          "scope": ":root,\n.ui-theme",
-          "value": "1.5556",
-          "variable": "--text-note-large-leading"
         }
       ]
     },
@@ -3063,6 +3045,35 @@
     },
     {
       "property": "line-height",
+      "value": "1.25rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, [data-footnotes])",
+          "value": "1.25rem"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre",
+          "value": "1.25rem"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "1.375rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-note-markdown table",
+          "value": "1.375rem"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
       "value": "calc(var(--spacing-1) * 5)",
       "utilities": [],
       "locations": [
@@ -3132,11 +3143,59 @@
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
           "value": "inherit"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--note-h1-line-height, 2.5rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h1",
+          "value": "var(--note-h1-line-height, 2.5rem)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--note-h2-line-height, 2rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h2",
+          "value": "var(--note-h2-line-height, 2rem)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--note-h3-line-height, 1.625rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h3",
+          "value": "var(--note-h3-line-height, 1.625rem)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--note-leading, 1.5)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *)",
+          "value": "var(--note-leading, 1.5)"
         },
         {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-ui .rich-table-tools select",
-          "value": "inherit"
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h4, h5, h6)",
+          "value": "var(--note-leading, 1.5)"
         }
       ]
     },
@@ -3171,16 +3230,6 @@
       "value": "var(--text-body-leading)",
       "utilities": [],
       "locations": [
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h5",
-          "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown pre",
-          "value": "var(--text-body-leading)"
-        },
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties",
@@ -3406,11 +3455,6 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h1",
-          "value": "var(--text-heading-1-leading)"
-        },
-        {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-1",
           "value": "var(--text-heading-1-leading)"
@@ -3513,30 +3557,6 @@
     },
     {
       "property": "line-height",
-      "value": "var(--text-note-large-leading)",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h3",
-          "value": "var(--text-note-large-leading)"
-        }
-      ]
-    },
-    {
-      "property": "line-height",
-      "value": "var(--text-note-subheading-leading)",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h2",
-          "value": "var(--text-note-subheading-leading)"
-        }
-      ]
-    },
-    {
-      "property": "line-height",
       "value": "var(--text-note-title-leading)",
       "utilities": [],
       "locations": [
@@ -3568,11 +3588,6 @@
         {
           "source": "apps/ui/ui/business/Editor.css",
           "scope": ".ui-note-editor .mobile-save-status",
-          "value": "var(--text-supporting-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h6",
           "value": "var(--text-supporting-leading)"
         },
         {
@@ -4039,11 +4054,6 @@
       "value": "var(--typeset-leading)",
       "utilities": [],
       "locations": [
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown h4",
-          "value": "var(--typeset-leading)"
-        },
         {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",

@@ -4,7 +4,7 @@ import { calloutColor, imageColumns } from './import-layout';
 import { calloutView, type CalloutIconTarget } from './rich-callout-view';
 import { imageRowView } from './rich-image-row-view';
 
-export const semanticTags = ['mark', 'abbr', 'kbd', 'sup', 'sub', 'details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'aside'];
+export const semanticTags = ['mark', 'abbr', 'kbd', 'sup', 'sub', 'figure', 'figcaption', 'aside'];
 export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (target: CalloutIconTarget) => void) {
   const marks = ['mark', 'abbr', 'kbd', 'sup', 'sub'].map(tag => Mark.create({
     name: tag,
@@ -13,8 +13,8 @@ export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (t
     renderHTML: ({ HTMLAttributes }) => [tag, HTMLAttributes, 0],
     renderMarkdown: (node, helpers) => `<${tag}${tag === 'abbr' ? ` title="${String(node.attrs?.title ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')}"` : ''}>${helpers.renderChildren(node)}</${tag}>`,
   }));
-  const nodes = ['details', 'summary', 'figure', 'figcaption', 'dl', 'dt', 'dd', 'aside'].map(tag => Node.create({
-    name: tag, group: 'block', content: ['summary', 'figcaption', 'dt'].includes(tag) ? 'inline*' : 'block+',
+  const nodes = ['figure', 'figcaption', 'aside'].map(tag => Node.create({
+    name: tag, group: 'block', content: tag === 'figcaption' ? 'inline*' : 'block+',
     defining: true,
     ...(tag === 'aside' && editIcon ? { addNodeView: () => (props: Parameters<typeof calloutView>[0]) => calloutView(props, editIcon) } : {}),
     ...(tag === 'figure' ? { addNodeView: () => imageRowView } : {}),
@@ -26,13 +26,11 @@ export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (t
       icon: { default: null, parseHTML: element => { const icon = element.getAttribute('data-callout-icon'); return icon && icon.length <= 32 ? icon : null; }, renderHTML: attrs => attrs.icon ? { 'data-callout-icon': attrs.icon } : {} },
     } : {},
     parseHTML: () => [{ tag }],
-    renderHTML: ({ node, HTMLAttributes }) => [tag, { ...HTMLAttributes, ...(tag === 'details' ? { open: '' } : {}), ...(tag === 'aside' && node.attrs.color ? { role: 'note' } : {}), ...(tag === 'figure' && imageColumns(node.attrs.columns) ? { role: 'group', 'aria-label': '图片组', style: `grid-template-columns: ${imageColumns(node.attrs.columns)!.map(column => `${column}fr`).join(' ')}` } : {}) }, 0],
+    renderHTML: ({ node, HTMLAttributes }) => [tag, { ...HTMLAttributes, ...(tag === 'aside' && node.attrs.color ? { role: 'note' } : {}), ...(tag === 'figure' && imageColumns(node.attrs.columns) ? { role: 'group', 'aria-label': '图片组', style: `grid-template-columns: ${imageColumns(node.attrs.columns)!.map(column => `${column}fr`).join(' ')}` } : {}) }, 0],
     renderMarkdown: node => {
       const editor = getEditor();
       if (!editor) return '';
       const dom = DOMSerializer.fromSchema(editor.schema).serializeNode(editor.schema.nodeFromJSON(node)) as HTMLElement;
-      // The disclosure stays open while editing; do not persist that UI state.
-      if (tag === 'details') dom.removeAttribute('open');
       if (tag === 'figure') dom.removeAttribute('style');
       return dom.outerHTML;
     },

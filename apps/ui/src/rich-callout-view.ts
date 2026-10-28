@@ -20,11 +20,11 @@ export function calloutView({ node, editor, getPos }: NodeViewRendererProps, edi
     button.textContent = current.attrs.icon || '+';
     button.setAttribute('aria-label', current.attrs.icon ? '更改标注图标' : '添加标注图标');
     button.title = current.attrs.icon ? '更改图标' : '添加图标';
-    button.hidden = !current.attrs.color || !editor.isEditable;
+    button.hidden = !current.attrs.icon || !current.attrs.color || !editor.isEditable;
     return true;
   }
   update(node);
-  const editable = () => { button.hidden = !dom.hasAttribute('data-callout') || !editor.isEditable; };
+  const editable = () => { button.hidden = !dom.hasAttribute('data-callout-icon') || !dom.hasAttribute('data-callout') || !editor.isEditable; };
   editor.on('transaction', editable);
   return { dom, contentDOM, update, stopEvent: (event: Event) => button.contains(event.target as globalThis.Node), ignoreMutation: (mutation: MutationRecord | { type: 'selection'; target: globalThis.Node }) => button.contains(mutation.target) || mutation.type === 'attributes' && mutation.target === dom, destroy: () => editor.off('transaction', editable) };
 }

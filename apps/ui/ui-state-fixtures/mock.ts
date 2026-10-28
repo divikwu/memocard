@@ -2,16 +2,19 @@ import type { Note, NoteProperties, VaultStatus, PropertyChange, TrashItem } fro
 import type { Draft, DraftList } from '../src/bridge';
 import { noteId } from './catalog';
 import { inlineTags, propertyTags } from '../src/inline-tags';
+import { blockSpacingBody } from './block-spacing';
 
 export class PreviewFailure extends Error {
   constructor(public code:string, message:string, public retryable=false) { super(message); }
 }
 export function createPreviewMock(scenario:string) {
-  const browser = ['permission','folder-cancel','unsupported','image-read-error','image-loading'].includes(scenario);
+  const browser = ['permission','folder-cancel','unsupported','image-read-error','image-loading','block-spacing'].includes(scenario);
   const capabilities = ['getStatus','getEnvironment','queryNotes','getNote','getDrafts','listTags','listFolders','saveNote','saveDraft','getNoteProperties','updateNoteProperty','getPropertyLabels','setPropertyLabels','dismissDraftReminder','selectVault','pickImage','resolveLink'];
   if (scenario === 'unsupported') capabilities.splice(0,capabilities.length,'getStatus','getEnvironment');
   if (scenario === 'permission') capabilities.push('reauthorizeVault');
   const note:Note = {id:noteId,title:'模拟笔记 · 产品验收',body:'这是一条模拟笔记，可以自由编辑。\n\n#验收\n\n所有修改只存在预览内存中。',tags:['验收'],contentHash:'preview-hash',relativePath:'notes/模拟笔记.md',sourceUrl:'',createdAt:'2026-10-12T01:00:00Z',updatedAt:'2026-10-12T08:00:00Z'};
+  if (scenario === 'tables') { note.title = '表格点击与编辑'; note.body = '点击单元格即可编辑；Shift+F10 打开表格选项。\n\n| 属性 | 类型 | 用途 |\n| --- | --- | --- |\n| Title | 标题 | 文章标题 |\n| Slug | 文本 | URL 路径 |\n| Status | 选项 | 发布状态 |\n\n第二张表格\n\n| 项目 | 状态 |\n| --- | --- |\n| MemoCard | 进行中 |\n| 编辑交互 | 待验证 |\n\n表格后的正文。'; }
+  if (scenario === 'block-spacing') { note.title = '内容块间距检查'; note.relativePath = 'notes/内容块间距检查.md'; note.body = blockSpacingBody; }
   if (scenario === 'loading') capabilities.push('getTrash','getTrashedNote','restoreNote');
   if (scenario === 'image-loading') note.body = '<img src="../assets/loading-preview.png" width="320" height="320" alt="加载预览图片" />\n\n' + note.body;
   if (scenario === 'image-read-error') note.body += '\n\n![无法读取的模拟图片](../assets/missing.png)';

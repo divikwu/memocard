@@ -1,0 +1,34 @@
+[
+  {
+    "css": {
+      "font": "16px",
+      "lineHeight": "25.6px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 4467.8125,
+      "height": 268.8984375,
+      "top": 4198.9140625,
+      "width": 704
+    },
+    "kind": "rich-code-block",
+    "text": "flowchart LR\n  A[收集内容] --> B[整理格式]\n  B --> C[检查间距]\n  C --> D"
+  },
+  {
+    "css": {
+      "font": "14px",
+      "lineHeight": "22.4px",
+      "margin": "0px",
+      "padding": "0px"
+    },
+    "frame": {
+      "bottom": 5139.9921875,
+      "height": 22.3984375,
+      "top": 5117.59375,
+      "width": 704
+    },
+    "kind": "FIGCAPTION",
+    "text": "并排图片的共同说明：检查列间距、说明文字与下方正文的距离。"
+  }
+]

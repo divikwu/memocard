@@ -11,11 +11,13 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Slice } from '@tiptap/pm/model';
 import { richBlock, richBlockAt, richSectionEnd, selectedRichBlocks, richBlockMoveSources, richBlockMoveTarget, selectRichBlocks, selectRichBlockRange, extendRichBlocksTo, blockMoveTransaction, moveRichBlocks, duplicateRichBlocks, editRichStructure, type RichBlock } from './rich-blocks';
 import { BlockRangeSelection } from './rich-block-selection';
+import { RichBlockHighlight } from './rich-block-highlight';
 import { pastedInlineTags, RichInlineTags } from './rich-inline-tags';
 import { unfoldRichHeadings } from './rich-heading-fold-core';
 import { RichTagSuggestions } from './RichTagSuggestions';
 import { RichMath } from './RichMath';
-import { richTable, RichTableRow, RichTableHeader, alignRichColumn } from './rich-table';
+import { richTable, RichTableRow, RichTableHeader } from './rich-table';
+import { createRichTableTools } from './rich-table-tools-core';
 import { Popover } from "@base-ui/react/popover";
 import { Menu } from '@base-ui/react/menu';
 import { useIsMobile } from './hooks/use-mobile';
@@ -55,6 +57,7 @@ export type RichEditorUI = {
 // Extensions and node views close over one view adapter without duplicating editor behavior.
 export function createRichMarkdownEditor({ RichHeadingFolding, icons, Markdown, NoteImage, RichCodeBlock, RichFormatTools, RichImageTools, CalloutColorsMenu, CalloutIconPicker, contentClassName = 'markdown typeset rich-editor-content', uiClassName = '' }: RichEditorUI) {
 const { Plus, GripVertical, Type, Heading, List, ListOrdered, ListTodo, Quote, Code, Minus, Table, Sigma, ImageIcon, Search, ArrowUp, ArrowDown, Copy, Trash2, RefreshCw, Check, ChevronRight, MessageSquareQuote } = icons;
+const RichTableTools = createRichTableTools(icons, uiClassName);
 function SafeImage({ node, extension, editor, getPos }: NodeViewProps) {
   const path = extension.options.notePath() as string;
   const source = imageSource(String(node.attrs.src), path, node.type.name === 'wikiImage');
@@ -143,7 +146,10 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   const [filter, setFilter] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [conversionOpen, setConversionOpen] = useState(false);
+  const [tableMenuOpen, setTableMenuOpen] = useState(false);
   const [calloutIcon, setCalloutIcon] = useState<CalloutIconTarget | null>(null);
+  // Menu exit focus runs after the picker opens, including after the menu unmounts.
+  const calloutIconOpen = useRef(false); calloutIconOpen.current = calloutIcon !== null;
   const isMobile = useIsMobile();
   const [toolbar, setToolbar] = useState<{ top: number; pos: number; left?: number }>({ top: 14, pos: 0 });
   const toolbarTarget = useRef<{ position: number; pointer: { clientX: number; clientY: number; buttons: number } | null }>({ position: 0, pointer: null });
@@ -152,7 +158,8 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   const [selectionBox, setSelectionBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [typing, setTyping] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const rangeGesture = useRef<{ before: EditorState; idleSelection: EditorState['selection']; pointerId: number; x: number; y: number } | null>(null);
+  const rangeGesture = useRef<{ before: EditorState; idleSelection: EditorState['selection']; pointerId: number; x: number; y: number; startX: number; startY: number; moved: boolean } | null>(null);
+  const ignoreRangeClick = useRef(false);
   const dragging = useRef<RichBlock[] | null>(null);
   const dragPreview = useRef<HTMLDivElement | null>(null);
   const beforeDrag = useRef<EditorState | null>(null);
@@ -172,7 +179,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     immediatelyRender: false,
     // Plain Markdown is parsed explicitly; rich/literal clipboard content must not run Markdown paste rules.
     enablePasteRules: false,
-    extensions: [RichNoteHistory, RichInlineTags, RichHeadingFolding, RichImageDrag.configure({ uiClassName }), RichStarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current, setCalloutIcon),
+    extensions: [RichNoteHistory, RichInlineTags, RichHeadingFolding, RichImageDrag.configure({ uiClassName }), RichStarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current, target => setCalloutIcon({ ...target, anchor: target.anchor.hidden ? gripRef.current ?? target.anchor : target.anchor })),
       richTable(() => editorRef.current), RichTableRow, RichTableHeader, TableCell, TaskList, TaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' }, a11y: { checkboxLabel: node => `待办：${node.textContent}` } }),
       SafeImageExtension.configure({ notePath: () => latest.current.notePath }), WikiImageExtension.configure({ notePath: () => latest.current.notePath }),
       PreservedExtension.configure({ notePath: () => latest.current.notePath }),
@@ -323,6 +330,11 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       if (restoreSelection && previous && e.state.doc === previous.doc) e.view.dispatch(e.state.tr.setSelection(previous.selection));
     }
   }, []);
+  function dismissSelection(e: TiptapEditor) {
+    const selection = TextSelection.near(e.state.doc.resolve(e.state.selection.from));
+    if (!e.state.selection.eq(selection)) e.view.dispatch(e.state.tr.setSelection(selection));
+    e.view.dom.blur();
+  }
   function positionToolbar(e: TiptapEditor, pos = e.state.selection.from) {
     if (!root.current) return;
     const image = isLayoutImage(e.state.doc.nodeAt(pos));
@@ -338,7 +350,8 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       const paddingTop = image ? 0 : Math.min(rect.height, parseFloat(style.paddingTop) || 0);
       const contentHeight = image ? rect.height : Math.max(0, rect.height - paddingTop - (parseFloat(style.paddingBottom) || 0));
       const top = rect.top - root.current.getBoundingClientRect().top + paddingTop + Math.min(contentHeight, line) / 2;
-      const left = image ? rect.left - root.current.getBoundingClientRect().left - 28 : undefined;
+      const frame = image ? element.querySelector<HTMLElement>('.ui-note-image') ?? element : element.matches('li') ? element.parentElement : null;
+      const left = frame ? frame.getBoundingClientRect().left - root.current.getBoundingClientRect().left - (controlsRef.current?.getBoundingClientRect().width ?? 24) - 6 : undefined;
       setToolbar(current => current.pos === from && current.top === top && current.left === left ? current : { pos: from, top, left });
     }
   }
@@ -431,11 +444,25 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   useEffect(() => {
     if (!editor) return;
     const start = (event: PointerEvent) => {
+      ignoreRangeClick.current = false;
       const target = event.target, element = root.current;
-      if (!(target instanceof HTMLElement) || !element || event.button !== 0 || event.pointerType === 'touch' || menu || props.disabled || editor.view.composing || target.closest('button, a, input, textarea, select, [contenteditable]')) return;
+      if (!(target instanceof HTMLElement) || !element || event.button !== 0 || props.disabled || editor.view.composing || target.closest('button, a, input, textarea, select, [contenteditable]')) return;
+      if (event.pointerType === 'touch') {
+        if (element.closest('.note-page-scroll')?.contains(target)) dismissSelection(editor);
+        return;
+      }
+      if (menu) {
+        if (element.closest('.note-page-scroll')?.contains(target)) dismissSelection(editor);
+        return;
+      }
       const rect = editor.view.dom.getBoundingClientRect();
+      // Let clicks below the text column reach the continue-writing handler.
+      if (event.clientY > rect.bottom && event.clientX >= rect.left && event.clientX <= rect.right) return;
       const pageTop = element.parentElement?.closest('.note-editor')?.getBoundingClientRect().top ?? rect.top;
-      if (event.clientY < pageTop || event.clientY > rect.bottom || (event.clientY >= rect.top && event.clientX >= rect.left)) return;
+      if (event.clientY < pageTop || event.clientY > rect.bottom || (event.clientY >= rect.top && event.clientX >= rect.left)) {
+        if (element.closest('.note-page-scroll')?.contains(target)) dismissSelection(editor);
+        return;
+      }
       let surface = element.parentElement;
       while (surface && !/auto|scroll/.test(getComputedStyle(surface).overflowY)) surface = surface.parentElement;
       if (!element.contains(target)) {
@@ -447,7 +474,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       const bounds = element.getBoundingClientRect();
       const x = event.clientX - bounds.left, y = event.clientY - bounds.top;
       const idleSelection = editor.state.selection instanceof TextSelection ? editor.state.selection : TextSelection.near(editor.state.doc.resolve(editor.state.selection.from));
-      rangeGesture.current = { before: editor.state, idleSelection, pointerId: event.pointerId, x, y };
+      rangeGesture.current = { before: editor.state, idleSelection, pointerId: event.pointerId, x, y, startX: event.clientX, startY: event.clientY, moved: false };
       element.setPointerCapture(event.pointerId); setSelectionBox({ left: x, top: y, width: 0, height: 0 });
       pointerX.current = event.clientX; pointerY.current = event.clientY;
       if (!editor.state.selection.eq(idleSelection)) editor.view.dispatch(editor.state.tr.setSelection(idleSelection));
@@ -457,7 +484,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     const followPointer = (event: Pick<MouseEvent, 'target' | 'buttons' | 'clientX' | 'clientY'>) => {
       const target = event.target, element = root.current;
       if (element?.contains(target as Node)) setTyping(false);
-      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || isImageDragging(editor) || event.buttons || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools')) return;
+      if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || isImageDragging(editor) || event.buttons || root.current?.hasAttribute('data-menu-open') || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools')) return;
       if (positionFoldToolbar(editor, target)) return;
       const controls = controlsRef.current?.getBoundingClientRect();
       if (toolbar.left != null && controls && event.clientY >= controls.top && event.clientY <= controls.bottom && event.clientX >= controls.left && event.clientX <= controls.right + 12) return;
@@ -484,6 +511,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       if (pointer) followPointer({ ...pointer, target: document.elementFromPoint(pointer.clientX, pointer.clientY) });
     };
     const continueWriting = (event: MouseEvent) => {
+      if (ignoreRangeClick.current) { ignoreRangeClick.current = false; return; }
       const target = event.target, element = root.current;
       if (!(target instanceof HTMLElement) || !element || event.button !== 0 || event.defaultPrevented || menu || props.disabled || editor.view.composing || target.closest('button, a, input, textarea, select, [contenteditable]')) return;
       const rect = editor.view.dom.getBoundingClientRect();
@@ -549,6 +577,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     const gesture = rangeGesture.current;
     if (!gesture) return;
     if (editor!.state.doc !== gesture.before.doc) { stopRangeSelection(); return; }
+    gesture.moved ||= Math.abs(pointerX.current - gesture.startX) > 4 || Math.abs(pointerY.current - gesture.startY) > 4;
     const rect = root.current!.getBoundingClientRect();
     const x = pointerX.current - rect.left, y = pointerY.current - rect.top;
     const box = { left: Math.min(gesture.x, x), top: Math.min(gesture.y, y), width: Math.abs(x - gesture.x), height: Math.abs(y - gesture.y) };
@@ -608,7 +637,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     if (row && row.pos !== toolbar.pos) { positionToolbar(editor, row.pos); editor.commands.setNodeSelection(row.pos); setMenu('block'); return; }
     const selected = selectedRichBlocks(editor, toolbar.pos);
     if (selected.length > 1) selectRichBlocks(editor, selected);
-    else if (editor.state.selection.empty || richBlock(editor, editor.state.selection.from)?.pos !== toolbar.pos) editor.commands.setNodeSelection(toolbar.pos);
+    else if (selected[0]?.node.type.name === 'table' || editor.state.selection.empty || richBlock(editor, editor.state.selection.from)?.pos !== toolbar.pos) editor.commands.setNodeSelection(toolbar.pos);
     setMenu('block');
   }
   const isCurrentType = (item: MenuItem) => {
@@ -621,15 +650,27 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     if (item.label === '图片') props.onImage?.(markdown => run({ label: '图片', run: chain => chain.insertContent(markdown, { contentType: 'markdown' }) }));
     else run(item);
   }
-  return <Menu.Root open={menu === 'block'} modal={false} onOpenChange={(open, details) => { if (open) openBlockMenu(); else { setMenu(current => current === 'block' ? null : current); if (details.reason === 'escape-key') editor.commands.focus(); } }}><Popover.Root open={menu === 'insert'} onOpenChange={open => { if (!open && menu === 'insert') { slash.current = null; setMenu(null); } }}><div className={`note-editor rich-editor ${uiClassName}`} ref={root} data-selecting={selectionBox != null || undefined} data-dragging={isDragging || undefined} data-typing={typing || undefined} data-menu-open={menu != null || undefined}
-    onFocusCapture={event => { if (!menu && !rangeGesture.current && !dragging.current && positionFoldToolbar(editor, event.target)) toolbarTarget.current.pointer = null; }}
+  return <Menu.Root open={menu === 'block'} modal={false} onOpenChange={(open, details) => { if (open) openBlockMenu(); else { setMenu(current => current === 'block' ? null : current); if (details.reason === 'escape-key') editor.commands.focus(); } }}><Popover.Root open={menu === 'insert'} onOpenChange={open => { if (!open && menu === 'insert') { slash.current = null; setMenu(null); } }}><div className={`note-editor rich-editor ${uiClassName}`} ref={root} data-selecting={selectionBox != null || undefined} data-dragging={isDragging || undefined} data-typing={typing || undefined} data-menu-open={menu != null || tableMenuOpen || undefined}
+    onFocusCapture={event => { if (!menu && !tableMenuOpen && !rangeGesture.current && !dragging.current && positionFoldToolbar(editor, event.target)) toolbarTarget.current.pointer = null; }}
     onInputCapture={event => { if (editor.view.dom.contains(event.target as Node)) setTyping(true); }}
     onPointerMove={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); } }}
-    onPointerUp={event => { if (rangeGesture.current?.pointerId === event.pointerId) { pointerX.current = event.clientX; pointerY.current = event.clientY; updateRangeSelection(); stopRangeSelection(); } }}
+    onPointerUp={event => {
+      const gesture = rangeGesture.current;
+      if (gesture?.pointerId !== event.pointerId) return;
+      pointerX.current = event.clientX; pointerY.current = event.clientY;
+      updateRangeSelection(); stopRangeSelection();
+      ignoreRangeClick.current = gesture.moved;
+      if (!gesture.moved && editor.state.doc === gesture.before.doc) dismissSelection(editor);
+    }}
     onPointerCancel={() => stopRangeSelection(true)} onLostPointerCapture={() => stopRangeSelection()}
     onKeyDownCapture={event => {
     toolbarTarget.current.pointer = null;
     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229 || editor.view.composing) return;
+    if (event.shiftKey && event.key === 'F10' && editor.isActive('table') && !props.disabled) {
+      const trigger = root.current?.querySelector<HTMLButtonElement>('.rich-table-tools button[aria-keyshortcuts]');
+      if (trigger) { event.preventDefault(); trigger.focus(); trigger.click(); }
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && (event.target as HTMLElement).closest('.rich-image-tools, .rich-image-column-controls')) {
       event.preventDefault(); event.stopPropagation(); if (event.shiftKey) editor.commands.redo(); else editor.commands.undo(); return;
     }
@@ -696,11 +737,13 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       }}><GripVertical size={16} /></button>
     </div>
     <EditorContent editor={editor} />
+    <RichBlockHighlight editor={editor} root={root} />
     {selectionBox && <div className="rich-selection-box" aria-hidden="true" style={selectionBox} />}
     {!props.disabled && <RichTagSuggestions editor={editor} />}
     {dropTop != null && <div className="block-drop-indicator" style={{ top: dropTop }} />}
-    {!props.disabled && editor.state.selection instanceof TextSelection && !editor.state.selection.empty && !menu && <Suspense fallback={null}><RichFormatTools editor={editor} /></Suspense>}
-    {menu === 'insert' && <Popover.Portal><Popover.Positioner anchor={controlsRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Popover.Popup ref={menuRef} initialFocus={() => slash.current ? false : true} finalFocus={false} className={`rich-menu block-menu rich-insert-menu ${uiClassName}`} role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
+    {!props.disabled && editor.state.selection instanceof TextSelection && !editor.state.selection.empty && !menu && !tableMenuOpen && <Suspense fallback={null}><RichFormatTools editor={editor} /></Suspense>}
+    {/* Gutter menus slide inside the viewport instead of flipping their horizontal alignment. */}
+    {menu === 'insert' && <Popover.Portal><Popover.Positioner anchor={controlsRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup ref={menuRef} initialFocus={() => slash.current ? false : true} finalFocus={false} className={`rich-menu block-menu rich-insert-menu ${uiClassName}`} role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Escape') { event.preventDefault(); closeMenu(); return; }
       if (event.target !== event.currentTarget.querySelector('.rich-insert-close')) handleInsertKey(event.nativeEvent);
@@ -718,7 +761,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
         <button className="rich-insert-close" onClick={closeMenu}>关闭菜单<kbd>esc</kbd></button>
       </>
     </Popover.Popup></Popover.Positioner></Popover.Portal>}
-    {menu === 'block' && <Menu.Portal><Menu.Positioner anchor={gripRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Menu.Popup ref={menuRef} className={`rich-block-menu ${uiClassName}`} aria-label="内容块操作菜单" finalFocus={calloutIcon !== null ? false : () => editor.view.dom}>
+    {menu === 'block' && <Menu.Portal><Menu.Positioner anchor={gripRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Menu.Popup ref={menuRef} className={`rich-block-menu ${uiClassName}`} aria-label="内容块操作菜单" finalFocus={() => calloutIconOpen.current ? false : editor.view.dom}>
       <Menu.SubmenuRoot open={conversionOpen} onOpenChange={setConversionOpen}>
         <Menu.SubmenuTrigger disabled={!canConvertText && !canConvertCallout && !selectedCallout}><RefreshCw aria-hidden="true" /><span>转换为</span><ChevronRight className="rich-menu-check" aria-hidden="true" /></Menu.SubmenuTrigger>
         <Menu.Portal><Menu.Positioner collisionPadding={12} sideOffset={isMobile ? -260 : 6} alignOffset={-5} className="z-50"><Menu.Popup className={`rich-block-menu rich-convert-menu ${uiClassName}`} aria-label="转换为">
@@ -743,15 +786,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       {(selectedBlocks.length > 1 || movingSection) && <><Menu.Separator /><div className="rich-block-menu-note" role="status">{movingSection ? `章节移动包含 ${moveSources.length} 个块；其他操作仅作用于标题` : `已选择 ${selectedBlocks.length} 个块`}</div></>}
     </Menu.Popup></Menu.Positioner></Menu.Portal>}
     {calloutIcon !== null && <Suspense fallback={<span role="status">正在打开图标选择器…</span>}><CalloutIconPicker editor={editor} target={calloutIcon} onClose={() => setCalloutIcon(null)} /></Suspense>}
-    {!props.disabled && editor.isActive('table') && <div className="rich-table-tools" aria-label="表格操作">
-      <button onClick={() => editor.chain().focus().addRowAfter().run()}>添加行</button><button onClick={() => editor.chain().focus().addColumnAfter().run()}>添加列</button>
-      <select aria-label="列对齐" defaultValue="" onChange={event => { alignRichColumn(editor, event.target.value); event.target.value = ''; }}><option value="" disabled>对齐</option><option value="left">左对齐</option><option value="center">居中</option><option value="right">右对齐</option></select>
-      {editor.isActive('tableHeader') && <select aria-label="表头范围" value={editor.getAttributes('tableHeader').scope ?? ''} onChange={event => editor.chain().focus().updateAttributes('tableHeader', { scope: event.target.value || null }).run()}><option value="">自动</option><option value="col">列标题</option><option value="row">行标题</option></select>}
-      <button onClick={() => editor.chain().focus().toggleHeaderRow().run()}>切换表头</button>
-      <button onClick={() => editor.chain().focus().mergeOrSplit().run()}>合并／拆分单元格</button>
-      <button disabled={!editor.isActive('tableRow') || (() => { const p = editor.state.selection.$from; for (let d = p.depth; d > 0; d--) if (p.node(d).type.name === 'tableRow') return p.index(d - 1) !== p.node(d - 1).childCount - 1; return true; })()} onClick={() => editor.chain().focus().updateAttributes('tableRow', { footer: !editor.getAttributes('tableRow').footer }).run()}>切换表尾行</button>
-      <button onClick={() => editor.chain().focus().deleteRow().run()}>删除行</button><button onClick={() => editor.chain().focus().deleteColumn().run()}>删除列</button>
-    </div>}
+    <RichTableTools editor={editor} blocked={props.disabled || menu !== null || isDragging || selectionBox !== null} onMenuOpenChange={setTableMenuOpen} />
 
   </div></Popover.Root></Menu.Root>;
 });

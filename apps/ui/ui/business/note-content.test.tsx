@@ -11,9 +11,9 @@ vi.mock("../../src/client-mode", () => ({ isBrowserVault: false, isLocalWeb: fal
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 it("retains the shared safe Markdown pipeline, complete semantics, WikiLinks and local attachments", () => {
-  const body = '## 思考\n\n[[相关笔记|关联]]\n\n![本地图片](../assets/photo.png)\n\n- [x] 完成\n- [ ] 待办\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n$E=mc^2$\n\n说明[^1]\n\n[^1]: 脚注\n\n<details><summary>详情</summary><p><mark>重点</mark> <kbd>Enter</kbd></p></details>\n\n<aside data-callout="blue" data-callout-icon="🧭"><p>提示</p></aside>\n\n<figure data-image-columns="40,60"><img src="../assets/a.png" alt="第一张"><img src="../assets/b.png" alt="第二张"></figure>';
+  const body = '## 思考\n\n[[相关笔记|关联]]\n\n![本地图片](../assets/photo.png)\n\n- [x] 完成\n- [ ] 待办\n\n| A | B |\n| --- | --- |\n| 1 | 2 |\n\n$E=mc^2$\n\n说明[^1]\n\n[^1]: 脚注\n\n<p><mark>重点</mark> <kbd>Enter</kbd></p>\n\n<aside data-callout="blue" data-callout-icon="🧭"><p>提示</p></aside>\n\n<figure data-image-columns="40,60"><img src="../assets/a.png" alt="第一张"><img src="../assets/b.png" alt="第二张"></figure>';
   const html = renderToStaticMarkup(<NoteMarkdown body={body} notePath="notes/note.md" />);
-  for (const tag of ["h2", "table", "math", "details", "summary", "mark", "kbd", "aside", "figure"]) expect(html).toContain(`<${tag}`);
+  for (const tag of ["h2", "table", "math", "mark", "kbd", "aside", "figure"]) expect(html).toContain(`<${tag}`);
   expect(html).toContain("typeset-memocard");
   expect(html).toContain("memocard-internal:");
   expect(html).toContain('src="memocard-asset://vault/assets/photo.png"');

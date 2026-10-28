@@ -56,17 +56,16 @@ it('keeps relative attachment targets through edits', () => {
 });
 
 it('edits semantic HTML, Wiki labels and footnotes without exposing source markers', () => {
- const body='正文 <mark>重点</mark> [[笔记|名字]] 和脚注[^1]\n\n[^1]: 注释\n\n<details><summary>摘要</summary><p>内部正文</p></details>';
+ const body='正文 <mark>重点</mark> [[笔记|名字]] 和脚注[^1]\n\n[^1]: 注释\n\n<aside><p>内部正文</p></aside>';
  const {editor,text}=setup(body);
  expect(editor.view.dom.querySelector('mark')?.textContent).toBe('重点');
  expect(editor.view.dom.querySelector('a[data-wiki-target]')?.textContent).toBe('名字');
  expect(editor.view.dom.querySelector('sup')?.textContent).toBe('1');
- expect(editor.view.dom.querySelector('summary')?.textContent).toBe('摘要');
+ expect(editor.view.dom.querySelector('aside')?.textContent).toBe('内部正文');
  expect(text()).toBe(body);
  let position=0;editor.state.doc.descendants((node,pos)=>{if(node.isText&&node.text==='内部正文')position=pos;});
  editor.commands.insertContentAt(position,'新');
  expect(text()).toContain('<p>新内部正文</p>');expect(text()).toContain('[[笔记|名字]]');
- expect(text()).not.toContain('<details open');
 });
 it('moves a list item with its children within and across compatible lists reversibly',()=>{
  const body='* parent\n  * child\n* second\n\nparagraph\n\n- other';

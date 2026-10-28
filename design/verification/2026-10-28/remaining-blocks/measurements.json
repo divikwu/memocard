@@ -1,0 +1,2086 @@
+{
+  "elements": 223,
+  "blocks": 87,
+  "baseline": [
+    {
+      "cls": "",
+      "height": 63.1875,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "这是用于检查内容块间距的模拟笔记。可以直接编辑、选中或拖动内",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "01 · 正文与行内格式",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第一段正文。观察文字起点、行高，以及段落上下的留白。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 63.1875,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二段正文稍长一些，用于检查自然换行。把窗口缩窄后，可以比较",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第三段包含 粗体、斜体、删除线、行内代码、链接文字、高亮文字",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "02 · 六级标题与正文",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 43.9921875,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H1",
+      "text": "一级标题",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "一级标题后的正文，用于比较标题与段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "二级标题",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "二级标题后的正文，用于比较标题与段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 40,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H3",
+      "text": "三级标题",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "三级标题后的正文，用于比较标题与段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H4",
+      "text": "四级标题",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "四级标题后的正文，用于比较标题与段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 32,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H5",
+      "text": "五级标题",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "五级标题后的正文，用于比较标题与段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 32,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H6",
+      "text": "六级标题",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "六级标题后的正文，用于比较标题与段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "03 · 普通列表与嵌套",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "无序列表之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 223.15625,
+      "padding": "6px 0px 6px 24px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "第一项：检查列表标记与文字的距离第二项：这是一条较长的列表内",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第一项：检查列表标记与文字的距离",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第一项：检查列表标记与文字的距离",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 151.96875,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第二项：这是一条较长的列表内容，用于观察换行后的文字是否对齐",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 51.1875,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二项：这是一条较长的列表内容，用于观察换行后的文字是否对齐",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 92.78125,
+      "padding": "0px 0px 0px 24px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "第二级第一项第二级第二项第三级内容",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第二级第一项",
+      "width": 649.6015625
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二级第一项",
+      "width": 643.203125
+    },
+    {
+      "cls": "",
+      "height": 63.1875,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第二级第二项第三级内容",
+      "width": 649.6015625
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二级第二项",
+      "width": 643.203125
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "0px 0px 0px 24px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "第三级内容",
+      "width": 643.203125
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第三级内容",
+      "width": 619.203125
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第三级内容",
+      "width": 612.8046875
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第三项：回到第一级",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第三项：回到第一级",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "无序列表之后、有序列表之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 163.96875,
+      "padding": "6px 0px 6px 24px",
+      "radius": "0px",
+      "tag": "OL",
+      "text": "第一步：收集信息第二步：整理内容嵌套步骤一嵌套步骤二第三步：",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第一步：收集信息",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第一步：收集信息",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 92.78125,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第二步：整理内容嵌套步骤一嵌套步骤二",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二步：整理内容",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 59.1875,
+      "padding": "0px 0px 0px 24px",
+      "radius": "0px",
+      "tag": "OL",
+      "text": "嵌套步骤一嵌套步骤二",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "嵌套步骤一",
+      "width": 649.6015625
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "嵌套步骤一",
+      "width": 643.203125
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "嵌套步骤二",
+      "width": 649.6015625
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "嵌套步骤二",
+      "width": 643.203125
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "第三步：检查结果",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第三步：检查结果",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "有序列表之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "04 · 任务列表",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "任务列表之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 193.5625,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "待办：未完成任务未完成任务待办：已完成任务已完成任务待办：包",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "待办：未完成任务未完成任务",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "未完成任务",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "待办：已完成任务已完成任务",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "已完成任务",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 92.78125,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "待办：包含子任务的父任务已完成的子任务较长的子任务内容，用于",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "包含子任务的父任务",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 59.1875,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "待办：已完成的子任务已完成的子任务待办：较长的子任务内容，用",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "待办：已完成的子任务已完成的子任务",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "已完成的子任务",
+      "width": 643.203125
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "待办：较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "较长的子任务内容，用于观察窄屏换行、复选框位置和多级缩进",
+      "width": 643.203125
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "待办：最后一项任务最后一项任务",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "最后一项任务",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "任务列表之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "05 · 引用",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "引用块之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 142.375,
+      "padding": "0px 0px 0px 16px",
+      "radius": "8px",
+      "tag": "BLOCKQUOTE",
+      "text": "引用的第一段，观察左侧竖线与文字之间的距离。引用的第二段，观",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "引用的第一段，观察左侧竖线与文字之间的距离。",
+      "width": 686
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "引用的第二段，观察引用内部段落的间距。",
+      "width": 686
+    },
+    {
+      "cls": "",
+      "height": 59.1875,
+      "padding": "0px 0px 0px 24px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "引用内的第一项列表引用内的第二项列表",
+      "width": 686
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "引用内的第一项列表",
+      "width": 662
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "引用内的第一项列表",
+      "width": 655.6015625
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "引用内的第二项列表",
+      "width": 662
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "引用内的第二项列表",
+      "width": 655.6015625
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "引用块之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "06 · 提示块",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "无图标提示块之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 83.1875,
+      "padding": "12px 16px",
+      "radius": "8px",
+      "tag": "ASIDE",
+      "text": "+无图标提示块第二段内容，用于检查提示块内部的上下、左右留白",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "无图标提示块",
+      "width": 672
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二段内容，用于检查提示块内部的上下、左右留白。",
+      "width": 672
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "带图标提示块之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 158.375,
+      "padding": "12px 16px 12px 48px",
+      "radius": "8px",
+      "tag": "ASIDE",
+      "text": "💡带图标提示块观察图标、正文起点及换行后的对齐。提示块内的",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "带图标提示块",
+      "width": 640
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "观察图标、正文起点及换行后的对齐。",
+      "width": 640
+    },
+    {
+      "cls": "",
+      "height": 59.1875,
+      "padding": "0px 0px 0px 24px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "提示块内的列表第一项提示块内的列表第二项",
+      "width": 640
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "提示块内的列表第一项",
+      "width": 616
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "提示块内的列表第一项",
+      "width": 609.6015625
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "提示块内的列表第二项",
+      "width": 616
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "提示块内的列表第二项",
+      "width": 609.6015625
+    },
+    {
+      "cls": "",
+      "height": 49.59375,
+      "padding": "12px 16px 12px 48px",
+      "radius": "8px",
+      "tag": "ASIDE",
+      "text": "ℹ️相邻的第二个提示块，检查两个容器之间的距离。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "相邻的第二个提示块，检查两个容器之间的距离。",
+      "width": 640
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "提示块之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "07 · 代码块",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "代码块之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 184,
+      "padding": "12px 16px",
+      "radius": "8px",
+      "tag": "PRE",
+      "text": "const title = \"内容块间距检查\";\nconst",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "代码块之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 64,
+      "padding": "12px 16px",
+      "radius": "8px",
+      "tag": "PRE",
+      "text": "没有语言标记的代码块\n第二行内容",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "08 · 表格",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "标准表头表格之前的正文。表头使用灰底，外框圆角为 8px。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 170.1875,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "TABLE",
+      "text": "内容块检查位置状态正文上下留白与左右基线待检查列表缩进、标记",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 39.1875,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "内容块",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "内容块",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 39.1875,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "检查位置",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "检查位置",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 39.1875,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "状态",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "状态",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "正文",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "正文",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "上下留白与左右基线",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "上下留白与左右基线",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "待检查",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "待检查",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "列表",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "列表",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "缩进、标记和换行",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "缩进、标记和换行",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "待检查",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "待检查",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "表格",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "表格",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "外围留白、表头灰底与圆角",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "外围留白、表头灰底与圆角",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "待检查",
+      "width": 175.5
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "待检查",
+      "width": 147.5
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "无表头表格：每个单元格都是普通正文格。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 88,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "TABLE",
+      "text": "第一行第一列第一行第二列第二行第一列第二行第二列",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "第一行第一列",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第一行第一列",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "第一行第二列",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第一行第二列",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "第二行第一列",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二行第一列",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "第二行第二列",
+      "width": 351
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "第二行第二列",
+      "width": 323
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "标题列表格：左列为表头，检查左上角与左下角的灰底裁切。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 131,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "TABLE",
+      "text": "项目内容块间距检查类型模拟数据状态等待人工检查",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "项目",
+      "width": 307.125
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "项目",
+      "width": 279.125
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "内容块间距检查",
+      "width": 394.875
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "内容块间距检查",
+      "width": 366.875
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "类型",
+      "width": 307.125
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "类型",
+      "width": 279.125
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "模拟数据",
+      "width": 394.875
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "模拟数据",
+      "width": 366.875
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "状态",
+      "width": 307.125
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "状态",
+      "width": 279.125
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "等待人工检查",
+      "width": 394.875
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "等待人工检查",
+      "width": 366.875
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "合并单元格表格：检查灰底和边框在合并格处的衔接。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 127.1875,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "TABLE",
+      "text": "合并的标题单元格状态左侧内容中间内容待检查合并的正文单元格待",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 39.1875,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "合并的标题单元格",
+      "width": 468
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "合并的标题单元格",
+      "width": 440
+    },
+    {
+      "cls": "",
+      "height": 39.1875,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "状态",
+      "width": 234
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "状态",
+      "width": 206
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "左侧内容",
+      "width": 234
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "左侧内容",
+      "width": 206
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "中间内容",
+      "width": 234
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "中间内容",
+      "width": 206
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "待检查",
+      "width": 234
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "待检查",
+      "width": 206
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "合并的正文单元格",
+      "width": 468
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "合并的正文单元格",
+      "width": 440
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "待检查",
+      "width": 234
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "待检查",
+      "width": 206
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "表格之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "09 · 公式",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "行内公式 E=mc2E=mc^2 与普通文字放在同一段，观察",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "块级公式之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-math rich-math-block",
+      "height": 66.140625,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "DIV",
+      "text": "∑i=1ni=n(n+1)2\\sum_{i=1}^{n} i",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "块级公式之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "10 · Mermaid 图形",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "图形之前的正文。可以切换图形和代码，比较两个状态的内部留白。",
+      "width": 704
+    },
+    {
+      "cls": "rich-code-block",
+      "height": 268.8984375,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "DIV",
+      "text": "flowchart LR\n  A[收集内容] --> B[整",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 104,
+      "padding": "12px 16px",
+      "radius": "8px",
+      "tag": "PRE",
+      "text": "flowchart LR\n  A[收集内容] --> B[整",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "图形之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "11 · 图片与并排图片",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "单张图片之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 dark:aria-invalid:border-error/50 dark:aria-invalid:ring-error/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-visible:focus-ring hover:bg-overlay-hover hover:text-primary aria-expanded:bg-muted aria-expanded:text-primary aria-expanded:hover:bg-overlay-hover h-element-md gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5 ui-note-image",
+      "height": 240,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 480
+    },
+    {
+      "cls": "",
+      "height": 240,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "IMG",
+      "text": "",
+      "width": 480
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "单张图片之后、并排图片之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 210.3984375,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "FIGURE",
+      "text": "并排图片的共同说明：检查列间距、说明文字与下方正文的距离。",
+      "width": 704
+    },
+    {
+      "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 dark:aria-invalid:border-error/50 dark:aria-invalid:ring-error/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-visible:focus-ring hover:bg-overlay-hover hover:text-primary aria-expanded:bg-muted aria-expanded:text-primary aria-expanded:hover:bg-overlay-hover h-element-md gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5 ui-note-image",
+      "height": 172,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 344
+    },
+    {
+      "cls": "",
+      "height": 172,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "IMG",
+      "text": "",
+      "width": 344
+    },
+    {
+      "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 dark:aria-invalid:border-error/50 dark:aria-invalid:ring-error/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-visible:focus-ring hover:bg-overlay-hover hover:text-primary aria-expanded:bg-muted aria-expanded:text-primary aria-expanded:hover:bg-overlay-hover h-element-md gap-1.5 px-3 has-data-[icon=inline-end]:pr-2.5 has-data-[icon=inline-start]:pl-2.5 ui-note-image",
+      "height": 172,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "BUTTON",
+      "text": "",
+      "width": 344
+    },
+    {
+      "cls": "",
+      "height": 172,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "IMG",
+      "text": "",
+      "width": 344
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "并排图片之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "12 · 分隔线",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "分隔线之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "分隔线之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "13 · 脚注与原格式块",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "这段正文包含一个脚注引用spacing，用于检查编号的基线与",
+      "width": 704
+    },
+    {
+      "cls": "rich-footnote",
+      "height": 54,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "DIV",
+      "text": "脚注的第一段内容。脚注的第二段内容，观察内部段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 19,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "脚注的第一段内容。",
+      "width": 126
+    },
+    {
+      "cls": "",
+      "height": 20,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "脚注的第二段内容，观察内部段落的间距。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "原格式保留块之前的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-preserved",
+      "height": 87.1875,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "DIV",
+      "text": "原格式保留块的第一段内容。原格式保留块的第二段内容，用于检查",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "原格式保留块的第一段内容。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "原格式保留块的第二段内容，用于检查保留标签、内部正文及块之间",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "原格式保留块之后的正文。",
+      "width": 704
+    },
+    {
+      "cls": "rich-foldable-heading",
+      "height": 36,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "H2",
+      "text": "14 · 连续混排",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "这一组不插入额外的小标题，直接比较相邻内容块。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 71.1875,
+      "padding": "6px 0px 6px 24px",
+      "radius": "0px",
+      "tag": "UL",
+      "text": "正文后紧接列表列表的第二项",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "正文后紧接列表",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "正文后紧接列表",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 29.59375,
+      "padding": "2px 0px 2px 6.4px",
+      "radius": "0px",
+      "tag": "LI",
+      "text": "列表的第二项",
+      "width": 680
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "列表的第二项",
+      "width": 673.6015625
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px 0px 0px 16px",
+      "radius": "8px",
+      "tag": "BLOCKQUOTE",
+      "text": "列表后紧接引用。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "列表后紧接引用。",
+      "width": 686
+    },
+    {
+      "cls": "",
+      "height": 49.59375,
+      "padding": "12px 16px 12px 48px",
+      "radius": "8px",
+      "tag": "ASIDE",
+      "text": "💡引用后紧接提示块。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 25.59375,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "引用后紧接提示块。",
+      "width": 640
+    },
+    {
+      "cls": "",
+      "height": 44,
+      "padding": "12px 16px",
+      "radius": "8px",
+      "tag": "PRE",
+      "text": "提示块后紧接代码块。",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 84.1875,
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "TABLE",
+      "text": "代码块后的表格内容间距检查观察相邻块的留白",
+      "width": 704
+    },
+    {
+      "cls": "",
+      "height": 39.1875,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "代码块后的表格",
+      "width": 332.5234375
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "代码块后的表格",
+      "width": 304.5234375
+    },
+    {
+      "cls": "",
+      "height": 39.1875,
+      "padding": "9.1px 14px",
+      "radius": "0px",
+      "tag": "TH",
+      "text": "内容",
+      "width": 369.4765625
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "内容",
+      "width": 341.4765625
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "间距检查",
+      "width": 332.5234375
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "间距检查",
+      "width": 304.5234375
+    },
+    {
+      "cls": "",
+      "height": 43,
+      "padding": "10.5px 14px",
+      "radius": "0px",
+      "tag": "TD",
+      "text": "观察相邻块的留白",
+      "width": 369.4765625
+    },
+    {
+      "cls": "",
+      "height": 21,
+      "padding": "0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "观察相邻块的留白",
+      "width": 341.4765625
+    },
+    {
+      "cls": "",
+      "height": 37.59375,
+      "padding": "6px 0px",
+      "radius": "0px",
+      "tag": "P",
+      "text": "最后一段正文。可以选中单个块、跨块选择或拖动排序，再按撤销恢",
+      "width": 704
+    }
+  ],
+  "selection": [
+    {
+      "arcs": [
+        12,
+        12,
+        12,
+        12
+      ],
+      "outsets": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "padding": "0px 0px 0px 16px",
+      "radius": "8px",
+      "tag": "BLOCKQUOTE"
+    },
+    {
+      "arcs": [
+        12,
+        12,
+        12,
+        12
+      ],
+      "outsets": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "padding": "12px 16px 12px 48px",
+      "radius": "8px",
+      "tag": "ASIDE"
+    },
+    {
+      "arcs": [
+        12,
+        12,
+        12,
+        12
+      ],
+      "outsets": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "padding": "12px 16px",
+      "radius": "8px",
+      "tag": "PRE"
+    },
+    {
+      "arcs": [
+        12,
+        12,
+        12,
+        12
+      ],
+      "outsets": [
+        4,
+        4,
+        4,
+        4
+      ],
+      "padding": "0px",
+      "radius": "8px",
+      "tag": "TABLE"
+    }
+  ],
+  "layoutDifferences": [],
+  "dragUndoRestored": true,
+  "finalContentRestored": true
+}

@@ -24,6 +24,8 @@ export const scenarios:Scenario[] = [
   {id:'draft-directory',group:'草稿',label:'恢复目录不可读',instructions:'检查说明中直接展示的恢复目录不可读原因与路径。'},
   {id:'draft-reminder-error',group:'草稿',label:'关闭提醒失败',drafts:1,auto:'查看草稿',instructions:'点击“不再提醒”，查看弹窗内错误；草稿卡片仍保留。'},
   {id:'draft-restore-error',group:'草稿',label:'恢复后保存失败',drafts:1,auto:'查看草稿',instructions:'点击“继续编辑”，模拟恢复后写入失败；错误在编辑器内展示，恢复内容仍保留。'},
+  {id:'tables',group:'编辑',label:'表格点击与编辑',detail:true,instructions:'点击单元格后使用行、列、表格菜单；检查方向插入、对齐、标题行列、合并拆分和撤销。Shift+F10 可从单元格打开表格选项。所有修改只写入模拟内存。'},
+  {id:'block-spacing',group:'编辑',label:'内容块间距检查',detail:true,instructions:'集中检查正文、六级标题、嵌套列表、任务、引用、提示块、代码、表格、公式、图形、图片、分隔线、脚注和保留格式。包含连续混排，可自由编辑、选中与拖动；刷新恢复模拟数据。'},
   {id:'save-error',group:'编辑',label:'正文保存失败',detail:true,instructions:'已加载模拟未保存修改，自动触发保存失败；检查重试保存。'},
   {id:'draft-save-error',group:'编辑',label:'本机草稿保存失败',detail:true,instructions:'检查草稿保存失败；输入内容仅留在此预览内存中。'},
   {id:'conflict',group:'编辑',label:'外部修改冲突',detail:true,instructions:'检查继续编辑、重新加载、另存副本；副本只写入内存。'},

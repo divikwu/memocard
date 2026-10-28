@@ -1,24 +1,37 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
-import { REFERENCE_ROOT_SIZE } from './scale';
+import { noteHeadings, noteLineHeights, REFERENCE_ROOT_SIZE } from './scale';
 import { defaults, measurePresets, parseTypography, STORAGE_KEY, type Typography } from './preferences';
 
 const Context = createContext<{ value: Typography; save: (next: Typography) => void; error: string }>({ value: defaults, save: () => {}, error: '' });
 export const useTypography = () => useContext(Context);
 // Keep the persisted choices and emitted CSS contract separate from React lifecycle work.
 export function resolveTypography(value: Typography) {
+  const headings = noteHeadings[value.size], line = noteLineHeights[value.size][value.leading];
   return {
-    '--note-size': value.size === '15' ? '0.9375rem' : value.size === '14' ? 'var(--font-size-sm)' : value.size === '18' ? 'var(--font-size-lg)' : 'var(--font-size-base)',
-    '--note-scale': `${Number(value.size) / REFERENCE_ROOT_SIZE}`,
-    '--note-summary-size': Number(value.size) > 16 ? 'var(--font-size-base)' : 'var(--font-size-sm)',
-    '--note-leading': value.leading,
-    '--note-flow': value.flow,
-    '--note-measure': `${measurePresets[value.measure].factor * Number(value.size)}px`,
+    '--note-size': value.size === '14' ? 'var(--font-size-sm)' : 'var(--font-size-base)',
+    '--note-h1-size': `${headings[0][0] / REFERENCE_ROOT_SIZE}rem`,
+    '--note-h1-line-height': `${headings[0][1] / REFERENCE_ROOT_SIZE}rem`,
+    '--note-h2-size': `${headings[1][0] / REFERENCE_ROOT_SIZE}rem`,
+    '--note-h2-line-height': `${headings[1][1] / REFERENCE_ROOT_SIZE}rem`,
+    '--note-h3-size': `${headings[2][0] / REFERENCE_ROOT_SIZE}rem`,
+    '--note-h3-line-height': `${headings[2][1] / REFERENCE_ROOT_SIZE}rem`,
+    '--note-summary-size': 'var(--font-size-sm)',
+    '--note-leading': `${line / Number(value.size)}`,
+    '--note-line-height': `${line / REFERENCE_ROOT_SIZE}rem`,
+    '--note-flow': value.flow.endsWith('em') ? `${parseFloat(value.flow) * Number(value.size) / REFERENCE_ROOT_SIZE}rem` : value.flow,
+    '--note-measure': `${measurePresets[value.measure].factor * REFERENCE_ROOT_SIZE}px`,
   };
 }
 export function TypographyProvider({ children }: { children: ReactNode }) {
   const [value, setValue] = useState(() => { try { return parseTypography(localStorage.getItem(STORAGE_KEY)); } catch { return { ...defaults }; } });
   const [error, setError] = useState('');
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY), previous = JSON.parse(stored ?? 'null');
+      if (previous?.size === '15' || previous?.size === '18') localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...previous, size: '16' }));
+    } catch { /* The active layout remains available when local storage cannot be written. */ }
+  }, []);
   useEffect(() => {
     const sync = (event: StorageEvent) => { if (event.key === STORAGE_KEY || event.key === null) setValue(parseTypography(event.key === null ? null : event.newValue)); };
     window.addEventListener('storage', sync); return () => window.removeEventListener('storage', sync);

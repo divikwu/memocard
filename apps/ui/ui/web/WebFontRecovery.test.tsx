@@ -59,7 +59,7 @@ it("reports a failed Chinese font and recovers through the real loader without c
   expect(screen.queryByText("字体加载失败，暂时使用系统字体。")).toBeNull();
   expect(errors).toHaveBeenCalledWith(expect.stringContaining("字体加载失败"), expect.any(Error));
   expect(localStorage.getItem(appearanceKey)).toBe(appearance);
-  expect(localStorage.getItem(typographyKey)).toBe(typography);
+  expect(JSON.parse(localStorage.getItem(typographyKey)!)).toEqual({ ...JSON.parse(typography), size: "16" });
 
   recovering = true;
   fireEvent.click(retry);
@@ -71,5 +71,5 @@ it("reports a failed Chinese font and recovers through the real loader without c
   expect(screen.queryByText("字体加载失败，暂时使用系统字体。")).toBeNull();
   expect(screen.queryByRole("button", { name: "重试加载字体" })).toBeNull();
   expect(localStorage.getItem(appearanceKey)).toBe(appearance);
-  expect(localStorage.getItem(typographyKey)).toBe(typography);
+  expect(JSON.parse(localStorage.getItem(typographyKey)!)).toEqual({ ...JSON.parse(typography), size: "16" });
 });

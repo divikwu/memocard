@@ -61,7 +61,7 @@ it("edits a custom grapheme icon without moving the caret and preserves undo and
 });
 
 it("searches common icons, clears them, and returns keyboard focus on Escape without writing", async () => {
-  const { field, change } = await setup('开头\n\n<aside data-callout="gray" data-callout-icon="💡"><p>正文</p></aside>');
+  const { editor, field, change } = await setup('开头\n\n<aside data-callout="gray" data-callout-icon="💡"><p>正文</p></aside>');
   fireEvent.click(screen.getByRole("button", { name: "更改标注图标" }));
   fireEvent.change(await screen.findByRole("textbox", { name: "搜索 Emoji" }), { target: { value: "警告" } });
   fireEvent.click(screen.getByRole("button", { name: "警告、小心" }));
@@ -70,14 +70,32 @@ it("searches common icons, clears them, and returns keyboard focus on Escape wit
   await screen.findByRole("textbox", { name: "搜索 Emoji" });
   fireEvent.click(screen.getByRole("button", { name: "清除图标" }));
   expect(field.querySelector("aside")?.hasAttribute("data-callout-icon")).toBe(false);
-  const trigger = screen.getByRole("button", { name: "添加标注图标" });
+  expect(screen.queryByRole("button", { name: "添加标注图标" })).toBeNull();
+  act(() => editor.commands.setTextSelection(editor.state.doc.firstChild!.nodeSize + 2));
+  const trigger = screen.getByRole("button", { name: "内容块操作" });
   act(() => trigger.focus()); fireEvent.click(trigger);
+  fireEvent.click(screen.getByRole("menuitem", { name: "编辑图标" }));
   await screen.findByRole("textbox", { name: "搜索 Emoji" });
   const count = change.mock.calls.length;
   await userEvent.setup().keyboard("{Escape}");
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标注图标" })).toBeNull());
   await waitFor(() => expect(document.activeElement).toBe(trigger));
   expect(change).toHaveBeenCalledTimes(count);
+});
+
+it("returns keyboard focus to the editor when clearing an icon hides its trigger", async () => {
+  const { editor, field } = await setup('开头\n\n<aside data-callout="gray" data-callout-icon="💡"><p>正文</p></aside>');
+  const user = userEvent.setup();
+  act(() => screen.getByRole("button", { name: "更改标注图标" }).focus());
+  await user.keyboard("{Enter}");
+  await screen.findByRole("textbox", { name: "搜索 Emoji" });
+  act(() => screen.getByRole("button", { name: "清除图标" }).focus());
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标注图标" })).toBeNull());
+  expect(field.querySelector("aside")?.hasAttribute("data-callout-icon")).toBe(false);
+  await waitFor(() => expect(document.activeElement).toBe(field));
+  act(() => editor.commands.undo());
+  expect(field.querySelector("aside")?.getAttribute("data-callout-icon")).toBe("💡");
 });
 
 it("uses the shared mobile sheet for callout icons and cancels without changing content or selection", async () => {

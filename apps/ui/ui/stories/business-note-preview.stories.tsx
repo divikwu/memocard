@@ -110,7 +110,7 @@ export const CompactTable: Story = {
 
 export const RichContent: Story = {
   name: "WikiLink · 数学 · 图表 · 导入内容",
-  args: { title: "关联与表达", body: '相关思路：[[相关笔记|继续阅读]]。\n\n$E=mc^2$\n\n<aside data-callout="blue" data-callout-icon="🧭"><p>提示：保留来源和上下文。</p></aside>\n\n```mermaid\ngraph TD\nA[捕捉]-->B[整理]\nB-->C[回顾]\n```\n\n<details><summary>更多说明</summary><p>保留完整的语义内容和安全清理。</p></details>\n\n| 日期 | 想法 |\n| --- | --- |\n| 今天 | 先记录，再整理 |' },
+  args: { title: "关联与表达", body: '相关思路：[[相关笔记|继续阅读]]。\n\n$E=mc^2$\n\n<aside data-callout="blue" data-callout-icon="🧭"><p>提示：保留来源和上下文。</p></aside>\n\n```mermaid\ngraph TD\nA[捕捉]-->B[整理]\nB-->C[回顾]\n```\n\n更多说明：保留完整的语义内容和安全清理。\n\n| 日期 | 想法 |\n| --- | --- |\n| 今天 | 先记录，再整理 |' },
 };
 
 export const RichContentRegression: Story = {

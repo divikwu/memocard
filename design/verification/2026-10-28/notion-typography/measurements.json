@@ -1,0 +1,25 @@
+{
+  "preview16": {
+    "font": "16px",
+    "h1": "30px",
+    "line": "24px",
+    "width": 702
+  },
+  "preview14": {
+    "font": "14px",
+    "h1": "26.25px",
+    "line": "21px",
+    "width": 702
+  },
+  "contentWidthUnchanged": true,
+  "smallDragSelected": [
+    "BLOCKQUOTE",
+    "ASIDE",
+    "PRE",
+    "DIV"
+  ],
+  "dragUndoRestored": true,
+  "editingUndoRestored": true,
+  "finalSize": "16px",
+  "finalLineHeight": "24px"
+}

@@ -7,12 +7,12 @@ export const measurePresets: Record<string, { label: string; factor: number }> =
 };
 export const options = {
   measure: Object.keys(measurePresets),
-  size: ['14', '15', '16', '18'],
-  leading: ['1.6', '1.75', '1.9'],
-  flow: ['1em', '1.25em', '2em'],
+  size: ['14', '16'],
+  leading: ['1.5', '1.6', '1.75', '1.9'],
+  flow: ['16px', '1em', '1.25em', '2em'],
 };
 export type Typography = { measure: string; size: string; leading: string; flow: string };
-export const defaults: Typography = { measure: '90', size: '16', leading: '1.6', flow: '1em' };
+export const defaults: Typography = { measure: '90', size: '16', leading: '1.5', flow: '16px' };
 export function parseTypography(raw: string | null): Typography {
   const result = { ...defaults };
   try {
