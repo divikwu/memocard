@@ -37,7 +37,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/preview-fonts.ts",
-          "scope": "line 36",
+          "scope": "line 39",
           "value": "\"Noto Sans SC Variable\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif"
         }
       ]
@@ -62,7 +62,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/preview-fonts.ts",
-          "scope": "line 37",
+          "scope": "line 40",
           "value": "\"PingFang SC\", \"Noto Sans SC Variable\", system-ui, sans-serif"
         }
       ]
@@ -74,7 +74,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/preview-fonts.ts",
-          "scope": "line 38",
+          "scope": "line 41",
           "value": "\"Songti SC\", \"STSong\", \"Noto Serif SC Variable\", serif"
         }
       ]
@@ -164,7 +164,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/preview-fonts.ts",
-          "scope": "line 31",
+          "scope": "line 34",
           "value": "ui-monospace, \"SF Mono\", Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
         },
         {
@@ -215,6 +215,11 @@
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-list-heading",
+          "value": "var(--font-family-body)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--font-family-body)"
         },
         {
@@ -328,6 +333,12 @@
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-body)",
           "variable": "--typeset-font-body"
+        },
+        {
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
+          "value": "var(--font-family-body)",
+          "variable": "--typeset-font-body"
         }
       ]
     },
@@ -370,6 +381,17 @@
         {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
+          "value": "var(--font-family-code)",
+          "variable": "--typeset-font-mono"
+        },
+        {
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown .note-mermaid-source pre",
+          "value": "var(--font-family-code)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-typography.css",
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
           "value": "var(--font-family-code)",
           "variable": "--typeset-font-mono"
         }
@@ -503,60 +525,17 @@
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
           "value": "var(--font-family-heading)"
-        }
-      ]
-    },
-    {
-      "property": "font-family",
-      "value": "var(--note-body-font, var(--font-family-body))",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
-          "value": "var(--note-body-font, var(--font-family-body))"
         },
-        {
-          "source": "apps/ui/ui/web/web-typography.css",
-          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
-          "value": "var(--note-body-font, var(--font-family-body))",
-          "variable": "--typeset-font-body"
-        }
-      ]
-    },
-    {
-      "property": "font-family",
-      "value": "var(--note-heading-font, var(--font-family-heading))",
-      "utilities": [],
-      "locations": [
         {
           "source": "apps/ui/ui/web/web-typography.css",
           "scope": ":root[data-web-typography] .ui-note-editor textarea.note-page-title",
-          "value": "var(--note-heading-font, var(--font-family-heading))"
+          "value": "var(--font-family-heading)"
         },
         {
           "source": "apps/ui/ui/web/web-typography.css",
           "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
-          "value": "var(--note-heading-font, var(--font-family-heading))",
+          "value": "var(--font-family-heading)",
           "variable": "--typeset-font-heading"
-        }
-      ]
-    },
-    {
-      "property": "font-family",
-      "value": "var(--note-mono-font, var(--font-family-code))",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/web/web-typography.css",
-          "scope": ":root[data-web-typography] .ui-note-markdown .note-mermaid-source pre",
-          "value": "var(--note-mono-font, var(--font-family-code))"
-        },
-        {
-          "source": "apps/ui/ui/web/web-typography.css",
-          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
-          "value": "var(--note-mono-font, var(--font-family-code))",
-          "variable": "--typeset-font-mono"
         }
       ]
     },
@@ -4076,151 +4055,157 @@
   "dynamic": [
     {
       "property": "font-family",
-      "expression": "`\"Figtree Variable\", ${sansFallback}`",
+      "expression": "`\"Inter Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 10"
     },
     {
       "property": "font-family",
-      "expression": "`\"Roboto Variable\", ${sansFallback}`",
+      "expression": "`\"Noto Sans Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 11"
     },
     {
       "property": "font-family",
-      "expression": "`\"Raleway Variable\", ${sansFallback}`",
+      "expression": "`\"Nunito Sans Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 12"
     },
     {
       "property": "font-family",
-      "expression": "`\"DM Sans Variable\", ${sansFallback}`",
+      "expression": "`\"Figtree Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 13"
     },
     {
       "property": "font-family",
-      "expression": "`\"Public Sans Variable\", ${sansFallback}`",
+      "expression": "`\"Roboto Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 14"
     },
     {
       "property": "font-family",
-      "expression": "`\"Outfit Variable\", ${sansFallback}`",
+      "expression": "`\"Raleway Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 15"
     },
     {
       "property": "font-family",
-      "expression": "`\"Oxanium Variable\", ${sansFallback}`",
+      "expression": "`\"DM Sans Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 16"
     },
     {
       "property": "font-family",
-      "expression": "`\"Manrope Variable\", ${sansFallback}`",
+      "expression": "`\"Public Sans Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 17"
     },
     {
       "property": "font-family",
-      "expression": "`\"Space Grotesk Variable\", ${sansFallback}`",
+      "expression": "`\"Outfit Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 18"
     },
     {
       "property": "font-family",
-      "expression": "`\"Montserrat Variable\", ${sansFallback}`",
+      "expression": "`\"Oxanium Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 19"
     },
     {
       "property": "font-family",
-      "expression": "`\"IBM Plex Sans Variable\", ${sansFallback}`",
+      "expression": "`\"Manrope Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 20"
     },
     {
       "property": "font-family",
-      "expression": "`\"Source Sans 3 Variable\", ${sansFallback}`",
+      "expression": "`\"Space Grotesk Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 21"
     },
     {
       "property": "font-family",
-      "expression": "`\"Instrument Sans Variable\", ${sansFallback}`",
+      "expression": "`\"Montserrat Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 22"
     },
     {
       "property": "font-family",
-      "expression": "`\"Geist Mono Variable\", ${monoFallback}`",
+      "expression": "`\"IBM Plex Sans Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 23"
     },
     {
       "property": "font-family",
-      "expression": "`\"JetBrains Mono Variable\", ${monoFallback}`",
+      "expression": "`\"Source Sans 3 Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 24"
     },
     {
       "property": "font-family",
-      "expression": "`\"Noto Serif Variable\", ${serifFallback}`",
+      "expression": "`\"Instrument Sans Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 25"
     },
     {
       "property": "font-family",
-      "expression": "`\"Roboto Slab Variable\", ${serifFallback}`",
+      "expression": "`\"Geist Mono Variable\", ${monoFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 26"
     },
     {
       "property": "font-family",
-      "expression": "`\"Merriweather Variable\", ${serifFallback}`",
+      "expression": "`\"JetBrains Mono Variable\", ${monoFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 27"
     },
     {
       "property": "font-family",
-      "expression": "`\"Lora Variable\", ${serifFallback}`",
+      "expression": "`\"Noto Serif Variable\", ${serifFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 28"
     },
     {
       "property": "font-family",
-      "expression": "`\"Playfair Display Variable\", ${serifFallback}`",
+      "expression": "`\"Roboto Slab Variable\", ${serifFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 29"
     },
     {
       "property": "font-family",
-      "expression": "`\"EB Garamond Variable\", ${serifFallback}`",
+      "expression": "`\"Merriweather Variable\", ${serifFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 30"
     },
     {
       "property": "font-family",
-      "expression": "`\"Geist Variable\", ${sansFallback}`",
+      "expression": "`\"Lora Variable\", ${serifFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
-      "scope": "line 6"
+      "scope": "line 31"
     },
     {
       "property": "font-family",
-      "expression": "`\"Inter Variable\", ${sansFallback}`",
+      "expression": "`\"Playfair Display Variable\", ${serifFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
-      "scope": "line 7"
+      "scope": "line 32"
     },
     {
       "property": "font-family",
-      "expression": "`\"Noto Sans Variable\", ${sansFallback}`",
+      "expression": "`\"EB Garamond Variable\", ${serifFallback}`",
+      "source": "apps/ui/ui/preview-fonts.ts",
+      "scope": "line 33"
+    },
+    {
+      "property": "font-family",
+      "expression": "SYSTEM_FONT_FAMILY",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 8"
     },
     {
       "property": "font-family",
-      "expression": "`\"Nunito Sans Variable\", ${sansFallback}`",
+      "expression": "`\"Geist Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 9"
     }

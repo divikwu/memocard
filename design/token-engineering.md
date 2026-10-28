@@ -149,7 +149,7 @@ const brand = defineTheme({
 | 生成轴 | 当前接口与职责 |
 | --- | --- |
 | color | accent 六位 hex 或浅深种子对、neutralStyle warm/cool/neutral、contrast standard/high。算法沿用固定 Astryx 基准的 CIELAB 近似 HCT，实现许可见 [astryx.txt](licenses/astryx.txt)，输出适配 MemoCard 的正文、表面、强调、边界与侧栏角色。仅 neutral 配置保留现有强调色；状态、内容 hue 和数据色不随种子生成。 |
-| typography | scale.base 指定像素基准；省略 ratio 按当前七档比例缩放，base=16 完全保留现值；显式 ratio 使用等比标尺。行高继续按既有 4px 网格与最少 4px 空隙计算，八种文字角色引用同一标尺。body/heading/code 可声明 family 与 fallbacks；code 同时生成 --app-font-mono 和 --note-mono-font，字体文件由调用方加载；ThemeProvider / TypographyProvider 的用户字体偏好继续优先。 |
+| typography | scale.base 指定像素基准；省略 ratio 按当前七档比例缩放，base=16 完全保留现值；显式 ratio 使用等比标尺。行高继续按既有 4px 网格与最少 4px 空隙计算，八种文字角色引用同一标尺。body/heading/code 可声明 family 与 fallbacks；code 同时生成 --app-font-mono 和 --note-mono-font，字体文件由调用方加载；旧主题的 ThemeProvider 用户字体偏好继续优先；当前 Web 字体由 UI 外观拥有，TypographyProvider 仅负责阅读布局。 |
 | radius | base 与可选 multiplier 只生成 --radius，原七种派生公式保持。省略时继续由用户圆角选择提供基准。 |
 | motion | scale 作用于原 fast/normal/panel/pulse 数值，1 保留原值；reduced 时长与缓动曲线保持核心来源。 |
 | syntax | 按既有 19 个角色指定 CSS 值，领域模块的加载职责保持。 |
@@ -179,7 +179,7 @@ pnpm theme:build design/themes/ocean.json design/themes/ocean.generated.css --ch
 | --- | --- |
 | 底层 CSS 名称 | Tailwind 的用途后缀与 Astryx 对齐；底层沿用现有 shadcn / 原生 palette 变量，避免破坏局部覆盖与协议。它们不是 Astryx 原始 CSS 名称的逐字替换。 |
 | spacingDefaults | 两者均以 rem 表达 4px 根基准。Tailwind 的 --spacing=.25rem 提供 p-* / gap-*，无需复制另一套 --spacing-0…12；100–200% 根字号下按相同比例缩放。 |
-| typographyDefaults | font-sans / heading 读取原界面字体；font-mono 读取 --app-font-mono，默认精确保留原 Tailwind monospace 栈。笔记代码继续由 --note-mono-font 及阅读偏好拥有；显式 code 轴可同时设置两者，用户 inline 偏好仍优先。 |
+| typographyDefaults | font-sans / heading 读取原界面字体；font-mono 读取 --app-font-mono，默认精确保留原 Tailwind monospace 栈。旧主题的显式 code 轴可同时设置两者；当前 Web 笔记代码直接使用 UI 的 --font-family-code，不再保存独立字体偏好。 |
 | textSizeDefaults / typeScaleDefaults | 保留七档项目字号和八种文字角色，现有 heading-1…6 兼容别名继续可用。没有引入 4xs / 3xs / 2xs 子标尺或 display-1…3 角色：产品无对应消费者，新增完整字号体系超出本轮保留数值的决定。text-4xl / 5xl 仍可使用锁定 Tailwind 的 2.25rem / 3rem，不冒充项目生成标尺；text-2xs 未声明。 |
 | fontWeightDefaults | normal / medium / semibold 为 400 / 500 / 600，bold 沿旧兼容映射为 600；不导入 Astryx 的 700。主题可用已有 canonical weight token 显式覆盖，不新增另一套角色配置。 |
 | radiusDefaults | 保留现有 rounded-sm…4xl 派生和用户圆角档位；rounded-xs 沿 Tailwind 的 .125rem，none / full 沿原工具类。Astryx inner / element / container / page / chat 是另一套 1/2/3/7 倍公式，没有导入或把现有后缀偷换为这些值。原生 rowRadius 只同步可表达的显式基准。 |
@@ -231,7 +231,7 @@ Docs 使用 MotionExample 的精简展示，只显示系统媒体偏好与一处
 
 界面字体由 [外观偏好](../apps/ui/src/features/theme/preferences.ts) 解析，经 [applyAppearance](../apps/ui/src/features/theme/apply-appearance.ts) 写入 `--app-font-heading` / `--app-font-body`。
 
-笔记字体、字号、摘要字号、阅读宽度、行高与段距由 [排版偏好](../apps/ui/src/features/typography/preferences.ts) 和 [TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx) 管理。它们写入 `--note-body-font`、`--note-heading-font`、`--note-mono-font`、`--note-size`、`--note-summary-size`、`--note-measure`、`--note-leading`、`--note-flow`。与静态 CSS 同名的字体输出覆盖其回退定义，不是重复的权威来源。
+笔记字号、摘要字号、阅读宽度、行高与段距由 [排版偏好](../apps/ui/src/features/typography/preferences.ts) 和 [TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx) 管理。它们写入 `--note-size`、`--note-summary-size`、`--note-measure`、`--note-leading`、`--note-flow`。当前 Web 笔记不再写入独立字体变量，正文、标题与代码直接引用 UI 字体角色。
 
 类型、单位、默认来源和派生源码逐项见覆盖清单的“运行时输出（偏好与原生安全区）”。Storybook Typography 仅保留 Docs，显示字体角色、可选字体、通用字号/字重/行高；四项阅读偏好和宽度计算表在 [Typography 工程文档](typography.md) 维护，四项原生相关基准和完整 Swift 文字用法在 [原生排版工程说明](native-typography.md) 维护，不重复运行时维护表，也不展示测试场景跳转。界面字体随外观设置解析；笔记静态字体回退与真实 Provider 的运行时覆盖职责不合并。
 
@@ -263,7 +263,7 @@ Spacing Docs 分为「Web 间距标尺」与「跨端间距基准」，保留旧
 
 Typography Docs 保留 `#foundation-typography` 与全部旧故事 ID，只显示 Docs。字体角色的定义与样本合并到同一张两列表格，另有字体、基础字号、字重、行高四个分区；旧原生分区和标题 ID 作为通用文字样式标题的兼容定位点保留；All tokens 列出全部已注册基础与语义定义，兼容 adapter 不重复展示。默认字体、默认正文字号、Provider 的宽度映射与原生规则保留；零散字号和标题按用户确认归入统一标尺，全部字号随根字号缩放。等宽字体新选项只来自现有 Mono 分组，读取时兼容旧的比例代码字体；随机搭配不再生成比例代码字体。行宽选项显示“窄 / 适中 / 宽 / 宽松”，旧 60 / 70 / 80 / 90 仅为存储档位标识，不是 CSS ch；16px 默认字号时仍对应 448 / 528 / 592 / 720px，其他字号沿用原等比例计算。
 
-[排版目录生成器](../scripts/build-project-typography-catalog.mjs) 复用生产依赖图，读取可达 TS/TSX、局部 CSS 及 `@apply`，用锁定的 Tailwind 编译器展开真实工具类、变体、字号附带行高及 slash 修饰。局部 CSS 的 font-family / font-size / font-weight / line-height 和 font 简写、静态 React / CSS-in-JS 属性一并登记；从这些属性的 var() 引用递归追踪局部自定义属性绑定，保留变量名、声明位置与选择器作用域并防止循环，覆盖卡片、摘要字号及搜索预览等局部映射，不将不同上下文错误合并成最终级联结果。保存来源、选择器/媒体上下文、原始声明与工具类；相同属性/表达式去重，`.875em` 与 `0.875em` 合并显示并保留原声明。beautiful-mermaid 的 `font` 参数按其字体栈选项登记，目前读取 `system-ui`。动态字体选择引用也登记，字体选项由原始 FONT_VALUES / FONT_FAMILIES / FONT_GROUPS 直接导入，不执行源码字符串。
+[排版目录生成器](../scripts/build-project-typography-catalog.mjs) 复用生产依赖图，读取可达 TS/TSX、局部 CSS 及 `@apply`，用锁定的 Tailwind 编译器展开真实工具类、变体、字号附带行高及 slash 修饰。局部 CSS 的 font-family / font-size / font-weight / line-height 和 font 简写、静态 React / CSS-in-JS 属性一并登记；从这些属性的 var() 引用递归追踪局部自定义属性绑定，保留变量名、声明位置与选择器作用域并防止循环，覆盖卡片、摘要字号及搜索预览等局部映射，不将不同上下文错误合并成最终级联结果。保存来源、选择器/媒体上下文、原始声明与工具类；相同属性/表达式去重，`.875em` 与 `0.875em` 合并显示并保留原声明。beautiful-mermaid 的 `font` 参数按其字体栈选项登记，目前读取 `system-ui`。动态字体选择引用也登记。当前可选字体由 FONT_CHOICES 与 preview-fonts.ts 共同维护，排版目录仅静态分析生产源码，不执行源码字符串。
 
 [生成目录](typography-usage.generated.json) 记录全部可达生产声明及变量绑定。28 个可选字体按原分组展示；样本进入视口附近（160px）才调用生产加载器，并等待对应 FontFaceSet.load，分别显示加载与失败回退状态。本机字体与 CJK 回退依平台解析；真实斜体 face 保持按需请求，允许无真实斜体的 style 合成回退，仍禁止 weight 合成。
 

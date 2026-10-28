@@ -3,12 +3,12 @@ import { isPreviewFont, type PreviewFont } from "./preview-fonts";
 export const PREVIEW_RADII = [
   { value: "default", title: "默认 · 8px", radius: "0.5rem" },
   { value: "none", title: "None · 0px", radius: "0rem" },
-  { value: "small", title: "Small · 7.2px", radius: "0.45rem" },
-  { value: "medium", title: "Medium · 10px", radius: "0.625rem" },
-  { value: "large", title: "Large · 14px", radius: "0.875rem" },
 ] as const;
 
 export const LEGACY_PREVIEW_RADII = [
+  { value: "small", title: "已有设置 · 7.2px", radius: "0.45rem" },
+  { value: "medium", title: "已有设置 · 10px", radius: "0.625rem" },
+  { value: "large", title: "已有设置 · 14px", radius: "0.875rem" },
   { value: "legacy-xs", title: "已有设置 · 4px", radius: "0.25rem" },
   { value: "legacy-sm", title: "已有设置 · 6px", radius: "0.375rem" },
   { value: "legacy-xl", title: "已有设置 · 12px", radius: "0.75rem" },

@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { DEFAULT_PREVIEW_APPEARANCE, parsePreviewAppearance } from "./preview-appearance";
 import { PREVIEW_FONTS, loadPreviewFonts } from "./preview-fonts";
 import { PreviewModeProvider, usePreviewGlobalsParam } from "./preview-mode";
+import { FONT_CHOICES } from "../src/lib/font-options";
 
 vi.mock("./preview-fonts", async importOriginal => ({
   ...await importOriginal<typeof import("./preview-fonts")>(),
@@ -22,6 +23,10 @@ it("keeps project defaults and rejects unsupported URL globals", () => {
   expect(parsePreviewAppearance({})).toEqual(DEFAULT_PREVIEW_APPEARANCE);
   expect(parsePreviewAppearance({ radius: "2xl", headingFont: "missing-font", bodyFont: "url(example.com)" })).toEqual(DEFAULT_PREVIEW_APPEARANCE);
   expect(parsePreviewAppearance({ radius: "none", headingFont: "noto-sans", bodyFont: "noto-serif" })).toEqual({ radius: "none", headingFont: "noto-sans", bodyFont: "noto-serif" });
+});
+
+it("shares the curated font choices with product appearance settings", () => {
+  expect(PREVIEW_FONTS.map(font => font.id)).toEqual(FONT_CHOICES);
 });
 
 function CanvasLink() {

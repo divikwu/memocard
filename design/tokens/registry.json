@@ -651,18 +651,6 @@
       "defaults": "apps/ui/src/features/typography/preferences.ts",
       "contract": "typography.note-preferences",
       "tokens": {
-        "--note-body-font": {
-          "type": "fontFamily",
-          "unit": null
-        },
-        "--note-heading-font": {
-          "type": "fontFamily",
-          "unit": null
-        },
-        "--note-mono-font": {
-          "type": "fontFamily",
-          "unit": null
-        },
         "--note-size": {
           "type": "dimension",
           "unit": "rem"
