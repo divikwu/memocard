@@ -42,7 +42,7 @@ export const scenarios:Scenario[] = [
   {id:'image-read-error',group:'附件与链接',label:'图片读取失败',detail:true,instructions:'检查正文中不可读图片，悬停查看原因。',note:'当前实际实现没有明显的错误卡片，此处保持真实展示。'},
   {id:'link-error',group:'附件与链接',label:'笔记链接打不开',detail:true,instructions:'Command/Ctrl + 点击正文“缺失笔记”，检查编辑器错误。'},
   {id:'theme-storage-error',group:'设置',label:'外观设置保存失败',instructions:'在“外观”中切换主题或颜色，检查无法保存设置提示。'},
-  {id:'font-error',group:'设置',label:'字体加载失败',instructions:'检查内容风格中的字体回退提示。'},
+  {id:'font-error',group:'设置',label:'字体加载失败',instructions:'检查外观设置中的字体回退提示。'},
   {id:'empty',group:'空状态',label:'空笔记库',instructions:'检查空状态和新建按钮；新建只写入模拟内存。'},
   {id:'search-empty',group:'空状态',label:'搜索无结果',auto:'search',instructions:'检查无结果文案和清除搜索。'},
   {id:'filter-empty',group:'空状态',label:'筛选无结果',instructions:'展开“所有笔记”旁的快捷筛选，再选“有图片”，检查空状态。'},

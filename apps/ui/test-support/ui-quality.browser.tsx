@@ -177,6 +177,27 @@ for (const mode of ["light", "dark"] as const) {
     await waitFor(() => expect(getComputedStyle(group).boxShadow).toBe(restingCaptureShadow));
   });
 
+  test(`collection layout changes preserve resting card borders without a color transition in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("no-preference");
+    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
+      <NoteCollection notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+    </main></PreviewModeProvider>);
+    const canvas = within(view.container);
+    await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+    const card = canvas.getByRole("button", { name: `打开 ${editorNote.title}` }).closest(".ui-note-card")!;
+    await Promise.all(card.getAnimations().map(animation => animation.finished));
+    const restingBorder = getComputedStyle(card).borderTopColor;
+    await userEvent.click(canvas.getByRole("button", { name: "列表布局" }));
+    expect(getComputedStyle(card).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(card).borderTopColor).toBe(restingBorder);
+    await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+    expect(card.matches(":hover")).toBe(false);
+    expect(getComputedStyle(card).borderTopWidth).toBe("1px");
+    expect(getComputedStyle(card).borderTopColor).toBe(restingBorder);
+    expect(card.getAnimations().filter(animation => animation instanceof CSSTransition && animation.transitionProperty.startsWith("border-"))).toHaveLength(0);
+  });
+
   test(`mobile capture distinguishes pointer and keyboard focus in ${mode}`, async () => {
     await page.viewport(390, 844);
     await commands.setReducedMotion("reduce");

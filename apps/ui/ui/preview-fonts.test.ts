@@ -19,6 +19,14 @@ it("shares duplicate font work across concurrent selections and skips system fon
   expect(load).toHaveBeenCalledWith('400 16px "Noto Sans SC Variable"', "中文");
 });
 
+it("uses the system stack without requesting custom Latin or Chinese font faces", async () => {
+  const { getPreviewFont, loadPreviewFonts } = await import("./preview-fonts");
+  expect(getPreviewFont("system").fontFamily).toBe('system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif');
+  await loadPreviewFonts(["system"]);
+  await loadPreviewFonts(["system"], false);
+  expect(load).not.toHaveBeenCalled();
+});
+
 it("rejects missing font faces and permits a later selection to retry", async () => {
   const { loadPreviewFonts } = await import("./preview-fonts");
   load.mockResolvedValueOnce([]);

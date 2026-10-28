@@ -37,7 +37,7 @@
 .ui-note-heading time { margin-block-start: calc(var(--spacing-1) * .5); line-height: var(--text-body-leading); }
 .ui-note-preview { flex: 1; min-height: 0; min-width: 0; overflow: hidden; padding: 0 calc(var(--spacing-1) * 4) calc(var(--spacing-1) * 4); color: var(--color-text-secondary); pointer-events: none; }
 .ui-note-preview .note-preview[data-compact] { opacity: .82; }
-.ui-note-preview .ui-note-markdown[data-compact] { --typeset-flow: var(--spacing-1); --typeset-leading: var(--text-body-leading); font-family: var(--note-body-font, var(--font-family-body)); font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
+.ui-note-preview .ui-note-markdown[data-compact] { --typeset-flow: var(--spacing-1); --typeset-leading: var(--text-body-leading); font-family: var(--font-family-body); font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
 .ui-note-preview .ui-note-markdown[data-compact]:has(img) { display: block; }
 .ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6) { color: inherit; font-family: inherit; font-size: 1em; font-weight: var(--font-weight-medium); line-height: inherit; }
 .ui-note-preview .ui-note-markdown[data-compact] :is(strong, b) { color: inherit; font-weight: var(--font-weight-medium); }
@@ -56,7 +56,7 @@
 .ui-note-tag:not(:disabled):is(:hover, :focus-visible) { background: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)), var(--tag-bg, var(--color-background-muted)); color: var(--tag-fg, var(--color-text-primary)); }
 .ui-note-tag > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui-note-tag-count { flex-shrink: 0; color: color-mix(in srgb, var(--color-text-secondary) 60%, transparent); font-size: var(--font-size-xs); }
-.ui-note-list-card { height: auto; padding: 0; border: 0; border-radius: var(--radius-item); box-shadow: none; }
+.ui-note-list-card { height: auto; padding: 0; border-width: 0; border-radius: var(--radius-item); box-shadow: none; }
 .ui-note-list-content { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: calc(var(--spacing-1) * 2); }
 .ui-note-list-content:has(.ui-note-tags) { grid-template-columns: minmax(0, 1fr) fit-content(calc(100% / 3)) auto; }
 .ui-note-list-heading { display: grid; grid-area: 1 / 1 / 2 / -1; grid-template-columns: subgrid; min-width: 0; margin: 0; font-family: var(--font-family-body); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); line-height: var(--text-body-leading); }

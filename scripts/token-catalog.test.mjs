@@ -95,7 +95,7 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     const result = await buildTokenCatalog(options);
     assert.equal(result.categories, 9);
     assert.equal(result.portable, 28);
-    assert.equal(result.runtime, 14);
+    assert.equal(result.runtime, 11);
     assert.ok(result.consumerFiles > 90);
     assert.equal(result.nativeConsumerFiles, 2);
     assert.ok(result.css > 300);
@@ -103,6 +103,7 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     const catalog = JSON.parse(await readFile(jsonPath, 'utf8'));
     assert.equal(catalog.css.length, result.css);
     assert.equal(catalog.runtime.length, result.runtime);
+    for (const name of ['--note-body-font', '--note-heading-font', '--note-mono-font']) assert.ok(!catalog.runtime.some(token => token.name === name));
     assert.equal(catalog.portable.length, result.portable);
     assert.equal(catalog.optionalStylesheets.length, 0);
     assert.ok(catalog.css.every(token => token.declarations.length && token.source.startsWith('apps/ui/ui/') && token.type));

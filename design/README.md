@@ -20,7 +20,7 @@
 | 当前语义色、字体标尺、尺寸、圆角、动效与 Tailwind 别名 | `apps/ui/ui/theme.css` | 产品与 Storybook 共用；同名 `@theme reference inline` 是编译别名 |
 | 用户强调色与中性色 | `ui/web/web-palette.css`、`WebAppearance.tsx` | 8 种强调色、2 种中性色、明暗/系统及本机持久化 |
 | UI 字体和圆角偏好 | `ui/preview-mode.tsx`、`preview-fonts.ts`、`preview-appearance.ts` | 产品和示例共用解析；产品存储与示例存储保持隔离 |
-| 正文内容风格 | `src/features/typography/preferences.ts`、`TypographyProvider.tsx`、`ui/web/web-typography.css` | 正文/标题/等宽字体、字号、行宽、行高和段距，不改变导航工具栏 |
+| 正文内容风格 | `src/features/typography/preferences.ts`、`TypographyProvider.tsx`、`ui/web/web-typography.css` | 字号、行宽、行高和段距；字体跟随 UI 外观 |
 | 标签配色 | `ui/business/note-properties.css`、`src/TagColorStyles.core.tsx` | 按 vault 偏好渲染；同源 palette 输出供原生使用 |
 | 组件局部布局与交互 | `ui/components`、`ui/business`、`ui/web` | 各组件维护自身局部变量、焦点、Portal 与响应式职责 |
 | 原生侧栏基准 | `tokens/sidebar.tokens.json` | 只生成原生 Swift 常量与基准对照表；Web 直接消费现行主题 |

@@ -1,22 +1,19 @@
 # 内容风格与 Typeset
 
-设置 → 内容风格维护笔记阅读与编辑的七项偏好，独立于导航、工具栏和通用 UI 外观。当前设置由 [WebTypographySettings](../apps/ui/ui/web/WebTypographySettings.tsx)、[preferences](../apps/ui/src/features/typography/preferences.ts) 和 [TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx) 实现。
+设置 → 内容风格维护笔记阅读与编辑的四项排版偏好；字体统一跟随外观设置。当前设置由 [WebTypographySettings](../apps/ui/ui/web/WebTypographySettings.tsx)、[preferences](../apps/ui/src/features/typography/preferences.ts) 和 [TypographyProvider](../apps/ui/src/features/typography/TypographyProvider.tsx) 实现。
 
 ## 当前默认与存储
 
 | 配置 | 默认值 | 可选范围 |
 | --- | --- | --- |
-| 标题字体 | 跟随正文 | 跟随正文及当前标题字体清单 |
-| 正文字体 | Noto Sans | 当前字体白名单 |
-| 等宽字体 | Geist Mono | Mono 字体清单；旧非等宽值仅兼容恢复 |
 | 字号基准 | 16px | 14 / 15 / 16 / 18px |
 | 行高 | 1.6 | 1.6 / 1.75 / 1.9 |
 | 段落间距 | 1em | 1 / 1.25 / 2em |
 | 行宽档位 | 90（默认字号下 720px） | 60 / 70 / 80 / 90 |
 
-行宽 ID 按字号基准乘以 28 / 33 / 37 / 45 计算，不是 CSS `ch`。恢复默认使用本表当前值；保留合法旧偏好，不自动重置用户已选字体和阅读节奏。
+行宽 ID 按字号基准乘以 28 / 33 / 37 / 45 计算，不是 CSS `ch`。恢复默认使用本表当前值；保留合法的行宽、字号、行高和段距值。旧内容字体字段不再使用，标题、正文与代码分别引用 UI 的 `--font-family-heading`、`--font-family-body` 和 `--font-family-code`。
 
-配置以 `memocard.typography.v1` 保存在当前浏览器/宿主的 localStorage，不写 Markdown、笔记库或跨设备同步数据。同源标签页响应 storage 变化；非法值回退默认。保存或字体加载失败提供提示，当前会话仍可继续使用。随机搭配使用当前有效选项。
+配置以 `memocard.typography.v1` 保存在当前浏览器/宿主的 localStorage，不写 Markdown、笔记库或跨设备同步数据。同源标签页响应 storage 变化；非法值回退默认。保存失败提供提示；字体加载与重试由外观设置统一管理，当前会话仍可继续使用。随机搭配使用当前有效选项。
 
 ## 当前渲染与编辑
 

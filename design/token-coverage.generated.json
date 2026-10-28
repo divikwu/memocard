@@ -12489,30 +12489,6 @@
   ],
   "runtime": [
     {
-      "name": "--note-body-font",
-      "type": "fontFamily",
-      "unit": null,
-      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
-      "defaults": "apps/ui/src/features/typography/preferences.ts",
-      "contract": "typography.note-preferences"
-    },
-    {
-      "name": "--note-heading-font",
-      "type": "fontFamily",
-      "unit": null,
-      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
-      "defaults": "apps/ui/src/features/typography/preferences.ts",
-      "contract": "typography.note-preferences"
-    },
-    {
-      "name": "--note-mono-font",
-      "type": "fontFamily",
-      "unit": null,
-      "source": "apps/ui/src/features/typography/TypographyProvider.tsx",
-      "defaults": "apps/ui/src/features/typography/preferences.ts",
-      "contract": "typography.note-preferences"
-    },
-    {
       "name": "--note-size",
       "type": "dimension",
       "unit": "rem",

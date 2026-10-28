@@ -5,7 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { AppViewState } from "../../src/App";
 import { noteEditor } from "../../src/editor-test-utils";
 import { RichMarkdownEditor } from "../business/RichMarkdownEditor";
-import { PREVIEW_FONTS, getPreviewFont, loadPreviewFonts } from "../preview-fonts";
+import { getPreviewFont, loadPreviewFonts } from "../preview-fonts";
 import { DEFAULT_WEB_APPEARANCE, WEB_NEUTRALS, WEB_PALETTES, WebAppearanceProvider, useWebAppearance } from "./WebAppearance";
 import { WebSettings } from "./WebSettings";
 
@@ -120,7 +120,7 @@ it("preserves a real editor instance, focus and undo when another tab changes ap
   expect(document.activeElement).toBe(field);
   const retry = await screen.findByRole("button", { name: "重试加载字体" }, { timeout: 5000 });
   expect(errors).toHaveBeenCalledWith(expect.stringContaining("字体加载失败"), expect.any(Error));
-  expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(PREVIEW_FONTS.find(font => font.id === "geist")!.fontFamily);
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(getPreviewFont("geist").fontFamily);
   expect(screen.getByRole("status").textContent).toContain("当前使用回退字体");
   vi.mocked(loadPreviewFonts).mockResolvedValue([]);
   fireEvent.click(retry);
@@ -155,9 +155,11 @@ it("uses labelled MemoCard UI appearance selectors and restores the last indexed
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
   await choose(user, "主题", "跟随系统");
   await user.click(screen.getByText("高级外观"));
-  await choose(user, "正文字体", "Geist");
+  await choose(user, "正文字体", "系统默认");
   await choose(user, "标题字体", "跟随正文");
-  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "system", bodyFont: "geist", headingFont: "inherit" });
+  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "system", bodyFont: "system", headingFont: "inherit" });
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(getPreviewFont("system").fontFamily);
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-heading")).toBe(getPreviewFont("system").fontFamily);
   expect(screen.getByRole("combobox", { name: "正文字体" }).getAttribute("data-slot")).toBe("select-trigger");
   fireEvent.click(screen.getByText("本机文件状态"));
   expect(screen.getByText("最近索引时间").nextElementSibling?.querySelector("time")?.dateTime).toBe("2026-10-22T08:12:00Z");
@@ -167,6 +169,32 @@ it("hides unsupported folder-picking actions in settings", () => {
   render(<WebAppearanceProvider><WebSettings state={{ ...settingsState(), unsupportedBrowser: true }} /></WebAppearanceProvider>);
   expect(screen.queryByRole("button", { name: "打开已有笔记库" })).toBeNull();
   expect(screen.queryByRole("button", { name: "创建笔记库" })).toBeNull();
+});
+
+it("offers the curated fonts in UI appearance without separate note font selectors", async () => {
+  const user = userEvent.setup();
+  render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
+  await user.click(screen.getByText("高级外观"));
+  for (const label of ["正文字体"]) {
+    await user.click(screen.getByRole("combobox", { name: label }));
+    expect((await screen.findAllByRole("option")).map(option => option.textContent)).toEqual(["系统默认", "Noto Sans", "Noto Serif", "Geist Mono"]);
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  }
+});
+
+it("offers only default and None as new radius choices and applies both", async () => {
+  const user = userEvent.setup();
+  render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
+  await user.click(screen.getByText("高级外观"));
+  await user.click(screen.getByRole("combobox", { name: "圆角" }));
+  expect((await screen.findAllByRole("option")).map(option => option.textContent)).toEqual(["默认 · 8px", "None · 0px"]);
+  await user.click(screen.getByRole("option", { name: "None · 0px" }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-radius")).toBe("0rem");
+  expect(JSON.parse(localStorage.getItem(key)!).radius).toBe("none");
+  await choose(user, "圆角", "默认 · 8px");
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-radius")).toBe("0.5rem");
 });
 
 it.each([

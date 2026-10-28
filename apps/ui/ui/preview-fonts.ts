@@ -1,8 +1,11 @@
+import { FONT_CHOICES, SYSTEM_FONT_FAMILY } from "../src/lib/font-options";
+
 const sansFallback = '"Noto Sans SC Variable", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 const serifFallback = '"Noto Serif SC Variable", Georgia, serif';
 const monoFallback = '"Noto Sans SC Variable", ui-monospace, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
-export const PREVIEW_FONTS = [
+const fontDefinitions = [
+  { id: "system", label: "系统默认", fontFamily: SYSTEM_FONT_FAMILY, group: "Sans" },
   { id: "geist", label: "Geist", fontFamily: `"Geist Variable", ${sansFallback}`, group: "Sans" },
   { id: "inter", label: "Inter", fontFamily: `"Inter Variable", ${sansFallback}`, group: "Sans" },
   { id: "noto-sans", label: "Noto Sans", fontFamily: `"Noto Sans Variable", ${sansFallback}`, group: "Sans" },
@@ -37,8 +40,9 @@ export const LEGACY_PREVIEW_FONTS = [
   { id: "pingfang", label: "PingFang", fontFamily: '"PingFang SC", "Noto Sans SC Variable", system-ui, sans-serif', group: "Sans" },
   { id: "songti", label: "Songti", fontFamily: '"Songti SC", "STSong", "Noto Serif SC Variable", serif', group: "Serif" },
 ] as const;
-export type PreviewFont = (typeof PREVIEW_FONTS)[number]["id"] | (typeof LEGACY_PREVIEW_FONTS)[number]["id"];
-const allFonts = [...PREVIEW_FONTS, ...LEGACY_PREVIEW_FONTS];
+export const PREVIEW_FONTS = FONT_CHOICES.map(id => fontDefinitions.find(font => font.id === id)!);
+export type PreviewFont = (typeof fontDefinitions)[number]["id"] | (typeof LEGACY_PREVIEW_FONTS)[number]["id"];
+const allFonts = [...fontDefinitions, ...LEGACY_PREVIEW_FONTS];
 export const getPreviewFont = (font: PreviewFont) => allFonts.find(option => option.id === font)!;
 export const isPreviewFont = (font: unknown): font is PreviewFont => allFonts.some(option => option.id === font);
 
@@ -69,7 +73,7 @@ const loaders = {
   "playfair-display": () => Promise.all([import("@fontsource-variable/playfair-display/wght.css"), import("@fontsource-variable/playfair-display/wght-italic.css")]),
   "eb-garamond": () => Promise.all([import("@fontsource-variable/eb-garamond/wght.css"), import("@fontsource-variable/eb-garamond/wght-italic.css")]),
   "noto-sans-sc": () => Promise.resolve(),
-} satisfies Record<Exclude<PreviewFont, "system-mono" | "pingfang" | "songti">, () => Promise<unknown>>;
+} satisfies Record<Exclude<PreviewFont, "system" | "system-mono" | "pingfang" | "songti">, () => Promise<unknown>>;
 
 const pending = new Map<string, Promise<unknown>>();
 let retryAttempt = 0;
@@ -104,7 +108,7 @@ function retryFailedFontFaces(families: string[]) {
 
 export function loadPreviewFonts(fonts: PreviewFont[], includeChineseCompanion = true): Promise<unknown[]> {
   return Promise.all([...new Set(fonts)].map(font => {
-    if (font === "system-mono" || font === "pingfang" || font === "songti" && !includeChineseCompanion) return Promise.resolve();
+    if (font === "system" || font === "system-mono" || font === "pingfang" || font === "songti" && !includeChineseCompanion) return Promise.resolve();
     const key = `${font}:${includeChineseCompanion}`;
     let request = pending.get(key);
     if (!request) {

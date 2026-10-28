@@ -1,6 +1,6 @@
 # Typography
 
-当前界面和 Storybook 的字体、字号、字重与行高来源为 [theme.css](../apps/ui/ui/theme.css)。默认 UI 正文为 Noto Sans，标题跟随正文；笔记内容的独立偏好由[内容风格](../docs/CONTENT_STYLE.md)拥有。原生系统文字使用[独立平台映射](native-typography.md)。
+当前界面和 Storybook 的字体、字号、字重与行高来源为 [theme.css](../apps/ui/ui/theme.css)。默认 UI 正文为 Noto Sans，标题跟随正文；笔记字体与 UI 共用正文、标题和代码角色，独立阅读布局偏好由[内容风格](../docs/CONTENT_STYLE.md)拥有。原生系统文字使用[独立平台映射](native-typography.md)。
 
 ## 界面标尺与角色
 

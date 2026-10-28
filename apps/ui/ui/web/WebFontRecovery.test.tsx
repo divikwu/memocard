@@ -55,11 +55,7 @@ it("reports a failed Chinese font and recovers through the real loader without c
   const retry = await screen.findByRole("button", { name: "重试加载字体" });
   expect(screen.getByText("所选字体暂时无法加载，当前使用回退字体。")).toBeTruthy();
   expect(load.mock.calls.some(([font, text]) => font.includes('"Noto Serif Variable"') && text === "Aa")).toBe(true);
-  await waitFor(() => {
-    for (const family of ["Inter Variable", "Lora Variable", "Geist Mono Variable"]) {
-      expect(load.mock.calls.some(([font, text]) => font.includes(`"${family}"`) && text === "Aa")).toBe(true);
-    }
-  });
+  expect(load.mock.calls.some(([font]) => font.includes('"Inter Variable"') || font.includes('"Lora Variable"'))).toBe(false);
   expect(screen.queryByText("字体加载失败，暂时使用系统字体。")).toBeNull();
   expect(errors).toHaveBeenCalledWith(expect.stringContaining("字体加载失败"), expect.any(Error));
   expect(localStorage.getItem(appearanceKey)).toBe(appearance);
