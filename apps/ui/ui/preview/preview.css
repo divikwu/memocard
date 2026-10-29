@@ -17,7 +17,7 @@
 .ui-preview-category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: calc(var(--spacing-1) * 4); margin-top: calc(var(--spacing-1) * 6); }
 .ui-preview-category-link { min-width: 0; border-radius: var(--radius-card); outline: none; }
 .ui-preview-category-link [data-slot="card"] { border-radius: var(--radius-card); }
-.ui-preview-category-link:focus-visible { outline: var(--border-width) solid var(--color-text-accent); outline-offset: calc(var(--spacing-1)); }
+.ui-preview-category-link:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .ui-preview-category-icon { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: calc(var(--spacing-1) * 10); height: calc(var(--spacing-1) * 10); border-radius: var(--radius-element); background: var(--color-background-muted); color: var(--color-icon-secondary); }
 .ui-preview-category-icon svg { width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); }
 .ui-preview-controls { flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--spacing-1) * 3); padding: calc(var(--spacing-1) * 4) calc(var(--spacing-1) * 5); border-bottom: var(--border-width) solid var(--color-border); background: var(--color-background-body); }

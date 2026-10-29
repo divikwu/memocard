@@ -48,7 +48,7 @@
 
 .luma-showcase-scroll:focus-visible {
   outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color);
-  outline-offset: calc(-1 * var(--focus-outline-width));
+  outline-offset: var(--focus-outline-offset);
 }
 
 .luma-showcase-center {

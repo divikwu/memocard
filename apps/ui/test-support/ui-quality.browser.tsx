@@ -4,8 +4,12 @@ import { commands, page, server, userEvent } from "vitest/browser";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
 import { InputFocusFixture } from "./input-focus-fixture";
 import { ComponentDocs } from "../ui/ComponentDocs";
+import { ComponentDocsExample } from "../ui/ComponentDocsTemplate";
 import { componentDocs, type ComponentKey } from "../ui/component-docs.data";
 import { Button } from "../ui/components/button";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../ui/components/accordion";
+import { WebSettings } from "../ui/web/WebSettings";
+import type { AppViewState } from "../src/App";
 import { Card } from "../ui/components/card";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "../ui/components/popover";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/components/sheet";
@@ -49,13 +53,70 @@ function paintedContrast(foreground: string, background: string) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
+function expectKeyboardOutline(element: Element, mode: "light" | "dark") {
+  const style = getComputedStyle(element);
+  expect(style.outlineStyle).toBe("solid");
+  expect(style.outlineWidth).toBe("2px");
+  expect(style.outlineOffset).toBe("2px");
+  const swatch = document.createElement("span");
+  swatch.style.color = `var(--color-blue-${mode === "light" ? "600" : "400"})`;
+  document.body.append(swatch);
+  try { expect(style.outlineColor).toBe(getComputedStyle(swatch).color); }
+  finally { swatch.remove(); }
+}
+
+function expectUnclippedOutline(element: Element) {
+  const bounds = element.getBoundingClientRect();
+  const style = getComputedStyle(element);
+  const outset = parseFloat(style.outlineOffset) + parseFloat(style.outlineWidth);
+  for (let parent = element.parentElement; parent; parent = parent.parentElement) {
+    const clip = getComputedStyle(parent), rect = parent.getBoundingClientRect();
+    if (/(hidden|clip|auto|scroll)/.test(clip.overflowX)) {
+      expect(bounds.left - outset, parent.className).toBeGreaterThanOrEqual(rect.left - 0.5);
+      expect(bounds.right + outset, parent.className).toBeLessThanOrEqual(rect.right + 0.5);
+    }
+    if (/(hidden|clip|auto|scroll)/.test(clip.overflowY)) {
+      expect(bounds.top - outset, parent.className).toBeGreaterThanOrEqual(rect.top - 0.5);
+      expect(bounds.bottom + outset, parent.className).toBeLessThanOrEqual(rect.bottom + 0.5);
+    }
+  }
+}
+
 for (const mode of ["light", "dark"] as const) {
-  test(`all editable controls distinguish pointer and keyboard navigation in ${mode}`, async () => {
+  for (const kind of ["accordion", "source", "settings"] as const) test(`outward focus is not clipped for ${kind} in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("reduce");
+    const settings = { status: { connected: true, vaultName: "测试库", coverage: {} }, sidebar: {}, capabilities: new Set(), unsupportedBrowser: true } as unknown as AppViewState;
+    const view = render(<PreviewModeProvider mode={mode}><main className="grid gap-6 p-6">
+      <Button>开始检查</Button>
+      {kind === "accordion" ? <Accordion><AccordionItem value="a"><AccordionTrigger>展开说明</AccordionTrigger><AccordionContent>说明内容</AccordionContent></AccordionItem></Accordion>
+        : kind === "source" ? <div className="ui-component-docs"><ComponentDocsExample title="代码说明" code="const current = true;" story="ui-input--example" description="组件说明">组件预览</ComponentDocsExample></div>
+          : <WebSettings state={settings} />}
+    </main></PreviewModeProvider>);
+    const canvas = within(view.container);
+    if (kind === "source") {
+      await userEvent.click(canvas.getByRole("button", { name: "切换预览说明与代码" }));
+      canvas.getByRole("button", { name: "复制代码" }).focus();
+    } else canvas.getByRole("button", { name: "开始检查" }).focus();
+    await userEvent.tab();
+    const target = kind === "accordion" ? canvas.getByRole("button", { name: "展开说明" })
+      : kind === "source" ? canvas.getByLabelText("组件用法代码") : canvas.getByText("本机文件状态").closest("summary")!;
+    await expect.element(target).toHaveFocus();
+    const surface = kind === "source" ? target.closest(".ui-docs-source")! : target;
+    expectKeyboardOutline(surface, mode);
+    expectUnclippedOutline(surface);
+    if (kind === "source") expect(getComputedStyle(surface).borderBottomLeftRadius).toBe(getComputedStyle(surface.closest(".ui-docs-example")!).borderBottomLeftRadius);
+  });
+
+  for (const labels of [
+    ["单行输入", "密码", "多行输入", "复合输入", "复合多行"],
+    ["搜索选择", "多选输入", "编辑器搜索", "富文本输入", "无效输入"],
+  ]) test(`all editable controls distinguish pointer and keyboard navigation in ${mode} (${labels[0]})`, async () => {
     await page.viewport(1024, 900);
     await commands.setReducedMotion("reduce");
     const view = render(<PreviewModeProvider mode={mode}><InputFocusFixture mode={mode} /></PreviewModeProvider>);
     const canvas = within(view.container);
-    for (const label of ["单行输入", "密码", "多行输入", "复合输入", "复合多行", "搜索选择", "多选输入", "编辑器搜索", "富文本输入", "无效输入"]) {
+    for (const label of labels) {
       const field = canvas.getByLabelText(label, { exact: true });
       const surface = field.closest('[data-slot="input-group"], [data-slot="combobox-chips"]') ?? field;
       await userEvent.click(field);
@@ -71,7 +132,7 @@ for (const mode of ["light", "dark"] as const) {
       await userEvent.tab();
       await userEvent.tab({ shift: true });
       expect(document.activeElement, label + " keyboard target").toBe(field);
-      expect(getComputedStyle(surface).outlineStyle, label + " keyboard").toBe("solid");
+      expectKeyboardOutline(surface, mode);
       if (surface !== field) expect(getComputedStyle(field).outlineStyle, label + " single ring").toBe("none");
       await userEvent.click(field);
       expect(getComputedStyle(surface).outlineStyle, label + " pointer again").toBe("none");
@@ -84,7 +145,7 @@ for (const mode of ["light", "dark"] as const) {
     await commands.setReducedMotion("reduce");
     const view = render(<PreviewModeProvider mode={mode}><InputFocusFixture mode={mode} /></PreviewModeProvider>);
     const canvas = within(view.container);
-    for (const label of ["原生选择", "选择器"]) {
+    for (const label of ["原生选择", "选择器", "设置选择器"]) {
       const select = canvas.getByLabelText(label, { exact: true });
       await userEvent.click(select);
       expect(getComputedStyle(select).outlineStyle, label + " pointer").toBe("none");
@@ -93,6 +154,7 @@ for (const mode of ["light", "dark"] as const) {
       if (menu) {
         await expect.element(menu).toBeVisible();
         await waitFor(() => expect(menu.contains(document.activeElement)).toBe(true));
+        expect(getComputedStyle(document.activeElement!).outlineStyle, label + " pointer popup").toBe("none");
       }
       await userEvent.keyboard("{Escape}");
       // Base UI hides its retained portal after exit animations, then restores focus.
@@ -106,7 +168,13 @@ for (const mode of ["light", "dark"] as const) {
       await userEvent.tab();
       await userEvent.tab({ shift: true });
       expect(document.activeElement).toBe(select);
-      expect(getComputedStyle(select).outlineStyle, label + " keyboard").toBe("solid");
+      expectKeyboardOutline(select, mode);
+      if (select.getAttribute("data-slot") === "select-trigger") {
+        await userEvent.keyboard("{ArrowDown}");
+        const keyboardMenu = await within(document.body).findByRole("listbox");
+        await waitFor(() => expect(keyboardMenu.contains(document.activeElement)).toBe(true));
+        expectKeyboardOutline(document.activeElement!, mode);
+      }
       await userEvent.keyboard("{Escape}");
       if (select.getAttribute("data-slot") === "select-trigger") await waitFor(() => expect(select.getAttribute("aria-expanded")).toBe("false"));
     }
@@ -114,7 +182,8 @@ for (const mode of ["light", "dark"] as const) {
     const dialogView = render(<PreviewModeProvider mode={mode}><InputFocusFixture mode={mode} /></PreviewModeProvider>);
     const trigger = within(dialogView.container).getByRole("button", { name: "打开自动聚焦输入" });
     for (const keyboard of [false, true]) {
-      if (keyboard) { trigger.focus(); await userEvent.keyboard("{Enter}"); }
+      trigger.focus();
+      if (keyboard) await userEvent.keyboard("{Enter}");
       else await userEvent.click(trigger);
       const input = await within(document.body).findByRole("textbox", { name: "弹窗输入" });
       await waitFor(() => expect(document.activeElement).toBe(input));
@@ -125,11 +194,54 @@ for (const mode of ["light", "dark"] as const) {
     }
   });
 
+  test(`buttons, links, selection controls and disclosures share keyboard-only blue focus in ${mode}`, async () => {
+    await page.viewport(1024, 900);
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><InputFocusFixture mode={mode} /></PreviewModeProvider>);
+    const canvas = within(view.container);
+    const controls = [
+      canvas.getByRole("button", { name: "键盘导航起点" }), canvas.getByRole("button", { name: "原生按钮" }),
+      canvas.getByRole("link", { name: "示例链接" }), canvas.getByRole("checkbox", { name: "复选框" }),
+      canvas.getByRole("switch", { name: "开关" }), canvas.getByRole("radio", { name: "第一个单选项" }),
+      canvas.getByRole("button", { name: "切换按钮" }), await canvas.findByRole("slider", { name: "调整值" }),
+      canvas.getByRole("tab", { name: "第一个标签" }), canvas.getByRole("button", { name: "折叠控件" }),
+      canvas.getByText("原生折叠"),
+    ];
+    for (const control of controls) {
+      const surface = control.closest('[data-slot="slider-thumb"]') ?? control;
+      await userEvent.click(surface);
+      expect(getComputedStyle(surface).outlineStyle, control.outerHTML).toBe("none");
+      if (surface !== control) {
+        control.focus();
+        const previous = Number(control.getAttribute("aria-valuenow"));
+        await userEvent.keyboard("{ArrowRight}");
+        expect(Number(control.getAttribute("aria-valuenow"))).toBeGreaterThan(previous);
+      }
+      else { await userEvent.tab(); await userEvent.tab({ shift: true }); }
+      expect(document.activeElement).toBe(control);
+      expectKeyboardOutline(surface, mode);
+      if (surface !== control) expect(getComputedStyle(control).outlineStyle).toBe("none");
+      await userEvent.click(surface);
+      expect(getComputedStyle(surface).outlineStyle).toBe("none");
+    }
+    const trigger = canvas.getByRole("button", { name: "打开菜单" });
+    for (const keyboard of [false, true]) {
+      if (keyboard) { trigger.focus(); await userEvent.keyboard("{Enter}"); }
+      else await userEvent.click(trigger);
+      const item = await within(document.body).findByRole("menuitem", { name: "菜单选项" });
+      await userEvent.keyboard("{ArrowDown}");
+      await waitFor(() => expect(document.activeElement).toBe(item));
+      expectKeyboardOutline(item, mode);
+      await userEvent.keyboard("{Escape}");
+      await expect.element(trigger).toHaveFocus();
+    }
+  });
+
   test(`product card and capture keyboard focus stays visible independently of elevation in ${mode}`, async () => {
     await page.viewport(1024, 900);
     await commands.setReducedMotion("reduce");
     const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
-      <NoteCollection notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+      <NoteCollection notes={[{ ...editorNote, tags: ["检查"] }]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
       <Button>键盘焦点起点</Button>
       <QuickCapture vaultId="shadow-focus-test" rootNotes tags={[]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
     </main></PreviewModeProvider>);
@@ -151,6 +263,12 @@ for (const mode of ["light", "dark"] as const) {
     await waitFor(() => expect(getComputedStyle(card).boxShadow).not.toBe(restingShadow));
     await userEvent.unhover(card);
     await waitFor(() => expect(getComputedStyle(card).boxShadow).toBe(restingShadow));
+    if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
+    else await userEvent.tab();
+    const tag = canvas.getByRole("button", { name: "筛选标签 检查" });
+    expect(document.activeElement).toBe(tag);
+    expectKeyboardOutline(tag, mode);
+    expect(getComputedStyle(card).outlineStyle).toBe("none");
     const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
     const group = field.closest('[data-slot="input-group"]')!;
     const restingCaptureShadow = getComputedStyle(group).boxShadow;
@@ -207,6 +325,7 @@ for (const mode of ["light", "dark"] as const) {
     await userEvent.click(within(view.container).getByRole("button", { name: "打开快速记录" }));
     const field = await within(document.body).findByRole("textbox", { name: "快速输入内容" });
     const group = field.closest('[data-slot="input-group"]')!;
+    await expect.element(field).toHaveFocus();
     expect(getComputedStyle(group).outlineStyle).toBe("none");
     expect(getComputedStyle(group).boxShadow).toBe("none");
     await userEvent.tab();
@@ -501,7 +620,7 @@ for (const parentTheme of ["light", "dark"] as const) {
   });
 }
 
-test("theme changes retain editable Docs state and real local Chinese/Latin fonts load", async () => {
+test("theme changes retain editable Docs state and system fonts while local Chinese/Latin fonts load", async () => {
   const view = render(<PreviewModeProvider mode="light"><ComponentDocs component="input" /></PreviewModeProvider>);
   const field = within(view.container).getAllByRole("textbox", { name: "名称" })[0];
   await userEvent.fill(field, "保留输入 MemoCard");
@@ -511,7 +630,7 @@ test("theme changes retain editable Docs state and real local Chinese/Latin font
   for (const [family, text] of [["Noto Sans Variable", "Aa"], ["Noto Sans SC Variable", "中文"], ["Noto Serif SC Variable", "中文"]]) {
     expect((await document.fonts.load(`400 16px "${family}"`, text)).length).toBeGreaterThan(0);
   }
-  expect(getComputedStyle(field).fontFamily).toContain("Noto Sans");
+  expect(getComputedStyle(field).fontFamily).toContain("system-ui");
 });
 
 test("Properties retains its input and Code view across tabs and appearance changes at 200% text size", async () => {

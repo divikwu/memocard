@@ -25,7 +25,7 @@ export type PreviewAppearance = {
 };
 
 export const DEFAULT_PREVIEW_APPEARANCE: PreviewAppearance = {
-  radius: "default", headingFont: "inherit", bodyFont: "noto-sans",
+  radius: "default", headingFont: "inherit", bodyFont: "system",
 };
 
 export function parsePreviewAppearance(globals: Record<string, unknown>): PreviewAppearance {

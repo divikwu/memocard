@@ -13,7 +13,7 @@ export const overview: Partial<Record<TokenCategory, string>> = {
   motion: "动效帮助说明状态、方向和空间关系。时长与缓动来自主题标尺，是否播放则遵循用户偏好与当前交互需求。",
   shape: "按钮、单行输入与选择框统一使用全圆角，多行输入使用独立的 12px 圆角。Luma 模块卡片与弹层外框默认 20px，快速记录输入面板默认 24px；容器与页面保持独立的圆角角色。",
   spacing: "布局工具类从共同基准派生间距。下方标尺展示完整步阶，控件高度另列为 Size；派生结果不重复计入源定义数量。",
-  typography: "字体、字号、字重和行高组成语义文字样式。视觉样式与 HTML 标题层级分别决定，正文默认采用 Noto Sans，标题默认跟随正文，中文使用 Noto Sans SC 回退；标题仍可独立选择字体。",
+  typography: "字体、字号、字重和行高组成语义文字样式。视觉样式与 HTML 标题层级分别决定，正文默认采用系统字体，标题默认跟随正文，中英文均使用当前系统的字体；标题仍可独立选择字体。",
 };
 
 export const bestPractices: Partial<Record<TokenCategory, GuidanceRule[]>> = {
@@ -37,7 +37,7 @@ export const bestPractices: Partial<Record<TokenCategory, GuidanceRule[]>> = {
     { kind: "do", text: "五档以多层投影表达递增高度，浅深色共用几何结构、分别设置各层透明度。等级 0 为六层透明值；1 使用两层投影与 1px 外缘；2–4 使用五层投影与 1px 外缘，其中透明占位层支持过渡。" },
     { kind: "do", text: "一个表面只选一档悬浮阴影。z-index 决定前后顺序，阴影等级表达感知高度；嵌套菜单与弹层可以复用同一等级。" },
     { kind: "do", text: "浮起表面的 1px 装饰外缘由阴影提供，保留透明布局边框，避免重复叠加。平面卡片与移动端无投影面板保留实际边框；浮层组合 surface-floating shadow-high，深色额外保留白色 4% 内侧高光。输入、按钮的状态边框及键盘焦点独立维护。" },
-    { kind: "do", text: "输入控件通过页面级输入方式检测区分指针与键盘；输入文字不会切换导航模式，Tab 与选项导航显示焦点框。键盘焦点使用统一的 focus-visible:focus-ring：2px solid、向外偏移 2px；浅色使用不透明 neutral-600，深色使用不透明 neutral-400。强制颜色模式的焦点与浮层边框使用系统前景色 CanvasText，与 Canvas 背景配对；焦点不依赖阴影。" },
+    { kind: "do", text: "输入控件通过页面级输入方式检测区分指针与键盘；输入文字不会切换导航模式，Tab 与选项导航显示焦点框。键盘焦点使用统一的 focus-visible:focus-ring：2px solid、向外偏移 2px；浅色使用不透明 blue-600，深色使用不透明 blue-400；焦点框宽度为 2px、向外偏移 2px，仅在键盘导航时显示。强制颜色模式的焦点与浮层边框使用系统前景色 CanvasText，与 Canvas 背景配对；焦点不依赖阴影。" },
     { kind: "do", text: "嵌入式移动面板、表格与图片工具条保持平面；反色 Tooltip 通过实心底色与箭头区分内容。这些例外不因位置悬浮就自动增加投影。" },
     { kind: "dont", text: "让普通嵌入内容无缘由地使用最高等级阴影，或把预留 shadow-inset 状态变量当作已开放的组件工具类。" },
     { kind: "dont", text: "用 shadow-red-500 等工具类表达彩色投影；本项目的阴影颜色由主题 --color-shadow 统一拥有，状态与强调通过独立角色表达。" },

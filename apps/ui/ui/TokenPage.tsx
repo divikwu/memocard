@@ -209,7 +209,7 @@ export function TokenPage({ category }: { category: TokenCategory }) {
       {section.rows && <TokenTable rows={section.rows} values={measurements.values} mode={mode} showUsage={category !== "all"} title={section.title} />}
       {section.content}
     </section>)}
-      <footer className="token-note">{category === "elevation" ? "基础尺度由主题统一维护，组件按语义角色消费。浅深色参数随主题切换；边框、浮层轮廓、键盘焦点与缩放动效分别管理。" : <>语义命名与尺度参考 <a href={`https://github.com/facebook/astryx/tree/${sourceRef}`} target="_blank" rel="noopener noreferrer">Astryx Neutral + Core · {sourceRef.slice(0, 7)}</a>；颜色主要引用 <a href="https://tailwindcss.com/docs/colors" target="_blank" rel="noopener noreferrer">Tailwind 基础色板</a>；阴影使用统一递增尺度，内侧高光、浮层轮廓与组件描边分别维护；视觉配置采用 <a href="https://ui.shadcn.com/create?preset=b5F2gjwQRE" target="_blank" rel="noopener noreferrer">shadcn Luma · b5F2gjwQRE</a>，正文默认使用 Noto Sans，标题默认跟随正文，图标使用 Hugeicons，圆角基准为 8px；当前预览由工具栏选择字体与圆角。brand 待配置；自适应字号与 domain 覆盖尚未接入。</>}</footer>
+      <footer className="token-note">{category === "elevation" ? "基础尺度由主题统一维护，组件按语义角色消费。浅深色参数随主题切换；边框、浮层轮廓、键盘焦点与缩放动效分别管理。" : <>语义命名与尺度参考 <a href={`https://github.com/facebook/astryx/tree/${sourceRef}`} target="_blank" rel="noopener noreferrer">Astryx Neutral + Core · {sourceRef.slice(0, 7)}</a>；颜色主要引用 <a href="https://tailwindcss.com/docs/colors" target="_blank" rel="noopener noreferrer">Tailwind 基础色板</a>；阴影使用统一递增尺度，内侧高光、浮层轮廓与组件描边分别维护；视觉配置采用 <a href="https://ui.shadcn.com/create?preset=b5F2gjwQRE" target="_blank" rel="noopener noreferrer">shadcn Luma · b5F2gjwQRE</a>，正文默认使用系统字体，标题默认跟随正文，图标使用 Hugeicons，圆角基准为 8px；当前预览由工具栏选择字体与圆角。brand 待配置；自适应字号与 domain 覆盖尚未接入。</>}</footer>
     </div>
   </main>;
 }

@@ -1,10 +1,14 @@
-/* Editing text after a pointer click keeps pointer feedback until navigation. */
-:root:not([data-ui-input-modality="keyboard"]) :is(input, textarea, select, [contenteditable="true"], [data-slot="input-group"], [data-slot="combobox-chips"], [data-slot="select-trigger"], [data-slot="combobox-trigger"]):focus-within {
+/* Pointer focus also suppresses browser outlines and delegated control rings. */
+:root:not([data-ui-input-modality="keyboard"]) :is(:focus, [data-slot="input-group"]:focus-within, [data-slot="combobox-chips"]:focus-within, [data-slot="field-label"]:focus-within, [data-slot="slider-thumb"]:focus-within, .ui-note-card:focus-within, .ui-trash-card:focus-within, .ui-docs-source:focus-within) {
   outline: none;
 }
 
-/* Grouped controls delegate their outline to their containing surface. */
-:root[data-ui-input-modality="keyboard"] :is(input, textarea, select, [contenteditable="true"]):not([data-slot="input-group-control"], [data-slot="combobox-chip-input"]):focus-visible {
+/* One policy for native controls, custom triggers, links and focused popups.
+ * Composite fields and note-open actions delegate to their visible surface. */
+:root[data-ui-input-modality="keyboard"] :is(a[href], button, input, textarea, select, summary, [contenteditable="true"], [tabindex]):not([data-slot="input-group-control"], [data-slot="combobox-chip-input"], [data-slot="slider-thumb"] *, .ui-note-open, .ui-trash-open, .ui-docs-source pre):focus-visible {
   outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color);
   outline-offset: var(--focus-outline-offset);
 }
+
+/* Composite controls draw one outline on their visible surface. */
+[data-slot="slider-thumb"] input, .ui-docs-source pre { outline: none; }

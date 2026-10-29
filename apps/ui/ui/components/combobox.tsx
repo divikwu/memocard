@@ -260,7 +260,7 @@ function ComboboxChips({
       data-slot="combobox-chips"
       className={cnState(
         className,
-        "flex min-h-element-md flex-wrap items-center gap-1.5 rounded-control border border-transparent bg-control bg-clip-padding px-3 py-1.5 text-sm transition-[color,box-shadow,background-color] focus-within:focus-ring has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5 dark:has-aria-invalid:border-error/50 dark:has-aria-invalid:ring-error/40"
+        "flex min-h-element-md flex-wrap items-center gap-1.5 rounded-control border border-transparent bg-control bg-clip-padding px-3 py-1.5 text-sm transition-[color,box-shadow,background-color] has-[[data-slot=combobox-chip-input]:focus-visible]:focus-ring has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5 dark:has-aria-invalid:border-error/50 dark:has-aria-invalid:ring-error/40"
       )}
       {...props}
     />

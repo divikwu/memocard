@@ -219,9 +219,11 @@ it("persists palette choices and resets to confirmed Luma defaults without erasi
   localStorage.setItem("memocard-appearance-v1", JSON.stringify({ palette: "green", radius: "2xl", bodyFont: "pingfang" }));
   const view = render(<WebAppearanceProvider><Controls /></WebAppearanceProvider>);
   fireEvent.click(screen.getByRole("button", { name: "冷灰蓝色" }));
-  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ palette: "blue", neutralPalette: "slate", radius: "legacy-2xl" });
+  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ palette: "blue", neutralPalette: "slate", radius: "legacy-2xl", bodyFont: "pingfang" });
   fireEvent.click(screen.getByRole("button", { name: "恢复默认" }));
   expect(JSON.parse(localStorage.getItem(key)!)).toEqual(DEFAULT_WEB_APPEARANCE);
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(getPreviewFont("system").fontFamily);
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-heading")).toBe(getPreviewFont("system").fontFamily);
   expect(document.documentElement.dataset.webPalette).toBe("mono");
   expect(document.documentElement.dataset.webNeutral).toBe("neutral");
   view.unmount();
