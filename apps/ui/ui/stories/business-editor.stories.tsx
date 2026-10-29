@@ -442,15 +442,16 @@ export const DetailLayoutMobileRegression: Story = {
 export const BlockSelectionGeometry: Story = {
   name: '内容块 · 四周4px选中回归',
   tags: ['!dev', '!autodocs'],
+  parameters: { geometryGroup: 'text' },
   args: { initialTitle: '内容块间距检查', initialBody: blockSpacingBody },
   decorators: DetailLayoutRegression.decorators,
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, parameters }) => {
     const field = await within(canvasElement).findByRole('textbox', { name: '笔记内容' });
     const editor = (field as HTMLElement & { editor: TiptapEditor }).editor;
     await canvasElement.ownerDocument.fonts.ready;
     await waitFor(() => expect(field.querySelectorAll('table')).toHaveLength(5));
     const original = editor.state.doc.content, seen = new Set<string>();
-    const candidates: { pos: number; element: HTMLElement }[] = [];
+    const candidates: { pos: number; element: HTMLElement; type: string }[] = [];
     const types = new Set(['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'listItem', 'taskItem', 'blockquote', 'aside', 'codeBlock', 'table', 'image', 'figure', 'blockMath', 'horizontalRule', 'footnoteDefinition', 'preservedMarkdown']);
     editor.state.doc.descendants((node, pos) => {
       if (!types.has(node.type.name) || node.type.name === 'paragraph' && editor.state.doc.resolve(pos).depth !== 0) return;
@@ -458,10 +459,14 @@ export const BlockSelectionGeometry: Story = {
       const key = `${node.type.name}:${variant}`;
       if (seen.has(key)) return;
       const element = editor.view.nodeDOM(pos);
-      if (element instanceof HTMLElement) { seen.add(key); candidates.push({ pos, element }); }
+      if (element instanceof HTMLElement) { seen.add(key); candidates.push({ pos, element, type: node.type.name }); }
     });
     expect(candidates.length).toBeGreaterThan(25);
-    for (const { pos, element } of candidates) {
+    // Keep every variant covered without putting all editing cycles in one CI test.
+    const textTypes = new Set(['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'listItem', 'taskItem', 'blockquote']);
+    const group = candidates.filter(({ type }) => textTypes.has(type) === (parameters.geometryGroup !== 'containers'));
+    expect(group.length).toBeGreaterThan(0);
+    for (const { pos, element } of group) {
       element.scrollIntoView({ block: 'center' });
       for (const image of element.querySelectorAll<HTMLImageElement>('img')) await waitFor(() => expect(image.complete && image.naturalWidth > 0).toBe(true));
       const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? element;
@@ -647,4 +652,28 @@ export const BlockSelectionSmallMobileGeometry: Story = {
   tags: ['!dev', '!autodocs', 'mobile'],
   globals: DetailLayoutMobile.globals,
   decorators: DetailLayoutMobileRegression.decorators,
+};
+export const BlockSelectionContainerGeometry: Story = {
+  ...BlockSelectionGeometry,
+  name: '容器块 · 四周4px选中回归',
+  tags: ['!dev', '!autodocs'],
+  parameters: { geometryGroup: 'containers' },
+};
+export const BlockSelectionContainerMobileGeometry: Story = {
+  ...BlockSelectionGeometryMobile,
+  name: '容器块 · 窄屏四周4px选中回归',
+  tags: ['!dev', '!autodocs', 'mobile'],
+  parameters: { geometryGroup: 'containers' },
+};
+export const BlockSelectionContainerSmallGeometry: Story = {
+  ...BlockSelectionSmallGeometry,
+  name: '容器块 · 14px四周4px选中回归',
+  tags: ['!dev', '!autodocs'],
+  parameters: { geometryGroup: 'containers' },
+};
+export const BlockSelectionContainerSmallMobileGeometry: Story = {
+  ...BlockSelectionSmallMobileGeometry,
+  name: '容器块 · 窄屏14px四周4px选中回归',
+  tags: ['!dev', '!autodocs', 'mobile'],
+  parameters: { geometryGroup: 'containers' },
 };
