@@ -16,7 +16,7 @@
 .web-appearance-fields label { font-size: var(--font-size-sm); }
 .web-appearance-fields [data-slot=select-trigger] { width: 100%; }
 .web-file-status { margin-inline: calc(var(--spacing-1) * -4); }
-.web-file-status summary { display: flex; align-items: center; justify-content: space-between; min-height: calc(var(--spacing-1) * 14); padding-inline: calc(var(--spacing-1) * 4); list-style: none; cursor: pointer; font-size: var(--font-size-sm); border-radius: 0 0 var(--radius-container) var(--radius-container); }
+.web-file-status summary { display: flex; align-items: center; justify-content: space-between; min-height: calc(var(--spacing-1) * 14); padding-inline: calc(var(--spacing-1) * 4); list-style: none; cursor: pointer; font-size: var(--font-size-sm); border-radius: 0 0 max(0px, calc(var(--radius-card) - var(--border-width))) max(0px, calc(var(--radius-card) - var(--border-width))); }
 .web-file-status summary::-webkit-details-marker { display: none; }
 .web-file-status summary > svg { width: var(--font-size-base); height: var(--font-size-base); color: var(--color-icon-secondary); }
 .web-file-status[open] summary { border-radius: 0; }

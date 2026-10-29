@@ -106,6 +106,10 @@ for (const mode of ["light", "dark"] as const) {
     const surface = kind === "source" ? target.closest(".ui-docs-source")! : target;
     expectKeyboardOutline(surface, mode);
     expectUnclippedOutline(surface);
+    if (kind === "settings") {
+      const card = getComputedStyle(target.closest('[data-slot="card"]')!);
+      expect(parseFloat(getComputedStyle(target).borderBottomLeftRadius)).toBeCloseTo(parseFloat(card.borderBottomLeftRadius) - parseFloat(card.borderLeftWidth), 3);
+    }
     if (kind === "source") {
       expect(getComputedStyle(surface).borderBottomLeftRadius).toBe(getComputedStyle(surface.closest(".ui-docs-example")!).borderBottomLeftRadius);
       expect(canvas.getByRole("link", { name: "在 Canvas 中打开" }).getBoundingClientRect().height).toBeGreaterThanOrEqual(canvas.getByRole("button", { name: "切换预览说明与代码" }).getBoundingClientRect().height);
