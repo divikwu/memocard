@@ -53,6 +53,22 @@ it("keeps shortcut-driven focus transfers visible without adding a ring for edit
   expect(mode()).toBe("pointer");
 });
 
+it("keeps keyboard focus through incidental pointer movement and yields when hover moves focus", () => {
+  render(<Fields />);
+  const input = screen.getByRole("textbox", { name: "文本" });
+  const target = screen.getByRole("combobox");
+  input.focus();
+  fireEvent.keyDown(input, { key: "Tab" });
+  fireEvent.pointerMove(input);
+  expect(mode()).toBe("keyboard");
+  target.focus();
+  expect(mode()).toBe("pointer");
+  fireEvent.pointerMove(target);
+  fireEvent.keyDown(target, { key: "ArrowDown" });
+  input.focus();
+  expect(mode()).toBe("keyboard");
+});
+
 it("shares the tracker between providers and releases it after the last unmount", () => {
   const first = render(<Fields />);
   const second = render(<Fields />);

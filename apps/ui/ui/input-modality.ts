@@ -13,25 +13,31 @@ export function useInputModality() {
         if (root.dataset.uiInputModality !== mode) root.dataset.uiInputModality = mode;
       };
       let keyboardOrigin: EventTarget | null = null;
+      let pointerOrigin = false;
       const keyDown = (event: KeyboardEvent) => {
         if (event.isComposing || ["Shift", "Control", "Alt", "Meta"].includes(event.key)) return;
         keyboardOrigin = event.target;
+        pointerOrigin = false;
         const field = event.target instanceof Element ? event.target.closest("input, textarea, [contenteditable=true]") : null;
         const editing = field && !field.matches("input:is([type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=reset], [type=file], [type=color])");
         const navigatingOptions = field?.getAttribute("role") === "combobox" && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key);
         const submitting = event.key === "Enter" && field?.tagName === "INPUT";
         if (event.key === "Tab" || event.key === "Escape" || !editing || navigatingOptions || submitting) set("keyboard");
       };
-      const pointerDown = () => { keyboardOrigin = null; set("pointer"); };
+      const pointerDown = () => { keyboardOrigin = null; pointerOrigin = true; set("pointer"); };
+      // Movement alone keeps the ring; a hover-driven focus transfer yields it.
+      const pointerMove = () => { keyboardOrigin = null; pointerOrigin = true; };
       // Keyboard shortcuts can move focus without using Tab (for example search).
-      const focusIn = (event: FocusEvent) => { if (keyboardOrigin && event.target !== keyboardOrigin) set("keyboard"); };
+      const focusIn = (event: FocusEvent) => { if (pointerOrigin) set("pointer"); else if (keyboardOrigin && event.target !== keyboardOrigin) set("keyboard"); };
       set("pointer");
       document.addEventListener("keydown", keyDown, true);
       document.addEventListener("pointerdown", pointerDown, true);
+      document.addEventListener("pointermove", pointerMove, true);
       document.addEventListener("focusin", focusIn, true);
       release = () => {
         document.removeEventListener("keydown", keyDown, true);
         document.removeEventListener("pointerdown", pointerDown, true);
+        document.removeEventListener("pointermove", pointerMove, true);
         document.removeEventListener("focusin", focusIn, true);
         if (previous === null) root.removeAttribute("data-ui-input-modality");
         else root.setAttribute("data-ui-input-modality", previous);

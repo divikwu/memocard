@@ -162,6 +162,7 @@ function verifyHighlight(field: HTMLElement, block: HTMLElement, target = block)
 
 async function verifyHighlights(field: HTMLElement, targets: [HTMLElement, HTMLElement][]) {
   let color = '';
+  // Temporary SVG probes must not retrigger the observer before the next paint.
   await waitFor(() => {
     const svg = field.closest('.rich-editor')!.querySelector<SVGSVGElement>('.rich-block-highlights')!;
     expect(svg).not.toBeNull();
@@ -203,7 +204,7 @@ async function verifyHighlights(field: HTMLElement, targets: [HTMLElement, HTMLE
         .map(corner => Math.min((parseFloat(corner) || 0) + 4, box.width / 2, box.height / 2));
       expect(Array.from(segment.matchAll(/A([\d.]+) ([\d.]+)/g), match => [Number(match[1]), Number(match[2])])).toEqual(radii.map(radius => [radius, radius]));
     }
-  });
+  }, { mutationObserverOptions: { attributes: true, subtree: true } });
   return { backgroundColor: color };
 }
 

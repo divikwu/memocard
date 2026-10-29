@@ -9,6 +9,7 @@ import { Combobox, ComboboxInput, ComboboxChips, ComboboxChipsInput, ComboboxCon
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "../ui/components/dialog";
 import { Button } from "../ui/components/button";
 import { Checkbox } from "../ui/components/checkbox";
+import { Field, FieldContent, FieldLabel, FieldTitle } from "../ui/components/field";
 import { RadioGroup, RadioGroupItem } from "../ui/components/radio-group";
 import { Switch } from "../ui/components/switch";
 import { Toggle } from "../ui/components/toggle";
@@ -40,6 +41,7 @@ export function InputFocusFixture({ mode }: { mode: "light" | "dark" }) {
     <Dialog><DialogTrigger render={<Button variant="outline" />}>打开自动聚焦输入</DialogTrigger><DialogContent initialFocus={popup} className="ui-theme" data-ui-theme={mode}><DialogTitle>输入焦点弹窗</DialogTitle><DialogDescription>根据打开方式保留鼠标或键盘焦点反馈。</DialogDescription><label htmlFor={id("popup")}>弹窗输入</label><Input id={id("popup")} ref={popup} /></DialogContent></Dialog>
     <button type="button" tabIndex={0}>原生按钮</button><a href={`#${id("link")}`} id={id("link")} tabIndex={0}>示例链接</a>
     <Checkbox aria-label="复选框" /><Switch aria-label="开关" />
+    <FieldLabel><Field orientation="horizontal"><FieldContent><FieldTitle>卡片选择</FieldTitle></FieldContent><Checkbox aria-label="卡片复选框" /></Field></FieldLabel>
     <RadioGroup defaultValue="a" aria-label="单选组"><RadioGroupItem value="a" aria-label="第一个单选项" /><RadioGroupItem value="b" aria-label="第二个单选项" /></RadioGroup>
     <Toggle aria-label="切换按钮">切换按钮</Toggle><Slider defaultValue={[50]} aria-label="调整值" />
     <Tabs defaultValue="a"><TabsList><TabsTrigger value="a">第一个标签</TabsTrigger><TabsTrigger value="b">第二个标签</TabsTrigger></TabsList><TabsContent value="a">标签内容</TabsContent><TabsContent value="b">其他内容</TabsContent></Tabs>

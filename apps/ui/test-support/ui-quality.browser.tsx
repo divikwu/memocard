@@ -8,6 +8,7 @@ import { ComponentDocsExample } from "../ui/ComponentDocsTemplate";
 import { componentDocs, type ComponentKey } from "../ui/component-docs.data";
 import { Button } from "../ui/components/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../ui/components/accordion";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../ui/components/dropdown-menu";
 import { WebSettings } from "../ui/web/WebSettings";
 import type { AppViewState } from "../src/App";
 import { Card } from "../ui/components/card";
@@ -105,7 +106,14 @@ for (const mode of ["light", "dark"] as const) {
     const surface = kind === "source" ? target.closest(".ui-docs-source")! : target;
     expectKeyboardOutline(surface, mode);
     expectUnclippedOutline(surface);
-    if (kind === "source") expect(getComputedStyle(surface).borderBottomLeftRadius).toBe(getComputedStyle(surface.closest(".ui-docs-example")!).borderBottomLeftRadius);
+    if (kind === "source") {
+      expect(getComputedStyle(surface).borderBottomLeftRadius).toBe(getComputedStyle(surface.closest(".ui-docs-example")!).borderBottomLeftRadius);
+      expect(canvas.getByRole("link", { name: "在 Canvas 中打开" }).getBoundingClientRect().height).toBeGreaterThanOrEqual(canvas.getByRole("button", { name: "切换预览说明与代码" }).getBoundingClientRect().height);
+      await userEvent.click(target);
+      expect(getComputedStyle(surface).outlineStyle).toBe("none");
+      await userEvent.keyboard("{ArrowDown}");
+      expectKeyboardOutline(surface, mode);
+    }
   });
 
   for (const labels of [
@@ -202,16 +210,18 @@ for (const mode of ["light", "dark"] as const) {
     const controls = [
       canvas.getByRole("button", { name: "键盘导航起点" }), canvas.getByRole("button", { name: "原生按钮" }),
       canvas.getByRole("link", { name: "示例链接" }), canvas.getByRole("checkbox", { name: "复选框" }),
+      canvas.getByRole("checkbox", { name: "卡片复选框" }),
       canvas.getByRole("switch", { name: "开关" }), canvas.getByRole("radio", { name: "第一个单选项" }),
       canvas.getByRole("button", { name: "切换按钮" }), await canvas.findByRole("slider", { name: "调整值" }),
       canvas.getByRole("tab", { name: "第一个标签" }), canvas.getByRole("button", { name: "折叠控件" }),
       canvas.getByText("原生折叠"),
     ];
     for (const control of controls) {
-      const surface = control.closest('[data-slot="slider-thumb"]') ?? control;
-      await userEvent.click(surface);
+      const surface = control.closest('[data-slot="slider-thumb"], [data-slot="field-label"]:has(>[data-slot="field"])') ?? control;
+      const slider = surface.matches('[data-slot="slider-thumb"]');
+      await userEvent.click(slider ? surface : control);
       expect(getComputedStyle(surface).outlineStyle, control.outerHTML).toBe("none");
-      if (surface !== control) {
+      if (slider) {
         control.focus();
         const previous = Number(control.getAttribute("aria-valuenow"));
         await userEvent.keyboard("{ArrowRight}");
@@ -221,8 +231,13 @@ for (const mode of ["light", "dark"] as const) {
       expect(document.activeElement).toBe(control);
       expectKeyboardOutline(surface, mode);
       if (surface !== control) expect(getComputedStyle(control).outlineStyle).toBe("none");
-      await userEvent.click(surface);
+      await userEvent.click(slider ? surface : control);
       expect(getComputedStyle(surface).outlineStyle).toBe("none");
+      if (surface.matches('[data-slot="field-label"]')) {
+        await userEvent.keyboard(" ");
+        expectKeyboardOutline(surface, mode);
+        expect(getComputedStyle(control).outlineStyle).toBe("none");
+      }
     }
     const trigger = canvas.getByRole("button", { name: "打开菜单" });
     for (const keyboard of [false, true]) {
@@ -235,6 +250,22 @@ for (const mode of ["light", "dark"] as const) {
       await userEvent.keyboard("{Escape}");
       await expect.element(trigger).toHaveFocus();
     }
+  });
+
+  test(`pointer menu hover does not borrow previous keyboard focus in ${mode}`, async () => {
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><DropdownMenu><DropdownMenuTrigger render={<Button />}>悬停菜单</DropdownMenuTrigger><DropdownMenuContent className="ui-theme" data-ui-theme={mode}><DropdownMenuItem>第一项</DropdownMenuItem><DropdownMenuItem>第二项</DropdownMenuItem></DropdownMenuContent></DropdownMenu></PreviewModeProvider>);
+    within(view.container).getByRole("button", { name: "悬停菜单" }).focus();
+    await userEvent.keyboard("{Enter}");
+    const first = await within(document.body).findByRole("menuitem", { name: "第一项" });
+    const second = within(document.body).getByRole("menuitem", { name: "第二项" });
+    await expect.element(first).toHaveFocus();
+    await userEvent.keyboard("{End}");
+    await expect.element(second).toHaveFocus();
+    expectKeyboardOutline(second, mode);
+    await userEvent.hover(first);
+    expect(first.matches(":hover")).toBe(true);
+    expect(getComputedStyle(first).outlineStyle).toBe("none");
   });
 
   test(`product card and capture keyboard focus stays visible independently of elevation in ${mode}`, async () => {

@@ -31,7 +31,7 @@
 .ui-docs-example-preview .luma-status { text-align: center; }
 .ui-component-docs .ui-docs-example-details { gap: 0; border-top: var(--border-width) solid var(--color-border); border-radius: 0 0 var(--radius-container) var(--radius-container); background: var(--color-background-muted); }
 .ui-docs-example-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); padding: calc(var(--spacing-1) * 1) calc(var(--spacing-1) * 4); }
-.ui-docs-example-toolbar > a { max-width: 100%; height: auto; white-space: normal; }
+.ui-docs-example-toolbar > a { max-width: 100%; min-height: var(--size-element-sm); height: auto; white-space: normal; }
 .ui-docs-example-content { min-width: 0; border-end-start-radius: inherit; border-end-end-radius: inherit; }
 .ui-docs-example-content > div { border-radius: inherit; }
 .ui-docs-example-content > p { margin: 0; padding: calc(var(--spacing-1) * 4); font-size: var(--font-size-sm); }
