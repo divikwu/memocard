@@ -42,12 +42,11 @@ test("a bound browser first list includes format parsing and filters even when l
     "src/note-filters.ts": { file: "filters.js", imports: ["shared"] },
     cards: { file: "cards.js", imports: ["yaml"] },
   };
-  const fontFiles = Object.values(fonts).map(font => font.file);
-  assert.deepEqual([...firstListFiles(manifest, "browser")].sort(), ["entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js", ...fontFiles].sort());
-  assert.deepEqual([...firstListFiles(manifest, "browser", ["cards"])].sort(), ["cards.js", "entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js", ...fontFiles].sort());
-  for (const mode of ["native", "local-web"]) assert.deepEqual([...firstListFiles(manifest, mode)].sort(), ["entry.js", "shared.js", ...fontFiles].sort());
+  assert.deepEqual([...firstListFiles(manifest, "browser")].sort(), ["entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js"].sort());
+  assert.deepEqual([...firstListFiles(manifest, "browser", ["cards"])].sort(), ["cards.js", "entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js"].sort());
+  for (const mode of ["native", "local-web"]) assert.deepEqual([...firstListFiles(manifest, mode)].sort(), ["entry.js", "shared.js"].sort());
   delete manifest["node_modules/@fontsource-variable/geist-mono/wght.css"];
-  assert.throws(() => firstListFiles(manifest, "browser"), /Missing default typography asset/);
+  assert.doesNotThrow(() => firstListFiles(manifest, "browser"));
   Object.assign(manifest, fonts);
   delete manifest["src/browser-files.ts"];
   assert.throws(() => firstListFiles(manifest, "browser"), /Missing route asset/);

@@ -17,7 +17,7 @@ English and 中文 share the same document. **重要的信息保持清晰**，�
 
 ### 列表、引用与代码
 
-- 默认正文使用 Noto Sans，中文回退到 Noto Sans SC。
+- 默认正文使用系统字体，中英文均跟随当前系统。
 - 默认标题跟随正文；代码使用独立的等宽字体角色。
   - 嵌套列表沿用相同节奏。
   - 布局宽度由页面容器决定。
@@ -44,7 +44,7 @@ English and 中文 share the same document. **重要的信息保持清晰**，�
 
 | 场景 | 正文字体 | 标题字体 | 字号来源 | 颜色来源 | 宽度策略 |
 | --- | --- | --- | --- | --- | --- |
-| 笔记内容 | Noto Sans + SC | 默认跟随正文 | font-size-base | 当前语义角色 | 页面负责阅读宽度 |
+| 笔记内容 | 系统默认 | 默认跟随正文 | font-size-base | 当前语义角色 | 页面负责阅读宽度 |
 | 嵌入组件 | 组件自身配置 | 组件自身配置 | 组件语义尺寸 | 组件状态角色 | 保留自己的布局 |
 
 长链接与标识符也应保持在阅读区域内：https://example.com/notes/a-long-document-identifier-that-should-wrap-without-expanding-the-page。

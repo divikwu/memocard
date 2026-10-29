@@ -22,26 +22,28 @@
 .ui-docs-hero .luma-example-card, .ui-docs-hero .luma-field-wide, .ui-docs-hero .luma-field-narrow { margin-inline: auto; }
 .ui-docs-hero > div > :is(button, [data-slot="tabs"], [data-slot="tooltip-trigger"]) { margin-inline: auto; }
 .ui-docs-hero > div > button { display: flex; }
-.ui-docs-example { min-width: 0; overflow: hidden; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); }
+.ui-docs-example { min-width: 0; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); }
 .ui-docs-example-header { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 4); min-height: calc(var(--spacing-1) * 12); padding: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 4); }
 .ui-docs-example-header h3 { margin: 0; font-family: var(--font-family-body); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); line-height: var(--text-supporting-leading); }
 .ui-docs-example-preview { min-width: 0; min-height: calc(var(--spacing-1) * 50); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: calc(var(--spacing-1) * 6); }
 .ui-docs-example-preview > :is(.luma-field-grid, .luma-field-wide, .luma-field-narrow) { width: 100%; }
 .ui-docs-example-preview .luma-control-row { justify-content: center; }
 .ui-docs-example-preview .luma-status { text-align: center; }
-.ui-component-docs .ui-docs-example-details { gap: 0; border-top: var(--border-width) solid var(--color-border); background: var(--color-background-muted); }
+.ui-component-docs .ui-docs-example-details { gap: 0; border-top: var(--border-width) solid var(--color-border); border-radius: 0 0 var(--radius-container) var(--radius-container); background: var(--color-background-muted); }
 .ui-docs-example-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); padding: calc(var(--spacing-1) * 1) calc(var(--spacing-1) * 4); }
-.ui-docs-example-content { min-width: 0; }
+.ui-docs-example-toolbar > a { max-width: 100%; min-height: var(--size-element-sm); height: auto; white-space: normal; }
+.ui-docs-example-content { min-width: 0; border-end-start-radius: inherit; border-end-end-radius: inherit; }
+.ui-docs-example-content > div { border-radius: inherit; }
 .ui-docs-example-content > p { margin: 0; padding: calc(var(--spacing-1) * 4); font-size: var(--font-size-sm); }
 .ui-docs-example-content[hidden] { display: none; }
 .ui-docs-source { min-width: 0; overflow: hidden; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); background: var(--color-background-muted); }
-.ui-docs-example-content .ui-docs-source { border: 0; border-radius: 0; }
+.ui-docs-example-content .ui-docs-source { border: 0; border-radius: inherit; }
 .ui-docs-source-toolbar { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 4); padding: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 4); border-bottom: var(--border-width) solid var(--color-border); }
 .ui-docs-source-toolbar > span { color: var(--color-text-secondary); font-family: var(--font-family-code); font-size: var(--font-size-sm); }
 .ui-component-docs code { font-family: var(--font-family-code); font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); overflow-wrap: anywhere; }
 .ui-component-docs .ui-docs-source pre { font-family: var(--font-family-code); font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); max-width: 100%; max-height: calc(var(--spacing-1) * 88); margin: 0; padding: calc(var(--spacing-1) * 4); overflow: auto; background: var(--color-syntax-background); color: var(--color-syntax-variable); white-space: pre; }
 .ui-docs-source code { white-space: pre; overflow-wrap: normal; }
-.ui-docs-source pre:focus-visible, .ui-docs-table-wrap:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: calc(-1 * var(--focus-outline-width)); }
+.ui-docs-source:has(pre:focus-visible), .ui-docs-table-wrap:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .ui-docs-table-wrap { max-width: 100%; overflow-x: auto; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); }
 .ui-docs-table { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); }
 .ui-docs-table :is(th, td) { padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4); border: 0; border-bottom: var(--border-width) solid var(--color-border); vertical-align: top; overflow-wrap: anywhere; }

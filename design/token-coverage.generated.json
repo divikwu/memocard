@@ -8628,13 +8628,13 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
-          "value": "var(--color-neutral-600)",
+          "value": "var(--color-blue-600)",
           "line": 203
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
-          "value": "var(--color-neutral-400)",
+          "value": "var(--color-blue-400)",
           "line": 418
         },
         {
@@ -8741,7 +8741,7 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
-          "value": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "value": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
           "line": 218
         },
         {

@@ -44,19 +44,6 @@
     },
     {
       "property": "font-family",
-      "value": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/theme.css",
-          "scope": ":root,\n.ui-theme",
-          "value": "\"Noto Sans Variable\", \"Noto Sans SC Variable\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
-          "variable": "--font-family-body"
-        }
-      ]
-    },
-    {
-      "property": "font-family",
       "value": "\"PingFang SC\", \"Noto Sans SC Variable\", system-ui, sans-serif",
       "utilities": [],
       "locations": [
@@ -149,6 +136,19 @@
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "inherit",
           "variable": "--typeset-font-body"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+          "variable": "--font-family-body"
         }
       ]
     },

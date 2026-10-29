@@ -162,6 +162,7 @@ function verifyHighlight(field: HTMLElement, block: HTMLElement, target = block)
 
 async function verifyHighlights(field: HTMLElement, targets: [HTMLElement, HTMLElement][]) {
   let color = '';
+  // Temporary SVG probes must not retrigger the observer before the next paint.
   await waitFor(() => {
     const svg = field.closest('.rich-editor')!.querySelector<SVGSVGElement>('.rich-block-highlights')!;
     expect(svg).not.toBeNull();
@@ -203,7 +204,7 @@ async function verifyHighlights(field: HTMLElement, targets: [HTMLElement, HTMLE
         .map(corner => Math.min((parseFloat(corner) || 0) + 4, box.width / 2, box.height / 2));
       expect(Array.from(segment.matchAll(/A([\d.]+) ([\d.]+)/g), match => [Number(match[1]), Number(match[2])])).toEqual(radii.map(radius => [radius, radius]));
     }
-  });
+  }, { mutationObserverOptions: { attributes: true, subtree: true } });
   return { backgroundColor: color };
 }
 
@@ -227,7 +228,15 @@ export const DetailLayoutRegression: Story = {
       block.scrollIntoView({ block: 'center' });
       const before = block.getBoundingClientRect(), text = block.textContent, background = getComputedStyle(block).backgroundColor, scrollWidth = block.scrollWidth;
       await userEvent.pointer({ target: block, coords: { clientX: before.left + 8, clientY: before.top + before.height / 2 } });
-      await userEvent.click(canvas.getByRole('button', { name: '内容块操作' }));
+      const grip = canvas.getByRole('button', { name: '内容块操作' });
+      // React must move the shared gutter to this block before the next click.
+      await waitFor(() => {
+        const anchor = (block.closest('[data-node-view-wrapper]') ?? block).getBoundingClientRect();
+        const control = grip.getBoundingClientRect(), center = control.top + control.height / 2;
+        expect(center).toBeGreaterThanOrEqual(anchor.top);
+        expect(center).toBeLessThanOrEqual(anchor.bottom);
+      });
+      await userEvent.click(grip);
       const popup = await within(canvasElement.ownerDocument.body).findByRole('menu', { name: '内容块操作菜单' });
       await expect(popup).toBeVisible();
       await expect(['top', 'bottom']).toContain(popup.getAttribute('data-side'));

@@ -49,7 +49,7 @@ function Slider({
             index={index}
             aria-label={ariaLabel}
             aria-labelledby={ariaLabelledBy}
-            className="block h-4 w-6 shrink-0 rounded-full bg-on-dark shadow-control border border-border transition-[color,box-shadow,background-color] select-none not-dark:bg-clip-padding not-data-disabled:hover:ring-4 not-data-disabled:hover:ring-focus/30 has-[:focus-visible]:focus-ring data-disabled:pointer-events-none data-vertical:h-6 data-vertical:w-4"
+            className="block h-4 w-6 shrink-0 rounded-full bg-on-dark shadow-control border border-border transition-[color,box-shadow,background-color] select-none not-dark:bg-clip-padding not-data-disabled:hover:ring-4 not-data-disabled:hover:ring-control-secondary/30 has-[:focus-visible]:focus-ring data-disabled:pointer-events-none data-vertical:h-6 data-vertical:w-4"
           />
         ))}
       </SliderPrimitive.Control>

@@ -30,13 +30,8 @@ export function firstListFiles(manifest, mode, entries = []) {
   // A bound browser vault needs parsers and filtering before showing its first
   // list, even though the application shell mounts before those imports finish.
   const browser = mode === "browser" ? ["src/browser-vault.ts", "src/browser-files.ts", "src/note-filters.ts"] : [];
-  // Both appearance providers request these default font styles after mount.
-  const fonts = ["noto-sans/wght-italic.css", "geist-mono/wght.css", "geist-mono/wght-italic.css"].map(font => {
-    const key = Object.keys(manifest).find(key => key.endsWith(`/@fontsource-variable/${font}`));
-    if (!key) throw new Error(`Missing default typography asset: ${font}`);
-    return key;
-  });
-  return routeFiles(manifest, [...browser, ...fonts, ...entries]);
+  // System body/heading and code roles do not request optional Web font styles.
+  return routeFiles(manifest, [...browser, ...entries]);
 }
 
 export function checkCurrentManifest(manifest) {

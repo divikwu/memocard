@@ -4,7 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { DEFAULT_PREVIEW_APPEARANCE, parsePreviewAppearance } from "./preview-appearance";
 import { PREVIEW_FONTS, loadPreviewFonts } from "./preview-fonts";
 import { PreviewModeProvider, usePreviewGlobalsParam } from "./preview-mode";
-import { FONT_CHOICES } from "../src/lib/font-options";
+import { FONT_CHOICES, SYSTEM_FONT_FAMILY } from "../src/lib/font-options";
 
 vi.mock("./preview-fonts", async importOriginal => ({
   ...await importOriginal<typeof import("./preview-fonts")>(),
@@ -58,6 +58,6 @@ it("resolves inherit against the selected body font and restores defaults", () =
   rerender(<PreviewModeProvider mode="light">内容</PreviewModeProvider>);
   expect(root.style.getPropertyValue("--ui-preview-radius")).toBe("0.5rem");
   expect(root.style.getPropertyValue("--ui-preview-heading")).toBe(root.style.getPropertyValue("--ui-preview-body"));
-  expect(root.style.getPropertyValue("--ui-preview-body")).toContain("Noto Sans Variable");
-  expect(loadPreviewFonts).toHaveBeenLastCalledWith(["noto-sans", "noto-sans"]);
+  expect(root.style.getPropertyValue("--ui-preview-body")).toBe(SYSTEM_FONT_FAMILY);
+  expect(loadPreviewFonts).toHaveBeenLastCalledWith(["system", "system"]);
 });

@@ -965,7 +965,8 @@ it('drags only the heading by default, leaving its body and neighbors in place',
  expect(change).toHaveBeenLastCalledWith('- [ ] first\n- [ ] second\n\nend\n\n## 标题');
  act(()=>{editor.commands.undo();});expect(change).toHaveBeenLastCalledWith(original);
 });
-it('drags every remaining top-level block variant and restores the complete source with one undo',async()=>{
+const dragBlockTypes=['paragraph','heading','bulletList','orderedList','taskList','blockquote','aside','codeBlock','table','blockMath','image','figure','horizontalRule','footnoteDefinition','preservedMarkdown'];
+it.each(dragBlockTypes)('drags every %s block variant and restores the complete source with one undo',async type=>{
  const {editor,field,change}=await setup(blockSpacingBody),root=field.closest('.rich-editor')!;
  const original=editor.state.doc,seen=new Set<string>(),candidates:{pos:number;index:number}[]=[];
  original.forEach((node,pos,index)=>{
@@ -973,8 +974,11 @@ it('drags every remaining top-level block variant and restores the complete sour
   if(!seen.has(key)){seen.add(key);candidates.push({pos,index});}
  });
  expect(candidates.length).toBeGreaterThan(20);
+ expect(dragBlockTypes).toEqual(expect.arrayContaining([...new Set(original.content.content.map(node=>node.type.name))]));
+ const selected=candidates.filter(({index})=>original.child(index).type.name===type);
+ expect(selected.length).toBeGreaterThan(0);
  const hit=vi.spyOn(editor.view,'posAtCoords');
- for(const {pos,index} of candidates){
+ for(const {pos,index} of selected){
   const node=original.child(index);let last=0;original.forEach((_node,at)=>{last=at;});
   act(()=>{editor.commands.setNodeSelection(pos);});
   hit.mockReturnValue({pos,inside:pos});

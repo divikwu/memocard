@@ -8,7 +8,7 @@ function Accordion({ className, ...props }: AccordionPrimitive.Root.Props) {
   return (
     <AccordionPrimitive.Root
       data-slot="accordion"
-      className={cnState(className, "flex w-full flex-col overflow-hidden rounded-2xl border border-divider")}
+      className={cnState(className, "flex w-full flex-col rounded-2xl border border-divider")}
       {...props}
     />
   )
@@ -18,7 +18,7 @@ function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props) {
   return (
     <AccordionPrimitive.Item
       data-slot="accordion-item"
-      className={cnState(className, "not-last:border-b border-divider data-open:bg-muted/50")}
+      className={cnState(className, "not-last:border-b border-divider first:rounded-t-[inherit] last:rounded-b-[inherit] data-open:bg-muted/50")}
       {...props}
     />
   )
@@ -30,12 +30,12 @@ function AccordionTrigger({
   ...props
 }: AccordionPrimitive.Trigger.Props) {
   return (
-    <AccordionPrimitive.Header className="flex">
+    <AccordionPrimitive.Header className="flex rounded-[inherit]">
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cnState(
           className,
-          "group/accordion-trigger relative flex flex-1 items-start justify-between gap-6 border border-transparent p-4 text-left text-sm font-medium transition-all outline-none focus-visible:focus-ring focus-visible:outline-offset-[calc(-1*var(--focus-outline-width))] hover:underline aria-disabled:pointer-events-none aria-disabled:opacity-50 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4 **:data-[slot=accordion-trigger-icon]:text-secondary"
+          "group/accordion-trigger relative flex flex-1 items-start justify-between gap-6 rounded-[inherit] border border-transparent p-4 text-left text-sm font-medium transition-all outline-none focus-visible:focus-ring hover:underline aria-disabled:pointer-events-none aria-disabled:opacity-50 **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-4 **:data-[slot=accordion-trigger-icon]:text-secondary"
         )}
         {...props}
       >
