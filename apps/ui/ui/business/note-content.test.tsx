@@ -6,8 +6,7 @@ import { NoteMarkdown } from "./NoteMarkdown";
 import { NotePreview } from "./NotePreview";
 import { compactPreviewBody } from "../../src/note-preview";
 
-vi.mock("../../src/bridge", () => ({ request: vi.fn() }));
-vi.mock("../../src/client-mode", () => ({ isBrowserVault: false, isLocalWeb: false }));
+vi.mock("../../src/bridge", () => ({ request: vi.fn(), isBrowserVault: false, isLocalWeb: false }));
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 it("retains the shared safe Markdown pipeline, complete semantics, WikiLinks and local attachments", () => {
