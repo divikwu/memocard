@@ -999,7 +999,7 @@ for (const mode of ["light", "dark"] as const) test.skipIf(server.browser === "w
   const style = getComputedStyle(close);
   expect(style.boxShadow).toBe("none");
   expect(style.outlineStyle).toBe("solid");
-  for (const property of ["borderTopColor", "outlineColor"] as const) expect(paintedContrast(style[property], style.backgroundColor)).toBeGreaterThanOrEqual(3);
+  for (const property of ["borderTopColor", "outlineColor"] as const) expect(paintedContrast(style[property], style.backgroundColor), `${property}: ${style[property]} on ${style.backgroundColor}; outline: ${style.outlineColor}`).toBeGreaterThanOrEqual(3);
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(sheet.isConnected).toBe(false));
   expect(document.activeElement).toBe(trigger);
@@ -1335,6 +1335,7 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
       canOpen = true;
       view.rerender(app());
       const canvas = within(view.container);
+      await waitFor(() => expect(view.container.querySelectorAll('.web-app-header [data-slot="action-group"]')).toHaveLength(scenario.width < 768 ? 2 : 0));
       const list = await canvas.findByRole("list", {name: "笔记列表"});
       expect(list.getAttribute("data-layout")).toBe("list");
       const open = within(list).getAllByRole("button", {name: /^打开 /})[0];
@@ -1366,7 +1367,16 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
         await userEvent.hover(outside);
         open.focus();
-        await userEvent.keyboard("{ArrowRight}");
+        if (server.browser === "webkit") {
+          await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
+          expect(document.activeElement).not.toBe(open);
+          await userEvent.keyboard("{Alt>}{Shift>}{Tab}{/Shift}{/Alt}");
+        } else {
+          await userEvent.tab();
+          expect(document.activeElement).not.toBe(open);
+          await userEvent.tab({shift: true});
+        }
+        expect(document.activeElement).toBe(open);
         expect(open.matches(":focus-visible")).toBe(true);
         expectKeyboardOutline(card, mode);
         expectUnclippedOutline(card);

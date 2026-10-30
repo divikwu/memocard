@@ -41,6 +41,7 @@ export default mergeConfig(viteConfig, defineConfig({
   root: uiRoot,
   test: {
     fileParallelism: false,
+    reporters: process.env.CI ? ["verbose"] : ["default"],
     projects: [
       {
         extends: true,

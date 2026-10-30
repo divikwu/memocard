@@ -6,4 +6,7 @@
   .ui-sheet-swipe[data-side="bottom"] .ui-sheet-close-button:not([data-action-group])::after { content: ""; position: absolute; inset: calc(var(--spacing-1) * -1); }
   .ui-sheet-swipe[data-side="bottom"] .ui-sheet-close-button:not([data-action-group]):hover { background: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)) var(--color-background-body); }
   .ui-sheet-swipe[data-side="bottom"] .ui-sheet-close-button > svg { width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); }
+  @media (forced-colors: active) {
+    .ui-sheet-swipe[data-side="bottom"] .ui-sheet-close-button:not([data-action-group]) { border-color: CanvasText; }
+  }
 }
