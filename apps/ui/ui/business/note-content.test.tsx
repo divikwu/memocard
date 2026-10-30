@@ -48,8 +48,10 @@ it("keeps compact previews noninteractive while preserving inline tags and fence
   expect(compact).toContain("正文里的 #工作 保留");
   expect(compact).not.toContain("#工作 #设计");
   expect(compact).toContain("```md\n#工作\n```");
-  const html = renderToStaticMarkup(<NoteMarkdown body={compact} compact interactive={false} />);
-  for (const interactive of ["<button", "<a ", "<input", "<details", "tabindex="]) expect(html).not.toContain(interactive);
+  const html = renderToStaticMarkup(<NoteMarkdown body={`${compact}\n\n| A | B |\n| --- | --- |\n| 1 | 2 |`} compact interactive={false} />);
+  for (const interactive of ["<button", "<a ", "<input", "<details"]) expect(html).not.toContain(interactive);
+  expect(html).not.toMatch(/tabindex="(?:0|[1-9]\d*)"/);
+  expect(html.match(/tabindex="-1"/g)).toHaveLength(2);
   expect(html).toContain('alt="本地图片"');
   expect(html).toContain('class="note-task-indicator" aria-hidden="true" data-checked="true"');
   expect(html).toContain('class="note-task-indicator" aria-hidden="true" data-checked="false"');
