@@ -117,12 +117,12 @@ function expectUnclippedOutline(element: Element) {
   for (let parent = element.parentElement; parent; parent = parent.parentElement) {
     const clip = getComputedStyle(parent), rect = parent.getBoundingClientRect();
     if (/(hidden|clip|auto|scroll)/.test(clip.overflowX)) {
-      expect(bounds.left - outset, parent.className).toBeGreaterThanOrEqual(rect.left - 0.5);
-      expect(bounds.right + outset, parent.className).toBeLessThanOrEqual(rect.right + 0.5);
+      expect(bounds.left - outset, `${parent.className} left: element=${bounds.left}, outline=${outset}, clip=${rect.left}`).toBeGreaterThanOrEqual(rect.left - 0.5);
+      expect(bounds.right + outset, `${parent.className} right: element=${bounds.right}, outline=${outset}, clip=${rect.right}`).toBeLessThanOrEqual(rect.right + 0.5);
     }
     if (/(hidden|clip|auto|scroll)/.test(clip.overflowY)) {
-      expect(bounds.top - outset, parent.className).toBeGreaterThanOrEqual(rect.top - 0.5);
-      expect(bounds.bottom + outset, parent.className).toBeLessThanOrEqual(rect.bottom + 0.5);
+      expect(bounds.top - outset, `${parent.className} top: element=${bounds.top}, outline=${outset}, clip=${rect.top}`).toBeGreaterThanOrEqual(rect.top - 0.5);
+      expect(bounds.bottom + outset, `${parent.className} bottom: element=${bounds.bottom}, outline=${outset}, clip=${rect.bottom}`).toBeLessThanOrEqual(rect.bottom + 0.5);
     }
   }
 }
@@ -1755,12 +1755,16 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
       await userEvent.click(canvas.getByRole("button", {name: "收起"}));
       checkpoint(`${width}px collapsed layout`);
       await waitFor(checkLayout);
+      checkpoint(`${width}px hover list toolbar`);
+      await userEvent.hover(body.querySelector("li")!);
+      await waitFor(() => expect(view.container.querySelector<HTMLElement>(".block-controls")!.style.left).not.toBe(""));
       checkpoint(`${width}px keyboard navigation`);
       canvas.getByRole("button", {name: "更多属性"}).focus();
       if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
       else await userEvent.tab();
       checkpoint(`${width}px keyboard focus layout`);
       const grip = canvas.getByRole("button", {name: "内容块操作"});
+      checkpoint(`${width}px toolbar left: inline=${grip.parentElement!.style.left}, computed=${getComputedStyle(grip.parentElement!).left}`);
       const checked = new Set<string>();
       const focusCheckpoint = (phase: string) => {
         if (!checked.has(phase)) { checked.add(phase); checkpoint(`${width}px ${phase}`); }

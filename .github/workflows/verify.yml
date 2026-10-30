@@ -50,8 +50,13 @@ jobs:
             /etc/apt/apt-mirrors.txt
           cat /etc/apt/apt-mirrors.txt
       - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium firefox webkit
-      - name: Probe responsive WebKit detail layout
-        run: pnpm --filter @memocard/ui exec vitest run --config vitest.storybook.config.ts --project 'ui-quality (webkit)' -t '^Web detail aligns title, properties and body across breakpoints$'
+      - name: Probe responsive controls and detail layout
+        run: |
+          chrome_probe_status=0
+          webkit_probe_status=0
+          pnpm --filter @memocard/ui exec vitest run --config vitest.storybook.config.ts --project 'ui-quality (chromium)' -t '^Web list rows keep transparent rest, independent tags and pointer feedback in ' || chrome_probe_status=$?
+          pnpm --filter @memocard/ui exec vitest run --config vitest.storybook.config.ts --project 'ui-quality (webkit)' -t '^Web detail aligns title, properties and body across breakpoints$' || webkit_probe_status=$?
+          if [ "$chrome_probe_status" -ne 0 ] || [ "$webkit_probe_status" -ne 0 ]; then exit 1; fi
       - run: pnpm verify:design
       - run: pnpm verify:ui
   release-web:

@@ -117,6 +117,8 @@
   .web-app-header { padding-left: max(calc(var(--spacing-1) * 3), env(safe-area-inset-left)); padding-right: max(calc(var(--spacing-1) * 3), env(safe-area-inset-right)); }
   .web-app-scroll[data-detail] { --page-gutter: calc(var(--spacing-1) * 2); }
   .web-page-content[data-detail] { --note-measure: 100%; }
+  /* Keep keyboard focus inside the scroll clip, overriding list/image inline positioning. */
+  :where(.web-app[data-web-client]) .ui-note-editor .block-controls:has(button:focus-visible) { left: calc(var(--spacing-1) * -1) !important; }
   .web-app-scroll { padding-left: max(var(--page-gutter), env(safe-area-inset-left)); padding-right: max(var(--page-gutter), env(safe-area-inset-right)); }
   .web-toast { bottom: max(calc(var(--spacing-1) * 6), env(safe-area-inset-bottom)); }
   .web-toast[data-record-bar] { bottom: calc(var(--size-element-lg) + var(--spacing-1) * 10 + env(safe-area-inset-bottom)); }
