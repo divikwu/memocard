@@ -192,7 +192,7 @@ it("retains the collection while a refresh times out and restores it through ret
 
 it("opens the property controls and validates a malformed date using the new picker", async () => {
   await show("date-invalid");
-  fireEvent.click(await screen.findByRole("button", { name: "属性" }));
+  fireEvent.click(await screen.findByRole("button", { name: "更多属性" }));
   fireEvent.click(await screen.findByRole("button", { name: "编辑属性 日期" }));
   const input = await screen.findByRole("textbox", { name: "属性值" });
   fireEvent.change(input, { target: { value: "99/99/2026" } });
@@ -201,7 +201,7 @@ it("opens the property controls and validates a malformed date using the new pic
 });
 
 async function confirmSummaryType(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole("button", { name: "属性" }));
+  await user.click(await screen.findByRole("button", { name: "更多属性" }));
   await user.click(await screen.findByRole("button", { name: "属性菜单 摘要" }));
   const trigger = await screen.findByRole("menuitem", { name: /^类型/ });
   trigger.focus();
@@ -246,7 +246,7 @@ it("requires a real delete confirmation and changes only the current in-memory f
   const secondOriginal = untouched.snapshot();
   const { fixture, request } = await show("confirm-delete");
   const original = fixture.snapshot();
-  await user.click(await screen.findByRole("button", { name: "属性" }));
+  await user.click(await screen.findByRole("button", { name: "更多属性" }));
   await user.click(await screen.findByRole("button", { name: "属性菜单 摘要" }));
   await user.click(await screen.findByRole("menuitem", { name: "删除属性" }));
   const dialog = await screen.findByRole("alertdialog", { name: "删除属性「摘要」？" });

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
 
-export default function PropertyOptionList({ label, count, multiple = true, children }: { label:string; count:number; multiple?:boolean; children:(value:string)=>ReactNode }) {
+export default function PropertyOptionList({ label, count, multiple = true, children }: { label:string; count:number; multiple?:boolean; children:(value:string,index:number)=>ReactNode }) {
   const list = useRef<HTMLDivElement>(null);
   const [canScrollDown, setCanScrollDown] = useState(false);
   useEffect(() => {

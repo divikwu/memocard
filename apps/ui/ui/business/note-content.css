@@ -56,12 +56,15 @@
 .ui-note-viewer::before { display: none; }
 .note-viewer-image { max-width: min(960px,85%); max-height: 80%; object-fit: contain; }
 .note-viewer-close { position: absolute; z-index: 1; top: max(16px,env(safe-area-inset-top)); right: max(16px,env(safe-area-inset-right)); width: 44px; height: 44px; }
+.note-viewer-close[data-slot="action-group"] { width: calc(var(--size-element-md) + var(--spacing-1)); height: calc(var(--size-element-md) + var(--spacing-1)); }
 .ui-note-mermaid { position: relative; min-width: 0; gap: 0; margin-block-start: var(--typeset-flow); }
 .note-mermaid-toolbar { position: absolute; inset-block-start: calc(var(--spacing-1) * 2); inset-inline-end: calc(var(--spacing-1) * 2); z-index: 1; opacity: 0; pointer-events: none; }
 .ui-note-mermaid:is(:hover, :focus-within) > .note-mermaid-toolbar { opacity: 1; pointer-events: auto; }
 .note-mermaid-toolbar [data-slot="tabs-list"] { max-width: 100%; height: var(--size-element-md); padding: calc(var(--spacing-1) * .75); border-radius: calc(var(--radius-element) + var(--spacing-1) * .5); background: var(--color-background-surface); box-shadow: var(--shadow-floating), var(--surface-edge-floating); }
 .ui-note-mermaid [data-slot="tabs-trigger"] { flex: none; height: calc(100% - var(--border-width)); padding: var(--spacing-1) calc(var(--spacing-1) * 2); border-radius: var(--radius-element); transition-property: color, background-color, border-color, opacity; }
 .ui-note-mermaid [data-slot="tabs-trigger"][data-active] { background: var(--color-background-muted); }
+.note-mermaid-toolbar > [data-slot="action-group"] > [data-slot="tabs-list"] { height: 100%; padding: 0; border-radius: inherit; background: transparent; box-shadow: none; }
+.note-mermaid-toolbar > [data-slot="action-group"] [data-slot="tabs-trigger"] { width: var(--size-element-md); min-width: var(--size-element-md); height: var(--size-element-md); min-height: var(--size-element-md); padding: 0; border-radius: var(--radius-full); }
 .ui-note-mermaid [hidden] { display: none; }
 .note-mermaid-source pre { margin: 0; padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4); border-radius: var(--note-block-radius, var(--radius-element)); overflow-x: auto; background: var(--color-background-muted); font: var(--font-size-sm)/var(--text-supporting-leading) var(--font-family-code); }
 .note-mermaid-diagram { margin-block-start: calc(var(--spacing-1) * 3); }

@@ -1,22 +1,26 @@
 .note-properties {
-  --property-label-width: clamp(96px, 22%, 160px);
+  --property-label-width: 160px;
+  --property-row-height: calc(var(--size-element-sm) + var(--border-width) * 2);
   container-type: inline-size;
-  padding: 0 calc(var(--spacing-1) * .5) calc(var(--spacing-1) * 3);
+  padding: var(--spacing-1) calc(var(--spacing-1) * .5) calc(var(--spacing-1) * 3);
   border-bottom: var(--border-width) solid var(--color-border);
   font-family: var(--font-family-body);
   font-size: var(--font-size-sm);
-  line-height: var(--text-body-leading);
+  line-height: 1.5;
 }
-.note-properties :is(button, input, textarea, select, .note-tag-pill, .note-property-inline) { border-radius: var(--radius-element); }
+.note-properties :is(button, input, textarea, select, .note-tag-pill, .note-property-inline) { border-radius: calc(var(--spacing-1) * 1.5); }
 :is(.note-property-popup, .note-property-option-menu, .note-property-name-popup) :is(input, textarea, select) { border-radius: var(--radius-item); }
 .ui-property-sheet { max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); overflow: hidden; }
 .ui-property-sheet > .ui-property-sheet-body { width: 100%; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; padding: 0; }
+.note-property-group { display: grid; gap: var(--spacing-1); }
+.note-property-add-row { margin-top: var(--spacing-1); }
 .note-property-row {
+  position: relative;
   display: grid;
+  min-height: var(--property-row-height);
   grid-template-columns: var(--property-label-width) minmax(0, 1fr);
   column-gap: calc(var(--spacing-1) * 2);
   align-items: start;
-  margin-bottom: var(--spacing-1);
 }
 .note-property-label {
   display: flex;
@@ -24,7 +28,10 @@
   gap: var(--spacing-1);
   min-width: 0;
   height: var(--size-element-sm);
-  padding: calc(var(--spacing-1) * 1.5);
+  margin-block: var(--border-width);
+  padding: 0 calc(var(--spacing-1) * 1.5);
+  border: 0;
+  line-height: var(--text-body-leading);
   white-space: nowrap;
 }
 .note-property-label > svg { width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); flex-shrink: 0; }
@@ -34,13 +41,14 @@
 .note-property-label > svg, .note-property-action svg { opacity: 0.8; }
 .note-property-value {
   min-width: 0;
-  min-height: var(--size-element-sm);
+  min-height: var(--property-row-height);
   padding: calc(var(--spacing-1) * 1.5);
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
-.note-property-tags { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--spacing-1); }
+.note-property-tags { display: flex; flex-wrap: wrap; align-items: flex-start; gap: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); }
 @container (max-width: 28rem) {
-  .note-property-row:has(.note-property-tags) { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .note-property-row { grid-template-columns: 120px minmax(0, 1fr); }
 }
 .note-property-popup.note-tag-popup { padding: 0; max-height: var(--available-height); overflow-y: auto; }
 .note-tag-options-wrap { position: relative; margin: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 1.5) 0; }
@@ -74,22 +82,31 @@
 
 .note-properties .note-property-action {
   height: var(--size-element-sm);
+  margin-block: var(--border-width);
+  border: 0;
   gap: var(--spacing-1);
-  padding: 0 calc(var(--spacing-1) * 2) 0 calc(var(--spacing-1) * 1.5);
+  padding: 0 calc(var(--spacing-1) * 1.5);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-normal);
   line-height: var(--text-body-leading);
 }
+.note-property-row > .note-property-action { justify-content: flex-start; }
+.note-property-footer { padding-top: var(--spacing-1); }
+.note-properties .note-property-toggle { display: flex; justify-content: flex-start; width: fit-content; max-width: 100%; height: var(--property-row-height); margin: 0; padding-inline: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); background: transparent; }
 
 .note-properties .note-property-edit {
   height: auto;
-  min-height: var(--size-element-sm);
+  min-height: var(--property-row-height);
   padding: calc(var(--spacing-1) * 1.5);
   border: 0;
   font-size: var(--font-size-sm);
-  line-height: var(--text-body-leading);
+  line-height: inherit;
   overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
+.note-properties .note-property-edit:not(.note-property-tags) { display: block; }
+.note-properties .note-property-edit:not([aria-haspopup])::after { content: "\200b"; }
+.note-properties :is(.note-property-edit, .note-property-value):is(.note-property-tags, :has(> .note-property-tags)) { padding-block: calc((var(--property-row-height) - var(--spacing-1) * 5) / 2); line-height: calc(var(--spacing-1) * 5); }
 
 .note-property-checkbox-value { display: flex; align-items: center; }
 .note-properties[data-updating] :is(.note-property-label, .note-property-edit, .note-property-action, .note-property-checkbox):disabled { opacity: 1; }
@@ -112,6 +129,20 @@
 .note-property-confirm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: calc(var(--spacing-1) * 2); margin-top: calc(var(--spacing-1) * 4); }
 
 .note-properties .note-property-name { width: 100%; justify-content: flex-start; font-size: inherit; font-weight: var(--font-weight-normal); }
+.note-property-name-cell { position: relative; min-width: 0; }
+.note-property-grip { position: absolute; z-index: 1; top: var(--border-width); left: calc(var(--spacing-1) * 1.5); display: flex; align-items: center; justify-content: center; width: calc(var(--spacing-1) * 4); height: var(--size-element-sm); padding: 0; border: 0; background: transparent; opacity: 0; cursor: grab; touch-action: manipulation; }
+.note-property-grip > svg { width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); }
+.note-property-grip:active { cursor: grabbing; }
+.note-property-name-cell:is(:hover, :focus-within, :has([data-popup-open])) > .note-property-grip { opacity: 1; }
+.note-property-name-cell:has(.note-property-grip):is(:hover, :focus-within, :has([data-popup-open])) .note-property-label > svg { visibility: hidden; }
+.note-property-grip:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
+@media (hover: none) {
+  .note-property-grip { opacity: 1; }
+  .note-property-name-cell:has(.note-property-grip) .note-property-label > svg { visibility: hidden; }
+}
+.note-property-row[data-drop-position]::before { content: ''; position: absolute; z-index: 2; inset-inline: 0; height: var(--focus-outline-width); background: var(--focus-outline-color); pointer-events: none; }
+.note-property-row[data-drop-position="before"]::before { top: calc(var(--spacing-1) * -.5); }
+.note-property-row[data-drop-position="after"]::before { bottom: calc(var(--spacing-1) * -.5); }
 .note-property-popup { width: min(360px, calc(100vw - calc(var(--spacing-1) * 6))); padding: calc(var(--spacing-1) * 3); animation: none; }
 .note-property-popup textarea { max-height: 240px; }
 .note-property-create-popup { width: min(280px, calc(100vw - calc(var(--spacing-1) * 6))); padding: calc(var(--spacing-1) * 2); }
@@ -124,7 +155,7 @@
 
 .note-property-inline { border-radius: var(--radius-element); outline: var(--border-width) solid var(--color-border); background: var(--color-background-muted); }
 .note-property-inline textarea {
-  min-height: var(--size-element-sm);
+  min-height: var(--property-row-height);
   max-height: none;
   padding: calc(var(--spacing-1) * 1.5);
   border: 0;
@@ -132,7 +163,9 @@
   background: transparent;
   outline: none;
   font: inherit;
-  line-height: calc(var(--spacing-1) * 5);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   resize: none;
   box-shadow: none;
 }
@@ -149,7 +182,8 @@
 :is(.note-property-menu, .note-property-option-menu) :is([data-highlighted], [data-slot="dropdown-menu-sub-trigger"][data-popup-open]) { background: var(--color-overlay-hover); }
 .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]), .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]) > svg { color: var(--color-error); }
 
-.note-property-image-thumbnail { width: var(--size-element-sm); height: var(--size-element-sm); object-fit: cover; }
+.note-property-image-thumbnail { width: auto; max-width: 100%; height: calc(var(--spacing-1) * 6); object-fit: contain; }
+.note-property-image-trigger { width: 100%; min-height: var(--property-row-height, 34px); height: auto; justify-content: flex-start; padding: calc(var(--spacing-1) * 1.25) calc(var(--spacing-1) * 1.5); border: 0; }
 .note-property-image-preview { max-height: 24rem; }
 .note-property-image-popup { width: min(24rem, var(--available-width)); }
 .note-property-image-toolbar { justify-content: flex-end; }
@@ -161,7 +195,7 @@
 .note-date-time-input { margin-top: calc(var(--spacing-1) * 2); font-variant-numeric: tabular-nums; }
 .mobile-tag-menu { max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; }
 
-.note-properties .note-tag-pill { border-radius: var(--radius-full); }
+.note-properties .note-tag-pill { height: auto; border-radius: calc(var(--spacing-1) * 2.5); }
 .note-tag-color-swatch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); border-radius: var(--radius-inner); background: var(--tag-bg); color: var(--tag-fg); border: var(--border-width) solid color-mix(in oklab, var(--tag-fg) 20%, transparent); }
 .note-tag-color-option { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-height: var(--size-element-md); padding: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); border-radius: var(--radius-item); font-size: var(--font-size-sm); outline: none; }
 .note-tag-color-option[data-checked] { background: var(--color-overlay-hover); }
@@ -173,15 +207,15 @@ button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hov
 .note-tag-color-trigger { border-radius: var(--radius-full); color: var(--color-text-secondary); }
 .note-tag-color-trigger:is(:hover, :focus-visible, [data-popup-open]) { background: var(--color-overlay-hover); color: var(--color-text-primary); }
 
-/* Safari keeps the viewport stable when focusing editable property controls. */
+/* Property popups retain their touch input sizing on narrow screens. */
 @media (max-width: 767px) {
+  .note-properties { --property-label-width: 120px; }
   .ui-property-confirm-sheet.note-property-confirm { top: auto; inset-inline: 0; bottom: 0; width: 100%; max-width: none; max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); transform: none; border-inline: 0; border-bottom: 0; }
   .ui-property-confirm-sheet > .ui-property-confirm-body { min-height: 0; overflow-y: auto; }
   .ui-property-confirm-sheet [data-slot="sheet-header"] > h2 { min-width: 0; overflow-wrap: anywhere; font-family: var(--font-family-heading); font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); line-height: var(--text-body-leading); }
   .ui-property-confirm-body > :first-child { margin-block-start: 0; }
-  :is(.note-property-popup, .note-property-inline, .note-property-option-menu, .mobile-tag-menu, .name-editor-popup) :is(input, textarea, select),
+  :is(.note-property-popup, .note-property-option-menu, .mobile-tag-menu, .name-editor-popup) :is(input, textarea, select),
   .note-tag-search { font-size: var(--font-size-base); }
-  .note-properties .note-property-edit:not([aria-haspopup]) { font-size: var(--font-size-base); line-height: calc(var(--spacing-1) * 5); }
   :is(.ui-property-sheet-body, .mobile-tag-menu, .note-property-confirm, .note-property-option-menu) :is([data-slot="input"], textarea, [data-slot="select-trigger"], [data-slot="button"]):not(.ui-sheet-close-button) { min-height: calc(var(--spacing-1) * 11); }
   :is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]), .note-tag-option, .note-tag-color-option { min-height: calc(var(--spacing-1) * 11); }
   :is(.ui-property-sheet-body, .note-property-option-menu) .note-tag-color-trigger { width: calc(var(--spacing-1) * 11); height: calc(var(--spacing-1) * 11); opacity: 1; }

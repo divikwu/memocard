@@ -8,10 +8,12 @@ import RowInsertIcon from "@hugeicons/core-free-icons/RowInsertIcon";
 import { adjacentImage, applyImageTransaction, imageIndex, imageMoveTransaction, imageRow, setImageWidths, splitImageRow } from "../../src/rich-image-layout";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Button } from "../components/button";
+import { ActionGroup, useMobileActionGroup } from "../components/action-group";
 import { richIcons } from "./rich-icons";
 
 export function RichImageTools({ editor, getPos, alt }: { editor: Editor; getPos: () => number | undefined; alt: string }) {
   const [open, setOpen] = useState(false);
+  const mobileActions = useMobileActionGroup();
   const { editable } = useEditorState({ editor, selector: ({ editor }) => ({ editable: editor.isEditable, doc: open ? editor.state.doc : null }) });
   if (!editable) return null;
   const pos = getPos(), row = pos == null ? null : imageRow(editor, pos), index = row && pos != null ? imageIndex(row, pos) : -1;
@@ -25,9 +27,10 @@ export function RichImageTools({ editor, getPos, alt }: { editor: Editor; getPos
   };
   const columns = <HugeiconsIcon icon={ColumnInsertIcon} aria-hidden="true" strokeWidth={2} />;
   const rows = <HugeiconsIcon icon={RowInsertIcon} aria-hidden="true" strokeWidth={2} />;
-  return <div className="rich-image-tools" contentEditable={false} data-open={open || undefined}>
+  const Surface = mobileActions ? ActionGroup : "div";
+  return <Surface className="rich-image-tools" contentEditable={false} data-open={open || undefined} aria-label={mobileActions ? "图片操作" : undefined}>
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger render={<Button type="button" variant="secondary" size="icon-xs" aria-label={`图片布局 ${alt}`} title="图片布局" />}><richIcons.MoreHorizontal aria-hidden="true" /></DropdownMenuTrigger>
+      <DropdownMenuTrigger render={<Button type="button" variant={mobileActions ? "ghost" : "secondary"} size="icon-xs" aria-label={`图片布局 ${alt}`} title="图片布局" />}><richIcons.MoreHorizontal aria-hidden="true" /></DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="ui-rich-ui rich-block-menu" aria-label="图片布局">
         <DropdownMenuItem disabled={!join(previous, "right")} onClick={() => applyImageTransaction(editor, join(previous, "right"))}>{columns}与上一行并排</DropdownMenuItem>
         <DropdownMenuItem disabled={!join(next, "left")} onClick={() => applyImageTransaction(editor, join(next, "left"))}>{columns}与下一行并排</DropdownMenuItem>
@@ -40,5 +43,5 @@ export function RichImageTools({ editor, getPos, alt }: { editor: Editor; getPos
         <DropdownMenuItem disabled={!grouped} onClick={() => { if (pos != null) splitImageRow(editor, pos); }}>{rows}全部拆为单行</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  </div>;
+  </Surface>;
 }

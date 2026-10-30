@@ -675,12 +675,15 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   await user.click(await screen.findByRole("button", { name: "工作/项目" }));
   await user.click(await screen.findByRole("button", { name: "新建" }));
   expect(readEditorText()).toBe("");
+  await user.click(screen.getByRole("button", { name: "更多属性" }));
   expect(screen.getByLabelText("笔记属性").textContent).toContain("工作/项目");
   expect(screen.queryByRole("button", { name: "移除标签 工作/项目" })).toBeNull();
   expect(screen.queryByLabelText("笔记标签")).toBeNull();
   expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
   const cardTag = await screen.findByRole("button", { name: "筛选标签 生活" });
+  expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
+  expect(bridge.request).not.toHaveBeenCalledWith("saveDraft", expect.anything());
   expect(cardTag.getAttribute("data-slot")).toBe("badge");
   expect(cardTag.getAttribute("data-variant")).toBe("secondary");
   expect(cardTag.className).toContain("text-xs");

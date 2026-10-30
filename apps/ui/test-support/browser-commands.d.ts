@@ -7,3 +7,9 @@ declare module "vitest/browser" {
     setFontsOffline: (offline: boolean) => Promise<void>;
   }
 }
+
+declare module "vitest" {
+  interface ProvidedContext {
+    uiQualityTouch: boolean;
+  }
+}

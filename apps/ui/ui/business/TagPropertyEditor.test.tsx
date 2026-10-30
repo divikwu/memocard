@@ -46,7 +46,7 @@ it('uses arrow keys and Enter to choose a matching option instead of creating th
   const {user,input,onSave} = await setup();
   await user.type(input,'项目');
   await user.keyboard('{ArrowDown}{Enter}');
-  await waitFor(()=>expect(onSave).toHaveBeenCalledWith(['项目/开发']));
+  await waitFor(()=>expect(onSave).toHaveBeenCalledWith(['项目/设计']));
   expect(onSave).toHaveBeenCalledTimes(1);
 });
 it('creates a new tag with Enter and keeps it available after removal without clearing the search',async () => {

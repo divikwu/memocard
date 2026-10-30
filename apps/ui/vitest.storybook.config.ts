@@ -15,6 +15,7 @@ const mobile = { width: 390, height: 844 };
 const qualityBrowsers = process.env.CI || process.env.STORYBOOK_FIREFOX === "1"
   ? ["chromium", "firefox", "webkit"] as const
   : ["chromium", "webkit"] as const;
+const qualityOptimizeDeps = { include: ["storybook/test", "@hugeicons/core-free-icons/ArrowUpRight01Icon", "@hugeicons/core-free-icons/HashIcon", "@hugeicons/core-free-icons/ImageAdd01Icon", "@hugeicons/core-free-icons/TelegramIcon", "@hugeicons/core-free-icons/ArrowLeft02Icon", "@hugeicons/core-free-icons/Edit02Icon", "@hugeicons/core-free-icons/PinOffIcon", "@hugeicons/core-free-icons/RefreshIcon", "page-mascot", "@tiptap/pm/history", "@tiptap/pm/model", "@tiptap/pm/state", "@tiptap/pm/transform", "@tiptap/pm/view", "@tiptap/react"] };
 
 const setReducedMotion: BrowserCommand<["reduce" | "no-preference"], void> = async ({ page }, reducedMotion) => {
   await page.emulateMedia({ reducedMotion });
@@ -31,6 +32,7 @@ export default mergeConfig(viteConfig, defineConfig({
   root: uiRoot,
   test: {
     fileParallelism: false,
+    reporters: process.env.CI ? ["verbose"] : ["default"],
     projects: [
       {
         extends: true,
@@ -54,11 +56,22 @@ export default mergeConfig(viteConfig, defineConfig({
       },
       {
         extends: true,
-        optimizeDeps: { include: ["@hugeicons/core-free-icons/ArrowUpRight01Icon", "@hugeicons/core-free-icons/HashIcon", "@hugeicons/core-free-icons/ImageAdd01Icon", "@hugeicons/core-free-icons/TelegramIcon", "@hugeicons/core-free-icons/ArrowLeft02Icon", "@hugeicons/core-free-icons/Edit02Icon", "@hugeicons/core-free-icons/PinOffIcon", "@hugeicons/core-free-icons/RefreshIcon", "page-mascot", "@tiptap/pm/history", "@tiptap/pm/model", "@tiptap/pm/state", "@tiptap/pm/transform", "@tiptap/pm/view", "@tiptap/react"] },
+        optimizeDeps: qualityOptimizeDeps,
         test: {
           name: "ui-quality",
           include: ["test-support/ui-quality.browser.tsx", "test-support/note-typography.browser.tsx"],
+          provide: { uiQualityTouch: false },
           browser: { enabled: true, provider: playwright(), commands: { setReducedMotion, setForcedColors, setFontsOffline }, headless: true, instances: qualityBrowsers.map(browser => ({ browser })), viewport: desktop, screenshotDirectory },
+        },
+      },
+      {
+        extends: true,
+        optimizeDeps: qualityOptimizeDeps,
+        test: {
+          name: "ui-quality-touch",
+          include: ["test-support/ui-quality.browser.tsx"],
+          provide: { uiQualityTouch: true },
+          browser: { enabled: true, provider: playwright({ contextOptions: { hasTouch: true } }), commands: { setReducedMotion, setForcedColors, setFontsOffline }, headless: true, instances: [{ browser: "chromium" }], viewport: mobile, screenshotDirectory },
         },
       },
     ],

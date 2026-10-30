@@ -18,6 +18,7 @@ import { useRichTagSuggestions } from "../../src/hooks/use-rich-tag-suggestions"
 import { hasCapture } from "../../src/quick-capture-draft";
 import { assetUrl } from "../../src/urls";
 import { Button } from "../components/button";
+import { ActionGroup, useMobileActionGroup } from "../components/action-group";
 import { Input } from "../components/input";
 import { InputGroup, InputGroupAddon, InputGroupButton } from "../components/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/popover";
@@ -31,6 +32,7 @@ const icons = { add: Add01Icon, send: TelegramIcon, continue: ArrowUpRight01Icon
 function Icon({ name, className }: { name: keyof typeof icons; className?: string }) { return <HugeiconsIcon icon={icons[name]} aria-hidden="true" strokeWidth={2} className={className || "size-4 shrink-0"} />; }
 
 export function QuickCapture(props: QuickCaptureProps) {
+  const mobileActions = useMobileActionGroup();
   const { tags: options, canImage, onContinue, draftCount = 0, onOpenDrafts, docked = false, active = true } = props;
   const { expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
   if (isIOSNative) return null;
@@ -61,8 +63,9 @@ export function QuickCapture(props: QuickCaptureProps) {
     {isMobile && <div className="ui-capture-save-status" role="status" aria-live="polite" aria-atomic="true">{draftError ? <><span className="text-error">{recordedLocally ? "记录已保存，临时草稿未清除。" : draftError}</span><Button type="button" variant="ghost" size="sm" disabled={blocked} onClick={retryProtection}>{restoreFailed ? "重试恢复草稿" : recordedLocally ? "重试清理草稿" : "重试草稿保护"}</Button></> : recordedLocally ? "已保存到本机" : null}</div>}
   </form>;
   if (!docked) return form;
+  const entry = <SheetTrigger render={<Button type="button" variant={mobileActions ? "ghost" : "outline"} className="ui-capture-entry mobile-capture-entry" disabled={blocked} aria-label="打开快速记录" />}><Icon name="add" /><span className="min-w-0 truncate">{capture.text.trim() || (hasCapture(capture) ? "继续未完成的记录…" : "记下此刻的想法…")}</span></SheetTrigger>;
   return <Sheet open={expanded && active} onOpenChange={(open, details) => { if (working.current) details.cancel(); else { if (open) continuing.current = false; setExpanded(open); } }}>
-    <SheetTrigger render={<Button type="button" variant="outline" className="ui-capture-entry mobile-capture-entry" disabled={blocked} aria-label="打开快速记录" />}><Icon name="add" /><span className="min-w-0 truncate">{capture.text.trim() || (hasCapture(capture) ? "继续未完成的记录…" : "记下此刻的想法…")}</span></SheetTrigger>
+    {mobileActions ? <ActionGroup size="lg" className="ui-capture-entry-group w-full">{entry}</ActionGroup> : entry}
     <SheetContent side="bottom" className="ui-capture-sheet" style={sheetViewport ?? undefined} initialFocus={textarea} finalFocus={() => continuing.current ? false : true} showCloseButton={false} swipeToClose swipeDisabled={busy}>
       <SheetHeader className="flex-row items-center justify-between p-0"><div><SheetTitle>快速记录</SheetTitle><SheetDescription className="sr-only">记录文字、标签或图片；草稿在本机保护。</SheetDescription></div><SheetCloseButton disabled={busy} aria-label="收起快速记录" /></SheetHeader>
       {form}

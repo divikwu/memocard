@@ -219,7 +219,7 @@
         },
         {
           "source": "apps/ui/ui/business/NoteMarkdown.tsx",
-          "scope": "line 77",
+          "scope": "line 84",
           "value": "var(--font-family-body)"
         },
         {
@@ -1045,12 +1045,7 @@
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → :is(.note-property-popup, .note-property-inline, .note-property-option-menu, .mobile-tag-menu, .name-editor-popup) :is(input, textarea, select),\n  .note-tag-search",
-          "value": "var(--font-size-base)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .note-properties .note-property-edit:not([aria-haspopup])",
+          "scope": "@media (max-width: 767px) → :is(.note-property-popup, .note-property-option-menu, .mobile-tag-menu, .name-editor-popup) :is(input, textarea, select),\n  .note-tag-search",
           "value": "var(--font-size-base)"
         },
         {
@@ -2909,6 +2904,16 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-properties",
+          "value": "1.5"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-property-inline textarea",
+          "value": "1.5"
+        },
+        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "1.5"
@@ -3079,17 +3084,12 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".note-property-inline textarea",
+          "scope": ".note-properties :is(.note-property-edit, .note-property-value):is(.note-property-tags, :has(> .note-property-tags))",
           "value": "calc(var(--spacing-1) * 5)"
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-tag-search",
-          "value": "calc(var(--spacing-1) * 5)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .note-properties .note-property-edit:not([aria-haspopup])",
           "value": "calc(var(--spacing-1) * 5)"
         }
       ]
@@ -3099,6 +3099,11 @@
       "value": "inherit",
       "utilities": [],
       "locations": [
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-properties .note-property-edit",
+          "value": "inherit"
+        },
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-inline textarea",
@@ -3232,22 +3237,17 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".note-properties",
-          "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-action",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".note-properties .note-property-edit",
+          "scope": ".note-property-create",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".note-property-create",
+          "scope": ".note-property-label",
           "value": "var(--text-body-leading)"
         },
         {

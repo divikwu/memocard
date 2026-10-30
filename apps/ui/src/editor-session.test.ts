@@ -1,6 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { EditorSession } from './editor-session';
 import type { Draft } from './bridge';
+import type { PropertyChange } from '@memocard/contracts';
 const initial: Draft = { id: 'a', body: '', tags: [], baseHash: null, relativePath: 'notes/a.md' };
 const note = { id: 'a', contentHash: 'new-hash' };
 afterEach(() => vi.useRealTimers());
@@ -153,14 +154,52 @@ it('does not rewrite an untouched existing note, but saves an explicitly cleared
   expect(transport).toHaveBeenCalledWith('saveNote', expect.objectContaining({ body: '', baseHash: 'original' }));
   session.dispose();
 });
-it('does not create a tag-only new note', async () => {
+it('does not create a new note from inherited tags alone', async () => {
   const { session, transport } = setup({ ...initial, tags: ['标签'] }); session.update(''); await session.flush(); expect(transport).not.toHaveBeenCalled(); session.dispose();
+});
+it.each(['', ' \t\n'])('does not create a blank note for an empty tag value (%j)', async blank => {
+  const transport = vi.fn(async (operation:string, params?:Record<string,unknown>) => operation === 'saveDraft' ? params : note);
+  const session = new EditorSession({...initial,title:blank,body:blank},transport as never,true,vi.fn(),vi.fn());
+  await session.changeProperty({name:'tags',type:'list',value:[]});
+  await session.flush(); await session.recover();
+  expect(session.dirty).toBe(false); expect(session.error).toBeNull();
+  expect(transport).not.toHaveBeenCalled();
+  session.dispose();
+});
+it.each([
+  {name:'tags',type:'list',value:['工作']},
+  {name:'摘要',type:'text',value:'属性内容'},
+  {name:'数量',type:'number',value:'0'},
+  {name:'已验证',type:'checkbox',value:false},
+  {name:'新属性',type:'text',value:'',create:true},
+] satisfies PropertyChange[])('retains a new page with an explicit property edit (%j)', async change => {
+  const transport = vi.fn(async (operation:string, params?:Record<string,unknown>) => operation === 'saveDraft' ? params : note);
+  const session = new EditorSession({...initial,title:''},transport as never,true,vi.fn(),vi.fn());
+  await session.changeProperty(structuredClone(change)); await session.flush();
+  expect(transport.mock.calls.filter(([operation]) => operation === 'saveNote')).toHaveLength(1);
+  expect(transport).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'',title:'',baseHash:null}));
+  expect(transport).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining({...change,baseHash:'new-hash'}));
+  expect(transport).toHaveBeenLastCalledWith('saveDraft',expect.objectContaining({pendingProperties:[],body:'',baseHash:null}));
+  expect(session.dirty).toBe(false); session.dispose();
 });
 it('retains inherited tags without saving an untouched new page', async () => {
   const { session, transport } = setup({ ...initial, title: '', tags: ['生活'] });
   expect(session.current.body).toBe(''); expect(session.current.inheritedTags).toEqual(['生活']);
   await session.flush(); await session.recover();
   expect(session.dirty).toBe(false); expect(transport).not.toHaveBeenCalled(); session.dispose();
+});
+it.each([
+  {name:'summary',type:'text',value:'Property only'},
+  {name:'summary',type:'text',value:'',create:true},
+  {name:'tags',type:'list',value:['生活','手工标签']},
+] satisfies PropertyChange[])('preserves inherited tags when an explicit property first creates the page (%j)', async change => {
+  const transport = vi.fn(async (operation:string, params?:Record<string,unknown>) => operation === 'saveDraft' ? params : note);
+  const session = new EditorSession({...initial,title:'',tags:['生活']},transport as never,true,vi.fn(),vi.fn());
+  await session.changeProperty(change); await session.flush();
+  expect(transport).toHaveBeenCalledWith('saveNote',expect.objectContaining({title:'',body:'',tags:[],inheritedTags:['生活']}));
+  expect(transport).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining(change));
+  expect(session.current.inheritedTags).toBeUndefined();
+  expect(session.dirty).toBe(false); session.dispose();
 });
 it.each([{ title: '', body: '实际内容' }, { title: '只有标题', body: '' }])('autosaves actual input with inherited tag properties without changing the body (%j)', async content => {
   vi.useFakeTimers();

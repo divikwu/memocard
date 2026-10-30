@@ -1,6 +1,7 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/licenses/shadcn-preview-02.md.
 import { Slider as SliderPrimitive } from "@base-ui/react/slider"
-import { cnState } from "@ui/lib/utils"
+import { cn, cnState } from "@ui/lib/utils"
+import { useMobileActionGroup } from "./action-group"
 
 function Slider({
   className,
@@ -12,6 +13,7 @@ function Slider({
   "aria-labelledby": ariaLabelledBy,
   ...props
 }: SliderPrimitive.Root.Props) {
+  const mobileActions = useMobileActionGroup()
   const initialValues = value ?? defaultValue
   const _values = Array.isArray(initialValues)
     ? initialValues
@@ -49,7 +51,7 @@ function Slider({
             index={index}
             aria-label={ariaLabel}
             aria-labelledby={ariaLabelledBy}
-            className="block h-4 w-6 shrink-0 rounded-full bg-on-dark shadow-control border border-border transition-[color,box-shadow,background-color] select-none not-dark:bg-clip-padding not-data-disabled:hover:ring-4 not-data-disabled:hover:ring-control-secondary/30 has-[:focus-visible]:focus-ring data-disabled:pointer-events-none data-vertical:h-6 data-vertical:w-4"
+            className={cn("block h-4 w-6 shrink-0 rounded-full bg-on-dark shadow-control border border-border transition-[color,box-shadow,background-color] select-none not-dark:bg-clip-padding not-data-disabled:hover:ring-4 not-data-disabled:hover:ring-control-secondary/30 has-[:focus-visible]:focus-ring data-disabled:pointer-events-none data-vertical:h-6 data-vertical:w-4", mobileActions && "[@media(max-width:767px)]:border-(--color-border-floating)")}
           />
         ))}
       </SliderPrimitive.Control>

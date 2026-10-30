@@ -32,8 +32,11 @@ export class EditorSession {
     this.propertyRecovery = Boolean(initial.pendingProperties?.length);
     this.persisted = initial.baseHash && !initial.updatedAt ? key(this.current) : '';
   }
-  private get bodyDirty() { return key(this.current) !== this.persisted && Boolean(this.current.baseHash || this.current.title?.trim() || this.current.body.trim()); }
-  get dirty() { return this.bodyDirty || Boolean(this.current.pendingProperties?.length); }
+  private hasPropertyInput(draft = this.current) {
+    return draft.pendingProperties?.some(change => !change.remove && (change.create || typeof change.value === 'boolean' || (Array.isArray(change.value) ? change.value.length > 0 : Boolean(change.value?.trim()))));
+  }
+  private get bodyDirty() { return key(this.current) !== this.persisted && Boolean(this.current.baseHash || this.current.title?.trim() || this.current.body.trim() || this.hasPropertyInput()); }
+  get dirty() { return this.bodyDirty || Boolean(this.current.baseHash && this.current.pendingProperties?.length); }
   private emit() { if (!this.disposed) this.notify(); }
   private failed(error: unknown) {
     const indexing = Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'INDEXING');
@@ -74,15 +77,17 @@ export class EditorSession {
   }
   private params(draft: Draft): Record<string, unknown> {
     const { id, title, baseHash, relativePath, vaultBinding, draftKey, recoveredFrom } = draft;
-    const empty = !baseHash && !title?.trim() && !draft.body.trim();
+    const empty = !baseHash && !title?.trim() && !draft.body.trim() && !this.hasPropertyInput(draft);
     const body = empty ? '' : draft.body, tags = empty ? [] : draft.tags;
     const pendingProperties = draft.pendingProperties?.map(change => ({ ...change, id, baseHash: baseHash ?? '' }));
     return { ...(pendingProperties?.length ? { pendingProperties } : {}), id, ...(title === undefined ? {} : { title }), body, tags, ...(!empty && draft.inheritedTags?.length ? { inheritedTags: draft.inheritedTags } : {}), baseHash, relativePath, ...(vaultBinding ? { vaultBinding } : {}), ...(draftKey ? { draftKey } : {}), ...(recoveredFrom ? {recoveredFrom} : {}) };
   }
   changeProperty(change: PropertyChange): Promise<void> {
     this.current = { ...this.current, pendingProperties: [...this.current.pendingProperties ?? [], structuredClone(change)] };
-    this.propertyRecovery = true;
     this.emit();
+    // An empty field alone does not create a new page.
+    if (!this.dirty) return Promise.resolve();
+    this.propertyRecovery = true;
     // Preserve intent before attempting any source write. A failed intent stays at the head.
     void this.recover().catch(error => { this.error = error; this.state = 'error'; this.emit(); });
     return this.enqueue(async () => {

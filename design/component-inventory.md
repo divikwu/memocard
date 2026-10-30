@@ -1,6 +1,6 @@
 # 已使用组件维护表
 
-本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **85 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
+本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **89 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
 
 当前产品和唯一 Storybook 共用当前组件。iOS 的 SwiftUI/UIKit 导航、搜索、快速记录及系统确认通过表面协议保持；正文继续消费同一 Web 输出。共享core仍可直接消费Base UI/Tiptap，不称作无界面依赖的纯算法。
 
@@ -14,6 +14,7 @@
 | `apps/ui/src/ImagePropertyEditor.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/NoteProperties.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/PropertyOptionList.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
+| `apps/ui/src/VirtualTagOptions.tsx` | 共享标签候选虚拟列表 | 可见窗口、动态行高、键盘定位与菜单锚点保留 | editor / property / runtime | `apps/ui/test-support/ui-quality.browser.tsx`；`scripts/benchmark-note-authoring.mjs` | 随标签编辑组合维护；真实设备另验 |
 | `apps/ui/src/PropertyOptionMenu.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/RichMath.tsx` | 保留共享实现；由当前UI消费 | 编辑器共享状态、事务、内容与当前控件注入 | editor / property / runtime | `apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/RichTagSuggestions.tsx` | 保留共享实现；由当前UI消费 | 编辑器共享状态、事务、内容与当前控件注入 | editor / property / runtime | `apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
@@ -42,7 +43,7 @@
 | `apps/ui/ui/business/NoteDeleteDialog.tsx` | 当前删除确认与原生投影 | 版本保护、取消、busy与成功/失败 | destructive / overlay | `apps/ui/ui/business/TrashPage.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 真实写入与系统确认组合另验 |
 | `apps/ui/ui/business/NoteMarkdown.tsx` | 当前正文/附件/图表渲染 | 共享清洗管线、本库链接、图片、表格、数学和Mermaid | typeset / content / overlay | `apps/ui/ui/business/note-content.test.tsx`；`apps/ui/ui/business/NoteImage.test.tsx`；`apps/ui/ui/business/MermaidRendering.test.tsx` | 真实文件路径、超大图和全部图表语法另验 |
 | `apps/ui/ui/business/NotePreview.tsx` | 当前笔记摘要 | 安全正文预览、标签独立选择、溢出省略 | editor / preview / type | `apps/ui/ui/business/NoteCollection.recipe.test.tsx`；`apps/ui/ui/stories/business-note-preview.stories.tsx` | 长文、辅助技术与全部嵌套内容未全覆盖 |
-| `apps/ui/ui/business/NoteProperties.tsx` | 当前属性适配 | 字段、类型转换、命名、只读、日期/图片/标签与错误 | property / state / destructive | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 全部类型转换、时区和系统picker矩阵另验 |
+| `apps/ui/ui/business/NoteProperties.tsx` | 当前属性适配 | 字段、排序、可见性、类型转换、命名、只读、日期/图片/标签与错误 | property / state / destructive | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 全部类型转换、时区和系统picker矩阵另验 |
 | `apps/ui/ui/business/NoteSearchDialog.tsx` | 当前搜索视图与原生投影 | 共享查询会话；分页、预览、键盘选择与返回位置 | search / type / overlay | `apps/ui/ui/business/note-search.test.tsx`；`apps/ui/ui/stories/business-note-search.stories.tsx` | 真实服务断线、辅助技术与大库性能另验 |
 | `apps/ui/ui/business/PageNotice.tsx` | 当前业务通知组合 | 错误/状态说明、重试与可访问语义 | state / color / type | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/business/TrashPage.test.tsx` | 随页面组合维护，无独立Story |
 | `apps/ui/ui/business/QuickCapture.tsx` | 当前快速记录视图 | 共享草稿/保存；文字、标签、附件、继续页面和H5抽屉 | capture / input / overlay | `apps/ui/ui/business/QuickCapture.test.tsx`；`apps/ui/ui/stories/business-quick-capture.stories.tsx` | 系统图片选择、软键盘与真机手势另验 |
@@ -63,6 +64,7 @@
 | `apps/ui/ui/business/tag-navigation.tsx` | 当前标签导航内部组件 | 选择/展开、Emoji编辑、置顶和导航动作 | sidebar / tag / state | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 内部组件随侧栏组合维护；大树/真实触摸另验 |
 | `apps/ui/ui/components/badge.tsx` | 当前Base UI/HTML控件适配 | badge；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-badge.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/breadcrumb.tsx` | 当前Base UI/HTML控件适配 | breadcrumb；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-breadcrumb.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
+| `apps/ui/ui/components/action-group.tsx` | Web 移动端单个与组合操作容器 | 40px/48px 外框、2px 内边距、共享阴影与交互上下文 | theme / size / focus / state | `apps/ui/ui/stories/action-group.stories.tsx`；`apps/ui/ui/web/WebActionGroups.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | PC 与 APP 沿用原控件；实体触屏与辅助技术另验 |
 | `apps/ui/ui/components/button.tsx` | 当前Base UI/HTML控件适配 | button；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-button.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/calendar.tsx` | 当前Base UI/HTML控件适配 | calendar；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-calendar.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/card.tsx` | 当前Base UI/HTML控件适配 | card；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-card.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |

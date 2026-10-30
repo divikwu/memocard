@@ -7,6 +7,7 @@ import { cn, cnState } from "../lib/utils"
 import { recoverableLazy } from "./recoverable-lazy"
 
 import { Button } from "./button"
+import { ActionGroup, useMobileActionGroup } from "./action-group"
 import { HugeiconsIcon } from "@hugeicons/react"
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
 import "./sheet.css"
@@ -24,10 +25,12 @@ function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
-function SheetCloseButton({ className, render = <Button type="button" variant="secondary" size="icon-sm" />, children, ...props }: SheetPrimitive.Close.Props) {
-  return <SheetClose aria-label="关闭" {...props} className={cnState(className, "ui-sheet-close-button relative shrink-0")} render={render}>
+function SheetCloseButton({ className, render, children, ...props }: SheetPrimitive.Close.Props) {
+  const grouped = useMobileActionGroup()
+  const button = <SheetClose aria-label="关闭" {...props} data-action-group={grouped || undefined} className={cnState(className, "ui-sheet-close-button relative shrink-0")} render={render ?? <Button type="button" variant={grouped ? "ghost" : "secondary"} size={grouped ? "icon" : "icon-sm"} />}>
     {children ?? <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />}
   </SheetClose>
+  return grouped ? <ActionGroup>{button}</ActionGroup> : button
 }
 
 function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
@@ -61,6 +64,7 @@ function SheetPopup({
   swipeToClose?: boolean
   swipeDisabled?: boolean
 }) {
+  const grouped = useMobileActionGroup()
   return (
       <SheetPrimitive.Popup
         data-slot="sheet-content"
@@ -68,6 +72,7 @@ function SheetPopup({
         className={cnState(
           className,
           swipeToClose && side === "bottom" && "ui-sheet-swipe",
+          grouped && showCloseButton && "[&>[data-slot=sheet-header]]:pr-16",
           "fixed z-50 flex flex-col bg-popover bg-clip-padding text-sm text-primary surface-floating shadow-high transition duration-medium-min ease-standard data-ending-style:opacity-0 data-starting-style:opacity-0 data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:h-auto data-[side=bottom]:border-t data-[side=bottom]:data-ending-style:translate-y-[2.5rem] data-[side=bottom]:data-starting-style:translate-y-[2.5rem] data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:h-full data-[side=left]:w-3/4 data-[side=left]:border-r data-[side=left]:data-ending-style:translate-x-[-2.5rem] data-[side=left]:data-starting-style:translate-x-[-2.5rem] data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:h-full data-[side=right]:w-3/4 data-[side=right]:border-l data-[side=right]:data-ending-style:translate-x-[2.5rem] data-[side=right]:data-starting-style:translate-x-[2.5rem] data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:h-auto data-[side=top]:border-b data-[side=top]:data-ending-style:translate-y-[-2.5rem] data-[side=top]:data-starting-style:translate-y-[-2.5rem] data-[side=left]:sm:max-w-sm data-[side=right]:sm:max-w-sm"
         )}
         {...props}
@@ -75,7 +80,7 @@ function SheetPopup({
         {children}
         {swipeToClose && side === "bottom" && <React.Suspense fallback={null}><SheetSwipe disabled={swipeDisabled} /></React.Suspense>}
         {showCloseButton && (
-          <SheetCloseButton className="absolute top-4 right-4" />
+          grouped ? <div className="absolute top-4 right-4"><SheetCloseButton /></div> : <SheetCloseButton className="absolute top-4 right-4" />
         )}
       </SheetPrimitive.Popup>
   )

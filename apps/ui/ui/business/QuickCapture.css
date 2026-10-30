@@ -32,6 +32,7 @@
 .ui-capture-sheet .ui-capture-editor-content { min-height: 10rem; max-height: min(20rem, 40dvh); font-size: var(--font-size-base); }
 .ui-capture-continue { min-height: var(--size-element-lg); width: 100%; margin-top: calc(var(--spacing-1) * 2); }
 @media (max-width: 767px) {
+  .ui-capture-entry-group > .ui-capture-entry { width: 100%; min-height: calc(var(--spacing-1) * 11); padding-block: 0; padding-inline: calc(var(--spacing-1) * 3.5); }
   .ui-capture-sheet .ui-capture-group { border-color: var(--color-border-subtle); box-shadow: none; }
   .ui-capture-sheet .ui-capture-continue { border-color: var(--color-border-subtle); }
   .ui-capture-sheet .ui-capture-tool { width: calc(var(--size-element-lg) + var(--spacing-1)); padding-inline: 0; }

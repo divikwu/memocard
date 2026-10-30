@@ -13084,6 +13084,24 @@
       ]
     },
     {
+      "id": "interaction.mobile-actions",
+      "category": "effects",
+      "layer": "component",
+      "type": "policy",
+      "status": "component-owned",
+      "axes": [
+        "state"
+      ],
+      "description": "Web mobile action hover, press and disabled feedback; selection, expanded state and keyboard focus remain owned by their controls.",
+      "sources": [
+        "apps/ui/ui/components/action-group.css"
+      ],
+      "consumers": [
+        "apps/ui/ui/components/action-group.tsx",
+        "apps/ui/ui/business/QuickCapture.tsx"
+      ]
+    },
+    {
       "id": "interaction.input-focus",
       "category": "effects",
       "layer": "component",

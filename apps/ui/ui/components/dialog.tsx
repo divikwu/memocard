@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn, cnState } from "../lib/utils"
 
 import { Button } from "./button"
+import { ActionGroup, useMobileActionGroup } from "./action-group"
 import { HugeiconsIcon } from "@hugeicons/react"
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
 
@@ -51,6 +52,14 @@ function DialogContent({
   showCloseButton?: boolean
   "data-ui-theme"?: "light" | "dark"
 }) {
+  const grouped = useMobileActionGroup()
+  const closeButton = <DialogPrimitive.Close
+    data-slot="dialog-close"
+    render={<Button variant={grouped ? "ghost" : "secondary"} className={grouped ? undefined : "absolute top-4 right-4"} size={grouped ? "icon" : "icon-sm"} />}
+  >
+    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
+    <span className="sr-only">关闭</span>
+  </DialogPrimitive.Close>
   return (
     <DialogPortal>
       <DialogOverlay className={theme ? "ui-theme" : undefined} data-ui-theme={theme} />
@@ -60,25 +69,13 @@ function DialogContent({
         className={cnState(
           className,
           "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full overflow-y-auto overscroll-contain break-words max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl bg-popover p-6 text-sm text-primary surface-floating shadow-high border duration-fast-min ease-standard outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          showCloseButton && "[&>[data-slot=dialog-header]]:pr-6"
+          showCloseButton && (grouped ? "[&>[data-slot=dialog-header]]:pr-10" : "[&>[data-slot=dialog-header]]:pr-6")
         )}
         {...props}
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            render={
-              <Button
-                variant="secondary"
-                className="absolute top-4 right-4"
-                size="icon-sm"
-              />
-            }
-          >
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} aria-hidden="true" />
-            <span className="sr-only">关闭</span>
-          </DialogPrimitive.Close>
+          grouped ? <ActionGroup className="absolute top-4 right-4">{closeButton}</ActionGroup> : closeButton
         )}
       </DialogPrimitive.Popup>
     </DialogPortal>

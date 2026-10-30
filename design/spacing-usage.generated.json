@@ -60,8 +60,16 @@
       "value": "calc(var(--spacing) * 8.5)"
     },
     {
+      "step": "10",
+      "value": "calc(var(--spacing) * 10)"
+    },
+    {
       "step": "12",
       "value": "calc(var(--spacing) * 12)"
+    },
+    {
+      "step": "16",
+      "value": "calc(var(--spacing) * 16)"
     }
   ],
   "usage": [
@@ -122,11 +130,27 @@
       ]
     },
     {
+      "utility": "[&>[data-slot=dialog-header]]:pr-10",
+      "step": "10",
+      "value": "10",
+      "consumers": [
+        "apps/ui/ui/components/dialog.tsx"
+      ]
+    },
+    {
       "utility": "[&>[data-slot=dialog-header]]:pr-6",
       "step": "6",
       "value": "6",
       "consumers": [
         "apps/ui/ui/components/dialog.tsx"
+      ]
+    },
+    {
+      "utility": "[&>[data-slot=sheet-header]]:pr-16",
+      "step": "16",
+      "value": "16",
+      "consumers": [
+        "apps/ui/ui/components/sheet.tsx"
       ]
     },
     {
@@ -175,6 +199,7 @@
       "value": "0",
       "consumers": [
         "apps/ui/ui/business/NoteSearchDialog.tsx",
+        "apps/ui/ui/components/action-group.tsx",
         "apps/ui/ui/web/WebSettings.tsx",
         "apps/ui/ui/web/WebTypographySettings.tsx"
       ]
@@ -224,6 +249,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/NoteCollection.tsx",
@@ -690,7 +716,6 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/QuickCapture.tsx",
@@ -706,6 +731,7 @@
       "step": "0.5",
       "value": "0.5",
       "consumers": [
+        "apps/ui/ui/components/action-group.tsx",
         "apps/ui/ui/components/tabs.tsx"
       ]
     },
@@ -1019,7 +1045,6 @@
       "step": "1",
       "value": "1",
       "consumers": [
-        "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/ui/components/input.tsx",
         "apps/ui/ui/components/select.tsx",
@@ -1099,6 +1124,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx"

@@ -6,6 +6,7 @@ import { isBrowserVault } from "../../src/client-mode";
 import { useNoteImage } from "../../src/use-note-image";
 import { mermaidSVG } from "../../src/mermaid-svg";
 import { Button } from "../components/button";
+import { ActionGroup, useMobileActionGroup } from "../components/action-group";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "../components/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -16,6 +17,12 @@ import { CloseIcon } from "../icons";
 import "./note-content.css";
 
 export type VaultImageProps = { source: string; alt: string; width?: string | number; height?: string | number; loading?: "lazy"; interactive?: boolean; onDragStart?: DragEventHandler<HTMLImageElement> };
+
+function ViewerClose({ label }: { label: string }) {
+  const grouped = useMobileActionGroup();
+  const close = <DialogClose render={<Button variant={grouped ? "ghost" : "outline"} size={grouped ? "icon" : "icon-lg"} className={grouped ? undefined : "note-viewer-close"} aria-label={label} />}><CloseIcon aria-hidden="true" /></DialogClose>;
+  return grouped ? <ActionGroup className="note-viewer-close" aria-label="查看器操作">{close}</ActionGroup> : close;
+}
 
 export function VaultImage({ source, alt, width, height, loading, interactive = true, onDragStart }: VaultImageProps) {
   const { ref: image, state, dimensions, onLoaded, onFailed, retry } = useNoteImage(source, loading === 'lazy');
@@ -47,7 +54,7 @@ export function ImageViewer({ source, alt, onClose }: { source: string; alt: str
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}>
     <DialogContent className="ui-note-viewer" aria-describedby={undefined} showCloseButton={false} onClick={event => { if (event.target === event.currentTarget) onClose(); }}>
       <DialogTitle className="sr-only">{alt}</DialogTitle>
-      <DialogClose render={<Button variant="outline" size="icon-lg" className="note-viewer-close" aria-label="关闭图片" />}><CloseIcon aria-hidden="true" /></DialogClose>
+      <ViewerClose label="关闭图片" />
       {current?.url ? <img className="note-viewer-image" src={current.url} alt={alt} /> : <p role={current?.failed ? "alert" : "status"}>{current?.failed ? "图片暂时无法读取，请检查文件是否可用。" : "正在读取图片…"}</p>}
     </DialogContent>
   </Dialog>;
@@ -89,7 +96,7 @@ function MermaidDiagram({ source }: { source: string }) {
     {open && current?.svg && <Dialog open onOpenChange={value => { if (!value) setOpen(false); }}>
       <DialogContent className="ui-note-viewer" aria-describedby={undefined} showCloseButton={false} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
         <DialogTitle className="sr-only">Mermaid 图表</DialogTitle>
-        <DialogClose render={<Button variant="outline" size="icon-lg" className="note-viewer-close" aria-label="关闭图表" />}><CloseIcon aria-hidden="true" /></DialogClose>
+        <ViewerClose label="关闭图表" />
         <div className="note-diagram-enlarged" role="region" aria-label="Mermaid 大图，可滚动" tabIndex={0}><Diagram svg={current.svg} enlarged /></div>
       </DialogContent>
     </Dialog>}
@@ -104,11 +111,13 @@ const mermaidModes = [
 
 export function MermaidContent({ source, children }: { source: string; children: React.ReactNode }) {
   const [mode, setMode] = useState("both");
+  const grouped = useMobileActionGroup();
+  const modes = <TabsList contentEditable={false} aria-label="Mermaid 显示模式" activateOnFocus>
+    {mermaidModes.map(({ value, label, icon }) => <TabsTrigger key={value} value={value} aria-label={label} title={label}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></TabsTrigger>)}
+  </TabsList>;
   return <Tabs className="ui-note-mermaid" value={mode} onValueChange={setMode}>
     <div className="note-mermaid-toolbar" contentEditable={false}>
-      <TabsList contentEditable={false} aria-label="Mermaid 显示模式" activateOnFocus>
-        {mermaidModes.map(({ value, label, icon }) => <TabsTrigger key={value} value={value} aria-label={label} title={label}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></TabsTrigger>)}
-      </TabsList>
+      {grouped ? <ActionGroup aria-label="Mermaid 操作">{modes}</ActionGroup> : modes}
     </div>
     <TabsContent value={mode} keepMounted>
       <div className="note-mermaid-source" hidden={mode === "preview"}>{children}</div>

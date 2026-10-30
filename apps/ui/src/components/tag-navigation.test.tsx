@@ -189,3 +189,16 @@ it("keeps pin menu actions correct with a large saved pin list", async () => {
   await user.click(screen.getByRole("button", { name: "标签操作 unpinned" }));
   expect(await screen.findByRole("menuitem", { name: "置顶标签" })).toBeTruthy();
 });
+
+it("uses the latest selection callback when unchanged branches are reused", async () => {
+  const user = userEvent.setup();
+  const previous = vi.fn(), latest = vi.fn();
+  const view = render(<TagNavigation {...props} onSelect={previous} />);
+  const tag = screen.getByRole("button", {name: "工作"});
+  await user.click(tag);
+  expect(previous).toHaveBeenCalledTimes(1);
+  view.rerender(<SidebarProvider><TagNavigation {...props} onSelect={latest} /></SidebarProvider>);
+  await user.click(tag);
+  expect(latest).toHaveBeenCalledWith("工作");
+  expect(previous).toHaveBeenCalledTimes(1);
+});

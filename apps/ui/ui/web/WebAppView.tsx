@@ -4,6 +4,8 @@ import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-l
 import { errorMessage } from "../../src/error-messages";
 import { HomeMascot } from "../business/HomeMascot";
 import { Button } from "../components/button";
+import { ActionGroup, MobileActionGroupProvider } from "../components/action-group";
+import { isNative } from "../../src/bridge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/breadcrumb";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
@@ -95,7 +97,14 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
   const menuDelete = useRef(false);
   const tagParts = s.sidebar.tag?.split("/") ?? [];
   const detailBreadcrumbs = s.view === "home" ? ["主页"] : ["所有笔记", ...tagParts, ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : [])];
-  return <div className="ui-theme web-app sb-unstyled" data-ui-theme={mode} data-native-chrome={s.nativeChrome ? "true" : undefined}>
+  const mobileActions = s.isMobile && !s.nativeChrome && !isNative;
+  const HeaderActions = mobileActions ? ActionGroup : "div";
+  const navigationControls = <>
+    {(s.isMobile ? !s.detailView : !s.sidebarOpen) && <SidebarTrigger className="web-header-icon" />}
+    {s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
+  </>;
+  const searchControl = <Button variant={mobileActions ? "ghost" : "outline"} size="icon-lg" disabled={!s.search.available} onClick={s.onSearch} aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={s.search.open}><SearchIcon aria-hidden="true" /></Button>;
+  return <MobileActionGroupProvider enabled={mobileActions}><div className="ui-theme web-app sb-unstyled" data-ui-theme={mode} data-web-client={!s.nativeChrome && !isNative || undefined} data-native-chrome={s.nativeChrome ? "true" : undefined}>
     <TagColorStyles />
     {s.nativeChrome && <Suspense fallback={null}><IOSAppChrome {...s.nativeChrome} /></Suspense>}
     <a className="web-skip-link" href="#web-main-content" onClick={event => { event.preventDefault(); s.scrollContainer.current?.focus(); }}>跳到笔记内容</a>
@@ -104,12 +113,11 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
       <SidebarInset className="web-app-main">
         {!s.nativeChrome && <header className="web-app-header">
           <div className="web-header-leading">
-            {(s.isMobile ? !s.detailView : !s.sidebarOpen) && <SidebarTrigger className="web-header-icon" />}
-            {s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
+            {mobileActions ? <ActionGroup aria-label="页面导航" className="web-header-navigation">{navigationControls}</ActionGroup> : navigationControls}
             {!s.isMobile && !s.sidebarOpen && <Separator orientation="vertical" className="web-header-separator" />}
             <Breadcrumb aria-label="当前位置" className="web-crumb" data-detail={s.detailView || undefined}><BreadcrumbList>{s.detailView ? detailBreadcrumbs.map((label, index) => <BreadcrumbItem key={index}>{index > 0 && <span aria-hidden="true">/</span>}<BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? tagParts.slice(0, index).join("/") : null)}>{label}</BreadcrumbLink></BreadcrumbItem>) : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>
           </div>
-          <div className="web-header-actions">
+          <HeaderActions aria-label={mobileActions ? "页面操作组" : undefined} className="web-header-actions">
             {s.editor && s.capabilities.has("setNotePinned") && <TooltipProvider><Tooltip><TooltipTrigger render={<span className="web-pin-tooltip-trigger" tabIndex={s.pinDisabled ? 0 : undefined} />}><Button variant="ghost" size="icon" className={`web-header-icon${s.pinned ? " text-accent" : ""}`} aria-label={s.pinned ? "取消固定" : "固定到主页"} aria-description={!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : undefined} aria-pressed={s.pinned} disabled={s.pinDisabled} onClick={s.onTogglePin}><HugeiconsIcon icon={PinIcon} fill={s.pinned ? "currentColor" : "none"} aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>{!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : s.pinned ? "取消固定" : "固定到主页"}</TooltipContent></Tooltip></TooltipProvider>}
             <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="web-header-icon" aria-label="页面操作" />}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56" finalFocus={() => { if (menuDelete.current) { menuDelete.current = false; s.onRequestDelete?.(); return false; } return true; }}>
               <DropdownMenuItem disabled={!s.canCreate} onClick={() => void s.onNew()}><AddIcon aria-hidden="true" />新建笔记</DropdownMenuItem><DropdownMenuItem disabled={!s.canRefresh} onClick={s.onRefresh}><HugeiconsIcon icon={RefreshIcon} className={s.loading ? "animate-spin motion-reduce:animate-none" : undefined} aria-hidden="true" />刷新笔记库</DropdownMenuItem>
@@ -117,7 +125,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
               {s.drafts.records.length > 0 && <DropdownMenuItem onClick={() => s.drafts.onOpenChange(true)}>保留草稿（{s.drafts.records.length}）</DropdownMenuItem>}
               <DropdownMenuSeparator /><DropdownMenuItem onClick={() => void s.onNavigate("settings")}><SettingsIcon aria-hidden="true" />设置</DropdownMenuItem>
             </DropdownMenuContent></DropdownMenu>
-          </div>
+          </HeaderActions>
         </header>}
         <div ref={s.scrollContainer} id="web-main-content" tabIndex={-1} className={`web-app-scroll${s.detailView ? " note-page-scroll" : ""}`} data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined}><div className="web-page-content" data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined} data-view={s.view}>
           {s.switchingVault && <Notice title="正在打开笔记库"><Spinner aria-hidden="true" className="mr-2 inline" />首次读取可能需要一些时间。</Notice>}
@@ -133,7 +141,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           {!s.detailView && s.view !== "settings" && s.view !== "trash" && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}><h1>{s.title}</h1></div>)}
           <WorkspaceContent state={s} />
         </div></div>
-        {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录"><Button variant="outline" size="icon-lg" disabled={!s.search.available} onClick={s.onSearch} aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={s.search.open}><SearchIcon aria-hidden="true" /></Button><div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
+        {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录">{mobileActions ? <ActionGroup size="lg">{searchControl}</ActionGroup> : searchControl}<div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
       </SidebarInset>
     </SidebarProvider>
     {s.searchMounted && <Suspense fallback={null}><NoteSearchDialog key={s.status?.vaultId} {...s.search} /></Suspense>}
@@ -141,7 +149,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
     {!s.nativeChrome && <Drafts state={s} />}
     {s.nativeChrome && s.capture && <Suspense fallback={null}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
     {s.notice && <div className="web-toast" data-record-bar={s.isMobile && !s.detailView && (s.view === "home" || s.view === "notes") || undefined} role="status"><CheckIcon aria-hidden="true" />{s.notice}</div>}
-  </div>;
+  </div></MobileActionGroupProvider>;
 }
 
 function Drafts({ state: s }: { state: AppViewState }) {
