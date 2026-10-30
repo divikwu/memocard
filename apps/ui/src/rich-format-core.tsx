@@ -26,6 +26,7 @@ export type RichFormatUI = {
   DialogContent: ComponentType<ComponentProps<typeof import('@ui/components/dialog').DialogContent>>;
   DialogTitle: ComponentType<ComponentProps<typeof import('@ui/components/dialog').DialogTitle>>;
   MobileDialogHeader?: ComponentType<{ title: string; onClose: () => void }>;
+  Toolbar?: ComponentType<ComponentProps<'div'>> | 'div';
   Input: ComponentType<ComponentProps<typeof import('@ui/components/input').Input>>;
   Button: ComponentType<Omit<ComponentProps<typeof import('@ui/components/button').Button>, 'render'>>;
   Select: typeof import('@ui/components/select').Select;
@@ -34,7 +35,7 @@ export type RichFormatUI = {
   SelectTrigger: ComponentType<ComponentProps<typeof import('@ui/components/select').SelectTrigger>>;
   SelectValue: ComponentType<ComponentProps<typeof import('@ui/components/select').SelectValue>>;
 };
-export function createRichFormatTools({ uiClassName = '', icons, Dialog, DialogContent, DialogTitle, MobileDialogHeader, Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue }: RichFormatUI) {
+export function createRichFormatTools({ uiClassName = '', icons, Dialog, DialogContent, DialogTitle, MobileDialogHeader, Toolbar = 'div', Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue }: RichFormatUI) {
 const { Link, Highlighter, MoreHorizontal, Superscript, Subscript, Keyboard, Info, Check, Minus, Code, Strikethrough, Unlink, RemoveFormatting, FileText, X } = icons;
 return function RichFormatTools({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
@@ -157,7 +158,7 @@ return function RichFormatTools({ editor }: { editor: Editor }) {
     <div className="rich-property-actions">{properties.kind === 'link' && state.link && <Button variant="ghost" className="rich-property-remove" onClick={removeLink}>移除链接</Button>}{properties.kind === 'abbr' && markState(editor, 'abbr') && <Button variant="ghost" className="rich-property-remove" onClick={() => { restore(); editRichStructure(editor, () => { editor.commands.unsetMark('abbr'); }); close(); }}>移除说明</Button>}<Button variant="ghost" onClick={close}>取消</Button><Button onClick={apply}>保存</Button></div>
   </div>;
   return <>
-    <div ref={toolbar} className={`rich-inline-tools ${uiClassName}`} style={{ top: position.top, left: position.left, visibility: position.visible ? 'visible' : 'hidden' }} role="toolbar" aria-label="文字格式" onKeyDown={event => { if (event.key === 'Escape' && !open && !properties) { event.preventDefault(); setPosition(current => ({ ...current, visible: false })); editor.view.focus(); }
+    <Toolbar ref={toolbar} className={`rich-inline-tools ${uiClassName}`} style={{ top: position.top, left: position.left, visibility: position.visible ? 'visible' : 'hidden' }} role="toolbar" aria-label="文字格式" onKeyDown={event => { if (event.key === 'Escape' && !open && !properties) { event.preventDefault(); setPosition(current => ({ ...current, visible: false })); editor.view.focus(); }
       if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) { const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button')); const index = buttons.indexOf(document.activeElement as HTMLButtonElement); if (index >= 0) { event.preventDefault(); buttons[event.key === 'Home' ? 0 : event.key === 'End' ? buttons.length - 1 : (index + (event.key === 'ArrowLeft' ? -1 : 1) + buttons.length) % buttons.length].focus(); } } }}>
       {formatButton(0, <strong>B</strong>)}{formatButton(1, <em>I</em>)}{!mobile && <>{formatButton(2, <s>S</s>)}{formatButton(3, <span>&lt;/&gt;</span>)}</>}
       <button ref={linkAnchor} aria-label="链接" title="编辑链接" aria-pressed={state.link} onMouseDown={event => event.preventDefault()} onClick={() => show('link')}><Link aria-hidden="true" /></button>
@@ -165,7 +166,7 @@ return function RichFormatTools({ editor }: { editor: Editor }) {
       <Popover.Root open={!mobile && open} onOpenChange={next => { setOpen(next); if (next) { setProperties(null); setPropertiesOpen(false); bookmark.current = editor.state.selection.getBookmark(); } else if (!properties) { restore(); bookmark.current = null; } }}><Popover.Trigger ref={moreAnchor} aria-label="更多格式" title="更多格式" onClick={mobile ? () => { setProperties(null); setPropertiesOpen(false); bookmark.current = editor.state.selection.getBookmark(); setOpen(true); } : undefined}><MoreHorizontal aria-hidden="true" /></Popover.Trigger>
         <Popover.Portal><Popover.Positioner align="end" sideOffset={8} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup className={`rich-menu rich-format-menu ${uiClassName}`} aria-label="更多格式" finalFocus={properties ? false : () => editor.view.dom}>{more}</Popover.Popup></Popover.Positioner></Popover.Portal>
       </Popover.Root>
-    </div>
+    </Toolbar>
     <Popover.Root open={!mobile && propertiesOpen} onOpenChange={next => { if (!next && propertiesOpen) close(); }} onOpenChangeComplete={finishPropertyClose}><Popover.Portal><Popover.Positioner anchor={properties?.kind === 'abbr' ? moreAnchor : linkAnchor} sideOffset={8} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup className={`rich-properties rich-link-popup ${uiClassName}`} aria-label={propertyTitle} initialFocus={() => propertyInput.current} finalFocus={() => editor.view.dom}>
       <div className="rich-format-header"><Popover.Title>{propertyTitle}</Popover.Title><Popover.Close aria-label="关闭弹窗" render={<Button variant="ghost" size="icon-sm" />}><X aria-hidden="true" /></Popover.Close></div>{fields}
     </Popover.Popup></Popover.Positioner></Popover.Portal></Popover.Root>

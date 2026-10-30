@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import type { BridgeRequest, Note, NotePage, NotePins, TagPreferenceState, VaultStatus, PropertyLabels } from "@memocard/contracts";
+import type { BridgeRequest, Note, NotePage, NotePins, TagPreferenceState, VaultStatus, PropertyLabels, PropertyLayout } from "@memocard/contracts";
 import { BrowserVault } from "./browser-vault";
 import { parseBrowserNote } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserWritable } from "./browser-files";
@@ -329,16 +329,19 @@ it('saves property tags independently, merges filters and counts once, and check
 
 class TestFile implements BrowserFileHandle {
   readonly kind = "file" as const;
-  bytes: Uint8Array;
+  private contents: Uint8Array;
+  lastModified = Date.now();
   readError?: string;
   writeHook?: () => Promise<void> | void;
   closeError = false;
   writable = false;
-  constructor(public name: string, text: string | Uint8Array) { this.bytes = typeof text === "string" ? bytes(text) : text; }
+  constructor(public name: string, text: string | Uint8Array) { this.contents = typeof text === "string" ? bytes(text) : text; }
+  get bytes(): Uint8Array { return this.contents; }
+  set bytes(value: Uint8Array) { this.contents = value; this.lastModified = Date.now(); }
   async isSameEntry(other: BrowserFileHandle | BrowserDirectoryHandle): Promise<boolean> { return this === other; }
   async getFile(): Promise<File> {
     if (this.readError) throw error(this.readError);
-    return new File([this.bytes as Uint8Array<ArrayBuffer>], this.name);
+    return new File([this.bytes as Uint8Array<ArrayBuffer>], this.name, {lastModified:this.lastModified});
   }
   async createWritable(options?: { mode?: "exclusive" }): Promise<BrowserWritable> {
     if (this.writable && options?.mode === "exclusive") throw error("NoModificationAllowedError");
@@ -355,6 +358,23 @@ class TestFile implements BrowserFileHandle {
   }
   get text(): string { return new TextDecoder().decode(this.bytes); }
 }
+
+it('keeps fixture modification times stable across reads and staged or aborted writes', async () => {
+  const clock = vi.spyOn(Date,'now').mockReturnValue(10);
+  try {
+    const file = new TestFile('Stable.md','initial');
+    expect((await file.getFile()).lastModified).toBe(10);
+    clock.mockReturnValue(20);
+    expect((await file.getFile()).lastModified).toBe(10);
+    const aborted = await file.createWritable(); await aborted.write('discard');
+    expect((await file.getFile()).lastModified).toBe(10);
+    await aborted.abort!();
+    expect((await file.getFile()).lastModified).toBe(10);
+    const saved = await file.createWritable(); await saved.write('saved'); await saved.close();
+    expect((await file.getFile()).lastModified).toBe(20);
+    expect(file.text).toBe('saved');
+  } finally { clock.mockRestore(); }
+});
 
 class TestDirectory implements BrowserDirectoryHandle {
   readonly kind = "directory" as const;
@@ -1155,6 +1175,97 @@ it('persists property display names per vault without rewriting any note and det
  config.closeError=false; config.bytes=bytes('{broken');
  await expect(call(h.core,'getPropertyLabels')).rejects.toMatchObject({code:'INVALID_PROPERTY'});
  expect(config.text).toBe('{broken');
+});
+
+it.each([false,true])('persists property order and visibility without rewriting notes or timestamps (shared=%s)', async shared => {
+ const root=shared ? new TestDirectory('Shared') : await fixture();
+ const notes=shared ? root : await root.getDirectoryHandle('notes');
+ if (shared) notes.children.set('Original.md',new TestFile('Original.md','---\nsummary: First\n---\nBody'));
+ const h=harness(root); await call(h.core,'selectVault');
+ const page=await call<NotePage>(h.core,'queryNotes');
+ const before=page.notes.map(note=>({...note}));
+ const files=await Promise.all(page.notes.map(async note => {
+   let directory=root; const parts=note.relativePath.split('/');
+   for (const part of parts.slice(0,-1)) directory=await directory.getDirectoryHandle(part);
+   return (await directory.getFileHandle(parts.at(-1)!)).text;
+ }));
+ const initial=await call<PropertyLayout>(h.core,'getPropertyLayout');
+ expect(initial).toEqual({order:[],visibility:{},contentHash:createHash('sha256').update('').digest('hex')});
+ const settings={order:['property:unseen','system:filename','system:tags'],visibility:{'property:summary':'hide-empty','system:updatedAt':'hidden','property:unseen':'always'}};
+ const saved=await call<PropertyLayout>(h.core,'setPropertyLayout',{...settings,baseHash:initial.contentHash});
+ expect(saved).toEqual({...settings,contentHash:expect.any(String)});
+ expect((await call<VaultStatus>(h.core,'getStatus')).capabilities).toEqual(expect.arrayContaining(['getPropertyLayout','setPropertyLayout']));
+ expect((await call<NotePage>(h.core,'queryNotes')).notes).toEqual(before);
+ for (const [index,note] of page.notes.entries()) {
+   let directory=root; const parts=note.relativePath.split('/');
+   for (const part of parts.slice(0,-1)) directory=await directory.getDirectoryHandle(part);
+   expect((await directory.getFileHandle(parts.at(-1)!)).text).toBe(files[index]);
+ }
+ const reopened=harness(root,h.storage); await call(reopened.core,'selectVault');
+ expect(await call(reopened.core,'getPropertyLayout')).toEqual(saved);
+ expect(await call(reopened.core,'setPropertyLayout',{...settings,baseHash:saved.contentHash})).toEqual(saved);
+ const other=await fixture('Other','33333333-3333-4333-8333-333333333333');
+ h.choose(other); await call(h.core,'selectVault');
+ expect(await call(h.core,'getPropertyLayout')).toMatchObject({order:[],visibility:{}});
+ await expect(call(h.core,'setPropertyLayout',{...settings,baseHash:initial.contentHash,vaultId})).rejects.toMatchObject({code:'VAULT_CHANGED'});
+});
+
+it('rejects stale layout writes, invalid settings and malformed configuration without overwriting it', async () => {
+ const h=await open();
+ const initial=await call<PropertyLayout>(h.core,'getPropertyLayout');
+ const saved=await call<PropertyLayout>(h.core,'setPropertyLayout',{order:['system:tags'],visibility:{'system:tags':'always'},baseHash:initial.contentHash});
+ await expect(call(h.core,'setPropertyLayout',{order:[],visibility:{},baseHash:initial.contentHash})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+ for (const next of [
+   {order:['system:tags','system:tags'],visibility:{}},
+   {order:['unknown'],visibility:{}}, {order:[],visibility:{'system:tags':'never'}},
+   {order:[],visibility:JSON.parse('{"__proto__":"hidden"}')},
+ ]) await expect(call(h.core,'setPropertyLayout',{...next,baseHash:saved.contentHash})).rejects.toMatchObject({code:'INVALID_PROPERTY_LAYOUT'});
+ const file=await (await h.root.getDirectoryHandle('.memocard')).getFileHandle('property-layout.json');
+ file.bytes=bytes('{broken');
+ await expect(call(h.core,'getPropertyLayout')).rejects.toMatchObject({code:'INVALID_PROPERTY_LAYOUT'});
+ await expect(call(h.core,'setPropertyLayout',{order:[],visibility:{},baseHash:createHash('sha256').update('{broken').digest('hex')})).rejects.toMatchObject({code:'INVALID_PROPERTY_LAYOUT'});
+ expect(file.text).toBe('{broken');
+});
+
+it('preserves layout settings on failed close and can retry an interrupted first file creation', async () => {
+ const h=await open();
+ const initial=await call<PropertyLayout>(h.core,'getPropertyLayout');
+ const directory=await h.root.getDirectoryHandle('.memocard');
+ directory.createdFile=file=>{if(file.name==='property-layout.json')file.closeError=true;};
+ const settings={order:['system:tags'],visibility:{'system:filename':'hidden'},baseHash:initial.contentHash};
+ await expect(call(h.core,'setPropertyLayout',settings)).rejects.toBeTruthy();
+ const file=await directory.getFileHandle('property-layout.json');
+ expect(file.text).toBe('');expect(await call(h.core,'getPropertyLayout')).toEqual(initial);
+ file.closeError=false;
+ const saved=await call<PropertyLayout>(h.core,'setPropertyLayout',settings);
+ file.closeError=true;
+ await expect(call(h.core,'setPropertyLayout',{order:[],visibility:{},baseHash:saved.contentHash})).rejects.toBeTruthy();
+ expect(await call(h.core,'getPropertyLayout')).toEqual(saved);
+});
+
+it.each(['bytes','file','directory','vault'])('aborts a staged layout write when %s changes before commit', async change => {
+ const h=await open();
+ const initial=await call<PropertyLayout>(h.core,'getPropertyLayout');
+ const saved=await call<PropertyLayout>(h.core,'setPropertyLayout',{order:['system:tags'],visibility:{},baseHash:initial.contentHash});
+ const directory=await h.root.getDirectoryHandle('.memocard');
+ const file=await directory.getFileHandle('property-layout.json');
+ const original=file.text;
+ const external=JSON.stringify({order:['system:filename'],visibility:{}});
+ const other=await fixture('Other','33333333-3333-4333-8333-333333333333');
+ file.writeHook=async()=>{
+   if(change==='bytes')file.bytes=bytes(external);
+   if(change==='file')directory.children.set(file.name,new TestFile(file.name,original));
+   if(change==='directory') {
+     const replacement=new TestDirectory('.memocard');
+     replacement.children.set('vault.json',await directory.getFileHandle('vault.json'));
+     replacement.children.set(file.name,new TestFile(file.name,original));
+     h.root.children.set('.memocard',replacement);
+   }
+   if(change==='vault') {h.choose(other);await call(h.core,'selectVault');}
+ };
+ await expect(call(h.core,'setPropertyLayout',{order:['system:createdAt'],visibility:{},baseHash:saved.contentHash})).rejects.toMatchObject({code:change==='vault'?'UNAUTHORIZED':'HASH_CONFLICT'});
+ expect(file.text).toBe(change==='bytes'?external:original);
+ expect(file.writable).toBe(false);
 });
 
 it('shares property labels for Obsidian notes while preserving YAML and individual values', async () => {

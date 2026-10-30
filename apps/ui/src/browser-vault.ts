@@ -29,7 +29,7 @@ type Options = {
   parseCompatible?: typeof parseObsidianNote;
 };
 const propertyOperations = ["getNoteProperties", "updateNoteProperty"];
-const operations = ["getStatus", "queryNotes", "getNote", "saveNote", ...propertyOperations, "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"];
+const operations = ["getStatus", "queryNotes", "getNote", "saveNote", ...propertyOperations, "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"];
 const coverageEmpty = (): Coverage => ({ complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: null });
 const now = () => new Date().toISOString();
 const textBytes = (text: string) => new TextEncoder().encode(text);
@@ -754,6 +754,11 @@ export class BrowserVault {
     if (operation === "getPropertyLabels" || operation === "renamePropertyLabel") {
       const { propertyLabelOperation } = await import('./browser-property-labels');
       return this.lock(`memocard:browser:vault:${selected.vaultId}`, () => propertyLabelOperation(operation, params, selected.handle, () => this.active(selected), () => this.scan(selected)));
+    }
+    if (operation === 'getPropertyLayout' || operation === 'setPropertyLayout') {
+      if (params.vaultId !== undefined && params.vaultId !== selected.vaultId) throw new BrowserVaultError('VAULT_CHANGED','笔记库已切换，请重新打开属性设置。');
+      const { propertyLayoutOperation } = await import('./browser-property-layout');
+      return this.lock(`memocard:browser:vault:${selected.vaultId}`, () => propertyLayoutOperation(operation, params, selected.handle, () => this.active(selected)));
     }
     if (propertyOperations.includes(operation)) {
       const { propertyOperation } = await import('./browser-rename');

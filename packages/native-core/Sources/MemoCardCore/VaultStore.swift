@@ -221,7 +221,7 @@ public actor VaultStore {
     public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) async throws -> Data {
         do {
             try requireBinding(expectedBinding)
-            if ["getTagPreferences", "setTagPreferences", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
+            if ["getTagPreferences", "setTagPreferences", "getPropertyLayout", "setPropertyLayout", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
                 struct Scope: Decodable { var vaultId: String?; var vaultBinding: UUID? }
                 let scope = try decode(Scope.self, params)
                 try requireBinding(scope.vaultBinding)
@@ -287,6 +287,13 @@ public actor VaultStore {
                 let data = try coordinateRead(root.appendingPathComponent(note.relativePath), inside: root) { try self.readSource($0) }
                 return try encode(effectiveNoteProperties(data, snapshot: snapshot, config: readPropertyDefinitions(root)))
             case "getPropertyLabels": return try encode(readPropertyLabels())
+            case "getPropertyLayout": return try encode(readPropertyLayout())
+            case "setPropertyLayout":
+                struct Request: Decodable { let order: [String]; let visibility: [String: String]; let baseHash: String }
+                let request: Request
+                do { request = try JSONDecoder().decode(Request.self, from: params) }
+                catch { throw VaultError(code: "INVALID_PROPERTY_LAYOUT", message: "属性布局设置无效。") }
+                return try encode(setPropertyLayout(PropertyLayoutValue(order: request.order, visibility: request.visibility), baseHash: request.baseHash))
             case "getTagPreferences": return try encode(readTagPreferences())
             case "setTagPreferences":
                 struct Request: Decodable { let pinned: [String]; let icons: [String: String]; let baseHash: String }
@@ -807,7 +814,7 @@ public actor VaultStore {
                 try values.encode(capabilities, forKey: .capabilities)
             }
         }
-        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"]
+        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"]
         guard let root, let metadata else {
             return try encode(Status(connected: false, vaultId: nil, vaultName: nil,
                 coverage: Coverage(complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: nil),
@@ -1070,10 +1077,60 @@ public actor VaultStore {
     }
 
     private struct PropertyLabels: Encodable { let labels: [String: String]; let contentHash: String }
+    private struct PropertyLayoutValue: Codable, Equatable { let order: [String]; let visibility: [String: String] }
+    private struct PropertyLayout: Encodable { let order: [String]; let visibility: [String: String]; let contentHash: String }
     private let systemPropertyLabels = ["system:tags": "标签", "system:updatedAt": "更新时间", "system:createdAt": "创建时间", "system:filename": "文件名"]
     private func defaultPropertyLabel(_ key: String) -> String { systemPropertyLabels[key] ?? String(key.dropFirst("property:".count)) }
     private func validPropertyLabel(_ value: String) -> Bool {
         !value.isEmpty && value.count <= 100 && value == value.trimmingCharacters(in: .whitespacesAndNewlines) && !value.unicodeScalars.contains { $0.value < 32 }
+    }
+    private func validPropertyLayoutKey(_ key: String) -> Bool {
+        (systemPropertyLabels[key] != nil || key.hasPrefix("property:") && key.count > 9)
+            && key == key.trimmingCharacters(in: .whitespacesAndNewlines)
+            && !key.unicodeScalars.contains { $0.value < 32 || $0.value == 127 }
+    }
+    private func validPropertyLayout(_ value: PropertyLayoutValue) -> Bool {
+        Set(value.order).count == value.order.count && value.order.allSatisfy(validPropertyLayoutKey)
+            && value.visibility.allSatisfy { validPropertyLayoutKey($0.key) && ["always", "hide-empty", "hidden"].contains($0.value) }
+    }
+    private func decodedPropertyLayout(_ data: Data) throws -> PropertyLayout {
+        let value: PropertyLayoutValue
+        do {
+            if data.isEmpty { value = PropertyLayoutValue(order: [], visibility: [:]) }
+            else {
+                guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any], Set(object.keys) == ["order", "visibility"] else {
+                    throw VaultError(code: "INVALID_PROPERTY_LAYOUT", message: "属性布局设置无效。")
+                }
+                value = try JSONDecoder().decode(PropertyLayoutValue.self, from: data)
+            }
+        } catch { throw VaultError(code: "INVALID_PROPERTY_LAYOUT", message: "属性布局配置无法读取，请检查 .memocard/property-layout.json。") }
+        guard validPropertyLayout(value) else { throw VaultError(code: "INVALID_PROPERTY_LAYOUT", message: "属性布局配置无法读取，请检查 .memocard/property-layout.json。") }
+        return PropertyLayout(order: value.order, visibility: value.visibility, contentHash: sha256(data))
+    }
+    private func propertyLayoutBytes(_ url: URL) throws -> Data {
+        guard fm.fileExists(atPath: url.path) else { return Data() }
+        return try readSource(url)
+    }
+    private func readPropertyLayout() throws -> PropertyLayout {
+        let (root, _) = try active()
+        let path = root.appendingPathComponent(".memocard/property-layout.json")
+        try validate(path, inside: root)
+        if !fm.fileExists(atPath: path.path) { return try decodedPropertyLayout(Data()) }
+        return try coordinateRead(path, inside: root) { try self.decodedPropertyLayout(self.propertyLayoutBytes($0)) }
+    }
+    private func setPropertyLayout(_ value: PropertyLayoutValue, baseHash: String) throws -> PropertyLayout {
+        guard validPropertyLayout(value) else { throw VaultError(code: "INVALID_PROPERTY_LAYOUT", message: "属性布局设置无效。") }
+        let (root, _) = try active()
+        let path = root.appendingPathComponent(".memocard/property-layout.json")
+        return try coordinateWrite(path, inside: root) { url in
+            try self.requireNoConflict(url)
+            let current = try self.decodedPropertyLayout(self.propertyLayoutBytes(url))
+            guard current.contentHash == baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "属性布局已在其他位置修改，请重新加载后重试。", retryable: true) }
+            if current.order == value.order && current.visibility == value.visibility { return current }
+            let bytes = try encode(value)
+            try bytes.write(to: url, options: .atomic)
+            return try self.decodedPropertyLayout(bytes)
+        }
     }
     private func decodedNotePins(_ data: Data) throws -> NotePins {
         do {

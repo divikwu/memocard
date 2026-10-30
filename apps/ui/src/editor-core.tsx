@@ -219,7 +219,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       const value = event.target.value.replace(/[\r\n]+/g, ' ');
       lastEnteredTitle.current = value;
       if (richEditor.current) changeNoteTitle(richEditor.current, value); else session.update(body, relativePath, value);
-    }} onPointerDown={event => { event.currentTarget.dataset.pointerFocus = 'true'; }} onBlur={event => { delete event.currentTarget.dataset.pointerFocus; if (richEditor.current) endNoteTyping(richEditor.current); }} onKeyDown={event => {
+    }} onBlur={() => { if (richEditor.current) endNoteTyping(richEditor.current); }} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
     }} />;
@@ -245,7 +245,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   const saveStatus = session.state === 'conflict' ? '存在冲突，尚未保存' : conversionRejected ? '属性未更改' : '保存失败，请重试';
   const showSaveStatus = isMobile && canSave && (session.state === 'error' || session.state === 'conflict');
   return <section ref={page} tabIndex={!autoFocus ? -1 : undefined} aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className={className} onKeyDownCapture={undoKey}>
-    <NoteProperties saveError={error} renderHeader={(notice, ownsSaveError) => <>
+    <NoteProperties scopeKey={initialDraft.id} saveError={error} renderHeader={(notice, ownsSaveError) => <>
       {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : conversionRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !conversionRejected || session.state === 'conflict') ? <>
         {session.state === 'error' && !conversionRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
         {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
@@ -254,7 +254,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       {pendingLink && <PageNotice tone="info" title="有待打开的笔记">完成当前记录后，将打开收到的笔记链接。</PageNotice>}
       {heading}
       {showSaveStatus && <div className="mobile-save-status" role="status" aria-live="polite" aria-atomic="true">{saveStatus}</div>}
-    </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} vaultBinding={session.current.vaultBinding} onChangeTag={changeTag} note={metadata} tags={[...tags, ...session.current.inheritedTags ?? []]} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onApplyValue={applyProperty} onLocateTag={tag => {
+    </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} vaultBinding={session.current.vaultBinding} onChangeTag={changeTag} note={metadata} tags={tags} inheritedTags={session.current.inheritedTags} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onApplyValue={applyProperty} onLocateTag={tag => {
       const target = Array.from(field.current?.querySelectorAll('.rich-inline-tag') ?? []).find(element => element.getAttribute('data-tag') === encodeURIComponent(tag));
       if (!target) return;
       field.current?.focus();

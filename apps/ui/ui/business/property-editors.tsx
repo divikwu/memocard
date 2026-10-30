@@ -24,7 +24,7 @@ import { createNameEditor } from "../../src/components/name-editor.core";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { Badge } from "../components/badge";
-import { Calendar } from "../components/calendar";
+import { recoverableLazy } from "../components/recoverable-lazy";
 import { Switch } from "../components/switch";
 import { Skeleton } from "../components/skeleton";
 import { Popover, PopoverContent } from "../components/popover";
@@ -39,6 +39,8 @@ import { richIcons } from "./rich-icons";
 import { PropertyConfirmationPopup } from "./property-confirmation";
 import "./tag.css";
 import "./note-properties.css";
+
+const Calendar = recoverableLazy(() => import("../components/calendar").then(module => ({ default: module.Calendar })), "日期");
 
 const icon = (data: HugeiconsIconProps["icon"]): RichIcon => props => <HugeiconsIcon icon={data} {...props} strokeWidth={Number(props.strokeWidth ?? 2)} />;
 export const propertyIcons = {

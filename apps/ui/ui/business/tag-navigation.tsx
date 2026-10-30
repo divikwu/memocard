@@ -1,5 +1,5 @@
 import { recoverableLazy } from "../components/recoverable-lazy";
-import { Suspense, useMemo, useRef, useState } from "react";
+import { memo, Suspense, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Collapsible } from "@base-ui/react/collapsible";
 import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
 import { indexTags } from "../../src/components/tag-tree-index";
@@ -18,16 +18,21 @@ type TagBranchProps = { index: ReturnType<typeof indexTags>; path: string; prefe
 export function TagNavigation({ vaultId, tags, selected, onSelect, onRename }: NavigationProps) {
   const { isMobile } = useSidebar();
   const { preferences, error, togglePinned, saveAppearance } = useTagPreferences(vaultId);
+  const actions = useRef({onSelect, togglePinned});
+  useLayoutEffect(() => { actions.current = {onSelect, togglePinned}; });
+  const select = useCallback((path:string) => actions.current.onSelect(path), []);
+  const pin = useCallback((path:string) => { void actions.current.togglePinned(path); }, []);
   const [tagsOpen, setTagsOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState<{ path: string; anchor: HTMLElement } | null>(null);
+  const edit = useCallback((path:string,anchor:HTMLElement) => setEditing({path,anchor}), []);
   const index = useMemo(() => indexTags(tags), [tags]);
   const pinned = preferences.pinned.filter(path => index.byName.has(path));
   const showSearch = !isMobile && searchOpen;
   const needle = showSearch ? query.trim().toLocaleLowerCase() : "";
   const matches = needle ? tags.filter(tag => tag.name.toLocaleLowerCase().includes(needle)) : [];
-  const common = { index, preferences, selected, onSelect, onPin: (path: string) => { void togglePinned(path); }, onEdit: (path: string, anchor: HTMLElement) => setEditing({ path, anchor }) };
+  const common = { index, preferences, selected, onSelect: select, onPin: pin, onEdit: edit };
   return <>
     {pinned.length > 0 && <SidebarGroup className="ui-sidebar-tag-section"><Collapsible.Root defaultOpen><SidebarGroupLabel><Collapsible.Trigger className="ui-sidebar-section-toggle"><span>置顶标签</span><SidebarIcon name="right" className="text-secondary" /></Collapsible.Trigger></SidebarGroupLabel><Collapsible.Panel><nav aria-label="置顶标签" className="pt-1"><SidebarMenu>{pinned.map(path => <TagBranch key={path} path={path} root {...common} />)}</SidebarMenu></nav></Collapsible.Panel></Collapsible.Root></SidebarGroup>}
     <SidebarGroup className="ui-sidebar-tag-section"><Collapsible.Root open={tagsOpen} onOpenChange={setTagsOpen}>
@@ -39,7 +44,7 @@ export function TagNavigation({ vaultId, tags, selected, onSelect, onRename }: N
   </>;
 }
 
-function TagBranch({ path, index, preferences, selected, onSelect, onPin, onEdit, flat = false, root = false }: TagBranchProps) {
+const TagBranch = memo(function TagBranchView({ path, index, preferences, selected, onSelect, onPin, onEdit, flat = false, root = false }: TagBranchProps) {
   const { isMobile } = useSidebar();
   const anchor = useRef<HTMLButtonElement>(null);
   const editing = useRef(false);
@@ -55,4 +60,4 @@ function TagBranch({ path, index, preferences, selected, onSelect, onPin, onEdit
   </>}>
     {children.length > 0 && <SidebarMenuSub className="mr-0 translate-x-0 pr-0">{children.map(child => <TagBranch key={child.name} path={child.name} index={index} preferences={preferences} selected={selected} onSelect={onSelect} onPin={onPin} onEdit={onEdit} />)}</SidebarMenuSub>}
   </SidebarTreeItem>;
-}
+});

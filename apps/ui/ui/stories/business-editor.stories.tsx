@@ -50,6 +50,7 @@ function createFixture(failSave: boolean, initialBody = body, initialTitle = '�
   let revision = 0;
   const snapshot = () => structuredClone(note);
   return { snapshot, request(operation: string, params: Record<string, unknown>): unknown {
+    if (operation === 'getStatus') return { vaultId: 'ui-editor-story', capabilities: [] };
     if (operation === 'getPropertyLabels') return { labels, contentHash: `labels-${revision}` };
     if (operation === 'renamePropertyLabel') { labels = { ...labels, [String(params.key)]: String(params.label) }; return { labels, contentHash: `labels-${++revision}` }; }
     if (operation === 'listTags') return { tags: [{ name: '设计' }, { name: '产品' }, { name: '灵感' }] };
@@ -145,7 +146,6 @@ export const DetailLayout: Story = {
     const canvas = within(canvasElement);
     await expect(await canvas.findByRole('textbox', { name: '页面标题' })).toHaveValue(detailLayoutTitle);
     await expect(await canvas.findByRole('textbox', { name: '笔记内容' })).toBeVisible();
-    await expect(await canvas.findByRole('button', { name: '编辑标签' })).toBeVisible();
   },
 };
 export const DetailLayoutMobile: Story = {

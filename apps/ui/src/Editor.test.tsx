@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createRef, useState } from 'react';
 import { Editor, type EditorHandle } from '@ui/business/Editor';
@@ -19,7 +20,7 @@ async function editor(draft = initial, capabilities = new Set(['saveNote', 'save
   const onClose = vi.fn(), onSaved = vi.fn(), onCommitted = vi.fn();
   render(<Editor initial={draft} capabilities={capabilities} onClose={onClose} onSaved={onSaved} onCommitted={onCommitted} />);
   await screen.findByRole('textbox', { name: '笔记内容' });
-  await screen.findByRole('button', { name: '属性' });
+  await screen.findByRole('button', { name: '更多属性' });
   return { onClose, onSaved, onCommitted };
 }
 function finishEditor() {
@@ -140,7 +141,7 @@ async function historyEditor(waitForProperty?: () => Promise<void>) {
  render(<Editor initial={{...initial,title:note.title,body:note.body,baseHash:note.contentHash}} initialNote={note}
    capabilities={new Set(['saveNote','saveDraft','getNoteProperties','updateNoteProperty'])} handle={handle} onClose={vi.fn()} onSaved={vi.fn()} />);
  await waitFor(()=>expect(noteEditor().getText()).toBe('正文'));
- fireEvent.click(screen.getByRole('button',{name:'属性'}));
+ fireEvent.click(screen.getByRole('button',{name:'更多属性'}));
  await screen.findByRole('checkbox',{name:'切换属性 已验证'});
  return {handle,stored:()=>({note,properties})};
 }
@@ -490,6 +491,82 @@ it('closes an untouched new page without creating a note', async () => {
   finishEditor(); await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   expect(onSaved).not.toHaveBeenCalled(); expect(native).not.toHaveBeenCalled();
 });
+it.each([{inheritedTags:[]}, {inheritedTags:['生活']}])('retains tags on a new page without requiring a title or body (%j)', async ({inheritedTags}) => {
+  let propertyTags: string[] = [];
+  const propertyData = () => ({properties:[],tagProperty:{name:'tags',type:'list',value:propertyTags,editable:true},writable:true,contentHash:'tag-hash'});
+  native.mockImplementation(async (operation, params) => {
+    if (operation === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
+    if (operation === 'getNoteProperties') return params?.id ? propertyData() : {properties:[],tagProperty:{name:'tags',type:'list',value:[],editable:false},writable:false,contentHash:''};
+    if (operation === 'listTags') return {tags:[{name:'工作'}]};
+    if (operation === 'saveNote') return {...saved,title:params!.title,body:'',tags:[],contentHash:'created-hash'};
+    if (operation === 'updateNoteProperty') { propertyTags = params!.value as string[]; return {...saved,title:'新内容',body:'',tags:propertyTags,contentHash:'tag-hash',propertyData:propertyData()}; }
+  });
+  const user = userEvent.setup();
+  await editor({...initial,title:'',inheritedTags}, new Set(['saveNote','saveDraft','getNoteProperties','updateNoteProperty']));
+  await user.click(screen.getByRole('button',{name:'更多属性'}));
+  await user.click(await screen.findByRole('button',{name:'编辑标签'}));
+  await screen.findByRole('combobox',{name:'搜索或新建属性标签'});
+  expect(native.mock.calls.some(([op]) => op === 'saveNote' || op === 'updateNoteProperty')).toBe(false);
+  await user.keyboard('{Escape}');
+  expect(native.mock.calls.some(([op]) => op === 'saveNote' || op === 'updateNoteProperty')).toBe(false);
+  await user.click(screen.getByRole('button',{name:'编辑标签'}));
+  await user.click(await screen.findByRole('option',{name:'属性标签 工作'}));
+  await screen.findByRole('button',{name:'移除属性标签 工作'});
+  await user.keyboard('{Escape}');
+  expect(screen.getByRole('textbox',{name:'页面标题'})).toHaveProperty('value','');
+  expect(readEditorText()).toBe('');
+  await waitFor(() => expect(native).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining({name:'tags',value:[...inheritedTags,'工作'],baseHash:'created-hash'})));
+  expect(native.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(1);
+  await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+  expect(screen.getByRole('button',{name:'收起'}).getAttribute('aria-expanded')).toBe('true');
+  expect(await screen.findByRole('button',{name:'添加属性'})).toBeTruthy();
+});
+it('retains a new page when a custom property is added before title or body input', async () => {
+  let properties: NoteProperties['properties'] = [];
+  const propertyData = () => ({properties,tagProperty:{name:'tags',type:'list',value:[],editable:true},writable:true,contentHash:'property-hash'});
+  native.mockImplementation(async (operation, params) => {
+    if (operation === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
+    if (operation === 'getNoteProperties') return params?.id ? propertyData() : {properties:[],writable:false,contentHash:''};
+    if (operation === 'saveNote') return {...saved,title:'新内容',body:'',tags:[],contentHash:'created-hash'};
+    if (operation === 'updateNoteProperty') {
+      properties = [{name:'摘要',type:'text',value:'',editable:true}];
+      return {...saved,title:'新内容',body:'',tags:[],contentHash:'property-hash',propertyData:propertyData()};
+    }
+  });
+  const user = userEvent.setup();
+  await editor({...initial,title:''},new Set(['saveNote','saveDraft','getNoteProperties','updateNoteProperty']));
+  await user.click(screen.getByRole('button',{name:'更多属性'}));
+  await user.click(await screen.findByRole('button',{name:'添加属性'}));
+  await user.type(screen.getByRole('textbox',{name:'属性名'}),'摘要');
+  await user.click(screen.getByRole('button',{name:'文本'}));
+  await waitFor(() => expect(native).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining({name:'摘要',type:'text',value:'',create:true,baseHash:'created-hash'})));
+  expect(native.mock.calls.filter(([operation]) => operation === 'saveNote')).toHaveLength(1);
+  expect(screen.getByRole('textbox',{name:'页面标题'})).toHaveProperty('value','');
+  expect(readEditorText()).toBe('');
+  await waitFor(()=>expect(screen.queryByRole('textbox',{name:'属性名'})).toBeNull());
+  expect(screen.getByRole('button',{name:'收起'}).getAttribute('aria-expanded')).toBe('true');
+  expect(await screen.findByRole('button',{name:'添加属性'})).toBeTruthy();
+});
+it.each([{type:'text' as const,value:'直接填写'}, {type:'number' as const,value:'0'}])('edits an inherited $type property before entering title or body', async ({type,value}) => {
+  const properties = [{name:'摘要',type,value:'',editable:true}];
+  native.mockImplementation(async operation => {
+    if (operation === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
+    if (operation === 'getNoteProperties') return {properties,writable:false,contentHash:''};
+    if (operation === 'saveNote') return {...saved,title:'新内容',body:'',tags:[],contentHash:'created-hash'};
+    if (operation === 'updateNoteProperty') return {...saved,title:'新内容',body:'',tags:[],contentHash:'property-hash',propertyData:{properties:[{...properties[0],value}],writable:true,contentHash:'property-hash'}};
+  });
+  const user = userEvent.setup();
+  await editor({...initial,title:''},new Set(['saveNote','saveDraft','getNoteProperties','updateNoteProperty']));
+  await user.click(screen.getByRole('button',{name:'更多属性'}));
+  await user.click(await screen.findByRole('button',{name:'编辑属性 摘要'}));
+  expect(screen.getByRole('button',{name:'属性菜单 摘要'})).toHaveProperty('disabled',true);
+  expect(native.mock.calls.some(([operation]) => operation === 'saveNote')).toBe(false);
+  await user.type(screen.getByRole('textbox',{name:'属性值'}),value);
+  await user.keyboard('{Enter}');
+  await waitFor(() => expect(native).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining({name:'摘要',type,value,baseHash:'created-hash'})));
+  expect(screen.getByRole('textbox',{name:'页面标题'})).toHaveProperty('value','');
+  expect(readEditorText()).toBe('');
+});
 it.each(['新内容', '新内容 (2)', '未命名', '未命名 (2)'])('shows a title placeholder for a reopened default filename without renaming it (%s)', async filename => {
   await editor({ ...initial, title: filename, body: '原文', relativePath: `notes/${filename}.md`, baseHash: 'old' });
   const title = screen.getByRole('textbox', { name: '页面标题' }) as HTMLTextAreaElement;
@@ -539,9 +616,8 @@ it('shows inherited tags in the default property row and preserves the caret whe
   await editor({ ...initial, title: '', tags: ['生活'] });
   expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
   expect(screen.queryByLabelText('继承标签')).toBeNull();
-  expect(screen.getAllByText('生活')).toHaveLength(1);
-  expect(screen.queryByText('更新时间')).toBeNull();
-  fireEvent.click(screen.getByRole('button', { name: '属性' }));
+  expect(screen.getByText('更新时间')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '更多属性' }));
   expect(screen.getAllByText('生活')).toHaveLength(1);
   expect(readEditorText()).toBe('');
   const rich = noteEditor();
@@ -611,8 +687,7 @@ it('summarizes body tags above the editor without restoring property tags', asyn
  await editor({...initial, body:'#测试/笔记', tags:['测试/笔记'], baseHash:'old'});
  expect(screen.queryByLabelText('笔记标签')).toBeNull();
  expect(screen.getByLabelText('笔记属性').textContent).toContain('测试/笔记');
- expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#测试/笔记');
- fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ fireEvent.click(await screen.findByRole('button', {name:'更多属性'}));
  expect(screen.getByLabelText('笔记属性').textContent).toContain('测试/笔记');
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#测试/笔记');
  expect(screen.getByRole('textbox',{name:'笔记内容'}).querySelector('.rich-inline-tag')?.textContent).toBe('#测试/笔记');
@@ -623,22 +698,22 @@ it('shows source metadata read-only and updates it only after a successful save'
  const handle = createRef<EditorHandle>();
  render(<Editor initial={source} initialNote={note} handle={handle} capabilities={new Set(['saveNote'])} onClose={vi.fn()} onSaved={vi.fn()} />);
  expect(screen.queryByRole('dialog')).toBeNull();
- expect((await screen.findByLabelText('笔记属性')).querySelectorAll('dt')).toHaveLength(1);
+ expect((await screen.findByLabelText('笔记属性')).querySelectorAll('dt')).toHaveLength(4);
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('2030');
- expect(screen.queryByText('笔记.md')).toBeNull();
- expect(screen.queryByText('更新时间')).toBeNull();
- fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ expect(screen.getByText('笔记.md')).toBeTruthy();
+ expect(screen.getByText('更新时间')).toBeTruthy();
+ fireEvent.click(await screen.findByRole('button', {name:'更多属性'}));
  const panel = screen.getByLabelText('笔记属性');
  expect(panel.textContent).toContain('笔记.md');expect(panel.textContent).not.toContain('所在目录');expect(panel.textContent).not.toContain('项目');
  expect(panel.textContent).toContain('10/01/2026');expect(panel.textContent).toContain('10/02/2026');
  expect(Array.from(panel.querySelectorAll('dt'), node => node.textContent)).toEqual(['标签','更新时间','创建时间','文件名']);
  expect(native).not.toHaveBeenCalled();
- fireEvent.click(await screen.findByRole('button', {name:'属性'}));
- await waitFor(() => expect(screen.queryByText('笔记.md')).toBeNull());
+ fireEvent.click(await screen.findByRole('button', {name:'收起'}));
+ expect(screen.getByText('笔记.md')).toBeTruthy();
  native.mockResolvedValue({ ...note, relativePath:'根笔记.md', updatedAt:'2026-10-10T10:00:00Z', contentHash:'new' });
  replaceEditorText('更新正文 #生活');
  await act(async () => { await handle.current!.flush(); });
- fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ fireEvent.click(await screen.findByRole('button', {name:'更多属性'}));
  expect(screen.getByLabelText('笔记属性').textContent).toContain('10/10/2026');
  expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('#生活');
@@ -650,7 +725,7 @@ it('shows source metadata read-only and updates it only after a successful save'
 it('does not invent file dates or create a file when inspecting an empty new note', async () => {
  const handle = createRef<EditorHandle>();
  render(<Editor initial={{...initial,title:''}} handle={handle} capabilities={new Set(['saveNote','saveDraft'])} onClose={vi.fn()} onSaved={vi.fn()} />);
- fireEvent.click(await screen.findByRole('button', {name:'属性'}));
+ fireEvent.click(await screen.findByRole('button', {name:'更多属性'}));
  const panel = screen.getByLabelText('笔记属性');
  expect(panel.textContent).toContain('尚未保存');expect(panel.textContent).toContain('未提供');
  expect(panel.textContent).not.toContain('test-note.md');expect(screen.queryByRole('dialog')).toBeNull();
@@ -732,7 +807,7 @@ it('uses committed property data without another read and keeps subsequent write
    }
  });
  render(<Editor initial={{...initial,body:note.body,baseHash:note.contentHash}} initialNote={note} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} />);
- fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+ fireEvent.click(await screen.findByRole('button',{name:'更多属性'}));
  for (const value of ['新值','再次修改']) {
    fireEvent.click(await screen.findByRole('button',{name:'编辑属性 摘要'}));
    const input = screen.getByRole('textbox',{name:'属性值'});
@@ -751,7 +826,7 @@ it('flushes pending body edits before creating an empty property and retains the
  const properties = {properties:[],writable:true,contentHash:note.contentHash};
  native.mockImplementation(async op => op === 'getNoteProperties' ? properties : op === 'saveNote' ? {...note,body:'更新正文',contentHash:'body-hash'} : op === 'updateNoteProperty' ? {...note,body:'更新正文',contentHash:'property-hash'} : undefined);
  render(<Editor initial={{...initial,body:note.body,baseHash:note.contentHash}} initialNote={note} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} />);
- fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+ fireEvent.click(await screen.findByRole('button',{name:'更多属性'}));
  const add = await screen.findByRole('button',{name:'添加属性'});
  await waitFor(() => expect(add.hasAttribute('disabled')).toBe(false));
  fireEvent.click(add);
@@ -785,7 +860,7 @@ it('flushes the current note before a global tag rename and continues with the r
     current = {...current,body:'#project/child 待保存',contentHash:'renamed-hash'};
   });
   render(<TagColorProvider vaultId="v"><Editor initial={{...initial,body:current.body,baseHash:current.contentHash}} initialNote={current} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} /></TagColorProvider>);
-  fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+  fireEvent.click(await screen.findByRole('button',{name:'更多属性'}));
   await waitFor(() => expect(screen.getByRole('button',{name:'编辑标签'}).hasAttribute('disabled')).toBe(false));
   replaceEditorText('#work/child 待保存');
   fireEvent.click(screen.getByRole('button',{name:'编辑标签'}));
@@ -808,6 +883,7 @@ it('keeps the page editable during property saves, preserves newer input and ret
  let first = true, fail = false;
  const mutations: string[] = [];
  native.mockImplementation(async (op, params) => {
+   if (op === 'getStatus') return {capabilities:[]};
    if (op === 'getNoteProperties') return {...properties,contentHash:stored.contentHash};
    if (op === 'getPropertyLabels') return {labels:{},contentHash:'labels'};
    if (op === 'saveDraft') return;
@@ -823,7 +899,7 @@ it('keeps the page editable during property saves, preserves newer input and ret
  });
  const handle = createRef<EditorHandle>();
  render(<Editor initial={{...initial,title:note.title,body:note.body,baseHash:note.contentHash}} initialNote={note} capabilities={new Set(['saveNote','saveDraft','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} handle={handle} />);
- fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+ fireEvent.click(await screen.findByRole('button',{name:'更多属性'}));
  const checkbox = await screen.findByRole('checkbox',{name:'切换属性 已验证'});
  fireEvent.click(checkbox);
  await waitFor(()=>expect(complete).toBeTypeOf('function'));

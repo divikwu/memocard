@@ -1661,6 +1661,97 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
     }
 
+    func testPropertyLayoutPersistsAcrossClientsWithoutRewritingNotesAndRejectsStaleVersions() async throws {
+        let core = try await store()
+        let path = try writeNote(id: UUID().uuidString.lowercased(), body: "Body #keep", extra: "summary: One\n")
+        let original = try Data(contentsOf: path)
+        let modified = try FileManager.default.attributesOfItem(atPath: path.path)[.modificationDate] as? Date
+        let initial = try await call(core, "getPropertyLayout")
+        XCTAssertEqual(initial["order"] as? [String], [])
+        XCTAssertEqual(initial["visibility"] as? [String: String], [:])
+        let config = vault.appendingPathComponent(".memocard/property-layout.json")
+        _ = try await call(core, "setPropertyLayout", ["order": [], "visibility": [:], "baseHash": initial["contentHash"]!])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: config.path))
+        let order = ["property:summary", "system:tags", "property:absent-on-this-note"]
+        let visibility = ["system:tags": "hide-empty", "system:filename": "hidden", "property:absent-on-this-note": "always"]
+        let saved = try await call(core, "setPropertyLayout", ["order": order, "visibility": visibility, "baseHash": initial["contentHash"]!])
+        XCTAssertEqual(saved["order"] as? [String], order)
+        XCTAssertEqual(saved["visibility"] as? [String: String], visibility)
+        let stored = try Data(contentsOf: config)
+        let disk = try XCTUnwrap(JSONSerialization.jsonObject(with: stored) as? [String: Any])
+        XCTAssertEqual(Set(disk.keys), ["order", "visibility"])
+        let other = try VaultStore(localDataURL: temporary.appendingPathComponent("independent-layout-client"))
+        try await other.open(url: vault, create: false)
+        let loaded = try await call(other, "getPropertyLayout")
+        XCTAssertEqual(loaded["order"] as? [String], order)
+        XCTAssertEqual(loaded["visibility"] as? [String: String], visibility)
+        XCTAssertEqual(loaded["contentHash"] as? String, saved["contentHash"] as? String)
+        await expectCode("HASH_CONFLICT") { _ = try await self.call(other, "setPropertyLayout", ["order": [], "visibility": [:], "baseHash": initial["contentHash"]!]) }
+        XCTAssertEqual(try Data(contentsOf: config), stored)
+        XCTAssertEqual(try Data(contentsOf: path), original)
+        XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: path.path)[.modificationDate] as? Date, modified)
+        let capabilities = try await call(core, "getStatus")["capabilities"] as! [String]
+        XCTAssertTrue(capabilities.contains("getPropertyLayout"))
+        XCTAssertTrue(capabilities.contains("setPropertyLayout"))
+    }
+
+    func testPropertyLayoutRejectsInvalidInputAndCorruptStoredFilesWithoutOverwriting() async throws {
+        let core = try await store()
+        let initial = try await call(core, "getPropertyLayout")
+        let invalid: [[String: Any]] = [
+            ["order": ["system:tags", "system:tags"], "visibility": [:]],
+            ["order": ["system:unknown"], "visibility": [:]],
+            ["order": ["property:"], "visibility": [:]],
+            ["order": ["property:name\n"], "visibility": [:]],
+            ["order": [], "visibility": ["__proto__": "always"]],
+            ["order": [], "visibility": ["system:tags": "sometimes"]],
+            ["order": [:], "visibility": [:]],
+            ["order": [], "visibility": ["system:tags": false]],
+        ]
+        for var params in invalid {
+            params["baseHash"] = initial["contentHash"]!
+            await expectCode("INVALID_PROPERTY_LAYOUT") { _ = try await self.call(core, "setPropertyLayout", params) }
+        }
+        let path = vault.appendingPathComponent(".memocard/property-layout.json")
+        for raw in ["{broken", "[]", "{\"order\":[],\"visibility\":{},\"extra\":true}", "{\"order\":[],\"visibility\":[]}", "{\"order\":[\"system:tags\",\"system:tags\"],\"visibility\":{}}"] {
+            try Data(raw.utf8).write(to: path)
+            await expectCode("INVALID_PROPERTY_LAYOUT") { _ = try await self.call(core, "getPropertyLayout") }
+            await expectCode("INVALID_PROPERTY_LAYOUT") { _ = try await self.call(core, "setPropertyLayout", ["order": [], "visibility": [:], "baseHash": initial["contentHash"]!]) }
+            XCTAssertEqual(try String(contentsOf: path, encoding: .utf8), raw)
+        }
+    }
+
+    func testPropertyLayoutRetainsEmptyDefaultsAndPreservesNoncanonicalNoOpBytes() async throws {
+        let core = try await store()
+        let path = vault.appendingPathComponent(".memocard/property-layout.json")
+        try Data().write(to: path)
+        let empty = try await call(core, "getPropertyLayout")
+        XCTAssertEqual(empty["order"] as? [String], [])
+        let key = "property:" + String(repeating: "长", count: 150)
+        let raw = "{\n \"visibility\":{\"property:__proto__\":\"hidden\",\"\(key)\":\"hide-empty\"}, \"order\":[\"property:__proto__\",\"\(key)\"]\n}"
+        try Data(raw.utf8).write(to: path)
+        let loaded = try await call(core, "getPropertyLayout")
+        let saved = try await call(core, "setPropertyLayout", ["order": loaded["order"]!, "visibility": loaded["visibility"]!, "baseHash": loaded["contentHash"]!])
+        XCTAssertEqual(saved["contentHash"] as? String, loaded["contentHash"] as? String)
+        XCTAssertEqual(try String(contentsOf: path, encoding: .utf8), raw)
+    }
+
+    func testPropertyLayoutChecksVaultScopeAndRejectsSymlinkConfiguration() async throws {
+        let core = try await store()
+        let initial = try await call(core, "getPropertyLayout")
+        for operation in ["getPropertyLayout", "setPropertyLayout"] {
+            await expectCode("VAULT_CHANGED") { _ = try await self.call(core, operation, ["vaultId": "another-vault"]) }
+            await expectCode("UNAUTHORIZED") { _ = try await self.call(core, operation, ["vaultBinding": UUID().uuidString.lowercased()]) }
+        }
+        let outside = temporary.appendingPathComponent("outside-layout.json")
+        let original = Data("{\"order\":[],\"visibility\":{}}".utf8)
+        try original.write(to: outside)
+        try FileManager.default.createSymbolicLink(at: vault.appendingPathComponent(".memocard/property-layout.json"), withDestinationURL: outside)
+        await expectCode("SYMLINK_NOT_ALLOWED") { _ = try await self.call(core, "getPropertyLayout") }
+        await expectCode("SYMLINK_NOT_ALLOWED") { _ = try await self.call(core, "setPropertyLayout", ["order": ["system:tags"], "visibility": [:], "baseHash": initial["contentHash"]!]) }
+        XCTAssertEqual(try Data(contentsOf: outside), original)
+    }
+
     func testVaultPropertyLabelsPersistWithoutRewritingNotesAndRejectConflicts() async throws {
         let core = try await store()
         let first = try writeNote(id: UUID().uuidString.lowercased(), body: "First", extra: "summary: One\n")

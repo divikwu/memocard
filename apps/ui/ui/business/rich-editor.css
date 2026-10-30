@@ -277,4 +277,6 @@
 .ui-rich-ui.rich-table-menu :is([role="menuitemradio"], [role="menuitemcheckbox"]) > span:last-child:not(:first-child) { margin-left: auto; }
 @media (max-width: 767px) {
   .ui-rich-ui .rich-table-tools button { min-width: 44px; min-height: 44px; }
+  .ui-rich-ui .rich-image-tools[data-slot="action-group"], .ui-rich-ui.rich-inline-tools[data-slot="action-group"] { height: calc(var(--size-element-md) + var(--spacing-1)); gap: 0; padding: calc(var(--spacing-1) * .5); border: 0; border-radius: var(--radius-full); background: var(--color-background-body); box-shadow: var(--shadow-control); }
+  .ui-rich-ui .rich-image-tools[data-slot="action-group"] > button, .ui-rich-ui.rich-inline-tools[data-slot="action-group"] button { width: var(--size-element-md); min-width: var(--size-element-md); height: var(--size-element-md); min-height: var(--size-element-md); padding: 0; }
 }

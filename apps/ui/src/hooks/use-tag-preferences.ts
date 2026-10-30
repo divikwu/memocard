@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { tagKey } from "@/inline-tags";
 import { renamedTag } from "@/rename-tag";
 import { renameTagColors } from "@/tag-colors";
@@ -24,7 +24,7 @@ export function useTagPreferences(vaultId?: string | null) {
   const key = tagPreferenceKey(vaultId);
   const raw = useSyncExternalStore(subscribe, () => (vaultId && sharedTagPreferences(vaultId)?.raw) || read(key));
   const sharedError = useSyncExternalStore(subscribe, () => (vaultId && sharedTagPreferences(vaultId)?.error) || "");
-  const preferences = parse(raw);
+  const preferences = useMemo(() => parse(raw), [raw]);
   const [error, setError] = useState("");
   function save(next: Preferences) {
     try { localStorage.setItem(key, JSON.stringify(next)); window.dispatchEvent(new Event(changeEvent)); setError(""); return true; }

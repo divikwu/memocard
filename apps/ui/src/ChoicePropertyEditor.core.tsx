@@ -40,7 +40,7 @@ function ChoicePropertyEditor({property, busy, error, onSave}: {property:NotePro
   const valid = normalizeOptionName(name) !== null;
   const create = valid && options.length < 200 && !options.some(option => option.name === name) ? name : null;
   const candidates = options.filter(option => option.name.toLocaleLowerCase().includes(name.toLocaleLowerCase())).map(option => option.name);
-  if (create) candidates.push(create);
+  if (create) candidates.unshift(create);
   const disabled = busy || pending;
   async function save(next:string[], nextOptions = options, keepOpen = multiple, optionRename?:{from:string;to:string}) {
     if (disabled || saving.current) return false;
@@ -74,8 +74,8 @@ function ChoicePropertyEditor({property, busy, error, onSave}: {property:NotePro
       </Combobox.Chips>
       <p className="note-tag-hint text-xs text-secondary">选择或创建{multiple ? '多个选项' : '一个选项'}</p>
       <PropertyOptionList label="可选选项" count={candidates.length} multiple={multiple}>
-        {(value:string) => <div key={value} className="note-tag-option-row">
-          <Combobox.Item value={value} disabled={disabled} className="note-tag-option" aria-label={value === create ? `创建选项 ${value}` : `选项 ${value}`}>
+        {(value:string,index:number) => <div key={value} className="note-tag-option-row">
+          <Combobox.Item index={index} value={value} disabled={disabled} className="note-tag-option" aria-label={value === create ? `创建选项 ${value}` : `选项 ${value}`}>
             {value === create && <span className="text-secondary">创建</span>}<ChoicePill name={value} options={options} />
           </Combobox.Item>
           {value !== create && <PropertyOptionMenu name={value} kind="选项" color={options.find(option => option.name === value)?.color ?? 'default'} disabled={disabled} normalizeName={normalizeOptionName}

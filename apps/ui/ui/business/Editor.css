@@ -6,8 +6,7 @@
 .ui-note-editor > [data-slot=alert] { margin-block: 0 calc(var(--spacing-1) * 8); }
 .ui-note-editor > [data-slot=alert]:has(+ [data-slot=alert]) { margin-block-end: calc(var(--spacing-1) * 2); }
 .ui-note-editor .note-page-title { display: block; width: 100%; min-width: 0; min-height: 1.2em; padding: 0 calc(var(--spacing-1) * 2); resize: none; overflow: hidden; border: 0; border-radius: var(--radius-element); background: transparent; color: var(--color-text-primary); font-family: var(--font-family-heading); font-size: var(--font-size-note-title); font-weight: var(--font-weight-semibold); line-height: var(--text-note-title-leading); outline: none; }
-.ui-note-editor .note-page-title::placeholder { color: var(--color-text-secondary); }
-.ui-note-editor .note-page-title:focus-visible:not([data-pointer-focus]) { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
+.ui-note-editor .note-page-title::placeholder { color: var(--color-text-disabled); opacity: .7; }
 .ui-note-editor .ui-editor-document { min-width: 0; margin-block-start: calc(var(--spacing-1) * 6); }
 .ui-note-editor .ui-note-markdown { --typeset-leading: var(--note-leading, var(--text-note-body-leading)); --typeset-flow: var(--note-flow, 1em); font-size: var(--note-size, var(--font-size-base)); }
 .ui-note-editor .ui-rich-ui.rich-editor { --editor-gutter: calc(var(--spacing-1) * 2); --editor-inset-right: calc(var(--spacing-1) * 2); }
@@ -33,4 +32,5 @@
   .ui-note-editor .block-controls, .ui-note-editor .block-controls[data-heading] { left: calc(var(--editor-gutter) - 1.5rem - 6px); }
   .ui-note-editor .block-controls button { opacity: 0; touch-action: none; }
   .ui-note-editor .block-controls button:focus-visible { opacity: 1; }
+  .ui-note-editor .block-controls:has(button:focus-visible) { left: calc(var(--spacing-1) * -1); background: var(--color-background-body); }
 }

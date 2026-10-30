@@ -28,15 +28,23 @@ it('distinguishes tag sources, selects existing tags, creates tags and removes o
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : operation === 'listTags' ? {tags:[{name:'共享'},{name:'属性/分类'}]} : {properties:[],tagProperty:{name:'tags',type:'list',value:['共享'],editable:true},writable:true,contentHash:'hash'});
  const user = userEvent.setup();
  render(<NoteProperties note={note} tags={['共享','正文/分类']} canEdit busy={false} onApply={onApply} onLocateTag={onLocateTag} />);
+ const toggle = screen.getByRole('button',{name:/^更多属性$/});
+ expect(toggle.getAttribute('aria-expanded')).toBe('false');
+ expect(within(await screen.findByRole('button',{name:'编辑标签'})).getAllByText('共享')).toHaveLength(1);
+ expect(screen.getByText('更新时间')).toBeTruthy();
+ expect(screen.queryByRole('button',{name:'添加属性'})).toBeNull();
+ await user.click(toggle);
+ expect(within(await screen.findByRole('button',{name:'编辑标签'})).getAllByText('共享')).toHaveLength(1);
+ expect(screen.getByText('更新时间')).toBeTruthy();
+ await user.click(toggle);
+ expect(toggle.getAttribute('aria-expanded')).toBe('false');
+ expect(screen.getByRole('button',{name:'编辑标签'})).toBeTruthy();
+ expect(screen.getByText('更新时间')).toBeTruthy();
+ await waitFor(() => expect(screen.queryByRole('button',{name:'添加属性'})).toBeNull());
+ await user.click(toggle);
  const trigger = await screen.findByRole('button',{name:'编辑标签'});
- expect(screen.getByRole('button',{name:/^属性$/}).getAttribute('aria-expanded')).toBe('false');
- expect(screen.queryByText('更新时间')).toBeNull();
- expect(within(trigger).getAllByText('共享')).toHaveLength(1);
  expect(within(trigger).getByText('正文/分类')).toBeTruthy();
- await user.click(screen.getByRole('button',{name:/^属性$/}));
- expect(screen.getAllByText('共享')).toHaveLength(1);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
- expect(screen.getByRole('button',{name:'编辑标签'})).toBe(trigger);
+ expect(onApply).not.toHaveBeenCalled();
  expect(screen.queryByText('正文标签')).toBeNull();
  const sharedBadge = within(trigger).getByText('共享');
  expect(sharedBadge.hasAttribute('title')).toBe(false);
@@ -59,7 +67,7 @@ it('retains tag input on a conflict and does not write invalid names or on Escap
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : operation === 'listTags' ? {tags:[]} : {properties:[],tagProperty:{name:'tags',type:'list',value:[],editable:true},writable:true,contentHash:'hash'});
  const user = userEvent.setup();
  render(<NoteProperties note={note} tags={['正文']} canEdit busy={false} onApply={onApply} />);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
+ await user.click(screen.getByRole('button',{name:/^更多属性$/}));
  await user.click(await screen.findByRole('button',{name:'编辑标签'}));
  const input = screen.getByRole('combobox',{name:'搜索或新建属性标签'});
  await user.type(input,'two words{Enter}'); expect(onApply).not.toHaveBeenCalled();
@@ -74,15 +82,15 @@ it('retains tag input on a conflict and does not write invalid names or on Escap
 async function setup(onApply = vi.fn().mockResolvedValue(undefined)) {
  const user = userEvent.setup();
  render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={onApply} />);
- expect(screen.queryByRole('button',{name:'编辑属性 摘要'})).toBeNull();
- await user.click(screen.getByRole('button',{name:/^属性$/}));
+ expect((await screen.findByRole('button',{name:'编辑属性 摘要'})).textContent).toBe('原值');
+ await user.click(screen.getByRole('button',{name:/^更多属性$/}));
  await screen.findByRole('button',{name:'编辑属性 摘要'});
  return {user,onApply};
 }
 it('uses month/day/year for timestamps, date values and the date editor',async () => {
  const user = userEvent.setup();
  render(<NoteProperties note={{...note,createdAt:new Date(2026,9,9,16,5).toISOString(),updatedAt:new Date(2026,9,10,0,5).toISOString()}} tags={[]} canEdit busy={false} onApply={vi.fn()} />);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
+ await user.click(screen.getByRole('button',{name:/^更多属性$/}));
  const date = await screen.findByRole('button',{name:'编辑属性 日期'});
  expect(date.textContent).toBe('10/12/2026');
  expect(screen.getByText('10/09/2026 16:05')).toBeTruthy();
@@ -196,11 +204,13 @@ it('edits text in its existing value cell, cancels with Escape and saves with En
  expect(screen.queryByRole('dialog')).toBeNull();
  expect(screen.queryByRole('button',{name:'保存属性'})).toBeNull();
  await user.clear(input); await user.type(input,'不保存'); await user.keyboard('{Escape}');
+ await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button',{name:'编辑属性 摘要'})));
  expect(onApply).not.toHaveBeenCalled();
  await user.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
  const next = await screen.findByRole('textbox',{name:'属性值'});
  await user.clear(next); await user.type(next,'新值{Enter}');
  await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'摘要',type:'text',value:'新值'}));
+ await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button',{name:'编辑属性 摘要'})));
 });
 it('saves on outside click, keeps failed input and does not submit during IME composition',async () => {
  const onApply = vi.fn().mockRejectedValue(new Error('文件冲突'));
@@ -209,6 +219,8 @@ it('saves on outside click, keeps failed input and does not submit during IME co
  const input = await screen.findByRole('textbox',{name:'属性值'});
  await user.clear(input); await user.type(input,'保留输入');
  fireEvent.keyDown(input,{key:'Enter',isComposing:true});
+ fireEvent.keyDown(input,{key:'Escape',isComposing:true});
+ expect(screen.getByRole('textbox',{name:'属性值'})).toBe(input);
  expect(onApply).not.toHaveBeenCalled();
  await user.click(screen.getByText('创建时间'));
  expect((await screen.findByRole('alert')).textContent).toContain('文件冲突');
@@ -238,7 +250,7 @@ it('responds immediately to a checkbox click and retains the value during the sa
  const user = userEvent.setup();
  const props = {note,tags:[],canEdit:true,busy:false,onApply};
  const {rerender} = render(<NoteProperties {...props} />);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
+ await user.click(screen.getByRole('button',{name:/^更多属性$/}));
  const checkbox = await screen.findByRole('checkbox',{name:'切换属性 已验证'});
  const summary = screen.getByRole('button',{name:'编辑属性 摘要'});
  await user.click(checkbox);
@@ -266,7 +278,7 @@ it('uses the matching save snapshot, ignores an older read and reloads on a late
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels'} : new Promise(resolve => { complete = resolve; }));
  const props = {note,tags:[],canEdit:true,busy:false,onApply:vi.fn()};
  const view = render(<NoteProperties {...props} />);
- fireEvent.click(screen.getByRole('button',{name:/^属性$/}));
+ fireEvent.click(screen.getByRole('button',{name:/^更多属性$/}));
  const savedProperties = {properties:[{name:'摘要',type:'text' as const,value:'已保存',editable:true}],writable:true,contentHash:'saved-property'};
  view.rerender(<NoteProperties {...props} note={{...note,contentHash:savedProperties.contentHash}} savedProperties={savedProperties} />);
  const value = await screen.findByRole('button',{name:'编辑属性 摘要'});
@@ -299,8 +311,9 @@ it('commits on keyboard focus leaving the value editor',async () => {
  await user.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
  const input = await screen.findByRole('textbox',{name:'属性值'});
  await user.clear(input); await user.type(input,'键盘保存');
- await user.tab(); await user.tab(); await user.tab();
+ await user.tab();
  await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'摘要',type:'text',value:'键盘保存'}));
+ expect(document.activeElement).toBe(screen.getByRole('button',{name:'属性菜单 aliases'}));
 });
 it('selects a calendar date immediately, without extra save controls, and supports month navigation',async () => {
  const {user,onApply} = await setup();
@@ -378,6 +391,7 @@ it('supports calendar arrow keys and Space selection',async () => {
 it('reads both tag sources without offering edits when the note is read-only',async () => {
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : ({properties:[],tagProperty:{name:'tags',type:'list',value:['只读属性'],editable:true},writable:true,contentHash:'hash'}));
  render(<NoteProperties note={note} tags={['只读正文']} canRead canEdit={false} busy={false} onApply={vi.fn()} />);
+ fireEvent.click(screen.getByRole('button',{name:'更多属性'}));
  expect(await screen.findByText('只读属性')).toBeTruthy();
  expect(screen.getByText('只读正文')).toBeTruthy();
  expect(screen.queryByRole('button',{name:'编辑标签'})).toBeNull();
@@ -388,7 +402,7 @@ it('keeps the focus selected by the body locator when the tag popup closes',asyn
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : operation === 'listTags' ? {tags:[]} : {properties:[],tagProperty:{name:'tags',type:'list',value:[],editable:true},writable:true,contentHash:'hash'});
  const user = userEvent.setup();
  render(<NoteProperties note={note} tags={['正文']} canEdit busy={false} onApply={vi.fn()} onLocateTag={()=>target.focus()} />);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
+ await user.click(screen.getByRole('button',{name:/^更多属性$/}));
  await user.click(await screen.findByRole('button',{name:'编辑标签'}));
  await user.click(screen.getByRole('button',{name:'定位正文标签 正文'}));
  await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑标签'})).toBeNull());
@@ -408,7 +422,7 @@ it.each([['select',false],['multiSelect',true]] as const)('handles %s selection 
  const onApply = vi.fn().mockResolvedValue(undefined), user=userEvent.setup();
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : ({properties:[{name:'领域',type,value:type==='select'?'':[],options:[{name:'设计',color:'blue'}],editable:true}],writable:true,contentHash:'hash'}));
  render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={onApply} />);
- await user.click(screen.getByRole('button',{name:'属性'}));
+ await user.click(screen.getByRole('button',{name:'更多属性'}));
  await user.click(await screen.findByRole('button',{name:'编辑属性 领域'}));
  await user.click(screen.getByRole('option',{name:'选项 设计'}));
  await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'领域',type,value:type==='select'?'设计':['设计'],options:[{name:'设计',color:'blue'}]}));
@@ -544,7 +558,7 @@ it('reads shared labels on another note and keeps the underlying value key',asyn
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{'system:tags':'分类','property:摘要':'概述'},contentHash:'labels-hash'} : {properties,writable:true,contentHash:'hash'});
  const user=userEvent.setup(), onApply=vi.fn().mockResolvedValue(undefined);
  const view=render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={onApply} />);
- await user.click(screen.getByRole('button',{name:'属性'}));
+ await user.click(screen.getByRole('button',{name:'更多属性'}));
  expect(await screen.findByRole('button',{name:'属性菜单 分类'})).toBeTruthy();
  expect(screen.getByRole('button',{name:'属性菜单 概述'})).toBeTruthy();
  view.rerender(<NoteProperties note={{...note,id:'other'}} tags={[]} canEdit busy={false} onApply={onApply} />);
@@ -555,22 +569,24 @@ it('reads shared labels on another note and keeps the underlying value key',asyn
  await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'摘要',type:'text',value:'独立值'}));
 });
 
-it('previews inherited library fields on an unsaved page without editing or writing',async () => {
- const onApply = vi.fn(), inherited = properties.map(property => ({...property,value:property.type === 'checkbox' ? false : property.type === 'list' ? [] : ''}));
+it('previews inherited fields without writing and allows explicit edits on an unsaved page',async () => {
+ const onApply = vi.fn().mockResolvedValue(undefined), inherited = properties.map(property => ({...property,value:property.type === 'checkbox' ? false : property.type === 'list' ? [] : ''}));
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{'property:摘要':'库摘要'},contentHash:'labels-hash'} : {properties:inherited,writable:false,contentHash:''});
  const user = userEvent.setup();
  const view = render(<NoteProperties tags={[]} canEdit busy={false} onApply={onApply} />);
- await user.click(screen.getByRole('button',{name:/^属性$/}));
+ await user.click(screen.getByRole('button',{name:/^更多属性$/}));
  expect(await screen.findByText('库摘要')).toBeTruthy();
  expect(request).toHaveBeenCalledWith('getNoteProperties',{deferWhileIndexing:true});
  const checkbox = screen.getByRole('checkbox',{name:'切换属性 已验证'});
  expect(checkbox.getAttribute('aria-checked')).toBe('false');
- expect(checkbox).toHaveProperty('disabled',true);
- await user.click(checkbox);
+ expect(checkbox).toHaveProperty('disabled',false);
  expect(screen.queryByText('只读')).toBeNull();
  expect(screen.queryByText('高级 YAML 语法请在源文件中编辑。')).toBeNull();
- expect(screen.queryByRole('button',{name:'编辑属性 库摘要'})).toBeNull();
+ expect(screen.getByRole('button',{name:'编辑属性 库摘要'})).toBeTruthy();
+ expect(screen.getByRole('button',{name:'属性菜单 库摘要'})).toHaveProperty('disabled',true);
  expect(onApply).not.toHaveBeenCalled();
+ await user.click(checkbox);
+ await waitFor(() => expect(onApply).toHaveBeenCalledWith({name:'已验证',type:'checkbox',value:true}));
  view.rerender(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={onApply} />);
  await waitFor(()=>expect(request).toHaveBeenCalledWith('getNoteProperties',{id:note.id,deferWhileIndexing:true}));
  expect(await screen.findByRole('button',{name:'编辑属性 库摘要'})).toBeTruthy();
@@ -590,7 +606,7 @@ it('retries properties during initial indexing without showing a failure or leav
   expect(screen.queryByRole('alert')).toBeNull();
   indexing = false;
   await act(async()=>{await vi.advanceTimersByTimeAsync(1100);});
-  fireEvent.click(screen.getByRole('button',{name:'属性'}));
+  fireEvent.click(screen.getByRole('button',{name:'更多属性'}));
   expect(screen.getByRole('button',{name:'编辑属性 摘要'}).hasAttribute('disabled')).toBe(false);
   view.unmount();
   const calls = vi.mocked(request).mock.calls.length;
@@ -608,7 +624,7 @@ it.each(['getNoteProperties','getPropertyLabels'])('retries failed %s reads with
  });
  const onApply=vi.fn(), user=userEvent.setup();
  render(<NoteProperties note={note} tags={[]} canRead canEdit={false} busy={false} onApply={onApply} />);
- await user.click(screen.getByRole('button',{name:'属性'}));
+ await user.click(screen.getByRole('button',{name:'更多属性'}));
  expect((await screen.findByRole('alert')).textContent).toContain('配置文件暂时无法读取');
  failed=false;
  await user.click(screen.getByRole('button',{name:'重试读取'}));
@@ -677,6 +693,7 @@ it('keeps the open property presentation and adapts the next opening to the curr
  vi.mocked(request).mockImplementation(async operation=>operation==='getPropertyLabels'?{labels:{},contentHash:'labels'}:operation==='listTags'?{tags:[]}:{properties:[],tagProperty:{name:'tags',type:'list',value:[],editable:true},writable:true,contentHash:'hash'});
  const user=userEvent.setup();
  render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={vi.fn()}/>);
+ await user.click(screen.getByRole('button',{name:'更多属性'}));
  await user.click(await screen.findByRole('button',{name:'编辑标签'}));
  expect((await screen.findByRole('dialog',{name:'编辑标签'})).dataset.slot).toBe('popover-content');
  resize(true);
@@ -755,6 +772,7 @@ it('uses a mobile tag sheet and closes without submitting search text, returning
  vi.mocked(request).mockImplementation(async operation=>operation==='getPropertyLabels'?{labels:{},contentHash:'labels'}:operation==='listTags'?{tags:[]}:{properties:[],tagProperty:{name:'tags',type:'list',value:[],editable:true},writable:true,contentHash:'hash'});
  const onApply=vi.fn(),user=userEvent.setup();
  render(<NoteProperties note={note} tags={[]} canEdit busy={false} onApply={onApply}/>);
+ await user.click(screen.getByRole('button',{name:'更多属性'}));
  const trigger=await screen.findByRole('button',{name:'编辑标签'});
  await user.click(trigger);
  const sheet=await screen.findByRole('dialog',{name:'编辑标签'});

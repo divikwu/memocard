@@ -330,7 +330,7 @@ it('starts a block range beside the page title before reaching the document and 
 
 it('undoes title, body and real property controls in order, then persists redo through the public handle', async () => {
   const { handle, stored } = await page();
-  fireEvent.click(screen.getByRole('button', { name: /^属性$/ }));
+  fireEvent.click(screen.getByRole('button', { name: /^更多属性$/ }));
   const checkbox = await screen.findByRole('checkbox', { name: '切换属性 已验证' });
   const title = screen.getByRole('textbox', { name: '页面标题' });
   fireEvent.change(title, { target: { value: '新题' } }); fireEvent.blur(title);

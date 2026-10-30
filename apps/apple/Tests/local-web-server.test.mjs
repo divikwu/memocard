@@ -214,13 +214,13 @@ test('requires authentication for draft reminder review before dispatch', async 
   assert.equal(JSON.parse(reply.body).data.count, 1, 'Unauthorized review must not reach the handler.');
 });
 
-test('authenticates pin metadata reads and writes before dispatch', async t => {
+test('authenticates presentation metadata reads and writes before dispatch', async t => {
   const host = await webHost(t);
-  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences']) {
+  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences', 'getPropertyLayout', 'setPropertyLayout']) {
     assert.equal((await call(host.config, {body:envelope({}, {operation})})).status, 401);
   }
   const cookie = await authenticate(host);
-  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences']) {
+  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences', 'getPropertyLayout', 'setPropertyLayout']) {
     const reply = await call(host.config, {body:envelope({}, {operation}), headers:{Cookie:cookie}});
     assert.equal(reply.status, 200);
     assert.equal(JSON.parse(reply.body).data.operation, operation);

@@ -45,7 +45,7 @@ it.each([
   ['readonly','只读'],['empty','记下第一条笔记'],
 ])('%s renders the actual App state',async(id,text)=>{
   await show(id);
-  if(['property-read-error','readonly'].includes(id))fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+  if(['property-read-error','readonly'].includes(id))fireEvent.click(await screen.findByRole('button',{name:'更多属性'}));
   expect((await screen.findAllByText(content=>content.includes(errorMessage(new Error(text))),{}, {timeout:3000})).length).toBeGreaterThan(0);
 });
 it('shows multiple cards and retains dismissed drafts',async()=>{
@@ -124,7 +124,7 @@ it('refreshes a changed draft in the dialog and retains it if refreshing fails',
 
 it('shows a property save failure once with its shared retry action',async()=>{
   await show('property-save-error');
-  fireEvent.click(await screen.findByRole('button',{name:'属性'}));
+  fireEvent.click(await screen.findByRole('button',{name:'更多属性'}));
   fireEvent.click(await screen.findByRole('button',{name:'编辑属性 阶段'}));
   fireEvent.click(await screen.findByRole('option',{name:'选项 完成'}));
   await screen.findByRole('button',{name:'重试保存'});
@@ -140,7 +140,7 @@ it.each(['save-error','property-read-error','readonly'])('%s places its notice b
   if(id === 'property-read-error')expect(screen.getByRole('button',{name:'重试读取'})).toBeTruthy();
   if(id === 'readonly'){
     expect(screen.getAllByText('高级 YAML 语法请在源文件中编辑。')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button',{name:'属性'}));
+    fireEvent.click(screen.getByRole('button',{name:'更多属性'}));
     expect(await screen.findByText('只读')).toBeTruthy();
   }
 });
@@ -248,7 +248,7 @@ it('shows a rejected conversion only in its confirmation and keeps its original 
   const mock=await show('lossy-conversion');
   const original=mock.snapshot();
   const user=userEvent.setup();
-  await user.click(await screen.findByRole('button',{name:'属性'}));
+  await user.click(await screen.findByRole('button',{name:'更多属性'}));
   await user.click(await screen.findByRole('button',{name:'属性菜单 摘要'}));
   const types=await screen.findByRole('menuitem',{name:/^类型/});
   types.focus(); await user.keyboard('{ArrowRight}');

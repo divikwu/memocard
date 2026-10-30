@@ -246,14 +246,14 @@ describe("note workspace", () => {
     expect(readEditorText()).toBe("Recovered before sidebar");
   });
 
-  it("expands inline properties with the keyboard and clears metadata for a new page", async () => {
+  it("toggles property controls with the keyboard, preserves visible metadata and clears metadata for a new page", async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(await screen.findByRole('button', { name: /^打开 / }));
     await screen.findByRole('textbox', { name: '笔记内容' });
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.queryByText(`${note.id}.md`)).toBeNull();
-    const expand = screen.getByRole('button', {name:'属性'});
+    expect(screen.getByText(`${note.id}.md`)).toBeTruthy();
+    const expand = screen.getByRole('button', {name:'更多属性'});
     expect(expand.getAttribute('aria-expanded')).toBe('false');
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('textbox', {name:'笔记内容'})));
     act(() => expand.focus());
@@ -266,11 +266,12 @@ describe("note workspace", () => {
     expect(expand.getAttribute('aria-expanded')).toBe('true');
     expect(document.activeElement).toBe(expand);
     await user.keyboard(' ');
-    await waitFor(() => expect(screen.queryByText(`${note.id}.md`)).toBeNull());
+    expect(expand.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByText(`${note.id}.md`)).toBeTruthy();
     expect(bridge.request.mock.calls.some(([op]) => op === 'saveNote' || op === 'saveDraft')).toBe(false);
     await createNote();
     await screen.findByRole('region', {name:'新建笔记'});
-    await user.click(screen.getByRole('button', {name:'属性'}));
+    await user.click(screen.getByRole('button', {name:'更多属性'}));
     const unsaved = screen.getByLabelText('笔记属性');
     expect(unsaved.textContent).toContain('尚未保存');
     expect(unsaved.textContent).not.toContain(note.id);
@@ -1150,6 +1151,7 @@ it('leaves an untouched page created under a tag without writing a note or recov
   const title = await screen.findByRole('textbox', { name: '页面标题' });
   expect((title as HTMLTextAreaElement).value).toBe('');
   expect(readEditorText()).toBe('');
+  fireEvent.click(screen.getByRole('button', { name: '更多属性' }));
   expect(screen.getByLabelText('笔记属性').textContent).toContain('生活');
   fireEvent.click(within(screen.getByRole('navigation', { name: '主要导航' })).getByRole('button', { name: '所有笔记' }));
   await screen.findByRole('list', { name: '笔记列表' });
