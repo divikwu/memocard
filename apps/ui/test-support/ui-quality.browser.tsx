@@ -160,7 +160,8 @@ for (const [kind, block] of [
     expect(scrollPositions()).toEqual(before);
     expect(document.activeElement).toBe(target);
     if (target === tag) {
-      await waitFor(() => expectKeyboardOutline(tag, "light"));
+      await Promise.all(tag.getAnimations().map(animation => animation.finished));
+      expectKeyboardOutline(tag, "light");
       expectUnclippedOutline(tag);
     }
   }
@@ -561,6 +562,7 @@ for (const mode of ["light", "dark"] as const) {
     const innerTrigger = within(outer).getByRole("button", { name: "打开内层" });
     await userEvent.click(innerTrigger);
     const inner = await within(document.body).findByRole("dialog", { name: "内层浮层" });
+    await expect.element(within(inner).getByRole("button", { name: "内部操作" })).toHaveFocus();
     expect(outer.classList.contains("shadow-high")).toBe(true);
     expect(inner.classList.contains("shadow-high")).toBe(true);
     expect(getComputedStyle(inner).boxShadow).toBe(getComputedStyle(outer).boxShadow);
@@ -569,10 +571,10 @@ for (const mode of ["light", "dark"] as const) {
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(inner.isConnected).toBe(false));
     expect(outer.isConnected).toBe(true);
-    expect(document.activeElement).toBe(innerTrigger);
+    await expect.element(innerTrigger).toHaveFocus();
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(outer.isConnected).toBe(false));
-    expect(document.activeElement).toBe(outerTrigger);
+    await expect.element(outerTrigger).toHaveFocus();
   });
 
   for (const elevation of ["shadow-low", "shadow-none", "shadow-flat", "shadow-document"]) {
