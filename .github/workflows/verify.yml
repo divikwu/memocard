@@ -50,6 +50,8 @@ jobs:
             /etc/apt/apt-mirrors.txt
           cat /etc/apt/apt-mirrors.txt
       - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium firefox webkit
+      - name: Probe responsive WebKit detail layout
+        run: pnpm --filter @memocard/ui exec vitest run --config vitest.storybook.config.ts --project 'ui-quality (webkit)' -t '^Web detail aligns title, properties and body across breakpoints$'
       - run: pnpm verify:design
       - run: pnpm verify:ui
   release-web:

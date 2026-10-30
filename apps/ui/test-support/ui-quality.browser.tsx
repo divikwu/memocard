@@ -1325,15 +1325,18 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
   };
   const app = () => <WebAppearanceProvider><App renderView={renderState} /></WebAppearanceProvider>;
   const view = render(app());
+  let phase = "mount";
   try {
     const scenarios = [{width: 1440, touch: false}, {width: 390, touch: false}, ...(server.browser === "chromium" ? [{width: 390, touch: true}] : [])];
     for (const scenario of scenarios) {
+      phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: media`;
       await page.viewport(scenario.width, 900);
       if (server.browser === "chromium") await commands.setTouchInput(scenario.touch);
       expect(matchMedia("(hover: none)").matches).toBe(scenario.touch);
       expect(matchMedia("(pointer: coarse)").matches).toBe(scenario.touch);
       canOpen = true;
       view.rerender(app());
+      phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: collection`;
       const canvas = within(view.container);
       await waitFor(() => expect(view.container.querySelectorAll('.web-app-header [data-slot="action-group"]')).toHaveLength(scenario.width < 768 ? 2 : 0));
       const list = await canvas.findByRole("list", {name: "笔记列表"});
@@ -1347,14 +1350,17 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
       reference.style.backgroundColor = "var(--color-overlay-hover)";
       root.append(reference);
       try {
+        phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: rest`;
         const outside = canvas.getByRole("button", {name: "页面操作"});
         await userEvent.hover(outside);
         expect(getComputedStyle(card).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: hover`;
         await userEvent.hover(open);
         expect(card.matches(":hover")).toBe(true);
         const overlay = getComputedStyle(reference).backgroundColor;
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
         const before = opened.length, bounds = card.getBoundingClientRect();
+        phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: held click`;
         const click = Promise.resolve(userEvent.click(open, {delay: 400}));
         try {
           await waitFor(() => expect(open.matches(":active")).toBe(true));
@@ -1362,10 +1368,12 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
           expect(card.getBoundingClientRect().top).toBeCloseTo(bounds.top, 1);
           expect(opened).toHaveLength(before);
         } finally { await click; }
+        phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: release`;
         expect(opened).toHaveLength(before + 1);
         if (scenario.touch) expect(card.matches(":hover")).toBe(true);
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
         await userEvent.hover(outside);
+        phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: keyboard`;
         open.focus();
         if (server.browser === "webkit") {
           await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
@@ -1385,6 +1393,7 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
         expect(opened).toHaveLength(before + 2);
         open.blur();
         await userEvent.hover(outside);
+        phase = `${scenario.width}/${scenario.touch ? "touch" : "mouse"}: disabled`;
         canOpen = false;
         view.rerender(app());
         expect(open).toHaveProperty("disabled", true);
@@ -1394,6 +1403,7 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
         open.click();
         expect(opened).toHaveLength(before + 2);
         if (scenario.width === 1440) {
+          phase = `${scenario.width}/mouse: independent tag`;
           const tag = within(card).getAllByRole("button", {name: /^筛选标签 /})[0];
           const tagCount = selected.length;
           await userEvent.click(tag);
@@ -1403,12 +1413,21 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
         }
       } finally { reference.remove(); }
     }
+    phase = "native baseline";
     view.unmount();
     const native = render(<PreviewModeProvider mode={mode}><main className="ui-theme p-4" data-ui-theme={mode}><NoteCollection {...current!.collection} canOpen={false} /><div data-testid="card-color" className="bg-card" /></main></PreviewModeProvider>);
     const nativeCard = native.container.querySelector<HTMLElement>(".ui-note-list-card")!;
     expect(nativeCard.closest("[data-web-client]")).toBeNull();
     expect(getComputedStyle(nativeCard).backgroundColor).toBe(getComputedStyle(within(native.container).getByTestId("card-color")).backgroundColor);
     expect(getComputedStyle(nativeCard).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
+  } catch (error) {
+    console.error(`Web list ${mode} failed at ${phase}`, {
+      hoverNone: matchMedia("(hover: none)").matches,
+      coarsePointer: matchMedia("(pointer: coarse)").matches,
+      hovered: [...document.querySelectorAll(":hover")].slice(-5).map(element => `${element.tagName}.${element.className}`),
+      cards: [...view.container.querySelectorAll(".ui-note-list-card")].slice(0, 2).map(element => ({background: getComputedStyle(element).backgroundColor, hovered: element.matches(":hover"), openable: element.getAttribute("data-note-openable")})),
+    }, error instanceof Error ? error.stack : error);
+    throw error;
   } finally {
     if (server.browser === "chromium") await commands.setTouchInput(false);
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
@@ -1658,24 +1677,38 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
 }, 30_000);
 
 test("Web detail aligns title, properties and body across breakpoints", async () => {
+  const checkpoint = (phase: string) => {
+    if (server.browser === "webkit") console.info(`[Web detail] ${phase}; visibility=${document.visibilityState}; focus=${document.hasFocus()}; fonts=${document.fonts.status}`);
+  };
+  checkpoint("initial viewport");
   await page.viewport(320, 900);
+  checkpoint("reduced motion");
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
   localStorage.clear();
+  checkpoint("workspace fixture");
   const fixture = await createWorkspaceFixture();
   const note = fixture.snapshot().notes[0];
+  checkpoint("seed tags");
   await fixture.request("updateNoteProperty", {id: note.id, name: "tags", type: "list", value: ["生活/咖啡", ...Array.from({length: 14}, (_, index) => `布局标签${index}`), "unbroken_".repeat(20)]});
+  checkpoint("seed choices");
   await fixture.request("updateNoteProperty", {id: note.id, name: "阶段", type: "multiSelect", value: ["进行中", "完成"]});
   history.replaceState(null, "", `#/notes/${note.id}`);
   const release = setStorybookRequestHandler(fixture.request);
+  checkpoint("render App");
   const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
+    checkpoint("wait for title");
     const title = await canvas.findByRole("textbox", {name: "页面标题"});
+    checkpoint("wait for body");
     const body = await canvas.findByRole("textbox", {name: "笔记内容"});
+    checkpoint("wait for properties");
     await canvas.findByRole("button", {name: "属性菜单 阶段"});
+    checkpoint("wait for fonts");
     await document.fonts.ready;
     for (const width of [320, 390, 640, 767, 768, 820, 1024, 1180, 1440]) {
+      checkpoint(`${width}px viewport`);
       await page.viewport(width, 900);
       const checkLayout = () => {
         const titleBox = title.getBoundingClientRect(), titleStyle = getComputedStyle(title);
@@ -1712,14 +1745,21 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
         const overflow = Array.from(scroll.querySelectorAll<HTMLElement>("*")).filter(element => element.getBoundingClientRect().right > width + 1).map(element => `${element.tagName}.${element.className}: ${element.getBoundingClientRect().right}`);
         expect(scroll.scrollWidth, overflow.join("\n")).toBeLessThanOrEqual(scroll.clientWidth + 1);
       };
+      checkpoint(`${width}px initial layout`);
       await waitFor(checkLayout);
+      checkpoint(`${width}px expand click`);
       await userEvent.click(canvas.getByRole("button", {name: "更多属性"}));
+      checkpoint(`${width}px expanded layout`);
       await waitFor(checkLayout);
+      checkpoint(`${width}px collapse click`);
       await userEvent.click(canvas.getByRole("button", {name: "收起"}));
+      checkpoint(`${width}px collapsed layout`);
       await waitFor(checkLayout);
+      checkpoint(`${width}px keyboard navigation`);
       canvas.getByRole("button", {name: "更多属性"}).focus();
       if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
       else await userEvent.tab();
+      checkpoint(`${width}px keyboard focus layout`);
       const grip = canvas.getByRole("button", {name: "内容块操作"});
       await waitFor(() => {
         expect(document.activeElement).toBe(grip);
@@ -1728,10 +1768,14 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
         expectKeyboardOutline(grip, "light");
         expectUnclippedOutline(grip);
       });
+      checkpoint(`${width}px complete`);
     }
   } finally {
+    checkpoint("unmount App");
     view.unmount(); release();
+    checkpoint("restore history");
     history.replaceState(null, "", previousHash || "#/notes");
+    checkpoint("complete");
   }
 }, 30_000);
 
