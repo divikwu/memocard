@@ -1,5 +1,4 @@
 // @vitest-environment node
-import { readFileSync } from "node:fs";
 import { expect, it, vi } from "vitest";
 import { aliases, tokens } from "./token-catalog";
 
@@ -8,22 +7,17 @@ vi.mock("./theme.css?raw", async () => {
   return { default: readFileSync(new URL("./theme.css", import.meta.url), "utf8") };
 });
 
-it("retains the stored Luma sidebar surface independently from body, card and muted roles", () => {
-  const registry = JSON.parse(readFileSync(new URL("../../../design/themes/ui-luma.registry.json", import.meta.url), "utf8"));
-  const palette = readFileSync(new URL("../node_modules/tailwindcss/theme.css", import.meta.url), "utf8");
+it("keeps sidebar, page and content surfaces mapped to their own semantic roles", () => {
   const sidebar = tokens.find(token => token.name === "--color-background-sidebar")!;
   expect(sidebar).toMatchObject({ category: "colors", colorGroup: "extensions", projectExtension: true, interfaces: ["bg-sidebar"] });
-  for (const mode of ["light", "dark"] as const) {
-    const name = sidebar[mode].match(/^var\((--color-neutral-\d+)\)$/)![1];
-    const lightness = Number(palette.match(new RegExp(`${name}: oklch\\(([\\d.]+)% 0 (?:0|none)\\)`))![1]) / 100;
-    expect(registry.cssVars[mode].sidebar).toBe(`oklch(${lightness} 0 0)`);
-  }
-  expect(tokens.find(token => token.name === "--color-background-body")).toMatchObject({ light: "var(--color-white)", dark: "var(--color-neutral-950)" });
+  expect(sidebar).toMatchObject({ light: "var(--color-neutral-100)", dark: "var(--color-neutral-900)" });
+  expect(tokens.find(token => token.name === "--color-background-body")).toMatchObject({ light: "var(--color-neutral-100)", dark: "var(--color-neutral-950)" });
   expect(tokens.find(token => token.name === "--color-background-surface")).toMatchObject({ light: "var(--color-white)", dark: "var(--color-neutral-900)" });
   expect(tokens.find(token => token.name === "--color-background-muted")).toMatchObject({ light: "var(--color-neutral-100)", dark: "var(--color-neutral-800)" });
 });
 
 const shadowScale = tokens.filter(token => token.name.startsWith("--shadow-scale-"));
+const outlinedScale = tokens.filter(token => token.name.startsWith("--shadow-outlined-"));
 
 function outerLayers(value: string) {
   const matches = [...value.matchAll(/(-?[\d.]+)px (-?[\d.]+)px ([\d.]+)px (-?[\d.]+)px color-mix\(in srgb, var\(--color-shadow\) ([\d.]+)%, transparent\)/g)];
@@ -41,27 +35,43 @@ it("exposes only five ordered outer-shadow levels without primitive utility inte
   }
 });
 
-it("keeps multi-layer geometry and a single outer edge consistent across themes", () => {
-  const lightOpacity = [[0, 0, 0, 0, 0, 0], [4, 6, 6], [4, 4, 2, 1, 0, 6], [7, 6, 4, 1, 0, 6], [7, 6, 4, 1, 0, 3]];
-  const darkOpacity = [[0, 0, 0, 0, 0, 0], [12, 14, 16], [8, 7, 4, 1, 0, 12], [10, 9, 5, 1, 0, 12], [12, 10, 6, 2, 0, 12]];
-  let previousHeight = 0;
+it("shares Figma projection geometry across themes and strengthens dark opacity fourfold", () => {
+  const lightLayers = [
+    Array.from({ length: 6 }, () => [0, 0, 0, 0, 0]),
+    [[0, 2, 4, 0, 4], [0, 1, 2, -1, 2]],
+    [[0, 16, 32, -16, 12], [0, 4, 8, -4, 4]],
+    [[0, 20, 30, -20, 24], [0, 8, 16, -8, 4], [0, 4, 8, -4, 4]],
+    [[0, 24, 36, 0, 4], [0, 16, 24, 0, 8], [0, 4, 8, -4, 4]],
+  ];
+  const darkOpacity = [[0, 0, 0, 0, 0, 0], [16, 8], [48, 16], [96, 16, 16], [16, 32, 16]];
+  const previousHeight = { light: 0, dark: 0 };
   for (const [index, token] of shadowScale.entries()) {
     const light = outerLayers(token.light);
     const dark = outerLayers(token.dark);
-    expect(light).toHaveLength(index === 1 ? 3 : 6);
-    expect(dark.map(layer => layer.geometry)).toEqual(light.map(layer => layer.geometry));
-    expect(light.map(layer => layer.opacity)).toEqual(lightOpacity[index]);
+    expect(light).toEqual(lightLayers[index].map(([x, y, blur, spread, opacity]) => ({ geometry: [x, y, blur, spread], opacity })));
     expect(dark.map(layer => layer.opacity)).toEqual(darkOpacity[index]);
-    const edges = light.filter(layer => layer.geometry[3] === 1);
-    expect(edges).toHaveLength(index === 0 ? 0 : 1);
-    for (const edge of edges) expect(edge.geometry).toEqual([0, 0, 0, 1]);
-    if (index === 0) {
-      expect(light.every(layer => layer.geometry.every(value => value === 0))).toBe(true);
-    } else {
-      const height = Math.max(...light.filter(layer => layer.opacity > 0).map(layer => layer.geometry[1] + layer.geometry[2]));
-      expect(height).toBeGreaterThan(previousHeight);
-      previousHeight = height;
+    expect(dark.map(layer => layer.geometry)).toEqual(light.map(layer => layer.geometry));
+    for (const [mode, layers] of [["light", light], ["dark", dark]] as const) {
+      if (index === 0) expect(layers.every(layer => layer.geometry.every(value => value === 0))).toBe(true);
+      else {
+        const height = Math.max(...layers.filter(layer => layer.opacity > 0).map(layer => layer.geometry[1] + layer.geometry[2]));
+        expect(height).toBeGreaterThan(previousHeight[mode]);
+        previousHeight[mode] = height;
+      }
     }
+  }
+});
+
+it("composes five outlined recipes from the same projections and exactly one independent edge", () => {
+  expect(outlinedScale.map(token => token.name)).toEqual([0, 1, 2, 3, 4].map(level => `--shadow-outlined-${level}`));
+  expect(tokens.find(token => token.name === "--shadow-edge")).toMatchObject({
+    light: "0px 0px 0px 1px color-mix(in srgb, var(--color-shadow) 4%, transparent)",
+    dark: "0px 0px 0px 1px color-mix(in srgb, var(--color-white) 8%, transparent)",
+    interfaces: [],
+  });
+  for (const [level, token] of outlinedScale.entries()) {
+    const value = level === 0 ? "var(--shadow-edge)" : `var(--shadow-scale-${level}), var(--shadow-edge)`;
+    expect(token).toMatchObject({ light: value, dark: value, category: "elevation", interfaces: [] });
   }
 });
 
@@ -76,13 +86,13 @@ it("owns the control highlight separately from the elevation scale", () => {
 
 it.each([
   ["flat", "var(--shadow-scale-0)", ["shadow-flat"]],
-  ["low", "var(--shadow-scale-2)", ["shadow-low"]],
-  ["med", "var(--shadow-scale-3)", ["shadow-med"]],
-  ["high", "var(--shadow-scale-4)", ["shadow-high"]],
-  ["control", "var(--shadow-scale-1), var(--surface-highlight-control)", ["shadow-control"]],
-  ["floating", "var(--shadow-scale-2)", ["shadow-floating"]],
-  ["document", "var(--shadow-scale-3)", ["shadow-document"]],
-  ["card-hover", "var(--shadow-low)", ["shadow-card-hover"]],
+  ["low", "var(--shadow-outlined-2)", ["shadow-low"]],
+  ["med", "var(--shadow-outlined-3)", ["shadow-med"]],
+  ["high", "var(--shadow-outlined-4)", ["shadow-high"]],
+  ["control", "var(--shadow-outlined-1), var(--surface-highlight-control)", ["shadow-control"]],
+  ["floating", "var(--shadow-outlined-2)", ["shadow-floating"]],
+  ["document", "var(--shadow-outlined-3)", ["shadow-document"]],
+  ["card-hover", "var(--shadow-scale-2)", ["shadow-card-hover"]],
   ["input-focus", "var(--shadow-med)", ["shadow-input-focus"]],
 ])("maps %s to a component role in both themes", (name, value, interfaces) => {
   expect(tokens.find(token => token.name === `--shadow-${name}`)).toMatchObject({ light: value, dark: value, category: "elevation", interfaces });
@@ -95,9 +105,9 @@ it("keeps border roles independent from shadows and preserves utility aliases", 
     dark: "color-mix(in srgb, var(--color-white) 10%, transparent)",
     category: "colors", colorGroup: "colors", projectExtension: false, valueSource: undefined, interfaces: ["border-border", "surface-floating"],
   });
-  expect(tokens.find(token => token.name === "--color-divider")).toMatchObject({ light: "var(--color-border)", dark: "var(--color-border)" });
+  expect(tokens.find(token => token.name === "--color-divider")).toMatchObject({ light: "color-mix(in srgb, var(--color-black) 6%, transparent)", dark: "var(--color-border)" });
   expect(tokens.find(token => token.name === "--color-border-subtle")).toMatchObject({
-    light: "color-mix(in srgb, var(--color-black) 6%, transparent)",
+    light: "color-mix(in srgb, var(--color-black) 4%, transparent)",
     dark: "color-mix(in srgb, var(--color-white) 5%, transparent)",
     category: "colors", colorGroup: "extensions", projectExtension: true, interfaces: ["border-border-subtle"],
   });
@@ -134,5 +144,5 @@ it("does not duplicate the elevation edge in floating borders or highlights", ()
     dark: "0 0 0 0 transparent, inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent)",
     category: "elevation",
   });
-  expect(tokens.find(token => token.name === "--shadow-high")).toMatchObject({ light: "var(--shadow-scale-4)", dark: "var(--shadow-scale-4)" });
+  expect(tokens.find(token => token.name === "--shadow-high")).toMatchObject({ light: "var(--shadow-outlined-4)", dark: "var(--shadow-outlined-4)" });
 });

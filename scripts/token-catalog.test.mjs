@@ -115,7 +115,7 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     assert.ok(catalog.css.find(token => token.name === '--color-accent').declarations.some(declaration => declaration.source.endsWith('/web-palette.css')));
     assert.ok(catalog.css.find(token => token.name === '--radius-element').declarations.some(declaration => declaration.source.endsWith('/preview-appearance.css')));
     assert.ok(catalog.css.find(token => token.name === '--color-brand').status === 'reserved');
-    for (const [path, token] of [['TagColorStyles.core.tsx', '--tag-default-fg'], ['NoteMarkdown.tsx', '--color-background-body'], ['WebView.swift', '--ios-top'], ['select.tsx', '--anchor-width'], ['QuickCapture.tsx', '--shadow-low']]) {
+    for (const [path, token] of [['TagColorStyles.core.tsx', '--tag-default-fg'], ['NoteMarkdown.tsx', '--color-background-body'], ['WebView.swift', '--ios-top'], ['select.tsx', '--anchor-width'], ['QuickCapture.tsx', '--shadow-flat'], ['QuickCapture.css', '--shadow-scale-2']]) {
       assert.ok(content.split('\n').some(line => line.startsWith('| [') && line.includes(path) && line.includes(`\`${token}\``)), `${path} consumes ${token}`);
     }
     assert.ok(!content.includes('/src/components/ui/') && !content.includes('/apps/ui/stories/'));

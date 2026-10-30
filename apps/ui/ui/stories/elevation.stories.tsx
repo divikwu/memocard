@@ -48,12 +48,22 @@ export const InteractionRegression: StoryObj<typeof meta> = {
       await waitFor(() => expect(shadow(input)).toBe(restingInputShadow));
       const samples = [...panel.querySelectorAll<HTMLElement>("[data-shadow-scale]")];
       await expect(samples.map(sample => sample.dataset.shadowScale)).toEqual(["0", "1", "2", "3", "4"]);
+      const outlined = [...panel.querySelectorAll<HTMLElement>("[data-shadow-outlined]")];
+      await expect(outlined.map(sample => sample.dataset.shadowOutlined)).toEqual(["0", "1", "2", "3", "4"]);
       for (const sample of samples) {
         const value = shadow(sample);
         await expect(value).not.toBe("none");
         await expect(value).not.toContain("var(");
         await expect(value).not.toContain("inset");
         await expect(CSS.supports("box-shadow", value)).toBe(true);
+        await expect(value).not.toContain("0px 0px 0px 1px");
+      }
+      for (const [level, sample] of outlined.entries()) {
+        const value = shadow(sample);
+        await expect(CSS.supports("box-shadow", value)).toBe(true);
+        await expect(value.match(/0px 0px 0px 1px/g)).toHaveLength(1);
+        if (level > 0) await expect(value).toContain(shadow(samples[level]));
+        await expect(value).toContain(`color(srgb ${mode === "light" ? "0 0 0 / 0.04" : "1 1 1 / 0.08"}) 0px 0px 0px 1px`);
       }
       const thumb = panel.querySelector('[data-slot="switch-thumb"]')!;
       controlShadows.push(shadow(thumb));
@@ -65,6 +75,9 @@ export const InteractionRegression: StoryObj<typeof meta> = {
       await expect(getComputedStyle(card).borderTopStyle).toBe("solid");
       await expect(shadow(card)).toContain("0px 0px 0px 1px");
       await expect(getComputedStyle(card).borderTopColor).toBe("rgba(0, 0, 0, 0)");
+      const noteCard = panel.querySelector('[data-shadow-role="note-card"]')!;
+      await expect(getComputedStyle(noteCard).borderTopWidth).toBe("0px");
+      await expect(shadow(noteCard)).toBe(shadow(samples[0]));
       for (const [role, level] of [["floating", 2], ["document", 3]] as const) {
         await expect(shadow(panel.querySelector(`[data-shadow-role="${role}"]`)!)).toContain(shadow(samples[level]));
       }

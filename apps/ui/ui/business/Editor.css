@@ -32,5 +32,5 @@
   .ui-note-editor .block-controls, .ui-note-editor .block-controls[data-heading] { left: calc(var(--editor-gutter) - 1.5rem - 6px); }
   .ui-note-editor .block-controls button { opacity: 0; touch-action: none; }
   .ui-note-editor .block-controls button:focus-visible { opacity: 1; }
-  .ui-note-editor .block-controls:has(button:focus-visible) { left: calc(var(--spacing-1) * -1); background: var(--color-background-body); }
+  .ui-note-editor .block-controls:has(button:focus-visible) { left: calc(var(--spacing-1) * -1); background: var(--color-background-surface); }
 }

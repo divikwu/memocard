@@ -132,8 +132,8 @@ const preRenderer: Components["pre"] = ({ children }) => {
   const code = children as ReactElement<{ className?: string; children?: string }>;
   return code?.props?.className === "language-mermaid" ? <MermaidContent source={String(code.props.children ?? "").replace(/\n$/, "")}><pre>{children}</pre></MermaidContent> : <pre>{children}</pre>;
 };
-const compactTableRenderer: Components["table"] = ({ children }) => <div className="typeset-scroll"><table>{children}</table></div>;
-const compactPreRenderer: Components["pre"] = ({ children }) => <pre>{children}</pre>;
+const compactTableRenderer: Components["table"] = ({ children }) => <div className="typeset-scroll" tabIndex={-1}><table>{children}</table></div>;
+const compactPreRenderer: Components["pre"] = ({ children }) => <pre tabIndex={-1}>{children}</pre>;
 const compactTaskRenderer: Components["input"] = ({ checked }) => <span className="note-task-indicator" aria-hidden="true" data-checked={checked === true} />;
 
 export function NoteMarkdown({ compact = false, interactive = true, ...props }: Pick<MarkdownContentProps, "body" | "notePath" | "onError"> & { compact?: boolean; interactive?: boolean }) {

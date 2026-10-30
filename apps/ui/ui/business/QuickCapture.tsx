@@ -37,7 +37,7 @@ export function QuickCapture(props: QuickCaptureProps) {
   const { expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
   if (isIOSNative) return null;
   const form = <form className="ui-quick-capture" aria-label="快速输入" aria-busy={busy} onSubmit={event => { event.preventDefault(); void record(); }}>
-    <InputGroup className="ui-capture-group border-transparent bg-surface shadow-low">
+    <InputGroup className="ui-capture-group border-transparent bg-surface shadow-flat">
       <CaptureEditor value={capture.text} tags={options} resetKey={capture.id} disabled={blocked} field={textarea} editorRef={editorRef} onChange={text => changeCapture({ ...captureCurrent.current, text })} onSave={() => void record()} />
       {capture.images.length > 0 && <div className="ui-capture-images" aria-label="待记录的图片">{capture.images.map((image, index) => {
         const source = assetUrl(image.markdownPath, capture.relativePath);

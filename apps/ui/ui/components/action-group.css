@@ -1,5 +1,4 @@
 @media (max-width: 767px) {
-  div[data-slot="action-group"][data-mobile-actions].max-md\:bg-card { background-color: var(--color-background-card); }
   [data-slot="action-group"][data-mobile-actions] button { translate: none; }
   [data-slot="action-group"][data-mobile-actions] button:not(:disabled, [aria-disabled="true"], [data-disabled], [aria-pressed="true"], [aria-pressed="mixed"], [aria-selected="true"], [data-active], [aria-expanded="true"], [data-popup-open]):is(:hover, :active) { background: var(--color-overlay-hover); }
   [data-slot="action-group"][data-mobile-actions] button:is(:disabled, [aria-disabled="true"], [data-disabled]) { pointer-events: none; opacity: .5; }
