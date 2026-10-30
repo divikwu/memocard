@@ -1761,13 +1761,24 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
       else await userEvent.tab();
       checkpoint(`${width}px keyboard focus layout`);
       const grip = canvas.getByRole("button", {name: "内容块操作"});
+      const checked = new Set<string>();
+      const focusCheckpoint = (phase: string) => {
+        if (!checked.has(phase)) { checked.add(phase); checkpoint(`${width}px ${phase}`); }
+      };
       await waitFor(() => {
+        focusCheckpoint(`active grip: ${document.activeElement === grip}`);
         expect(document.activeElement).toBe(grip);
+        focusCheckpoint("focus-visible");
         expect(grip.matches(":focus-visible")).toBe(true);
+        focusCheckpoint("opacity");
         expect(getComputedStyle(grip).opacity).toBe("1");
-        expectKeyboardOutline(grip, "light");
+        focusCheckpoint("unclipped outline");
         expectUnclippedOutline(grip);
       });
+      checkpoint(`${width}px outline paint`);
+      // The color helper writes a temporary swatch: keep it outside waitFor so a
+      // failed bounds assertion cannot retrigger its own MutationObserver forever.
+      expectKeyboardOutline(grip, "light");
       checkpoint(`${width}px complete`);
     }
   } finally {
