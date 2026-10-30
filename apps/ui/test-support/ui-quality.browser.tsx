@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, inject, test } from "vitest";
 import type { NoteProperties as Properties, PropertyLayout } from "@memocard/contracts";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { commands, page, server, userEvent } from "vitest/browser";
@@ -127,6 +127,8 @@ function expectUnclippedOutline(element: Element) {
   }
 }
 
+// The fixed touch project registers only the shared list flow below.
+if (!inject("uiQualityTouch")) {
 for (const mode of ["light", "dark"] as const) {
   for (const kind of ["accordion", "source", "settings"] as const) test(`outward focus is not clipped for ${kind} in ${mode}`, async () => {
     await page.viewport(1024, 900);
@@ -1308,6 +1310,7 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
     }
   } finally { releaseAssets(); }
 }, 35_000);
+}
 
 for (const mode of ["light", "dark"] as const) test(`Web list rows keep transparent rest, independent tags and pointer feedback in ${mode}`, async () => {
   await commands.setReducedMotion("reduce");
@@ -1326,10 +1329,9 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
   const app = () => <WebAppearanceProvider><App renderView={renderState} /></WebAppearanceProvider>;
   const view = render(app());
   try {
-    const scenarios = [{width: 1440, touch: false}, {width: 390, touch: false}, ...(server.browser === "chromium" ? [{width: 390, touch: true}] : [])];
+    const scenarios = inject("uiQualityTouch") ? [{width: 390, touch: true}] : [{width: 1440, touch: false}, {width: 390, touch: false}];
     for (const scenario of scenarios) {
       await page.viewport(scenario.width, 900);
-      if (server.browser === "chromium") await commands.setTouchInput(scenario.touch);
       await waitFor(() => {
         expect(matchMedia("(hover: none)").matches).toBe(scenario.touch);
         expect(matchMedia("(pointer: coarse)").matches).toBe(scenario.touch);
@@ -1412,11 +1414,11 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
     expect(getComputedStyle(nativeCard).backgroundColor).toBe(getComputedStyle(within(native.container).getByTestId("card-color")).backgroundColor);
     expect(getComputedStyle(nativeCard).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
   } finally {
-    if (server.browser === "chromium") await commands.setTouchInput(false);
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
   }
 });
 
+if (!inject("uiQualityTouch")) {
 for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile touch targets, spacing and desktop appearance in ${mode}`, async () => {
   await page.viewport(320, 900);
   await commands.setReducedMotion("reduce");
@@ -2175,3 +2177,4 @@ test("lazy vault images wait for every ancestor clip and read once after nested 
     expect(reads).toBe(1);
   } finally { view.unmount(); releaseAssets(); }
 });
+}

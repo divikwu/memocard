@@ -5,6 +5,11 @@ declare module "vitest/browser" {
     setReducedMotion: (value: "reduce" | "no-preference") => Promise<void>;
     setForcedColors: (value: "active" | "none") => Promise<void>;
     setFontsOffline: (offline: boolean) => Promise<void>;
-    setTouchInput: (enabled: boolean) => Promise<void>;
+  }
+}
+
+declare module "vitest" {
+  interface ProvidedContext {
+    uiQualityTouch: boolean;
   }
 }

@@ -220,21 +220,33 @@ export const DetailLayoutRegression: Story = {
     await expect(await canvas.findByRole('button', { name: '编辑标签' })).toBeVisible();
     const editor = canvasElement.querySelector<HTMLElement>('.ui-note-editor')!;
     await waitFor(() => expect(editor.scrollWidth).toBeLessThanOrEqual(editor.clientWidth + 1));
-    await canvasElement.ownerDocument.fonts.ready;
     const field = canvas.getByRole('textbox', { name: '笔记内容' });
+    // The table follows the asynchronous diagram; its final SVG must own the
+    // document height before pointer coordinates are sampled.
+    const diagram = await within(field).findByRole('img', { name: 'Mermaid 图表' }, { timeout: 5000 });
+    await waitFor(() => expect(diagram.shadowRoot?.querySelector('svg')).toBeTruthy());
+    await canvasElement.ownerDocument.fonts.ready;
     const richEditor = (field as HTMLElement & { editor: TiptapEditor }).editor;
     const originalContent = richEditor.state.doc.content;
+    const paint = () => new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
     const verifyBlockSelection = async (block: HTMLElement) => {
-      block.scrollIntoView({ block: 'center' });
+      const pointerTarget = block.querySelector<HTMLElement>('td, th') ?? block;
+      // Finish the previous menu's focus scroll before centering the next target.
+      await paint();
+      pointerTarget.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'instant' });
+      await paint();
       const before = block.getBoundingClientRect(), text = block.textContent, background = getComputedStyle(block).backgroundColor, scrollWidth = block.scrollWidth;
-      await userEvent.pointer({ target: block, coords: { clientX: before.left + 8, clientY: before.top + before.height / 2 } });
+      const pointerBounds = pointerTarget.getBoundingClientRect();
+      const pointer = { clientX: pointerBounds.left + 8, clientY: pointerBounds.top + pointerBounds.height / 2 };
+      await userEvent.pointer({ target: pointerTarget, coords: pointer });
       const grip = canvas.getByRole('button', { name: '内容块操作' });
       // React must move the shared gutter to this block before the next click.
       await waitFor(() => {
         const anchor = (block.closest('[data-node-view-wrapper]') ?? block).getBoundingClientRect();
         const control = grip.getBoundingClientRect(), center = control.top + control.height / 2;
-        expect(center).toBeGreaterThanOrEqual(anchor.top);
-        expect(center).toBeLessThanOrEqual(anchor.bottom);
+        const target = `${block.tagName}「${text?.slice(0, 20)}」 pointerY=${pointer.clientY}, target=[${anchor.top},${anchor.bottom}]`;
+        expect(center, target).toBeGreaterThanOrEqual(anchor.top);
+        expect(center, target).toBeLessThanOrEqual(anchor.bottom);
       });
       await userEvent.click(grip);
       const popup = await within(canvasElement.ownerDocument.body).findByRole('menu', { name: '内容块操作菜单' });
