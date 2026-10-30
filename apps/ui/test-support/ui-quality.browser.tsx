@@ -1923,6 +1923,8 @@ test("property grips reorder rows with native drag without editing note data", a
     expect(grip.draggable).toBe(true);
     expect(within(name).getByText("摘要").getBoundingClientRect().left).toBeCloseTo(textLeft, 1);
     await userEvent.dragAndDrop(grip, target, {targetPosition: {x: 30, y: target.getBoundingClientRect().height - 2}});
+    // Release again: WebKit's native drag can suppress the next pointerdown.
+    if (server.browser === "webkit") await commands.releaseLeftMouseButton();
     await waitFor(() => {
       const order = fixture.layout().order;
       expect(order.indexOf("property:零值")).toBeGreaterThanOrEqual(0);
@@ -1936,6 +1938,13 @@ test("property grips reorder rows with native drag without editing note data", a
     });
     expect(document.activeElement).toBe(grip);
     expect(changes).toEqual([]);
+    const trigger = canvas.getByRole("button", {name: "属性菜单 标签"});
+    const body = within(document.body);
+    await userEvent.click(trigger, {delay: 250});
+    await body.findByRole("menuitem", {name: /^属性可见性/});
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(body.queryByRole("menu", {name: "管理属性 标签"})).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
   } finally { fixture.release(); }
 }, 20_000);
 
