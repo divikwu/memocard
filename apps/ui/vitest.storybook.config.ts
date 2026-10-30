@@ -33,8 +33,8 @@ const setTouchInput: BrowserCommand<[boolean], void> = async ({ page }, enabled)
   if (!enabled && !session) return;
   session ??= await page.context().newCDPSession(page);
   touchSessions.set(page, session);
-  try { await session.send("Emulation.setTouchEmulationEnabled", { enabled, maxTouchPoints: 1 }); }
-  finally { if (!enabled) { touchSessions.delete(page); await session.detach(); } }
+  // Reuse one session until the page closes; detaching can reset restored media.
+  await session.send("Emulation.setTouchEmulationEnabled", { enabled, maxTouchPoints: 1 });
 };
 
 export default mergeConfig(viteConfig, defineConfig({
