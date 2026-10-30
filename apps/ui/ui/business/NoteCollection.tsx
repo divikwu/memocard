@@ -60,8 +60,8 @@ export function NoteCollection({ home, notes, loading = false, searching = false
   const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
   const cards = layout === "cards";
   const layoutButtons = <div role="group" aria-label={home ? "主页布局" : "笔记布局"} data-variant="default" className={cn(tabsListVariants(), "ui-note-layout")}>
-    <Button type="button" variant="ghost" className={tabsTriggerStyles} aria-label="卡片布局" title="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
-    <Button type="button" variant="ghost" className={tabsTriggerStyles} aria-label="列表布局" title="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
+    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="卡片布局" title="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
+    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="列表布局" title="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
   </div>;
   const content = <>
     {loading && <span role="status" aria-label={searching ? "正在搜索笔记" : "正在读取笔记库"} className="sr-only">{searching ? "正在搜索笔记…" : "正在读取笔记库…"}</span>}

@@ -57,7 +57,8 @@
 }
 :root[data-web-neutral="slate"],
 :root[data-web-neutral="slate"] .ui-theme {
-  --color-background-sidebar: var(--color-slate-50);
+  --color-background-body: var(--color-slate-100);
+  --color-background-sidebar: var(--color-slate-100);
   --color-background-muted: var(--color-slate-100);
   --color-background-control: color-mix(in oklab, var(--color-slate-200) 50%, transparent);
   --color-text-primary: var(--color-slate-950);

@@ -4,7 +4,7 @@
 enum SidebarPreviewPalette {
     static let rowRadius: Double = 8
     static let light: [String: [Double]] = [
-        "background": [255, 255, 255, 255],
+        "background": [245, 245, 245, 255],
         "foreground": [10, 10, 10, 255],
         "muted": [245, 245, 245, 255],
         "muted-foreground": [115, 115, 115, 255],
@@ -12,7 +12,7 @@ enum SidebarPreviewPalette {
         "border": [0, 0, 0, 20],
         "primary": [23, 23, 23, 255],
         "primary-foreground": [250, 250, 250, 255],
-        "sidebar": [250, 250, 250, 255],
+        "sidebar": [245, 245, 245, 255],
         "sidebar-foreground": [10, 10, 10, 255],
         "sidebar-accent": [0, 0, 0, 10],
         "sidebar-border": [0, 0, 0, 20],

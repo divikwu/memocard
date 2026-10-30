@@ -6,6 +6,7 @@
 .elevation-mode { min-width: 0; padding: calc(var(--spacing-1) * 6); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); background: var(--color-background-body); color: var(--color-text-primary); }
 .elevation-mode-header { display: flex; align-items: baseline; justify-content: space-between; gap: calc(var(--spacing-1) * 2); }
 .elevation-mode h2 { margin: 0; font-size: var(--font-size-xl); font-weight: var(--font-weight-medium); }
+.elevation-family > h3 { margin: calc(var(--spacing-1) * 6) 0 0; font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
 .elevation-mode code { font-family: var(--font-family-code); font-size: var(--font-size-xs); color: var(--color-text-secondary); }
 .elevation-scale { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: calc(var(--spacing-1) * 8); row-gap: calc(var(--spacing-1) * 5); padding: calc(var(--spacing-1) * 8) calc(var(--spacing-1) * 4); }
 .elevation-scale figure { position: relative; min-width: 0; margin: 0; padding-bottom: calc(var(--spacing-1) * 5); }

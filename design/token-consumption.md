@@ -41,31 +41,33 @@
 
 ## 阴影标尺与组件职责
 
-五档基础尺度 `--shadow-scale-0` 至 `--shadow-scale-4` 统一在 [theme.css](../apps/ui/ui/theme.css) 拥有浅深色定义。0 为六层透明投影，1 为两层投影与一层 1px 外缘，2–4 为五层投影与一层 1px 外缘（包含透明占位层）。浅深色共享几何结构、分别定义各层透明度；完整参数由主题 CSS 拥有。组件通过语义角色选择高度；结构边框、内侧高光、键盘焦点与状态内环分别维护。
+两套 0–4 档配方统一由 [theme.css](../apps/ui/ui/theme.css) 拥有：`--shadow-scale-*` 只包含纯投影，`--shadow-outlined-*` 共用同档投影并组合独立的 `--shadow-edge`（浅色黑色 4%、深色白色 8%，宽 1px）。scale-0 保留六层透明占位，outlined-0 只有外缘。浅色投影采用 Figma Section 5 的 2 / 2 / 3 / 3 层数值，保留负扩展值；深色共用相同几何与层数，黑色透明度为浅色的 4 倍。组件通过语义角色选择高度与配方，结构边框、内侧高光和键盘焦点独立维护。
 
-| 基础尺度 | 语义角色 | 当前组件职责 |
+| 配方 | 语义角色 | 当前组件职责 |
 | --- | --- | --- |
-| `0` | `--shadow-flat` / `shadow-flat` | 笔记集合卡片默认平面；保留透明过渡层 |
-| `1` + 控件高光 | `--shadow-control` / `shadow-control` | Switch / Slider 滑块、小型圆形控件；组合独立的 `--surface-highlight-control` |
-| `2` | `--shadow-low` / `shadow-low` | 轻浮起表面、PC 快速记录默认面板 |
-| `3` | `--shadow-med` / `shadow-med` | 通用 Card 表面 |
-| `3`（经 med） | `--shadow-input-focus` / `shadow-input-focus` | PC 快速记录与输入聚焦表面 |
-| `4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog 等浮层；显式搭配 surface-floating 保留边框和独立轮廓 |
-| `2` | `--shadow-floating` / `shadow-floating` | 富文本浮动工具条、Mermaid 切换工具条 |
-| `3` | `--shadow-document` / `shadow-document` | 回收站笔记预览等独立文档表面；全屏编辑区保持平面 |
-| `2`（经 low） | `--shadow-card-hover` / `shadow-card-hover` | 笔记卡片与 Preview 入口的鼠标悬停反馈 |
+| `scale-0` | `--shadow-flat` / `shadow-flat` | 笔记集合卡片默认平面；保留透明过渡层 |
+| `outlined-1` + 控件高光 | `--shadow-control` / `shadow-control` | Switch / Slider 滑块、小型圆形控件；组合独立的 `--surface-highlight-control` |
+| `outlined-2` | `--shadow-low` / `shadow-low` | 通用轻浮起表面 |
+| `scale-0` | `--shadow-flat` / `shadow-flat` | PC 快速记录默认面板；透明边框，无可见外缘 |
+| `outlined-3` | `--shadow-med` / `shadow-med` | 通用 Card 表面 |
+| `outlined-3`（经 med） | `--shadow-input-focus` / `shadow-input-focus` | 通用输入聚焦表面 |
+| `scale-2`（组件内覆盖） | `--shadow-input-focus` | PC 快速记录聚焦面板；纯投影，无装饰外缘 |
+| `outlined-4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog 等浮层；搭配 surface-floating 维护透明布局边框与内侧高光 |
+| `outlined-2` | `--shadow-floating` / `shadow-floating` | 富文本浮动工具条、Mermaid 切换工具条 |
+| `outlined-3` | `--shadow-document` / `shadow-document` | 回收站笔记预览等独立文档表面；全屏编辑区保持平面 |
+| `scale-2` | `--shadow-card-hover` / `shadow-card-hover` | 笔记卡片与 Preview 入口的鼠标悬停反馈；纯投影，无装饰外缘 |
 
-组件只消费上表语义角色；基础尺度由主题与标尺示例引用。工具类仅开放同名语义角色；旧尺寸别名已移除，并通过 shadow 命名空间重置阻止 Tailwind 默认值回落。`shadow-none` 清除阴影，`shadow-flat` 保留透明过渡配方。inset 状态变量按 `reserved` 单独登记，不导出 `shadow-inset-*` 工具类，不代表生产组件已消费，也不提供与投影组合的公开接口。
+组件只消费上表语义角色；基础尺度由主题、组件内语义覆盖与标尺示例引用。工具类仅开放同名语义角色；旧尺寸别名已移除，并通过 shadow 命名空间重置阻止 Tailwind 默认值回落。`shadow-none` 清除阴影，`shadow-flat` 保留透明过渡配方。inset 状态变量按 `reserved` 单独登记，不导出 `shadow-inset-*` 工具类，不代表生产组件已消费，也不提供与投影组合的公开接口。
 
 z-index 管理前后顺序，阴影等级表达感知高度；嵌套菜单与弹层可复用同一档。嵌入式移动面板、表格与图片工具条保持平面，反色 Tooltip 依靠实心底色和箭头区分内容，不自动增加投影。
 
-`surface-floating` 承载透明布局边框和独立内侧高光，通过组合槽和 `shadow-high` 搭配；装饰外缘由投影提供。显式使用 `shadow-none` 或 `shadow-flat` 时恢复普通边框。投影颜色由主题 `--color-shadow` 管理，不提供 shadow-颜色 工具类契约。
+`surface-floating` 承载透明布局边框和独立内侧高光，通过组合槽和 `shadow-high` 搭配；装饰外缘由 outlined 配方组合。显式使用 `shadow-none` 或 `shadow-flat` 时恢复普通边框。投影颜色由主题 `--color-shadow` 管理，不提供 shadow-颜色 工具类契约。
 
-`--surface-edge-floating` 只补充深色 white / 4% 内侧高光，浅色为透明；`--color-border-floating` 在常规浅深色下均为透明，保留原 1px 布局尺寸，避免与投影内置外缘叠加。平面笔记卡片、移动端无投影输入面板保留弱边框，交互状态和键盘焦点独立。原生 `NativeElevation` 由 SwiftUI / UIKit 消费，浅色采用原生深色基准的 75%，保留快速记录向下和抽屉向左、随进度变化的参数。
+`--surface-edge-floating` 只补充深色 white / 4% 内侧高光，浅色为透明；`--color-border-floating` 在常规浅深色下均为透明，保留原 1px 布局尺寸，避免与投影内置外缘叠加。笔记卡片保持无边框，移动端无投影输入面板保留弱边框，交互状态和键盘焦点独立。原生 `NativeElevation` 由 SwiftUI / UIKit 消费，浅色采用原生深色基准的 75%，保留快速记录向下和抽屉向左、随进度变化的参数。
 
-键盘焦点使用独立的 `--focus-outline-*`：2px 实线、向外偏移 2px，浅色为不透明 `neutral-600`，深色为不透明 `neutral-400`。强制颜色模式的焦点与浮层布局边框改用系统前景色 `CanvasText`，与 `Canvas` 背景配对，使浏览器清除投影后仍有边界。焦点与投影分别验证。
+键盘焦点使用独立的 `--focus-outline-*`：2px 实线、向外偏移 2px，浅色为不透明 `blue-600`，深色为不透明 `blue-400`。强制颜色模式的焦点与浮层布局边框改用系统前景色 `CanvasText`，与 `Canvas` 背景配对，使浏览器清除投影后仍有边界。焦点与投影分别验证。
 
-控件白色 1px 内侧高光由 `--surface-highlight-control` 单独维护，浅色 / 深色透明度为 88% / 4%，不属于外投影高度。笔记卡片 hover 使用 `--shadow-card-hover → low → scale-2`，输入聚焦使用 `--shadow-input-focus → med → scale-3`；状态角色复用统一尺度，缩放独立维护。完整浅深色标尺与可交互组件示例见 [Elevation Storybook](../apps/ui/ui/stories/elevation.stories.tsx)。该示例仅使用内存与静态内容，不接入真实笔记库；Web CSS 接入不代表原生系统表面或全部设备已验收。
+控件白色 1px 内侧高光由 `--surface-highlight-control` 单独维护，浅色 / 深色透明度为 88% / 4%，不属于外投影高度。笔记卡片 hover 使用 `--shadow-card-hover → scale-2`，通用输入聚焦使用 `--shadow-input-focus → med → outlined-3`；快速记录默认使用 `shadow-flat → scale-0`，聚焦时在组件内将 `--shadow-input-focus` 映射到 `scale-2`。状态角色复用统一尺度，缩放独立维护。完整浅深色标尺与可交互组件示例见 [Elevation Storybook](../apps/ui/ui/stories/elevation.stories.tsx)。该示例仅使用内存与静态内容，不接入真实笔记库；Web CSS 接入不代表原生系统表面或全部设备已验收。
 
 ## 当前语义角色与运行时输出
 

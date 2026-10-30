@@ -16,12 +16,15 @@ function ModePreview({ mode }: { mode: "light" | "dark" }) {
   const [italic, setItalic] = useState(false);
   return <section className="ui-theme elevation-mode" data-ui-theme={mode} aria-label={`${label}阴影预览`}>
     <header className="elevation-mode-header"><h2>{label}</h2><code>{mode}</code></header>
-    <div className="elevation-scale" aria-label={`${label}五档递增基础阴影`}>
-      {scale.map(name => <figure key={name}>
-        <div className="elevation-scale-sample" data-shadow-scale={name} style={{ boxShadow: `var(--shadow-scale-${name})` }} aria-hidden="true" />
-        <figcaption><code>level {name}</code></figcaption>
-      </figure>)}
-    </div>
+    {(["scale", "outlined"] as const).map(family => <section className="elevation-family" key={family} aria-label={`${label}${family === "scale" ? "纯投影" : "带外缘阴影"}`}>
+      <h3>{family === "scale" ? "纯投影" : "投影 + 1px 外缘"}</h3>
+      <div className="elevation-scale">
+        {scale.map(level => <figure key={level}>
+          <div className="elevation-scale-sample" data-shadow-scale={family === "scale" ? level : undefined} data-shadow-outlined={family === "outlined" ? level : undefined} style={{ boxShadow: `var(--shadow-${family}-${level})` }} aria-hidden="true" />
+          <figcaption><code>{family} {level}</code></figcaption>
+        </figure>)}
+      </div>
+    </section>)}
     <div className="elevation-component-examples">
       <section className="elevation-example">
         <h3>输入表面 <code>low → input-focus · med</code></h3>
@@ -37,7 +40,7 @@ function ModePreview({ mode }: { mode: "light" | "dark" }) {
       </section>
       <section className="elevation-example">
         <h3>笔记卡片 <code>flat · 0 → card-hover · 2</code></h3>
-        <Card size="sm" className="ui-card-hover-shadow" data-shadow-role="note-card"><CardHeader><CardTitle>今天的小发现</CardTitle><CardDescription>默认平面；桌面鼠标悬停时只显示阴影，不缩放。</CardDescription></CardHeader><CardContent><Button variant="ghost" size="sm">打开笔记</Button></CardContent></Card>
+        <Card size="sm" className="ui-card-hover-shadow border-0 forced-colors:border" data-shadow-role="note-card"><CardHeader><CardTitle>今天的小发现</CardTitle><CardDescription>默认平面；桌面鼠标悬停时只显示阴影，不缩放。</CardDescription></CardHeader><CardContent><Button variant="ghost" size="sm">打开笔记</Button></CardContent></Card>
       </section>
       <section className="elevation-example">
         <h3>悬浮工具条 <code>floating · 2</code></h3>
@@ -45,7 +48,7 @@ function ModePreview({ mode }: { mode: "light" | "dark" }) {
       </section>
       <section className="elevation-example">
         <h3>菜单与弹层 <code>high · 4</code></h3>
-        <div className="elevation-floating-surface surface-floating shadow-high" data-shadow-role="popup"><strong>浮层轮廓</strong><p>{mode === "dark" ? "投影内置黑色 12% 外缘，额外保留白色 4% 内侧高光。" : "high 投影内置黑色 3% 外缘，不重复叠加装饰描边。"}</p></div>
+        <div className="elevation-floating-surface surface-floating shadow-high" data-shadow-role="popup"><strong>浮层轮廓</strong><p>{mode === "dark" ? "outlined 配方组合白色 8% 外缘，额外保留白色 4% 内侧高光。" : "high 使用 outlined 4，组合黑色 4% 外缘。"}</p></div>
         <Popover><PopoverTrigger render={<Button variant="outline" />} aria-label={`${label}打开弹层`}>打开 Popover</PopoverTrigger><PopoverContent className="ui-theme" data-ui-theme={mode} data-testid={`elevation-popover-${mode}`}><PopoverTitle>整理这条笔记</PopoverTitle><PopoverDescription>实际 Popover 组件，使用 high 投影内置外缘；深色额外保留白色 4% 内侧高光。</PopoverDescription><Button variant="secondary" size="sm">添加到收藏</Button></PopoverContent></Popover>
       </section>
       <section className="elevation-example">
@@ -58,5 +61,5 @@ function ModePreview({ mode }: { mode: "light" | "dark" }) {
 }
 
 export function ElevationShowcase() {
-  return <main className="elevation-showcase"><header><h1>阴影与组件</h1><p>五档递增基础尺度与实际组件的浅深色对照。示例仅使用本地内容。</p></header><div className="elevation-modes"><ModePreview mode="light" /><ModePreview mode="dark" /></div></main>;
+  return <main className="elevation-showcase"><header><h1>阴影与组件</h1><p>纯投影与带外缘两套 0–4 档配方，以及实际组件的浅深色对照。示例仅使用本地内容。</p></header><div className="elevation-modes"><ModePreview mode="light" /><ModePreview mode="dark" /></div></main>;
 }

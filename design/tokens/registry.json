@@ -285,10 +285,44 @@
       "axes": [
         "mode"
       ],
-      "description": "Five increasing multi-layer elevation levels (0–4) with theme-specific opacity and built-in 1px decorative outer edges; highlights, structural borders and focus remain independent.",
+      "description": "Five pure projection levels (0–4), without decorative edges. Both themes share the Figma geometry and layer count; dark projections use four times the light opacity.",
       "consumers": [
-        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/ElevationShowcase.tsx",
+        "apps/ui/ui/business/QuickCapture.css",
         "apps/ui/ui/stories/elevation.stories.tsx"
+      ]
+    },
+    {
+      "id": "effects.shadow-outlined",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--shadow-outlined-[0-4]$",
+      "category": "effects",
+      "layer": "semantic",
+      "type": "shadow",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "Five outlined recipes that reuse each mode's pure projection and a single decorative outer edge; level 0 contains only the edge.",
+      "consumers": [
+        "apps/ui/ui/ElevationShowcase.tsx"
+      ]
+    },
+    {
+      "id": "effects.shadow-edge",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--shadow-edge$",
+      "category": "effects",
+      "layer": "semantic",
+      "type": "shadow",
+      "status": "active",
+      "axes": [
+        "mode"
+      ],
+      "description": "One 1px decorative outer edge composed by outlined recipes, using black at 4% in light mode and white at 8% in dark mode, independent of structural dividers and control borders.",
+      "consumers": [
+        "apps/ui/ui/ElevationShowcase.tsx",
+        "apps/ui/ui/TokenPage.tsx"
       ]
     },
     {
@@ -328,7 +362,7 @@
     {
       "id": "effects.elevation",
       "source": "apps/ui/ui/theme.css",
-      "pattern": "^--shadow-(?!scale-|inset-)[a-z-]+$",
+      "pattern": "^--shadow-(?!scale-|outlined-|edge$|inset-)[a-z-]+$",
       "category": "effects",
       "layer": "semantic",
       "type": "shadow",
@@ -689,7 +723,10 @@
         },
         "--note-flow": {
           "type": "dimension",
-          "unit": ["px", "rem"]
+          "unit": [
+            "px",
+            "rem"
+          ]
         },
         "--note-line-height": {
           "type": "dimension",

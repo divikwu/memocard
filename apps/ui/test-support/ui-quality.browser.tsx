@@ -2,7 +2,7 @@ import { afterEach, expect, inject, test } from "vitest";
 import type { NoteProperties as Properties, PropertyLayout } from "@memocard/contracts";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { commands, page, server, userEvent } from "vitest/browser";
-import { cleanup, render, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, waitFor, within } from "@testing-library/react";
 import { InputFocusFixture } from "./input-focus-fixture";
 import { ComponentDocs } from "../ui/ComponentDocs";
 import { ComponentDocsExample } from "../ui/ComponentDocsTemplate";
@@ -24,15 +24,17 @@ import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, S
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/components/dialog";
 import { NoteProperties } from "../ui/business/NoteProperties";
 import { NoteCollection } from "../ui/business/NoteCollection";
+import { NoteSearchDialog } from "../ui/business/NoteSearchDialog";
 import { QuickCapture } from "../ui/business/QuickCapture";
 import { PropertyConfirmationPopup } from "../ui/business/property-confirmation";
-import { MermaidContent, VaultImage } from "../ui/business/NoteMarkdown";
+import { MermaidContent, NoteMarkdown, VaultImage } from "../ui/business/NoteMarkdown";
 import { RichMarkdownEditor } from "../ui/business/RichMarkdownEditor";
 import { PreviewModeProvider } from "../ui/preview-mode";
 import { loadPreviewFonts } from "../ui/preview-fonts";
 import { useNoteImage } from "../src/use-note-image";
 import { setStorybookBrowserAssets, setStorybookRequestHandler } from "./bridge";
 import { editorNote } from "./editor-note";
+import { createSearchFixture } from "./note-search.fixtures";
 import "../.storybook/preview.css";
 import "../ui/preview-appearance.css";
 import "../ui/business/NoteCollection.css";
@@ -129,6 +131,82 @@ function expectUnclippedOutline(element: Element) {
 
 // The fixed touch project registers only the shared list flow below.
 if (!inject("uiQualityTouch")) {
+for (const [kind, block] of [
+  ["table", `| A | B |\n| --- | --- |\n| ${"wide-table-cell".repeat(30)} | value |\n| second | row |`],
+  ["code", `\`\`\`txt\n${"wide-code-line".repeat(30)}\n\`\`\``],
+] as const) test(`compact card ${kind} preview stays at the start during native Tab navigation`, async () => {
+  await page.viewport(1024, 900);
+  const body = `${Array.from({ length: 6 }, (_, index) => `预览段落 ${index + 1}。`).join("\n\n")}\n\n${block}`;
+  const view = render(<PreviewModeProvider mode="light"><main className="ui-theme p-4" style={{ width: 384 }}>
+    <NoteCollection notes={[{ ...editorNote, body, tags: ["检查"] }]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+  </main></PreviewModeProvider>);
+  const canvas = within(view.container);
+  await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+  await canvas.findByText("预览段落 1。");
+  const open = canvas.getByRole("button", { name: `打开 ${editorNote.title}` });
+  const preview = open.closest(".ui-note-card")!.querySelector<HTMLElement>(".ui-note-preview")!;
+  const wide = preview.querySelector<HTMLElement>(kind === "table" ? ".typeset-scroll" : "pre")!;
+  expect(wide.scrollWidth).toBeGreaterThan(wide.clientWidth);
+  const containers = [preview, ...preview.querySelectorAll<HTMLElement>(".note-preview, .note-preview > div, .ui-note-markdown, .typeset-scroll, pre")];
+  const scrollPositions = () => containers.map(element => [element.scrollLeft, element.scrollTop]);
+  const before = scrollPositions();
+  const tag = canvas.getByRole("button", { name: "筛选标签 检查" });
+  open.focus();
+  for (const [keys, target] of [
+    [server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}", tag],
+    [server.browser === "webkit" ? "{Alt>}{Shift>}{Tab}{/Shift}{/Alt}" : "{Shift>}{Tab}{/Shift}", open],
+  ] as const) {
+    await userEvent.keyboard(keys);
+    expect(scrollPositions()).toEqual(before);
+    expect(document.activeElement).toBe(target);
+    if (target === tag) {
+      await waitFor(() => expectKeyboardOutline(tag, "light"));
+      expectUnclippedOutline(tag);
+    }
+  }
+});
+
+for (const width of [390, 1280]) test(`search preview remains stationary and excludes body from native Tab navigation at ${width}px`, async () => {
+  await page.viewport(width, 900);
+  const fixture = createSearchFixture("normal");
+  fixture.notes[0].body = `[参考链接](https://example.com)\n\n${"预览正文。\n\n".repeat(24)}\n\n| A | B |\n| --- | --- |\n| ${"wide-search-cell".repeat(30)} | value |\n\n\`\`\`txt\n${"wide-search-code".repeat(30)}\n\`\`\``;
+  const release = setStorybookRequestHandler(fixture.request);
+  try {
+    render(<PreviewModeProvider mode="light"><NoteSearchDialog open available vaultName="预览检查库" returnFocus={{ current: null }} onOpenChange={() => {}} onOpenNote={() => {}} /></PreviewModeProvider>);
+    const dialog = await within(document.body).findByRole("dialog", { name: "搜索笔记" });
+    const search = within(dialog);
+    await search.findByRole("option", { name: fixture.notes[0].title! });
+    const preview = dialog.querySelector<HTMLElement>(".ui-note-search-preview-content")!;
+    const containers = [preview, ...preview.querySelectorAll<HTMLElement>("div,pre")];
+    const scrollPositions = () => containers.map(element => [element.scrollLeft, element.scrollTop]);
+    const before = scrollPositions();
+    if (width >= 1024) expect(preview.scrollHeight).toBeGreaterThan(preview.clientHeight);
+    else expect(getComputedStyle(preview.closest("aside")!).display).toBe("none");
+    search.getByRole("combobox", { name: "搜索笔记" }).focus();
+    for (const keys of [
+      server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}",
+      server.browser === "webkit" ? "{Alt>}{Shift>}{Tab}{/Shift}{/Alt}" : "{Shift>}{Tab}{/Shift}",
+    ]) for (let step = 0; step < 6; step++) {
+      await userEvent.keyboard(keys);
+      expect(document.activeElement?.closest("[inert]")).toBeNull();
+      expect(scrollPositions()).toEqual(before);
+    }
+  } finally { release(); }
+});
+
+test("reading table retains native keyboard focus and horizontal scrolling", async () => {
+  const view = render(<main className="ui-theme p-4" style={{ width: 384 }}>
+    <button>正文起点</button>
+    <NoteMarkdown body={`| A | B |\n| --- | --- |\n| ${"wide-reading-cell".repeat(30)} | value |`} />
+  </main>);
+  within(view.container).getByRole("button", { name: "正文起点" }).focus();
+  await userEvent.keyboard(server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}");
+  const table = within(view.container).getByRole("region", { name: "表格，可横向滚动" });
+  expect(document.activeElement).toBe(table);
+  await userEvent.keyboard("{ArrowRight}");
+  await waitFor(() => expect(table.scrollLeft).toBeGreaterThan(0));
+});
+
 for (const mode of ["light", "dark"] as const) {
   for (const kind of ["accordion", "source", "settings"] as const) test(`outward focus is not clipped for ${kind} in ${mode}`, async () => {
     await page.viewport(1024, 900);
@@ -376,25 +454,26 @@ for (const mode of ["light", "dark"] as const) {
     await waitFor(() => expect(getComputedStyle(group).boxShadow).toBe(restingCaptureShadow));
   });
 
-  test(`collection layout changes preserve resting card borders without a color transition in ${mode}`, async () => {
+  test(`collection layout changes preserve borderless cards and surface controls in ${mode}`, async () => {
     await page.viewport(1024, 900);
-    await commands.setReducedMotion("no-preference");
-    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
-      <NoteCollection notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+    await commands.setReducedMotion("reduce");
+    const view = render(<PreviewModeProvider mode={mode}><main className="web-app ui-theme bg-body p-8" data-ui-theme={mode}>
+      <span className="hidden bg-surface" data-testid="expected-surface" />
+      <NoteCollection home={{ tab: "recent", pinnedCount: 1, onTabChange: () => {} }} notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
     </main></PreviewModeProvider>);
     const canvas = within(view.container);
     await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
     const card = canvas.getByRole("button", { name: `打开 ${editorNote.title}` }).closest(".ui-note-card")!;
-    await Promise.all(card.getAnimations().map(animation => animation.finished));
-    const restingBorder = getComputedStyle(card).borderTopColor;
+    expect(getComputedStyle(card).borderTopWidth).toBe("0px");
     await userEvent.click(canvas.getByRole("button", { name: "列表布局" }));
     expect(getComputedStyle(card).borderTopWidth).toBe("0px");
-    expect(getComputedStyle(card).borderTopColor).toBe(restingBorder);
     await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
     expect(card.matches(":hover")).toBe(false);
-    expect(getComputedStyle(card).borderTopWidth).toBe("1px");
-    expect(getComputedStyle(card).borderTopColor).toBe(restingBorder);
-    expect(card.getAnimations().filter(animation => animation instanceof CSSTransition && animation.transitionProperty.startsWith("border-"))).toHaveLength(0);
+    expect(getComputedStyle(card).borderTopWidth).toBe("0px");
+    const surface = getComputedStyle(canvas.getByTestId("expected-surface")).backgroundColor;
+    await waitFor(() => expect(getComputedStyle(canvas.getByRole("button", { name: "卡片布局" })).backgroundColor).toBe(surface));
+    await page.viewport(390, 844);
+    await waitFor(() => expect(getComputedStyle(canvas.getByRole("tab", { name: "最近更新" })).backgroundColor).toBe(surface));
   });
 
   test(`mobile capture distinguishes pointer and keyboard focus in ${mode}`, async () => {
@@ -425,19 +504,22 @@ for (const mode of ["light", "dark"] as const) {
     await commands.setForcedColors("active");
     expect(matchMedia("(forced-colors: active)").matches).toBe(true);
     const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
-      <Card className="ui-card-hover-shadow" data-testid="forced-card">高对比卡片</Card>
+      <NoteCollection notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
       <Card data-testid="forced-raised-card">高对比浮起卡片</Card>
       <QuickCapture vaultId="shadow-forced-colors-test" rootNotes tags={[]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
       <Popover><PopoverTrigger render={<Button />}>打开高对比浮层</PopoverTrigger>
         <PopoverContent className="ui-theme" data-ui-theme={mode}><PopoverTitle>高对比浮层</PopoverTitle><Button>前一项</Button><Button>焦点项</Button></PopoverContent>
       </Popover>
     </main></PreviewModeProvider>);
-    const card = within(view.container).getByTestId("forced-card");
+    await userEvent.click(within(view.container).getByRole("button", { name: "卡片布局" }));
+    const card = within(view.container).getByRole("button", { name: `打开 ${editorNote.title}` }).closest(".ui-note-card")!;
     await userEvent.hover(card);
     const field = within(view.container).getByRole("textbox", { name: "快速输入内容" });
     for (const surface of [card, within(view.container).getByTestId("forced-raised-card"), field.closest('[data-slot="input-group"]')!]) {
       const style = getComputedStyle(surface);
       expect(style.boxShadow).toBe("none");
+      expect(style.borderTopStyle).toBe("solid");
+      expect(parseFloat(style.borderTopWidth)).toBeGreaterThan(0);
       expect(paintedContrast(style.borderTopColor, style.backgroundColor)).toBeGreaterThanOrEqual(3);
     }
     await userEvent.click(field);
@@ -546,6 +628,7 @@ for (const mode of ["light", "dark"] as const) {
         if (width >= 768) expect(actual.transitionDuration.split(",").every(value => parseFloat(value) === 0.6)).toBe(true);
         if (width >= 768 && shadowEnabled) {
           expect(actual.boxShadow).not.toBe(restingSurfaceShadow);
+          expect(actual.boxShadow).not.toContain("0px 0px 0px 1px");
           expect(actual.borderTopColor).toBe("rgba(0, 0, 0, 0)");
         }
         else expect(actual.boxShadow).toBe(restingSurfaceShadow);
@@ -1012,7 +1095,7 @@ for (const mode of ["light", "dark"] as const) test(`ActionGroup shares one surf
   await commands.setReducedMotion("reduce");
   const clicks: string[] = [];
   const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme flex flex-col items-start gap-4 p-8" data-ui-theme={mode}>
-    <div data-testid="group-shadow" className="bg-body shadow-control" />
+    <div data-testid="group-shadow" className="bg-surface shadow-control" />
     <div data-testid="no-shadow" className="shadow-none" />
     <Button>操作起点</Button>
     <ActionGroup aria-label="单个操作"><Button variant="ghost" size="icon" aria-label="单个按钮" onClick={() => clicks.push("single")}>+</Button></ActionGroup>
@@ -1061,7 +1144,7 @@ for (const mode of ["light", "dark"] as const) test(`Web ActionGroup sizes share
   const calls: string[] = [];
   const view = render(<PreviewModeProvider mode={mode}><MobileActionGroupProvider enabled><main className="ui-theme flex flex-col items-start gap-4 p-8" data-ui-theme={mode}>
     <div data-testid="hover-reference" className="bg-overlay-hover" />
-    <div data-testid="frame-reference" className={mode === "dark" ? "bg-card shadow-control" : "bg-body shadow-control"} />
+    <div data-testid="frame-reference" className="bg-surface shadow-control" />
     <div data-testid="page-reference" className="bg-body" />
     <Button>交互起点</Button>
     {(["default", "lg"] as const).map(size => <div key={size} className="flex gap-4">
@@ -1098,7 +1181,7 @@ for (const mode of ["light", "dark"] as const) test(`Web ActionGroup sizes share
       expect(group.getBoundingClientRect().width).toBe((label === "单个" ? 1 : 2) * inner + 4);
       expect(getComputedStyle(group).backgroundColor).toBe(getComputedStyle(canvas.getByTestId("frame-reference")).backgroundColor);
       expect(getComputedStyle(group).boxShadow).toBe(getComputedStyle(canvas.getByTestId("frame-reference")).boxShadow);
-      expect(getComputedStyle(group).backgroundColor === getComputedStyle(canvas.getByTestId("page-reference")).backgroundColor).toBe(mode === "light");
+      expect(getComputedStyle(group).backgroundColor).not.toBe(getComputedStyle(canvas.getByTestId("page-reference")).backgroundColor);
       for (const button of group.querySelectorAll("button")) { expect(button.getBoundingClientRect().width).toBe(inner); expect(button.getBoundingClientRect().height).toBe(inner); }
     }
     await press(canvas.getByRole("button", {name: `${size} 单个按钮`}));
@@ -1148,7 +1231,7 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
       const changes: string[] = [], errors: string[] = [];
       let editor: import("@tiptap/react").Editor | null = null;
       const content = <main className="ui-theme grid gap-4 p-4" data-ui-theme={mode}>
-        <div data-testid="group-shadow" className={grouped && mode === "dark" ? "bg-card shadow-control" : "bg-body shadow-control"} /><div data-testid="no-shadow" className="shadow-none" /><div data-testid="page-color" className="bg-body" />
+        <div data-testid="group-shadow" className="bg-surface shadow-control" /><div data-testid="no-shadow" className="shadow-none" /><div data-testid="page-color" className="bg-body" />
         <div data-testid="group-token-shadow" style={{boxShadow: "var(--shadow-control)"}} />
         <QuickCapture vaultId={`actions-disabled-${scenario.name}-${mode}`} rootNotes docked tags={[]} disabled canImage={false} handle={{current: null}} onRecorded={() => errors.push("disabled capture recorded")} />
         <Sheet><SheetTrigger render={<Button />}>打开自定义面板</SheetTrigger><SheetContent side="bottom" swipeToClose showCloseButton={false}><SheetHeader><SheetTitle>自定义面板</SheetTitle><SheetDescription>真实自定义关闭控件。</SheetDescription><SheetCloseButton /></SheetHeader></SheetContent></Sheet>
@@ -1166,7 +1249,7 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         expect([getComputedStyle(canvas.getByTestId("group-shadow")).boxShadow, getComputedStyle(canvas.getByTestId("group-token-shadow")).boxShadow]).toContain(style.boxShadow);
         expect(style.backgroundColor).toBe(getComputedStyle(canvas.getByTestId("group-shadow")).backgroundColor);
         expect(style.borderTopWidth).toBe("0px");
-        expect(style.backgroundColor === getComputedStyle(canvas.getByTestId("page-color")).backgroundColor).toBe(mode === "light");
+        expect(style.backgroundColor).not.toBe(getComputedStyle(canvas.getByTestId("page-color")).backgroundColor);
       };
       const checkClose = (close: HTMLElement, previousSize: number) => {
         const group = close.closest<HTMLElement>('[data-slot="action-group"]');
@@ -1419,6 +1502,65 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
 });
 
 if (!inject("uiQualityTouch")) {
+test("Web home and all-notes collections share responsive widths", async () => {
+  await commands.setReducedMotion("reduce");
+  const previousHash = location.hash;
+  localStorage.clear();
+  localStorage.setItem("memocard:home-layout", "cards");
+  localStorage.setItem("memocard:note-layout", "cards");
+  history.replaceState(null, "", "#/home");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  let current: AppViewState | undefined;
+  const view = render(<WebAppearanceProvider><App renderView={state => { current = state; return renderWebApp(state); }} /></WebAppearanceProvider>);
+  const widths = [320, 390, 767, 768, 1024, 1440, 1560, 1920];
+  const measurements = new Map<string, {left: number; width: number; itemWidth: number; columns: string; tags: string; date: string}>();
+  try {
+    const canvas = within(view.container);
+    for (const layout of ["cards", "list"] as const) {
+      for (const route of ["home", "notes"] as const) {
+        await act(async () => { await current!.onNavigate(route); });
+        await page.viewport(1920, 700);
+        await canvas.findByRole("list", {name: "笔记列表"});
+        await userEvent.click(canvas.getByRole("button", {name: layout === "cards" ? "卡片布局" : "列表布局"}));
+        for (const width of widths) {
+          await page.viewport(width, 700);
+          await waitFor(() => expect(current!.isMobile).toBe(width < 768));
+          const list = canvas.getByRole("list", {name: "笔记列表"});
+          await waitFor(() => expect(list.closest(".ui-note-results")).toHaveAttribute("aria-busy", "false"));
+          expect(list.getAttribute("data-layout")).toBe(layout);
+          const bounds = list.getBoundingClientRect();
+          const item = list.querySelector<HTMLElement>(".ui-note-card")!;
+          const sample = {
+            left: bounds.left, width: bounds.width, itemWidth: item.getBoundingClientRect().width,
+            columns: getComputedStyle(list).gridTemplateColumns,
+            tags: getComputedStyle(item.querySelector(".ui-note-tags")!).display,
+            date: getComputedStyle(item.querySelector("time")!).display,
+          };
+          if (route === "home") measurements.set(`${layout}-${width}`, sample);
+          else {
+            const home = measurements.get(`${layout}-${width}`)!;
+            for (const dimension of ["left", "width", "itemWidth"] as const) expect(sample[dimension], `${layout} ${width}px ${dimension}`).toBeCloseTo(home[dimension], 1);
+            expect(sample.columns, `${layout} ${width}px columns`).toBe(home.columns);
+            expect(sample.tags, `${layout} ${width}px tags`).toBe(home.tags);
+            expect(sample.date, `${layout} ${width}px date`).toBe(home.date);
+          }
+          if (route === "home" && width >= 768) {
+            await waitFor(() => expect(view.container.querySelector(".web-page-content > .ui-quick-capture")).not.toBeNull());
+            const capture = view.container.querySelector<HTMLElement>(".web-page-content > .ui-quick-capture")!.getBoundingClientRect();
+            expect(capture.width).toBeCloseTo(Math.min(bounds.width, 768), 1);
+            expect(capture.left + capture.width / 2).toBeCloseTo(bounds.left + bounds.width / 2, 1);
+          }
+          expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth + 1);
+          expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
+        }
+      }
+    }
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+  }
+}, 30_000);
+
 for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile touch targets, spacing and desktop appearance in ${mode}`, async () => {
   await page.viewport(320, 900);
   await commands.setReducedMotion("reduce");
@@ -1437,7 +1579,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
   const controlShadow = document.createElement("div");
   controlShadow.className = "ui-theme shadow-control";
   controlShadow.dataset.uiTheme = mode;
-  controlShadow.style.backgroundColor = mode === "dark" ? "var(--color-background-card)" : "var(--color-background-body)";
+  controlShadow.style.backgroundColor = "var(--color-background-surface)";
   view.container.append(controlShadow);
   const noShadow = document.createElement("div");
   noShadow.className = "ui-theme shadow-none";
@@ -1486,7 +1628,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
             expect(groupStyle.boxShadow).toBe(getComputedStyle(controlShadow).boxShadow);
             expect(groupStyle.borderTopWidth).toBe("0px");
             expect(groupStyle.backgroundColor).toBe(getComputedStyle(controlShadow).backgroundColor);
-            expect(groupStyle.backgroundColor === getComputedStyle(header.closest(".web-app")!).backgroundColor).toBe(mode === "light");
+            expect(groupStyle.backgroundColor).not.toBe(getComputedStyle(header.closest(".web-app")!).backgroundColor);
             expect(parseFloat(groupStyle.borderTopLeftRadius)).toBeGreaterThanOrEqual(rect.height / 2);
           }
         } else {

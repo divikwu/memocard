@@ -7,7 +7,7 @@ export type GuidanceRule = { kind: "do" | "dont"; text: string };
 export const overview: Partial<Record<TokenCategory, string>> = {
   all: "按用途查阅主题定义。源变量、间距派生标尺和合成文字样式分别维护，避免将展示行数当成独立 token 数量。",
   colors: "基础色阶保持固定，语义角色按浅深色模式选择引用。背景按 body → surface → card → popover 建立层次；文字、图标、强调填充与状态分别维护。",
-  elevation: "阴影按基础尺度、语义角色和工具类适配三层维护。0–4 五个基础等级表达递增的视觉高度，统一定义多层外投影与 1px 装饰外缘；语义角色按使用场景选择等级。组件通过 flat、low、med、high、control、floating、document 等语义角色选择，同名 shadow-* 工具类用于 JSX，--shadow-* 用于 CSS；结构边框、浮层高光、键盘焦点与缩放动效分别维护。",
+  elevation: "阴影按基础尺度、语义角色和工具类适配三层维护。0–4 五个基础等级提供纯投影与带外缘两套配方；投影参数共用，装饰外缘由 --shadow-edge 单独拥有；语义角色按使用场景选择等级。组件通过 flat、low、med、high、control、floating、document 等语义角色选择，同名 shadow-* 工具类用于 JSX，--shadow-* 用于 CSS；结构边框、浮层高光、键盘焦点与缩放动效分别维护。",
   icons: "图标表达固定含义。使用 Hugeicons，按操作与内容语义选择图形，同一操作保持一致。",
   illustrations: "插画用于帮助理解空状态、引导和说明。此页维护使用与布局规范，插画资产不计入主题 token 数量。",
   motion: "动效帮助说明状态、方向和空间关系。时长与缓动来自主题标尺，是否播放则遵循用户偏好与当前交互需求。",
@@ -34,9 +34,9 @@ export const bestPractices: Partial<Record<TokenCategory, GuidanceRule[]>> = {
   elevation: [
     { kind: "do", text: "基础标尺只保留 0–4 五个递增等级；组件引用语义角色，同名 Tailwind 工具类负责适配。通用表面使用 shadow-flat / low / med / high，不直接消费基础尺度。" },
     { kind: "do", text: "按职责选择 shadow-flat、shadow-control、shadow-low、shadow-med、shadow-high、surface-floating、shadow-floating 或 shadow-document；嵌入内容保持无投影。" },
-    { kind: "do", text: "五档以多层投影表达递增高度，浅深色共用几何结构、分别设置各层透明度。等级 0 为六层透明值；1 使用两层投影与 1px 外缘；2–4 使用五层投影与 1px 外缘，其中透明占位层支持过渡。" },
+    { kind: "do", text: "scale 0–4 只包含纯投影；outlined 0–4 组合相同投影与独立 1px 外缘，0 仅有外缘。浅色采用 Figma 投影，深色共用相同几何与层数，黑色透明度为浅色的 4 倍；外缘浅色黑色 4%、深色白色 8%。" },
     { kind: "do", text: "一个表面只选一档悬浮阴影。z-index 决定前后顺序，阴影等级表达感知高度；嵌套菜单与弹层可以复用同一等级。" },
-    { kind: "do", text: "浮起表面的 1px 装饰外缘由阴影提供，保留透明布局边框，避免重复叠加。平面卡片与移动端无投影面板保留实际边框；浮层组合 surface-floating shadow-high，深色额外保留白色 4% 内侧高光。输入、按钮的状态边框及键盘焦点独立维护。" },
+    { kind: "do", text: "outlined 表面的 1px 装饰外缘由配方提供，保留透明布局边框，避免重复叠加。笔记卡片和 PC 快速记录只使用纯投影，不添加装饰外缘；移动端无投影面板保留实际边框；强制颜色模式恢复系统色边框；浮层组合 surface-floating shadow-high，深色额外保留白色 4% 内侧高光。输入、按钮的状态边框及键盘焦点独立维护。" },
     { kind: "do", text: "输入控件通过页面级输入方式检测区分指针与键盘；输入文字不会切换导航模式，Tab 与选项导航显示焦点框。键盘焦点使用统一的 focus-visible:focus-ring：2px solid、向外偏移 2px；浅色使用不透明 blue-600，深色使用不透明 blue-400；焦点框宽度为 2px、向外偏移 2px，仅在键盘导航时显示。强制颜色模式的焦点与浮层边框使用系统前景色 CanvasText，与 Canvas 背景配对；焦点不依赖阴影。" },
     { kind: "do", text: "嵌入式移动面板、表格与图片工具条保持平面；反色 Tooltip 通过实心底色与箭头区分内容。这些例外不因位置悬浮就自动增加投影。" },
     { kind: "dont", text: "让普通嵌入内容无缘由地使用最高等级阴影，或把预留 shadow-inset 状态变量当作已开放的组件工具类。" },
@@ -131,14 +131,14 @@ export function FoundationContent({ section }: { section: ContentSection }) {
     <thead><tr><th scope="col">Level</th><th scope="col">When to use</th></tr></thead>
     <tbody>{[
       ["flat · shadow-flat", "笔记集合卡片默认映射尺度 0，保留六层透明值支持过渡；嵌入式移动面板、表格与图片工具条、反色 Tooltip 保持无投影。"],
-      ["control · shadow-control", "Switch 与 Slider 滑块、小型圆形控件；尺度 1 与独立控件高光组合。"],
-      ["low · shadow-low", "轻浮起表面，例如 PC 快速记录的默认输入面板；映射尺度 2。"],
-      ["med · shadow-med", "通用内容卡片；映射尺度 3。"],
-      ["input-focus · --shadow-input-focus", "PC 快速记录聚焦时从 low 切换到 input-focus，当前映射 med；鼠标点击只增强阴影，Tab 导航进入编辑区时才显示独立焦点框。"],
-      ["high · shadow-high + surface-floating", "菜单、Popover 与对话框组合尺度 4 和独立浮层高光，模态遮罩单独定义。"],
-      ["floating · shadow-floating", "富文本浮动工具条与图表切换工具条；映射尺度 2。"],
-      ["document · shadow-document", "回收站笔记预览等独立文档表面；映射尺度 3，普通全屏编辑器保持平面。"],
-      ["card hover · shadow-card-hover", "PC 笔记卡片的悬停反馈；从 flat（尺度 0）切换到 low（尺度 2），缩放单独维护。"],
+      ["control · shadow-control", "Switch 与 Slider 滑块、小型圆形控件；outlined 1 与独立控件高光组合。"],
+      ["low · shadow-low", "通用轻浮起表面映射 outlined 2。"],
+      ["med · shadow-med", "通用内容卡片；映射 outlined 3。"],
+      ["input-focus · --shadow-input-focus", "通用角色映射 med；PC 快速记录在组件内覆盖为 outlined 2，默认使用 shadow-flat（尺度 0）和透明边框。鼠标点击只增强阴影，Tab 导航进入编辑区时才显示独立焦点框。"],
+      ["high · shadow-high + surface-floating", "菜单、Popover 与对话框组合 outlined 4 和独立浮层高光，模态遮罩单独定义。"],
+      ["floating · shadow-floating", "富文本浮动工具条与图表切换工具条；映射 outlined 2。"],
+      ["document · shadow-document", "回收站笔记预览等独立文档表面；映射 outlined 3，普通全屏编辑器保持平面。"],
+      ["card hover · shadow-card-hover", "PC 笔记卡片的悬停反馈；从 flat（尺度 0）切换到纯投影第 2 档，不含装饰外缘，缩放单独维护。"],
     ].map(([level, text]) => <tr key={level}><th scope="row"><code>{level}</code></th><td>{text}</td></tr>)}</tbody>
   </table></div>;
   if (section === "concentric-radius") return <>
