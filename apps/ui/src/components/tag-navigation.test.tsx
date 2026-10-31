@@ -64,12 +64,12 @@ it("persists pins per vault and allows expanding and selecting descendants of a 
   render(<TagNavigation {...props} vaultId="vault-b" />);
   expect(screen.queryByRole("navigation", { name: "置顶标签" })).toBeNull();
 });
-it("searches full paths and saves icons without changing navigation", async () => {
+it("selects nested tags and saves icons without a tag search control", async () => {
   const user = userEvent.setup();
   render(<TagNavigation {...props} />);
-  await user.click(screen.getByRole("button", { name: "搜索标签" }));
-  await user.type(screen.getByRole("textbox", { name: "搜索标签" }), "设计");
-  expect(screen.queryByRole("button", { name: "生活" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "搜索标签" })).toBeNull();
+  expect(screen.queryByRole("textbox", { name: "搜索标签" })).toBeNull();
+  expect(screen.getByRole("button", { name: "生活" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "工作/设计" }));
   expect(props.onSelect).toHaveBeenLastCalledWith("工作/设计");
   await user.click(screen.getByRole("button", { name: "标签操作 工作/设计" }));
@@ -117,7 +117,7 @@ it("keeps expanding a nested branch separate from selecting its tag", async () =
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
 });
 
-it("keeps source order and leaves missing-parent paths available only through search or pins", async () => {
+it("keeps source order and leaves missing-parent descendants selectable through pins", async () => {
   const tags = [
     { name: "zebra", count: 4 },
     { name: "zebra/second", count: 2 },
@@ -137,11 +137,7 @@ it("keeps source order and leaves missing-parent paths available only through se
   expect(pinned.getByRole("button", { name: "missing/child" }).textContent).toContain("missing/child");
   expect(pinned.getByRole("button", { name: "zebra/first" }).getAttribute("aria-current")).toBe("page");
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "搜索标签" }));
-  await user.type(screen.getByRole("textbox", { name: "搜索标签" }), "  MISSING/CHILD  ");
-  expect(navigation.getAllByRole("button").map(button => button.getAttribute("aria-label")).filter(label => paths.has(label || ""))).toEqual(["missing/child", "missing/child/deeper"]);
-  expect(navigation.queryByRole("button", { name: "展开或收起标签 missing/child" })).toBeNull();
-  await user.click(navigation.getByRole("button", { name: "missing/child/deeper" }));
+  await user.click(pinned.getByRole("button", { name: "missing/child/deeper" }));
   expect(props.onSelect).toHaveBeenLastCalledWith("missing/child/deeper");
 });
 

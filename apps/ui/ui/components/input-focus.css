@@ -5,9 +5,10 @@
 
 /* The page tracker owns modality; Firefox can retain pointer :focus-visible
  * heuristics when arrow navigation stays on an already-focused menu item.
- * Composite fields and note-open actions delegate to their visible surface. */
+ * Composite fields and note-open actions delegate to their visible surface.
+ * Document editing uses the caret and selection instead of a container ring. */
 :root[data-ui-input-modality="keyboard"] :is(
-  :is(a[href], button, input, textarea, select, summary, [contenteditable="true"], [tabindex]):not([data-slot="input-group-control"], [data-slot="combobox-chip-input"], [data-slot="slider-thumb"] *, [data-slot="field-label"]:has(>[data-slot="field"]) *, .ui-note-open, .ui-trash-open, .ui-docs-source pre):focus,
+  :is(a[href], button, input, textarea, select, summary, [contenteditable="true"], [tabindex]):not([data-slot="input-group-control"], [data-slot="combobox-chip-input"], [data-slot="slider-thumb"] *, [data-slot="field-label"]:has(>[data-slot="field"]) *, .rich-editor-content, .ui-note-open, .ui-trash-open, .ui-docs-source pre):focus,
   [data-slot="input-group"]:has([data-slot="input-group-control"]:focus),
   [data-slot="combobox-chips"]:has([data-slot="combobox-chip-input"]:focus),
   [data-slot="field-label"]:has(>[data-slot="field"]):focus-within,

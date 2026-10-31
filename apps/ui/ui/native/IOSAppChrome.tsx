@@ -15,7 +15,7 @@ import TagColorStyles from "../business/TagColorStyles";
 import { readIOSPalette } from "../../src/lib/ios-palette";
 import { readIOSThemeRadius } from "../../src/lib/ios-theme";
 
-type View = "home" | "notes" | "settings" | "trash";
+type View = "home" | "notes" | "tags" | "settings" | "trash";
 export type IOSAppChromeProps = {
   title:string; view:View; detail:boolean; tag:string|null; quickFilter:NoteQuickFilter|null;
   tags:{name:string;count:number}[]; filterCounts?:NoteFilterCounts; status:VaultStatus|null; hasVaultIssue:boolean; needsPermission:boolean;
@@ -103,7 +103,7 @@ export function IOSAppChrome(p:IOSAppChromeProps) {
     rowRadius:themeRadius ?? Number.parseFloat(getPreviewRadius(radius).radius) * 16,
     loading:p.loading && p.tags.length === 0,
     sections:[
-      {id:"pages",actions:[{id:"home",title:"主页",icon:"house",selected:p.view === "home"},{id:"notes",title:"所有笔记",icon:"note.text",selected:p.view === "notes" && !p.tag && !p.quickFilter},{id:"calendar",title:"日历",icon:"calendar",disabled:true}]},
+      {id:"pages",actions:[{id:"home",title:"主页",icon:"house",selected:p.view === "home"},{id:"notes",title:"所有笔记",icon:"note.text",selected:p.view === "notes" && !p.tag && !p.quickFilter},{id:"calendar",title:"日历",icon:"calendar",disabled:true},{id:"tags",title:"标签",icon:"number",disabled:true}]},
       {id:"filters",actions:(Object.keys(noteFilterLabels) as NoteQuickFilter[]).map(filter=>({id:`filter:${filter}`,title:noteFilterLabels[filter],icon:filter === "images" ? "photo" : filter === "links" ? "link" : "number",badge:p.filterCounts?.[filter],selected:p.view === "notes" && p.quickFilter === filter,disabled:!connected}))},
       {id:"pinned-tags",title:"置顶标签",actions:preferences.pinned.flatMap(path=>navigationTags.filter(item=>item.path === path))},
       {id:"tags",title:"标签",actions:navigationTags},

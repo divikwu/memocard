@@ -62,12 +62,12 @@ it("keeps the Sidebar-10 business mapping: brand and primary navigation above ta
   expect(brand.querySelector("img")?.getAttribute("alt")).toBe("");
   expect(brand.closest('[data-sidebar="header"]')).not.toBeNull();
   const nav = screen.getByRole("navigation", { name: "主要导航" });
-  expect(within(nav).getAllByRole("button").map(button => button.textContent)).toEqual(["搜索", "新建笔记", "主页", "所有笔记", "", "日历"]);
+  expect(within(nav).getAllByRole("button").map(button => button.textContent)).toEqual(["搜索", "新建笔记", "主页", "所有笔记", "", "日历", "标签"]);
   expect(screen.getByRole("navigation", { name: "标签" }).closest('[data-sidebar="content"]')).not.toBeNull();
   expect(screen.getByRole("button", { name: "笔记库：我的笔记" }).closest('[data-sidebar="footer"]')).not.toBeNull();
 });
 
-it("filters the tag tree by full path and uses existing tag preference storage for pinning", async () => {
+it("keeps the tag tree without search and uses existing tag preference storage for pinning", async () => {
   const user = userEvent.setup();
   mount();
   await user.click(screen.getByRole("button", { name: "标签操作 项目" }));
@@ -75,11 +75,16 @@ it("filters the tag tree by full path and uses existing tag preference storage f
   const pinned = await screen.findByRole("navigation", { name: "置顶标签" });
   expect(within(pinned).getByRole("button", { name: "项目" })).not.toBeNull();
   expect(JSON.parse(localStorage.getItem(preferencesKey) || "{}").pinned).toEqual(["项目"]);
-  await user.click(screen.getByRole("button", { name: "搜索标签" }));
-  await user.type(screen.getByRole("textbox", { name: "搜索标签" }), "memocard");
+  expect(screen.queryByRole("button", { name: "搜索标签" })).toBeNull();
+  expect(screen.queryByRole("textbox", { name: "搜索标签" })).toBeNull();
   const tagList = screen.getByRole("navigation", { name: "标签" });
   expect(within(tagList).getByRole("button", { name: "项目/MemoCard" })).not.toBeNull();
-  expect(within(tagList).queryByRole("button", { name: "生活" })).toBeNull();
+  expect(within(tagList).getByRole("button", { name: "生活" })).not.toBeNull();
+  const tagToggle = screen.getByRole("button", { name: "标签", expanded: true });
+  await user.click(tagToggle);
+  await waitFor(() => expect(screen.queryByRole("navigation", { name: "标签" })).toBeNull());
+  await user.click(tagToggle);
+  expect(within(screen.getByRole("navigation", { name: "标签" })).getByRole("button", { name: "项目/MemoCard" })).not.toBeNull();
 });
 
 it("edits tag name and icon through the existing rename callback and preference mapping", async () => {

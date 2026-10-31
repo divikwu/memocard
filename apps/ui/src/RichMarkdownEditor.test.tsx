@@ -63,6 +63,42 @@ it('does not steal focus from another control after the initial editor focus',as
  act(()=>frames.splice(0).forEach(callback=>callback(performance.now())));
  expect(document.activeElement).toBe(button);
 });
+it('keeps plain Tab in the document and uses Escape then Tab to leave and re-enter editing',async()=>{
+ const {editor,field,change}=await setup('正文',{},true),user=userEvent.setup();
+ const original=editor.state.doc;
+ act(()=>{field.focus();editor.commands.setTextSelection(2);});
+ for(const shiftKey of [false,true])expect(fireEvent.keyDown(field,{key:'Tab',shiftKey})).toBe(false);
+ expect(document.activeElement).toBe(field);expect(editor.state.selection.from).toBe(2);
+ await user.keyboard('{Escape}{Tab}');
+ expect(document.activeElement).toBe(screen.getByRole('button',{name:'其他操作'}));
+ await user.tab({shift:true});expect(document.activeElement).toBe(field);
+ await user.keyboard('{Tab}');expect(document.activeElement).toBe(field);
+ await user.keyboard('{Escape}{ArrowRight}{Tab}');expect(document.activeElement).toBe(field);
+ await user.keyboard('{Escape}{Shift>}{Tab}{/Shift}');
+ expect(document.activeElement).toBe(screen.getByRole('button',{name:'内容块操作'}));
+ expect(editor.state.doc.eq(original)).toBe(true);expect(change).not.toHaveBeenCalled();
+ const hint=document.getElementById(field.getAttribute('aria-describedby')!);
+ expect(hint?.textContent).toContain('Esc');
+});
+it('clears a text selection before Escape enables keyboard exit',async()=>{
+ const {editor,field,change}=await setup('正文',{},true),user=userEvent.setup();
+ act(()=>{field.focus();editor.commands.setTextSelection({from:1,to:3});});
+ await user.keyboard('{Escape}{Tab}');
+ expect(document.activeElement).toBe(field);expect(editor.state.selection.empty).toBe(true);
+ await user.keyboard('{Escape}{Tab}');
+ expect(document.activeElement).toBe(screen.getByRole('button',{name:'其他操作'}));
+ expect(change).not.toHaveBeenCalled();
+});
+it('dismisses slash suggestions before Escape enables keyboard exit',async()=>{
+ const {editor,field}=await setup('正文',{},true),user=userEvent.setup();
+ act(()=>{editor.commands.setContent('/文本',{contentType:'markdown'});field.focus();});
+ await screen.findByRole('menu',{name:'插入内容块菜单'});
+ await user.keyboard('{Escape}{Tab}');
+ expect(screen.queryByRole('menu')).toBeNull();expect(document.activeElement).toBe(field);
+ await user.keyboard('{Escape}{Tab}');
+ expect(document.activeElement).toBe(screen.getByRole('button',{name:'其他操作'}));
+ expect(editor.getText()).toBe('/文本');
+});
 it('restores the exact blank Markdown source after undoing body input',async()=>{
  const original=' \r\n\t';
  const {editor,change}=await setup('',{value:original,title:'空白页面'});

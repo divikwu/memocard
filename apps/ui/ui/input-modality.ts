@@ -22,6 +22,9 @@ export function useInputModality() {
         const editing = field && !field.matches("input:is([type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=reset], [type=file], [type=color])");
         const navigatingOptions = field?.getAttribute("role") === "combobox" && ["ArrowDown", "ArrowUp", "Enter"].includes(event.key);
         const submitting = event.key === "Enter" && field?.tagName === "INPUT";
+        // Rich-text Tab can indent lists or move between cells without leaving
+        // the editor. Let focusIn identify an actual keyboard focus transfer.
+        if (event.key === "Tab" && field?.matches('[contenteditable="true"]')) return;
         if (event.key === "Tab" || event.key === "Escape" || !editing || navigatingOptions || submitting) set("keyboard");
       };
       const pointerDown = () => { keyboardOrigin = null; pointerOrigin = true; set("pointer"); };

@@ -80,9 +80,17 @@ it("keeps the desktop Mac header structure and original sidebar-trigger size cla
   const header = document.querySelector<HTMLElement>(".web-app-header")!;
   const navigation = await within(header).findByRole("button", { name: "展开侧栏" });
   expect(header.querySelector('[data-slot="action-group"]')).toBeNull();
-  expect(navigation.parentElement).toBe(header.querySelector(".web-header-leading"));
+  expect(navigation.parentElement).toBe(header.querySelector(".web-sidebar-logo"));
+  expect(navigation.parentElement?.parentElement).toBe(header.querySelector(".web-header-leading"));
+  expect(navigation.parentElement?.querySelector("img")?.getAttribute("alt")).toBe("");
   // jsdom does not apply the UI stylesheet; size=icon remains the HEAD 36px token.
   expect(navigation.classList.contains("size-element-md")).toBe(true);
   expect(header.querySelector(".web-header-actions")?.getAttribute("role")).toBeNull();
   expect(header.querySelector(".web-header-actions")?.parentElement).toBe(header);
+  await user.click(screen.getByRole("button", { name: "打开 今天的手冲记录" }));
+  await screen.findByRole("textbox", { name: "笔记内容" });
+  expect(within(header).queryByRole("button", { name: "返回笔记列表" })).toBeNull();
+  expect(within(header).getByRole("button", { name: "展开侧栏" })).toBe(navigation);
+  await user.click(within(within(header).getByRole("navigation", { name: "当前位置" })).getByRole("button", { name: "所有笔记" }));
+  await screen.findByRole("button", { name: "打开 今天的手冲记录" });
 });

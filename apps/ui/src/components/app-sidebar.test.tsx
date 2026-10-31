@@ -158,7 +158,7 @@ describe("AppSidebar", () => {
   it("collapses and restores tags without changing the selected filter", async () => {
     const props = createProps({ tag: "生活" });
     renderSidebar(props);
-    const trigger = screen.getByRole("button", { name: "标签" });
+    const trigger = screen.getByRole("button", { name: "标签", expanded: true });
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     await userEvent.click(trigger);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");

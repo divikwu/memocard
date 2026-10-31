@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { createPortal } from "react-dom";
 import { page, userEvent } from "vitest/browser";
 import type { Editor } from "@tiptap/react";
@@ -51,6 +51,98 @@ test("portaled search preview keeps compact typography when note preferences cha
     expect(second.getBoundingClientRect().top - first.getBoundingClientRect().bottom).toBeCloseTo(11.9, 1);
     expect(getComputedStyle(root.querySelector("h1")!).fontSize).toBe("24.5px");
   }
+});
+
+test("editor keyboard exit hint fits below the content on narrow screens", async () => {
+  typography("16");
+  for (const width of [320, 390, 1024]) {
+    await page.viewport(width, 900);
+    const { field, container, unmount } = await editorFixture("Plain text");
+    await userEvent.click(field);
+    const hint = container.querySelector<HTMLElement>(".rich-keyboard-hint")!;
+    expect(getComputedStyle(hint).opacity).toBe("1");
+    expect(hint.getBoundingClientRect().top).toBeGreaterThanOrEqual(field.getBoundingClientRect().bottom);
+    expect(hint.getBoundingClientRect().right).toBeLessThanOrEqual(width);
+    expect(hint.scrollHeight).toBeLessThanOrEqual(hint.clientHeight + 1);
+    unmount();
+  }
+});
+
+for (const size of ["14", "16"]) test(`heading fold stays visible across the gutter and block grip at ${size}px`, async () => {
+  await page.viewport(1024, 900);
+  typography(size);
+  const { container, field, editor, findByRole } = await editorFixture("## Heading\n\nSection body\n\n## Next\n\nOther body");
+  const fold = await findByRole("button", { name: "收起“Heading”章节" });
+  const nextFold = await findByRole("button", { name: "收起“Next”章节" });
+  const heading = field.querySelector("h2")!, original = editor.state.doc;
+  const bounds = container.getBoundingClientRect();
+  const foldBox = fold.getBoundingClientRect(), headingBox = heading.getBoundingClientRect();
+  const y = foldBox.top + foldBox.height / 2 - bounds.top;
+  for (let x = headingBox.left + 30; x >= foldBox.left + foldBox.width / 2; x -= 2) {
+    await userEvent.hover(container, { position: { x: x - bounds.left, y } });
+    expect(getComputedStyle(fold).opacity, `pointer at ${x}`).toBe("1");
+    expect(getComputedStyle(nextFold).opacity).toBe("0");
+  }
+  const grip = await findByRole("button", { name: "内容块操作" });
+  const gripBox = grip.getBoundingClientRect();
+  expect(document.elementFromPoint(gripBox.left + gripBox.width / 2, gripBox.top + gripBox.height / 2)?.closest("button")).toBe(grip);
+  await userEvent.click(fold);
+  await waitFor(() => expect(fold.getAttribute("aria-expanded")).toBe("false"));
+  const other = field.querySelector("h2:last-of-type")!;
+  await userEvent.hover(other);
+  expect(getComputedStyle(fold).opacity).toBe("0");
+  await userEvent.hover(heading);
+  expect(getComputedStyle(fold).opacity).toBe("1");
+  await userEvent.click(fold);
+  await userEvent.hover(other);
+  expect(getComputedStyle(fold).opacity).toBe("0");
+  fold.focus();
+  await userEvent.keyboard("{Enter}");
+  await waitFor(() => expect(fold.getAttribute("aria-expanded")).toBe("false"));
+  expect(getComputedStyle(fold).opacity).toBe("1");
+  expect(editor.state.doc.eq(original)).toBe(true);
+});
+
+test("heading fold hover survives conversion and undo at the same position", async () => {
+  await page.viewport(1024, 900);
+  const { field, editor, findByRole } = await editorFixture("## Heading\n\nBody");
+  const original = editor.state.doc;
+  const fold = await findByRole("button", { name: "收起“Heading”章节" });
+  const grip = await findByRole("button", { name: "内容块操作" });
+  await userEvent.hover(field.querySelector("h2")!);
+  await userEvent.hover(grip);
+  expect(getComputedStyle(fold).opacity).toBe("1");
+  act(() => { editor.commands.setTextSelection(1); editor.commands.setParagraph(); });
+  await waitFor(() => expect(field.querySelector(".rich-heading-fold")).toBeNull());
+  act(() => { editor.commands.undo(); });
+  const restored = await findByRole("button", { name: "收起“Heading”章节" });
+  await waitFor(() => expect(getComputedStyle(restored).opacity).toBe("1"));
+  await userEvent.hover(field.querySelector("h2")!);
+  await userEvent.hover(grip);
+  expect(getComputedStyle(restored).opacity).toBe("1");
+  expect(editor.state.doc.eq(original)).toBe(true);
+});
+
+test("heading fold hover survives external content replacement at the same position", async () => {
+  await page.viewport(1024, 900);
+  const props = { notePath: "notes/replacement.md", disabled: false, autoFocus: false, onChange: vi.fn(), onSave: vi.fn(), onError: vi.fn() };
+  const content = (value: string) => <div className="ui-note-editor" style={{ padding: 32 }}><RichMarkdownEditor {...props} value={value} /></div>;
+  const view = render(content("## Old\n\nBody"));
+  const field = await view.findByRole("textbox", { name: "笔记内容" });
+  const old = await view.findByRole("button", { name: "收起“Old”章节" });
+  const grip = view.getByRole("button", { name: "内容块操作" });
+  await userEvent.hover(field.querySelector("h2")!);
+  await userEvent.hover(grip);
+  expect(getComputedStyle(old).opacity).toBe("1");
+  view.rerender(content("## New\n\nBody"));
+  const fold = await view.findByRole("button", { name: "收起“New”章节" });
+  await waitFor(() => expect(getComputedStyle(fold).opacity).toBe("1"));
+  await userEvent.hover(field.querySelector("h2")!);
+  await userEvent.hover(grip);
+  expect(getComputedStyle(fold).opacity).toBe("1");
+  await userEvent.hover(field.querySelector("p")!);
+  expect(getComputedStyle(fold).opacity).toBe("0");
+  expect(props.onChange).not.toHaveBeenCalled();
 });
 
 for (const size of ["14", "16"]) for (const tail of ["```txt\ncode\n```", "> quote", "- first\n- second"]) {
