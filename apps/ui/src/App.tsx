@@ -19,9 +19,9 @@ import { subscribeToOpenNotes } from "./open-note";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { isIOSNative } from "./ios-mode";
 
-type View = "home" | "notes" | "settings" | "trash";
+type View = "home" | "notes" | "tags" | "settings" | "trash";
 type TagCount = { name: string; count: number };
-const getView = (): View => window.location.hash === "#/trash" ? "trash" : window.location.hash === "#/settings" ? "settings" : window.location.hash.startsWith("#/notes") ? "notes" : "home";
+const getView = (): View => window.location.hash === "#/trash" ? "trash" : window.location.hash === "#/settings" ? "settings" : window.location.hash === "#/tags" ? "tags" : window.location.hash.startsWith("#/notes") ? "notes" : "home";
 const bridgeErrorCode = (error: unknown): string | null => typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
 const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error === "object" && error !== null && "retryable" in error && typeof error.retryable === "boolean" ? error.retryable : null;
 // Web/H5 can replace the view while sharing the existing request, route and draft lifecycle.
@@ -65,7 +65,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const isMobile = useIsMobile() || isIOSNative;
   const [view, setView] = useState<View>(getView);
   const [trashVersion,setTrashVersion] = useState(0);
-  const returnView = useRef<View>(getView() === "settings" || getView() === "trash" ? "notes" : getView());
+  const returnView = useRef<View>(getView() === "settings" || getView() === "trash" || getView() === "tags" ? "notes" : getView());
   const [homeTab, setHomeTab] = useState<"recent" | "pinned">("recent");
   const [captureOpened, setCaptureOpened] = useState(() => getView() === 'home');
   const [notePins, setNotePins] = useState<(NotePins & { vaultId: string }) | null>(null);
@@ -245,7 +245,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       // Replay the loaded extent using one fresh cursor chain; never merge two snapshots.
       const pageCount = background && !resetFilters ? loadedPages.current : 1;
       const readPages = async (): Promise<NotePage | null> => {
-        if (!allowed.has("queryNotes") || view === "trash") return null;
+        if (!allowed.has("queryNotes") || view === "trash" || view === "tags") return null;
         for (let attempt = 0; ; attempt++) {
           try {
             let page: NotePage | null = null;
@@ -407,7 +407,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     editorGeneration.current++;
     if (openingLink.current && openingLink.current !== draft.id) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
-    if (!editingRef.current && !editorHash.current) { returnView.current = view === 'settings' || view === 'trash' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
+    if (!editingRef.current && !editorHash.current) { returnView.current = view === 'settings' || view === 'trash' || view === 'tags' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
     const hash = `#/notes/${draft.baseHash ? draft.id : 'new'}`;
     editorHash.current = hash;
@@ -429,7 +429,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     if (openingLink.current && openingLink.current !== id && !fromLink) setPendingOpenNote(openingLink.current);
     openingLink.current = fromLink ? id : null;
     const currentRequest = ++editorGeneration.current;
-    if (!wasDetail) { returnView.current = view === 'settings' || view === 'trash' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = searchOpen ? searchReturnFocus.current : document.activeElement as HTMLElement; }
+    if (!wasDetail) { returnView.current = view === 'settings' || view === 'trash' || view === 'tags' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = searchOpen ? searchReturnFocus.current : document.activeElement as HTMLElement; }
     const hash = `#/notes/${id}`;
     editorHash.current = hash; attemptedRoute.current = hash;
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
@@ -575,9 +575,9 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const detailReadFailed = openingNote && Boolean(error) && !localWebReconnectRequired;
   const canRetryDetail = retryableError && bridgeErrorCode(error) !== "NOTE_NOT_FOUND";
   const openingTitle = pendingRoute ? notes.find(note => note.id === decodeURIComponent(pendingRoute.slice("#/notes/".length)))?.title?.trim() : undefined;
-  const connectionState = !detailView && view !== "settings" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
-  const listTimeoutVisible = !detailView && view !== "settings" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
-  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "home" ? "主页" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
+  const connectionState = !detailView && view !== "settings" && view !== "tags" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
+  const listTimeoutVisible = !detailView && view !== "settings" && view !== "tags" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
+  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "tags" ? "标签" : view === "home" ? "主页" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
   const newNote = async () => {
     if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setError('');

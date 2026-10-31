@@ -269,11 +269,94 @@ for (const mode of ["light", "dark"] as const) {
       await userEvent.tab();
       await userEvent.tab({ shift: true });
       expect(document.activeElement, label + " keyboard target").toBe(field);
-      expectKeyboardOutline(surface, mode);
+      if (label === "富文本输入") expect(getComputedStyle(surface).outlineStyle).toBe("none");
+      else expectKeyboardOutline(surface, mode);
       if (surface !== field) expect(getComputedStyle(field).outlineStyle, label + " single ring").toBe("none");
       await userEvent.click(field);
       expect(getComputedStyle(surface).outlineStyle, label + " pointer again").toBe("none");
       await userEvent.keyboard("{Escape}");
+    }
+  });
+
+  test(`rich-text Tab editing keeps the caret without a navigation outline in ${mode}`, async () => {
+    await commands.setReducedMotion("reduce");
+    for (const value of ["- First\n- Second", "1. First\n2. Second", "- [ ] First\n- [ ] Second", "| First | Second |\n| --- | --- |\n| Cell one | Cell two |", "Plain text", "## Heading\n\nPlain text", "> Quoted text", "```txt\ncode\n```"]) {
+      const view = render(<PreviewModeProvider mode={mode}><RichMarkdownEditor value={value} notePath="notes/tab-focus.md" disabled={false} autoFocus={false} onChange={() => {}} onSave={() => {}} onError={() => {}} /><Button>正文之后</Button></PreviewModeProvider>);
+      const canvas = within(view.container);
+      const editor = await canvas.findByRole("textbox", { name: "笔记内容" });
+      await waitFor(() => expect(editor.textContent).not.toBe(""));
+      if (!value.startsWith("-") && !value.startsWith("1.") && !value.startsWith("|")) {
+        await userEvent.click(editor);
+        const tiptap = (editor as HTMLElement & { editor: import("@tiptap/react").Editor }).editor;
+        const original = tiptap.state.doc, selection = tiptap.state.selection.toJSON();
+        for (const key of ["{Tab}", "{Shift>}{Tab}{/Shift}"]) {
+          await userEvent.keyboard(key);
+          expect(document.activeElement).toBe(editor);
+          expect(tiptap.state.doc.eq(original)).toBe(true);
+          expect(tiptap.state.selection.toJSON()).toEqual(selection);
+        }
+        const hint = document.getElementById(editor.getAttribute("aria-describedby")!)!;
+        expect(hint.textContent).toContain("Esc");
+        expect(getComputedStyle(hint).opacity).toBe("1");
+        await userEvent.keyboard("{Escape}{Tab}");
+        const next = canvas.getByRole("button", { name: "正文之后" });
+        const fold = editor.querySelector<HTMLElement>(".rich-heading-fold");
+        if (fold && document.activeElement === fold) {
+          expect(document.activeElement).toBe(fold);
+          expectKeyboardOutline(fold, mode);
+          await userEvent.tab();
+        }
+        expect(document.activeElement).toBe(next);
+        expectKeyboardOutline(next, mode);
+        await userEvent.tab({ shift: true });
+        if (fold && document.activeElement === fold) { expectKeyboardOutline(fold, mode); await userEvent.tab({ shift: true }); }
+        expect(document.activeElement).toBe(editor);
+        await userEvent.keyboard("{Tab}");
+        expect(document.activeElement).toBe(editor);
+        expect(getComputedStyle(editor).outlineStyle).toBe("none");
+        await userEvent.keyboard("x");
+        expect(editor.textContent).toContain("x");
+        expect(editor.contains(document.getSelection()?.anchorNode ?? null)).toBe(true);
+        act(() => { tiptap.commands.setNodeSelection(0); });
+        await waitFor(() => {
+          const highlight = view.container.querySelector<SVGPathElement>(".rich-block-highlights > path");
+          expect(highlight).not.toBeNull();
+          expect(highlight!.getBBox().width).toBeGreaterThan(0);
+          expect(getComputedStyle(highlight!).fill).not.toBe("none");
+        });
+        expect(getComputedStyle(editor).outlineStyle).toBe("none");
+        const grip = canvas.getByRole("button", { name: "内容块操作" });
+        grip.focus();
+        expectKeyboardOutline(grip, mode);
+      } else {
+        const table = value.startsWith("|");
+        const target = editor.querySelector<HTMLElement>(table ? "td p" : "li:last-child p")!;
+        await userEvent.click(target);
+        if (table) editor.querySelector<HTMLElement>(".tableWrapper")!.focus();
+        for (const key of ["{Tab}", "{Shift>}{Tab}{/Shift}"]) {
+          await userEvent.keyboard(key);
+          expect(document.activeElement).toBe(editor);
+          expect(getComputedStyle(editor).outlineStyle).toBe("none");
+          if (table) expect(document.getSelection()?.anchorNode?.parentElement?.closest("td")?.textContent).toBe(key === "{Tab}" ? "Cell two" : "Cell one");
+          else expect(editor.querySelector("li li") !== null).toBe(key === "{Tab}");
+        }
+        const tiptap = (editor as HTMLElement & { editor: import("@tiptap/react").Editor }).editor;
+        if (!tiptap.state.selection.empty) {
+          await userEvent.keyboard("{Escape}");
+          expect(tiptap.state.selection.empty).toBe(true);
+          expect(document.activeElement).toBe(editor);
+        }
+        await userEvent.keyboard("{Escape}{Tab}");
+        expect(document.activeElement, value).not.toBe(editor);
+        expectKeyboardOutline(document.activeElement!, mode);
+        if (table) {
+          const scroller = document.activeElement;
+          await userEvent.tab();
+          expect(document.activeElement).not.toBe(scroller);
+          expect(document.activeElement).not.toBe(editor);
+        }
+      }
+      view.unmount();
     }
   });
 
@@ -1444,13 +1527,13 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
         const overlay = getComputedStyle(reference).backgroundColor;
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
         const before = opened.length, bounds = card.getBoundingClientRect();
-        const click = Promise.resolve(userEvent.click(open, {delay: 400}));
+        await commands.pressLeftMouseButton();
         try {
           await waitFor(() => expect(open.matches(":active")).toBe(true));
           expect(getComputedStyle(card).backgroundColor).toBe(overlay);
           expect(card.getBoundingClientRect().top).toBeCloseTo(bounds.top, 1);
           expect(opened).toHaveLength(before);
-        } finally { await click; }
+        } finally { await commands.releaseLeftMouseButton(); }
         expect(opened).toHaveLength(before + 1);
         if (scenario.touch) expect(card.matches(":hover")).toBe(true);
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
@@ -1563,6 +1646,76 @@ test("Web home and all-notes collections share responsive widths", async () => {
   }
 }, 30_000);
 
+for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its logo for the toggle on hover and keyboard focus in ${mode}`, async () => {
+  await page.viewport(1024, 900);
+  await commands.setReducedMotion("reduce");
+  const previousHash = location.hash;
+  localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode}));
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("button", {name: "打开 今天的手冲记录"});
+    const brand = canvas.getByRole("button", {name: "MemoCard，返回主页"});
+    const logo = brand.querySelector<HTMLElement>(".ui-sidebar-logo")!;
+    const collapse = canvas.getByRole("button", {name: "收起侧栏"});
+    await userEvent.hover(brand.querySelector("span")!);
+    expect(getComputedStyle(logo).opacity).toBe("1");
+    expect(getComputedStyle(collapse).opacity).toBe("0");
+    const logoBox = logo.getBoundingClientRect(), controlBox = collapse.getBoundingClientRect();
+    expect(controlBox.left + controlBox.width / 2).toBeCloseTo(logoBox.left + logoBox.width / 2, 1);
+    expect(controlBox.top + controlBox.height / 2).toBeCloseTo(logoBox.top + logoBox.height / 2, 1);
+    await userEvent.hover(collapse);
+    expect(getComputedStyle(logo).opacity).toBe("0");
+    expect(getComputedStyle(collapse).opacity).toBe("1");
+    await userEvent.hover(brand.querySelector("span")!);
+    expect(getComputedStyle(logo).opacity).toBe("1");
+    expect(getComputedStyle(collapse).opacity).toBe("0");
+    brand.focus();
+    await userEvent.tab({shift: true});
+    expect(document.activeElement).toBe(collapse);
+    expect(getComputedStyle(collapse).opacity).toBe("1");
+    expect(getComputedStyle(logo).opacity).toBe("0");
+    expectKeyboardOutline(collapse, mode);
+    await userEvent.keyboard("{Enter}");
+    const expand = await canvas.findByRole("button", {name: "展开侧栏"});
+    await waitFor(() => expect(document.activeElement).toBe(expand));
+    expect(location.hash).toBe("#/notes");
+    const collapsedLogo = expand.parentElement!.querySelector<HTMLElement>(".ui-sidebar-logo")!;
+    expect(getComputedStyle(expand).opacity).toBe("1");
+    expect(getComputedStyle(collapsedLogo).opacity).toBe("0");
+    view.container.querySelector<HTMLElement>("#web-main-content")!.focus();
+    await userEvent.hover(canvas.getByRole("heading", {name: "所有笔记"}));
+    expect(getComputedStyle(expand).opacity).toBe("0");
+    expect(getComputedStyle(collapsedLogo).opacity).toBe("1");
+    const collapsedLogoBox = collapsedLogo.getBoundingClientRect(), expandBox = expand.getBoundingClientRect();
+    expect(expandBox.left + expandBox.width / 2).toBeCloseTo(collapsedLogoBox.left + collapsedLogoBox.width / 2, 1);
+    expect(expandBox.top + expandBox.height / 2).toBeCloseTo(collapsedLogoBox.top + collapsedLogoBox.height / 2, 1);
+    await userEvent.hover(expand);
+    expect(getComputedStyle(expand).opacity).toBe("1");
+    expect(getComputedStyle(collapsedLogo).opacity).toBe("0");
+    await userEvent.hover(canvas.getByRole("heading", {name: "所有笔记"}));
+    expect(getComputedStyle(expand).opacity).toBe("0");
+    expect(getComputedStyle(collapsedLogo).opacity).toBe("1");
+    canvas.getByRole("link", {name: "跳到笔记内容"}).focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(expand);
+    expect(getComputedStyle(expand).opacity).toBe("1");
+    expect(getComputedStyle(collapsedLogo).opacity).toBe("0");
+    expectKeyboardOutline(expand, mode);
+    await userEvent.keyboard("{Enter}");
+    await waitFor(() => expect(document.activeElement).toBe(canvas.getByRole("button", {name: "收起侧栏"})));
+    expect(getComputedStyle(canvas.getByRole("button", {name: "收起侧栏"})).opacity).toBe("1");
+    await userEvent.click(canvas.getByRole("button", {name: "MemoCard，返回主页"}));
+    await waitFor(() => expect(location.hash).toBe("#/home"));
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+  }
+});
+
 for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile touch targets, spacing and desktop appearance in ${mode}`, async () => {
   await page.viewport(320, 900);
   await commands.setReducedMotion("reduce");
@@ -1570,7 +1723,8 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
   localStorage.clear();
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode}));
   const fixture = await createWorkspaceFixture();
-  const note = fixture.snapshot().notes[0];
+  const note = { ...fixture.snapshot().notes[0], title: "用于检查当前笔记标题截断的长标题".repeat(12) };
+  await fixture.request("saveNote", { id: note.id, title: note.title, body: note.body, tags: note.tags, baseHash: note.contentHash });
   const longTag = "用于检查移动页头的较长标签名称".repeat(4);
   await fixture.request("updateNoteProperty", {id: note.id, name: "tags", type: "list", value: [longTag]});
   const noteWrites = () => fixture.calls.filter(operation => operation === "saveNote" || operation === "updateNoteProperty").length;
@@ -1602,12 +1756,21 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
       await userEvent.hover(title);
       await waitFor(() => expect(header.querySelectorAll('[data-slot="action-group"]')).toHaveLength(width < 768 ? 2 : 0));
       const actionGroup = header.querySelector<HTMLElement>(".web-header-actions")!;
-      const back = controls.getByRole("button", {name: /^返回/});
+      const navigation = width < 768
+        ? controls.getByRole("button", {name: /^返回/})
+        : within(controls.getByRole("navigation", {name: "当前位置"})).getByRole("button", {name: "所有笔记"});
+      expect(controls.queryByRole("button", {name: /^返回/})).toBe(width < 768 ? navigation : null);
+      expect(navigation).toHaveProperty("disabled", false);
       const more = controls.getByRole("button", {name: "页面操作"});
       const pin = controls.getByRole("button", {name: "固定到主页"});
+      const iconButtons = width < 768 ? [navigation, pin, more] : [pin, more];
       await waitFor(() => {
         const bounds = header.getBoundingClientRect();
-        for (const button of [back, pin, more]) {
+        const navigationBounds = navigation.getBoundingClientRect();
+        expect(navigationBounds.width).toBeGreaterThan(0);
+        expect(navigationBounds.left).toBeGreaterThanOrEqual(bounds.left);
+        expect(navigationBounds.right).toBeLessThanOrEqual(bounds.right);
+        for (const button of iconButtons) {
           const rect = button.getBoundingClientRect(), style = getComputedStyle(button);
           expect(rect.width, `${width}px ${button.ariaLabel} width`).toBeCloseTo(36, 1);
           expect(rect.height, `${width}px ${button.ariaLabel} height`).toBeCloseTo(36, 1);
@@ -1620,7 +1783,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
           expect(["none", getComputedStyle(noShadow).boxShadow]).toContain(style.boxShadow);
         }
         if (width < 768) {
-          const groups = [back.closest<HTMLElement>('[data-slot="action-group"]'), pin.closest<HTMLElement>('[data-slot="action-group"]')];
+          const groups = [navigation.closest<HTMLElement>('[data-slot="action-group"]'), pin.closest<HTMLElement>('[data-slot="action-group"]')];
           for (const [index, group] of groups.entries()) {
             expect(group).not.toBeNull();
             const groupStyle = getComputedStyle(group!), rect = group!.getBoundingClientRect();
@@ -1634,15 +1797,27 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
             expect(parseFloat(groupStyle.borderTopLeftRadius)).toBeGreaterThanOrEqual(rect.height / 2);
           }
         } else {
+          const current = controls.getByText(note.title);
+          expect(current.getAttribute("aria-current")).toBe("page");
+          expect(current.tabIndex).toBe(-1);
+          expect(current.clientWidth).toBeGreaterThan(0);
+          expect(current.scrollWidth).toBeGreaterThan(current.clientWidth);
+          expect(getComputedStyle(current).textOverflow).toBe("ellipsis");
+          expect(current.getBoundingClientRect().right).toBeLessThanOrEqual(pin.getBoundingClientRect().left);
           const groupStyle = getComputedStyle(actionGroup);
           expect(["none", getComputedStyle(noShadow).boxShadow]).toContain(groupStyle.boxShadow);
           expect(groupStyle.backgroundColor).toBe("rgba(0, 0, 0, 0)");
-          for (const button of [back, pin, more]) expect(button.closest('[data-slot="action-group"]')).toBeNull();
+          for (const button of iconButtons) expect(button.closest('[data-slot="action-group"]')).toBeNull();
         }
-        expect(pin.getBoundingClientRect().left).toBeGreaterThanOrEqual(back.getBoundingClientRect().right);
+        expect(pin.getBoundingClientRect().left).toBeGreaterThanOrEqual(navigationBounds.right);
         expect(more.getBoundingClientRect().left - pin.getBoundingClientRect().right, `${width}px action gap`).toBeCloseTo(width < 768 ? 0 : 8, 1);
         expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
       });
+      if (width >= 768) {
+        navigation.focus();
+        await userEvent.tab();
+        expect(document.activeElement).toBe(pin);
+      }
       await userEvent.click(pin);
       await waitFor(() => expect(controls.getByRole("button", {name: "取消固定"}).getAttribute("aria-pressed")).toBe("true"));
       await userEvent.click(pin);
@@ -1660,6 +1835,10 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
         expectUnclippedOutline(more);
       });
     }
+    await userEvent.click(within(controls.getByRole("navigation", {name: "当前位置"})).getByRole("button", {name: "所有笔记"}));
+    await waitFor(() => expect(canvas.queryByRole("textbox", {name: "页面标题"})).toBeNull());
+    await userEvent.click(canvas.getByRole("button", {name: `打开 ${note.title}`}));
+    await canvas.findByRole("textbox", {name: "页面标题"});
     await page.viewport(673, 900);
     await waitFor(() => expect(header.querySelectorAll('[data-slot="action-group"]')).toHaveLength(2));
     await userEvent.click(controls.getByRole("button", {name: /^返回/}));

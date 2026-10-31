@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { NoteFilterCounts, NoteQuickFilter } from "@memocard/contracts";
 import type { RegisteredVault } from "../../src/bridge";
-type SidebarView = "home" | "notes" | "settings" | "trash";
+type SidebarView = "home" | "notes" | "tags" | "settings" | "trash";
 export interface AppSidebarProps {
   view: SidebarView;
   tag: string | null;
@@ -72,11 +72,11 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
     <VaultMenuItem mobile={isMobile} disabled title="帮助功能暂未开放"><span className="ui-sidebar-vault-icon"><SidebarIcon name="help" /></span><span>帮助</span></VaultMenuItem>
   </>;
 
-  return <Sidebar id="desktop-sidebar" aria-label="笔记导航" className="ui-business-sidebar border-r-0">
+  return <Sidebar id="desktop-sidebar" aria-label="笔记导航" className="ui-business-sidebar border-r-0 border-transparent">
     <SidebarHeader>
-      <div className="flex items-center gap-2">
+      <div className="ui-sidebar-brand-header flex items-center gap-2">
+        {!isMobile && <SidebarTrigger className="ui-sidebar-logo-trigger" />}
         <Button type="button" variant="ghost" className="ui-sidebar-brand min-w-0 flex-1 justify-start" aria-label="MemoCard，返回主页" onClick={() => navigate("home", null)}><img src="./favicon.png" alt="" draggable={false} className="ui-sidebar-logo" /><span className="truncate text-base font-semibold">MemoCard</span></Button>
-        {!isMobile && <SidebarTrigger className="shrink-0" />}
       </div>
       <nav aria-label="主要导航"><SidebarMenu>
         {!isMobile && <>
@@ -88,6 +88,7 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
           <SidebarMenuSub className="mr-0 translate-x-0 pr-0">{filters.map(filter => <SidebarTreeItem key={filter.id} nested label={filter.label} icon={<SidebarIcon name={filter.icon} />} isActive={view === "notes" && quickFilter === filter.id} buttonProps={{ disabled: !connected, onClick: () => navigate("notes", null, filter.id), "aria-label": filter.label, "aria-description": filterCounts ? `${filterCounts[filter.id]} 条笔记` : undefined }} accessories={filterCounts && <SidebarMenuBadge aria-hidden="true">{filterCounts[filter.id]}</SidebarMenuBadge>} />)}</SidebarMenuSub>
         </SidebarTreeItem>
         <SidebarTreeItem label="日历" icon={<SidebarIcon name="calendar" />} isActive={false} buttonProps={{ "aria-disabled": "true", className: "aria-disabled:opacity-100", title: "日历功能暂未开放" }} />
+        <SidebarTreeItem label="标签" icon={<SidebarIcon name="hash" />} isActive={false} buttonProps={{ "aria-disabled": "true", className: "aria-disabled:opacity-100", title: "标签页暂未开放" }} />
       </SidebarMenu></nav>
     </SidebarHeader>
     <SidebarContent>{loadingTags ? <SidebarGroup role="status" aria-label="正在读取标签"><div className="grid gap-3 p-2">{[0, 1, 2].map(index => <Skeleton key={index} className="h-element-sm rounded-full" />)}</div></SidebarGroup> : <TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={path => navigate("notes", path)} />}</SidebarContent>

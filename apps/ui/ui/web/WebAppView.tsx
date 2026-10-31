@@ -75,6 +75,7 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
 function WorkspaceContent({ state: s }: { state: AppViewState }) {
   if (s.openingNote) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed ? <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty> : s.error ? null : <PageLoading />}</>;
   if (s.editor) return <><h1 className="sr-only">{s.title}</h1><Suspense fallback={<PageLoading />}><Editor key={s.editor.initial.id} {...s.editor} /></Suspense></>;
+  if (s.view === "tags") return null;
   if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
   if (s.connectionState) return <WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
@@ -97,11 +98,12 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
   const menuDelete = useRef(false);
   const tagParts = s.sidebar.tag?.split("/") ?? [];
   const detailBreadcrumbs = s.view === "home" ? ["主页"] : ["所有笔记", ...tagParts, ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : [])];
+  const showBreadcrumb = s.isMobile || s.detailView;
   const mobileActions = s.isMobile && !s.nativeChrome && !isNative;
   const HeaderActions = mobileActions ? ActionGroup : "div";
   const navigationControls = <>
-    {(s.isMobile ? !s.detailView : !s.sidebarOpen) && <SidebarTrigger className="web-header-icon" />}
-    {s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
+    {(s.isMobile ? !s.detailView : !s.sidebarOpen) && (s.isMobile ? <SidebarTrigger className="web-header-icon" /> : <span className="ui-sidebar-brand-header web-sidebar-logo"><img src="./favicon.png" alt="" draggable={false} className="ui-sidebar-logo" /><SidebarTrigger className="web-header-icon ui-sidebar-logo-trigger" /></span>)}
+    {s.isMobile && s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
   </>;
   const searchControl = <Button variant={mobileActions ? "ghost" : "outline"} size="icon-lg" disabled={!s.search.available} onClick={s.onSearch} aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={s.search.open}><SearchIcon aria-hidden="true" /></Button>;
   return <MobileActionGroupProvider enabled={mobileActions}><div className="ui-theme web-app sb-unstyled" data-ui-theme={mode} data-web-client={!s.nativeChrome && !isNative || undefined} data-native-chrome={s.nativeChrome ? "true" : undefined}>
@@ -114,8 +116,11 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
         {!s.nativeChrome && <header className="web-app-header">
           <div className="web-header-leading">
             {mobileActions ? <ActionGroup aria-label="页面导航" className="web-header-navigation">{navigationControls}</ActionGroup> : navigationControls}
-            {!s.isMobile && !s.sidebarOpen && <Separator orientation="vertical" className="web-header-separator" />}
-            <Breadcrumb aria-label="当前位置" className="web-crumb" data-detail={s.detailView || undefined}><BreadcrumbList>{s.detailView ? detailBreadcrumbs.map((label, index) => <BreadcrumbItem key={index}>{index > 0 && <span aria-hidden="true">/</span>}<BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? tagParts.slice(0, index).join("/") : null)}>{label}</BreadcrumbLink></BreadcrumbItem>) : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>
+            {showBreadcrumb && !s.isMobile && !s.sidebarOpen && <Separator orientation="vertical" className="web-header-separator" />}
+            {showBreadcrumb && <Breadcrumb aria-label="当前位置" className="web-crumb" data-detail={s.detailView || undefined}><BreadcrumbList>{s.detailView ? <>
+              {detailBreadcrumbs.map((label, index) => <BreadcrumbItem key={index}>{index > 0 && <span aria-hidden="true">/</span>}<BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? tagParts.slice(0, index).join("/") : null)}>{label}</BreadcrumbLink></BreadcrumbItem>)}
+              <BreadcrumbItem><span aria-hidden="true">/</span><BreadcrumbPage title={s.title}>{s.title}</BreadcrumbPage></BreadcrumbItem>
+            </> : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>}
           </div>
           <HeaderActions aria-label={mobileActions ? "页面操作组" : undefined} className="web-header-actions">
             {s.editor && s.capabilities.has("setNotePinned") && <TooltipProvider><Tooltip><TooltipTrigger render={<span className="web-pin-tooltip-trigger" tabIndex={s.pinDisabled ? 0 : undefined} />}><Button variant="ghost" size="icon" className={`web-header-icon${s.pinned ? " text-accent" : ""}`} aria-label={s.pinned ? "取消固定" : "固定到主页"} aria-description={!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : undefined} aria-pressed={s.pinned} disabled={s.pinDisabled} onClick={s.onTogglePin}><HugeiconsIcon icon={PinIcon} fill={s.pinned ? "currentColor" : "none"} aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>{!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : s.pinned ? "取消固定" : "固定到主页"}</TooltipContent></Tooltip></TooltipProvider>}

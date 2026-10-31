@@ -372,14 +372,16 @@ it('does not retain the previous vault list when another vault requires authoriz
 
 
 it.each([['detail-error','无法打开笔记'],['detail-missing','笔记不存在']])('%s reuses the compact centered card and keeps its reason',async(id,title)=>{
-  await show(id);
+  const mock=await show(id);
   const heading=await screen.findByRole('heading',{name:title});
   const card=heading.closest('[data-slot="empty"]')!;
   expect(card.getAttribute('role')).toBe('alert');
   expect(card.className).toContain('web-workspace-empty');
   expect(screen.getAllByRole('alert')).toHaveLength(1);
   expect(within(card as HTMLElement).getByText(id === 'detail-missing'?'找不到此笔记。':'笔记文件暂时无法读取，请稍后重试。')).toBeTruthy();
-  await waitFor(()=>expect(screen.getByLabelText('当前位置').textContent).toBe('所有笔记'));
+  const breadcrumb=screen.getByRole('navigation',{name:'当前位置'});
+  expect(within(breadcrumb).getAllByRole('button').map(button=>button.textContent)).toEqual(['所有笔记']);
+  expect(within(breadcrumb).getByRole('link',{current:'page'}).textContent).toBe(mock.snapshot().notes[0].title);
   expect(within(card as HTMLElement).getByRole('button',{name:'返回笔记列表'})).toBeTruthy();
   expect(screen.queryByRole('textbox',{name:'笔记内容'})).toBeNull();
 });

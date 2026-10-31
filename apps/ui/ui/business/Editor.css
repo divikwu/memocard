@@ -17,7 +17,7 @@
 .ui-note-editor .rich-editor-content li > p + p { margin-block-start: var(--spacing-1); }
 .ui-note-editor .rich-editor-content li :is(ul, ol) { margin-block: var(--spacing-1) 0; padding-block: 0; }
 .ui-note-editor .rich-editor-content > :first-child { margin-block-start: 0; }
-.ui-note-editor .rich-editor-content > .rich-foldable-heading > .rich-heading-fold-widget { top: var(--editor-block-space); left: calc(var(--spacing-1) * -5 - 8px); }
+.ui-note-editor .rich-editor-content > .rich-foldable-heading > .rich-heading-fold-widget { --heading-fold-gap: calc(var(--spacing-1) * 5 + 8px); top: var(--editor-block-space); }
 /* Every grip sits 6px before the block; heading folding sits another 2px before the grip. */
 .ui-note-editor .block-controls, .ui-note-editor .block-controls[data-heading] { gap: 0; left: calc(var(--editor-gutter) - var(--spacing-1) * 5 - 6px); }
 .ui-note-editor :is(.block-controls button, .rich-heading-fold) { color: var(--color-text-secondary); }

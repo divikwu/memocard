@@ -5,10 +5,25 @@ import { useInputModality } from "./input-modality";
 
 function Fields() {
   useInputModality();
-  return <><input aria-label="文本" /><textarea aria-label="多行" /><input role="combobox" aria-label="选项" /><button>打开</button></>;
+  return <><input aria-label="文本" /><textarea aria-label="多行" /><input role="combobox" aria-label="选项" /><div contentEditable role="textbox" aria-label="正文" onKeyDown={event => { if (event.key === "Tab") event.preventDefault(); }} /><button>打开</button></>;
 }
 afterEach(cleanup);
 const mode = () => document.documentElement.dataset.uiInputModality;
+
+it("keeps consumed rich-text Tab commands in editing mode and shows focus after leaving the editor", () => {
+  render(<Fields />);
+  const editor = screen.getByRole("textbox", { name: "正文" });
+  fireEvent.pointerDown(editor);
+  editor.focus();
+  for (const shiftKey of [false, true]) {
+    expect(fireEvent.keyDown(editor, { key: "Tab", shiftKey })).toBe(false);
+    expect(document.activeElement).toBe(editor);
+    expect(mode()).toBe("pointer");
+  }
+  fireEvent.keyDown(editor, { key: "Tab" });
+  screen.getByRole("button", { name: "打开" }).focus();
+  expect(mode()).toBe("keyboard");
+});
 
 it("keeps pointer editing separate from keyboard navigation", () => {
   render(<Fields />);

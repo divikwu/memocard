@@ -42,7 +42,7 @@ it("retains tag paths, pinned order and emoji while publishing the H5 mobile nav
   render(<IOSAppChrome {...props()}/>);send("chrome","navigation");
   const nav=surface("navigation");
   expect(nav.rowRadius).toBe(10);
-  expect(nav.sections?.find(s=>s.id === "pages")?.actions?.map(a=>a.id)).toEqual(["home","notes","calendar"]);
+  expect(nav.sections?.find(s=>s.id === "pages")?.actions?.map(a=>a.id)).toEqual(["home","notes","calendar","tags"]);
   expect(nav.sections?.find(s=>s.id === "pinned-tags")?.actions?.map(a=>a.path)).toEqual(["开发","设计/界面"]);
   expect(nav.sections?.find(s=>s.id === "tags")?.actions).toEqual(expect.arrayContaining([
     expect.objectContaining({id:"tag:设计/界面",path:"设计/界面",title:"界面"}),expect.objectContaining({path:"开发",emoji:"💻"}),
@@ -57,6 +57,8 @@ it("dispatches nested tag and quick filter selection and closes the sidebar",asy
   expect(surface("navigation").presented).toBe(false);
   send("chrome","navigation");send("navigation","filter:images");
   expect(p.onNavigate).toHaveBeenCalledWith("notes",null,"images");expect(surface("navigation").presented).toBe(false);
+  send("chrome","navigation");send("navigation","tags");
+  expect(p.onNavigate).not.toHaveBeenCalledWith("tags");
 });
 it("keeps bottom search and capture, and retains new notes and drafts through the page menu",()=>{
   const p=props();render(<IOSAppChrome {...p}/>);
@@ -83,6 +85,7 @@ it("resets the sidebar identity on vault change and preserves unavailable action
   page.rerender(<IOSAppChrome {...p} hasVaultIssue needsPermission vaultStatus="需要重新授权" canCreate={false} canSearch={false} capabilities={new Set(["selectVault"])} status={{...p.status!,vaultId:"other",connected:false}}/>);
   const nav=surface("navigation");expect(nav.resetKey).toBe("other");
   expect(nav.sections?.find(s=>s.id === "pages")?.actions?.find(a=>a.id === "calendar")?.disabled).toBe(true);
+  expect(nav.sections?.find(s=>s.id === "pages")?.actions?.find(a=>a.id === "tags")?.disabled).toBe(true);
   expect(surface("chrome").bottom?.every(a=>a.disabled)).toBe(true);
   expect(nav.sections?.find(s=>s.id === "library")?.message).toBe("需要重新授权");
   send("navigation","vault");

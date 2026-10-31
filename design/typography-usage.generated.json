@@ -1886,6 +1886,11 @@
           "value": "var(--font-size-xs)"
         },
         {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-keyboard-hint",
+          "value": "var(--font-size-xs)"
+        },
+        {
           "source": "apps/ui/ui/business/sidebar.css",
           "scope": ".ui-sidebar-tree-row .ui-sidebar-row-actions > [data-sidebar=\"menu-badge\"]",
           "value": "var(--font-size-xs)"
@@ -2916,6 +2921,11 @@
         {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
+          "value": "1.5"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-keyboard-hint",
           "value": "1.5"
         },
         {

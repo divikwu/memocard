@@ -1,4 +1,4 @@
-import { Suspense, forwardRef, useCallback, useEffect, useLayoutEffect, useImperativeHandle, useRef, useState, type ComponentType, type SVGProps, type DragEventHandler } from 'react';
+import { Suspense, forwardRef, useCallback, useEffect, useId, useLayoutEffect, useImperativeHandle, useRef, useState, type ComponentType, type SVGProps, type DragEventHandler } from 'react';
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, useEditorState, type NodeViewProps, type ReactNodeViewProps, type NodeViewRendererProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown as MarkdownExtension } from '@tiptap/markdown';
@@ -175,6 +175,8 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   const slash = useRef<{ from: number; to: number } | null>(null);
   const editorRef = useRef<TiptapEditor | null>(null);
   const pastePlain = useRef(false);
+  const tabExit = useRef(false);
+  const keyboardHintId = useId();
   const editor: TiptapEditor | null = useEditor({
     immediatelyRender: false,
     // Plain Markdown is parsed explicitly; rich/literal clipboard content must not run Markdown paste rules.
@@ -188,7 +190,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     ],
     content: '', editable: !props.disabled,
     editorProps: {
-      attributes: { class: contentClassName, role: 'textbox', 'aria-label': '笔记内容', 'aria-multiline': 'true' },
+      attributes: { class: contentClassName, role: 'textbox', 'aria-label': '笔记内容', 'aria-multiline': 'true', 'aria-describedby': keyboardHintId },
       decorations(state) {
         if (state.selection instanceof TextSelection && !state.selection.empty) return DecorationSet.create(state.doc, [Decoration.inline(state.selection.from, state.selection.to, { class: 'rich-text-selected' })]);
         if (!(state.selection instanceof AllSelection || state.selection instanceof BlockRangeSelection)) return null;
@@ -199,13 +201,33 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
         return DecorationSet.create(state.doc, blocks);
       },
       handleDOMEvents: {
+        keydown(view, event) {
+          const tab = event.key === 'Tab' && !event.isComposing && event.keyCode !== 229 && !view.composing && !event.metaKey && !event.ctrlKey && !event.altKey;
+          const table = event.target instanceof Element && event.target.classList.contains('tableWrapper');
+          const exit = tab && (tabExit.current || event.target !== view.dom && !table);
+          if (event.target === view.dom && event.key !== 'Tab' && !['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) tabExit.current = false;
+          // Firefox can move the DOM caret while the table scroller has focus.
+          // Capture that caret before view.focus() restores the stored selection.
+          if (tab && !exit && table) {
+            const selection = view.dom.ownerDocument.getSelection();
+            if (view.state.selection instanceof TextSelection && selection?.anchorNode && selection.focusNode && view.dom.contains(selection.anchorNode) && view.dom.contains(selection.focusNode)) {
+              const anchor = view.posAtDOM(selection.anchorNode, selection.anchorOffset), head = view.posAtDOM(selection.focusNode, selection.focusOffset);
+              view.dispatch(view.state.tr.setSelection(TextSelection.between(view.state.doc.resolve(anchor), view.state.doc.resolve(head))));
+            }
+            view.focus();
+          }
+          // Bypass editor keymaps while preserving the browser's native Tab order.
+          return exit;
+        },
+        focus() { tabExit.current = false; return false; },
+        pointerdown() { tabExit.current = false; return false; },
         keyup(_view, event) {
           pastePlain.current = event.shiftKey;
           const e = editorRef.current;
           if (e && !event.isComposing && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) revealCaret(e);
           return false;
         },
-        blur() { pastePlain.current = false; return false; },
+        blur(view, event) { pastePlain.current = false; if (!(event.relatedTarget instanceof Node) || !view.dom.contains(event.relatedTarget)) tabExit.current = false; return false; },
       },
       handleKeyDown(view, event) {
         pastePlain.current = event.shiftKey;
@@ -239,21 +261,28 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
         }
         if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') { event.preventDefault(); if (!latest.current.disabled) latest.current.onSave(); return true; }
         if (event.key === 'Escape') {
+          const dismissingMenu = slash.current !== null || menuRef.current !== null;
           slash.current = null; setMenu(null); stopDrag();
+          if (dismissingMenu) return true;
           const selection = view.state.selection;
-          if (!selection.empty && !menuRef.current && !(selection instanceof NodeSelection && selection.node.isInline)) {
+          if (!selection.empty && !(selection instanceof NodeSelection && selection.node.isInline)) {
             view.dispatch(view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(view.state.selection.from))));
             return true;
           }
-          return false;
+          tabExit.current = true;
+          return true;
         }
         if (slash.current && menuRef.current && handleInsertKey(event)) return true;
-        if (event.key === 'Tab') {
+        if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey && editorRef.current?.isEditable) {
+          event.preventDefault();
           const e = editorRef.current;
-          if (e?.isActive('listItem') || e?.isActive('taskItem')) {
-            event.preventDefault(); const name = e.isActive('taskItem') ? 'taskItem' : 'listItem';
-            return event.shiftKey ? e.commands.liftListItem(name) : e.commands.sinkListItem(name);
+          // Keep table navigation, including its boundary behavior, in the table keymap.
+          if (e.isActive('table')) return false;
+          if (e.isActive('listItem') || e.isActive('taskItem')) {
+            const name = e.isActive('taskItem') ? 'taskItem' : 'listItem';
+            if (event.shiftKey) e.commands.liftListItem(name); else e.commands.sinkListItem(name);
           }
+          return true;
         }
         return false;
       },
@@ -422,6 +451,24 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       editor.view.updateState(EditorState.create({ doc, plugins: editor.state.plugins }));
     }
   }, [editor, props.value]);
+  useEffect(() => {
+    if (!editor) return;
+    let active: Element | null = null;
+    // Undo and external replacements can rebuild widgets without moving the toolbar.
+    const sync = () => {
+      const element = editor.view.nodeDOM(toolbar.pos);
+      const fold = element instanceof HTMLElement ? element.querySelector(':scope > .rich-heading-fold-widget') : null;
+      const headingChanged = controlsRef.current?.hasAttribute('data-heading') !== (fold !== null);
+      if (fold === active && !headingChanged) return;
+      active?.removeAttribute('data-block-active');
+      fold?.setAttribute('data-block-active', '');
+      active = fold;
+      if (headingChanged) setRevision(n => n + 1);
+    };
+    sync();
+    editor.on('transaction', sync);
+    return () => { editor.off('transaction', sync); active?.removeAttribute('data-block-active'); };
+  }, [editor, toolbar.pos, props.value]);
   useEffect(() => {
     if (!editor) return;
     const observer = new ResizeObserver(() => { positionToolbar(editor, toolbarTarget.current.position); });
@@ -737,6 +784,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       }}><GripVertical size={16} /></button>
     </div>
     <EditorContent editor={editor} />
+    <p id={keyboardHintId} className="rich-keyboard-hint">Esc 后按 Tab / Shift+Tab 离开正文；有菜单或选区时，先按 Esc 取消。</p>
     <RichBlockHighlight editor={editor} root={root} />
     {selectionBox && <div className="rich-selection-box" aria-hidden="true" style={selectionBox} />}
     {!props.disabled && <RichTagSuggestions editor={editor} />}

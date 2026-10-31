@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Note, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import { App } from "./App";
-import { noteEditor, readEditorText, replaceCaptureText } from "./editor-test-utils";
+import { noteEditor, noteSourceButton, readEditorText, replaceCaptureText } from "./editor-test-utils";
 import { swipeSheet } from "@ui/components/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
@@ -30,7 +30,7 @@ const status: VaultStatus = {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/NoteSearchDialog"), import("@ui/business/Editor")]);
+  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/NoteSearchDialog"), import("@ui/business/Editor"), import("@ui/web/WebSettings")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -80,7 +80,7 @@ describe("sidebar workspace actions", () => {
     await user.keyboard("{Enter}");
     await screen.findByRole("textbox", { name: "页面标题" });
     expect(input.isConnected).toBe(false);
-    await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
+    await user.click(noteSourceButton());
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   });
 
@@ -680,7 +680,7 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   expect(screen.queryByRole("button", { name: "移除标签 工作/项目" })).toBeNull();
   expect(screen.queryByLabelText("笔记标签")).toBeNull();
   expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
-  await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
+  await user.click(noteSourceButton());
   const cardTag = await screen.findByRole("button", { name: "筛选标签 生活" });
   expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
   expect(bridge.request).not.toHaveBeenCalledWith("saveDraft", expect.anything());

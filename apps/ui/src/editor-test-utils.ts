@@ -1,5 +1,5 @@
 import type { Editor } from '@tiptap/react';
-import { act, screen } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import { closeHistory } from '@tiptap/pm/history';
 
 export function noteEditor(element: HTMLElement = screen.getByRole('textbox', { name: '笔记内容' })) {
@@ -8,6 +8,9 @@ export function noteEditor(element: HTMLElement = screen.getByRole('textbox', { 
   return editor;
 }
 export function readEditorText(element?: HTMLElement) { return noteEditor(element).getMarkdown(); }
+export function noteSourceButton() {
+  return within(screen.getByRole('navigation', { name: '当前位置' })).getAllByRole('button').at(-1)!;
+}
 export function replaceEditorText(body: string, element?: HTMLElement) {
   const editor = noteEditor(element);
   act(() => { editor.commands.setContent(body, { contentType: 'markdown' }); });
