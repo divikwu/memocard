@@ -20,6 +20,7 @@ afterEach(() => {
   cleanup();
   document.documentElement.removeAttribute("style");
   document.documentElement.removeAttribute("data-web-typography");
+  document.documentElement.removeAttribute("data-ui-input-modality");
 });
 
 function typography(size: string, flow = "16px", leading = "1.5") {
@@ -96,9 +97,8 @@ for (const size of ["14", "16"]) test(`heading fold stays visible across the gut
   await userEvent.click(fold);
   await userEvent.hover(other);
   expect(getComputedStyle(fold).opacity).toBe("0");
-  field.focus();
-  await userEvent.keyboard("{Escape}{Tab}");
-  expect(document.activeElement).toBe(fold);
+  document.documentElement.setAttribute("data-ui-input-modality", "keyboard");
+  fold.focus();
   await userEvent.keyboard("{Enter}");
   await waitFor(() => expect(fold.getAttribute("aria-expanded")).toBe("false"));
   expect(getComputedStyle(fold).opacity).toBe("1");

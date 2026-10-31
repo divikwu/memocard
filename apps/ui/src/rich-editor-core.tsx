@@ -206,8 +206,16 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
           const table = event.target instanceof Element && event.target.classList.contains('tableWrapper');
           const exit = tab && (tabExit.current || event.target !== view.dom && !table);
           if (event.target === view.dom && event.key !== 'Tab' && !['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) tabExit.current = false;
-          // Firefox can focus the table scroller when placing the caret in a cell.
-          if (tab && !exit && table) view.focus();
+          // Firefox can move the DOM caret while the table scroller has focus.
+          // Capture that caret before view.focus() restores the stored selection.
+          if (tab && !exit && table) {
+            const selection = view.dom.ownerDocument.getSelection();
+            if (view.state.selection instanceof TextSelection && selection?.anchorNode && selection.focusNode && view.dom.contains(selection.anchorNode) && view.dom.contains(selection.focusNode)) {
+              const anchor = view.posAtDOM(selection.anchorNode, selection.anchorOffset), head = view.posAtDOM(selection.focusNode, selection.focusOffset);
+              view.dispatch(view.state.tr.setSelection(TextSelection.between(view.state.doc.resolve(anchor), view.state.doc.resolve(head))));
+            }
+            view.focus();
+          }
           // Bypass editor keymaps while preserving the browser's native Tab order.
           return exit;
         },

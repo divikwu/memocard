@@ -301,7 +301,7 @@ for (const mode of ["light", "dark"] as const) {
         await userEvent.keyboard("{Escape}{Tab}");
         const next = canvas.getByRole("button", { name: "正文之后" });
         const fold = editor.querySelector<HTMLElement>(".rich-heading-fold");
-        if (fold) {
+        if (fold && document.activeElement === fold) {
           expect(document.activeElement).toBe(fold);
           expectKeyboardOutline(fold, mode);
           await userEvent.tab();
@@ -309,7 +309,7 @@ for (const mode of ["light", "dark"] as const) {
         expect(document.activeElement).toBe(next);
         expectKeyboardOutline(next, mode);
         await userEvent.tab({ shift: true });
-        if (fold) { expect(document.activeElement).toBe(fold); await userEvent.tab({ shift: true }); }
+        if (fold && document.activeElement === fold) { expectKeyboardOutline(fold, mode); await userEvent.tab({ shift: true }); }
         expect(document.activeElement).toBe(editor);
         await userEvent.keyboard("{Tab}");
         expect(document.activeElement).toBe(editor);

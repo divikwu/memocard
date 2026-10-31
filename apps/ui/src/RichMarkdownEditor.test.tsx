@@ -85,8 +85,10 @@ it('keeps table Tab editing when the scroller has focus and preserves the Escape
  act(()=>{editor.commands.setContent('| A | B |\n| --- | --- |\n| First | Second |',{contentType:'markdown'});});
  const scroller=field.querySelector<HTMLElement>('.tableWrapper')!;
  let position=0;
- editor.state.doc.descendants((node,pos)=>{if(node.isText && node.text==='First')position=pos;});
- act(()=>{editor.commands.setTextSelection(position);scroller.focus();});
+ editor.state.doc.descendants((node,pos)=>{if(node.isText && node.text==='Second')position=pos+node.nodeSize;});
+ // Firefox can move the DOM caret while the table scroller owns focus,
+ // leaving ProseMirror's stored selection at the previous cell.
+ act(()=>{editor.commands.setTextSelection(position);scroller.focus();document.getSelection()!.collapse(field.querySelector('td p')!.firstChild,0);});
  await user.keyboard('{Tab}');
  expect(document.activeElement).toBe(field);
  expect(editor.state.selection.$from.parent.textContent).toBe('Second');
