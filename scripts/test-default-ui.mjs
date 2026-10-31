@@ -38,7 +38,7 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         await page.getByRole('button', { name: '更多属性', exact: true }).click();
         await page.getByRole('button', { name: '编辑标签', exact: true }).click();
         await page.getByRole('combobox', { name: '搜索或新建属性标签', exact: true }).press('Escape');
-        await page.getByRole('button', { name: '返回主页', exact: true }).click();
+        await page.getByRole('navigation', { name: '当前位置', exact: true }).getByRole('button', { name: '主页', exact: true }).click();
         assert.equal(await page.getByRole('button', { name: /^打开 新内容/ }).count(), 0);
         assert.equal(await page.evaluate(async () => {
           const root = await navigator.storage.getDirectory();
@@ -61,7 +61,7 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         await page.getByRole('button', { name: '文本', exact: true }).click();
         await page.getByRole('textbox', { name: '页面标题', exact: true }).fill('Migration filesystem proof');
         await page.getByRole('textbox', { name: '笔记内容', exact: true }).fill('Persisted through the default UI. migrationproof');
-        await page.getByRole('button', { name: '返回主页', exact: true }).click();
+        await page.getByRole('navigation', { name: '当前位置', exact: true }).getByRole('button', { name: '主页', exact: true }).click();
         await page.getByRole('button', { name: '打开 Migration filesystem proof', exact: true }).waitFor();
         const persisted = await page.evaluate(async () => {
           const root = await navigator.storage.getDirectory();
@@ -145,7 +145,7 @@ test('property-first new note retains empty fields, zero, false and choice edits
     await page.getByRole('button', {name: '移除选项 a', exact: true}).click();
     await page.getByRole('button', {name: '移除选项 a', exact: true}).waitFor({state: 'hidden'});
     await search.press('Escape');
-    await page.getByRole('button', {name: '返回主页', exact: true}).click();
+    await page.getByRole('navigation', {name: '当前位置', exact: true}).getByRole('button', {name: '主页', exact: true}).click();
     const properties = parse((await read()).split('---')[1]);
     assert.equal(properties.empty, '');
     assert.equal(properties.zero, 0);
@@ -165,7 +165,7 @@ test('property-first new note retains empty fields, zero, false and choice edits
     await page.getByRole('button', {name: '编辑属性 zero', exact: true}).click();
     await page.getByRole('textbox', {name: '属性值', exact: true}).fill('0');
     await page.getByRole('textbox', {name: '属性值', exact: true}).press('Enter');
-    await page.getByRole('button', {name: '返回主页', exact: true}).click();
+    await page.getByRole('navigation', {name: '当前位置', exact: true}).getByRole('button', {name: '主页', exact: true}).click();
     await page.getByRole('button', {name: '打开 新内容 (2)', exact: true}).waitFor();
     const inherited = await page.evaluate(async () => {
       const root = await navigator.storage.getDirectory();

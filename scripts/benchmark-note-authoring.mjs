@@ -55,7 +55,7 @@ try {
       await page.reload({ waitUntil: 'networkidle' });
       await page.getByRole('button', { name: '所有笔记', exact: true }).click();
       await page.getByRole('button', { name: '打开 Audit', exact: true }).waitFor();
-      if (fixture.collapseSidebarTags) await page.getByRole('button', {name: '标签', exact: true}).click();
+      if (fixture.collapseSidebarTags) await page.getByRole('button', {name: '标签', exact: true, expanded: true}).click();
       const openNoteMs = await elapsed(async () => {
         await page.getByRole('button', { name: '打开 Audit', exact: true }).click();
         await page.waitForFunction(() => document.querySelector('[aria-label="笔记内容"]')?.textContent?.includes('AUDIT_END'));
@@ -107,7 +107,7 @@ try {
           return (await (await root.getFileHandle('Audit.md')).getFile()).text().then(source => source.includes(value) && source.includes('AUDIT_END'));
         }, `saved-value-${i}`);
       }));
-      await page.getByRole('button', {name: '返回笔记列表', exact: true}).click();
+      await page.getByRole('navigation', {name: '当前位置', exact: true}).getByRole('button', {name: '所有笔记', exact: true}).click();
       await page.getByRole('button', {name: '打开 Audit', exact: true}).click();
       await page.waitForFunction(() => document.querySelector('[aria-label="笔记内容"]')?.textContent?.includes('AUDIT_END'));
       const editor = page.getByRole('textbox', {name: '笔记内容', exact: true});
@@ -123,13 +123,13 @@ try {
         const root = await navigator.storage.getDirectory();
         return (await (await root.getFileHandle('Audit.md')).getFile()).text().then(source => source.includes('AUDIT_ENDabcde') && source.includes('saved-value-4'));
       });
-      await page.getByRole('button', { name: '返回笔记列表', exact: true }).click();
+      await page.getByRole('navigation', { name: '当前位置', exact: true }).getByRole('button', { name: '所有笔记', exact: true }).click();
       await page.getByRole('button', {name: '打开 Audit', exact: true}).waitFor();
       const newNoteMs = await elapsed(async () => {
         await page.getByRole('button', { name: '新建笔记', exact: true }).click();
         await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === '页面标题');
       });
-      await page.getByRole('button', { name: '返回笔记列表', exact: true }).click();
+      await page.getByRole('navigation', { name: '当前位置', exact: true }).getByRole('button', { name: '所有笔记', exact: true }).click();
       await page.getByRole('button', {name: '打开 Audit', exact: true}).waitFor();
       const fileCount = await page.evaluate(async () => {
         const root = await navigator.storage.getDirectory(); let count = 0;
