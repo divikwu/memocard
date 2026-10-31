@@ -27,6 +27,9 @@ const setFontsOffline: BrowserCommand<[boolean], void> = async ({ page }, offlin
   if (offline) await page.route("**/*.woff2*", route => route.abort());
   else await page.unroute("**/*.woff2*");
 };
+const pressLeftMouseButton: BrowserCommand<[], void> = async ({ page }) => {
+  await page.mouse.down({ button: "left" });
+};
 const releaseLeftMouseButton: BrowserCommand<[], void> = async ({ page }) => {
   await page.mouse.up({ button: "left" });
 };
@@ -64,7 +67,7 @@ export default mergeConfig(viteConfig, defineConfig({
           name: "ui-quality",
           include: ["test-support/ui-quality.browser.tsx", "test-support/note-typography.browser.tsx"],
           provide: { uiQualityTouch: false },
-          browser: { enabled: true, provider: playwright(), commands: { setReducedMotion, setForcedColors, setFontsOffline, releaseLeftMouseButton }, headless: true, instances: qualityBrowsers.map(browser => ({ browser })), viewport: desktop, screenshotDirectory },
+          browser: { enabled: true, provider: playwright(), commands: { setReducedMotion, setForcedColors, setFontsOffline, pressLeftMouseButton, releaseLeftMouseButton }, headless: true, instances: qualityBrowsers.map(browser => ({ browser })), viewport: desktop, screenshotDirectory },
         },
       },
       {
@@ -74,7 +77,7 @@ export default mergeConfig(viteConfig, defineConfig({
           name: "ui-quality-touch",
           include: ["test-support/ui-quality.browser.tsx"],
           provide: { uiQualityTouch: true },
-          browser: { enabled: true, provider: playwright({ contextOptions: { hasTouch: true } }), commands: { setReducedMotion, setForcedColors, setFontsOffline }, headless: true, instances: [{ browser: "chromium" }], viewport: mobile, screenshotDirectory },
+          browser: { enabled: true, provider: playwright({ contextOptions: { hasTouch: true } }), commands: { setReducedMotion, setForcedColors, setFontsOffline, pressLeftMouseButton, releaseLeftMouseButton }, headless: true, instances: [{ browser: "chromium" }], viewport: mobile, screenshotDirectory },
         },
       },
     ],

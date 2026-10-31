@@ -1526,13 +1526,13 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
         const overlay = getComputedStyle(reference).backgroundColor;
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
         const before = opened.length, bounds = card.getBoundingClientRect();
-        const click = Promise.resolve(userEvent.click(open, {delay: 400}));
+        await commands.pressLeftMouseButton();
         try {
           await waitFor(() => expect(open.matches(":active")).toBe(true));
           expect(getComputedStyle(card).backgroundColor).toBe(overlay);
           expect(card.getBoundingClientRect().top).toBeCloseTo(bounds.top, 1);
           expect(opened).toHaveLength(before);
-        } finally { await click; }
+        } finally { await commands.releaseLeftMouseButton(); }
         expect(opened).toHaveLength(before + 1);
         if (scenario.touch) expect(card.matches(":hover")).toBe(true);
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
