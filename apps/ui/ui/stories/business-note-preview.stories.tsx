@@ -123,7 +123,7 @@ export const RichContentRegression: Story = {
     // Desktop mode controls appear on hover or keyboard focus within the diagram.
     within(modes).getByRole("tab", { name: "源码与图形" }).focus();
     await waitFor(() => expect(modes).toBeVisible());
-    await waitFor(() => expect(canvas.getByRole("button", { name: "放大 Mermaid 图表" })).toBeVisible());
+    await expect(await canvas.findByRole("button", { name: "放大 Mermaid 图表" })).toBeVisible();
   },
 };
 
