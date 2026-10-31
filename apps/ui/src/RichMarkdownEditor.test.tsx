@@ -80,6 +80,23 @@ it('keeps plain Tab in the document and uses Escape then Tab to leave and re-ent
  const hint=document.getElementById(field.getAttribute('aria-describedby')!);
  expect(hint?.textContent).toContain('Esc');
 });
+it('keeps table Tab editing when the scroller has focus and preserves the Escape exit',async()=>{
+ const {editor,field}=await setup('正文',{},true),user=userEvent.setup();
+ act(()=>{editor.commands.setContent('| A | B |\n| --- | --- |\n| First | Second |',{contentType:'markdown'});});
+ const scroller=field.querySelector<HTMLElement>('.tableWrapper')!;
+ let position=0;
+ editor.state.doc.descendants((node,pos)=>{if(node.isText && node.text==='First')position=pos;});
+ act(()=>{editor.commands.setTextSelection(position);scroller.focus();});
+ await user.keyboard('{Tab}');
+ expect(document.activeElement).toBe(field);
+ expect(editor.state.selection.$from.parent.textContent).toBe('Second');
+ await user.keyboard('{Escape}');
+ expect(editor.state.selection.empty).toBe(true);
+ await user.keyboard('{Escape}{Tab}');
+ expect(document.activeElement).toBe(scroller);
+ await user.keyboard('{Tab}');
+ expect(document.activeElement).toBe(screen.getByRole('button',{name:'其他操作'}));
+});
 it('clears a text selection before Escape enables keyboard exit',async()=>{
  const {editor,field,change}=await setup('正文',{},true),user=userEvent.setup();
  act(()=>{field.focus();editor.commands.setTextSelection({from:1,to:3});});

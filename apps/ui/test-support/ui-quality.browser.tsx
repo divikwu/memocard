@@ -332,6 +332,7 @@ for (const mode of ["light", "dark"] as const) {
         const table = value.startsWith("|");
         const target = editor.querySelector<HTMLElement>(table ? "td p" : "li:last-child p")!;
         await userEvent.click(target);
+        if (table) editor.querySelector<HTMLElement>(".tableWrapper")!.focus();
         for (const key of ["{Tab}", "{Shift>}{Tab}{/Shift}"]) {
           await userEvent.keyboard(key);
           expect(document.activeElement).toBe(editor);

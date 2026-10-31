@@ -202,11 +202,16 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       },
       handleDOMEvents: {
         keydown(view, event) {
-          const exit = event.key === 'Tab' && !event.isComposing && !event.metaKey && !event.ctrlKey && !event.altKey && (event.target !== view.dom || tabExit.current);
-          if (!['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) tabExit.current = false;
+          const tab = event.key === 'Tab' && !event.isComposing && event.keyCode !== 229 && !view.composing && !event.metaKey && !event.ctrlKey && !event.altKey;
+          const table = event.target instanceof Element && event.target.classList.contains('tableWrapper');
+          const exit = tab && (tabExit.current || event.target !== view.dom && !table);
+          if (event.target === view.dom && event.key !== 'Tab' && !['Shift', 'Control', 'Alt', 'Meta'].includes(event.key)) tabExit.current = false;
+          // Firefox can focus the table scroller when placing the caret in a cell.
+          if (tab && !exit && table) view.focus();
           // Bypass editor keymaps while preserving the browser's native Tab order.
           return exit;
         },
+        focus() { tabExit.current = false; return false; },
         pointerdown() { tabExit.current = false; return false; },
         keyup(_view, event) {
           pastePlain.current = event.shiftKey;
@@ -214,7 +219,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
           if (e && !event.isComposing && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(event.key)) revealCaret(e);
           return false;
         },
-        blur() { pastePlain.current = false; tabExit.current = false; return false; },
+        blur(view, event) { pastePlain.current = false; if (!(event.relatedTarget instanceof Node) || !view.dom.contains(event.relatedTarget)) tabExit.current = false; return false; },
       },
       handleKeyDown(view, event) {
         pastePlain.current = event.shiftKey;
@@ -260,7 +265,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
           return true;
         }
         if (slash.current && menuRef.current && handleInsertKey(event)) return true;
-        if (event.key === 'Tab' && event.target === view.dom && !event.metaKey && !event.ctrlKey && !event.altKey && editorRef.current?.isEditable) {
+        if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey && editorRef.current?.isEditable) {
           event.preventDefault();
           const e = editorRef.current;
           // Keep table navigation, including its boundary behavior, in the table keymap.

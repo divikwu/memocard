@@ -211,6 +211,7 @@
 /* Keep the heading hovered across the gap without covering the block grip. */
 .ui-rich-ui .rich-heading-fold-widget::after { content: ""; position: absolute; inset-block: 0; left: 100%; width: var(--heading-fold-gap); }
 .ui-rich-ui.rich-editor:has(.block-controls[data-heading]:hover) .rich-heading-fold-widget[data-block-active] .rich-heading-fold { opacity: 1; }
+:root[data-ui-input-modality="keyboard"] .ui-rich-ui .rich-heading-fold:focus { opacity: 1; }
 .ui-rich-ui.rich-block-menu :is([role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"])[data-disabled] { opacity: .5; pointer-events: none; }
 .ui-rich-ui.rich-block-menu [role="menuitem"]:focus-visible, .ui-rich-ui.rich-block-menu [role="menuitemradio"]:focus-visible, .ui-rich-ui.rich-table-menu [role="menuitemcheckbox"]:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .ui-rich-ui .rich-tag-suggestions { width: min(18rem, 100%); border-radius: calc(var(--radius-element) * 2); }

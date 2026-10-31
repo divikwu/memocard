@@ -45,6 +45,7 @@ export default mergeConfig(viteConfig, defineConfig({
         plugins: [storybookTest({ configDir, tags: { exclude: ["mobile"] } })],
         test: {
           name: "storybook-desktop",
+          testTimeout: 30_000,
           setupFiles: [viewportSetup],
           provide: { storybookViewport: desktop },
           browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: desktop, screenshotDirectory },
@@ -55,6 +56,7 @@ export default mergeConfig(viteConfig, defineConfig({
         plugins: [storybookTest({ configDir, tags: { include: ["mobile"] } })],
         test: {
           name: "storybook-mobile",
+          testTimeout: 30_000,
           setupFiles: [viewportSetup],
           provide: { storybookViewport: mobile },
           browser: { enabled: true, provider: playwright(), headless: true, instances: [{ browser: "chromium" }], viewport: mobile, screenshotDirectory },

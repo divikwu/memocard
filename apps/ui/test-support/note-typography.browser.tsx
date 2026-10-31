@@ -96,7 +96,9 @@ for (const size of ["14", "16"]) test(`heading fold stays visible across the gut
   await userEvent.click(fold);
   await userEvent.hover(other);
   expect(getComputedStyle(fold).opacity).toBe("0");
-  fold.focus();
+  field.focus();
+  await userEvent.keyboard("{Escape}{Tab}");
+  expect(document.activeElement).toBe(fold);
   await userEvent.keyboard("{Enter}");
   await waitFor(() => expect(fold.getAttribute("aria-expanded")).toBe("false"));
   expect(getComputedStyle(fold).opacity).toBe("1");
