@@ -119,7 +119,7 @@ describe("AppSidebar", () => {
     });
     renderSidebar(props);
     await userEvent.click(screen.getByRole("button", { name: "笔记库：我的笔记" }));
-    expect((await screen.findByRole("menu")).parentElement?.getAttribute("data-align")).toBe("start");
+    expect((await screen.findByRole("menu")).parentElement?.getAttribute("data-align")).toBe("end");
     expect(await screen.findByRole("menuitem", { name: /工作/ })).toBeTruthy();
     expect(screen.getByText("⌥1")).toBeTruthy();
     expect(screen.getByText("⌥2")).toBeTruthy();

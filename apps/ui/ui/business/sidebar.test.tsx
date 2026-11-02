@@ -55,7 +55,7 @@ it("preserves note filters, counts, tag navigation and creation/search entry cal
   expect(args.onNewNote).toHaveBeenCalledTimes(1);
 });
 
-it("keeps the Sidebar-10 business mapping: brand and primary navigation above tags, vault at the footer", () => {
+it("keeps the icon-only vault menu beside the brand above primary navigation", () => {
   mount();
   const brand = screen.getByRole("button", { name: "MemoCard，返回主页" });
   expect(brand.querySelector("img")?.getAttribute("src")).toBe("./favicon.png");
@@ -64,7 +64,10 @@ it("keeps the Sidebar-10 business mapping: brand and primary navigation above ta
   const nav = screen.getByRole("navigation", { name: "主要导航" });
   expect(within(nav).getAllByRole("button").map(button => button.textContent)).toEqual(["搜索", "新建笔记", "主页", "所有笔记", "", "日历", "标签"]);
   expect(screen.getByRole("navigation", { name: "标签" }).closest('[data-sidebar="content"]')).not.toBeNull();
-  expect(screen.getByRole("button", { name: "笔记库：我的笔记" }).closest('[data-sidebar="footer"]')).not.toBeNull();
+  const vault = screen.getByRole("button", { name: "笔记库：我的笔记" });
+  expect(vault.parentElement).toBe(brand.parentElement);
+  expect(brand.nextElementSibling).toBe(vault);
+  expect(vault.textContent).toBe("");
 });
 
 it("keeps the tag tree without search and uses existing tag preference storage for pinning", async () => {
