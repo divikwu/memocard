@@ -1763,9 +1763,10 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
       expect(bounds.top + bounds.height / 2).toBeCloseTo(rowBounds.top + rowBounds.height / 2, 1);
       expect(getComputedStyle(pin).opacity).toBe("1");
     }
-    await userEvent.click(directory.getByRole("button", {name: "收起标签 日常"}));
-    await userEvent.click(directory.getByRole("button", {name: "展开标签 日常"}));
-    await userEvent.click(directory.getByRole("button", {name: "查看标签 日常/手冲记录 的笔记"}));
+    const directoryControls = page.getByRole("region", {name: "标签目录", exact: true});
+    await directoryControls.getByRole("button", {name: "收起标签 日常", exact: true}).click();
+    await directoryControls.getByRole("button", {name: "展开标签 日常", exact: true}).click();
+    await directoryControls.getByRole("button", {name: "查看标签 日常/手冲记录 的笔记", exact: true}).click();
     expect(location.hash).toBe("#/notes");
     await canvas.findByRole("list", {name: "笔记列表"});
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/" ); }
