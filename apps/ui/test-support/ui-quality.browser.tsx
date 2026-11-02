@@ -1603,6 +1603,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
   try {
     const canvas = within(view.container), body = within(document.body);
     const directory = within(await canvas.findByRole("region", {name: "标签目录"}));
+    const directoryControls = page.getByRole("region", {name: "标签目录", exact: true});
     await directory.findByRole("button", {name: "编辑标签名称 生活/咖啡"});
     for (const width of [320, 390, 767, 768, 1024, 1440]) {
       await page.viewport(width, 1000);
@@ -1632,7 +1633,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
       const childToggle = directory.getByRole("button", {name: "展开标签 生活/植物"});
       const childToggleBounds = childToggle.getBoundingClientRect();
       expect(childToggleBounds.left + childToggleBounds.width / 2).toBeCloseTo(guide.left + guide.width / 2, 1);
-      await userEvent.click(childToggle);
+      await directoryControls.getByRole("button", {name: "展开标签 生活/植物", exact: true}).click();
       const plantIcon = directory.getByRole("button", {name: "编辑标签图标 生活/植物"}).getBoundingClientRect();
       const leaf = directory.getByRole("button", {name: "编辑标签名称 生活/植物/绿萝"}).closest("tr")!;
       const nestedGuides = leaf.querySelectorAll(".ui-tag-directory-guide");
@@ -1644,7 +1645,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
       const branchGuide = childToggle.closest("tr")!.querySelector(".ui-tag-directory-guide")!;
       expect(branchGuide.hasAttribute("data-end")).toBe(true);
       expect(getComputedStyle(branchGuide).clipPath).toContain("50%");
-      await userEvent.click(directory.getByRole("button", {name: "收起标签 生活/植物"}));
+      await directoryControls.getByRole("button", {name: "收起标签 生活/植物", exact: true}).click();
       expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
       const panel = view.container.querySelector<HTMLElement>(".ui-tag-directory-panel")!;
       expect(panel.scrollWidth).toBeLessThanOrEqual(panel.clientWidth + 1);
@@ -1731,7 +1732,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     expect(document.activeElement).toBe(nextEditor);
     await userEvent.keyboard("{Escape}");
     await page.viewport(390, 1000);
-    await userEvent.click(directory.getByRole("button", {name: "收起标签 生活"}));
+    await directoryControls.getByRole("button", {name: "收起标签 生活", exact: true}).click();
     expect(directory.queryByRole("button", {name: "编辑标签名称 生活/手冲记录"})).toBeNull();
     await userEvent.type(directory.getByRole("textbox", {name: "搜索标签"}), "手冲");
     expect(directory.getByRole("table", {name: "标签搜索结果"})).toBeTruthy();
@@ -1763,7 +1764,6 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
       expect(bounds.top + bounds.height / 2).toBeCloseTo(rowBounds.top + rowBounds.height / 2, 1);
       expect(getComputedStyle(pin).opacity).toBe("1");
     }
-    const directoryControls = page.getByRole("region", {name: "标签目录", exact: true});
     await directoryControls.getByRole("button", {name: "收起标签 日常", exact: true}).click();
     await directoryControls.getByRole("button", {name: "展开标签 日常", exact: true}).click();
     await directoryControls.getByRole("button", {name: "查看标签 日常/手冲记录 的笔记", exact: true}).click();
