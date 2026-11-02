@@ -27,6 +27,11 @@
           "source": "apps/ui/ui/business/sidebar.css",
           "scope": ".ui-sidebar-emoji",
           "value": "\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-icon",
+          "value": "\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Noto Color Emoji\", sans-serif"
         }
       ]
     },
@@ -119,6 +124,11 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-name-form input",
           "value": "inherit"
         },
         {
@@ -957,6 +967,11 @@
           "value": "inherit"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-name-form input",
+          "value": "inherit"
+        },
+        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre code)",
           "value": "inherit"
@@ -1510,6 +1525,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/business/trash.css",
           "scope": ".ui-trash-open p",
           "value": "var(--font-size-sm)"
@@ -1601,6 +1621,11 @@
         },
         {
           "source": "apps/ui/ui/components/sidebar.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/components/table.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -1911,6 +1936,26 @@
           "value": "var(--font-size-xs)"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-error td",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-path",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-table .ui-tag-directory-count",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-table th",
+          "value": "var(--font-size-xs)"
+        },
+        {
           "source": "apps/ui/ui/business/trash.css",
           "scope": ".ui-trash-open .ui-trash-path",
           "value": "var(--font-size-xs)"
@@ -2189,6 +2234,16 @@
           "value": "var(--font-weight-normal)"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-name-button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-table .ui-tag-directory-count",
+          "value": "var(--font-weight-normal)"
+        },
+        {
           "source": "apps/ui/ui/components/breadcrumb.tsx",
           "scope": "font-normal",
           "value": "var(--font-weight-normal)"
@@ -2308,13 +2363,13 @@
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui/business/sidebar.tsx",
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
-          "scope": "font-medium",
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-table th",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2394,6 +2449,11 @@
         },
         {
           "source": "apps/ui/ui/components/sidebar.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/components/table.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
@@ -2687,6 +2747,11 @@
           "value": "inherit"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-name-form input",
+          "value": "inherit"
+        },
+        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(:is(h1, h2, h3, h4, h5, h6) :is(a))",
           "value": "inherit"
@@ -2929,6 +2994,11 @@
           "value": "1.5"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-name-form input",
+          "value": "1.5"
+        },
+        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h4)",
           "value": "1.5"
@@ -3089,6 +3159,30 @@
     },
     {
       "property": "line-height",
+      "value": "calc(var(--spacing-1) * 3.5)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-path",
+          "value": "calc(var(--spacing-1) * 3.5)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "calc(var(--spacing-1) * 4.5)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-row[data-flat] .ui-tag-directory-name-button",
+          "value": "calc(var(--spacing-1) * 4.5)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
       "value": "calc(var(--spacing-1) * 5)",
       "utilities": [],
       "locations": [
@@ -3157,6 +3251,11 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-name-form input",
           "value": "inherit"
         }
       ]
@@ -3808,6 +3907,11 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
           "source": "apps/ui/ui/business/TrashPage.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
@@ -3889,6 +3993,11 @@
         },
         {
           "source": "apps/ui/ui/components/sidebar.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/components/table.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },

@@ -908,6 +908,7 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
     });
     const view = render(<PreviewModeProvider mode={theme}><main className="ui-theme" data-ui-theme={theme}>
       <div data-testid="floating-reference" className="surface-floating shadow-high border" />
+      <div data-testid="inline-reference" className="bg-surface" style={{ boxShadow: "var(--shadow-scale-2)" }} />
       <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async change => { changes.push(change); }} onChangeTag={async (from, to) => { changes.push({ from, to }); }} savedProperties={{
         contentHash: editorNote.contentHash, writable: true,
         tagProperty: { name: "tags", type: "list", value: ["设计"], editable: true },
@@ -924,7 +925,9 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
         await userEvent.click(canvas.getByRole("button", { name: `编辑属性 ${name}` }));
         const input = await body.findByRole("textbox", { name: "属性值" });
         const style = getComputedStyle(input.closest("form")!);
-        expect(style.boxShadow).toBe("none");
+        const reference = getComputedStyle(canvas.getByTestId("inline-reference"));
+        expect(style.boxShadow).toBe(reference.boxShadow);
+        expect(style.backgroundColor).toBe(reference.backgroundColor);
         expect(style.outlineStyle).toBe("solid");
         await userEvent.keyboard("{Escape}");
       }
@@ -1587,6 +1590,188 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
 });
 
 if (!inject("uiQualityTouch")) {
+test("Web tag directory supports hierarchy, shared pins, renaming and responsive layouts", async () => {
+  await commands.setReducedMotion("reduce");
+  const previousHash = location.hash;
+  localStorage.clear();
+  history.replaceState(null, "", "#/tags");
+  const fixture = await createWorkspaceFixture();
+  const plant = fixture.snapshot().notes.find(note => note.tags.includes("生活/植物"))!;
+  await fixture.request("updateNoteProperty", {id: plant.id, name: "tags", type: "list", value: ["生活/植物/绿萝"]});
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container), body = within(document.body);
+    const directory = within(await canvas.findByRole("region", {name: "标签目录"}));
+    const directoryControls = page.getByRole("region", {name: "标签目录", exact: true});
+    await directory.findByRole("button", {name: "编辑标签名称 生活/咖啡"});
+    for (const width of [320, 390, 767, 768, 1024, 1440]) {
+      await page.viewport(width, 1000);
+      const row = directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"}).closest<HTMLElement>(".ui-tag-directory-row")!;
+      await waitFor(() => expect(row.getBoundingClientRect().height).toBe(36));
+      expect(row.nextElementSibling!.getBoundingClientRect().top - row.getBoundingClientRect().bottom).toBeCloseTo(2, 1);
+      expect(getComputedStyle(row.querySelector("td:first-child")!).borderTopLeftRadius).toBe("12px");
+      expect(getComputedStyle(row.querySelector("td:last-child")!).borderTopRightRadius).toBe("12px");
+      expect(directory.getByRole("table", {name: "标签层级"}).getAttribute("data-slot")).toBe("table");
+      for (const header of directory.getAllByRole("columnheader")) expect(header.getBoundingClientRect().height).toBe(32);
+      expect(getComputedStyle(directory.getAllByRole("columnheader")[0]).borderTopLeftRadius).toBe("12px");
+      expect(getComputedStyle(directory.getAllByRole("columnheader")[2]).borderTopRightRadius).toBe("12px");
+      for (const control of view.container.querySelectorAll(".ui-tag-directory-toggle, .ui-tag-directory-icon, .ui-tag-directory-pin")) {
+        const rect = control.getBoundingClientRect(), parent = control.closest(".ui-tag-directory-row")!.getBoundingClientRect();
+        const size = control.classList.contains("ui-tag-directory-pin") ? 32 : 28;
+        expect(rect.width).toBe(size);
+        expect(rect.height).toBe(size);
+        expect(rect.top + rect.height / 2).toBeCloseTo(parent.top + parent.height / 2, 1);
+      }
+      const toggle = directory.getByRole("button", {name: "收起标签 生活"}).getBoundingClientRect();
+      const guide = row.querySelector(".ui-tag-directory-guide")!.getBoundingClientRect();
+      const nextGuide = row.nextElementSibling!.querySelector(".ui-tag-directory-guide")!.getBoundingClientRect();
+      expect(guide.bottom).toBeCloseTo(nextGuide.top, 1);
+      const icon = directory.getByRole("button", {name: "编辑标签图标 生活"}).getBoundingClientRect();
+      expect(guide.left + guide.width / 2).toBeCloseTo(icon.left + icon.width / 2, 1);
+      expect(icon.left).toBeGreaterThanOrEqual(toggle.right);
+      const childToggle = directory.getByRole("button", {name: "展开标签 生活/植物"});
+      const childToggleBounds = childToggle.getBoundingClientRect();
+      expect(childToggleBounds.left + childToggleBounds.width / 2).toBeCloseTo(guide.left + guide.width / 2, 1);
+      await directoryControls.getByRole("button", {name: "展开标签 生活/植物", exact: true}).click();
+      const plantIcon = directory.getByRole("button", {name: "编辑标签图标 生活/植物"}).getBoundingClientRect();
+      const leaf = directory.getByRole("button", {name: "编辑标签名称 生活/植物/绿萝"}).closest("tr")!;
+      const nestedGuides = leaf.querySelectorAll(".ui-tag-directory-guide");
+      expect(nestedGuides).toHaveLength(1);
+      const nestedGuide = nestedGuides[0].getBoundingClientRect();
+      expect(nestedGuide.left + nestedGuide.width / 2).toBeCloseTo(plantIcon.left + plantIcon.width / 2, 1);
+      expect(nestedGuides[0].hasAttribute("data-end")).toBe(true);
+      expect(getComputedStyle(nestedGuides[0]).clipPath).toContain("50%");
+      const branchGuide = childToggle.closest("tr")!.querySelector(".ui-tag-directory-guide")!;
+      expect(branchGuide.hasAttribute("data-end")).toBe(true);
+      expect(getComputedStyle(branchGuide).clipPath).toContain("50%");
+      await directoryControls.getByRole("button", {name: "收起标签 生活/植物", exact: true}).click();
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
+      const panel = view.container.querySelector<HTMLElement>(".ui-tag-directory-panel")!;
+      expect(panel.scrollWidth).toBeLessThanOrEqual(panel.clientWidth + 1);
+      if (width >= 768) expect(panel.getBoundingClientRect().bottom).toBeCloseTo(view.container.querySelector("#web-main-content")!.getBoundingClientRect().bottom, 1);
+      await userEvent.click(directory.getByRole("textbox", {name: "搜索标签"}));
+      await waitFor(() => expect(getComputedStyle(directory.getByRole("button", {name: "置顶标签 生活/咖啡"})).opacity).toBe(width < 768 ? "1" : "0"));
+      await userEvent.click(directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"}));
+      const editor = directory.getByRole("textbox", {name: "标签名称 生活/咖啡"});
+      expect(editor.closest("form")!.getBoundingClientRect().width).toBeLessThanOrEqual(280);
+      expect(editor.closest("tr")!.getBoundingClientRect().height).toBe(36);
+      await userEvent.keyboard("{Escape}");
+    }
+    const coffeeRow = directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"}).closest<HTMLElement>(".ui-tag-directory-row")!;
+    expect(directory.queryByRole("button", {name: /^标签操作 /})).toBeNull();
+    const pinTrigger = directory.getByRole("button", {name: "置顶标签 生活/咖啡"});
+    await userEvent.click(directory.getByRole("textbox", {name: "搜索标签"}));
+    await waitFor(() => expect(getComputedStyle(pinTrigger).opacity).toBe("0"));
+    pinTrigger.focus();
+    await waitFor(() => expect(getComputedStyle(pinTrigger).opacity).toBe("1"));
+    await userEvent.keyboard("{Enter}");
+    const pinnedTrigger = directory.getByRole("button", {name: "取消置顶 生活/咖啡"});
+    expect(pinnedTrigger.getAttribute("aria-pressed")).toBe("true");
+    pinnedTrigger.blur();
+    await userEvent.hover(directory.getByRole("textbox", {name: "搜索标签"}));
+    expect(getComputedStyle(pinnedTrigger).opacity).toBe("1");
+    await userEvent.click(pinnedTrigger);
+    expect(pinTrigger.getAttribute("aria-pressed")).toBe("false");
+    for (const name of ["编辑标签名称 生活/咖啡", "查看标签 生活/咖啡 的笔记", "置顶标签 生活/咖啡"]) {
+      const button = directory.getByRole("button", {name});
+      await userEvent.hover(button);
+      expect(getComputedStyle(button).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    }
+    expect(getComputedStyle(coffeeRow).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(getComputedStyle(coffeeRow.querySelector("td")!).backgroundColor).toBe(getComputedStyle(view.container.querySelector(".ui-sidebar-row[data-active]")!).backgroundColor);
+    expect(getComputedStyle(coffeeRow.querySelector(".ui-tag-directory-icon")!).opacity).toBe("1");
+    expect(getComputedStyle(coffeeRow.querySelector(".ui-tag-directory-count")!).opacity).toBe("1");
+    const iconTrigger = directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"});
+    await userEvent.hover(iconTrigger);
+    expect(getComputedStyle(iconTrigger).borderRadius).toBe("8px");
+    expect(getComputedStyle(iconTrigger).backgroundColor).toBe(getComputedStyle(coffeeRow.querySelector("td")!).backgroundColor);
+    await userEvent.click(iconTrigger);
+    await body.findByRole("dialog", {name: "编辑标签"});
+    expect(iconTrigger.getAttribute("aria-expanded")).toBe("true");
+    await userEvent.click(iconTrigger);
+    await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
+    expect(iconTrigger.getAttribute("aria-expanded")).toBe("false");
+    await userEvent.click(iconTrigger);
+    const desktopEditor = await body.findByRole("dialog", {name: "编辑标签"});
+    await waitFor(() => expect(desktopEditor.getAttribute("data-slot")).toBe("popover-content"));
+    expect(desktopEditor.getBoundingClientRect().left).toBeGreaterThanOrEqual(0);
+    expect(desktopEditor.getBoundingClientRect().right).toBeLessThanOrEqual(1440);
+    await userEvent.type(within(desktopEditor).getByRole("textbox", {name: "搜索 Emoji"}), "咖啡");
+    await userEvent.click(within(desktopEditor).getByRole("button", {name: /^茶、热饮、咖啡/}));
+    await userEvent.click(within(desktopEditor).getByRole("button", {name: "保存"}));
+    await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
+    expect(directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"}).textContent).toContain("☕");
+    expect(within(canvas.getByRole("navigation", {name: "标签"})).getByRole("button", {name: "生活/咖啡"}).textContent).toContain("☕");
+    const name = directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"});
+    const nameLeft = name.getBoundingClientRect().left;
+    const nameRow = name.closest("tr")!.getBoundingClientRect();
+    await userEvent.click(name);
+    const inline = directory.getByRole("textbox", {name: "标签名称 生活/咖啡"});
+    await waitFor(() => expect(document.activeElement).toBe(inline));
+    expect(inline.getBoundingClientRect().left).toBeCloseTo(nameLeft + 4, 1);
+    expect(inline.closest("tr")!.getBoundingClientRect().height).toBe(nameRow.height);
+    expect(inline.closest("form")!.getBoundingClientRect().width).toBe(280);
+    expect(inline.closest("form")!.getBoundingClientRect().height).toBe(37);
+    expect(getComputedStyle(inline).borderTopWidth).toBe("0px");
+    expect(getComputedStyle(inline.closest("form")!).borderTopLeftRadius).toBe("8px");
+    expect(directory.queryByRole("button", {name: "保存标签名称"})).toBeNull();
+    expect(directory.queryByRole("button", {name: "取消修改标签名称"})).toBeNull();
+    await userEvent.clear(inline);
+    await userEvent.type(inline, "手冲{Enter}");
+    const renamedLeaf = await directory.findByRole("button", {name: "编辑标签名称 生活/手冲"});
+    await waitFor(() => expect(document.activeElement).toBe(renamedLeaf));
+    expect(fixture.snapshot().notes.some(note => note.tags.includes("生活/手冲"))).toBe(true);
+    await userEvent.click(renamedLeaf);
+    const blurInput = directory.getByRole("textbox", {name: "标签名称 生活/手冲"});
+    await userEvent.clear(blurInput);
+    await userEvent.type(blurInput, "手冲记录");
+    await userEvent.click(directory.getByRole("button", {name: "编辑标签名称 生活"}));
+    const nextEditor = directory.getByRole("textbox", {name: "标签名称 生活"});
+    await directory.findByRole("button", {name: "编辑标签名称 生活/手冲记录"});
+    expect(document.activeElement).toBe(nextEditor);
+    await userEvent.keyboard("{Escape}");
+    await page.viewport(390, 1000);
+    await directoryControls.getByRole("button", {name: "收起标签 生活", exact: true}).click();
+    expect(directory.queryByRole("button", {name: "编辑标签名称 生活/手冲记录"})).toBeNull();
+    await userEvent.type(directory.getByRole("textbox", {name: "搜索标签"}), "手冲");
+    expect(directory.getByRole("table", {name: "标签搜索结果"})).toBeTruthy();
+    expect(directory.getByRole("button", {name: "编辑标签名称 生活/手冲记录"})).toBeTruthy();
+    await userEvent.click(directory.getByRole("button", {name: "清空标签搜索"}));
+    await userEvent.click(directory.getByRole("button", {name: "置顶标签 生活"}));
+    expect(directory.getByRole("button", {name: "取消置顶 生活"}).getAttribute("aria-pressed")).toBe("true");
+    await userEvent.click(directory.getByRole("button", {name: "编辑标签图标 生活"}));
+    const mobileEditor = await body.findByRole("dialog", {name: "编辑标签"});
+    expect(mobileEditor.getAttribute("data-slot")).toBe("sheet-content");
+    const dialog = within(mobileEditor);
+    const input = dialog.getByRole("textbox", {name: "标签名称"});
+    await waitFor(() => expect(document.activeElement).toBe(dialog.getByRole("textbox", {name: "搜索 Emoji"})));
+    await userEvent.clear(input);
+    await userEvent.type(input, "日常");
+    await userEvent.type(dialog.getByRole("textbox", {name: "搜索 Emoji"}), "图书馆");
+    await userEvent.click(dialog.getByRole("button", {name: /^书、书本、书籍/}));
+    await userEvent.click(dialog.getByRole("button", {name: "保存"}));
+    await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
+    const renamed = await directory.findByRole("button", {name: "编辑标签名称 日常"});
+    await waitFor(() => expect(document.activeElement).toBe(renamed));
+    expect(directory.getByRole("button", {name: "编辑标签图标 日常"}).textContent).toContain("📚");
+    for (const width of [390, 1440]) {
+      await page.viewport(width, 1000);
+      const row = renamed.closest("tr")!;
+      const pin = directory.getByRole("button", {name: "取消置顶 日常"});
+      const bounds = pin.getBoundingClientRect(), rowBounds = row.getBoundingClientRect();
+      expect(bounds.width).toBe(32);
+      expect(bounds.top + bounds.height / 2).toBeCloseTo(rowBounds.top + rowBounds.height / 2, 1);
+      expect(getComputedStyle(pin).opacity).toBe("1");
+    }
+    await directoryControls.getByRole("button", {name: "收起标签 日常", exact: true}).click();
+    await directoryControls.getByRole("button", {name: "展开标签 日常", exact: true}).click();
+    await directoryControls.getByRole("button", {name: "查看标签 日常/手冲记录 的笔记", exact: true}).click();
+    expect(location.hash).toBe("#/notes");
+    await canvas.findByRole("list", {name: "笔记列表"});
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/" ); }
+}, 30_000);
+
 test("Web home and all-notes collections share responsive widths", async () => {
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -1639,6 +1824,31 @@ test("Web home and all-notes collections share responsive widths", async () => {
           expect(list.scrollWidth).toBeLessThanOrEqual(list.clientWidth + 1);
           expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
         }
+        if (layout === "list") {
+          const list = canvas.getByRole("list", {name: "笔记列表"});
+          const scroll = view.container.querySelector<HTMLElement>("#web-main-content")!;
+          const naturalHeight = () => Array.from(list.children).reduce((height, item) => height + item.getBoundingClientRect().height, 16);
+          for (const height of [1200, 1600]) {
+            await page.viewport(1440, height);
+            await waitFor(() => {
+              expect(list.getBoundingClientRect().bottom).toBeCloseTo(scroll.getBoundingClientRect().bottom, 1);
+              expect(scroll.scrollHeight).toBeLessThanOrEqual(scroll.clientHeight + 1);
+            });
+            expect(getComputedStyle(list).overflowY).toBe("visible");
+          }
+          for (const height of [1200, 1600]) {
+            await page.viewport(390, height);
+            await waitFor(() => expect(current!.isMobile).toBe(true));
+            expect(list.getBoundingClientRect().height).toBeCloseTo(naturalHeight(), 1);
+          }
+          await page.viewport(1440, 360);
+          await waitFor(() => expect(current!.isMobile).toBe(false));
+          expect(list.getBoundingClientRect().height).toBeCloseTo(naturalHeight(), 1);
+          expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight);
+          scroll.scrollTop = scroll.scrollHeight;
+          expect(list.lastElementChild!.getBoundingClientRect().bottom).toBeLessThanOrEqual(scroll.getBoundingClientRect().bottom);
+          scroll.scrollTop = 0;
+        }
       }
     }
   } finally {
@@ -1663,6 +1873,7 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
     const logo = brand.querySelector<HTMLElement>(".ui-sidebar-logo")!;
     const collapse = canvas.getByRole("button", {name: "收起侧栏"});
     await userEvent.hover(brand.querySelector("span")!);
+    expect(getComputedStyle(brand.parentElement!).backgroundColor).not.toBe("rgba(0, 0, 0, 0)");
     expect(getComputedStyle(logo).opacity).toBe("1");
     expect(getComputedStyle(collapse).opacity).toBe("0");
     const logoBox = logo.getBoundingClientRect(), controlBox = collapse.getBoundingClientRect();
@@ -1711,6 +1922,10 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
     expect(getComputedStyle(canvas.getByRole("button", {name: "收起侧栏"})).opacity).toBe("1");
     await userEvent.click(canvas.getByRole("button", {name: "MemoCard，返回主页"}));
     await waitFor(() => expect(location.hash).toBe("#/home"));
+    await userEvent.hover(canvas.getByRole("tab", {name: /^最近更新$/}));
+    const focusedBrand = canvas.getByRole("button", {name: "MemoCard，返回主页"});
+    expect(document.activeElement).toBe(focusedBrand);
+    expect(getComputedStyle(focusedBrand.parentElement!).backgroundColor).toBe("rgba(0, 0, 0, 0)");
   } finally {
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
   }
@@ -2009,8 +2224,9 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
         const start = titleBox.left + parseFloat(titleStyle.paddingLeft);
         const end = titleBox.right - parseFloat(titleStyle.paddingRight);
         if (width < 768) {
-          expect(start).toBeCloseTo(16, 1);
-          expect(width - end).toBeCloseTo(16, 1);
+          const panel = view.container.querySelector<HTMLElement>(".web-app-main")!.getBoundingClientRect();
+          expect(start - panel.left).toBeCloseTo(16, 1);
+          expect(panel.right - end).toBeCloseTo(16, 1);
         }
         expect(body.getBoundingClientRect().left, `${width}px body start`).toBeCloseTo(start, 1);
         expect(body.getBoundingClientRect().right, `${width}px body end`).toBeCloseTo(end, 1);

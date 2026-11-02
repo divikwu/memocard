@@ -104,27 +104,44 @@ it("keeps a home-opened note under the home breadcrumb", async () => {
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
 });
 
-it.each([1200, 390])("retains the blank tags route and keeps its navigation unavailable at %spx", async width => {
+it.each([1200, 390])("opens the tag directory and navigates its results at %spx", async width => {
   vi.stubGlobal("innerWidth", width);
   history.replaceState(null, "", "#/tags");
   const user = userEvent.setup();
   const { request } = await mount();
-  await screen.findByRole("heading", { name: "标签", level: 1 });
-  if (width < 768) await user.click(screen.getByRole("button", { name: "打开导航" }));
-  await within(await screen.findByRole("navigation", { name: "标签" })).findByRole("button", { name: "设计" });
-  const navigation = screen.getByRole("navigation", { name: "主要导航" });
-  expect(within(navigation).getByRole("button", { name: "标签" }).getAttribute("aria-disabled")).toBe("true");
-  expect(document.querySelector("#web-main-content")?.textContent).toBe("标签");
+  const directory = await screen.findByRole("region", { name: "标签目录" });
+  await within(directory).findByRole("button", { name: "编辑标签名称 生活/咖啡" });
   expect(request.mock.calls.some(([operation]) => operation === "queryNotes")).toBe(false);
-  await user.click(within(navigation).getByRole("button", { name: "所有笔记" }));
+  await user.type(within(directory).getByRole("textbox", { name: "搜索标签" }), "咖啡");
+  await user.click(within(directory).getByRole("button", { name: "查看标签 生活/咖啡 的笔记" }));
   await screen.findByRole("button", { name: "打开 今天的手冲记录" });
-  if (width < 768) await user.click(screen.getByRole("button", { name: "打开导航" }));
-  const disabledTags = within(screen.getByRole("navigation", { name: "主要导航" })).getByRole("button", { name: "标签" });
-  expect(disabledTags.getAttribute("aria-disabled")).toBe("true");
-  disabledTags.focus();
-  await user.keyboard("{Enter} ");
   expect(location.hash).toBe("#/notes");
-  expect(screen.queryByRole("heading", { name: "标签", level: 1 })).toBeNull();
+  if (width < 768) await user.click(screen.getByRole("button", { name: "打开导航" }));
+  const navigation = screen.getByRole("navigation", { name: "主要导航" });
+  const tags = within(navigation).getByRole("button", { name: "标签" });
+  expect(tags.getAttribute("aria-disabled")).toBeNull();
+  await user.click(tags);
+  await screen.findByRole("region", { name: "标签目录" });
+  expect(location.hash).toBe("#/tags");
+});
+
+it("renames a tag and its descendants in the library from the directory", async () => {
+  history.replaceState(null, "", "#/tags");
+  const user = userEvent.setup();
+  const { fixture } = await mount();
+  const coffeeId = fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")!.id;
+  const directory = await screen.findByRole("region", { name: "标签目录" });
+  await user.click(await within(directory).findByRole("button", { name: "编辑标签图标 生活" }));
+  const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
+  await user.clear(within(dialog).getByRole("textbox", { name: "标签名称" }));
+  await user.type(within(dialog).getByRole("textbox", { name: "标签名称" }), "日常");
+  await user.click(within(dialog).getByRole("button", { name: "保存" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await within(directory).findByRole("button", { name: "编辑标签名称 日常/咖啡" });
+  const coffee = fixture.snapshot().notes.find(note => note.id === coffeeId)!;
+  expect(coffee.tags).toContain("日常/咖啡");
+  expect(coffee.body).toContain("#日常/咖啡");
+  expect(coffee.tags).not.toContain("生活/咖啡");
 });
 
 it("uses the selected tag hierarchy and blocks ancestor navigation when saving fails", async () => {

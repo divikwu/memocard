@@ -18,6 +18,7 @@ import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, S
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
 import { SidebarIcon } from "./sidebar-icons";
 import { cn } from "../lib/utils";
+import "./sidebar.css";
 
 const categories = {
   smileys_people: { label: "表情与人物", icon: SmileIcon },
@@ -67,16 +68,22 @@ export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false }:
   </section>;
 }
 
-export function TagEditor({ path, initialIcon, anchor, mobile, onClose, onSave }: { path: string; initialIcon: string; anchor: HTMLElement; mobile: boolean; onClose: () => void; onSave: (name: string, icon: string) => Promise<void> }) {
+export function TagEditor({ path, initialIcon, anchor, mobile, onClose, onSave, finalFocus, initialPickerOpen = false, anchorIsTrigger = false }: { path: string; initialIcon: string; anchor: HTMLElement; mobile: boolean; onClose: () => void; onSave: (name: string, icon: string) => Promise<void>; finalFocus?: () => HTMLElement | false; initialPickerOpen?: boolean; anchorIsTrigger?: boolean }) {
   const id = useId();
   const [name, setName] = useState(path);
   const [icon, setIcon] = useState(initialIcon);
-  const [pickerOpen, setPickerOpen] = useState(mobile);
+  const [pickerOpen, setPickerOpen] = useState(mobile || initialPickerOpen);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const submitting = useRef(false);
   const input = useRef<HTMLInputElement>(null);
   const navigation = useRef(anchor.closest('[data-slot="sidebar-content"]'));
+  useLayoutEffect(() => {
+    if (!anchorIsTrigger || mobile) return;
+    const toggle = (event: MouseEvent) => { event.stopPropagation(); if (!submitting.current) onClose(); };
+    anchor.addEventListener("click", toggle);
+    return () => anchor.removeEventListener("click", toggle);
+  }, [anchor, anchorIsTrigger, mobile, onClose]);
   const returnFocus = () => {
     if (anchor.isConnected) return anchor;
     const buttons = [...navigation.current?.querySelectorAll<HTMLButtonElement>("button") ?? []];
@@ -95,6 +102,12 @@ export function TagEditor({ path, initialIcon, anchor, mobile, onClose, onSave }
     <p id={`${id}-description`} className="px-1 text-pretty text-xs leading-normal text-secondary">使用 / 分隔多级标签；改名会更新笔记中的标签。</p>
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
   </form>{pickerOpen && <EmojiPicker selected={icon} disabled={saving} autoFocus={!mobile} onSelect={setIcon} />}</div>;
-  if (mobile) return <Sheet open onOpenChange={(open, details) => { if (!open) { if (saving) details.cancel(); else onClose(); } }}><SheetContent side="bottom" className="ui-sidebar-vault-sheet ui-sidebar-tag-editor" showCloseButton={false} swipeToClose swipeDisabled={saving} initialFocus={input} finalFocus={returnFocus}><SheetHeader className="flex-row items-center justify-between p-0"><div><SheetTitle>编辑标签</SheetTitle><SheetDescription>调整标签名称与图标。</SheetDescription></div><SheetCloseButton aria-label="关闭编辑标签" disabled={saving} /></SheetHeader>{content}</SheetContent></Sheet>;
-  return <Popover open onOpenChange={(open, details) => { if (!open) { if (saving) details.cancel(); else onClose(); } }}><PopoverContent anchor={anchor} side="right" align="start" sideOffset={8} collisionPadding={12} aria-label="编辑标签" className="ui-sidebar-tag-editor" initialFocus={input} finalFocus={returnFocus}>{content}</PopoverContent></Popover>;
+  if (mobile) return <Sheet open onOpenChange={(open, details) => { if (!open) { if (saving) details.cancel(); else onClose(); } }}><SheetContent side="bottom" className="ui-sidebar-vault-sheet ui-sidebar-tag-editor" showCloseButton={false} swipeToClose swipeDisabled={saving} initialFocus={initialPickerOpen ? () => input.current?.closest(".ui-sidebar-tag-editor-content")?.querySelector<HTMLInputElement>('[aria-label="搜索 Emoji"]') ?? input.current ?? false : input} finalFocus={finalFocus ?? returnFocus}><SheetHeader className="flex-row items-center justify-between p-0"><div><SheetTitle>编辑标签</SheetTitle><SheetDescription>调整标签名称与图标。</SheetDescription></div><SheetCloseButton aria-label="关闭编辑标签" disabled={saving} /></SheetHeader>{content}</SheetContent></Sheet>;
+  return <Popover open onOpenChange={(open, details) => {
+    if (!open) {
+      const target = details.reason === "focus-out" ? (details.event as FocusEvent).relatedTarget : details.event.target;
+      if (saving || (anchorIsTrigger && (details.reason === "outside-press" || details.reason === "focus-out") && target instanceof Node && anchor.contains(target))) details.cancel();
+      else onClose();
+    }
+  }}><PopoverContent anchor={anchor} side="right" align="start" sideOffset={8} collisionPadding={12} aria-label="编辑标签" className="ui-sidebar-tag-editor" initialFocus={initialPickerOpen ? () => input.current?.closest(".ui-sidebar-tag-editor-content")?.querySelector<HTMLInputElement>('[aria-label="搜索 Emoji"]') ?? input.current ?? false : input} finalFocus={finalFocus ?? returnFocus}>{content}</PopoverContent></Popover>;
 }

@@ -64,6 +64,11 @@ export const SearchReview: Story = { args: { scenario: "review-search", initialR
 export const SearchLoading: Story = { args: { scenario: "review-search-loading", initialRoute: "#/notes" } };
 export const SearchFailure: Story = { args: { scenario: "review-search-error", initialRoute: "#/notes" } };
 export const SettingsReview: Story = { args: { scenario: "loading", initialRoute: "#/settings" } };
+export const TagDirectory: Story = { args: { scenario: "loading", initialRoute: "#/tags" }, play: async ({ canvasElement }) => {
+  const directory = within(await within(canvasElement).findByRole("region", { name: "标签目录" }));
+  await expect(await directory.findByRole("button", { name: "编辑标签名称 生活/咖啡" })).toBeVisible();
+  await expect(directory.getByRole("table", { name: "标签层级" })).toBeVisible();
+} };
 export const TrashReview: Story = { args: { scenario: "review-trash", initialRoute: "#/trash" } };
 export const TrashLoading: Story = { args: { scenario: "review-trash-loading", initialRoute: "#/trash" } };
 export const TrashFailure: Story = { args: { scenario: "review-trash-error", initialRoute: "#/trash" } };

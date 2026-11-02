@@ -122,6 +122,14 @@
       ]
     },
     {
+      "utility": "[&:has([role=checkbox])]:pr-0",
+      "step": "0",
+      "value": "0",
+      "consumers": [
+        "apps/ui/ui/components/table.tsx"
+      ]
+    },
+    {
       "utility": "[&>[data-slot=dialog-header]]:pr-10",
       "step": "10",
       "value": "10",
@@ -245,6 +253,7 @@
         "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/NoteCollection.tsx",
+        "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/components/dialog.tsx",
@@ -621,6 +630,14 @@
       ]
     },
     {
+      "utility": "mt-4",
+      "step": "4",
+      "value": "4",
+      "consumers": [
+        "apps/ui/ui/components/table.tsx"
+      ]
+    },
+    {
       "utility": "mt-6",
       "step": "6",
       "value": "6",
@@ -750,6 +767,7 @@
       "consumers": [
         "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
+        "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/components/sidebar.tsx"
       ]
@@ -761,7 +779,8 @@
       "consumers": [
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
-        "apps/ui/ui/components/calendar.tsx"
+        "apps/ui/ui/components/calendar.tsx",
+        "apps/ui/ui/components/table.tsx"
       ]
     },
     {
@@ -973,6 +992,7 @@
         "apps/ui/ui/components/input.tsx",
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/sidebar.tsx",
+        "apps/ui/ui/components/table.tsx",
         "apps/ui/ui/components/tabs.tsx",
         "apps/ui/ui/components/textarea.tsx",
         "apps/ui/ui/components/tooltip.tsx"

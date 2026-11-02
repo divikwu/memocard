@@ -37,6 +37,7 @@ const Editor = recoverableLazy(() => import("../business/Editor").then(module =>
 const QuickCapture = recoverableLazy(() => import("../business/QuickCapture").then(module => ({ default: module.QuickCapture })), "快速记录");
 const NoteSearchDialog = recoverableLazy(() => import("../business/NoteSearchDialog").then(module => ({ default: module.NoteSearchDialog })), "搜索");
 const TrashPage = recoverableLazy(() => import("../business/TrashPage").then(module => ({ default: module.TrashPage })), "回收站");
+const TagsPage = recoverableLazy(() => import("../business/TagsPage").then(module => ({ default: module.TagsPage })), "标签");
 const NoteDeleteDialog = recoverableLazy(() => import("../business/NoteDeleteDialog").then(module => ({ default: module.NoteDeleteDialog })), "删除确认");
 
 export const preloadWebEditor = () => import("../business/Editor");
@@ -75,7 +76,7 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
 function WorkspaceContent({ state: s }: { state: AppViewState }) {
   if (s.openingNote) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed ? <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty> : s.error ? null : <PageLoading />}</>;
   if (s.editor) return <><h1 className="sr-only">{s.title}</h1><Suspense fallback={<PageLoading />}><Editor key={s.editor.initial.id} {...s.editor} /></Suspense></>;
-  if (s.view === "tags") return null;
+  if (s.view === "tags") return <Suspense fallback={<PageLoading />}><TagsPage key={s.sidebar.vaultId || "disconnected"} tags={s.sidebar.tags} vaultId={s.sidebar.vaultId} loading={Boolean(s.sidebar.loadingTags)} connected={Boolean(s.status?.connected)} disabled={s.working || s.switchingVault} canRename={s.canCreate && !s.working && !s.switchingVault} onSelect={path => void s.onNavigate("notes", path)} onRename={s.sidebar.onRenameTag} /></Suspense>;
   if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
   if (s.connectionState) return <WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>

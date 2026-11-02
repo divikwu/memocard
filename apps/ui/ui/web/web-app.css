@@ -4,9 +4,10 @@
 .web-app-shell { height: 100dvh; min-height: 0; overflow: hidden; }
 .web-app-main { min-width: 0; min-height: 0; overflow: hidden; background: var(--color-background-body); }
 .web-app-main:has(> .web-app-scroll[data-detail]) { background: var(--color-background-surface); --color-background-glass: color-mix(in srgb, var(--color-background-surface) 75%, transparent); }
+:where(.web-app[data-web-client]) .web-app-main:has(> .web-app-scroll[data-detail]) { margin: var(--spacing-1); border-radius: calc(var(--radius-element) * 1.5); }
 /* Sidebar-10 slots, retaining the existing MemoCard responsive layout. */
 .web-app-main { container-type: inline-size; }
-.web-app-header { position: absolute; inset-inline: 0; top: 0; z-index: 20; display: flex; flex: 0 0 auto; align-items: center; height: calc(var(--spacing-1) * 14); gap: calc(var(--spacing-1) * 2); }
+.web-app-header { --spacing-glass-fade: calc(var(--spacing-1) * 2); position: absolute; inset-inline: 0; top: 0; z-index: 20; display: flex; flex: 0 0 auto; align-items: center; height: calc(var(--spacing-1) * 14); gap: calc(var(--spacing-1) * 2); }
 .web-app-header::after { content: ""; position: absolute; inset-inline: 0; top: 0; pointer-events: none; }
 .web-app-header::after, .web-mobile-record::before { z-index: -1; height: calc(100% + var(--spacing-glass-fade)); }
 .web-app-header::after, .web-mobile-record::before, .web-app-main::after { background: var(--color-background-glass); -webkit-backdrop-filter: blur(var(--blur-glass)); backdrop-filter: blur(var(--blur-glass)); }
@@ -17,6 +18,8 @@
 .web-header-actions { flex-shrink: 0; margin-left: auto; }
 .web-sidebar-logo { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: var(--size-element-md); height: var(--size-element-md); }
 .web-header-leading .web-sidebar-logo .ui-sidebar-logo-trigger { inset-inline-start: 0; }
+:where(.web-app[data-web-client]) .ui-note-collection { row-gap: calc(var(--spacing-1) * 3); }
+:where(.web-app[data-web-client]) .ui-note-list { padding: calc(var(--spacing-1) * 2); border-radius: var(--radius-card); background: var(--color-background-surface); }
 :where(.web-app[data-web-client]) .ui-note-list-card { background: transparent; }
 @media (hover: none) {
   :where(.web-app[data-web-client]) .ui-note-card.ui-note-list-card[data-note-openable="true"]:hover { background: transparent; }
@@ -49,7 +52,14 @@
   .web-page-content { padding-block: calc(var(--spacing-1) * 8); }
   .web-app-scroll[data-detail] { --note-rail: calc(var(--spacing-1) * 12); }
   .web-app-scroll[data-settings] { padding-inline: calc(var(--spacing-1) * 16); }
+  :where(.web-app[data-web-client]) .web-page-content:has(.ui-note-list, .ui-tag-directory) { display: flex; flex-direction: column; min-height: 100%; padding-block-end: 0; }
+  :where(.web-app[data-web-client]) .web-page-content:has(.ui-note-list, .ui-tag-directory) > * { flex-shrink: 0; }
+  :where(.web-app[data-web-client]) .web-page-content > .ui-tag-directory { flex: 1; }
+  :where(.web-app[data-web-client]) .web-page-content > .ui-note-collection:has(.ui-note-list) { flex: 1; }
+  :where(.web-app[data-web-client]) .ui-note-collection:has(.ui-note-list) :is([data-slot=tabs-content]:not([hidden]), .ui-note-results) { display: flex; flex-direction: column; flex: 1; }
+  :where(.web-app[data-web-client]) .ui-note-list { flex: 1; }
 }
+.web-app[data-web-client] .web-page-content { padding-block-start: var(--spacing-1); }
 .web-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); padding: calc(var(--spacing-1) * 4); border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); background: var(--color-background-surface); }
 .web-notice > div:first-child { flex: 1; min-width: min(100%, 12rem); overflow-wrap: anywhere; }
 .web-notice-actions { display: flex; flex-wrap: wrap; gap: calc(var(--spacing-1) * 2); }
