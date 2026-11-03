@@ -6,6 +6,8 @@
 
 iOS 的返回、固定、页面菜单和原生确认由 [IOSAppChrome](../../apps/ui/ui/native/IOSAppChrome.tsx) 发布 surface，再由 [NativeChrome](../../apps/apple/Sources/NativeChrome.swift) 消费；编辑器不是 SwiftUI 重写。当前内容风格见[排版规范](../typography.md)和[内容风格](../../docs/CONTENT_STYLE.md)。
 
+桌面 Web 详情页的 [浮动目录](../../apps/ui/ui/business/NoteOutline.tsx) 在正文至少有两个非空标题时显示，依据 H1–H6 实时生成。右侧短线提供层级与当前位置，悬停、键盘聚焦或点击可打开目录；章节跳转会展开目标的折叠祖先，并同步滚动位置及短暂定位高亮，高亮复用内容块选中的颜色、圆角与覆盖范围。文末主动跳转保留目标章节高亮，继续滚动后恢复跟踪；打开目录或当前章节变化时，列表将当前条目带入可视区，不改变正文滚动位置。目录使用现有滚动容器和 Base UI Popover，不修改 Markdown 或撤销历史；移动端、原生和不足两个标题的笔记不展示。浏览器回归覆盖实时标题、重复名称、折叠跳转、滚动跟踪、长目录和键盘退出。
+
 ## 隔离预览
 
 [编辑器故事](../../apps/ui/ui/stories/business-editor.stories.tsx) 的目录为 `business/editor`，包含 Desktop、H5、只读、保存重试、内容样式和图片/并排布局。故事直接使用真实 Editor、当前控件及内存版本/附件 handler，未知操作拒绝，不读用户笔记库。

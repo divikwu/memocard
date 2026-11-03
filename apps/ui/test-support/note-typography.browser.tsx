@@ -1,5 +1,5 @@
 import { afterEach, expect, test, vi } from "vitest";
-import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { createPortal } from "react-dom";
 import { page, userEvent } from "vitest/browser";
 import type { Editor } from "@tiptap/react";
@@ -15,6 +15,7 @@ import "../.storybook/preview.css";
 import "../ui/business/Editor.css";
 import "../ui/business/sidebar.css";
 import "../ui/web/web-typography.css";
+import "../ui/web/web-app.css";
 
 afterEach(() => {
   cleanup();
@@ -32,6 +33,142 @@ async function editorFixture(body: string) {
   const field = await view.findByRole("textbox", { name: "笔记内容" });
   return { ...view, field, editor: (field as HTMLElement & { editor: Editor }).editor };
 }
+
+async function outlineFixture(body: string, web = true) {
+  await page.viewport(1024, 900);
+  const onChange = vi.fn();
+  const view = render(<div className="ui-theme web-app" data-web-client={web || undefined}><main className="web-app-main" style={{ position: "relative", height: 600 }}><div className="note-page-scroll" style={{ height: 600, overflowY: "auto", scrollPaddingTop: 64, padding: "80px 80px 32px" }}><div className="ui-note-editor"><RichMarkdownEditor value={body} notePath="notes/outline.md" disabled={false} autoFocus={false} onChange={onChange} onSave={vi.fn()} onError={vi.fn()} /></div></div></main></div>);
+  const field = await view.findByRole("textbox", { name: "笔记内容" });
+  return { ...view, field, onChange, editor: (field as HTMLElement & { editor: Editor }).editor, scroller: view.container.querySelector<HTMLElement>(".note-page-scroll")! };
+}
+
+test("floating note outline follows heading edits, duplicate titles, and its two-heading threshold", async () => {
+  const { editor, queryByRole, findByRole } = await outlineFixture("## One\n\nBody");
+  expect(queryByRole("button", { name: "打开笔记目录" })).toBeNull();
+  act(() => { editor.commands.setContent("<h2>Same</h2><p>Body</p><h3>Same</h3><h4></h4>"); });
+  const trigger = await findByRole("button", { name: "打开笔记目录" });
+  await userEvent.hover(trigger);
+  const nav = await findByRole("navigation", { name: "笔记目录" });
+  expect(within(nav).getAllByRole("button", { name: "Same" })).toHaveLength(2);
+  const links = within(nav).getAllByRole("button", { name: "Same" });
+  expect(links[1].getBoundingClientRect().left).toBeGreaterThan(links[0].getBoundingClientRect().left);
+  act(() => { editor.commands.setContent("<h2>Renamed</h2><p>Body</p><h3>Second</h3>"); });
+  await waitFor(() => expect(within(nav).getByRole("button", { name: "Renamed" })).toBeTruthy());
+  act(() => { editor.commands.setContent("<h2>Only</h2><p>Body</p>"); });
+  await waitFor(() => expect(queryByRole("button", { name: "打开笔记目录" })).toBeNull());
+  expect(queryByRole("navigation", { name: "笔记目录" })).toBeNull();
+});
+
+test("floating note outline jumps into folded chapters and tracks scrolling without editing the note", async () => {
+  const paragraphs = Array.from({ length: 18 }, (_, index) => `Paragraph ${index + 1} with enough content to give this chapter its own scroll position.`).join("\n\n");
+  const { editor, field, onChange, scroller, findByRole } = await outlineFixture(`## Parent\n\n${paragraphs}\n\n### Child\n\n${paragraphs}\n\n## End\n\n${paragraphs}`);
+  scroller.style.paddingTop = "80.25px";
+  const original = editor.state.doc;
+  onChange.mockClear();
+  await userEvent.click(await findByRole("button", { name: "收起“Parent”章节" }));
+  expect(field.querySelector("h3")?.hasAttribute("hidden")).toBe(true);
+  await userEvent.hover(await findByRole("button", { name: "打开笔记目录" }));
+  const nav = await findByRole("navigation", { name: "笔记目录" });
+  await userEvent.click(within(nav).getByRole("button", { name: "Child" }));
+  await waitFor(() => expect(field.querySelector("h3")?.hasAttribute("hidden")).toBe(false));
+  await waitFor(() => expect(within(nav).getByRole("button", { name: "Child" }).getAttribute("aria-current")).toBe("location"));
+  expect(scroller.scrollTop).toBeGreaterThan(0);
+  const flash = document.querySelector<HTMLElement>(".ui-note-outline-highlight")!;
+  expect(flash.hidden).toBe(false);
+  act(() => { editor.commands.setNodeSelection(editor.state.selection.$from.before(1)); });
+  await waitFor(() => {
+    const selected = field.closest(".rich-editor")!.querySelector<SVGPathElement>(".rich-block-highlights > path")!;
+    const jumped = flash.querySelector<SVGPathElement>("path")!;
+    expect(selected).not.toBeNull();
+    const a = selected.getBoundingClientRect(), b = jumped.getBoundingClientRect();
+    for (const edge of ["left", "top", "width", "height"] as const) expect(b[edge]).toBeCloseTo(a[edge], 1);
+    expect(jumped.getTotalLength()).toBeCloseTo(selected.getTotalLength(), 1);
+    expect(getComputedStyle(jumped).fill).toBe(getComputedStyle(selected).fill);
+    expect(getComputedStyle(flash).opacity).toBe("1");
+  });
+  scroller.scrollTo({ top: scroller.scrollHeight, behavior: "instant" });
+  await waitFor(() => expect(within(nav).getByRole("button", { name: "End" }).getAttribute("aria-current")).toBe("location"));
+  expect(editor.state.doc.eq(original)).toBe(true);
+  expect(editor.can().undo()).toBe(false);
+  expect(onChange).not.toHaveBeenCalled();
+});
+
+test("floating note outline preserves an explicit near-end jump until reading resumes", async () => {
+  const intro = Array.from({ length: 18 }, () => "A paragraph that makes this document taller than its scroll surface.").join("\n\n");
+  const { scroller, findByRole } = await outlineFixture(`## Start\n\n${intro}\n\n## Requested\n\nShort section.\n\n## Last\n\nShort end.`);
+  await userEvent.hover(await findByRole("button", { name: "打开笔记目录" }));
+  const nav = await findByRole("navigation", { name: "笔记目录" });
+  await userEvent.click(within(nav).getByRole("button", { name: "Requested" }));
+  await act(async () => { await new Promise(requestAnimationFrame); await new Promise(requestAnimationFrame); });
+  expect(scroller.scrollTop).toBeCloseTo(scroller.scrollHeight - scroller.clientHeight, 0);
+  expect(within(nav).getByRole("button", { name: "Requested" }).getAttribute("aria-current")).toBe("location");
+  // A wheel gesture at the bottom resumes reading even when the scroll offset cannot change.
+  fireEvent.wheel(scroller, { deltaY: 100 });
+  await waitFor(() => expect(within(nav).getByRole("button", { name: "Last" }).getAttribute("aria-current")).toBe("location"));
+  scroller.scrollTo({ top: 0, behavior: "instant" });
+  await waitFor(() => expect(within(nav).getByRole("button", { name: "Start" }).getAttribute("aria-current")).toBe("location"));
+});
+
+test("floating note outline reveals the current item when a long menu opens or the chapter changes", async () => {
+  const body = Array.from({ length: 60 }, (_, index) => `## Chapter ${index + 1}\n\nThis chapter has a body paragraph.`).join("\n\n");
+  const { container, scroller, findByRole, queryByRole } = await outlineFixture(body);
+  const trigger = await findByRole("button", { name: "打开笔记目录" });
+  scroller.scrollTo({ top: scroller.scrollHeight, behavior: "instant" });
+  await waitFor(() => expect(container.querySelector(".ui-note-outline-marks > span:last-child")?.hasAttribute("data-active")).toBe(true));
+  const beforeOpen = scroller.scrollTop;
+  await userEvent.hover(trigger);
+  const nav = await findByRole("navigation", { name: "笔记目录" });
+  await waitFor(() => {
+    const target = within(nav).getByRole("button", { name: "Chapter 60" }).getBoundingClientRect();
+    const bounds = nav.getBoundingClientRect();
+    expect(target.top).toBeGreaterThanOrEqual(bounds.top - 1);
+    expect(target.bottom).toBeLessThanOrEqual(bounds.bottom + 1);
+  });
+  expect(scroller.scrollTop).toBe(beforeOpen);
+  scroller.scrollTo({ top: 0, behavior: "instant" });
+  await waitFor(() => {
+    const first = within(nav).getByRole("button", { name: "Chapter 1" });
+    expect(first.getAttribute("aria-current")).toBe("location");
+    expect(first.getBoundingClientRect().top).toBeGreaterThanOrEqual(nav.getBoundingClientRect().top - 1);
+  });
+  await userEvent.hover(document.body, { position: { x: 4, y: 4 } });
+  await waitFor(() => expect(queryByRole("navigation", { name: "笔记目录" })).toBeNull());
+  await userEvent.hover(trigger);
+  const reopened = await findByRole("navigation", { name: "笔记目录" });
+  await waitFor(() => expect(within(reopened).getByRole("button", { name: "Chapter 1" }).getBoundingClientRect().bottom).toBeLessThanOrEqual(reopened.getBoundingClientRect().bottom + 1));
+  scroller.scrollTo({ top: scroller.scrollHeight, behavior: "instant" });
+  const last = within(reopened).getByRole("button", { name: "Chapter 60" });
+  await waitFor(() => expect(last.getAttribute("aria-current")).toBe("location"));
+  last.focus();
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(queryByRole("navigation", { name: "笔记目录" })).toBeNull());
+  expect(document.activeElement).toBe(trigger);
+  await userEvent.keyboard("{Enter}");
+  const keyboardMenu = await findByRole("navigation", { name: "笔记目录" });
+  await waitFor(() => expect(document.activeElement).toBe(within(keyboardMenu).getByRole("button", { name: "Chapter 60" })));
+});
+
+test("floating note outline supports keyboard dismissal and stays out of mobile and native layouts", async () => {
+  const fixture = await outlineFixture("## First\n\nBody\n\n### Second\n\nBody");
+  const trigger = await fixture.findByRole("button", { name: "打开笔记目录" });
+  await userEvent.hover(trigger);
+  await fixture.findByRole("navigation", { name: "笔记目录" });
+  await userEvent.hover(document.body, { position: { x: 4, y: 4 } });
+  await waitFor(() => expect(fixture.queryByRole("navigation", { name: "笔记目录" })).toBeNull());
+  await userEvent.keyboard("{Tab}");
+  trigger.focus();
+  const nav = await fixture.findByRole("navigation", { name: "笔记目录" });
+  await userEvent.tab();
+  expect(nav.contains(document.activeElement)).toBe(true);
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(fixture.queryByRole("navigation", { name: "笔记目录" })).toBeNull());
+  expect(document.activeElement).toBe(trigger);
+  await page.viewport(390, 844);
+  await waitFor(() => expect(fixture.queryByRole("button", { name: "打开笔记目录" })).toBeNull());
+  fixture.unmount();
+  const native = await outlineFixture("## First\n\nBody\n\n### Second\n\nBody", false);
+  expect(native.queryByRole("button", { name: "打开笔记目录" })).toBeNull();
+});
 
 test("embedded emoji picker retains the sidebar separator and spacing", () => {
   const { container } = render(<EmojiPicker selected="" disabled={false} onSelect={vi.fn()} />);
@@ -54,17 +191,17 @@ test("portaled search preview keeps compact typography when note preferences cha
   }
 });
 
-test("editor keyboard exit hint fits below the content on narrow screens", async () => {
+test("editor keyboard exit hint stays screen-reader-only while editing", async () => {
   typography("16");
   for (const width of [320, 390, 1024]) {
     await page.viewport(width, 900);
-    const { field, container, unmount } = await editorFixture("Plain text");
+    const { field, unmount } = await editorFixture("Plain text");
     await userEvent.click(field);
-    const hint = container.querySelector<HTMLElement>(".rich-keyboard-hint")!;
-    expect(getComputedStyle(hint).opacity).toBe("1");
-    expect(hint.getBoundingClientRect().top).toBeGreaterThanOrEqual(field.getBoundingClientRect().bottom);
-    expect(hint.getBoundingClientRect().right).toBeLessThanOrEqual(width);
-    expect(hint.scrollHeight).toBeLessThanOrEqual(hint.clientHeight + 1);
+    const hint = document.getElementById(field.getAttribute("aria-describedby")!)!;
+    expect(hint.textContent).toContain("Esc 后按 Tab / Shift+Tab 离开正文");
+    expect(hint.getBoundingClientRect().width).toBe(1);
+    expect(hint.getBoundingClientRect().height).toBe(1);
+    expect(getComputedStyle(hint).clipPath).toBe("inset(50%)");
     unmount();
   }
 });

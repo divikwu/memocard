@@ -107,7 +107,7 @@ export function NoteCollection({ home, notes, loading = false, searching = false
   return <section className="ui-note-collection" data-slot="note-collection" aria-label="笔记集合">
     <div className="ui-note-toolbar">
       <div className="ui-collection-search">{loading ? <Spinner aria-hidden="true" className="ui-collection-search-icon" /> : <SearchIcon aria-hidden="true" className="ui-collection-search-icon" />}<Input value={query} onChange={event => onQueryChange(event.target.value)} placeholder={searchPlaceholder} aria-label="搜索当前视图笔记" disabled={searchDisabled} className="ui-collection-search-input" />{query && <Button type="button" variant="ghost" size="icon-xs" className="ui-collection-search-clear" onClick={() => onQueryChange("")} disabled={searchDisabled} aria-label="清空当前搜索"><CloseIcon aria-hidden="true" /></Button>}</div>
-      <div className="ui-note-actions">{layoutButtons}<Button type="button" variant="outline" size="default" disabled={!canCreate} onClick={onNewNote}><AddIcon aria-hidden="true" />新建</Button></div>
+      <div className="ui-note-actions">{layoutButtons}<Button type="button" variant="outline" size="default" className="bg-surface text-primary dark:bg-surface" disabled={!canCreate} onClick={onNewNote}><AddIcon aria-hidden="true" />新建</Button></div>
     </div>
     {content}
   </section>;

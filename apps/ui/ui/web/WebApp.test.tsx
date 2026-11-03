@@ -400,10 +400,17 @@ it("keeps desktop page headings without a page menu or duplicate header label", 
   expect(within(header).queryByRole("button", { name: "搜索" })).toBeNull();
   expect(within(header).queryByRole("button", { name: "收起侧栏" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "收起侧栏" }));
-  await within(header).findByRole("button", { name: "展开侧栏" });
+  const title = screen.getByRole("heading", { name: "所有笔记", level: 1 });
+  const expand = await within(title.parentElement!).findByRole("button", { name: "展开侧栏" });
+  expect(within(header).queryByRole("button", { name: "展开侧栏" })).toBeNull();
+  expect(expand.compareDocumentPosition(title) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  await waitFor(() => expect(document.activeElement).toBe(expand));
   expect(header.querySelector(".web-header-separator")).toBeNull();
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   expect(document.querySelector('[data-slot="sidebar-inner"]')?.hasAttribute("inert")).toBe(true);
+  await user.click(expand);
+  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "收起侧栏" })));
+  expect(within(title.parentElement!).queryByRole("button", { name: "展开侧栏" })).toBeNull();
 });
 
 it("opens retained drafts from the vault menu on desktop tags without page actions", async () => {

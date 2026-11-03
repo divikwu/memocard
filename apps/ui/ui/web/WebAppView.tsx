@@ -102,8 +102,10 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
   const showBreadcrumb = s.isMobile || s.detailView;
   const mobileActions = s.isMobile && !s.nativeChrome && !isNative;
   const HeaderActions = mobileActions ? ActionGroup : "div";
+  const sidebarInHeading = !isNative && !s.nativeChrome && !s.isMobile && !s.detailView && (s.view === "notes" || s.view === "tags");
+  const sidebarControl = s.isMobile ? <SidebarTrigger className="web-header-icon" /> : <span className="ui-sidebar-brand-header web-sidebar-logo"><img src="./favicon.png" alt="" draggable={false} className="ui-sidebar-logo" /><SidebarTrigger className="web-header-icon ui-sidebar-logo-trigger" /></span>;
   const navigationControls = <>
-    {(s.isMobile ? !s.detailView : !s.sidebarOpen) && (s.isMobile ? <SidebarTrigger className="web-header-icon" /> : <span className="ui-sidebar-brand-header web-sidebar-logo"><img src="./favicon.png" alt="" draggable={false} className="ui-sidebar-logo" /><SidebarTrigger className="web-header-icon ui-sidebar-logo-trigger" /></span>)}
+    {!sidebarInHeading && (s.isMobile ? !s.detailView : !s.sidebarOpen) && sidebarControl}
     {s.isMobile && s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
   </>;
   const searchControl = <Button variant={mobileActions ? "ghost" : "outline"} size="icon-lg" disabled={!s.search.available} onClick={s.onSearch} aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={s.search.open}><SearchIcon aria-hidden="true" /></Button>;
@@ -143,7 +145,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           {s.drafts.issues.length > 0 && <Notice title="部分草稿无法读取">{s.drafts.issues.map((issue, i) => <p className="break-words not-last:mb-2" key={i}>{issue.message}{issue.path && <code className="block break-all">{issue.path}</code>}</p>)}</Notice>}
           {s.drafts.reminderVisible && !s.detailView && s.view !== "settings" && <Notice title="有尚未完成的草稿" action={<><Button variant="outline" size="sm" onClick={() => s.drafts.onOpenChange(true)}>查看草稿</Button><Button variant="ghost" size="sm" onClick={s.drafts.onDismissReminder}>稍后处理</Button></>}>可继续编辑，稍后处理不会删除草稿。</Notice>}
           {s.listTimeout === "refresh" && <Notice title="刷新超时" error action={<Button variant="outline" size="sm" disabled={s.refreshingPages || s.switchingVault} onClick={s.onRefreshBackground}>重试</Button>}>继续显示上次读取的内容。</Notice>}
-          {!s.detailView && s.view !== "settings" && s.view !== "trash" && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}><h1>{s.title}</h1></div>)}
+          {!s.detailView && s.view !== "settings" && s.view !== "trash" && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}>{sidebarInHeading && !s.sidebarOpen && sidebarControl}<h1>{s.title}</h1></div>)}
           <WorkspaceContent state={s} />
         </div></div>
         {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录">{mobileActions ? <ActionGroup size="lg">{searchControl}</ActionGroup> : searchControl}<div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}

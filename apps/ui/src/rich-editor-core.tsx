@@ -50,12 +50,13 @@ export type RichEditorUI = {
   RichImageTools: ComponentType<{ editor: TiptapEditor; getPos: () => number | undefined; alt: string }>;
   CalloutColorsMenu: ComponentType<{ editor: TiptapEditor; pos: number; onClose: () => void }>;
   CalloutIconPicker: ComponentType<{ editor: TiptapEditor; target: CalloutIconTarget; onClose: () => void }>;
+  NoteOutline?: ComponentType<{ editor: TiptapEditor }>;
   contentClassName?: string;
   uiClassName?: string;
 };
 
 // Extensions and node views close over one view adapter without duplicating editor behavior.
-export function createRichMarkdownEditor({ RichHeadingFolding, icons, Markdown, NoteImage, RichCodeBlock, RichFormatTools, RichImageTools, CalloutColorsMenu, CalloutIconPicker, contentClassName = 'markdown typeset rich-editor-content', uiClassName = '' }: RichEditorUI) {
+export function createRichMarkdownEditor({ RichHeadingFolding, icons, Markdown, NoteImage, RichCodeBlock, RichFormatTools, RichImageTools, CalloutColorsMenu, CalloutIconPicker, NoteOutline, contentClassName = 'markdown typeset rich-editor-content', uiClassName = '' }: RichEditorUI) {
 const { Plus, GripVertical, Type, Heading, List, ListOrdered, ListTodo, Quote, Code, Minus, Table, Sigma, ImageIcon, Search, ArrowUp, ArrowDown, Copy, Trash2, RefreshCw, Check, ChevronRight, MessageSquareQuote } = icons;
 const RichTableTools = createRichTableTools(icons, uiClassName);
 function SafeImage({ node, extension, editor, getPos }: NodeViewProps) {
@@ -784,7 +785,8 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       }}><GripVertical size={16} /></button>
     </div>
     <EditorContent editor={editor} />
-    <p id={keyboardHintId} className="rich-keyboard-hint">Esc 后按 Tab / Shift+Tab 离开正文；有菜单或选区时，先按 Esc 取消。</p>
+    {NoteOutline && <NoteOutline editor={editor} />}
+    <p id={keyboardHintId} className="sr-only">Esc 后按 Tab / Shift+Tab 离开正文；有菜单或选区时，先按 Esc 取消。</p>
     <RichBlockHighlight editor={editor} root={root} />
     {selectionBox && <div className="rich-selection-box" aria-hidden="true" style={selectionBox} />}
     {!props.disabled && <RichTagSuggestions editor={editor} />}
