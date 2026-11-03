@@ -31,12 +31,12 @@ const status: VaultStatus = {
 let pendingDrafts: Draft[] = [];
 
 async function openRetainedDrafts() {
-  fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
+  fireEvent.click(screen.queryByRole("button", { name: /^笔记库：/ }) ?? screen.getByRole("button", { name: "页面操作" }));
   fireEvent.click(await screen.findByRole("menuitem", { name: /^保留草稿/ }));
 }
 
 async function createNote() {
-  const entry = screen.queryByRole("button", { name: "新建" });
+  const entry = screen.queryByRole("button", { name: "新建" }) ?? screen.queryByRole("button", { name: "新建笔记" });
   if (entry) fireEvent.click(entry);
   else {
     fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
@@ -684,9 +684,7 @@ describe("note workspace", () => {
     expect(screen.getByText("连接已断开")).toBeTruthy();
     expect(screen.getByRole("link", { name: "重新打开", hidden: true }).getAttribute("href")).toBe("memocard-service://open-web");
     expect(screen.queryByRole("button", { name: "重试", hidden: true })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
-    expect(await screen.findByRole("menuitem", { name: "新建笔记" })).toHaveProperty("ariaDisabled", "true");
-    await userEvent.keyboard("{Escape}");
+    expect(screen.getByRole("button", { name: "新建笔记" })).toHaveProperty("disabled", true);
     fireEvent.click(noteSourceButton());
     await waitFor(() => expect(within(screen.getByRole("region", { name: "新建笔记" })).getByText(disconnected.message)).toBeTruthy());
     expect(readEditorText()).toBe("断开时还在编辑的内容");
@@ -1369,7 +1367,7 @@ it('confirms deletion of one exact draft, retains failures, and updates the draf
   expect(bridge.request.mock.calls.filter(([op])=>op==='saveNote')).toHaveLength(0);
   await user.keyboard('{Escape}');
   await user.click(screen.getByRole('button',{name:'稍后处理'}));
-  fireEvent.click(screen.getByRole("button", { name: "页面操作" }));
+  fireEvent.click(screen.getByRole("button", { name: /^笔记库：/ }));
   expect(await screen.findByRole("menuitem", { name: "保留草稿（1）" })).toBeTruthy();
 });
 

@@ -230,8 +230,8 @@ it("flushes unfinished edits before opening settings and preserves them across a
   const { fixture } = await mount();
   await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
   replaceEditorText("离开编辑页前必须保留的正文", await screen.findByRole("textbox", { name: "笔记内容" }));
-  await user.click(screen.getByRole("button", { name: "页面操作" }));
-  await user.click(await screen.findByRole("menuitem", { name: "设置" }));
+  await user.click(screen.getByRole("button", { name: /^笔记库：/ }));
+  await user.click(await screen.findByRole("menuitem", { name: "笔记库设置" }));
   await screen.findByRole("heading", { name: "设置", level: 1 });
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   expect(fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")?.body).toBe("离开编辑页前必须保留的正文");
@@ -277,10 +277,7 @@ it("honors missing write/delete capabilities across sidebar, detail and page act
   await user.click(screen.getByRole("button", { name: "打开 今天的手冲记录" }));
   const field = await screen.findByRole("textbox", { name: "笔记内容" });
   expect(field.getAttribute("contenteditable")).toBe("false");
-  await user.click(screen.getByRole("button", { name: "页面操作" }));
-  const menu = await screen.findByRole("menu");
-  expect(within(menu).queryByRole("menuitem", { name: "移入回收站" })).toBeNull();
-  expect(within(menu).getByRole("menuitem", { name: "新建笔记" }).getAttribute("aria-disabled")).toBe("true");
+  expect(screen.queryByRole("button", { name: "页面操作" })).toBeNull();
   expect(request.mock.calls.some(([operation]) => ["saveNote", "deleteNote", "deleteDraft"].includes(operation))).toBe(false);
 });
 
@@ -392,14 +389,14 @@ it("does not keep announcing loading after a terminal disconnect while opening a
   expect(screen.queryByRole("status", { name: "正在读取内容" })).toBeNull();
 });
 
-it("keeps desktop page headings and actions without a duplicate header label", async () => {
+it("keeps desktop page headings without a page menu or duplicate header label", async () => {
   const user = userEvent.setup();
   await mount();
   await screen.findByRole("button", { name: "打开 今天的手冲记录" });
   const header = document.querySelector<HTMLElement>(".web-app-header")!;
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   expect(screen.getByRole("heading", { name: "所有笔记", level: 1 })).toBeDefined();
-  expect(within(header).getByRole("button", { name: "页面操作" })).toBeDefined();
+  expect(within(header).queryByRole("button", { name: "页面操作" })).toBeNull();
   expect(within(header).queryByRole("button", { name: "搜索" })).toBeNull();
   expect(within(header).queryByRole("button", { name: "收起侧栏" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "收起侧栏" }));
@@ -407,6 +404,31 @@ it("keeps desktop page headings and actions without a duplicate header label", a
   expect(header.querySelector(".web-header-separator")).toBeNull();
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   expect(document.querySelector('[data-slot="sidebar-inner"]')?.hasAttribute("inert")).toBe(true);
+});
+
+it("opens retained drafts from the vault menu on desktop tags without page actions", async () => {
+  const user = userEvent.setup();
+  const { request } = await mount("draft-many");
+  await screen.findByRole("button", { name: "查看草稿" });
+  await user.click(within(screen.getByRole("navigation", { name: "主要导航" })).getByRole("button", { name: "标签" }));
+  await screen.findByRole("heading", { name: "标签", level: 1 });
+  expect(screen.queryByRole("button", { name: "页面操作" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: /^笔记库：/ }));
+  expect((await screen.findByRole("menuitem", { name: "刷新笔记库" })).getAttribute("aria-disabled")).not.toBe("true");
+  await user.click(screen.getByRole("menuitem", { name: /^保留草稿/ }));
+  const dialog = await screen.findByRole("dialog", { name: "保留的草稿" });
+  expect(within(dialog).getByRole("heading", { name: "保留草稿 1" })).toBeDefined();
+  expect(request.mock.calls.some(([operation]) => ["saveNote", "deleteNote", "deleteDraft"].includes(operation))).toBe(false);
+});
+
+it("keeps only current-note actions in the desktop detail menu", async () => {
+  const user = userEvent.setup();
+  await mount();
+  await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
+  await screen.findByRole("textbox", { name: "笔记内容" });
+  await user.click(screen.getByRole("button", { name: "页面操作" }));
+  const menu = await screen.findByRole("menu");
+  expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["移入回收站"]);
 });
 
 it("keeps H5 navigation in its drawer and the global search/capture in the record bar", async () => {

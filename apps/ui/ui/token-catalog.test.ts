@@ -10,7 +10,7 @@ vi.mock("./theme.css?raw", async () => {
 it("keeps sidebar, page and content surfaces mapped to their own semantic roles", () => {
   const sidebar = tokens.find(token => token.name === "--color-background-sidebar")!;
   expect(sidebar).toMatchObject({ category: "colors", colorGroup: "extensions", projectExtension: true, interfaces: ["bg-sidebar"] });
-  expect(sidebar).toMatchObject({ light: "var(--color-neutral-100)", dark: "var(--color-neutral-900)" });
+  expect(sidebar).toMatchObject({ light: "color-mix(in srgb, var(--color-neutral-100) 97%, var(--color-black))", dark: "var(--color-neutral-900)" });
   expect(tokens.find(token => token.name === "--color-background-body")).toMatchObject({ light: "var(--color-neutral-100)", dark: "var(--color-neutral-950)" });
   expect(tokens.find(token => token.name === "--color-background-surface")).toMatchObject({ light: "var(--color-white)", dark: "var(--color-neutral-900)" });
   expect(tokens.find(token => token.name === "--color-background-muted")).toMatchObject({ light: "var(--color-neutral-100)", dark: "var(--color-neutral-800)" });

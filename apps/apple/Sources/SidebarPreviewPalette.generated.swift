@@ -12,7 +12,7 @@ enum SidebarPreviewPalette {
         "border": [0, 0, 0, 20],
         "primary": [23, 23, 23, 255],
         "primary-foreground": [250, 250, 250, 255],
-        "sidebar": [245, 245, 245, 255],
+        "sidebar": [238, 238, 238, 255],
         "sidebar-foreground": [10, 10, 10, 255],
         "sidebar-accent": [0, 0, 0, 10],
         "sidebar-border": [0, 0, 0, 20],
