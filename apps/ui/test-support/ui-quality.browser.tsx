@@ -1522,13 +1522,29 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
       reference.style.backgroundColor = "var(--color-overlay-hover)";
       root.append(reference);
       try {
-        const outside = canvas.getByRole("button", {name: "页面操作"});
+        const outside = canvas.getByRole("button", {name: scenario.width < 768 ? "页面操作" : "MemoCard，返回主页"});
         await userEvent.hover(outside);
         expect(getComputedStyle(card).backgroundColor).toBe("rgba(0, 0, 0, 0)");
         await userEvent.hover(open);
         expect(card.matches(":hover")).toBe(true);
         const overlay = getComputedStyle(reference).backgroundColor;
         await waitFor(() => expect(getComputedStyle(card).backgroundColor).toBe(scenario.touch ? "rgba(0, 0, 0, 0)" : overlay));
+        if (scenario.width === 1440) {
+          const tag = within(card).getAllByRole("button", {name: /^筛选标签 /})[0];
+          const color = getComputedStyle(tag).color;
+          const rowHover = getComputedStyle(tag).backgroundImage;
+          expect(rowHover).not.toBe("none");
+          expect(getComputedStyle(open).paddingInlineStart).toBe("12px");
+          expect(getComputedStyle(open).paddingInlineEnd).toBe("12px");
+          expect(Number.parseFloat(getComputedStyle(card).borderTopLeftRadius)).toBeGreaterThanOrEqual(card.getBoundingClientRect().height / 2);
+          await userEvent.hover(tag);
+          await waitFor(() => expect(getComputedStyle(tag).backgroundImage).not.toBe(rowHover));
+          expect(getComputedStyle(tag).color).toBe(color);
+          await userEvent.hover(outside);
+          expect(getComputedStyle(tag).backgroundImage).toBe("none");
+          expect(getComputedStyle(tag).color).toBe(color);
+          await userEvent.hover(open);
+        }
         const before = opened.length, bounds = card.getBoundingClientRect();
         await commands.pressLeftMouseButton();
         try {
@@ -1590,6 +1606,44 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
 });
 
 if (!inject("uiQualityTouch")) {
+test("Web collection headings align with the sidebar brand and retain compact spacing", async () => {
+  const previousHash = location.hash;
+  localStorage.clear();
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  await page.viewport(1440, 900);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("button", {name: "打开 今天的手冲记录"});
+    const header = view.container.querySelector<HTMLElement>(".web-app-header")!;
+    for (const width of [768, 1440]) {
+      await page.viewport(width, 900);
+      for (const name of ["所有笔记", "标签"]) {
+        await userEvent.click(within(canvas.getByRole("navigation", {name: "主要导航"})).getByRole("button", {name}));
+        const title = await canvas.findByRole("heading", {name, level: 1});
+        await waitFor(() => {
+          const brand = view.container.querySelector(".ui-sidebar-brand-header")!.getBoundingClientRect();
+          const bounds = title.getBoundingClientRect();
+          expect(bounds.top + bounds.height / 2).toBeCloseTo(brand.top + brand.height / 2, 1);
+          expect(header.getBoundingClientRect().height).toBe(0);
+        });
+        expect(getComputedStyle(title.parentElement!).marginBottom).toBe("0px");
+        expect(getComputedStyle(header, "::after").height).toBe("16px");
+      }
+    }
+    await userEvent.click(canvas.getByRole("button", {name: "收起侧栏"}));
+    await canvas.findByRole("button", {name: "展开侧栏"});
+    expect(header.getBoundingClientRect().height).toBe(56);
+    await page.viewport(390, 900);
+    await waitFor(() => expect(within(header).getByRole("button", {name: "页面操作"})).toBeDefined());
+    expect(header.getBoundingClientRect().height).toBe(56);
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/notes");
+  }
+});
+
 test("Web tag directory supports hierarchy, shared pins, renaming and responsive layouts", async () => {
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -1602,31 +1656,31 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
   const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container), body = within(document.body);
+    await canvas.findByRole("button", {name: "编辑标签名称 生活/咖啡"});
     const directory = within(await canvas.findByRole("region", {name: "标签目录"}));
     const directoryControls = page.getByRole("region", {name: "标签目录", exact: true});
-    await directory.findByRole("button", {name: "编辑标签名称 生活/咖啡"});
     for (const width of [320, 390, 767, 768, 1024, 1440]) {
       await page.viewport(width, 1000);
       const row = directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"}).closest<HTMLElement>(".ui-tag-directory-row")!;
       await waitFor(() => expect(row.getBoundingClientRect().height).toBe(36));
       expect(row.nextElementSibling!.getBoundingClientRect().top - row.getBoundingClientRect().bottom).toBeCloseTo(2, 1);
-      expect(getComputedStyle(row.querySelector("td:first-child")!).borderTopLeftRadius).toBe("12px");
-      expect(getComputedStyle(row.querySelector("td:last-child")!).borderTopRightRadius).toBe("12px");
+      expect(Number.parseFloat(getComputedStyle(row.querySelector("td:first-child")!).borderTopLeftRadius)).toBeGreaterThanOrEqual(row.getBoundingClientRect().height / 2);
+      expect(Number.parseFloat(getComputedStyle(row.querySelector("td:last-child")!).borderTopRightRadius)).toBeGreaterThanOrEqual(row.getBoundingClientRect().height / 2);
       expect(directory.getByRole("table", {name: "标签层级"}).getAttribute("data-slot")).toBe("table");
       for (const header of directory.getAllByRole("columnheader")) expect(header.getBoundingClientRect().height).toBe(32);
-      expect(getComputedStyle(directory.getAllByRole("columnheader")[0]).borderTopLeftRadius).toBe("12px");
-      expect(getComputedStyle(directory.getAllByRole("columnheader")[2]).borderTopRightRadius).toBe("12px");
+      expect(Number.parseFloat(getComputedStyle(directory.getAllByRole("columnheader")[0]).borderTopLeftRadius)).toBeGreaterThanOrEqual(16);
+      expect(Number.parseFloat(getComputedStyle(directory.getAllByRole("columnheader")[2]).borderTopRightRadius)).toBeGreaterThanOrEqual(16);
       for (const control of view.container.querySelectorAll(".ui-tag-directory-toggle, .ui-tag-directory-icon, .ui-tag-directory-pin")) {
         const rect = control.getBoundingClientRect(), parent = control.closest(".ui-tag-directory-row")!.getBoundingClientRect();
         const size = control.classList.contains("ui-tag-directory-pin") ? 32 : 28;
         expect(rect.width).toBe(size);
         expect(rect.height).toBe(size);
+        expect(Number.parseFloat(getComputedStyle(control).borderTopLeftRadius)).toBeGreaterThanOrEqual(size / 2);
         expect(rect.top + rect.height / 2).toBeCloseTo(parent.top + parent.height / 2, 1);
       }
       const toggle = directory.getByRole("button", {name: "收起标签 生活"}).getBoundingClientRect();
       const guide = row.querySelector(".ui-tag-directory-guide")!.getBoundingClientRect();
-      const nextGuide = row.nextElementSibling!.querySelector(".ui-tag-directory-guide")!.getBoundingClientRect();
-      expect(guide.bottom).toBeCloseTo(nextGuide.top, 1);
+      expect(guide.bottom).toBeLessThanOrEqual(row.nextElementSibling!.getBoundingClientRect().top);
       const icon = directory.getByRole("button", {name: "编辑标签图标 生活"}).getBoundingClientRect();
       expect(guide.left + guide.width / 2).toBeCloseTo(icon.left + icon.width / 2, 1);
       expect(icon.left).toBeGreaterThanOrEqual(toggle.right);
@@ -1644,7 +1698,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
       expect(getComputedStyle(nestedGuides[0]).clipPath).toContain("50%");
       const branchGuide = childToggle.closest("tr")!.querySelector(".ui-tag-directory-guide")!;
       expect(branchGuide.hasAttribute("data-end")).toBe(true);
-      expect(getComputedStyle(branchGuide).clipPath).toContain("50%");
+      expect(getComputedStyle(branchGuide).display).toBe("none");
       await directoryControls.getByRole("button", {name: "收起标签 生活/植物", exact: true}).click();
       expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
       const panel = view.container.querySelector<HTMLElement>(".ui-tag-directory-panel")!;
@@ -1668,15 +1722,17 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     await userEvent.keyboard("{Enter}");
     const pinnedTrigger = directory.getByRole("button", {name: "取消置顶 生活/咖啡"});
     expect(pinnedTrigger.getAttribute("aria-pressed")).toBe("true");
+    expect(pinnedTrigger.querySelector("svg")!.getAttribute("fill")).toBe("currentColor");
     pinnedTrigger.blur();
     await userEvent.hover(directory.getByRole("textbox", {name: "搜索标签"}));
     expect(getComputedStyle(pinnedTrigger).opacity).toBe("1");
     await userEvent.click(pinnedTrigger);
     expect(pinTrigger.getAttribute("aria-pressed")).toBe("false");
+    expect(pinTrigger.querySelector("svg")!.getAttribute("fill")).toBe("none");
     for (const name of ["编辑标签名称 生活/咖啡", "查看标签 生活/咖啡 的笔记", "置顶标签 生活/咖啡"]) {
       const button = directory.getByRole("button", {name});
       await userEvent.hover(button);
-      expect(getComputedStyle(button).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+      expect(getComputedStyle(button).backgroundColor).toBe(name.startsWith("置顶标签") ? getComputedStyle(coffeeRow.querySelector("td")!).backgroundColor : "rgba(0, 0, 0, 0)");
     }
     expect(getComputedStyle(coffeeRow).backgroundColor).toBe("rgba(0, 0, 0, 0)");
     expect(getComputedStyle(coffeeRow.querySelector("td")!).backgroundColor).toBe(getComputedStyle(view.container.querySelector(".ui-sidebar-row[data-active]")!).backgroundColor);
@@ -1684,7 +1740,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     expect(getComputedStyle(coffeeRow.querySelector(".ui-tag-directory-count")!).opacity).toBe("1");
     const iconTrigger = directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"});
     await userEvent.hover(iconTrigger);
-    expect(getComputedStyle(iconTrigger).borderRadius).toBe("8px");
+    expect(Number.parseFloat(getComputedStyle(iconTrigger).borderRadius)).toBeGreaterThanOrEqual(iconTrigger.getBoundingClientRect().height / 2);
     expect(getComputedStyle(iconTrigger).backgroundColor).toBe(getComputedStyle(coffeeRow.querySelector("td")!).backgroundColor);
     await userEvent.click(iconTrigger);
     await body.findByRole("dialog", {name: "编辑标签"});
@@ -1841,7 +1897,7 @@ test("Web home and all-notes collections share responsive widths", async () => {
             await waitFor(() => expect(current!.isMobile).toBe(true));
             expect(list.getBoundingClientRect().height).toBeCloseTo(naturalHeight(), 1);
           }
-          await page.viewport(1440, 360);
+          await page.viewport(1440, 240);
           await waitFor(() => expect(current!.isMobile).toBe(false));
           expect(list.getBoundingClientRect().height).toBeCloseTo(naturalHeight(), 1);
           expect(scroll.scrollHeight).toBeGreaterThan(scroll.clientHeight);
@@ -2178,10 +2234,16 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
       await page.viewport(width, 900);
       await waitFor(() => expect(header.querySelectorAll('[data-slot="action-group"]')).toHaveLength(width < 768 ? 2 : 0));
       const disabledPin = controls.getByRole("button", {name: "固定到主页"});
-      const more = controls.getByRole("button", {name: "页面操作"});
-      more.focus();
-      if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Shift>}{Tab}{/Shift}{/Alt}");
-      else await userEvent.tab({shift: true});
+      if (width < 768) {
+        controls.getByRole("button", {name: "页面操作"}).focus();
+        if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Shift>}{Tab}{/Shift}{/Alt}");
+        else await userEvent.tab({shift: true});
+      } else {
+        expect(controls.queryByRole("button", {name: "页面操作"})).toBeNull();
+        within(controls.getByRole("navigation", {name: "当前位置"})).getAllByRole("button").at(-1)!.focus();
+        if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
+        else await userEvent.tab();
+      }
       const tooltipTrigger = disabledPin.closest<HTMLElement>(".web-pin-tooltip-trigger")!;
       await waitFor(() => expect(document.activeElement).toBe(tooltipTrigger));
       expectKeyboardOutline(tooltipTrigger, mode);

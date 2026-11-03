@@ -172,7 +172,7 @@ function TagRow({ tag, depth, lastSibling, icon, pinned, iconEditorOpen, expande
       </div></TableCell>
       <TableCell><Button variant="ghost" size="sm" className="ui-tag-directory-count" aria-label={`查看标签 ${tag.name} 的笔记`} aria-description={`${tag.count} 条笔记，包含子标签，按笔记去重`} title="包含子标签，按笔记去重" disabled={disabled || saving} onClick={onSelect}>{tag.count}</Button></TableCell>
       <TableCell><div className="ui-tag-directory-actions">
-        <Button variant="ghost" size="icon-sm" className="ui-tag-directory-pin" aria-label={`${pinned ? "取消置顶" : "置顶标签"} ${tag.name}`} aria-pressed={pinned} disabled={disabled || pinDisabled || saving} onClick={onPin}><HugeiconsIcon icon={PinIcon} aria-hidden="true" /></Button>
+        <Button variant="ghost" size="icon-sm" className="ui-tag-directory-pin" aria-label={`${pinned ? "取消置顶" : "置顶标签"} ${tag.name}`} aria-pressed={pinned} disabled={disabled || pinDisabled || saving} onClick={onPin}><HugeiconsIcon icon={PinIcon} fill={pinned ? "currentColor" : "none"} aria-hidden="true" /></Button>
       </div></TableCell>
     </TableRow>
     {error && <TableRow className="ui-tag-directory-error"><TableCell colSpan={3}><p id={errorId} role="alert">{error}</p></TableCell></TableRow>}

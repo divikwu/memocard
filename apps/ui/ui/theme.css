@@ -13,7 +13,7 @@
   color-scheme: light;
   --color-background-body: var(--color-neutral-100);
   --color-background-surface: var(--color-white);
-  --color-background-sidebar: var(--color-neutral-100);
+  --color-background-sidebar: color-mix(in srgb, var(--color-neutral-100) 97%, var(--color-black));
   --color-background-card: var(--color-white);
   --color-background-popover: var(--color-white);
   --color-background-muted: var(--color-neutral-100);

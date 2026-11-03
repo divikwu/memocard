@@ -28,6 +28,10 @@ export interface AppSidebarProps {
   onSelectVault: (create: boolean) => void;
   onActivateVault: (vaultId: string) => void;
   onReauthorize: () => void;
+  canRefresh?: boolean;
+  onRefresh?: () => void;
+  draftCount?: number;
+  onOpenDrafts?: () => void;
 }
 import { Button } from "../components/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "../components/dropdown-menu";
@@ -35,6 +39,8 @@ import { Separator } from "../components/separator";
 import { Sheet, SheetClose, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuSub, SidebarRail, SidebarTrigger, useSidebar } from "../components/sidebar";
 import { Skeleton } from "../components/skeleton";
+import { HugeiconsIcon } from "@hugeicons/react";
+import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import { SidebarIcon } from "./sidebar-icons";
 import { SidebarTreeItem } from "./sidebar-tree-item";
 import { TagNavigation } from "./tag-navigation";
@@ -47,7 +53,7 @@ const filters: { id: NoteQuickFilter; label: string; icon: "hash" | "image" | "l
   { id: "links", label: "有链接", icon: "link" },
 ];
 
-export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, loadingTags = false, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, canTrash = false, vaultStatusText, hasVaultIssue, canCreate, canChooseVault, canCreateVault, needsPermission, working, onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize }: AppSidebarProps) {
+export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, loadingTags = false, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, canTrash = false, vaultStatusText, hasVaultIssue, canCreate, canChooseVault, canCreateVault, needsPermission, working, onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize, canRefresh = false, onRefresh, draftCount = 0, onOpenDrafts }: AppSidebarProps) {
   const { isMobile, setOpenMobile } = useSidebar();
   const navigate: AppSidebarProps["onNavigate"] = (nextView, nextTag, nextFilter) => {
     onNavigate(nextView, nextTag, nextFilter);
@@ -67,6 +73,8 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
     {canChooseVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(false)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="folder" /></span><span>打开已有笔记库</span></VaultMenuItem>}
     {canCreateVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(true)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="folderAdd" /></span><span>创建新笔记库</span></VaultMenuItem>}
     {needsPermission && <VaultMenuItem mobile={isMobile} disabled={working} onClick={action(onReauthorize)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="shield" /></span><span>重新授权文件夹</span></VaultMenuItem>}
+    {onRefresh && <VaultMenuItem mobile={isMobile} disabled={!canRefresh} onClick={action(onRefresh)}><span className="ui-sidebar-vault-icon"><HugeiconsIcon icon={RefreshIcon} className="size-4" aria-hidden="true" /></span><span>刷新笔记库</span></VaultMenuItem>}
+    {onOpenDrafts && draftCount > 0 && <VaultMenuItem mobile={isMobile} onClick={action(onOpenDrafts)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="notebook" /></span><span>保留草稿（{draftCount}）</span></VaultMenuItem>}
     <VaultMenuItem mobile={isMobile} onClick={() => navigate("settings")}><span className="ui-sidebar-vault-icon"><SidebarIcon name="settings" /></span><span>笔记库设置</span></VaultMenuItem>
     <VaultMenuItem mobile={isMobile} disabled={!connected || !canTrash} aria-current={view === "trash" ? "page" : undefined} onClick={() => navigate("trash")}><span className="ui-sidebar-vault-icon"><SidebarIcon name="trash" /></span><span>回收站</span></VaultMenuItem>
     <VaultMenuItem mobile={isMobile} disabled title="帮助功能暂未开放"><span className="ui-sidebar-vault-icon"><SidebarIcon name="help" /></span><span>帮助</span></VaultMenuItem>

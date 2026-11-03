@@ -276,16 +276,17 @@ describe("sidebar workspace actions", () => {
     expect(screen.getByRole("navigation", { name: "主要导航" })).toBeTruthy();
   });
 
-  it("connects the template page-actions menu to refresh and settings", async () => {
+  it("connects the vault menu to refresh and settings without desktop page actions", async () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
     const previousReads = bridge.request.mock.calls.filter(([operation]) => operation === "getStatus").length;
-    await user.click(screen.getByRole("button", { name: "页面操作" }));
+    expect(screen.queryByRole("button", { name: "页面操作" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: /^笔记库：/ }));
     await user.click(await screen.findByRole("menuitem", { name: "刷新笔记库" }));
     await waitFor(() => expect(bridge.request.mock.calls.filter(([operation]) => operation === "getStatus").length).toBeGreaterThan(previousReads));
-    await user.click(screen.getByRole("button", { name: "页面操作" }));
-    await user.click(await screen.findByRole("menuitem", { name: "设置" }));
+    await user.click(screen.getByRole("button", { name: /^笔记库：/ }));
+    await user.click(await screen.findByRole("menuitem", { name: "笔记库设置" }));
     expect(await screen.findByRole("heading", { name: "设置", level: 1 })).toBeTruthy();
   });
 

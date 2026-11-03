@@ -944,7 +944,7 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
-          "value": "var(--color-neutral-100)",
+          "value": "color-mix(in srgb, var(--color-neutral-100) 97%, var(--color-black))",
           "line": 16
         },
         {
@@ -956,7 +956,7 @@
         {
           "source": "apps/ui/ui/web/web-palette.css",
           "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
-          "value": "var(--color-slate-100)",
+          "value": "color-mix(in srgb, var(--color-slate-100) 97%, var(--color-black))",
           "line": 61
         },
         {

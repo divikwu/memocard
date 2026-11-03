@@ -157,9 +157,7 @@ it('shows an initial timeout below the heading and retries through a loading sta
   expect(screen.queryByRole('textbox',{name:'搜索当前视图笔记'})).toBeNull();
   expect(screen.queryByText('记下第一条笔记')).toBeNull();
   expect(screen.queryByText('等待连接本机服务')).toBeNull();
-  fireEvent.click(screen.getByRole('button',{name:'页面操作'}));
-  expect((await screen.findByRole('menuitem',{name:'新建笔记'})).getAttribute('aria-disabled')).not.toBe('true');
-  await userEvent.keyboard('{Escape}');
+  expect(screen.getByRole('button',{name:'新建笔记'})).toHaveProperty('disabled',false);
   let finish!:()=>void;
   fixture.request.mockImplementation(async(op,params)=>{
     if(op === 'queryNotes')await new Promise<void>(resolve=>{finish=resolve;});

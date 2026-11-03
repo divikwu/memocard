@@ -112,7 +112,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
     {s.nativeChrome && <Suspense fallback={null}><IOSAppChrome {...s.nativeChrome} /></Suspense>}
     <a className="web-skip-link" href="#web-main-content" onClick={event => { event.preventDefault(); s.scrollContainer.current?.focus(); }}>跳到笔记内容</a>
     <SidebarProvider open={s.sidebarOpen} onOpenChange={s.onSidebarOpenChange} openMobile={s.menuOpen} onOpenMobileChange={s.onMenuOpenChange} persistState={false} className="web-app-shell">
-      {!s.nativeChrome && <AppSidebar {...s.sidebar} />}
+      {!s.nativeChrome && <AppSidebar {...s.sidebar} canRefresh={s.canRefresh} onRefresh={s.isMobile ? undefined : s.onRefresh} draftCount={s.isMobile ? 0 : s.drafts.records.length} onOpenDrafts={() => s.drafts.onOpenChange(true)} />}
       <SidebarInset className="web-app-main">
         {!s.nativeChrome && <header className="web-app-header">
           <div className="web-header-leading">
@@ -125,12 +125,11 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           </div>
           <HeaderActions aria-label={mobileActions ? "页面操作组" : undefined} className="web-header-actions">
             {s.editor && s.capabilities.has("setNotePinned") && <TooltipProvider><Tooltip><TooltipTrigger render={<span className="web-pin-tooltip-trigger" tabIndex={s.pinDisabled ? 0 : undefined} />}><Button variant="ghost" size="icon" className={`web-header-icon${s.pinned ? " text-accent" : ""}`} aria-label={s.pinned ? "取消固定" : "固定到主页"} aria-description={!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : undefined} aria-pressed={s.pinned} disabled={s.pinDisabled} onClick={s.onTogglePin}><HugeiconsIcon icon={PinIcon} fill={s.pinned ? "currentColor" : "none"} aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>{!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : s.pinned ? "取消固定" : "固定到主页"}</TooltipContent></Tooltip></TooltipProvider>}
-            <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="web-header-icon" aria-label="页面操作" />}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56" finalFocus={() => { if (menuDelete.current) { menuDelete.current = false; s.onRequestDelete?.(); return false; } return true; }}>
-              <DropdownMenuItem disabled={!s.canCreate} onClick={() => void s.onNew()}><AddIcon aria-hidden="true" />新建笔记</DropdownMenuItem><DropdownMenuItem disabled={!s.canRefresh} onClick={s.onRefresh}><HugeiconsIcon icon={RefreshIcon} className={s.loading ? "animate-spin motion-reduce:animate-none" : undefined} aria-hidden="true" />刷新笔记库</DropdownMenuItem>
+            {(s.isMobile || (s.detailView && Boolean(s.onRequestDelete))) && <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="web-header-icon" aria-label="页面操作" />}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56" finalFocus={() => { if (menuDelete.current) { menuDelete.current = false; s.onRequestDelete?.(); return false; } return true; }}>
+              {s.isMobile && <><DropdownMenuItem disabled={!s.canCreate} onClick={() => void s.onNew()}><AddIcon aria-hidden="true" />新建笔记</DropdownMenuItem><DropdownMenuItem disabled={!s.canRefresh} onClick={s.onRefresh}><HugeiconsIcon icon={RefreshIcon} className={s.loading ? "animate-spin motion-reduce:animate-none" : undefined} aria-hidden="true" />刷新笔记库</DropdownMenuItem></>}
               {s.onRequestDelete && <DropdownMenuItem variant="destructive" disabled={!s.canDeleteNote} onClick={() => { menuDelete.current = true; }}><DeleteIcon aria-hidden="true" />移入回收站</DropdownMenuItem>}
-              {s.drafts.records.length > 0 && <DropdownMenuItem onClick={() => s.drafts.onOpenChange(true)}>保留草稿（{s.drafts.records.length}）</DropdownMenuItem>}
-              <DropdownMenuSeparator /><DropdownMenuItem onClick={() => void s.onNavigate("settings")}><SettingsIcon aria-hidden="true" />设置</DropdownMenuItem>
-            </DropdownMenuContent></DropdownMenu>
+              {s.isMobile && <>{s.drafts.records.length > 0 && <DropdownMenuItem onClick={() => s.drafts.onOpenChange(true)}>保留草稿（{s.drafts.records.length}）</DropdownMenuItem>}<DropdownMenuSeparator /><DropdownMenuItem onClick={() => void s.onNavigate("settings")}><SettingsIcon aria-hidden="true" />设置</DropdownMenuItem></>}
+            </DropdownMenuContent></DropdownMenu>}
           </HeaderActions>
         </header>}
         <div ref={s.scrollContainer} id="web-main-content" tabIndex={-1} className={`web-app-scroll${s.detailView ? " note-page-scroll" : ""}`} data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined}><div className="web-page-content" data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined} data-view={s.view}>
