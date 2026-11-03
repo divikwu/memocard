@@ -742,7 +742,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null)) { cancelAnimationFrame(frame.current); frame.current = 0; setDropTop(null); } }}
   >
     <div ref={controlsRef} className="block-controls" data-heading={richBlockAt(editor, toolbar.pos)?.node.type.name === 'heading' && richSectionEnd(editor.state.doc, toolbar.pos) > toolbar.pos + editor.state.doc.nodeAt(toolbar.pos)!.nodeSize || undefined} style={{ top: toolbar.top, left: toolbar.left }}>
-      <button ref={gripRef} type="button" aria-label="内容块操作" title={gripTitle} disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
+      <button ref={gripRef} type="button" aria-label="内容块操作" data-ui-tooltip={gripTitle} disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
         if (editor.view.composing) { event.preventDefault(); return; }
         const selected = selectedRichBlocks(editor, toolbar.pos), row = isLayoutImage(editor.state.doc.nodeAt(toolbar.pos)) ? imageRow(editor, toolbar.pos) : null;
         if (row && selected.length === 1 && !event.altKey) { beginImageDrag(editor, toolbar.pos, event.nativeEvent); return; }

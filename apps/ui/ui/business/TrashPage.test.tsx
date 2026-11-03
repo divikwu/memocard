@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { resetStorybookBridge, setStorybookRequestHandler } from "../../test-support/bridge";
 import { TrashPage } from "./TrashPage";
+import { TooltipHints } from "../components/tooltip";
 
 let detach: (() => void) | undefined;
 const style = document.createElement("style");
@@ -35,12 +36,16 @@ it("keeps long titles and deep paths on one line while exposing their full value
     throw new Error(operation);
   });
   detach = setStorybookRequestHandler(request);
-  render(<TrashPage vaultId="fixture" vaultBinding="binding" refreshVersion={0} onRestored={vi.fn()} />);
+  render(<TooltipHints><TrashPage vaultId="fixture" vaultBinding="binding" refreshVersion={0} onRestored={vi.fn()} /></TooltipHints>);
   const open = await screen.findByRole("button", { name: `查看已删除笔记：${note.title}` });
   const heading = within(open).getByRole("heading", { name: note.title });
   const path = within(open).getByText(note.relativePath);
   for (const [element, fullText] of [[heading, note.title], [path, note.relativePath]] as const) {
-    expect(element.getAttribute("title")).toBe(fullText);
+    Object.defineProperties(element, { clientWidth: { value: 160 }, scrollWidth: { value: 1600 } });
+    expect(element.hasAttribute("title")).toBe(false);
+    await user.hover(element);
+    expect((await screen.findByRole("tooltip")).textContent).toBe(fullText);
+    await user.unhover(element);
     expect(getComputedStyle(element).whiteSpace).toBe("nowrap");
     expect(getComputedStyle(element).overflow).toBe("hidden");
     expect(getComputedStyle(element).textOverflow).toBe("ellipsis");

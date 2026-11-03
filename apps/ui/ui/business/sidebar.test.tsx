@@ -42,6 +42,8 @@ it("keeps selection and expansion independent and supports keyboard row selectio
 it("preserves note filters, counts, tag navigation and creation/search entry callbacks", async () => {
   const user = userEvent.setup();
   const args = mount();
+  expect(document.querySelectorAll("button[title]")).toHaveLength(0);
+  expect(screen.getByRole("button", { name: "项目/MemoCard" }).hasAttribute("data-ui-tooltip")).toBe(false);
   await user.click(screen.getByRole("button", { name: "展开或收起快捷筛选" }));
   const images = screen.getByRole("button", { name: "有图片" });
   expect(images.getAttribute("aria-description")).toBe("4 条笔记");

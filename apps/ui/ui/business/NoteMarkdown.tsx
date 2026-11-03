@@ -113,7 +113,7 @@ export function MermaidContent({ source, children }: { source: string; children:
   const [mode, setMode] = useState("both");
   const grouped = useMobileActionGroup();
   const modes = <TabsList contentEditable={false} aria-label="Mermaid 显示模式" activateOnFocus>
-    {mermaidModes.map(({ value, label, icon }) => <TabsTrigger key={value} value={value} aria-label={label} title={label}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></TabsTrigger>)}
+    {mermaidModes.map(({ value, label, icon }) => <TabsTrigger key={value} value={value} aria-label={label} data-ui-tooltip={label}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></TabsTrigger>)}
   </TabsList>;
   return <Tabs className="ui-note-mermaid" value={mode} onValueChange={setMode}>
     <div className="note-mermaid-toolbar" contentEditable={false}>

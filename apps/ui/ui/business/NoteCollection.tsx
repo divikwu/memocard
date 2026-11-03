@@ -16,6 +16,7 @@ import { Input } from "../components/input";
 import { Skeleton } from "../components/skeleton";
 import { Spinner } from "../components/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants, tabsTriggerStyles } from "../components/tabs";
+import { TooltipHints } from "../components/tooltip";
 import { AddIcon, CloseIcon, DocumentIcon, SearchIcon } from "../icons";
 import { cn } from "../lib/utils";
 import "./NoteCollection.css";
@@ -24,6 +25,7 @@ const NotePreview = recoverableLazy(() => import("./NotePreview").then(module =>
 export type NoteCollectionProps = {
   home?: { tab: "recent" | "pinned"; pinnedCount: number; onTabChange: (tab: "recent" | "pinned") => void };
   notes: Note[];
+  activeTag?: string | null;
   loading?: boolean;
   searching?: boolean;
   query: string;
@@ -56,20 +58,21 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
   </div>;
 }
 
-export function NoteCollection({ home, notes, loading = false, searching = false, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
+export function NoteCollection({ home, notes, activeTag, loading = false, searching = false, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
   const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
   const cards = layout === "cards";
   const layoutButtons = <div role="group" aria-label={home ? "主页布局" : "笔记布局"} data-variant="default" className={cn(tabsListVariants(), "ui-note-layout")}>
-    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="卡片布局" title="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
-    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="列表布局" title="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
+    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="卡片布局" data-ui-tooltip="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
+    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="列表布局" data-ui-tooltip="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
   </div>;
-  const content = <>
+  const content = <TooltipHints>
     {loading && <span role="status" aria-label={searching ? "正在搜索笔记" : "正在读取笔记库"} className="sr-only">{searching ? "正在搜索笔记…" : "正在读取笔记库…"}</span>}
     <div className="ui-note-results" aria-busy={loading}>
       {notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={cn("ui-note-items", cards ? "ui-note-cards" : "ui-note-list")}>
         {notes.map(note => {
           const title = note.title?.trim() || "新内容";
           const date = home ? note.updatedAt : note.createdAt;
+          const tags = note.tags.filter(name => name !== activeTag);
           return <li key={note.id} data-note-id={note.id}>
             <Card className={cn("ui-note-card", cards && canOpen && "ui-card-hover-shadow ui-card-hover-scale", !cards && "ui-note-list-card shadow-none ring-0")} data-note-openable={canOpen}>
               <CardContent className={cn("ui-note-content", !cards && "ui-note-list-content")}>
@@ -83,9 +86,9 @@ export function NoteCollection({ home, notes, loading = false, searching = false
                   </button>
                 </h2>}
                 {cards && <div className="ui-note-preview"><Suspense fallback={<Skeleton className="h-full w-full rounded-lg" />}><NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={onError} /></Suspense></div>}
-                {note.tags.length > 0 && <div className="ui-note-tags">
-                  {note.tags.slice(0, 2).map(name => <Badge key={name} variant="secondary" className="ui-note-tag" render={<button type="button" />} aria-label={`筛选标签 ${name}`} title={name} data-tag={encodeURIComponent(name)} onClick={() => onSelectTag(name)}><span>{name}</span></Badge>)}
-                  {note.tags.length > 2 && <span className="ui-note-tag-count" aria-label={`另有 ${note.tags.length - 2} 个标签`}>+{note.tags.length - 2}</span>}
+                {tags.length > 0 && <div className="ui-note-tags">
+                  {tags.slice(0, 2).map(name => <Badge key={name} variant="secondary" className="ui-note-tag" render={<button type="button" />} aria-label={`筛选标签 ${name}`} data-ui-tooltip={name} data-tag={encodeURIComponent(name)} onClick={() => onSelectTag(name)}><span data-ui-tooltip-overflow={!cards || !name.includes("/") || undefined}>{cards ? name.split("/").at(-1) : name}</span></Badge>)}
+                  {tags.length > 2 && <span className="ui-note-tag-count" aria-label={`另有 ${tags.length - 2} 个标签`}>+{tags.length - 2}</span>}
                 </div>}
               </CardContent>
             </Card>
@@ -97,7 +100,7 @@ export function NoteCollection({ home, notes, loading = false, searching = false
       </Empty>}
       {hasMore && <div className="ui-note-pagination"><Button variant="outline" size="sm" aria-label="加载更多" aria-busy={paging} onClick={onLoadMore} disabled={loadMoreDisabled || paging}>{paging ? <Spinner aria-hidden="true" /> : <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" strokeWidth={2} />}{paging ? "正在加载…" : "加载更多"}</Button>{paging && <span role="status" className="sr-only">正在加载更多笔记…</span>}</div>}
     </div>
-  </>;
+  </TooltipHints>;
 
   if (home) return <Tabs value={home.tab} onValueChange={value => { if (value === "recent" || value === "pinned") home.onTabChange(value); }} className="ui-note-collection" data-slot="note-collection">
     <div className="ui-note-toolbar"><div className="ui-note-home-tabs"><TabsList variant="line" activateOnFocus aria-label="主页内容"><TabsTrigger value="recent"><HugeiconsIcon icon={Clock03Icon} aria-hidden="true" strokeWidth={2} />最近更新</TabsTrigger><TabsTrigger value="pinned"><HugeiconsIcon icon={PinIcon} aria-hidden="true" strokeWidth={2} />已固定<span className="text-xs text-secondary tabular-nums">{home.pinnedCount}</span></TabsTrigger></TabsList></div><div className="ui-note-actions">{loading && notes.length > 0 && <Spinner aria-hidden="true" className="text-icon-secondary" />}{layoutButtons}</div></div>

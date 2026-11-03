@@ -20,11 +20,26 @@ const props = (overrides: Partial<NoteCollectionProps> = {}): NoteCollectionProp
 beforeEach(() => localStorage.clear());
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
+it("does not repeat a complete root tag in a tooltip", async () => {
+  const user = userEvent.setup();
+  render(<NoteCollection {...props({ notes: [{ ...note, tags: ["idea"] }] })} />);
+  await user.hover(screen.getByRole("button", { name: "筛选标签 idea" }));
+  expect(screen.queryByRole("tooltip")).toBeNull();
+});
+
 it("keeps card opening keyboard-accessible and tag filtering independent", async () => {
   const user = userEvent.setup();
   const options = props();
   render(<NoteCollection {...options} />);
   expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
+  const tag = screen.getByRole("button", { name: "筛选标签 area/coffee" });
+  expect(tag.textContent).toBe("coffee");
+  expect(tag.title).toBe("");
+  await user.hover(tag);
+  expect((await screen.findByRole("tooltip")).textContent).toBe("area/coffee");
+  expect(screen.getByRole("tooltip").id).toBe(tag.getAttribute("aria-describedby"));
+  await user.unhover(tag);
+  expect(screen.getAllByRole("button", { name: /^筛选标签 / })).toHaveLength(2);
   await user.click(screen.getByRole("button", { name: "筛选标签 area/coffee" }));
   expect(options.onSelectTag).toHaveBeenCalledWith("area/coffee");
   expect(options.onOpen).not.toHaveBeenCalled();
@@ -54,10 +69,23 @@ it("persists layout changes without removing tags or dates from list mode", asyn
   expect(screen.getByRole("list").getAttribute("data-layout")).toBe("list");
   expect(localStorage.getItem("memocard:note-layout")).toBe("list");
   expect(screen.getByRole("button", { name: "筛选标签 日常" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "筛选标签 area/coffee" }).textContent).toBe("area/coffee");
   expect(screen.getByText(note.createdAt).getAttribute("dateTime")).toBe(note.createdAt);
   view.unmount();
   render(<NoteCollection {...options} />);
   expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
+});
+
+it("omits the active tag before limiting visible tags and removes an empty tag row", () => {
+  const options = props({ activeTag: "area/coffee" });
+  const view = render(<NoteCollection {...options} />);
+  expect(screen.queryByRole("button", { name: "筛选标签 area/coffee" })).toBeNull();
+  expect(screen.getAllByRole("button", { name: /^筛选标签 / }).map(button => button.textContent)).toEqual(["日常", "配方"]);
+  expect(screen.queryByText("+1")).toBeNull();
+  view.rerender(<NoteCollection {...options} activeTag="area" />);
+  expect(screen.getByRole("button", { name: "筛选标签 area/coffee" }).textContent).toBe("coffee");
+  view.rerender(<NoteCollection {...options} notes={[{ ...note, tags: ["area/coffee"] }]} />);
+  expect(view.container.querySelector(".ui-note-tags")).toBeNull();
 });
 
 it("limits shared hover shadow and scale to openable cards", async () => {

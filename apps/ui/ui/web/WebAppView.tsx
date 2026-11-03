@@ -1,4 +1,4 @@
-import { Suspense, useRef, type ReactNode } from "react";
+import { Fragment, Suspense, useRef, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-labels";
 import { errorMessage } from "../../src/error-messages";
@@ -6,7 +6,7 @@ import { HomeMascot } from "../business/HomeMascot";
 import { Button } from "../components/button";
 import { ActionGroup, MobileActionGroupProvider } from "../components/action-group";
 import { isNative } from "../../src/bridge";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/breadcrumb";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../components/breadcrumb";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/empty";
@@ -14,7 +14,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "../components/sid
 import { Separator } from "../components/separator";
 import { Skeleton } from "../components/skeleton";
 import { Spinner } from "../components/spinner";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, TooltipHints } from "../components/tooltip";
 import TagColorStyles from "../business/TagColorStyles";
 import { AppSidebar } from "../business/sidebar";
 import { MobileTagActions } from "../business/MobileTagActions";
@@ -109,7 +109,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
     {s.isMobile && s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
   </>;
   const searchControl = <Button variant={mobileActions ? "ghost" : "outline"} size="icon-lg" disabled={!s.search.available} onClick={s.onSearch} aria-label="搜索全部笔记" aria-haspopup="dialog" aria-expanded={s.search.open}><SearchIcon aria-hidden="true" /></Button>;
-  return <MobileActionGroupProvider enabled={mobileActions}><div className="ui-theme web-app sb-unstyled" data-ui-theme={mode} data-web-client={!s.nativeChrome && !isNative || undefined} data-native-chrome={s.nativeChrome ? "true" : undefined}>
+  return <TooltipHints><MobileActionGroupProvider enabled={mobileActions}><div className="ui-theme web-app sb-unstyled" data-ui-theme={mode} data-web-client={!s.nativeChrome && !isNative || undefined} data-native-chrome={s.nativeChrome ? "true" : undefined}>
     <TagColorStyles />
     {s.nativeChrome && <Suspense fallback={null}><IOSAppChrome {...s.nativeChrome} /></Suspense>}
     <a className="web-skip-link" href="#web-main-content" onClick={event => { event.preventDefault(); s.scrollContainer.current?.focus(); }}>跳到笔记内容</a>
@@ -121,8 +121,8 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
             {mobileActions ? <ActionGroup aria-label="页面导航" className="web-header-navigation">{navigationControls}</ActionGroup> : navigationControls}
             {showBreadcrumb && !s.isMobile && !s.sidebarOpen && <Separator orientation="vertical" className="web-header-separator" />}
             {showBreadcrumb && <Breadcrumb aria-label="当前位置" className="web-crumb" data-detail={s.detailView || undefined}><BreadcrumbList>{s.detailView ? <>
-              {detailBreadcrumbs.map((label, index) => <BreadcrumbItem key={index}>{index > 0 && <span aria-hidden="true">/</span>}<BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? tagParts.slice(0, index).join("/") : null)}>{label}</BreadcrumbLink></BreadcrumbItem>)}
-              <BreadcrumbItem><span aria-hidden="true">/</span><BreadcrumbPage title={s.title}>{s.title}</BreadcrumbPage></BreadcrumbItem>
+              {detailBreadcrumbs.map((label, index) => <Fragment key={index}>{index > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}<BreadcrumbItem><BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? tagParts.slice(0, index).join("/") : null)}>{label}</BreadcrumbLink></BreadcrumbItem></Fragment>)}
+              <BreadcrumbSeparator>/</BreadcrumbSeparator><BreadcrumbItem><BreadcrumbPage className="px-1" data-ui-tooltip={s.title} data-ui-tooltip-overflow>{s.title}</BreadcrumbPage></BreadcrumbItem>
             </> : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>}
           </div>
           <HeaderActions aria-label={mobileActions ? "页面操作组" : undefined} className="web-header-actions">
@@ -156,7 +156,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
     {!s.nativeChrome && <Drafts state={s} />}
     {s.nativeChrome && s.capture && <Suspense fallback={null}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
     {s.notice && <div className="web-toast" data-record-bar={s.isMobile && !s.detailView && (s.view === "home" || s.view === "notes") || undefined} role="status"><CheckIcon aria-hidden="true" />{s.notice}</div>}
-  </div></MobileActionGroupProvider>;
+  </div></MobileActionGroupProvider></TooltipHints>;
 }
 
 function Drafts({ state: s }: { state: AppViewState }) {

@@ -134,7 +134,7 @@ function OutlineNavigation({ editor, headings, host, scroller }: { editor: Edito
         <PopoverContent className="ui-note-outline-popup" side="left" align="start" sideOffset={0} collisionPadding={16} initialFocus={type => type === "keyboard" ? navigation.current?.querySelector<HTMLElement>("[aria-current]") ?? true : false} finalFocus={type => type === "keyboard"}>
           <PopoverTitle className="sr-only">笔记目录</PopoverTitle>
           <nav ref={navigation} aria-label="笔记目录"><ol>{headings.map(item => <li key={item.pos} style={{ "--outline-depth": item.level - minLevel } as CSSProperties}>
-            <Button variant="ghost" className="ui-note-outline-link" aria-current={item.pos === active ? "location" : undefined} onClick={() => jump(item)} title={item.text}>{item.text}</Button>
+            <Button variant="ghost" className="ui-note-outline-link" aria-current={item.pos === active ? "location" : undefined} onClick={() => jump(item)}>{item.text}</Button>
           </li>)}</ol></nav>
         </PopoverContent>
       </Popover>

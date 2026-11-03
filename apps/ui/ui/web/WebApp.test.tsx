@@ -96,7 +96,10 @@ it("keeps a home-opened note under the home breadcrumb", async () => {
   await waitFor(() => expect(current.textContent).toBe("新内容"));
   await user.type(screen.getByRole("textbox", { name: "页面标题" }), "新的手冲记录");
   await waitFor(() => expect(current.textContent).toBe("新的手冲记录"));
-  expect(current.title).toBe("新的手冲记录");
+  expect(current.title).toBe("");
+  await user.hover(current);
+  expect(screen.queryByRole("tooltip")).toBeNull();
+  await user.unhover(current);
   expect(screen.queryByRole("button", { name: "返回主页" })).toBeNull();
   await user.click(within(breadcrumb).getByRole("button", { name: "主页" }));
   await screen.findByRole("button", { name: "打开 新的手冲记录" });
@@ -148,6 +151,8 @@ it("uses the selected tag hierarchy and blocks ancestor navigation when saving f
   const user = userEvent.setup();
   const { request } = await mount();
   await user.click((await screen.findAllByRole("button", { name: "筛选标签 生活/咖啡" }))[0]);
+  await screen.findByRole("heading", { name: "# 生活/咖啡", level: 1 });
+  expect(screen.queryByRole("button", { name: "筛选标签 生活/咖啡" })).toBeNull();
   await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
   const field = await screen.findByRole("textbox", { name: "笔记内容" });
   const breadcrumb = screen.getByRole("navigation", { name: "当前位置" });

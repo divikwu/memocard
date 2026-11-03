@@ -17,6 +17,7 @@ import { Button } from "../components/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "../components/card";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../components/select";
 import { cn } from "../lib/utils";
+import { TooltipHints } from "../components/tooltip";
 import { PreviewModeProvider } from "../preview-mode";
 import "../styles.css";
 import "../preview-appearance.css";
@@ -66,25 +67,25 @@ function Preview() {
   const homeUrl = `/?theme=${theme}`;
   const frameUrl = scenario ? `/client.html?scenario=${scenario.id}&theme=${theme}&delay=${delay}` : "";
   const scenarioItems = category?.scenarios.map((item, i) => ({ value: item.id, label: `${String(i + 1).padStart(2, "0")} · ${item.label}` })) ?? [];
-  return <PreviewModeProvider mode={theme}>
+  return <PreviewModeProvider mode={theme}><TooltipHints>
     <div className={cn("ui-theme ui-preview", category ? "ui-preview-workbench" : "ui-preview-home")} data-ui-theme={theme}>
       <header className="ui-preview-header">
-        <div className="ui-preview-brand">{category ? <><Button role="link" nativeButton={false} variant="outline" size="icon" render={<a href={homeUrl} />} aria-label="返回验收首页" title="返回验收首页"><HugeiconsIcon icon={Home01Icon} strokeWidth={2} aria-hidden="true" /></Button><h1 id="ui-preview-title" className="text-base font-medium">{category.title}验收</h1></> : <><img src="/favicon.png" alt="" className="size-7 shrink-0 object-contain" /><span className="text-base">MemoCard UI</span></>}</div>
+        <div className="ui-preview-brand">{category ? <><Button role="link" nativeButton={false} variant="outline" size="icon" render={<a href={homeUrl} />} aria-label="返回验收首页" data-ui-tooltip="返回验收首页"><HugeiconsIcon icon={Home01Icon} strokeWidth={2} aria-hidden="true" /></Button><h1 id="ui-preview-title" className="text-base font-medium">{category.title}验收</h1></> : <><img src="/favicon.png" alt="" className="size-7 shrink-0 object-contain" /><span className="text-base">MemoCard UI</span></>}</div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon-sm" aria-label={theme === "light" ? "切换深色主题" : "切换浅色主题"} title={theme === "light" ? "切换深色主题" : "切换浅色主题"} onClick={() => update({ theme: theme === "light" ? "dark" : "light" })}><HugeiconsIcon icon={theme === "light" ? Moon02Icon : Sun03Icon} strokeWidth={2} aria-hidden="true" /></Button>
+          <Button variant="ghost" size="icon-sm" aria-label={theme === "light" ? "切换深色主题" : "切换浅色主题"} data-ui-tooltip={theme === "light" ? "切换深色主题" : "切换浅色主题"} onClick={() => update({ theme: theme === "light" ? "dark" : "light" })}><HugeiconsIcon icon={theme === "light" ? Moon02Icon : Sun03Icon} strokeWidth={2} aria-hidden="true" /></Button>
         </div>
       </header>
       {category && scenario ? <>
         <section className="ui-preview-controls" aria-labelledby="ui-preview-title">
           <div className="flex items-center gap-1" role="group" aria-label="场景导航">
-            <Button variant="outline" size="icon" aria-label="上一项" title="上一项" disabled={index === 0} onClick={() => update({ scenario: category.scenarios[index - 1] })}><HugeiconsIcon icon={ArrowLeft02Icon} strokeWidth={2} aria-hidden="true" /></Button>
-            <Button variant="outline" size="icon" aria-label="下一项" title="下一项" disabled={index === category.scenarios.length - 1} onClick={() => update({ scenario: category.scenarios[index + 1] })}><HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" /></Button>
-            <Button variant="outline" size="icon" aria-label="重置场景" title="重置场景" onClick={() => setRevision(value => value + 1)}><HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" /></Button>
+            <Button variant="outline" size="icon" aria-label="上一项" data-ui-tooltip="上一项" disabled={index === 0} onClick={() => update({ scenario: category.scenarios[index - 1] })}><HugeiconsIcon icon={ArrowLeft02Icon} strokeWidth={2} aria-hidden="true" /></Button>
+            <Button variant="outline" size="icon" aria-label="下一项" data-ui-tooltip="下一项" disabled={index === category.scenarios.length - 1} onClick={() => update({ scenario: category.scenarios[index + 1] })}><HugeiconsIcon icon={ArrowRight02Icon} strokeWidth={2} aria-hidden="true" /></Button>
+            <Button variant="outline" size="icon" aria-label="重置场景" data-ui-tooltip="重置场景" onClick={() => setRevision(value => value + 1)}><HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" /></Button>
           </div>
           <div className="ui-preview-toolbar">
             <div className="ui-preview-scenario-select">
               <Select items={scenarioItems} value={scenario.id} onValueChange={id => { const next = category.scenarios.find(item => item.id === id); if (next) update({ scenario: next }); }}>
-                <SelectTrigger aria-label="验收场景" className="w-full min-w-0" title={scenario.label}><SelectValue><span className="truncate">{scenarioItems[index]?.label}</span></SelectValue></SelectTrigger>
+                <SelectTrigger aria-label="验收场景" className="w-full min-w-0"><SelectValue><span className="truncate" data-ui-tooltip={scenario.label} data-ui-tooltip-overflow>{scenarioItems[index]?.label}</span></SelectValue></SelectTrigger>
                 <SelectContent align="start" className="ui-preview-scenario-menu">
                   {[...new Set(category.scenarios.map(item => item.group))].map(group => <SelectGroup key={group}><SelectLabel>{group}</SelectLabel>{category.scenarios.map((item, i) => item.group === group ? <SelectItem key={item.id} value={item.id}>{scenarioItems[i].label}</SelectItem> : null)}</SelectGroup>)}
                 </SelectContent>
@@ -113,7 +114,7 @@ function Preview() {
         </nav>
       </main>}
     </div>
-  </PreviewModeProvider>;
+  </TooltipHints></PreviewModeProvider>;
 }
 
 const root = createRoot(document.getElementById("root")!);

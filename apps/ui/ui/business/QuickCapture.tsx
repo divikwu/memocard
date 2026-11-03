@@ -44,7 +44,7 @@ export function QuickCapture(props: QuickCaptureProps) {
         return <div className="ui-capture-image" key={image.relativePath}>{source && <Suspense fallback={<span role="status" className="text-xs text-secondary">正在读取图片…</span>}><VaultImage source={source} alt={`待记录图片 ${index + 1}`} interactive={!blocked} /></Suspense>}<Button type="button" size="icon-xs" variant="secondary" disabled={blocked} aria-label={`移除图片 ${index + 1}`} onClick={() => { const current = captureCurrent.current; changeCapture({ ...current, images: current.images.filter((_, item) => item !== index) }); }}><Icon name="close" /></Button></div>;
       })}</div>}
       <InputGroupAddon align="block-end" className="ui-capture-footer">
-        <Popover open={tagPickerOpen} onOpenChange={setTagPickerOpen}><PopoverTrigger render={<InputGroupButton size="sm" className="ui-capture-tool" disabled={blocked} aria-label="选择标签" title="选择标签" />}><Icon name="tag" /><span>标签</span></PopoverTrigger>
+        <Popover open={tagPickerOpen} onOpenChange={setTagPickerOpen}><PopoverTrigger render={<InputGroupButton size="sm" className="ui-capture-tool" disabled={blocked} aria-label="选择标签" />}><Icon name="tag" /><span>标签</span></PopoverTrigger>
           <PopoverContent align="start" className="ui-capture-tag-picker" aria-label="选择标签" finalFocus={textarea}>
             <Input aria-label="搜索或新建标签" placeholder="搜索或新建标签" value={tagQuery} disabled={blocked} onChange={event => setTagQuery(event.target.value)} />
             <div className="ui-capture-tag-options">{matches.map(tag => <Button type="button" key={tag} variant="ghost" size="sm" disabled={blocked} aria-pressed={capture.tags.includes(tag)} onClick={() => toggleTag(tag)}><Icon name="tag" /><span>{tag}</span>{capture.tags.includes(tag) && <Icon name="check" />}</Button>)}
@@ -53,7 +53,7 @@ export function QuickCapture(props: QuickCaptureProps) {
             </div>
           </PopoverContent>
         </Popover>
-        <InputGroupButton size="sm" className="ui-capture-tool" disabled={blocked || !canImage} aria-label="添加图片" title="添加图片" onClick={() => void image()}><Icon name="image" /><span>图片</span></InputGroupButton>
+        <InputGroupButton size="sm" className="ui-capture-tool" disabled={blocked || !canImage} aria-label="添加图片" onClick={() => void image()}><Icon name="image" /><span>图片</span></InputGroupButton>
         <InputGroupButton type="submit" variant="default" size="sm" className="ui-capture-submit" disabled={!canRecord} aria-label={busy ? "处理中" : "记录"}><Icon name={busy ? "loading" : "send"} className={busy ? "size-4 animate-spin motion-reduce:animate-none" : undefined} /><span>{busy ? "处理中" : "记录"}</span></InputGroupButton>
       </InputGroupAddon>
     </InputGroup>

@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import type { AppViewState } from "../../src/App";
 import { resetStorybookBridge, setStorybookClientMode } from "../../test-support/bridge";
 import { WebSettings } from "./WebSettings";
+import { TooltipHints } from "../components/tooltip";
 
 afterEach(() => { cleanup(); resetStorybookBridge(); });
 
@@ -20,8 +21,13 @@ function state() {
 it("keeps file count units, zero values, full vault names and the same index timestamp in the expandable status", async () => {
   const user = userEvent.setup();
   const model = state();
-  const view = render(<WebSettings state={model} />);
-  expect(screen.getByText(model.status!.vaultName!).getAttribute("title")).toBe(model.status!.vaultName);
+  const view = render(<TooltipHints><WebSettings state={model} /></TooltipHints>);
+  const vaultName = screen.getByText(model.status!.vaultName!);
+  Object.defineProperties(vaultName, { clientWidth: { value: 160 }, scrollWidth: { value: 1600 } });
+  expect(vaultName.hasAttribute("title")).toBe(false);
+  await user.hover(vaultName);
+  expect((await screen.findByRole("tooltip")).textContent).toBe(model.status!.vaultName);
+  await user.unhover(vaultName);
   const summary = screen.getByText("本机文件状态");
   const details = summary.closest("details")!;
   expect(details.open).toBe(false);
@@ -35,10 +41,10 @@ it("keeps file count units, zero values, full vault names and the same index tim
   await user.tab();
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "恢复默认风格" }));
   model.status!.coverage.indexedAt = "invalid";
-  view.rerender(<WebSettings state={model} />);
+  view.rerender(<TooltipHints><WebSettings state={model} /></TooltipHints>);
   expect(within(details).getByText("时间未知")).toBeTruthy();
   model.status!.coverage.indexedAt = null;
-  view.rerender(<WebSettings state={model} />);
+  view.rerender(<TooltipHints><WebSettings state={model} /></TooltipHints>);
   expect(within(details).getByText("—")).toBeTruthy();
 });
 
@@ -64,7 +70,7 @@ it("keeps the local-host authorization explanation distinct from a browser-owned
   const model = state();
   const detach = setStorybookClientMode("local-web");
   const view = render(<WebSettings state={model} />);
-  expect(screen.getByText("由 MemoCard 本机宿主授权，笔记与图片直接保存在所选文件夹中。")).toBeTruthy();
+  expect(screen.getByText("笔记与图片保存在 MemoCard 已授权的文件夹中。")).toBeTruthy();
   detach();
   const detachBrowser = setStorybookClientMode("browser");
   view.rerender(<WebSettings state={model} />);

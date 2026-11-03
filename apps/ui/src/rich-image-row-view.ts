@@ -38,7 +38,7 @@ export function imageRowView({ node, editor, getPos }: NodeViewRendererProps) {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'rich-image-column-resize';
         button.setAttribute('role', 'separator'); button.setAttribute('aria-orientation', 'vertical'); button.setAttribute('aria-label', `调整第 ${i + 1}、${i + 2} 列宽度`);
         button.setAttribute('aria-valuemin', '15'); button.setAttribute('aria-valuemax', '85');
-        button.title = '拖动调整列宽；方向键微调；双击等宽';
+        button.setAttribute('data-ui-tooltip', '拖动调整列宽；方向键微调；双击等宽');
         button.addEventListener('pointerdown', event => {
           const pos = getPos(), row = pos == null ? null : imageRow(editor, pos);
           if (gesture || event.button !== 0 || !editor.isEditable || editor.view.composing || !row) return;

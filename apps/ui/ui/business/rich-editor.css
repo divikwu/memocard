@@ -63,7 +63,7 @@
 @media (hover: hover) {
 :where(.ui-rich-ui):is(.rich-editor:hover .block-controls), :where(.ui-rich-ui) :is(.rich-editor:hover .block-controls) { opacity: 1; }
 :where(.ui-rich-ui):is(.rich-editor:where([data-typing]):hover .block-controls), :where(.ui-rich-ui) :is(.rich-editor:where([data-typing]):hover .block-controls) { opacity: .25; }
-:where(.ui-rich-ui):is(.rich-editor .block-controls:hover, .rich-editor .block-controls:focus-within, .rich-editor[data-menu-open] .block-controls), :where(.ui-rich-ui) :is(.rich-editor .block-controls:hover, .rich-editor .block-controls:focus-within, .rich-editor[data-menu-open] .block-controls) { opacity: 1; }
+:where(.ui-rich-ui):is(.rich-editor .block-controls:hover, .rich-editor .block-controls:has(:focus-visible), .rich-editor[data-menu-open] .block-controls), :where(.ui-rich-ui) :is(.rich-editor .block-controls:hover, .rich-editor .block-controls:has(:focus-visible), .rich-editor[data-menu-open] .block-controls) { opacity: 1; }
 }
 :where(.ui-rich-ui):is(.rich-math), :where(.ui-rich-ui) :is(.rich-math) { position: relative; }
 :where(.ui-rich-ui):is(.rich-math-block), :where(.ui-rich-ui) :is(.rich-math-block) { display: block; margin-block-start: var(--typeset-flow); text-align: center; }
@@ -134,7 +134,7 @@
 :where(.ui-rich-ui):is(.rich-image-tools), :where(.ui-rich-ui) :is(.rich-image-tools) { position: absolute; top: 8px; right: 8px; z-index: 2; display: flex; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-full); background: var(--color-background-popover); color: var(--color-text-primary); opacity: 0; }
 :where(.ui-rich-ui):is(.rich-image-tools > button), :where(.ui-rich-ui) :is(.rich-image-tools > button) { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-full); }
 :where(.ui-rich-ui):is(.rich-image-tools > button:hover), :where(.ui-rich-ui) :is(.rich-image-tools > button:hover) { background: var(--color-accent-muted); }
-:where(.ui-rich-ui):is(.rich-image-tools:focus-within, .rich-image-tools[data-open]), :where(.ui-rich-ui) :is(.rich-image-tools:focus-within, .rich-image-tools[data-open]) { opacity: 1; }
+:where(.ui-rich-ui):is(.rich-image-tools:has(:focus-visible), .rich-image-tools[data-open]), :where(.ui-rich-ui) :is(.rich-image-tools:has(:focus-visible), .rich-image-tools[data-open]) { opacity: 1; }
 :where(.ui-rich-ui):is(.rich-image-row), :where(.ui-rich-ui) :is(.rich-image-row) { position: relative; margin-block-start: var(--typeset-flow); }
 :where(.ui-rich-ui):is(.rich-image-row > figure), :where(.ui-rich-ui) :is(.rich-image-row > figure) { margin: 0; }
 :where(.ui-rich-ui):is(.rich-image-column-controls), :where(.ui-rich-ui) :is(.rich-image-column-controls) { position: absolute; inset: 0; pointer-events: none; }

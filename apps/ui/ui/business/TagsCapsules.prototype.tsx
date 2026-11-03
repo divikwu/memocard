@@ -71,7 +71,7 @@ export function TagsCapsulesPrototype() {
     const branch = variant === "D" && tags.some(child => child.path.startsWith(item.path + "/"));
     const expanded = !needle && opened.includes(item.path);
     return <div key={item.path} className={cn("tag-demo-chip", selected === item.path && "tag-demo-chip-selected")}>
-    <Button variant="ghost" className="tag-demo-chip-open" title={item.path} aria-label={branch ? `${expanded ? "收起" : "展开"}子标签 ${item.path}` : `选择标签 ${item.path}`} aria-pressed={branch ? undefined : selected === item.path} aria-expanded={branch ? expanded : undefined} aria-controls={branch && expanded ? `tag-demo-inline-${encodeURIComponent(item.path)}` : undefined} onClick={() => branch ? toggleInline(item.path) : setSelected(item.path)}>
+    <Button variant="ghost" className="tag-demo-chip-open" aria-label={branch ? `${expanded ? "收起" : "展开"}子标签 ${item.path}` : `选择标签 ${item.path}`} aria-pressed={branch ? undefined : selected === item.path} aria-expanded={branch ? expanded : undefined} aria-controls={branch && expanded ? `tag-demo-inline-${encodeURIComponent(item.path)}` : undefined} onClick={() => branch ? toggleInline(item.path) : setSelected(item.path)}>
       <span className="tag-demo-icon" aria-hidden="true">{item.icon || <SidebarIcon name="hash" />}</span>
       <span className="tag-demo-chip-text">{full || variant === "E" ? item.path : variant !== "C" ? tagName(item) : item.path.split("/").slice(1).join(" / ") || item.path}</span>
       {variant === "B" && tags.filter(other => tagName(other) === tagName(item)).length > 1 && <span className="tag-demo-chip-parent">{item.path.slice(0, item.path.lastIndexOf("/"))}</span>}

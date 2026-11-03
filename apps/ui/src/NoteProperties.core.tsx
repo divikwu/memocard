@@ -337,7 +337,7 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
     row.dataset.dropPosition = after ? 'after' : 'before'; dropTarget.current = row;
   }
   function grip(key:string) {
-    return canEdit && presentation.writable ? <button type="button" className="note-property-grip text-secondary" draggable={canArrange} disabled={busy || loading} aria-disabled={!canArrange || undefined} aria-label={`拖动属性 ${label(key)}`} title="拖动排序；也可使用上、下方向键" onKeyDown={event => {
+    return canEdit && presentation.writable ? <button type="button" className="note-property-grip text-secondary" draggable={canArrange} disabled={busy || loading} aria-disabled={!canArrange || undefined} aria-label={`拖动属性 ${label(key)}`} data-ui-tooltip="拖动排序；也可使用上、下方向键" onKeyDown={event => {
       if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
       event.preventDefault(); event.stopPropagation(); moveBy(key,event.key === 'ArrowUp' ? -1 : 1);
     }} onClick={event => {
@@ -370,13 +370,13 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
     const valueEditable = Boolean(property?.editable && (!note || data?.writable));
     const definitionEditable = !property || Boolean(valueEditable && note?.contentHash);
     const menu = canEdit && (!property || valueEditable || presentation.writable);
-    return <dt className="min-w-0"><div className="note-property-name-cell">{grip(key)}{menu ? <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" className="note-property-label note-property-name text-secondary" onFocus={event => { propertyTrigger.current = event.currentTarget; }} disabled={busy || loading || !labelData || (!definitionEditable && !presentation.writable)} aria-label={`属性菜单 ${name}`} />}><Icon /><span className="truncate" title={name}>{name}</span></DropdownMenuTrigger><DropdownMenuContent align="start" className="note-property-menu" finalFocus={() => {
+    return <dt className="min-w-0"><div className="note-property-name-cell">{grip(key)}{menu ? <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" className="note-property-label note-property-name text-secondary" onFocus={event => { propertyTrigger.current = event.currentTarget; }} disabled={busy || loading || !labelData || (!definitionEditable && !presentation.writable)} aria-label={`属性菜单 ${name}`} />}><Icon /><span className="truncate" data-ui-tooltip={name} data-ui-tooltip-overflow>{name}</span></DropdownMenuTrigger><DropdownMenuContent align="start" className="note-property-menu" finalFocus={() => {
       if (renaming || removing || editing || typeChange) return false;
       return hiddenKeys.has(key) && !open ? panelTrigger.current ?? false : true;
     }} aria-label={`管理属性 ${name}`}>
       {definitionEditable && <DropdownMenuItem onClick={() => renameLabel(key)}><Pencil />重命名</DropdownMenuItem>}
       {controls}{arrangementMenu(key)}
-    </DropdownMenuContent></DropdownMenu> : <span className="note-property-label text-secondary"><Icon /><span className="truncate" title={name}>{name}</span></span>}</div></dt>;
+    </DropdownMenuContent></DropdownMenu> : <span className="note-property-label text-secondary"><Icon /><span className="truncate" data-ui-tooltip={name} data-ui-tooltip-overflow>{name}</span></span>}</div></dt>;
   }
   function systemName(key:keyof typeof systemNames) { return nameCell(key,systemNames[key]); }
   async function apply(change:PropertyChange, keepOpen = false) {
@@ -458,7 +458,7 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
               else if (choice) setEditing(null);
               else if (details.reason !== 'escape-key') { details.cancel(); formRef.current?.requestSubmit(); }
               else setEditing(null);
-            }}><PopoverTrigger render={<Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} />}>{value}</PopoverTrigger><PopoverContent align="start" sideOffset={choice ? ({anchor}) => -anchor.height : undefined} aria-label={`编辑属性 ${name}`} className={choice ? 'note-property-popup note-tag-popup' : property.type === 'date' ? 'note-property-popup note-date-popup' : 'note-property-popup'}>{choice ? <ChoicePropertyEditor property={property} error={error} busy={busy || loading} onSave={apply} /> : <PropertyForm property={property} formRef={formRef} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} />}</PopoverContent></Popover> : <div className="note-property-value text-secondary" title={property.editable ? undefined : "此属性暂不支持编辑"}>{value} {!property.editable && <span className="text-xs">只读</span>}</div>}</dd>
+            }}><PopoverTrigger render={<Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} />}>{value}</PopoverTrigger><PopoverContent align="start" sideOffset={choice ? ({anchor}) => -anchor.height : undefined} aria-label={`编辑属性 ${name}`} className={choice ? 'note-property-popup note-tag-popup' : property.type === 'date' ? 'note-property-popup note-date-popup' : 'note-property-popup'}>{choice ? <ChoicePropertyEditor property={property} error={error} busy={busy || loading} onSave={apply} /> : <PropertyForm property={property} formRef={formRef} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} />}</PopoverContent></Popover> : <div className="note-property-value text-secondary">{value} {!property.editable && <span className="text-xs">只读</span>}</div>}</dd>
           </>);
   }
   const contextualError = Boolean(editing || adding || removing || renaming || typeChange);

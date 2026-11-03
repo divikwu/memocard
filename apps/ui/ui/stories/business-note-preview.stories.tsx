@@ -91,20 +91,24 @@ export const CompactText: Story = {
     await expect(canvas.getByText("正文中的 #工作 标签保留。")).toBeVisible();
     await expect(canvas.queryByText("#工作 #设计")).not.toBeInTheDocument();
     await waitFor(() => expect(canvasElement.querySelector("[data-overflow=true]")).not.toBeNull());
+    await expect(getComputedStyle(canvasElement.querySelector(".note-preview")!).overflow).toBe("hidden");
+    await expect(getComputedStyle(canvasElement.querySelector(".markdown")!).webkitLineClamp).toBe("none");
     await expect(canvas.queryByRole("button")).not.toBeInTheDocument();
   },
 };
 
 export const CompactTable: Story = {
-  name: "卡片 · 完整表格行裁切",
+  name: "卡片 · 表格按高度裁切",
   args: { compact: true, showTitle: false, body: `| 阶段 | 内容 | 状态 |\n| --- | --- | --- |\n${Array.from({ length: 12 }, (_, index) => `| ${index + 1} | 回顾与整理笔记 | 待处理 |`).join("\n")}` },
   render: args => <section aria-label="表格摘要容器" className="h-40 max-w-80"><NotePreview {...args} /></section>,
   play: async ({ canvasElement }) => {
-    await waitFor(() => expect(within(canvasElement).getByText("…")).toBeVisible());
-    const clip = canvasElement.querySelector<HTMLElement>("[style*='max-height']")!;
-    const bottom = clip.getBoundingClientRect().bottom;
-    const rows = [...canvasElement.querySelectorAll("tr")];
-    await expect(rows.every(row => row.getBoundingClientRect().top >= bottom - 1 || row.getBoundingClientRect().bottom <= bottom + 1)).toBe(true);
+    await waitFor(() => expect(canvasElement.querySelector("[data-overflow=true]")).not.toBeNull());
+    const preview = canvasElement.querySelector<HTMLElement>(".note-preview")!;
+    await expect(getComputedStyle(preview).overflow).toBe("hidden");
+    await expect(preview.clientHeight).toBe(160);
+    await expect(preview.scrollHeight).toBeGreaterThan(preview.clientHeight);
+    await expect(within(canvasElement).queryByText("…")).not.toBeInTheDocument();
+    await expect(canvasElement.querySelector("[style*='max-height']")).toBeNull();
   },
 };
 

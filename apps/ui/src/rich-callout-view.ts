@@ -19,7 +19,7 @@ export function calloutView({ node, editor, getPos }: NodeViewRendererProps, edi
     }
     button.textContent = current.attrs.icon || '+';
     button.setAttribute('aria-label', current.attrs.icon ? '更改标注图标' : '添加标注图标');
-    button.title = current.attrs.icon ? '更改图标' : '添加图标';
+    button.setAttribute('data-ui-tooltip', current.attrs.icon ? '更改图标' : '添加图标');
     button.hidden = !current.attrs.icon || !current.attrs.color || !editor.isEditable;
     return true;
   }

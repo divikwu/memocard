@@ -9,7 +9,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "
 import { LumaStoryFrame } from "../LumaPage";
 import { TagColorProvider } from "../../src/TagColorProvider";
 import TagColorStyles from "../business/TagColorStyles";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import "../business/note-search.css";
 
 const fixtures: Note[] = [
@@ -43,7 +43,7 @@ function CollectionFixture({ home = false, empty = false, loading: initialLoadin
     <header><h1 className="type-heading-1">{home ? "主页" : "所有笔记"}</h1><p className="mt-2 text-sm text-secondary">真实的本地交互示例：搜索、标签筛选、布局、分页、打开与新建。示例不连接笔记库。</p></header>
     {loading && <div><Button variant="outline" onClick={() => setLoading(false)}>完成读取</Button></div>}
     {tag && <div className="flex items-center gap-3 text-sm"><span>当前标签：{tag}</span><Button variant="ghost" size="sm" onClick={() => { setTag(null); setLimit(2); }}>清除标签筛选</Button></div>}
-    <NoteCollection home={home ? { tab, pinnedCount: notes.filter(note => pinned.has(note.id)).length, onTabChange: next => { setTab(next); setLimit(2); } } : undefined} notes={loading || error ? [] : filtered.slice(0, limit)} loading={loading} query={query} onQueryChange={value => { setQuery(value); setLimit(2); }} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={loading || Boolean(error)} hasMore={!loading && !error && filtered.length > limit} paging={false} loadMoreDisabled={false} canOpen={!loading && !error} canCreate={!loading && !error} onNewNote={create} onOpen={setOpened} onSelectTag={name => { setTag(name); setLimit(2); }} onLoadMore={() => setLimit(current => current + 2)} onError={setError} formatDate={value => new Date(value).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}>
+    <NoteCollection home={home ? { tab, pinnedCount: notes.filter(note => pinned.has(note.id)).length, onTabChange: next => { setTab(next); setLimit(2); } } : undefined} activeTag={tag} notes={loading || error ? [] : filtered.slice(0, limit)} loading={loading} query={query} onQueryChange={value => { setQuery(value); setLimit(2); }} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={loading || Boolean(error)} hasMore={!loading && !error && filtered.length > limit} paging={false} loadMoreDisabled={false} canOpen={!loading && !error} canCreate={!loading && !error} onNewNote={create} onOpen={setOpened} onSelectTag={name => { setTag(name); setLimit(2); }} onLoadMore={() => setLimit(current => current + 2)} onError={setError} formatDate={value => new Date(value).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}>
       {error ? <Empty className="border"><EmptyHeader><EmptyTitle>读取遇到问题</EmptyTitle><EmptyDescription><span role="alert">{error}</span></EmptyDescription></EmptyHeader><EmptyContent><Button variant="outline" onClick={() => setError(null)}>重试</Button></EmptyContent></Empty> : undefined}
     </NoteCollection>
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setOpened(null); }}><DialogContent className="max-h-[85svh] overflow-y-auto"><DialogHeader><DialogTitle>{selected?.title?.trim() || "新内容"}</DialogTitle><DialogDescription>本地示例笔记</DialogDescription></DialogHeader>{selected && <NotePreview body={selected.body} title={selected.title} showTitle={false} notePath={selected.relativePath} onError={setError} />}</DialogContent></Dialog>
@@ -92,5 +92,18 @@ export const ColoredTagsRegression: Story = {
     await expect(getComputedStyle(tag).color).toBe(getComputedStyle(probe).color);
     await expect(getComputedStyle(tag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
     probe.remove();
+    await expect(tag).not.toHaveAttribute("title");
+    await userEvent.hover(tag);
+    const tooltip = await within(canvasElement.ownerDocument.body).findByRole("tooltip");
+    await expect(tooltip).toHaveTextContent("area/coffee");
+    await userEvent.unhover(tag);
+    await waitFor(() => expect(tooltip).not.toBeVisible());
+    const open = within(canvasElement).getByRole("button", { name: "打开 今天的手冲记录" });
+    open.focus();
+    await userEvent.tab();
+    await expect(tag).toHaveFocus();
+    await expect(await within(canvasElement.ownerDocument.body).findByRole("tooltip")).toHaveTextContent("area/coffee");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(within(canvasElement.ownerDocument.body).queryByRole("tooltip")).not.toBeInTheDocument());
   },
 };

@@ -130,7 +130,7 @@ it("offers two sizes and advanced rhythm choices, and resets without changing UI
   expect(screen.queryByRole("button",{name:"随机搭配"})).toBeNull();
   const section=screen.getByRole("region", {name:"内容风格"});
   expect(section.querySelector("details")?.open).toBe(false);
-  expect(within(section.querySelector('[data-slot="card"]')!).getAllByRole("combobox")).toHaveLength(2);
+  expect(within(section.querySelector('[data-slot="card"]')!).getAllByRole("combobox").filter(control => !control.closest("details"))).toHaveLength(2);
   const user=userEvent.setup();
   await user.click(screen.getByRole("combobox",{name:"字号"}));
   expect((await screen.findAllByRole("option")).map(el=>el.textContent)).toEqual(["小字号（14px）","标准（16px）"]);

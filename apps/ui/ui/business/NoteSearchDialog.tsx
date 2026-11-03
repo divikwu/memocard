@@ -84,7 +84,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
               <div className="break-words">
                 <div className="ui-note-search-preview-heading flex items-start justify-between gap-3">
                   {(active.title || !active.body.trim()) && <h2 className="ui-note-search-preview-title min-w-0 flex-1">{active.title || "新内容"}</h2>}
-                  <Button variant="outline" size="icon-sm" className="ui-note-search-control ml-auto" aria-label="打开笔记" title="打开笔记" onClick={() => onOpenNote(active.id)}><HugeiconsIcon icon={ArrowUpRight01Icon} aria-hidden="true" /></Button>
+                  <Button variant="outline" size="icon-sm" className="ui-note-search-control ml-auto" aria-label="打开笔记" data-ui-tooltip="打开笔记" onClick={() => onOpenNote(active.id)}><HugeiconsIcon icon={ArrowUpRight01Icon} aria-hidden="true" /></Button>
                 </div>
                 <div inert><NoteMarkdown body={active.body || "还没有正文"} notePath={active.relativePath} onError={setPreviewError} /></div>
               </div>

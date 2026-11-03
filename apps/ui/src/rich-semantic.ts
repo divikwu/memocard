@@ -1,8 +1,10 @@
 import { Mark, Node, type Editor } from '@tiptap/react';
 import { DOMSerializer } from '@tiptap/pm/model';
+import { Plugin } from '@tiptap/pm/state';
 import { calloutColor, imageColumns } from './import-layout';
 import { calloutView, type CalloutIconTarget } from './rich-callout-view';
 import { imageRowView } from './rich-image-row-view';
+import { copyForNotion } from './rich-notion-clipboard';
 
 export const semanticTags = ['mark', 'abbr', 'kbd', 'sup', 'sub', 'figure', 'figcaption', 'aside'];
 export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (target: CalloutIconTarget) => void) {
@@ -17,6 +19,17 @@ export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (t
     name: tag, group: 'block', content: tag === 'figcaption' ? 'inline*' : 'block+',
     defining: true,
     ...(tag === 'aside' && editIcon ? { addNodeView: () => (props: Parameters<typeof calloutView>[0]) => calloutView(props, editIcon) } : {}),
+    ...(tag === 'aside' ? { addProseMirrorPlugins() {
+      const serializer = DOMSerializer.fromSchema(this.editor.schema);
+      return [new Plugin({ props: { handleDOMEvents: { copy: copyForNotion }, clipboardSerializer: new DOMSerializer({
+        ...serializer.nodes,
+        aside: node => {
+          // Generic block containers let external editors parse each child instead of flattening an aside.
+          const [, attrs] = serializer.nodes.aside(node) as [string, Record<string, unknown>, number];
+          return ['div', { ...attrs, 'data-memocard-aside': '' }, 0];
+        },
+      }, serializer.marks) } })];
+    } } : {}),
     ...(tag === 'figure' ? { addNodeView: () => imageRowView } : {}),
     addAttributes: () => tag === 'figure' ? {
       columns: { default: null, parseHTML: element => imageColumns(element.getAttribute('data-image-columns'))?.join(',') ?? null, renderHTML: attrs => imageColumns(attrs.columns) ? { 'data-image-columns': attrs.columns } : {} },
@@ -25,7 +38,7 @@ export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (t
       textColor: { default: null, parseHTML: element => calloutColor(element.getAttribute('data-callout-text-color')), renderHTML: attrs => calloutColor(attrs.textColor) ? { 'data-callout-text-color': attrs.textColor } : {} },
       icon: { default: null, parseHTML: element => { const icon = element.getAttribute('data-callout-icon'); return icon && icon.length <= 32 ? icon : null; }, renderHTML: attrs => attrs.icon ? { 'data-callout-icon': attrs.icon } : {} },
     } : {},
-    parseHTML: () => [{ tag }],
+    parseHTML: () => tag === 'aside' ? [{ tag }, { tag: 'div[data-memocard-aside]' }] : [{ tag }],
     renderHTML: ({ node, HTMLAttributes }) => [tag, { ...HTMLAttributes, ...(tag === 'aside' && node.attrs.color ? { role: 'note' } : {}), ...(tag === 'figure' && imageColumns(node.attrs.columns) ? { role: 'group', 'aria-label': '图片组', style: `grid-template-columns: ${imageColumns(node.attrs.columns)!.map(column => `${column}fr`).join(' ')}` } : {}) }, 0],
     renderMarkdown: node => {
       const editor = getEditor();

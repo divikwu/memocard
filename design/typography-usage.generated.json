@@ -532,6 +532,11 @@
           "value": "var(--font-family-heading)"
         },
         {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-title",
+          "value": "var(--font-family-heading)"
+        },
+        {
           "source": "apps/ui/ui/web/web-typography.css",
           "scope": ":root[data-web-typography] .ui-note-editor textarea.note-page-title",
           "value": "var(--font-family-heading)"
@@ -997,6 +1002,11 @@
           "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-collection-heading h1",
           "value": "var(--font-size-2xl)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-title",
+          "value": "var(--font-size-2xl)"
         }
       ]
     },
@@ -1316,11 +1326,6 @@
         {
           "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-mermaid-source pre",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-content.css",
-          "scope": ".note-preview-ellipsis",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2519,6 +2524,11 @@
         },
         {
           "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-file-status summary",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
           "value": "var(--font-weight-medium)"
         },
@@ -2672,6 +2682,11 @@
         {
           "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-collection-heading h1",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-title",
           "value": "var(--font-weight-semibold)"
         }
       ]
@@ -3589,6 +3604,11 @@
           "source": "apps/ui/ui/web/web-app.css",
           "scope": ".web-collection-heading h1",
           "value": "var(--text-heading-2-leading)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-title",
+          "value": "var(--text-heading-2-leading)"
         }
       ]
     },
@@ -3707,11 +3727,6 @@
         {
           "source": "apps/ui/ui/business/note-content.css",
           "scope": ".note-mermaid-source pre",
-          "value": "var(--text-supporting-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-content.css",
-          "scope": ".note-preview-ellipsis",
           "value": "var(--text-supporting-leading)"
         },
         {
