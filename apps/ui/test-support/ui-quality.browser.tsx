@@ -1631,11 +1631,29 @@ test("Web collection headings align with the sidebar brand and retain compact sp
         });
         expect(getComputedStyle(title.parentElement!).marginBottom).toBe("0px");
         expect(getComputedStyle(header, "::after").height).toBe("16px");
+        const content = title.closest(".web-page-content")!;
+        await waitFor(() => expect(content.querySelector(".ui-note-toolbar, .ui-tag-directory-toolbar")).not.toBeNull());
+        const toolbar = content.querySelector(".ui-note-toolbar, .ui-tag-directory-toolbar")!.getBoundingClientRect();
+        const search = content.querySelector(".ui-collection-search")!.getBoundingClientRect();
+        const results = content.querySelector(".ui-note-results, .ui-tag-directory-panel")!.getBoundingClientRect();
+        expect(search.left).toBeCloseTo(title.parentElement!.getBoundingClientRect().left, 1);
+        expect(toolbar.top - title.parentElement!.getBoundingClientRect().bottom).toBeCloseTo(8, 1);
+        expect(results.top - toolbar.bottom).toBeCloseTo(16, 1);
+        expect(search.width).toBeLessThanOrEqual(320);
+        expect(toolbar.right).toBeLessThanOrEqual(content.getBoundingClientRect().right);
       }
     }
     await userEvent.click(canvas.getByRole("button", {name: "收起侧栏"}));
-    await canvas.findByRole("button", {name: "展开侧栏"});
-    expect(header.getBoundingClientRect().height).toBe(56);
+    const expand = await canvas.findByRole("button", {name: "展开侧栏"});
+    const title = canvas.getByRole("heading", {name: "标签", level: 1});
+    await waitFor(() => {
+      const button = expand.getBoundingClientRect(), bounds = title.getBoundingClientRect();
+      expect(button.right).toBeLessThanOrEqual(bounds.left);
+      expect(button.top + button.height / 2).toBeCloseTo(bounds.top + bounds.height / 2, 1);
+      expect(header.getBoundingClientRect().height).toBe(0);
+    });
+    expect(expand.closest(".web-collection-heading")).toBe(title.parentElement);
+    await waitFor(() => expect(document.activeElement).toBe(expand));
     await page.viewport(390, 900);
     await waitFor(() => expect(within(header).getByRole("button", {name: "页面操作"})).toBeDefined());
     expect(header.getBoundingClientRect().height).toBe(56);

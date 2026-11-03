@@ -1425,6 +1425,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/business/NoteOutline.css",
+          "scope": ".ui-note-outline-popup .ui-note-outline-link",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1911,11 +1916,6 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-ui .rich-keyboard-hint",
-          "value": "var(--font-size-xs)"
-        },
-        {
           "source": "apps/ui/ui/business/sidebar.css",
           "scope": ".ui-sidebar-tree-row .ui-sidebar-row-actions > [data-sidebar=\"menu-badge\"]",
           "value": "var(--font-size-xs)"
@@ -2161,6 +2161,11 @@
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-card .ui-note-tags .ui-note-tag",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteOutline.css",
+          "scope": ".ui-note-outline-popup .ui-note-outline-link",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2989,11 +2994,6 @@
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-ui .rich-keyboard-hint",
-          "value": "1.5"
-        },
-        {
           "source": "apps/ui/ui/business/TagsPage.css",
           "scope": ".ui-tag-directory-name-form input",
           "value": "1.5"
@@ -3409,6 +3409,11 @@
           "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--text-body-leading)",
           "variable": "--typeset-leading"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteOutline.css",
+          "scope": ".ui-note-outline-popup .ui-note-outline-link",
+          "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/PageNotice.css",

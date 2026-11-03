@@ -1,6 +1,6 @@
 # 已使用组件维护表
 
-本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **91 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
+本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **92 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
 
 当前产品和唯一 Storybook 共用当前组件。iOS 的 SwiftUI/UIKit 导航、搜索、快速记录及系统确认通过表面协议保持；正文继续消费同一 Web 输出。共享core仍可直接消费Base UI/Tiptap，不称作无界面依赖的纯算法。
 
@@ -51,6 +51,7 @@
 | `apps/ui/ui/business/RichFormatTools.tsx` | 当前编辑器内部适配 | 格式、图片、Callout、代码或图标；保留选区/撤销契约 | editor / selection / content | `apps/ui/ui/business/RichAdapters.test.tsx`；`apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | 内部组合无需独立Story；触摸/IME与复杂选区另验 |
 | `apps/ui/ui/business/RichImageTools.tsx` | 当前编辑器内部适配 | 格式、图片、Callout、代码或图标；保留选区/撤销契约 | editor / selection / content | `apps/ui/ui/business/RichAdapters.test.tsx`；`apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | 内部组合无需独立Story；触摸/IME与复杂选区另验 |
 | `apps/ui/ui/business/RichMarkdownEditor.tsx` | 当前富文本适配 | Tiptap 事务、选区、块菜单、图片/链接/数学和折叠 | editor / typeset / selection | `apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/business/RichAdapters.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | 复杂输入法、触摸选区与所有语法组合未全覆盖 |
+| `apps/ui/ui/business/NoteOutline.tsx` | Web 笔记浮动目录 | 自动标题层级、悬停/键盘展开、跳转、滚动高亮与折叠章节定位 | navigation / editor / selection | `apps/ui/test-support/note-typography.browser.tsx` | 桌面 Web；移动端和原生不展示 |
 | `apps/ui/ui/business/TagColorStyles.tsx` | 当前标签样式接线 | 共享动态颜色规则与当前note-properties样式 | tag / color | `apps/ui/ui/business/tag-colors.test.tsx` | 全部颜色组合与跨窗口另验 |
 | `apps/ui/ui/business/TagsPage.tsx` | 当前标签目录 | 层级浏览、路径搜索、笔记计数、置顶、名称与图标编辑 | tag / table / state / responsive | `apps/ui/ui/business/TagsPage.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 真实大库性能、软键盘与辅助技术另验 |
 | `apps/ui/ui/business/TrashPage.tsx` | 当前回收站视图与原生投影 | 读取、只读预览、恢复、永久删除与确认/失败 | trash / state / destructive | `apps/ui/ui/business/TrashPage.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 真实回收文件和跨进程状态另验 |

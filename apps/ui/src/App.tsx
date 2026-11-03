@@ -78,7 +78,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     const restoreToggleFocus = document.activeElement?.getAttribute("data-slot") === "sidebar-trigger";
     setSidebarOpen(open);
     if (restoreToggleFocus) requestAnimationFrame(() => {
-      document.querySelector<HTMLButtonElement>(open ? '#desktop-sidebar [data-slot="sidebar-trigger"]' : 'main header [data-slot="sidebar-trigger"]')?.focus();
+      document.querySelector<HTMLButtonElement>(open ? '#desktop-sidebar [data-slot="sidebar-trigger"]' : 'main [data-slot="sidebar-trigger"]')?.focus();
     });
   }, []);
   const [searchOpen, setSearchOpen] = useState(false);

@@ -41,6 +41,11 @@ function roundedBox({ x, y, width, height, radii }: NonNullable<ReturnType<typeo
   return `M${x + tl} ${y}H${right - tr}A${tr} ${tr} 0 0 1 ${right} ${y + tr}V${bottom - br}A${br} ${br} 0 0 1 ${right - br} ${bottom}H${x + bl}A${bl} ${bl} 0 0 1 ${x} ${bottom - bl}V${y + tl}A${tl} ${tl} 0 0 1 ${x + tl} ${y}Z`;
 }
 
+export function richBlockHighlightPath(element: HTMLElement, origin: DOMRect) {
+  const box = blockHighlightBox(element, origin);
+  return box ? roundedBox(box) : '';
+}
+
 export function RichBlockHighlight({ editor, root }: { editor: Editor; root: RefObject<HTMLDivElement | null> }) {
   const { selection, doc } = useEditorState({ editor, selector: ({ editor }) => ({ selection: editor.state.selection, doc: editor.state.doc }) });
   const active = selection instanceof AllSelection || selection instanceof BlockRangeSelection || selection instanceof NodeSelection && selection.node.isBlock;
@@ -54,7 +59,7 @@ export function RichBlockHighlight({ editor, root }: { editor: Editor; root: Ref
     const update = () => {
       frame = 0;
       const origin = host.getBoundingClientRect();
-      setPath(elements.map(element => blockHighlightBox(element, origin)).filter(box => box !== null).map(roundedBox).join(''));
+      setPath(elements.map(element => richBlockHighlightPath(element, origin)).join(''));
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
     update();

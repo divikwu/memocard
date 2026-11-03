@@ -73,7 +73,7 @@ export function TagsPage({ tags, vaultId, loading, connected, disabled, canRenam
   return <section ref={directory} className="ui-tag-directory" aria-label="标签目录">
     <div className="ui-tag-directory-toolbar">
       <div className="ui-collection-search"><SidebarIcon name="search" className="ui-collection-search-icon" /><Input ref={search} value={query} aria-label="搜索标签" placeholder="搜索标签" className="ui-collection-search-input" onChange={event => setQuery(event.target.value)} />{query && <Button variant="ghost" size="icon-xs" className="ui-collection-search-clear" aria-label="清空标签搜索" onClick={() => { setQuery(""); search.current?.focus(); }}><SidebarIcon name="close" /></Button>}</div>
-      <Button variant="ghost" size="sm" disabled={disabled || loading || !branches.length || Boolean(needle)} onClick={() => setExpanded(Object.fromEntries(branches.map(path => [path, !allExpanded])))}>{branches.length && allExpanded ? "全部收起" : "全部展开"}</Button>
+      <Button variant="outline" size="default" className="bg-surface text-primary dark:bg-surface" disabled={disabled || loading || !branches.length || Boolean(needle)} onClick={() => setExpanded(Object.fromEntries(branches.map(path => [path, !allExpanded])))}>{branches.length && allExpanded ? "全部收起" : "全部展开"}</Button>
     </div>
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
     <div className="ui-tag-directory-panel" aria-busy={loading}>
