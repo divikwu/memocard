@@ -19,8 +19,8 @@
   --typeset-flow: .85em;
 }
 :root[data-web-typography] .ui-note-markdown .note-mermaid-source pre { font-family: var(--font-family-code); }
-.web-note-style-preview { min-width: 0; overflow: hidden; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-container); background: var(--color-background-body); }
-.web-note-style-preview > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: calc(var(--spacing-1) * 2); padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4); border-bottom: var(--border-width) solid var(--color-border); font-size: var(--font-size-sm); }
+.web-note-style-preview { min-width: 0; overflow: hidden; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-card); background: var(--color-background-card); }
+.web-note-style-preview > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: calc(var(--spacing-1) * 2); margin-inline: calc(var(--spacing-1) * 4); padding-block: calc(var(--spacing-1) * 3); border-bottom: var(--border-width) solid var(--color-divider); font-size: var(--font-size-sm); }
 .web-note-style-preview > header > p:last-child { color: var(--color-text-secondary); }
 .web-note-style-preview > header > p:first-child { font-weight: var(--font-weight-medium); }
 .web-note-style-preview-body { padding: calc(var(--spacing-1) * 6) calc(var(--spacing-1) * 5); }

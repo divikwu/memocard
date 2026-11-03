@@ -35,7 +35,7 @@
 .ui-note-open:disabled::after { pointer-events: none; }
 .ui-note-heading time, .ui-note-list-date { display: block; margin-block-start: var(--spacing-1); color: color-mix(in srgb, var(--color-text-secondary) 80%, transparent); font-family: var(--font-family-body); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; line-height: var(--text-supporting-leading); }
 .ui-note-heading time { margin-block-start: calc(var(--spacing-1) * .5); line-height: var(--text-body-leading); }
-.ui-note-preview { flex: 1; min-height: 0; min-width: 0; overflow: hidden; padding: 0 calc(var(--spacing-1) * 4) calc(var(--spacing-1) * 4); color: var(--color-text-secondary); pointer-events: none; }
+.ui-note-preview { flex: 1; min-height: 0; min-width: 0; overflow: hidden; padding: 0 calc(var(--spacing-1) * 4) var(--spacing-1); color: var(--color-text-secondary); pointer-events: none; }
 .ui-note-preview .note-preview[data-compact] { opacity: .82; }
 .ui-note-preview .ui-note-markdown[data-compact] { --typeset-flow: var(--spacing-1); --typeset-leading: var(--text-body-leading); font-family: var(--font-family-body); font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
 .ui-note-preview .ui-note-markdown[data-compact]:has(img) { display: block; }

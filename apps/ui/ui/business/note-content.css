@@ -2,6 +2,10 @@
 
 .note-preview { min-width: 0; color: var(--color-text-primary); }
 .note-preview[data-compact] { position: relative; height: 100%; overflow: hidden; color: var(--color-text-secondary); }
+.note-preview[data-compact][data-overflow="true"] { mask-image: linear-gradient(to bottom, #000 calc(100% - var(--spacing-1) * 6), transparent); }
+@media (forced-colors: active) {
+  .note-preview[data-compact][data-overflow="true"] { mask-image: none; }
+}
 .ui-note-markdown { --note-block-radius: 8px; min-width: 0; }
 .ui-note-markdown :is(pre, table, blockquote, aside[data-callout], figure, img, video, .ui-note-image, .note-diagram-scroll, .rich-code-block, .rich-image-row, .rich-preserved, .rich-footnote, .rich-math-block) { border-radius: var(--note-block-radius); }
 .ui-note-markdown blockquote { position: relative; border-inline-start-color: transparent; }
@@ -11,9 +15,8 @@
 .ui-note-markdown :is(li.task-list-item > input[type="checkbox"]:checked, li[data-type="taskItem"] > label > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"]) { border-color: var(--color-accent); background: var(--color-accent); }
 .ui-note-markdown :is(li.task-list-item > input[type="checkbox"]:checked, li[data-type="taskItem"] > label > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"])::before { content: ""; width: calc(var(--spacing-1) * 1.25); height: calc(var(--spacing-1) * 2.25); border: solid var(--color-on-accent); border-width: 0 calc(var(--border-width) * 2) calc(var(--border-width) * 2) 0; transform: translateY(calc(var(--border-width) * -1)) rotate(45deg); }
 .ui-note-markdown :is(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"]):focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
-.ui-note-markdown[data-compact] { display: -webkit-box; -webkit-box-orient: vertical; font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); --typeset-leading: var(--text-supporting-leading); --typeset-flow: .65em; color: inherit; overflow: hidden; }
+.ui-note-markdown[data-compact] { font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); --typeset-leading: var(--text-supporting-leading); --typeset-flow: .65em; color: inherit; overflow: hidden; }
 .ui-note-markdown[data-compact] :is(h1,h2,h3,h4,h5,h6) { color: inherit; }
-.note-preview-ellipsis { position: absolute; inset-inline-start: 0; bottom: 0; font-size: var(--font-size-sm); line-height: var(--text-supporting-leading); }
 .ui-note-markdown .typeset-scroll { max-width: 100%; min-width: 0; }
 .ui-note-markdown .typeset-scroll[data-overflow="true"]::after { content: "左右滚动查看完整表格"; display: block; position: sticky; left: 0; width: fit-content; padding-block: calc(var(--spacing-1) * 1.5); color: var(--color-text-secondary); font-family: var(--font-family-body); font-size: var(--font-size-xs); line-height: var(--text-supporting-leading); }
 .ui-note-markdown .typeset-scroll:focus-visible, .note-diagram-scroll:focus-visible, .note-diagram-enlarged:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
@@ -59,7 +62,7 @@
 .note-viewer-close[data-slot="action-group"] { width: calc(var(--size-element-md) + var(--spacing-1)); height: calc(var(--size-element-md) + var(--spacing-1)); }
 .ui-note-mermaid { position: relative; min-width: 0; gap: 0; margin-block-start: var(--typeset-flow); }
 .note-mermaid-toolbar { position: absolute; inset-block-start: calc(var(--spacing-1) * 2); inset-inline-end: calc(var(--spacing-1) * 2); z-index: 1; opacity: 0; pointer-events: none; }
-.ui-note-mermaid:is(:hover, :focus-within) > .note-mermaid-toolbar { opacity: 1; pointer-events: auto; }
+.ui-note-mermaid:is(:hover, :has(:focus-visible)) > .note-mermaid-toolbar { opacity: 1; pointer-events: auto; }
 .note-mermaid-toolbar [data-slot="tabs-list"] { max-width: 100%; height: var(--size-element-md); padding: calc(var(--spacing-1) * .75); border-radius: calc(var(--radius-element) + var(--spacing-1) * .5); background: var(--color-background-surface); box-shadow: var(--shadow-floating), var(--surface-edge-floating); }
 .ui-note-mermaid [data-slot="tabs-trigger"] { flex: none; height: calc(100% - var(--border-width)); padding: var(--spacing-1) calc(var(--spacing-1) * 2); border-radius: var(--radius-element); transition-property: color, background-color, border-color, opacity; }
 .ui-note-mermaid [data-slot="tabs-trigger"][data-active] { background: var(--color-background-muted); }

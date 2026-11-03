@@ -10,7 +10,7 @@ export type SidebarTreeItemProps = {
   label: string;
   className?: string;
   icon: ReactNode;
-  buttonProps: ComponentProps<"button">;
+  buttonProps: ComponentProps<"button"> & { "data-ui-tooltip"?: string };
   isActive: boolean;
   nested?: boolean;
   defaultOpen?: boolean;

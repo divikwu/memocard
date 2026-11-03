@@ -63,7 +63,7 @@ function PropertyOptionMenu({name:tag, kind, color, disabled, normalizeName, onC
       <DropdownMenuContent align="start" side="right" className={onChangeName ? 'note-property-option-menu w-56' : 'note-property-option-menu w-44'} aria-label={onChangeName ? `${kind}设置 ${tag}` : `${kind}颜色 ${tag}`}>
         {onChangeName ? <form className="px-2 py-1.5" onSubmit={event => { event.preventDefault(); if (normalized && normalized !== tag) void change(normalized); }}>
           <Input autoFocus aria-label={`${kind}名称`} value={name} disabled={disabled || working} className="h-8 min-w-0 text-sm" onChange={event => setName(event.target.value)} onFocus={event => event.target.select()} onKeyDown={event => { if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) event.preventDefault(); if (event.key !== 'Escape') event.stopPropagation(); }} />
-        </form> : <DropdownMenuGroup><DropdownMenuLabel className="truncate" title={tag}><TagPill name={tag} /></DropdownMenuLabel></DropdownMenuGroup>}
+        </form> : <DropdownMenuGroup><DropdownMenuLabel className="truncate" data-ui-tooltip={tag} data-ui-tooltip-overflow><TagPill name={tag} /></DropdownMenuLabel></DropdownMenuGroup>}
         {onChangeName && <><DropdownMenuItem disabled={disabled || working} onClick={() => { setError(''); setRemoving(true); }}><Trash2 />删除{kind}</DropdownMenuItem><DropdownMenuSeparator /></>}
         <DropdownMenuGroup><DropdownMenuLabel className="text-xs text-secondary">颜色</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={color} onValueChange={async value => {

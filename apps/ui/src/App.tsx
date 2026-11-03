@@ -761,6 +761,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     },
   } : null;
   const collectionProps: NoteCollectionProps = {
+    activeTag: view === "notes" ? tag : null,
     home: view === "home" ? { tab: homeTab, pinnedCount: notePins && notePins.vaultId === status?.vaultId ? Object.keys(notePins.pins).length : 0, onTabChange: changeHomeTab } : undefined,
     notes, loading: loading || (view !== "home" && query !== debouncedQuery), searching: view !== "home" && (query !== debouncedQuery || Boolean(query)),
     query, onQueryChange: setQuery, searchPlaceholder: tag ? "搜索当前标签内容" : "搜索笔记内容",

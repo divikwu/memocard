@@ -40,14 +40,14 @@ export function MarkdownContent({ body, notePath, onError, interactive = true, c
       return externalUrl(url) ?? (internalTarget(target) ? `memocard-internal:${encodeURIComponent(JSON.stringify({ target, wiki }))}` : "");
     }}
     components={{
-      a: ({ href, children, id, title, "aria-label": ariaLabel }) => href && interactive ? <a id={id} title={title} aria-label={ariaLabel} href={href} onClick={(event) => {
+      a: ({ href, children, id, title, "aria-label": ariaLabel }) => href && interactive ? <a id={id} data-ui-tooltip={title} aria-label={ariaLabel} href={href} onClick={(event) => {
         if (href.startsWith("#")) return;
         event.preventDefault();
         if (href.startsWith("memocard-internal:")) {
           const { target, wiki } = JSON.parse(decodeURIComponent(href.slice("memocard-internal:".length))) as { target: string; wiki: boolean };
           void openVaultLink(target, notePath ?? "notes/note.md", wiki).catch((error: unknown) => onError?.(error instanceof Error ? error.message : "无法打开笔记链接。"));
         } else void request("openExternal", { url: href }).catch(() => onError?.("无法打开链接，请在 App 中重试。"));
-      }}>{children}</a> : <span id={id} title={title}>{children}</span>,
+      }}>{children}</a> : <span id={id} data-ui-tooltip={title}>{children}</span>,
       aside: markdownCallout,
       figure: markdownFigure,
       table: ScrollableTable,

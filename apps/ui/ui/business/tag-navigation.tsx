@@ -43,7 +43,7 @@ const TagBranch = memo(function TagBranchView({ path, index, preferences, select
   const [menuOpen, setMenuOpen] = useState(false);
   const children = index.children.get(path) || [];
   const nested = !root && path.includes("/");
-  return <SidebarTreeItem className={menuOpen ? "ui-sidebar-tag-row-open" : undefined} nested={nested} label={root ? path : path.slice(path.lastIndexOf("/") + 1)} icon={preferences.icons[path] || <SidebarIcon name="hash" />} buttonProps={{ "aria-label": path, "aria-description": `${index.byName.get(path)?.count ?? 0} 条笔记`, title: path, onClick: () => onSelect(path) }} isActive={selected === path} toggleLabel={`展开或收起标签 ${path}`} accessories={<>
+  return <SidebarTreeItem className={menuOpen ? "ui-sidebar-tag-row-open" : undefined} nested={nested} label={root ? path : path.slice(path.lastIndexOf("/") + 1)} icon={preferences.icons[path] || <SidebarIcon name="hash" />} buttonProps={{ "aria-label": path, "aria-description": `${index.byName.get(path)?.count ?? 0} 条笔记`, onClick: () => onSelect(path) }} isActive={selected === path} toggleLabel={`展开或收起标签 ${path}`} accessories={<>
     <SidebarMenuBadge aria-hidden="true">{index.byName.get(path)?.count}</SidebarMenuBadge>
     {!isMobile && <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}><DropdownMenuTrigger render={<Button ref={anchor} type="button" size="icon-xs" variant="ghost" className="ui-sidebar-tag-more" aria-label={`标签操作 ${path}`} />}><SidebarIcon name="more" className="size-3" /></DropdownMenuTrigger><DropdownMenuContent side="right" align="start" sideOffset={8} finalFocus={() => {
       if (editing.current) { editing.current = false; if (anchor.current) onEdit(path, anchor.current); return false; }

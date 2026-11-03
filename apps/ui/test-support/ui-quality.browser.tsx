@@ -8,6 +8,8 @@ import { ComponentDocs } from "../ui/ComponentDocs";
 import { ComponentDocsExample } from "../ui/ComponentDocsTemplate";
 import { componentDocs, type ComponentKey } from "../ui/component-docs.data";
 import { Button } from "../ui/components/button";
+import { TooltipHints } from "../ui/components/tooltip";
+import { Sidebar, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "../ui/components/sidebar";
 import { ActionGroup, MobileActionGroupProvider } from "../ui/components/action-group";
 import { Slider } from "../ui/components/slider";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "../ui/components/accordion";
@@ -24,6 +26,8 @@ import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, S
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/components/dialog";
 import { NoteProperties } from "../ui/business/NoteProperties";
 import { NoteCollection } from "../ui/business/NoteCollection";
+import { AppSidebar } from "../ui/business/sidebar";
+import sidebarStoryMeta from "../ui/stories/business-sidebar.stories";
 import { NoteSearchDialog } from "../ui/business/NoteSearchDialog";
 import { QuickCapture } from "../ui/business/QuickCapture";
 import { PropertyConfirmationPopup } from "../ui/business/property-confirmation";
@@ -131,6 +135,99 @@ function expectUnclippedOutline(element: Element) {
 
 // The fixed touch project registers only the shared list flow below.
 if (!inject("uiQualityTouch")) {
+test("tooltip review reveals clipped labels and icon actions without repeating visible text", async () => {
+  const fullName = "完整属性名称";
+  const view = render(<PreviewModeProvider mode="light"><TooltipHints>
+    <Button>焦点起点</Button><Button data-ui-tooltip={fullName}><span data-ui-tooltip-overflow style={{ display: "block", width: 200, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{fullName}</span></Button>
+    <Button aria-label="必要的图标操作" data-ui-tooltip="必要的图标操作"><svg aria-hidden="true" /></Button><Button>已有文字的操作</Button>
+  </TooltipHints></PreviewModeProvider>);
+  const canvas = within(view.container), body = within(document.body), label = canvas.getByText(fullName);
+  await userEvent.hover(label);
+  expect(body.queryByRole("tooltip")).toBeNull();
+  await userEvent.unhover(label);
+  act(() => { label.style.width = "24px"; });
+  await userEvent.hover(label);
+  await waitFor(() => expect(body.getByRole("tooltip").textContent).toBe(fullName));
+  await userEvent.unhover(label);
+  await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
+  canvas.getByRole("button", { name: "焦点起点" }).focus();
+  await userEvent.tab();
+  if (server.browser === "webkit") canvas.getByRole("button", { name: fullName }).focus();
+  await waitFor(() => expect(body.getByRole("tooltip").textContent).toBe(fullName));
+  await userEvent.keyboard("{Escape}");
+  await userEvent.hover(canvas.getByRole("button", { name: "必要的图标操作" }));
+  await waitFor(() => expect(body.getByRole("tooltip").textContent).toBe("必要的图标操作"));
+  await userEvent.hover(canvas.getByRole("button", { name: "已有文字的操作" }));
+  await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
+});
+
+for (const width of [390, 1024]) for (const mode of ["light", "dark"] as const) test(`tag sidebar fades only beyond scroll edges at ${width}px in ${mode}`, async () => {
+  await page.viewport(width, 720);
+  await commands.setReducedMotion("reduce");
+  const tags = Array.from({ length: 40 }, (_, index) => ({ name: `标签${String(index).padStart(2, "0")}`, count: 1 }));
+  render(<PreviewModeProvider mode={mode}><SidebarProvider persistState={false} keyboardShortcut={false} openMobile={width < 768} onOpenMobileChange={() => {}}>
+    <AppSidebar {...sidebarStoryMeta.args} vaultId={`scroll-edges-${width}-${mode}`} tag={null} tags={tags} />
+  </SidebarProvider></PreviewModeProvider>);
+  const body = within(document.body);
+  await body.findByRole("button", { name: "标签00" });
+  const scroller = document.querySelector<HTMLElement>(".ui-sidebar-tag-scroll")!;
+  const edges = (top: boolean, bottom: boolean) => {
+    expect(scroller.hasAttribute("data-overflow-top")).toBe(top);
+    expect(scroller.hasAttribute("data-overflow-bottom")).toBe(bottom);
+  };
+  const scroll = (top: number) => act(() => { scroller.scrollTop = top; scroller.dispatchEvent(new Event("scroll")); });
+  await waitFor(() => edges(false, true));
+  expect(getComputedStyle(scroller).maskImage).toContain("linear-gradient");
+  scroll((scroller.scrollHeight - scroller.clientHeight) / 2);
+  await waitFor(() => edges(true, true));
+  scroll(scroller.scrollHeight);
+  await waitFor(() => edges(true, false));
+  await userEvent.keyboard("{Tab}");
+  const focused = body.getByRole("button", { name: "标签20" });
+  act(() => focused.focus());
+  await waitFor(() => {
+    const bounds = scroller.getBoundingClientRect(), target = focused.getBoundingClientRect();
+    expect(target.top).toBeGreaterThanOrEqual(bounds.top + 24);
+    expect(target.bottom).toBeLessThanOrEqual(bounds.bottom - 24);
+  });
+  await userEvent.click(body.getByRole("button", { name: "标签", expanded: true }));
+  await waitFor(() => edges(false, false));
+});
+
+test("global UI hints use Tooltip without mouse focus persistence or duplicate portal hints", async () => {
+  const view = render(<PreviewModeProvider mode="light"><TooltipHints><TooltipHints>
+    <Button data-ui-tooltip="搜索 (⌘ / Ctrl K)">搜索提示</Button><Button>焦点起点</Button>
+    <DropdownMenu><DropdownMenuTrigger render={<Button data-ui-tooltip="笔记库：测试" />}>菜单提示</DropdownMenuTrigger><DropdownMenuContent><DropdownMenuItem data-ui-tooltip="完整路径 area/work/uxd">uxd</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+  </TooltipHints></TooltipHints></PreviewModeProvider>);
+  const canvas = within(view.container), body = within(document.body);
+  const search = canvas.getByRole("button", { name: "搜索提示" });
+  expect(search.hasAttribute("title")).toBe(false);
+  await userEvent.hover(search);
+  await waitFor(() => expect(body.getAllByRole("tooltip")).toHaveLength(1));
+  expect(body.getByRole("tooltip").textContent).toBe("搜索 (⌘ / Ctrl K)");
+  await userEvent.click(search);
+  await userEvent.unhover(search);
+  await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
+  expect(document.activeElement).toBe(search);
+  expect(search.matches(":focus-visible")).toBe(false);
+  await userEvent.click(canvas.getByRole("button", { name: "焦点起点" }));
+  canvas.getByRole("button", { name: "焦点起点" }).focus();
+  await userEvent.tab({ shift: true });
+  if (server.browser === "webkit") search.focus();
+  expect(document.activeElement).toBe(search);
+  await waitFor(() => expect(body.getByRole("tooltip").id).toBe(search.getAttribute("aria-describedby")));
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
+  expect(document.activeElement).toBe(search);
+  await userEvent.click(canvas.getByRole("button", { name: "菜单提示" }));
+  const item = await body.findByRole("menuitem", { name: "uxd" });
+  await userEvent.hover(item);
+  await waitFor(() => expect(body.getByRole("tooltip").textContent).toBe("完整路径 area/work/uxd"));
+  expect(body.getAllByRole("tooltip")).toHaveLength(1);
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
+});
+
 for (const [kind, block] of [
   ["table", `| A | B |\n| --- | --- |\n| ${"wide-table-cell".repeat(30)} | value |\n| second | row |`],
   ["code", `\`\`\`txt\n${"wide-code-line".repeat(30)}\n\`\`\``],
@@ -850,7 +947,19 @@ for (const width of [320, 1024]) {
       await userEvent.clear(search);
       list = within(popup).getByRole("listbox", {name: "可选属性标签"});
       await within(list).findByRole("option", {name: "属性标签 area/tag0000"});
-      await userEvent.click(within(popup).getByRole("button", {name: "设置标签颜色 area/tag0000"}));
+      const colorTrigger = within(popup).getByRole("button", {name: "设置标签颜色 area/tag0000"});
+      await userEvent.click(colorTrigger);
+      await within(document.body).findByRole("menu", {name: "标签颜色 area/tag0000"});
+      if (width >= 768) {
+        await userEvent.hover(search);
+        expect(getComputedStyle(colorTrigger).opacity).toBe("1");
+        await userEvent.click(colorTrigger);
+        await waitFor(() => expect(within(document.body).queryByRole("menu", {name: "标签颜色 area/tag0000"})).toBeNull());
+        await userEvent.hover(search);
+        await waitFor(() => expect(getComputedStyle(colorTrigger).opacity).toBe("0"));
+        await userEvent.hover(within(list).getByRole("option", {name: "属性标签 area/tag0000"}));
+        await userEvent.click(colorTrigger);
+      }
       const menu = await within(document.body).findByRole("menu", {name: "标签颜色 area/tag0000"});
       list.scrollTop = list.scrollHeight;
       list.dispatchEvent(new Event("scroll"));
@@ -1403,6 +1512,15 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         const tablist = canvas.getByRole("tablist", {name: "Mermaid 显示模式"});
         await userEvent.hover(tablist.closest(".ui-note-mermaid")!);
         const tabs = within(tablist).getAllByRole("tab");
+        if (scenario.width >= 768) {
+          await userEvent.click(tabs[0]);
+          await userEvent.hover(imageTrigger);
+          await waitFor(() => expect(getComputedStyle(tablist.closest(".note-mermaid-toolbar")!).opacity).toBe("0"));
+          expect(document.activeElement).toBe(tabs[0]);
+          await userEvent.tab();
+          await userEvent.tab({shift: true});
+          expect(getComputedStyle(tablist.closest(".note-mermaid-toolbar")!).opacity).toBe("1");
+        }
         const toolbarGroup = tabs[0].closest<HTMLElement>('[data-slot="action-group"]');
         if (grouped) {
           expect(toolbarGroup).not.toBeNull();
@@ -1443,6 +1561,14 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         expect(within(imageMenu).getByRole("menuitem", {name: "等宽排列"}).getAttribute("aria-disabled")).toBe("true");
         await userEvent.keyboard("{Escape}");
         await waitFor(() => { expect(body.queryByRole("menu", {name: "图片布局"})).toBeNull(); expect(document.activeElement).toBe(imageLayout); });
+        if (scenario.width >= 768) {
+          await userEvent.click(imageLayout);
+          await body.findByRole("menu", {name: "图片布局"});
+          await userEvent.click(imageLayout);
+          await waitFor(() => expect(body.queryByRole("menu", {name: "图片布局"})).toBeNull());
+          await userEvent.hover(imageTrigger);
+          await waitFor(() => expect(getComputedStyle(imageTools).opacity).toBe("0"));
+        }
         expect(changes).toEqual([]);
         expect(errors).toEqual([]);
         await waitFor(() => expect(editor).not.toBeNull());
@@ -1735,7 +1861,8 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     const pinTrigger = directory.getByRole("button", {name: "置顶标签 生活/咖啡"});
     await userEvent.click(directory.getByRole("textbox", {name: "搜索标签"}));
     await waitFor(() => expect(getComputedStyle(pinTrigger).opacity).toBe("0"));
-    pinTrigger.focus();
+    directory.getByRole("button", {name: "查看标签 生活/咖啡 的笔记"}).focus();
+    await userEvent.tab();
     await waitFor(() => expect(getComputedStyle(pinTrigger).opacity).toBe("1"));
     await userEvent.keyboard("{Enter}");
     const pinnedTrigger = directory.getByRole("button", {name: "取消置顶 生活/咖啡"});
@@ -1747,6 +1874,10 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     await userEvent.click(pinnedTrigger);
     expect(pinTrigger.getAttribute("aria-pressed")).toBe("false");
     expect(pinTrigger.querySelector("svg")!.getAttribute("fill")).toBe("none");
+    await userEvent.hover(directory.getByRole("textbox", {name: "搜索标签"}));
+    await waitFor(() => expect(getComputedStyle(pinTrigger).opacity).toBe("0"));
+    expect(document.activeElement).toBe(pinTrigger);
+    expect(getComputedStyle(coffeeRow.querySelector("td")!).backgroundColor).toBe("rgba(0, 0, 0, 0)");
     for (const name of ["编辑标签名称 生活/咖啡", "查看标签 生活/咖啡 的笔记", "置顶标签 生活/咖啡"]) {
       const button = directory.getByRole("button", {name});
       await userEvent.hover(button);
@@ -1930,6 +2061,66 @@ test("Web home and all-notes collections share responsive widths", async () => {
   }
 }, 30_000);
 
+for (const mode of ["light", "dark"] as const) test(`settings groups share card bounds, controls and disclosure spacing in ${mode}`, async () => {
+  const previousHash = location.hash;
+  localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode}));
+  history.replaceState(null, "", "#/settings");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    const title = await canvas.findByRole("heading", {name: "设置", level: 1});
+    const advanced = canvas.getByText("高级排版").closest("details")!;
+    const card = canvas.getByRole("combobox", {name: "行宽"}).closest<HTMLElement>('[data-slot="card"]')!;
+    expect(advanced.closest('[data-slot="card"]')).toBe(card);
+    for (const width of [320, 768, 1440]) {
+      await page.viewport(width, 900);
+      await waitFor(() => expect(title.getBoundingClientRect().height).toBeGreaterThanOrEqual(32));
+      expect(title.getBoundingClientRect().width).toBeGreaterThan(100);
+      const bounds = card.getBoundingClientRect(), disclosure = advanced.getBoundingClientRect();
+      expect(disclosure.left).toBeGreaterThanOrEqual(bounds.left);
+      expect(disclosure.right).toBeLessThanOrEqual(bounds.right);
+      const preview = canvas.getByRole("region", {name: "笔记排版预览"});
+      expect(getComputedStyle(preview).borderRadius).toBe(getComputedStyle(card).borderRadius);
+      expect(getComputedStyle(preview).backgroundColor).toBe(getComputedStyle(card).backgroundColor);
+      await userEvent.click(within(advanced).getByText("高级排版"));
+      const controls = ["行宽", "字号", "行高", "段落间距"].map(name => canvas.getByRole("combobox", {name}));
+      for (const control of controls) expect(control.getBoundingClientRect().width).toBeCloseTo(controls[0].getBoundingClientRect().width, 1);
+      if (width >= 768) {
+        const row = controls[0].parentElement!;
+        expect(advanced.querySelector("summary")!.getBoundingClientRect().height).toBe(row.getBoundingClientRect().height - Number.parseFloat(getComputedStyle(row).borderBottomWidth));
+        const scroller = view.container.querySelector<HTMLElement>("#web-main-content")!;
+        expect(title.getBoundingClientRect().top + title.getBoundingClientRect().height / 2 + scroller.scrollTop).toBeCloseTo(view.container.querySelector(".ui-sidebar-brand-header")!.getBoundingClientRect().top + 20, 1);
+      }
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
+      await userEvent.click(within(advanced).getByText("高级排版"));
+    }
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+});
+
+test("shared sidebar hover actions hide after pointer focus and remain keyboard accessible", async () => {
+  await page.viewport(1024, 900);
+  const view = render(<PreviewModeProvider mode="light"><SidebarProvider className="ui-theme">
+    <Sidebar collapsible="none"><SidebarMenu><SidebarMenuItem>
+      <SidebarMenuButton>浏览笔记</SidebarMenuButton>
+      <SidebarMenuAction showOnHover render={<Button />} aria-label="笔记操作">…</SidebarMenuAction>
+    </SidebarMenuItem></SidebarMenu></Sidebar>
+    <main><Button>区域之外</Button></main>
+  </SidebarProvider></PreviewModeProvider>);
+  const canvas = within(view.container);
+  const trigger = canvas.getByRole("button", {name: "浏览笔记"});
+  const action = canvas.getByRole("button", {name: "笔记操作"});
+  await userEvent.click(trigger);
+  await userEvent.hover(canvas.getByRole("button", {name: "区域之外"}));
+  expect(getComputedStyle(action).opacity).toBe("0");
+  trigger.focus();
+  await userEvent.tab();
+  expect(document.activeElement).toBe(action);
+  expect(getComputedStyle(action).opacity).toBe("1");
+});
+
 for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its logo for the toggle on hover and keyboard focus in ${mode}`, async () => {
   await page.viewport(1024, 900);
   await commands.setReducedMotion("reduce");
@@ -1943,6 +2134,21 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
   try {
     const canvas = within(view.container);
     await canvas.findByRole("button", {name: "打开 今天的手冲记录"});
+    const tag = canvas.getByRole("button", {name: /^生活$/});
+    const tagRow = tag.closest(".ui-sidebar-tree-row")!;
+    const tagMore = tagRow.querySelector<HTMLElement>(".ui-sidebar-tag-more")!;
+    const tagToggle = tagRow.querySelector<HTMLElement>(".ui-sidebar-tree-toggle")!;
+    await userEvent.click(tag);
+    await userEvent.hover(canvas.getByRole("textbox", {name: "搜索当前视图笔记"}));
+    await waitFor(() => expect(getComputedStyle(tagMore).opacity).toBe("0"));
+    expect(getComputedStyle(tagToggle).opacity).toBe("0");
+    expect(getComputedStyle(tagRow.querySelector(".ui-sidebar-branch-icon")!).opacity).toBe("1");
+    tag.focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(tagToggle);
+    expect(getComputedStyle(tagMore).opacity).toBe("1");
+    expect(getComputedStyle(tagToggle).opacity).toBe("1");
+    await userEvent.click(canvas.getByRole("button", {name: /^所有笔记$/}));
     const brand = canvas.getByRole("button", {name: "MemoCard，返回主页"});
     const logo = brand.querySelector<HTMLElement>(".ui-sidebar-logo")!;
     const collapse = canvas.getByRole("button", {name: "收起侧栏"});
@@ -2000,6 +2206,11 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
     const focusedBrand = canvas.getByRole("button", {name: "MemoCard，返回主页"});
     expect(document.activeElement).toBe(focusedBrand);
     expect(getComputedStyle(focusedBrand.parentElement!).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    const vault = canvas.getByRole("button", {name: /^笔记库：/});
+    expect(getComputedStyle(vault).opacity).toBe("0");
+    await userEvent.tab();
+    expect(document.activeElement).toBe(vault);
+    expect(getComputedStyle(vault).opacity).toBe("1");
   } finally {
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
   }
@@ -2537,6 +2748,14 @@ test("property grips reorder rows with native drag without editing note data", a
     const target = (await canvas.findByRole("button", {name: "属性菜单 零值"})).closest<HTMLElement>(".note-property-row")!;
     const name = canvas.getByRole("button", {name: "属性菜单 摘要"});
     const textLeft = within(name).getByText("摘要").getBoundingClientRect().left;
+    await userEvent.click(name);
+    await within(document.body).findByRole("menu");
+    await userEvent.click(name);
+    await waitFor(() => expect(within(document.body).queryByRole("menu")).toBeNull());
+    await userEvent.hover(canvas.getByRole("button", {name: "属性菜单 零值"}));
+    expect(document.activeElement).toBe(name);
+    await waitFor(() => expect(getComputedStyle(canvas.getByRole("button", {name: "拖动属性 摘要"})).opacity).toBe("0"));
+    expect(getComputedStyle(name.querySelector("svg")!).visibility).toBe("visible");
     await userEvent.hover(name);
     const grip = await canvas.findByRole("button", {name: "拖动属性 摘要"});
     expect(grip.draggable).toBe(true);

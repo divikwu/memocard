@@ -97,7 +97,7 @@ export function bindNoteImage(image: HTMLImageElement, source: string, onError?:
       image.src = objectURL;
     } catch {
       if (alive()) {
-        image.title = resolving ? '图片链接不存在或不唯一，请检查附件路径。' : '图片暂时无法读取，请检查文件夹授权和文件是否已下载。';
+        image.setAttribute('data-ui-tooltip', resolving ? '图片链接不存在或不唯一，请检查附件路径。' : '图片暂时无法读取，请检查文件夹授权和文件是否已下载。');
         onError?.();
       }
     }

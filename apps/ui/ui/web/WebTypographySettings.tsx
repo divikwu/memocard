@@ -35,10 +35,11 @@ export function WebTypographySettings() {
   </div>;
   return <section aria-labelledby={`${id}-section-heading`}>
     <div className="web-setting-section-heading"><h2 id={`${id}-section-heading`}>内容风格</h2><Button size="sm" variant="ghost" onClick={() => save({ ...defaults })}>恢复默认风格</Button></div>
-    <p className="text-sm text-secondary">字体跟随外观设置；以下选项仅调整笔记正文和编辑区域的排版。保存在当前设备的浏览器中。字号、行高按 16px 根字号标注偶数基准值，实际文字随浏览器缩放。</p>
+    <p className="text-sm text-secondary text-pretty">调整笔记正文和编辑区域的排版，字体跟随外观设置。设置仅保存在当前浏览器中。</p>
     {error && <p role="status" className="text-sm text-error">{error}</p>}
-    <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">{field("measure")}{field("size")}</CardContent></Card>
-    <details className="web-file-status web-appearance-advanced"><summary>高级排版<ChevronDownIcon aria-hidden="true" /></summary><div className="web-setting-card-content web-appearance-fields">{field("leading")}{field("flow")}</div></details>
-    <div role="region" aria-label="笔记排版预览" className="web-note-style-preview"><header><p>实时预览</p><p>随内容风格设置即时更新</p></header><div className="web-note-style-preview-body"><div className="web-note-style-preview-measure"><NoteMarkdown body={preview} /></div></div></div>
+    <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">{field("measure")}{field("size")}
+      <details className="web-file-status web-appearance-advanced"><summary>高级排版<ChevronDownIcon aria-hidden="true" /></summary><div className="web-setting-card-content web-advanced-fields">{field("leading")}{field("flow")}</div></details>
+    </CardContent></Card>
+    <div role="region" aria-label="笔记排版预览" className="web-note-style-preview"><header><p>实时预览</p></header><div className="web-note-style-preview-body"><div className="web-note-style-preview-measure"><NoteMarkdown body={preview} /></div></div></div>
   </section>;
 }

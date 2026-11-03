@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Editor } from "@tiptap/react";
 import { RichMarkdownEditor } from "./RichMarkdownEditor";
+import { notionClipboardType } from "../../src/rich-notion-clipboard";
 
 vi.mock("../../src/bridge", () => ({ isBrowserVault: false, isLocalWeb: false, isNative: false, isConnectedClient: false, request: vi.fn(), getBrowserVaultBinding: () => null }));
 beforeEach(() => {
@@ -36,6 +37,70 @@ async function chooseColor(name: string) {
   fireEvent.click(within(menu).getByRole("menuitemradio", { name }));
   await waitFor(() => expect(screen.queryByRole("menu", { name: "标注颜色" })).toBeNull());
 }
+
+it("copies callout children as portable HTML and restores their structure when pasted back", async () => {
+  const original = '开头\n\n### 标题\n\n<aside data-callout="blue" data-callout-text-color="red" data-callout-icon="💡"><p>段落</p><blockquote><p><strong>引用</strong></p></blockquote><ul><li><p>第一项</p></li><li><p>第二项</p></li></ul><table><tbody><tr><th><p>表头</p></th></tr><tr><td><p>单元格</p></td></tr></tbody></table><aside data-callout="gray"><p>嵌套标注</p></aside></aside>\n\n结尾';
+  const { editor, change } = await setup(original);
+  act(() => editor.commands.selectAll());
+  const html = editor.getHTML();
+  const { dom } = editor.view.serializeForClipboard(editor.state.selection.content());
+  expect(dom.querySelector("aside")).toBeNull();
+  expect(dom.querySelectorAll("div[data-memocard-aside]")).toHaveLength(2);
+  expect(dom.querySelector("[data-callout=blue]")?.getAttribute("data-callout-icon")).toBe("💡");
+  expect(dom.querySelector("[data-callout=blue]")?.getAttribute("data-callout-text-color")).toBe("red");
+  expect(dom.querySelector("h3")?.textContent).toBe("标题");
+  expect(dom.querySelector("blockquote strong")?.textContent).toBe("引用");
+  expect(dom.querySelectorAll("li")).toHaveLength(2);
+  expect(dom.querySelector("th")?.textContent).toBe("表头");
+  expect(dom.querySelector("td")?.textContent).toBe("单元格");
+  const clipboard = new Map<string, string>();
+  fireEvent.copy(editor.view.dom, { clipboardData: { clearData: () => clipboard.clear(), setData: (type: string, value: string) => clipboard.set(type, value) } });
+  expect(clipboard.get("text/html")).toBe(dom.innerHTML);
+  const native = JSON.parse(clipboard.get(notionClipboardType)!);
+  const blocks = native.blocks.flatMap((entry: { blockSubtree: { block: Record<string, { value: { type: string; format?: Record<string, unknown> } }> } }) => Object.values(entry.blockSubtree.block).map(record => record.value));
+  expect(blocks.filter((block: { type: string }) => block.type === "callout")).toHaveLength(2);
+  expect(blocks.find((block: { format?: Record<string, unknown> }) => block.format?.page_icon === "💡")?.format).toMatchObject({ callout_version: 2, block_color: "blue_background" });
+  expect(blocks.map((block: { type: string }) => block.type)).toEqual(expect.arrayContaining(["sub_sub_header", "quote", "bulleted_list", "table", "table_row"]));
+  expect(clipboard.get(notionClipboardType)).toContain('["h","red"]');
+  expect(clipboard.get(notionClipboardType)).not.toMatch(/space_id|notion_user|created_by|last_edited_by/);
+  expect(change).not.toHaveBeenCalled();
+  act(() => editor.commands.clearContent());
+  fireEvent.paste(editor.view.dom, { clipboardData: { getData: (type: string) => type === "text/html" ? dom.innerHTML : "", files: [] } });
+  expect(editor.getHTML()).toBe(html);
+  expect(change.mock.lastCall![0]).toContain('<aside data-callout="blue"');
+  expect(change.mock.lastCall![0]).not.toContain("data-memocard-aside");
+});
+
+it.each([
+  '开头\n\n普通正文',
+  '开头\n\n<aside data-callout="blue" data-callout-icon="💡"><p>正文</p><img src="../assets/a.png" alt="图片"></aside>',
+])("keeps standard clipboard HTML when native callouts cannot represent the selection: %s", async original => {
+  const { editor, change } = await setup(original);
+  act(() => editor.commands.selectAll());
+  const clipboard = new Map<string, string>();
+  fireEvent.copy(editor.view.dom, { clipboardData: { clearData: () => clipboard.clear(), setData: (type: string, value: string) => clipboard.set(type, value) } });
+  expect(clipboard.has(notionClipboardType)).toBe(false);
+  expect(clipboard.get("text/html")).toContain("开头");
+  if (original.includes("<img")) expect(clipboard.get("text/html")).toContain("../assets/a.png");
+  expect(change).not.toHaveBeenCalled();
+});
+
+it.each([
+  '<table><caption>表格说明</caption><tbody><tr><td>数据</td></tr></tbody></table>',
+  '<table><tbody><tr><th scope="col">表头</th></tr><tr><td>数据</td></tr></tbody></table>',
+  '<table><tbody><tr><td align="right">数据</td></tr></tbody></table>',
+  '<table><tbody><tr><td>数据</td></tr></tbody><tfoot><tr><td>合计</td></tr></tfoot></table>',
+])("falls back to HTML without dropping unsupported table semantics: %s", async table => {
+  const { editor, change } = await setup(`开头\n\n<aside data-callout="blue"><p>提示</p>${table}</aside>`);
+  act(() => editor.commands.selectAll());
+  const { dom } = editor.view.serializeForClipboard(editor.state.selection.content());
+  const clipboard = new Map<string, string>();
+  fireEvent.copy(editor.view.dom, { clipboardData: { clearData: () => clipboard.clear(), setData: (type: string, value: string) => clipboard.set(type, value) } });
+  expect(clipboard.has(notionClipboardType)).toBe(false);
+  expect(clipboard.get("text/html")).toBe(dom.innerHTML);
+  expect(clipboard.get("text/plain")).toContain("数据");
+  expect(change).not.toHaveBeenCalled();
+});
 
 it("edits a custom grapheme icon without moving the caret and preserves undo and reopening", async () => {
   const original = '开头\n\n<aside data-callout="blue" data-callout-icon="ℹ️"><p><strong>标题</strong></p><ul><li>正文</li></ul></aside>\n\n结尾';

@@ -9,6 +9,7 @@ import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/select";
+import { TooltipHints } from "../components/tooltip";
 import { PreviewModeProvider } from "../preview-mode";
 import "../styles.css";
 import "../preview-appearance.css";
@@ -26,12 +27,12 @@ function Mascots() {
     history.replaceState(null, "", url);
   };
 
-  return <PreviewModeProvider mode={theme}>
+  return <PreviewModeProvider mode={theme}><TooltipHints>
     <div className="ui-theme min-h-dvh" data-ui-theme={theme}>
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
           <div className="flex min-w-0 items-center gap-2">
-            <Button role="link" nativeButton={false} variant="ghost" size="icon-sm" render={<a href={`/?theme=${theme}`} />} aria-label="返回 UI 验收主页" title="返回 UI 验收主页"><HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} aria-hidden="true" /></Button>
+            <Button role="link" nativeButton={false} variant="ghost" size="icon-sm" render={<a href={`/?theme=${theme}`} />} aria-label="返回 UI 验收主页" data-ui-tooltip="返回 UI 验收主页"><HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} aria-hidden="true" /></Button>
             <Badge variant="secondary">MemoCard UI</Badge>
           </div>
           <Select items={themes} value={theme} onValueChange={changeTheme}>
@@ -62,7 +63,7 @@ function Mascots() {
         <p className="text-pretty text-xs text-secondary">交互与预设角色来自 <a href="https://koboyo.com/page-mascot" target="_blank" rel="noreferrer" className="underline underline-offset-4 focus-visible:focus-ring">page-mascot</a> · <a href={mascotLicense} className="underline underline-offset-4 focus-visible:focus-ring">MIT License</a></p>
       </main>
     </div>
-  </PreviewModeProvider>;
+  </TooltipHints></PreviewModeProvider>;
 }
 
 const root = createRoot(document.getElementById("root")!);

@@ -5,6 +5,7 @@ import { GLOBALS_UPDATED } from "storybook/internal/core-events";
 import type { GlobalsUpdatedPayload } from "storybook/internal/types";
 import { themes } from "storybook/theming";
 import { PreviewModeProvider } from "../ui/preview-mode";
+import { TooltipHints } from "../ui/components/tooltip";
 import { DEFAULT_PREVIEW_APPEARANCE, parsePreviewAppearance, PREVIEW_RADII } from "../ui/preview-appearance";
 import { PREVIEW_FONTS } from "../ui/preview-fonts";
 import { componentDocsRenderer } from "../ui/component-docs-renderer";
@@ -53,6 +54,6 @@ const preview: Preview = {
       },
     },
   },
-  decorators: [(Story, context) => <PreviewModeProvider mode={context.globals.theme === "dark" ? "dark" : "light"} appearance={parsePreviewAppearance(context.globals)}><Story /></PreviewModeProvider>],
+  decorators: [(Story, context) => <PreviewModeProvider mode={context.globals.theme === "dark" ? "dark" : "light"} appearance={parsePreviewAppearance(context.globals)}><TooltipHints><Story /></TooltipHints></PreviewModeProvider>],
 };
 export default preview;

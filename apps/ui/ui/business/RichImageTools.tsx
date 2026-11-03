@@ -30,7 +30,7 @@ export function RichImageTools({ editor, getPos, alt }: { editor: Editor; getPos
   const Surface = mobileActions ? ActionGroup : "div";
   return <Surface className="rich-image-tools" contentEditable={false} data-open={open || undefined} aria-label={mobileActions ? "图片操作" : undefined}>
     <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger render={<Button type="button" variant={mobileActions ? "ghost" : "secondary"} size="icon-xs" aria-label={`图片布局 ${alt}`} title="图片布局" />}><richIcons.MoreHorizontal aria-hidden="true" /></DropdownMenuTrigger>
+      <DropdownMenuTrigger render={<Button type="button" variant={mobileActions ? "ghost" : "secondary"} size="icon-xs" aria-label={`图片布局 ${alt}`} data-ui-tooltip="图片布局" />}><richIcons.MoreHorizontal aria-hidden="true" /></DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end" sideOffset={6} className="ui-rich-ui rich-block-menu" aria-label="图片布局">
         <DropdownMenuItem disabled={!join(previous, "right")} onClick={() => applyImageTransaction(editor, join(previous, "right"))}>{columns}与上一行并排</DropdownMenuItem>
         <DropdownMenuItem disabled={!join(next, "left")} onClick={() => applyImageTransaction(editor, join(next, "left"))}>{columns}与下一行并排</DropdownMenuItem>

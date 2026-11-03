@@ -80,7 +80,7 @@ export function TagsPage({ tags, vaultId, loading, connected, disabled, canRenam
       {loading && !tags.length ? <div role="status" aria-label="正在读取标签" className="grid gap-2 p-2">{[0, 1, 2, 3].map(item => <Skeleton key={item} className="h-8 rounded-xl" />)}</div>
         : matches.length ? <Table className="ui-tag-directory-table" aria-label={needle ? "标签搜索结果" : "标签层级"}>
           <colgroup><col /><col className="ui-tag-directory-count-column" /><col className="ui-tag-directory-actions-column" /></colgroup>
-          <TableHeader><TableRow><TableHead scope="col" className="ui-tag-directory-label-heading">标签</TableHead><TableHead scope="col" className="ui-tag-directory-count-heading" title="包含子标签，按笔记去重">笔记数</TableHead><TableHead scope="col" className="ui-tag-directory-actions-heading">置顶</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead scope="col" className="ui-tag-directory-label-heading">标签</TableHead><TableHead scope="col" className="ui-tag-directory-count-heading" data-ui-tooltip="包含子标签，按笔记去重">笔记数</TableHead><TableHead scope="col" className="ui-tag-directory-actions-heading">置顶</TableHead></TableRow></TableHeader>
           <TableBody>{(needle ? matches : index.roots).map(tag => row(tag, 0, Boolean(needle)))}</TableBody>
         </Table>
         : <Empty><EmptyHeader><EmptyTitle>{!connected ? "连接笔记库后查看标签" : needle ? "没有找到相关标签" : "还没有标签"}</EmptyTitle><EmptyDescription>{!connected ? "从左上角选择笔记库。" : needle ? "换个关键词，或清空搜索。" : "在笔记中添加标签后，会显示在这里。"}</EmptyDescription></EmptyHeader>{needle && <EmptyContent><Button variant="outline" onClick={() => { setQuery(""); search.current?.focus(); }}>清空搜索</Button></EmptyContent>}</Empty>}
@@ -166,11 +166,11 @@ function TagRow({ tag, depth, lastSibling, icon, pinned, iconEditorOpen, expande
               if (!event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) void save(true);
             }} />
             {saving && <span role="status" className="sr-only">保存中…</span>}
-          </form> : <Button ref={label} variant="ghost" className="ui-tag-directory-name-button" data-tag-path={tag.name} aria-label={`编辑标签名称 ${tag.name}`} title={tag.name} disabled={disabled || !canRename} onClick={() => { cancelled.current = false; setDraft(name); setError(""); setRenaming(true); }}>{name}</Button>}
+          </form> : <Button ref={label} variant="ghost" className="ui-tag-directory-name-button" data-tag-path={tag.name} aria-label={`编辑标签名称 ${tag.name}`} disabled={disabled || !canRename} onClick={() => { cancelled.current = false; setDraft(name); setError(""); setRenaming(true); }}>{name}</Button>}
           {flat && !renaming && separator >= 0 && <span className="ui-tag-directory-path">{tag.name.slice(0, separator)}</span>}
         </div>
       </div></TableCell>
-      <TableCell><Button variant="ghost" size="sm" className="ui-tag-directory-count" aria-label={`查看标签 ${tag.name} 的笔记`} aria-description={`${tag.count} 条笔记，包含子标签，按笔记去重`} title="包含子标签，按笔记去重" disabled={disabled || saving} onClick={onSelect}>{tag.count}</Button></TableCell>
+      <TableCell><Button variant="ghost" size="sm" className="ui-tag-directory-count" aria-label={`查看标签 ${tag.name} 的笔记`} aria-description={`${tag.count} 条笔记，包含子标签，按笔记去重`} disabled={disabled || saving} onClick={onSelect}>{tag.count}</Button></TableCell>
       <TableCell><div className="ui-tag-directory-actions">
         <Button variant="ghost" size="icon-sm" className="ui-tag-directory-pin" aria-label={`${pinned ? "取消置顶" : "置顶标签"} ${tag.name}`} aria-pressed={pinned} disabled={disabled || pinDisabled || saving} onClick={onPin}><HugeiconsIcon icon={PinIcon} fill={pinned ? "currentColor" : "none"} aria-hidden="true" /></Button>
       </div></TableCell>
