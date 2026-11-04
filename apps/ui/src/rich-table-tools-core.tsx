@@ -22,7 +22,7 @@ function tableContext(editor: Editor) {
   return null;
 }
 
-export function createRichTableTools(icons: RichEditorUI['icons'], uiClassName: string) {
+export function createRichTableTools(icons: RichEditorUI['icons'], uiClassName: string, MenuPortal: NonNullable<RichEditorUI['MenuPortal']> = Menu.Portal) {
   const { Table, Plus, ArrowUp, ArrowDown, ChevronRight, Trash2, Check } = icons;
   return function RichTableTools({ editor, blocked, onMenuOpenChange }: { editor: Editor; blocked: boolean; onMenuOpenChange: (open: boolean) => void }) {
     const [open, setOpen] = useState<'row' | 'column' | 'table' | null>(null);
@@ -107,10 +107,10 @@ export function createRichTableTools(icons: RichEditorUI['icons'], uiClassName: 
     const item = (label: string, command: () => void, Icon = Plus, disabled = false, destructive = false) => <Menu.Item key={label} disabled={disabled} data-variant={destructive ? 'destructive' : undefined} onClick={() => run(command)}><Icon aria-hidden="true" /><span>{label}</span></Menu.Item>;
     const menu = (kind: NonNullable<typeof open>, label: string, children: ReactNode) => <Menu.Root open={open === kind} modal={false} onOpenChange={(next, details) => { if (!next) closeReasons.current[kind] = details.reason; changeOpen(kind, next); }}>
       <Menu.Trigger type="button" aria-keyshortcuts={kind === 'table' ? 'Shift+F10' : undefined} data-ui-tooltip={kind === 'table' ? '表格选项（Shift+F10）' : undefined} onMouseDown={event => event.preventDefault()} aria-label={kind === 'row' ? `第 ${context.row + 1} 行操作` : kind === 'column' ? `第 ${context.column + 1} 列操作` : '表格选项'}>{kind === 'table' && <Table aria-hidden="true" />}<span>{label}</span><ArrowDown aria-hidden="true" /></Menu.Trigger>
-      <Menu.Portal><Menu.Positioner side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Menu.Popup className={`rich-block-menu rich-table-menu ${uiClassName}`} aria-label={`${label}操作菜单`} finalFocus={() => !editor.isEditable || blocked || activeMenu.current !== null || ['outside-press', 'focus-out'].includes(closeReasons.current[kind] ?? '') ? false : editor.view.dom}>
+      <MenuPortal><Menu.Positioner side="bottom" align="start" sideOffset={6} collisionPadding={12} className="z-50"><Menu.Popup className={`rich-block-menu rich-table-menu ${uiClassName}`} aria-label={`${label}操作菜单`} finalFocus={() => !editor.isEditable || blocked || activeMenu.current !== null || ['outside-press', 'focus-out'].includes(closeReasons.current[kind] ?? '') ? false : editor.view.dom}>
         <div className="block-menu-label">{kind === 'table' ? '表格设置' : `第 ${kind === 'row' ? context.row + 1 : context.column + 1} ${label}`}</div>
         {children}
-      </Menu.Popup></Menu.Positioner></Menu.Portal>
+      </Menu.Popup></Menu.Positioner></MenuPortal>
     </Menu.Root>;
     return <><div ref={outline} className="rich-table-cell-outline" aria-hidden="true" /><div ref={tools} className="rich-table-tools" role="group" aria-label="表格操作" onKeyDown={event => { if (event.key === 'Escape' && !open) { event.preventDefault(); editor.view.focus(); } }}>
       {menu('row', '行', <>

@@ -15,32 +15,31 @@ import HashtagIcon from "@hugeicons/core-free-icons/HashtagIcon";
 import ImageAdd02Icon from "@hugeicons/core-free-icons/ImageAdd02Icon";
 import Maximize01Icon from "@hugeicons/core-free-icons/Maximize01Icon";
 import { createPropertyOptionMenu } from "../../src/PropertyOptionMenu.core";
-import { createChoicePropertyEditor } from "../../src/ChoicePropertyEditor.core";
+import { ChoicePill } from "../../src/ChoicePill";
 import { createTagColorMenu } from "../../src/TagColorMenu.core";
-import { createTagPropertyEditor } from "../../src/TagPropertyEditor.core";
-import { createDatePropertyPicker } from "../../src/DatePropertyPicker.core";
 import { createImagePropertyEditor } from "../../src/ImagePropertyEditor.core";
 import { createNameEditor } from "../../src/components/name-editor.core";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { Badge } from "../components/badge";
 import { recoverableLazy } from "../components/recoverable-lazy";
-import { Switch } from "../components/switch";
 import { Skeleton } from "../components/skeleton";
 import { Popover, PopoverContent } from "../components/popover";
 import { PropertyPopover, PropertyPopoverContent, PropertyPopoverTrigger } from "./property-popover";
 import { useIsMobile } from "../../src/hooks/use-mobile";
 import * as menus from "../components/dropdown-menu";
-import * as tooltips from "../components/tooltip";
 import { Sheet, SheetCloseButton, SheetContent, SheetHeader, SheetTitle } from "../components/sheet";
 import { cn, cnState } from "../lib/utils";
-import { ImageViewer } from "./NoteMarkdown";
+import { ImageViewer } from "./NoteMedia";
 import { richIcons } from "./rich-icons";
-import { PropertyConfirmationPopup } from "./property-confirmation";
+import { PropertyConfirmationPortal, PropertyConfirmationPopup } from "./property-confirmation";
 import "./tag.css";
 import "./note-properties.css";
 
-const Calendar = recoverableLazy(() => import("../components/calendar").then(module => ({ default: module.Calendar })), "日期");
+export const DatePropertyPicker = recoverableLazy(() => import("./DatePropertyPicker").then(module => ({ default: module.DatePropertyPicker })), "日期");
+export const TagPropertyEditor = recoverableLazy(() => import("./TagPropertyEditor").then(module => ({ default: module.TagPropertyEditor })), "标签");
+export const ChoicePropertyEditor = recoverableLazy(() => import("./ChoicePropertyEditor").then(module => ({ default: module.ChoicePropertyEditor })), "选项");
+export { ChoicePill };
 
 const icon = (data: HugeiconsIconProps["icon"]): RichIcon => props => <HugeiconsIcon icon={data} {...props} strokeWidth={Number(props.strokeWidth ?? 2)} />;
 export const propertyIcons = {
@@ -60,10 +59,7 @@ export function NameEditor(props: ComponentProps<typeof SharedNameEditor>) {
   const mobile = useIsMobile();
   return <SharedNameEditor {...props} className={cn("note-property-name-popup", props.className)} sheet={props.sheet || mobile} />;
 }
-export const PropertyOptionMenu = createPropertyOptionMenu({ ...menus, ...propertyIcons, Button, Input, TagPill, ConfirmationPopup: PropertyConfirmationPopup });
-export const { ChoicePropertyEditor, ChoicePill } = createChoicePropertyEditor({ X: propertyIcons.X, PropertyOptionMenu });
+export const PropertyOptionMenu = createPropertyOptionMenu({ ...menus, ...propertyIcons, Button, Input, TagPill, ConfirmationPortal: PropertyConfirmationPortal, ConfirmationPopup: PropertyConfirmationPopup });
 export const TagColorMenu = createTagColorMenu({ PropertyOptionMenu });
-export const TagPropertyEditor = createTagPropertyEditor({ ...tooltips, TagColorMenu, X: propertyIcons.X, Button, TagPill });
-export const DatePropertyPicker = createDatePropertyPicker({ DayPicker: Calendar, Button, Input, Switch });
 export const ImagePropertyEditor = createImagePropertyEditor({ ...menus, ...propertyIcons, Button, Skeleton, Popover: PropertyPopover, PopoverContent: PropertyPopoverContent, PopoverTrigger: PropertyPopoverTrigger, DropdownMenuContent: props => <menus.DropdownMenuContent {...props} className={cnState(props.className, "note-property-image-menu")} />, ImageViewer });
 export const collapsibles = { Collapsible: CollapsiblePrimitive.Root, CollapsibleContent: CollapsiblePrimitive.Panel, CollapsibleTrigger: CollapsiblePrimitive.Trigger };

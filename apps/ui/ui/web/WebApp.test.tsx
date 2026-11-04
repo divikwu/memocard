@@ -3,10 +3,14 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { App, type AppViewState } from "../../src/App";
-import { replaceCaptureText, replaceEditorText } from "../../src/editor-test-utils";
+import { noteEditor, replaceCaptureText, replaceEditorText } from "../../src/editor-test-utils";
 import { resetStorybookBridge, setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { createWorkspaceFixture } from "./workspace-fixture";
 import { WebAppearanceProvider } from "./WebAppearance";
+import { AppearanceCatalogProvider } from "./appearance/AppearanceRuntime";
+import { appearanceCatalog } from "./appearance/catalog";
+import type { AppearanceCatalog } from "./appearance/contracts";
+import { appearanceFixture } from "../../ui-state-fixtures/appearance-fixture";
 import { preloadWebEditor, renderWebApp } from "./WebAppView";
 
 let detach: (() => void) | undefined;
@@ -26,7 +30,7 @@ beforeEach(() => {
 });
 afterEach(async () => { cleanup(); await act(async () => {}); detach?.(); resetStorybookBridge(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
-async function mount(scenario = "loading", readOnly = false, mapView?: (state: AppViewState) => AppViewState) {
+async function mount(scenario = "loading", readOnly = false, mapView?: (state: AppViewState) => AppViewState, catalog: AppearanceCatalog = appearanceCatalog) {
   const fixture = await createWorkspaceFixture(scenario);
   const request = vi.fn(async (operation: string, params: Record<string, unknown> = {}) => {
     const result = await fixture.request(operation, params);
@@ -37,7 +41,7 @@ async function mount(scenario = "loading", readOnly = false, mapView?: (state: A
     return result;
   });
   detach = setStorybookRequestHandler(request);
-  await act(async () => { render(<WebAppearanceProvider><App renderView={state => renderWebApp(mapView ? mapView(state) : state)} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>); });
+  await act(async () => { render(<AppearanceCatalogProvider catalog={catalog}><WebAppearanceProvider><App renderView={state => renderWebApp(mapView ? mapView(state) : state)} preloadEditor={preloadWebEditor} /></WebAppearanceProvider></AppearanceCatalogProvider>); });
   return { fixture, request };
 }
 
@@ -240,9 +244,13 @@ it("flushes unfinished edits before opening settings and preserves them across a
   await screen.findByRole("heading", { name: "设置", level: 1 });
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   expect(fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")?.body).toBe("离开编辑页前必须保留的正文");
-  await user.click(screen.getByRole("combobox", { name: "主题" }));
+  await user.click(screen.getByRole("combobox", { name: "颜色模式" }));
   await user.click(await screen.findByRole("option", { name: "深色" }));
   await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  await user.click(screen.getByRole("combobox", { name: "界面主题" }));
+  await user.click(await screen.findByRole("option", { name: "简约" }));
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  await screen.findByRole("navigation", { name: "顶部导航" });
   await user.click(screen.getByText("高级外观"));
   await user.click(screen.getByRole("combobox", { name: "圆角" }));
   await user.click(await screen.findByRole("option", { name: "None · 0px" }));
@@ -500,4 +508,104 @@ it("announces an initial list timeout and preserves its retry action", async () 
   const alert = await screen.findByRole("alert");
   expect(alert.textContent).toContain("笔记加载超时");
   expect(within(alert).getByRole("button", { name: "重试" })).toBeDefined();
+});
+
+
+it("switches interface themes without rebuilding an open editor, changing its route, or losing undo", async () => {
+  const user = userEvent.setup();
+  await mount();
+  await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
+  const field = await screen.findByRole("textbox", { name: "笔记内容" });
+  const editor = noteEditor(field);
+  const original = editor.getText();
+  act(() => { editor.commands.insertContentAt(1, "主题切换保留编辑"); field.focus(); });
+  const hash = location.hash;
+  for (const interfaceTheme of ["minimal", "classic"]) {
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: "memocard-web-appearance-v1", newValue: JSON.stringify({ interfaceTheme }), storageArea: localStorage })));
+    if (interfaceTheme === "minimal") await screen.findByRole("navigation", { name: "顶部导航" });
+    else await waitFor(() => expect(screen.queryByRole("navigation", { name: "顶部导航" })).toBeNull());
+    expect(screen.getByRole("textbox", { name: "笔记内容" })).toBe(field);
+    expect(noteEditor(field)).toBe(editor);
+    expect(document.activeElement).toBe(field);
+    expect(location.hash).toBe(hash);
+    expect(editor.getText()).toContain("主题切换保留编辑");
+  }
+  act(() => { editor.commands.undo(); });
+  expect(editor.getText()).toBe(original);
+});
+
+it("uses the shared tag tree, search, and quick filters from the minimal navigation", async () => {
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
+  const user = userEvent.setup();
+  await mount();
+  await screen.findByRole("button", { name: "打开 今天的手冲记录" });
+  expect(screen.queryByRole("complementary", { name: "笔记导航" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "展开侧栏" })).toBeNull();
+  const nav = screen.getByRole("navigation", { name: "顶部导航" });
+  await user.click(within(nav).getByRole("button", { name: "标签" }));
+  const tags = await screen.findByRole("dialog", { name: "浏览标签" });
+  expect(tags.querySelector(".ui-sidebar-tree-row")).not.toBeNull();
+  await user.click(within(within(tags).getByRole("navigation", { name: "标签" })).getByRole("button", { name: "设计" }));
+  await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" });
+  expect(screen.queryByRole("dialog", { name: "浏览标签" })).toBeNull();
+  expect(within(nav).getByRole("button", { name: "标签" }).getAttribute("aria-current")).toBe("page");
+  await user.click(within(nav).getByRole("button", { name: "更多" }));
+  const menu = await screen.findByRole("menu");
+  expect(within(menu).queryByRole("menuitem", { name: "新建笔记" })).toBeNull();
+  expect(within(menu).getByRole("menuitem", { name: "刷新笔记库" }).querySelector("svg")).not.toBeNull();
+  await user.click(within(menu).getByRole("menuitem", { name: "有图片" }));
+  await screen.findByText("在笔记中插入图片后，会自动出现在这里。");
+  await user.click(screen.getByRole("button", { name: "搜索" }));
+  await screen.findByRole("dialog", { name: "搜索笔记" });
+});
+
+it("keeps the drawer navigation on mobile even when the minimal theme is saved", async () => {
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
+  vi.stubGlobal("innerWidth", 390);
+  await mount();
+  await screen.findByRole("heading", { name: "所有笔记", level: 1 });
+  expect(screen.queryByRole("navigation", { name: "顶部导航" })).toBeNull();
+  expect(screen.getByRole("button", { name: "打开导航" })).toBeDefined();
+});
+
+
+it("registers a CSS theme reusing topbar and a test-only layout without rebuilding shared content", async () => {
+  const user = userEvent.setup();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
+  await mount("loading", false, undefined, appearanceFixture);
+  await screen.findByRole("navigation", { name: "顶部导航" });
+  await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
+  const field = await screen.findByRole("textbox", { name: "笔记内容" });
+  const editor = noteEditor(field); const original = editor.getText(); const hash = location.hash;
+  const nav = screen.getByRole("navigation", { name: "顶部导航" });
+  act(() => { editor.commands.insertContentAt(1, "跨主题编辑"); field.focus(); });
+  for (const interfaceTheme of ["paper", "experimental", "classic"]) {
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: "memocard-web-appearance-v1", newValue: JSON.stringify({ interfaceTheme }), storageArea: localStorage })));
+    await waitFor(() => expect(document.querySelector(".web-app")?.getAttribute("data-interface-theme")).toBe(interfaceTheme));
+    if (interfaceTheme === "paper") expect(screen.getByRole("navigation", { name: "顶部导航" })).toBe(nav);
+    if (interfaceTheme === "experimental") expect(screen.getByRole("navigation", { name: "测试布局" })).toBeDefined();
+    expect(screen.getByRole("textbox", { name: "笔记内容" })).toBe(field);
+    expect(noteEditor(field)).toBe(editor); expect(location.hash).toBe(hash);
+    expect(document.activeElement).toBe(field); expect(editor.getText()).toContain("跨主题编辑");
+  }
+  act(() => { editor.commands.undo(); }); expect(editor.getText()).toBe(original);
+});
+
+
+it("commits a loaded theme without overwriting color changes made while loading", async () => {
+  let finish!: () => void;
+  const css = new Promise<void>(resolve => { finish = resolve; });
+  const catalog: AppearanceCatalog = { ...appearanceFixture, themes: { ...appearanceFixture.themes, paper: { ...appearanceFixture.themes.paper, loadStyles: () => css } } };
+  history.replaceState(null, "", "#/settings");
+  const user = userEvent.setup(); await mount("loading", false, undefined, catalog);
+  await screen.findByRole("combobox", { name: "界面主题" });
+  await user.click(screen.getByRole("combobox", { name: "界面主题" }));
+  await user.click(await screen.findByRole("option", { name: "测试纸感" }));
+  expect(document.querySelector(".web-app")?.getAttribute("data-interface-theme")).toBe("classic");
+  await user.click(screen.getByRole("combobox", { name: "颜色模式" }));
+  await user.click(await screen.findByRole("option", { name: "深色" }));
+  await act(async () => { finish(); });
+  await waitFor(() => expect(document.querySelector(".web-app")?.getAttribute("data-interface-theme")).toBe("paper"));
+  expect(JSON.parse(localStorage.getItem("memocard-web-appearance-v1")!)).toMatchObject({ interfaceTheme: "paper", theme: "dark" });
+  expect(document.querySelector(".web-app")?.getAttribute("data-ui-theme")).toBe("dark");
 });

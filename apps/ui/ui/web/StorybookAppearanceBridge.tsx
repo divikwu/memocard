@@ -11,6 +11,8 @@ type PreviewGlobals = PreviewAppearance & { theme: "light" | "dark" };
 export function StorybookAppearanceBridge({ children }: { children: ReactNode }) {
   const appearance = usePreviewAppearance();
   const [theme, setTheme] = useState<WebAppearance["theme"]>(appearance.mode);
+  const [interfaceTheme, setInterfaceThemeState] = useState<WebAppearance["interfaceTheme"]>("classic");
+  const [themeRevision, setThemeRevision] = useState(0);
   const [colors, setColors] = useState<Pick<WebAppearance, "palette" | "neutralPalette">>({ palette: "mono", neutralPalette: "neutral" });
   const [systemDark, setSystemDark] = useState(() => matchMedia("(prefers-color-scheme: dark)").matches);
   const current = useRef(appearance); current.current = appearance;
@@ -43,8 +45,13 @@ export function StorybookAppearanceBridge({ children }: { children: ReactNode })
   }, [publish, theme]);
   const onChange = (next: WebAppearance) => {
     setTheme(next.theme);
+    setInterfaceThemeState(next.interfaceTheme);
     setColors({ palette: next.palette, neutralPalette: next.neutralPalette });
     publish({ radius: next.radius, headingFont: next.headingFont, bodyFont: next.bodyFont, theme: next.theme === "system" ? systemDark ? "dark" : "light" : next.theme });
   };
-  return <WebAppearanceContext.Provider value={{ value: { ...appearance, ...colors, theme }, onChange, resetAppearance: () => onChange({ ...DEFAULT_WEB_APPEARANCE }) }}><WebPaletteStyles value={colors} />{children}</WebAppearanceContext.Provider>;
+  const setInterfaceTheme = (id: string) => {
+    setThemeRevision(value => value + 1);
+    setInterfaceThemeState(id);
+  };
+  return <WebAppearanceContext.Provider value={{ value: { ...appearance, ...colors, theme, interfaceTheme }, onChange, setInterfaceTheme, themeRevision, resetAppearance: () => { setThemeRevision(value => value + 1); onChange({ ...DEFAULT_WEB_APPEARANCE }); } }}><WebPaletteStyles value={colors} />{children}</WebAppearanceContext.Provider>;
 }

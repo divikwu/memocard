@@ -1,6 +1,7 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/themes/ui-luma.sources.json.
 "use client"
 
+import { useThemeScopeProps } from "./theme-scope"
 import * as React from "react"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
 import { cn, cnState } from "../lib/utils"
@@ -14,7 +15,8 @@ function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
 }
 
 function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
-  return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
+  const scope = useThemeScopeProps()
+  return <MenuPrimitive.Portal {...scope} data-slot="dropdown-menu-portal" {...props} />
 }
 
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
@@ -34,8 +36,9 @@ function DropdownMenuContent({
     MenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "collisionPadding"
   >) {
+  const scope = useThemeScopeProps()
   return (
-    <MenuPrimitive.Portal>
+    <MenuPrimitive.Portal {...scope}>
       <MenuPrimitive.Positioner
         className="isolate z-50 outline-none"
         align={align}
@@ -94,7 +97,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cnState(
         className,
-        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary not-data-[variant=destructive]:focus:**:text-accent dark:not-data-[variant=destructive]:focus:**:text-primary data-inset:pl-8.5 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-error/10 data-[variant=destructive]:focus:text-error dark:data-[variant=destructive]:focus:bg-error/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-error"
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus not-data-[variant=destructive]:focus:**:text-menu-focus data-inset:pl-8.5 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-danger-surface data-[variant=destructive]:focus:text-error data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-error"
       )}
       {...props}
     />
@@ -119,7 +122,7 @@ function DropdownMenuSubTrigger({
       data-inset={inset}
       className={cnState(
         className,
-        "flex cursor-default items-center gap-2 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary not-data-[variant=destructive]:focus:**:text-accent dark:not-data-[variant=destructive]:focus:**:text-primary data-inset:pl-8.5 data-popup-open:bg-accent-muted data-popup-open:text-accent dark:data-popup-open:text-primary data-open:bg-accent-muted data-open:text-accent dark:data-open:text-primary [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "flex cursor-default items-center gap-2 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus not-data-[variant=destructive]:focus:**:text-menu-focus data-inset:pl-8.5 data-popup-open:bg-accent-muted data-popup-open:text-menu-focus data-open:bg-accent-muted data-open:text-menu-focus [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >
@@ -168,7 +171,7 @@ function DropdownMenuCheckboxItem({
       data-inset={inset}
       className={cnState(
         className,
-        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary focus:**:text-accent dark:focus:**:text-primary data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus focus:**:text-menu-focus data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       checked={checked}
       {...props}
@@ -209,7 +212,7 @@ function DropdownMenuRadioItem({
       data-inset={inset}
       className={cnState(
         className,
-        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary focus:**:text-accent dark:focus:**:text-primary data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus focus:**:text-menu-focus data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >
@@ -247,7 +250,7 @@ function DropdownMenuShortcut({
     <span
       data-slot="dropdown-menu-shortcut"
       className={cn(
-        "ml-auto text-xs tracking-widest text-secondary group-focus/dropdown-menu-item:text-accent dark:group-focus/dropdown-menu-item:text-primary",
+        "ml-auto text-xs tracking-widest text-secondary group-focus/dropdown-menu-item:text-menu-focus",
         className
       )}
       {...props}

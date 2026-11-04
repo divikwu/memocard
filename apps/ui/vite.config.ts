@@ -30,9 +30,12 @@ export default defineConfig({
     target: "safari16.4",
     assetsInlineLimit: 0,
     rolldownOptions: { output: { codeSplitting: { groups: [
-      // Only consolidate eager vendor modules. Keep local bootstrap modules separate:
+      // Keep local bootstrap modules separate from the eager UI groups:
       // browser-runtime awaits a dynamic storage graph that imports shared local helpers.
       { name: "initial-vendor", test: /node_modules/, tags: ["$initial"] },
+      // Coalesce only eager UI modules. Pulling their shared storage dependencies
+      // into this chunk would create an async bootstrap cycle with browser-runtime.
+      { name: "initial-ui", test: /\/apps\/ui\/ui\//, tags: ["$initial"], includeDependenciesRecursively: false },
     ] } } },
   },
 });

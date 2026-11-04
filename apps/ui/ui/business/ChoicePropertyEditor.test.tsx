@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { NoteProperty } from '@memocard/contracts';
-import { ChoicePropertyEditor } from './property-editors';
+import { ChoicePropertyEditor } from './ChoicePropertyEditor';
 const options = [{name:'设计',color:'blue' as const},{name:'开发',color:'green' as const}];
 const property:NoteProperty = {name:'领域',type:'multiSelect',value:['设计'],options,editable:true};
 beforeEach(()=>{

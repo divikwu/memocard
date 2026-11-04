@@ -67,7 +67,7 @@ export default mergeConfig(viteConfig, defineConfig({
         optimizeDeps: qualityOptimizeDeps,
         test: {
           name: "ui-quality",
-          include: ["test-support/ui-quality.browser.tsx", "test-support/note-typography.browser.tsx"],
+          include: ["test-support/ui-quality.browser.tsx", "test-support/note-typography.browser.tsx", "test-support/interface-themes.browser.tsx"],
           provide: { uiQualityTouch: false },
           browser: { enabled: true, provider: playwright(), commands: { setReducedMotion, setForcedColors, setFontsOffline, pressLeftMouseButton, releaseLeftMouseButton }, headless: true, instances: qualityBrowsers.map(browser => ({ browser })), viewport: desktop, screenshotDirectory },
         },

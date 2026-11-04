@@ -1,6 +1,7 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/themes/ui-luma.sources.json.
 "use client"
 
+import { ThemeScope, themeScopeStyle, useThemeScopeProps } from "./theme-scope"
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cn, cnState } from "../lib/utils"
@@ -19,7 +20,8 @@ function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+  const scope = useThemeScopeProps()
+  return <DialogPrimitive.Portal {...scope} data-slot="dialog-portal" {...props} />
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
@@ -42,6 +44,11 @@ function DialogOverlay({
   )
 }
 
+function ScopedDialogPopup({ className, style, ...props }: DialogPrimitive.Popup.Props) {
+  const scope = useThemeScopeProps()
+  return <DialogPrimitive.Popup {...scope} {...props} className={cnState(className, scope.className)} style={themeScopeStyle(scope.style, style)} />
+}
+
 function DialogContent({
   className,
   children,
@@ -61,11 +68,10 @@ function DialogContent({
     <span className="sr-only">关闭</span>
   </DialogPrimitive.Close>
   return (
-    <DialogPortal>
+    <ThemeScope value={{ mode: theme }}><DialogPortal>
       <DialogOverlay className={theme ? "ui-theme" : undefined} data-ui-theme={theme} />
-      <DialogPrimitive.Popup
+      <ScopedDialogPopup
         data-slot="dialog-content"
-        data-ui-theme={theme}
         className={cnState(
           className,
           "fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100dvh-2rem)] w-full overflow-y-auto overscroll-contain break-words max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-6 rounded-4xl bg-popover p-6 text-sm text-primary surface-floating shadow-high border duration-fast-min ease-standard outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
@@ -77,8 +83,8 @@ function DialogContent({
         {showCloseButton && (
           grouped ? <ActionGroup className="absolute top-4 right-4">{closeButton}</ActionGroup> : closeButton
         )}
-      </DialogPrimitive.Popup>
-    </DialogPortal>
+      </ScopedDialogPopup>
+    </DialogPortal></ThemeScope>
   )
 }
 

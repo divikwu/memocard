@@ -1,6 +1,7 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/licenses/shadcn-preview-02.md.
 "use client"
 
+import { useThemeScopeProps } from "./theme-scope"
 import * as React from "react"
 import { Combobox as ComboboxPrimitive } from "@base-ui/react/combobox"
 import { cn, cnState } from "@ui/lib/utils"
@@ -125,8 +126,9 @@ function ComboboxContent({
     ComboboxPrimitive.Positioner.Props,
     "side" | "align" | "sideOffset" | "alignOffset" | "anchor"
   >) {
+  const scope = useThemeScopeProps()
   return (
-    <ComboboxPrimitive.Portal>
+    <ComboboxPrimitive.Portal {...scope}>
       <ComboboxPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
@@ -172,7 +174,7 @@ function ComboboxItem({
       data-slot="combobox-item"
       className={cnState(
         className,
-        "relative flex w-full cursor-default items-center gap-2.5 rounded-element py-2 pr-8 pl-3 text-sm font-medium outline-hidden focus-visible:focus-ring select-none data-highlighted:bg-accent-muted data-highlighted:text-accent dark:data-highlighted:text-primary not-data-[variant=destructive]:data-highlighted:**:text-accent dark:not-data-[variant=destructive]:data-highlighted:**:text-primary data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex w-full cursor-default items-center gap-2.5 rounded-element py-2 pr-8 pl-3 text-sm font-medium outline-hidden focus-visible:focus-ring select-none data-highlighted:bg-accent-muted data-highlighted:text-menu-focus not-data-[variant=destructive]:data-highlighted:**:text-menu-focus data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >
@@ -260,7 +262,7 @@ function ComboboxChips({
       data-slot="combobox-chips"
       className={cnState(
         className,
-        "flex min-h-element-md flex-wrap items-center gap-1.5 rounded-control border border-transparent bg-control bg-clip-padding px-3 py-1.5 text-sm transition-[color,box-shadow,background-color] has-[[data-slot=combobox-chip-input]:focus-visible]:focus-ring has-aria-invalid:border-error has-aria-invalid:ring-3 has-aria-invalid:ring-error/20 has-data-[slot=combobox-chip]:px-1.5 dark:has-aria-invalid:border-error/50 dark:has-aria-invalid:ring-error/40"
+        "flex min-h-element-md flex-wrap items-center gap-1.5 rounded-control border border-transparent bg-control bg-clip-padding px-3 py-1.5 text-sm transition-[color,box-shadow,background-color] has-[[data-slot=combobox-chip-input]:focus-visible]:focus-ring has-aria-invalid:border-control-error-border has-aria-invalid:ring-3 has-aria-invalid:ring-control-error-ring has-data-[slot=combobox-chip]:px-1.5"
       )}
       {...props}
     />
@@ -287,7 +289,7 @@ function ComboboxChip({
       data-slot="combobox-chip"
       className={cnState(
         className,
-        "flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-3xl bg-neutral px-2 text-xs font-medium whitespace-nowrap text-primary has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0 dark:bg-neutral"
+        "flex h-[calc(--spacing(5.5))] w-fit items-center justify-center gap-1 rounded-3xl bg-neutral px-2 text-xs font-medium whitespace-nowrap text-primary has-disabled:pointer-events-none has-disabled:cursor-not-allowed has-disabled:opacity-50 has-data-[slot=combobox-chip-remove]:pr-0"
       )}
       {...props}
     >

@@ -497,7 +497,8 @@
       "sources": [
         "apps/ui/ui/preview-mode.tsx",
         "apps/ui/ui/preview-appearance.ts",
-        "apps/ui/ui/web/WebAppearance.tsx"
+        "apps/ui/ui/web/WebAppearance.tsx",
+        "apps/ui/ui/web/WorkspaceFrame.tsx"
       ],
       "consumers": [
         "apps/ui/ui/web/WebSettings.tsx"
@@ -533,7 +534,10 @@
         "apps/ui/ui/typeset.css",
         "apps/ui/ui/web/web-app.css",
         "apps/ui/ui/web/web-settings.css",
-        "apps/ui/ui/web/web-typography.css"
+        "apps/ui/ui/web/web-typography.css",
+        "apps/ui/ui/components/theme-scope.css",
+        "apps/ui/ui/web/layouts/topbar.css",
+        "apps/ui/ui/web/appearance/themes/minimal.css"
       ],
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx"
@@ -725,7 +729,10 @@
         },
         "--note-flow": {
           "type": "dimension",
-          "unit": ["px", "rem"]
+          "unit": [
+            "px",
+            "rem"
+          ]
         },
         "--note-line-height": {
           "type": "dimension",

@@ -1,38 +1,6 @@
 import { useLayoutEffect, useState, type ReactNode } from "react";
-import type { NoteFilterCounts, NoteQuickFilter } from "@memocard/contracts";
-import type { RegisteredVault } from "../../src/bridge";
-type SidebarView = "home" | "notes" | "tags" | "settings" | "trash";
-export interface AppSidebarProps {
-  view: SidebarView;
-  tag: string | null;
-  quickFilter?: NoteQuickFilter | null;
-  filterCounts?: NoteFilterCounts;
-  tags: { name: string; count: number }[];
-  loadingTags?: boolean;
-  vaultName: string;
-  vaultId?: string | null;
-  registeredVaults?: RegisteredVault[];
-  onRenameTag?: (from: string, to: string) => Promise<void>;
-  connected?: boolean;
-  canTrash?: boolean;
-  vaultStatusText: string;
-  hasVaultIssue: boolean;
-  canCreate: boolean;
-  canChooseVault: boolean;
-  canCreateVault: boolean;
-  needsPermission: boolean;
-  working: boolean;
-  onNavigate: (view: SidebarView, tag?: string | null, quickFilter?: NoteQuickFilter | null) => void;
-  onNewNote: () => void;
-  onSearch: () => void;
-  onSelectVault: (create: boolean) => void;
-  onActivateVault: (vaultId: string) => void;
-  onReauthorize: () => void;
-  canRefresh?: boolean;
-  onRefresh?: () => void;
-  draftCount?: number;
-  onOpenDrafts?: () => void;
-}
+import { workspaceActions, workspaceVaultActions, type WorkspaceNavigationProps } from "./navigation-model";
+export type AppSidebarProps = WorkspaceNavigationProps;
 import { Button } from "../components/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Separator } from "../components/separator";
@@ -47,13 +15,9 @@ import { TagNavigation } from "./tag-navigation";
 import "./sidebar.css";
 
 
-const filters: { id: NoteQuickFilter; label: string; icon: "hash" | "image" | "link" }[] = [
-  { id: "untagged", label: "无标签", icon: "hash" },
-  { id: "images", label: "有图片", icon: "image" },
-  { id: "links", label: "有链接", icon: "link" },
-];
-
-export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, loadingTags = false, vaultName, vaultId, registeredVaults = [], onRenameTag, connected = false, canTrash = false, vaultStatusText, hasVaultIssue, canCreate, canChooseVault, canCreateVault, needsPermission, working, onNavigate, onNewNote, onSearch, onSelectVault, onActivateVault, onReauthorize, canRefresh = false, onRefresh, draftCount = 0, onOpenDrafts }: AppSidebarProps) {
+export function AppSidebar(props: AppSidebarProps) {
+  const { view, tag, quickFilter = null, filterCounts, tags, loadingTags = false, vaultName, vaultId, registeredVaults = [], onRenameTag, vaultStatusText, hasVaultIssue, canChooseVault, canCreateVault, needsPermission, working, onNavigate, onRefresh, draftCount = 0, onOpenDrafts } = props;
+  const actions = workspaceActions(props);
   const { isMobile, setOpenMobile } = useSidebar();
   const [tagScroller, setTagScroller] = useState<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
@@ -74,23 +38,23 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
     if (isMobile) setOpenMobile(false);
   };
   const action = (run: () => void) => () => { run(); if (isMobile) setOpenMobile(false); };
-  const vaults = registeredVaults.length ? registeredVaults : connected && vaultId ? [{ vaultId, name: vaultName, active: true }] : [];
+  const vaults = registeredVaults.length ? registeredVaults : props.connected && vaultId ? [{ vaultId, name: vaultName, active: true }] : [];
   const vaultTrigger = <Button type="button" variant="ghost" size="icon" className="ui-sidebar-brand-menu size-7 text-secondary max-md:size-element-lg" aria-label={`笔记库：${vaultName}`} data-ui-tooltip={`笔记库：${vaultName}`}>
     <SidebarIcon name="down" />
   </Button>;
   const vaultItems = <>
-    {vaults.map((vault, index) => <VaultMenuItem key={vault.vaultId} mobile={isMobile} aria-label={vault.name} disabled={working} onClick={vault.active ? () => navigate("notes") : action(() => onActivateVault(vault.vaultId))}>
+    {workspaceVaultActions(props, vaults).map((vault, index) => <VaultMenuItem key={vault.vaultId} mobile={isMobile} aria-label={vault.name} disabled={vault.disabled} onClick={action(vault.run)}>
       <span className="ui-sidebar-vault-icon"><SidebarIcon name="layers" /></span><span className="min-w-0 flex-1 truncate" data-ui-tooltip={vault.name} data-ui-tooltip-overflow>{vault.name}</span>{vault.active && <span aria-label="当前笔记库"><SidebarIcon name="check" /></span>}
       {!isMobile && registeredVaults.length > 1 && index < 9 && <DropdownMenuShortcut aria-hidden="true">⌥{index + 1}</DropdownMenuShortcut>}
     </VaultMenuItem>)}
     {isMobile ? <Separator className="my-2" /> : <DropdownMenuSeparator />}
-    {canChooseVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(false)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="folder" /></span><span>打开已有笔记库</span></VaultMenuItem>}
-    {canCreateVault && <VaultMenuItem mobile={isMobile} disabled={working} onClick={() => onSelectVault(true)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="folderAdd" /></span><span>创建新笔记库</span></VaultMenuItem>}
-    {needsPermission && <VaultMenuItem mobile={isMobile} disabled={working} onClick={action(onReauthorize)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="shield" /></span><span>重新授权文件夹</span></VaultMenuItem>}
-    {onRefresh && <VaultMenuItem mobile={isMobile} disabled={!canRefresh} onClick={action(onRefresh)}><span className="ui-sidebar-vault-icon"><HugeiconsIcon icon={RefreshIcon} className="size-4" aria-hidden="true" /></span><span>刷新笔记库</span></VaultMenuItem>}
-    {onOpenDrafts && draftCount > 0 && <VaultMenuItem mobile={isMobile} onClick={action(onOpenDrafts)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="notebook" /></span><span>保留草稿（{draftCount}）</span></VaultMenuItem>}
-    <VaultMenuItem mobile={isMobile} onClick={() => navigate("settings")}><span className="ui-sidebar-vault-icon"><SidebarIcon name="settings" /></span><span>笔记库设置</span></VaultMenuItem>
-    <VaultMenuItem mobile={isMobile} disabled={!connected || !canTrash} aria-current={view === "trash" ? "page" : undefined} onClick={() => navigate("trash")}><span className="ui-sidebar-vault-icon"><SidebarIcon name="trash" /></span><span>回收站</span></VaultMenuItem>
+    {canChooseVault && <VaultMenuItem mobile={isMobile} disabled={actions.openVault.disabled} onClick={actions.openVault.run}><span className="ui-sidebar-vault-icon"><SidebarIcon name="folder" /></span><span>{actions.openVault.label}</span></VaultMenuItem>}
+    {canCreateVault && <VaultMenuItem mobile={isMobile} disabled={actions.createVault.disabled} onClick={actions.createVault.run}><span className="ui-sidebar-vault-icon"><SidebarIcon name="folderAdd" /></span><span>{actions.createVault.label}</span></VaultMenuItem>}
+    {needsPermission && <VaultMenuItem mobile={isMobile} disabled={actions.reauthorize.disabled} onClick={action(actions.reauthorize.run)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="shield" /></span><span>{actions.reauthorize.label}</span></VaultMenuItem>}
+    {onRefresh && <VaultMenuItem mobile={isMobile} disabled={actions.refresh.disabled} onClick={action(actions.refresh.run)}><span className="ui-sidebar-vault-icon"><HugeiconsIcon icon={RefreshIcon} className="size-4" aria-hidden="true" /></span><span>{actions.refresh.label}</span></VaultMenuItem>}
+    {onOpenDrafts && draftCount > 0 && <VaultMenuItem mobile={isMobile} onClick={action(actions.drafts.run)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="notebook" /></span><span>{actions.drafts.label}</span></VaultMenuItem>}
+    <VaultMenuItem mobile={isMobile} onClick={action(actions.settings.run)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="settings" /></span><span>笔记库设置</span></VaultMenuItem>
+    <VaultMenuItem mobile={isMobile} disabled={actions.trash.disabled} aria-current={view === "trash" ? "page" : undefined} onClick={action(actions.trash.run)}><span className="ui-sidebar-vault-icon"><SidebarIcon name="trash" /></span><span>{actions.trash.label}</span></VaultMenuItem>
     <VaultMenuItem mobile={isMobile} disabled data-ui-tooltip="帮助功能暂未开放"><span className="ui-sidebar-vault-icon"><SidebarIcon name="help" /></span><span>帮助</span></VaultMenuItem>
   </>;
 
@@ -104,15 +68,15 @@ export function AppSidebar({ view, tag, quickFilter = null, filterCounts, tags, 
       {hasVaultIssue && <p role="status" className="px-3 py-2 text-xs text-error">{vaultStatusText}</p>}
       <nav aria-label="主要导航"><SidebarMenu>
         {!isMobile && <>
-          <SidebarTreeItem label="搜索" icon={<SidebarIcon name="search" />} isActive={false} buttonProps={{ disabled: !connected, onClick: action(onSearch) }} />
-          <SidebarTreeItem label="新建笔记" icon={<SidebarIcon name="add" />} isActive={false} buttonProps={{ disabled: !canCreate || working, onClick: action(onNewNote) }} />
+          <SidebarTreeItem label={actions.search.label} icon={<SidebarIcon name="search" />} isActive={false} buttonProps={{ disabled: actions.search.disabled, onClick: action(actions.search.run) }} />
+          <SidebarTreeItem label={actions.newNote.label} icon={<SidebarIcon name="add" />} isActive={false} buttonProps={{ disabled: actions.newNote.disabled, onClick: action(actions.newNote.run) }} />
         </>}
-        <SidebarTreeItem label="主页" icon={<SidebarIcon name="home" />} isActive={view === "home"} buttonProps={{ onClick: () => navigate("home") }} />
-        <SidebarTreeItem label="所有笔记" icon={<SidebarIcon name="notebook" />} buttonProps={{ onClick: () => navigate("notes", null) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
-          <SidebarMenuSub className="mr-0 translate-x-0 pr-0">{filters.map(filter => <SidebarTreeItem key={filter.id} nested label={filter.label} icon={<SidebarIcon name={filter.icon} />} isActive={view === "notes" && quickFilter === filter.id} buttonProps={{ disabled: !connected, onClick: () => navigate("notes", null, filter.id), "aria-label": filter.label, "aria-description": filterCounts ? `${filterCounts[filter.id]} 条笔记` : undefined }} accessories={filterCounts && <SidebarMenuBadge aria-hidden="true">{filterCounts[filter.id]}</SidebarMenuBadge>} />)}</SidebarMenuSub>
+        <SidebarTreeItem label={actions.home.label} icon={<SidebarIcon name="home" />} isActive={view === "home"} buttonProps={{ onClick: action(actions.home.run) }} />
+        <SidebarTreeItem label={actions.notes.label} icon={<SidebarIcon name="notebook" />} buttonProps={{ onClick: action(actions.notes.run) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
+          <SidebarMenuSub className="mr-0 translate-x-0 pr-0">{actions.filters.map(filter => <SidebarTreeItem key={filter.id} nested label={filter.label} icon={<SidebarIcon name={filter.icon} />} isActive={view === "notes" && quickFilter === filter.id} buttonProps={{ disabled: filter.disabled, onClick: action(filter.run), "aria-label": filter.label, "aria-description": filterCounts ? `${filterCounts[filter.id]} 条笔记` : undefined }} accessories={filterCounts && <SidebarMenuBadge aria-hidden="true">{filterCounts[filter.id]}</SidebarMenuBadge>} />)}</SidebarMenuSub>
         </SidebarTreeItem>
         <SidebarTreeItem label="日历" icon={<SidebarIcon name="calendar" />} isActive={false} buttonProps={{ "aria-disabled": "true", className: "aria-disabled:opacity-100", "data-ui-tooltip": "日历功能暂未开放" }} />
-        <SidebarTreeItem label="标签" icon={<SidebarIcon name="hash" />} isActive={view === "tags"} buttonProps={{ onClick: () => navigate("tags") }} />
+        <SidebarTreeItem label={actions.tags.label} icon={<SidebarIcon name="hash" />} isActive={view === "tags"} buttonProps={{ onClick: action(actions.tags.run) }} />
       </SidebarMenu></nav>
     </SidebarHeader>
     <SidebarContent ref={setTagScroller} className="ui-sidebar-tag-scroll" onFocusCapture={event => {

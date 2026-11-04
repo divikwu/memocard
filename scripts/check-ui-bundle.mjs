@@ -93,6 +93,7 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   const metrics = [];
   for (const route of [
     { name: "list", entries: [], raw: 1120, gzip: 330 },
+    { name: "minimal interface first list", entries: ["ui/web/layouts/topbar.tsx", "ui/web/appearance/themes/minimal.css"], raw: 1200, gzip: 350 },
     { name: "list with card previews", entries: ["ui/business/NotePreview.tsx"], raw: 1780, gzip: 525 },
     { name: "home with quick capture", entries: ["ui/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
     { name: "home with capture and card previews", entries: ["ui/business/QuickCapture.tsx", "ui/business/NotePreview.tsx"], raw: 2140, gzip: 645 },
@@ -101,7 +102,10 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "search", entries: ["ui/business/NoteSearchDialog.tsx"], raw: 1800, gzip: 530 },
     { name: "trash", entries: ["ui/business/TrashPage.tsx"], raw: 1800, gzip: 535 },
     { name: "settings", entries: ["ui/web/WebSettings.tsx"], raw: 1850, gzip: 545 },
+    { name: "detail editor", entries: ["ui/business/Editor.tsx"], raw: 2250, gzip: 675 },
     { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
+    { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/web/layouts/topbar.tsx", "ui/web/appearance/themes/minimal.css"], raw: 2700, gzip: 820 },
+    { name: "detail with all property editors", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx"], raw: 2700, gzip: 820 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";
@@ -110,8 +114,9 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
       raw += bytes.length; gzip += gzipSync(bytes).length;
     }
     if (raw > route.raw * 1024 || gzip > route.gzip * 1024) throw new Error(`${route.name} exceeds its route budget: ${raw} raw / ${gzip} gzip bytes.`);
-    metrics.push({ name: route.name, raw, gzip });
-    console.log(`${route.name}: ${raw} raw / ${gzip} gzip bytes.`);
+    const requests = firstListFiles(manifest, mode, route.entries).size;
+    metrics.push({ name: route.name, raw, gzip, requests });
+    console.log(`${route.name}: ${raw} raw / ${gzip} gzip bytes; ${requests} JS/CSS files.`);
   }
   const fonts = { normal: 0, italic: 0, cjk: 0 };
   for (const entry of await readdir(resolve(root, "assets"))) {

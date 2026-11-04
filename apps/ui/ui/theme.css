@@ -59,6 +59,23 @@
   --color-background-error-inverted: var(--color-red-700);
   --color-track: color-mix(in oklab, var(--color-neutral-200) 90%, transparent);
 
+  /* Resolve component state colors at each theme root; ancestor dark variants
+     cannot distinguish an independent light scope on a dark page. */
+  --color-control-error-border: var(--color-error);
+  --color-control-error-ring: color-mix(in oklab, var(--color-error) 20%, transparent);
+  --color-menu-focus: var(--color-text-accent);
+  --color-danger-surface: color-mix(in oklab, var(--color-error) 10%, transparent);
+  --color-danger-hover: color-mix(in oklab, var(--color-error) 20%, transparent);
+  --color-tooltip-text: var(--color-on-dark);
+  --color-outline-surface: var(--color-background-body);
+  --color-outline-hover: var(--color-background-muted);
+  --color-tab-muted: color-mix(in oklab, var(--color-text-primary) 60%, transparent);
+  --color-tab-active: var(--color-background-body);
+  --color-tab-active-border: transparent;
+  --color-switch-checked: var(--color-background-body);
+  --color-switch-unchecked: var(--color-background-body);
+
+
   /* Project extensions promoted from Neutral component-local roles. */
   --color-success-fill: var(--color-green-700);
   --color-warning-fill: var(--color-yellow-400);
@@ -346,6 +363,21 @@
   --color-background-inverted: var(--color-neutral-200);
   --color-background-error-inverted: var(--color-red-700);
   --color-track: color-mix(in oklab, var(--color-white) 13.5%, transparent);
+
+  --color-control-error-border: color-mix(in oklab, var(--color-error) 50%, transparent);
+  --color-control-error-ring: color-mix(in oklab, var(--color-error) 40%, transparent);
+  --color-menu-focus: var(--color-text-primary);
+  --color-danger-surface: color-mix(in oklab, var(--color-error) 20%, transparent);
+  --color-danger-hover: color-mix(in oklab, var(--color-error) 30%, transparent);
+  --color-tooltip-text: var(--color-on-light);
+  --color-outline-surface: transparent;
+  --color-outline-hover: color-mix(in oklab, var(--color-neutral) 30%, transparent);
+  --color-tab-muted: var(--color-text-secondary);
+  --color-tab-active: color-mix(in oklab, var(--color-neutral) 30%, transparent);
+  --color-tab-active-border: var(--color-border-emphasized);
+  --color-switch-checked: var(--color-on-accent);
+  --color-switch-unchecked: var(--color-text-primary);
+
   --color-success-fill: var(--color-green-400);
   --color-warning-fill: var(--color-yellow-400);
   --color-error-fill: var(--color-red-400);
@@ -479,6 +511,20 @@
   --color-inverted: var(--color-background-inverted);
   --color-error-inverted: var(--color-background-error-inverted);
   --color-track: var(--color-track);
+  --color-control-error-border: var(--color-control-error-border);
+  --color-control-error-ring: var(--color-control-error-ring);
+  --color-menu-focus: var(--color-menu-focus);
+  --color-danger-surface: var(--color-danger-surface);
+  --color-danger-hover: var(--color-danger-hover);
+  --color-tooltip-text: var(--color-tooltip-text);
+  --color-outline-surface: var(--color-outline-surface);
+  --color-outline-hover: var(--color-outline-hover);
+  --color-tab-muted: var(--color-tab-muted);
+  --color-tab-active: var(--color-tab-active);
+  --color-tab-active-border: var(--color-tab-active-border);
+  --color-switch-checked: var(--color-switch-checked);
+  --color-switch-unchecked: var(--color-switch-unchecked);
+
   /* Preset chart slots reuse the existing blue data roles, now mapped to Sky. */
   --color-chart-1: var(--color-data-blue-1);
   --color-chart-2: var(--color-data-blue-2);

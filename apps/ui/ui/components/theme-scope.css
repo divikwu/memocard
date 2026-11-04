@@ -1,0 +1,6 @@
+.ui-appearance-scope[data-ui-appearance] {
+  font-family: var(--font-family-body);
+  --radius-element: var(--ui-preview-radius);
+  --font-family-body: var(--ui-preview-body);
+  --font-family-heading: var(--ui-preview-heading);
+}

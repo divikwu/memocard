@@ -65,3 +65,29 @@ test("bundled CSS rejects inlined retired tokens and layout utilities without ba
   assert.throws(() => checkCurrentStylesheet(String.raw`.grid-cols-\[repeat\(auto-fill\,minmax\(min\(100\%\,320px\)\,1fr\)\)\]{grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}`, "entry.css"), /Retired collection layout utility/);
   assert.doesNotThrow(() => checkCurrentStylesheet('/* --radius:10px */ :root{--radius-element:.5rem;--sidebar-width:16rem}.widget{--radius:1rem}.ui-note-cards{grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr))}', "entry.css"));
 });
+
+
+test("theme CSS and its shared layout add their resource closures once", () => {
+  const manifest = {
+    "index.html": { file: "entry.js", imports: ["shared"] },
+    shared: { file: "shared.js" },
+    skin: { file: "skin.css" },
+    layout: { file: "layout.js", css: ["layout.css"], imports: ["shared"] },
+  };
+  assert.deepEqual([...routeFiles(manifest, ["skin", "layout", "layout"])].sort(), ["entry.js", "layout.css", "layout.js", "shared.js", "skin.css"]);
+  assert.deepEqual([...routeFiles(manifest)].sort(), ["entry.js", "shared.js"]);
+});
+
+test("optional Markdown and property editors retain their full transitive cost when opened", () => {
+  const manifest = {
+    "index.html": { file: "entry.js", dynamicImports: ["editor"] },
+    editor: { file: "editor.js", imports: ["media"], dynamicImports: ["markdown", "properties"] },
+    media: { file: "media.js", css: ["content.css"] },
+    markdown: { file: "markdown.js", imports: ["media", "parser"] },
+    parser: { file: "parser.js" },
+    properties: { file: "properties.js", imports: ["calendar"] },
+    calendar: { file: "calendar.js", css: ["calendar.css"] },
+  };
+  assert.deepEqual([...routeFiles(manifest, ["editor"])].sort(), ["content.css", "editor.js", "entry.js", "media.js"]);
+  assert.deepEqual([...routeFiles(manifest, ["editor", "markdown", "properties"])].sort(), ["calendar.css", "calendar.js", "content.css", "editor.js", "entry.js", "markdown.js", "media.js", "parser.js", "properties.js"]);
+});

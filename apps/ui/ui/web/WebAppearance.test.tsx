@@ -153,7 +153,7 @@ const settingsState = () => ({
 it("uses labelled MemoCard UI appearance selectors and restores the last indexed timestamp", async () => {
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  await choose(user, "主题", "跟随系统");
+  await choose(user, "颜色模式", "跟随系统");
   await user.click(screen.getByText("高级外观"));
   await choose(user, "正文字体", "系统默认");
   await choose(user, "标题字体", "跟随正文");
@@ -297,7 +297,7 @@ it("shows existing font and radius values as real current options before the use
 it("supports keyboard selection and Escape without losing trigger focus or changing a cancelled choice", async () => {
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  const theme = screen.getByRole("combobox", { name: "主题" });
+  const theme = screen.getByRole("combobox", { name: "颜色模式" });
   theme.focus();
   await user.keyboard("{Enter}");
   const light = await screen.findByRole("option", { name: "浅色" });
@@ -318,4 +318,24 @@ it("supports keyboard selection and Escape without losing trigger focus or chang
   await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   expect(JSON.parse(localStorage.getItem(key)!).theme).toBe("dark");
   expect(document.activeElement).toBe(theme);
+});
+
+
+it("persists the interface theme independently of color mode and restores it on reload", async () => {
+  const user = userEvent.setup();
+  localStorage.setItem(key, JSON.stringify({ theme: "dark" }));
+  const view = render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
+  expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("经典");
+  await choose(user, "界面主题", "简约");
+  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "dark", interfaceTheme: "minimal" });
+  await choose(user, "颜色模式", "浅色");
+  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "light", interfaceTheme: "minimal" });
+  view.unmount();
+  render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
+  expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("简约");
+  await user.click(screen.getAllByRole("button", { name: "恢复默认" })[0]);
+  expect(JSON.parse(localStorage.getItem(key)!)).toEqual(DEFAULT_WEB_APPEARANCE);
+  receive({ interfaceTheme: "unknown", theme: "dark" });
+  expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("暂不可用");
+  expect(screen.getByRole("combobox", { name: "颜色模式" }).textContent).toContain("深色");
 });

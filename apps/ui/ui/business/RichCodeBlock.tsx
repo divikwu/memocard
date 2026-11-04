@@ -1,5 +1,5 @@
 import { NodeViewContent, NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { MermaidContent } from "./NoteMarkdown";
+import { MermaidContent } from "./NoteMedia";
 
 export function RichCodeBlock({ node }: ReactNodeViewProps) {
   const language = String(node.attrs.language ?? "");

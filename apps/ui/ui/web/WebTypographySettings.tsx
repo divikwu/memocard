@@ -15,16 +15,11 @@ const sizeNames: Record<string, string> = { "14": "小字号（14px）", "16": "
 const choiceLabel = (key: keyof Typography, value: string, size: string) => key === "measure" ? measurePresets[value].label : key === "size" ? sizeNames[value] : key === "leading" ? `${names[value]}（${noteLineHeights[size][value]}px）` : names[value] ?? value;
 const preview = `# 把一闪而过的想法留下来
 
-早晨走过熟悉的街道，忽然想到一个新的点子。打开 MemoCard，先把它记下来，再慢慢整理。好的记录不必完整，能留住当时的思路就够了。
+打开 MemoCard，记下今天的发现，留待日后慢慢整理。
 
-Keep a little room for new ideas. 中文与 English 自然地出现在同一段里，让阅读保持流畅，也让每一次回顾都轻松一些。
+Keep a little room for new ideas. 为灵感留一点空间。
 
-## 从一个小想法开始
-
-- 记下今天的**发现**，也留下一点疑问。
-- 用 \`#灵感\` 串起相关笔记，等有空时继续展开。
-
-> 不急着找到答案，先给想法一个可以停留的地方。`;
+- 用 **关键词** 和 \`#灵感\` 串起想法。`;
 
 export function WebTypographySettings() {
   const id = useId();
@@ -34,8 +29,8 @@ export function WebTypographySettings() {
     <WebSettingSelect id={`${id}-${key}`} value={value[key]} onValueChange={next => save({ ...value, [key]: next })} options={options[key].map(option => ({ value: option, label: choiceLabel(key, option, value.size) }))} />
   </div>;
   return <section aria-labelledby={`${id}-section-heading`}>
-    <div className="web-setting-section-heading"><h2 id={`${id}-section-heading`}>内容风格</h2><Button size="sm" variant="ghost" onClick={() => save({ ...defaults })}>恢复默认风格</Button></div>
-    <p className="text-sm text-secondary text-pretty">调整笔记正文和编辑区域的排版，字体跟随外观设置。设置仅保存在当前浏览器中。</p>
+    <div className="web-setting-section-heading"><h2 id={`${id}-section-heading`}>内容风格</h2><Button size="sm" variant="ghost" aria-label="恢复默认风格" onClick={() => save({ ...defaults })}>恢复默认</Button></div>
+    <p className="text-sm text-secondary text-pretty">仅保存在当前浏览器。</p>
     {error && <p role="status" className="text-sm text-error">{error}</p>}
     <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">{field("measure")}{field("size")}
       <details className="web-file-status web-appearance-advanced"><summary>高级排版<ChevronDownIcon aria-hidden="true" /></summary><div className="web-setting-card-content web-advanced-fields">{field("leading")}{field("flow")}</div></details>

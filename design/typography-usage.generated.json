@@ -228,8 +228,8 @@
           "value": "var(--font-family-body)"
         },
         {
-          "source": "apps/ui/ui/business/NoteMarkdown.tsx",
-          "scope": "line 84",
+          "source": "apps/ui/ui/business/NoteMedia.tsx",
+          "scope": "line 82",
           "value": "var(--font-family-body)"
         },
         {
@@ -305,6 +305,11 @@
         {
           "source": "apps/ui/ui/business/sidebar.css",
           "scope": ".ui-business-sidebar .ui-sidebar-brand",
+          "value": "var(--font-family-body)"
+        },
+        {
+          "source": "apps/ui/ui/components/theme-scope.css",
+          "scope": ".ui-appearance-scope[data-ui-appearance]",
           "value": "var(--font-family-body)"
         },
         {
@@ -596,6 +601,12 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/components/theme-scope.css",
+          "scope": ".ui-appearance-scope[data-ui-appearance]",
+          "value": "var(--ui-preview-body)",
+          "variable": "--font-family-body"
+        },
+        {
           "source": "apps/ui/ui/preview-appearance.css",
           "scope": ":root[data-ui-appearance],\n:root[data-ui-appearance] .ui-theme",
           "value": "var(--ui-preview-body)",
@@ -608,6 +619,12 @@
       "value": "var(--ui-preview-heading)",
       "utilities": [],
       "locations": [
+        {
+          "source": "apps/ui/ui/components/theme-scope.css",
+          "scope": ".ui-appearance-scope[data-ui-appearance]",
+          "value": "var(--ui-preview-heading)",
+          "variable": "--font-family-heading"
+        },
         {
           "source": "apps/ui/ui/preview-appearance.css",
           "scope": ":root[data-ui-appearance],\n:root[data-ui-appearance] .ui-theme",
@@ -1425,7 +1442,7 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui/business/NoteMarkdown.tsx",
+          "source": "apps/ui/ui/business/NoteMedia.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -1657,6 +1674,11 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-supporting",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/web/layouts/topbar.css",
+          "scope": ".web-top-links > button",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2292,6 +2314,16 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-supporting",
           "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/web/layouts/topbar.css",
+          "scope": ".web-top-links > button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/web/layouts/topbar.css",
+          "scope": ".web-top-tag-tree [data-sidebar=group-label]",
+          "value": "var(--font-weight-normal)"
         }
       ]
     },
@@ -2510,6 +2542,11 @@
         {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(thead th)",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/web/layouts/topbar.css",
+          "scope": ".web-top-tag-tree .ui-sidebar-row",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -3907,7 +3944,7 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
-          "source": "apps/ui/ui/business/NoteMarkdown.tsx",
+          "source": "apps/ui/ui/business/NoteMedia.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },

@@ -70,11 +70,13 @@ it("keeps the local-host authorization explanation distinct from a browser-owned
   const model = state();
   const detach = setStorybookClientMode("local-web");
   const view = render(<WebSettings state={model} />);
-  expect(screen.getByText("笔记与图片保存在 MemoCard 已授权的文件夹中。")).toBeTruthy();
+  const details = screen.getByText("本机文件状态").closest("details")!;
+  expect(details.open).toBe(false);
+  expect(within(details).getByText("笔记与图片保存在 MemoCard 已授权的文件夹中。")).toBeTruthy();
   detach();
   const detachBrowser = setStorybookClientMode("browser");
   view.rerender(<WebSettings state={model} />);
-  expect(screen.getByText("笔记与图片保存在所选文件夹中。")).toBeTruthy();
+  expect(within(details).getByText("笔记与图片保存在所选文件夹中。")).toBeTruthy();
   detachBrowser();
 });
 

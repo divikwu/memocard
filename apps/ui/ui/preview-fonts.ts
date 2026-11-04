@@ -49,7 +49,7 @@ export const isPreviewFont = (font: unknown): font is PreviewFont => allFonts.so
 const loaders = {
   geist: () => Promise.all([import("@fontsource-variable/geist/wght.css"), import("@fontsource-variable/geist/wght-italic.css")]),
   inter: () => Promise.all([import("@fontsource-variable/inter/wght.css"), import("@fontsource-variable/inter/wght-italic.css")]),
-  "noto-sans": () => import("@fontsource-variable/noto-sans/wght-italic.css"),
+  "noto-sans": () => Promise.all([import("@fontsource-variable/noto-sans/wght.css"), import("@fontsource-variable/noto-sans/wght-italic.css")]),
   "nunito-sans": () => Promise.all([import("@fontsource-variable/nunito-sans/wght.css"), import("@fontsource-variable/nunito-sans/wght-italic.css")]),
   figtree: () => Promise.all([import("@fontsource-variable/figtree/wght.css"), import("@fontsource-variable/figtree/wght-italic.css")]),
   roboto: () => Promise.all([import("@fontsource-variable/roboto/wght.css"), import("@fontsource-variable/roboto/wght-italic.css")]),
@@ -72,7 +72,7 @@ const loaders = {
   lora: () => Promise.all([import("@fontsource-variable/lora/wght.css"), import("@fontsource-variable/lora/wght-italic.css")]),
   "playfair-display": () => Promise.all([import("@fontsource-variable/playfair-display/wght.css"), import("@fontsource-variable/playfair-display/wght-italic.css")]),
   "eb-garamond": () => Promise.all([import("@fontsource-variable/eb-garamond/wght.css"), import("@fontsource-variable/eb-garamond/wght-italic.css")]),
-  "noto-sans-sc": () => Promise.resolve(),
+  "noto-sans-sc": () => import("@fontsource-variable/noto-sans-sc/wght.css"),
 } satisfies Record<Exclude<PreviewFont, "system" | "system-mono" | "pingfang" | "songti">, () => Promise<unknown>>;
 
 const pending = new Map<string, Promise<unknown>>();
@@ -108,16 +108,17 @@ function retryFailedFontFaces(families: string[]) {
 
 export function loadPreviewFonts(fonts: PreviewFont[], includeChineseCompanion = true): Promise<unknown[]> {
   return Promise.all([...new Set(fonts)].map(font => {
-    if (font === "system" || font === "system-mono" || font === "pingfang" || font === "songti" && !includeChineseCompanion) return Promise.resolve();
+    if (font === "system" || font === "system-mono" || (font === "pingfang" || font === "songti") && !includeChineseCompanion) return Promise.resolve();
     const key = `${font}:${includeChineseCompanion}`;
     let request = pending.get(key);
     if (!request) {
       const option = getPreviewFont(font);
       const stack = option.fontFamily.split(",").map(family => family.trim().replace(/["']/g, ""));
       const companions = includeChineseCompanion ? stack.filter(family => family.endsWith(" SC Variable")) : [];
-      const families = [...new Set([...(font === "songti" ? [] : [stack[0]]), ...companions])];
+      const families = [...new Set([...(font === "songti" || font === "pingfang" ? [] : [stack[0]]), ...companions])];
       request = Promise.all([
-        font === "songti" ? Promise.resolve() : loaders[font](),
+        font === "songti" || font === "pingfang" ? Promise.resolve() : loaders[font](),
+        ...(companions.includes("Noto Sans SC Variable") ? [import("@fontsource-variable/noto-sans-sc/wght.css")] : []),
         ...(companions.includes("Noto Serif SC Variable") ? [import("@fontsource-variable/noto-serif-sc/wght.css")] : []),
       ]).then(async () => {
         retryFailedFontFaces(families);

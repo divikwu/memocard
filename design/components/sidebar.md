@@ -26,6 +26,16 @@ iOS 保留边缘展开、主页面推移、侧滑/点击关闭和系统安全区
 
 当前 Storybook 为 [business/sidebar](../../apps/ui/ui/stories/business-sidebar.stories.tsx) 与[基础 sidebar](../../apps/ui/ui/stories/luma-sidebar.stories.tsx)，默认/选中/禁用/展开/长名/层级/加载等场景使用生产实现。Debug 原生 palette 和默认圆角由当前 CSS 采样，不拥有另一套主题。
 
+## Web 界面主题
+
+Web 设置的「界面主题」提供默认「经典」侧栏与「简约」顶部栏；「颜色模式」独立控制浅色、深色或跟随系统。选择保存在当前浏览器，旧偏好默认经典。简约仅作用于宽度至少 768px 的 Web；窄屏仍使用抽屉，原生端不提供该选项。切换主题不重建编辑器或重置路由、筛选和撤销记录。
+
+[WebTopNavigation](../../apps/ui/ui/web/WebTopNavigation.tsx) 的标签弹层复用 TagNavigation 与 SidebarTreeItem，保留层级、置顶、图标和标签操作；外层间距与更多菜单对齐。更多集中设置、回收站、草稿、快捷筛选及笔记库操作，保留忙碌和权限限制。新建笔记使用主页捕获、列表工具栏或移动端入口。
+
+简约导航、集合与详情白色外层最大宽度同为 80rem；768–1023px 两侧各留 24px，1024px 起各留 32px。详情正文继续遵循内容行宽。Web 首页列表随内容收尾，所有笔记列表继续撑满可用高度。
+
+当前主题按“视觉主题＋可复用布局”组合；[共享导航模型](../../apps/ui/ui/business/navigation-model.ts)统一动作与可用性，[WorkspaceFrame](../../apps/ui/ui/web/WorkspaceFrame.tsx)保持内容树稳定，[组合目录](../../apps/ui/ui/web/appearance/catalog.ts)按需加载布局与视觉资源。主页面和浮层共享 ThemeScope，富文本内核经工厂注入 Portal。新增视觉主题只需 CSS/参数与布局引用；详见[Web 界面主题架构](../../docs/WEB_INTERFACE_THEMES_ARCHITECTURE.md)。仍使用 v1 偏好，未知主题 ID 保留并回退到可用界面。
+
 ## 验证与性能
 
 执行 `pnpm verify:design`、`pnpm test:sidebar-native`、`pnpm test:native-surfaces` 和相关产品回归。真实浏览器检查宽窄屏、焦点、触摸关闭和主题；Xcode Preview、Simulator probe 与完整 App 手势分开记录，不能互相替代。

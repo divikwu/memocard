@@ -1,4 +1,5 @@
 import type { ComponentProps } from 'react';
+import { PopoverPortal } from '../components/popover';
 import { createRichFormatTools } from '../../src/rich-format-core';
 import type { DialogContent } from '../components/dialog';
 import { Sheet, SheetCloseButton, SheetContent, SheetHeader, SheetTitle } from '../components/sheet';
@@ -30,7 +31,7 @@ function RichToolbar(props: ComponentProps<'div'>) {
 }
 
 export const RichFormatTools = createRichFormatTools({
-  icons: richIcons, uiClassName: 'ui-rich-ui',
+  PopoverPortal, icons: richIcons, uiClassName: 'ui-rich-ui',
   Dialog: Sheet, DialogContent: RichSheetContent, DialogTitle: SheetTitle, MobileDialogHeader: RichSheetHeader,
   Toolbar: RichToolbar,
   Input, Button, Select, SelectContent: RichSelectContent, SelectItem, SelectTrigger, SelectValue,

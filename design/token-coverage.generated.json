@@ -21,7 +21,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--spacing-1) * .75)",
-          "line": 195
+          "line": 212
         }
       ]
     },
@@ -45,7 +45,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1px",
-          "line": 200
+          "line": 217
         }
       ]
     },
@@ -83,35 +83,35 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-200)",
-          "line": 317
+          "line": 334
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-accent)",
-          "line": 436
+          "line": 468
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 72
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-200)",
           "line": 98
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-700)",
           "line": 110
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-300)",
           "line": 118
         }
@@ -145,7 +145,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-accent)",
-          "line": 449
+          "line": 481
         }
       ]
     },
@@ -183,35 +183,35 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-800)",
-          "line": 318
+          "line": 335
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-accent-muted)",
-          "line": 450
+          "line": 482
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-100)",
           "line": 73
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-800)",
           "line": 99
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-100)",
           "line": 111
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-950)",
           "line": 119
         }
@@ -245,13 +245,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-blue-100)",
-          "line": 70
+          "line": 87
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-blue-950)",
-          "line": 355
+          "line": 387
         }
       ]
     },
@@ -289,17 +289,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 304
+          "line": 321
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-100)",
           "line": 60
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-950)",
           "line": 83
         }
@@ -339,11 +339,11 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-900)",
-          "line": 307
+          "line": 324
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 85
         }
@@ -383,17 +383,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in oklab, var(--color-white) 7.5%, transparent)",
-          "line": 310
+          "line": 327
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "color-mix(in oklab, var(--color-slate-200) 50%, transparent)",
           "line": 63
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "color-mix(in oklab, var(--color-white) 7.5%, transparent)",
           "line": 89
         }
@@ -427,13 +427,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-cyan-100)",
-          "line": 74
+          "line": 91
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-cyan-950)",
-          "line": 359
+          "line": 391
         }
       ]
     },
@@ -471,7 +471,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-700)",
-          "line": 347
+          "line": 364
         }
       ]
     },
@@ -535,13 +535,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-100)",
-          "line": 78
+          "line": 95
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 363
+          "line": 395
         }
       ]
     },
@@ -573,13 +573,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-green-100)",
-          "line": 82
+          "line": 99
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-950)",
-          "line": 367
+          "line": 399
         }
       ]
     },
@@ -617,17 +617,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-200)",
-          "line": 346
+          "line": 363
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 78
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-200)",
           "line": 104
         }
@@ -667,17 +667,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-800)",
-          "line": 309
+          "line": 326
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-100)",
           "line": 62
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-800)",
           "line": 88
         }
@@ -711,13 +711,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-100)",
-          "line": 86
+          "line": 103
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-orange-950)",
-          "line": 371
+          "line": 403
         }
       ]
     },
@@ -749,13 +749,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-100)",
-          "line": 90
+          "line": 107
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-pink-950)",
-          "line": 375
+          "line": 407
         }
       ]
     },
@@ -793,11 +793,11 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-900)",
-          "line": 308
+          "line": 325
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 86
         }
@@ -831,13 +831,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-100)",
-          "line": 94
+          "line": 111
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-purple-950)",
-          "line": 379
+          "line": 411
         }
       ]
     },
@@ -869,13 +869,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-100)",
-          "line": 98
+          "line": 115
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-950)",
-          "line": 383
+          "line": 415
         }
       ]
     },
@@ -913,7 +913,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-blue-400) 24%, transparent)",
-          "line": 311
+          "line": 328
         }
       ]
     },
@@ -951,17 +951,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-900)",
-          "line": 306
+          "line": 323
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "color-mix(in srgb, var(--color-slate-100) 97%, var(--color-black))",
           "line": 61
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 87
         }
@@ -1001,11 +1001,11 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-900)",
-          "line": 305
+          "line": 322
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 84
         }
@@ -1039,13 +1039,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-100)",
-          "line": 102
+          "line": 119
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-teal-950)",
-          "line": 387
+          "line": 419
         }
       ]
     },
@@ -1077,13 +1077,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-100)",
-          "line": 106
+          "line": 123
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-yellow-950)",
-          "line": 391
+          "line": 423
         }
       ]
     },
@@ -1115,7 +1115,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-blue)",
-          "line": 491
+          "line": 537
         }
       ]
     },
@@ -1147,7 +1147,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-blue)",
-          "line": 488
+          "line": 534
         }
       ]
     },
@@ -1179,7 +1179,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-body)",
-          "line": 441
+          "line": 473
         }
       ]
     },
@@ -1217,13 +1217,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-white) 10%, transparent)",
-          "line": 328
+          "line": 345
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border)",
-          "line": 468
+          "line": 500
         }
       ]
     },
@@ -1255,19 +1255,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-blue-300)",
-          "line": 71
+          "line": 88
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-blue-600)",
-          "line": 356
+          "line": 388
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-blue)",
-          "line": 489
+          "line": 535
         }
       ]
     },
@@ -1299,19 +1299,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-cyan-300)",
-          "line": 75
+          "line": 92
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-cyan-600)",
-          "line": 360
+          "line": 392
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-cyan)",
-          "line": 493
+          "line": 539
         }
       ]
     },
@@ -1349,17 +1349,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 331
+          "line": 348
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-500)",
           "line": 76
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-400)",
           "line": 102
         }
@@ -1393,19 +1393,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "transparent",
-          "line": 292
+          "line": 309
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "transparent",
-          "line": 426
+          "line": 458
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (forced-colors: active) / :root, .ui-theme",
           "value": "CanvasText",
-          "line": 827
+          "line": 873
         }
       ]
     },
@@ -1437,19 +1437,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-300)",
-          "line": 79
+          "line": 96
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-600)",
-          "line": 364
+          "line": 396
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-gray)",
-          "line": 497
+          "line": 543
         }
       ]
     },
@@ -1481,19 +1481,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-green-300)",
-          "line": 83
+          "line": 100
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-600)",
-          "line": 368
+          "line": 400
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-green)",
-          "line": 501
+          "line": 547
         }
       ]
     },
@@ -1525,19 +1525,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-300)",
-          "line": 87
+          "line": 104
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-orange-600)",
-          "line": 372
+          "line": 404
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-orange)",
-          "line": 505
+          "line": 551
         }
       ]
     },
@@ -1569,19 +1569,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-300)",
-          "line": 91
+          "line": 108
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-pink-600)",
-          "line": 376
+          "line": 408
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-pink)",
-          "line": 509
+          "line": 555
         }
       ]
     },
@@ -1613,19 +1613,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-300)",
-          "line": 95
+          "line": 112
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-purple-600)",
-          "line": 380
+          "line": 412
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-purple)",
-          "line": 513
+          "line": 559
         }
       ]
     },
@@ -1657,19 +1657,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-300)",
-          "line": 99
+          "line": 116
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-600)",
-          "line": 384
+          "line": 416
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-red)",
-          "line": 517
+          "line": 563
         }
       ]
     },
@@ -1701,7 +1701,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-emphasized)",
-          "line": 471
+          "line": 503
         }
       ]
     },
@@ -1739,13 +1739,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-white) 5%, transparent)",
-          "line": 329
+          "line": 346
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-subtle)",
-          "line": 469
+          "line": 501
         }
       ]
     },
@@ -1777,19 +1777,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-300)",
-          "line": 103
+          "line": 120
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-teal-600)",
-          "line": 388
+          "line": 420
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-teal)",
-          "line": 521
+          "line": 567
         }
       ]
     },
@@ -1821,19 +1821,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-300)",
-          "line": 107
+          "line": 124
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-yellow-600)",
-          "line": 392
+          "line": 424
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-yellow)",
-          "line": 525
+          "line": 571
         }
       ]
     },
@@ -1857,13 +1857,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "initial",
-          "line": 191
+          "line": 208
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-brand)",
-          "line": 603
+          "line": 649
         }
       ]
     },
@@ -1895,7 +1895,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-card)",
-          "line": 444
+          "line": 476
         }
       ]
     },
@@ -1927,7 +1927,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-1)",
-          "line": 483
+          "line": 529
         }
       ]
     },
@@ -1959,7 +1959,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-2)",
-          "line": 484
+          "line": 530
         }
       ]
     },
@@ -1991,7 +1991,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-3)",
-          "line": 485
+          "line": 531
         }
       ]
     },
@@ -2023,7 +2023,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-4)",
-          "line": 486
+          "line": 532
         }
       ]
     },
@@ -2055,7 +2055,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-5)",
-          "line": 487
+          "line": 533
         }
       ]
     },
@@ -2087,7 +2087,95 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-control)",
-          "line": 447
+          "line": 479
+        }
+      ]
+    },
+    {
+      "name": "--color-control-error-border",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-error)",
+          "line": 64
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "color-mix(in oklab, var(--color-error) 50%, transparent)",
+          "line": 367
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-control-error-border)",
+          "line": 514
+        }
+      ]
+    },
+    {
+      "name": "--color-control-error-ring",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "color-mix(in oklab, var(--color-error) 20%, transparent)",
+          "line": 65
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "color-mix(in oklab, var(--color-error) 40%, transparent)",
+          "line": 368
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-control-error-ring)",
+          "line": 515
         }
       ]
     },
@@ -2119,7 +2207,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-control-secondary)",
-          "line": 434
+          "line": 466
         }
       ]
     },
@@ -2151,7 +2239,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-cyan)",
-          "line": 495
+          "line": 541
         }
       ]
     },
@@ -2183,7 +2271,95 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-cyan)",
-          "line": 492
+          "line": 538
+        }
+      ]
+    },
+    {
+      "name": "--color-danger-hover",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "color-mix(in oklab, var(--color-error) 20%, transparent)",
+          "line": 68
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "color-mix(in oklab, var(--color-error) 30%, transparent)",
+          "line": 371
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-danger-hover)",
+          "line": 518
+        }
+      ]
+    },
+    {
+      "name": "--color-danger-surface",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "color-mix(in oklab, var(--color-error) 10%, transparent)",
+          "line": 67
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "color-mix(in oklab, var(--color-error) 20%, transparent)",
+          "line": 370
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-danger-surface)",
+          "line": 517
         }
       ]
     },
@@ -2209,13 +2385,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-sky-300)",
-          "line": 148
+          "line": 165
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-1)",
-          "line": 562
+          "line": 608
         }
       ]
     },
@@ -2241,13 +2417,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-sky-400)",
-          "line": 147
+          "line": 164
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-2)",
-          "line": 561
+          "line": 607
         }
       ]
     },
@@ -2273,13 +2449,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-sky-500)",
-          "line": 146
+          "line": 163
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-3)",
-          "line": 560
+          "line": 606
         }
       ]
     },
@@ -2305,13 +2481,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-sky-600)",
-          "line": 145
+          "line": 162
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-4)",
-          "line": 559
+          "line": 605
         }
       ]
     },
@@ -2337,13 +2513,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-sky-700)",
-          "line": 144
+          "line": 161
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-5)",
-          "line": 558
+          "line": 604
         }
       ]
     },
@@ -2369,13 +2545,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-sky-600)",
-          "line": 133
+          "line": 150
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-blue)",
-          "line": 547
+          "line": 593
         }
       ]
     },
@@ -2401,13 +2577,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-amber-600)",
-          "line": 141
+          "line": 158
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-brown)",
-          "line": 555
+          "line": 601
         }
       ]
     },
@@ -2433,13 +2609,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-cyan-600)",
-          "line": 138
+          "line": 155
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-cyan)",
-          "line": 552
+          "line": 598
         }
       ]
     },
@@ -2465,13 +2641,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-green-600)",
-          "line": 136
+          "line": 153
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-green)",
-          "line": 550
+          "line": 596
         }
       ]
     },
@@ -2497,13 +2673,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-indigo-500)",
-          "line": 142
+          "line": 159
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-indigo)",
-          "line": 556
+          "line": 602
         }
       ]
     },
@@ -2529,13 +2705,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-600)",
-          "line": 134
+          "line": 151
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-orange)",
-          "line": 548
+          "line": 594
         }
       ]
     },
@@ -2561,13 +2737,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-500)",
-          "line": 137
+          "line": 154
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-pink)",
-          "line": 551
+          "line": 597
         }
       ]
     },
@@ -2593,13 +2769,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-600)",
-          "line": 135
+          "line": 152
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-purple)",
-          "line": 549
+          "line": 595
         }
       ]
     },
@@ -2625,13 +2801,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-500)",
-          "line": 139
+          "line": 156
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-red)",
-          "line": 553
+          "line": 599
         }
       ]
     },
@@ -2657,13 +2833,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-600)",
-          "line": 140
+          "line": 157
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-teal)",
-          "line": 554
+          "line": 600
         }
       ]
     },
@@ -2689,19 +2865,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-50)",
-          "line": 188
+          "line": 205
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-50)",
-          "line": 416
+          "line": 448
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-1)",
-          "line": 602
+          "line": 648
         }
       ]
     },
@@ -2727,19 +2903,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-200)",
-          "line": 187
+          "line": 204
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-200)",
-          "line": 415
+          "line": 447
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-2)",
-          "line": 601
+          "line": 647
         }
       ]
     },
@@ -2765,19 +2941,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-400)",
-          "line": 186
+          "line": 203
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 414
+          "line": 446
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-3)",
-          "line": 600
+          "line": 646
         }
       ]
     },
@@ -2803,19 +2979,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-700)",
-          "line": 185
+          "line": 202
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-700)",
-          "line": 413
+          "line": 445
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-4)",
-          "line": 599
+          "line": 645
         }
       ]
     },
@@ -2841,19 +3017,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-950)",
-          "line": 184
+          "line": 201
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 412
+          "line": 444
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-5)",
-          "line": 598
+          "line": 644
         }
       ]
     },
@@ -2879,19 +3055,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-500)",
-          "line": 143
+          "line": 160
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 411
+          "line": 443
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-neutral)",
-          "line": 557
+          "line": 603
         }
       ]
     },
@@ -2917,13 +3093,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-100)",
-          "line": 158
+          "line": 175
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-1)",
-          "line": 572
+          "line": 618
         }
       ]
     },
@@ -2949,13 +3125,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-300)",
-          "line": 157
+          "line": 174
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-2)",
-          "line": 571
+          "line": 617
         }
       ]
     },
@@ -2981,13 +3157,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-500)",
-          "line": 156
+          "line": 173
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-3)",
-          "line": 570
+          "line": 616
         }
       ]
     },
@@ -3013,13 +3189,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-800)",
-          "line": 155
+          "line": 172
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-4)",
-          "line": 569
+          "line": 615
         }
       ]
     },
@@ -3045,13 +3221,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-950)",
-          "line": 154
+          "line": 171
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-5)",
-          "line": 568
+          "line": 614
         }
       ]
     },
@@ -3077,13 +3253,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-100)",
-          "line": 163
+          "line": 180
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-1)",
-          "line": 577
+          "line": 623
         }
       ]
     },
@@ -3109,13 +3285,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-300)",
-          "line": 162
+          "line": 179
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-2)",
-          "line": 576
+          "line": 622
         }
       ]
     },
@@ -3141,13 +3317,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-500)",
-          "line": 161
+          "line": 178
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-3)",
-          "line": 575
+          "line": 621
         }
       ]
     },
@@ -3173,13 +3349,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-800)",
-          "line": 160
+          "line": 177
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-4)",
-          "line": 574
+          "line": 620
         }
       ]
     },
@@ -3205,13 +3381,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-950)",
-          "line": 159
+          "line": 176
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-5)",
-          "line": 573
+          "line": 619
         }
       ]
     },
@@ -3237,13 +3413,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-100)",
-          "line": 168
+          "line": 185
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-1)",
-          "line": 582
+          "line": 628
         }
       ]
     },
@@ -3269,13 +3445,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-300)",
-          "line": 167
+          "line": 184
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-2)",
-          "line": 581
+          "line": 627
         }
       ]
     },
@@ -3301,13 +3477,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-500)",
-          "line": 166
+          "line": 183
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-3)",
-          "line": 580
+          "line": 626
         }
       ]
     },
@@ -3333,13 +3509,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-800)",
-          "line": 165
+          "line": 182
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-4)",
-          "line": 579
+          "line": 625
         }
       ]
     },
@@ -3365,13 +3541,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-950)",
-          "line": 164
+          "line": 181
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-5)",
-          "line": 578
+          "line": 624
         }
       ]
     },
@@ -3397,13 +3573,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-100)",
-          "line": 173
+          "line": 190
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-1)",
-          "line": 587
+          "line": 633
         }
       ]
     },
@@ -3429,13 +3605,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-300)",
-          "line": 172
+          "line": 189
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-2)",
-          "line": 586
+          "line": 632
         }
       ]
     },
@@ -3461,13 +3637,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-500)",
-          "line": 171
+          "line": 188
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-3)",
-          "line": 585
+          "line": 631
         }
       ]
     },
@@ -3493,13 +3669,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-800)",
-          "line": 170
+          "line": 187
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-4)",
-          "line": 584
+          "line": 630
         }
       ]
     },
@@ -3525,13 +3701,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-950)",
-          "line": 169
+          "line": 186
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-5)",
-          "line": 583
+          "line": 629
         }
       ]
     },
@@ -3557,13 +3733,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-emerald-100)",
-          "line": 153
+          "line": 170
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-1)",
-          "line": 567
+          "line": 613
         }
       ]
     },
@@ -3589,13 +3765,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-emerald-300)",
-          "line": 152
+          "line": 169
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-2)",
-          "line": 566
+          "line": 612
         }
       ]
     },
@@ -3621,13 +3797,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-emerald-500)",
-          "line": 151
+          "line": 168
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-3)",
-          "line": 565
+          "line": 611
         }
       ]
     },
@@ -3653,13 +3829,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-emerald-800)",
-          "line": 150
+          "line": 167
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-4)",
-          "line": 564
+          "line": 610
         }
       ]
     },
@@ -3685,13 +3861,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-emerald-950)",
-          "line": 149
+          "line": 166
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-5)",
-          "line": 563
+          "line": 609
         }
       ]
     },
@@ -3717,13 +3893,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-100)",
-          "line": 178
+          "line": 195
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-1)",
-          "line": 592
+          "line": 638
         }
       ]
     },
@@ -3749,13 +3925,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-300)",
-          "line": 177
+          "line": 194
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-2)",
-          "line": 591
+          "line": 637
         }
       ]
     },
@@ -3781,13 +3957,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-500)",
-          "line": 176
+          "line": 193
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-3)",
-          "line": 590
+          "line": 636
         }
       ]
     },
@@ -3813,13 +3989,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-800)",
-          "line": 175
+          "line": 192
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-4)",
-          "line": 589
+          "line": 635
         }
       ]
     },
@@ -3845,13 +4021,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-950)",
-          "line": 174
+          "line": 191
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-5)",
-          "line": 588
+          "line": 634
         }
       ]
     },
@@ -3877,13 +4053,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-100)",
-          "line": 183
+          "line": 200
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-1)",
-          "line": 597
+          "line": 643
         }
       ]
     },
@@ -3909,13 +4085,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-300)",
-          "line": 182
+          "line": 199
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-2)",
-          "line": 596
+          "line": 642
         }
       ]
     },
@@ -3941,13 +4117,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-500)",
-          "line": 181
+          "line": 198
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-3)",
-          "line": 595
+          "line": 641
         }
       ]
     },
@@ -3973,13 +4149,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-800)",
-          "line": 180
+          "line": 197
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-4)",
-          "line": 594
+          "line": 640
         }
       ]
     },
@@ -4005,13 +4181,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-950)",
-          "line": 179
+          "line": 196
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-5)",
-          "line": 593
+          "line": 639
         }
       ]
     },
@@ -4043,7 +4219,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-disabled)",
-          "line": 435
+          "line": 467
         }
       ]
     },
@@ -4081,13 +4257,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-border)",
-          "line": 330
+          "line": 347
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-divider)",
-          "line": 470
+          "line": 502
         }
       ]
     },
@@ -4125,13 +4301,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-200)",
-          "line": 340
+          "line": 357
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-error)",
-          "line": 464
+          "line": 496
         }
       ]
     },
@@ -4163,7 +4339,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-error-fill)",
-          "line": 466
+          "line": 498
         }
       ]
     },
@@ -4195,13 +4371,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-700)",
-          "line": 65
+          "line": 82
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-400)",
-          "line": 351
+          "line": 383
         }
       ]
     },
@@ -4233,7 +4409,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-error-inverted)",
-          "line": 480
+          "line": 512
         }
       ]
     },
@@ -4271,13 +4447,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-950)",
-          "line": 341
+          "line": 358
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-error-muted)",
-          "line": 465
+          "line": 497
         }
       ]
     },
@@ -4309,7 +4485,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--focus-outline-color)",
-          "line": 472
+          "line": 504
         }
       ]
     },
@@ -4341,7 +4517,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-gray)",
-          "line": 499
+          "line": 545
         }
       ]
     },
@@ -4373,7 +4549,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-gray)",
-          "line": 496
+          "line": 542
         }
       ]
     },
@@ -4405,7 +4581,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-green)",
-          "line": 503
+          "line": 549
         }
       ]
     },
@@ -4437,7 +4613,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-green)",
-          "line": 500
+          "line": 546
         }
       ]
     },
@@ -4475,35 +4651,35 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-50)",
-          "line": 323
+          "line": 340
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-accent)",
-          "line": 440
+          "line": 472
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-950)",
           "line": 74
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-50)",
           "line": 100
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-800)",
           "line": 112
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-200)",
           "line": 120
         }
@@ -4537,19 +4713,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-blue-700)",
-          "line": 72
+          "line": 89
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-blue-300)",
-          "line": 357
+          "line": 389
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-blue)",
-          "line": 490
+          "line": 536
         }
       ]
     },
@@ -4581,19 +4757,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-cyan-700)",
-          "line": 76
+          "line": 93
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-cyan-300)",
-          "line": 361
+          "line": 393
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-cyan)",
-          "line": 494
+          "line": 540
         }
       ]
     },
@@ -4631,23 +4807,23 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-600)",
-          "line": 322
+          "line": 339
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-disabled)",
-          "line": 439
+          "line": 471
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-400)",
           "line": 70
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-600)",
           "line": 96
         }
@@ -4681,19 +4857,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-700)",
-          "line": 80
+          "line": 97
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-300)",
-          "line": 365
+          "line": 397
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-gray)",
-          "line": 498
+          "line": 544
         }
       ]
     },
@@ -4725,19 +4901,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-green-700)",
-          "line": 84
+          "line": 101
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-300)",
-          "line": 369
+          "line": 401
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-green)",
-          "line": 502
+          "line": 548
         }
       ]
     },
@@ -4769,19 +4945,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-700)",
-          "line": 88
+          "line": 105
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-orange-300)",
-          "line": 373
+          "line": 405
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-orange)",
-          "line": 506
+          "line": 552
         }
       ]
     },
@@ -4813,19 +4989,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-700)",
-          "line": 92
+          "line": 109
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-pink-300)",
-          "line": 377
+          "line": 409
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-pink)",
-          "line": 510
+          "line": 556
         }
       ]
     },
@@ -4863,23 +5039,23 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-50)",
-          "line": 320
+          "line": 337
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-primary)",
-          "line": 437
+          "line": 469
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-950)",
           "line": 68
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-50)",
           "line": 94
         }
@@ -4913,19 +5089,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-700)",
-          "line": 96
+          "line": 113
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-purple-300)",
-          "line": 381
+          "line": 413
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-purple)",
-          "line": 514
+          "line": 560
         }
       ]
     },
@@ -4957,19 +5133,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-700)",
-          "line": 100
+          "line": 117
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-300)",
-          "line": 385
+          "line": 417
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-red)",
-          "line": 518
+          "line": 564
         }
       ]
     },
@@ -5007,23 +5183,23 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 321
+          "line": 338
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-secondary)",
-          "line": 438
+          "line": 470
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-500)",
           "line": 69
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-400)",
           "line": 95
         }
@@ -5057,19 +5233,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-700)",
-          "line": 104
+          "line": 121
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-teal-300)",
-          "line": 389
+          "line": 421
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-teal)",
-          "line": 522
+          "line": 568
         }
       ]
     },
@@ -5101,19 +5277,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-700)",
-          "line": 108
+          "line": 125
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-yellow-300)",
-          "line": 393
+          "line": 425
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-yellow)",
-          "line": 526
+          "line": 572
         }
       ]
     },
@@ -5145,7 +5321,51 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-inverted)",
-          "line": 479
+          "line": 511
+        }
+      ]
+    },
+    {
+      "name": "--color-menu-focus",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-text-accent)",
+          "line": 66
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "var(--color-text-primary)",
+          "line": 369
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-menu-focus)",
+          "line": 516
         }
       ]
     },
@@ -5177,7 +5397,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-muted)",
-          "line": 446
+          "line": 478
         }
       ]
     },
@@ -5215,13 +5435,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-white) 10%, transparent)",
-          "line": 324
+          "line": 341
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-neutral)",
-          "line": 452
+          "line": 484
         }
       ]
     },
@@ -5259,35 +5479,35 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-900)",
-          "line": 319
+          "line": 336
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-accent)",
-          "line": 451
+          "line": 483
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-50)",
           "line": 75
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 101
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-white)",
           "line": 113
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-950)",
           "line": 121
         }
@@ -5321,19 +5541,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "color-mix(in srgb, var(--color-white) 10%, transparent)",
-          "line": 66
+          "line": 83
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-black) 10%, transparent)",
-          "line": 352
+          "line": 384
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-accent-overlay-hover)",
-          "line": 605
+          "line": 651
         }
       ]
     },
@@ -5365,19 +5585,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "color-mix(in srgb, var(--color-white) 20%, transparent)",
-          "line": 67
+          "line": 84
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-black) 20%, transparent)",
-          "line": 353
+          "line": 385
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-accent-overlay-pressed)",
-          "line": 606
+          "line": 652
         }
       ]
     },
@@ -5415,13 +5635,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-white)",
-          "line": 335
+          "line": 352
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-dark)",
-          "line": 473
+          "line": 505
         }
       ]
     },
@@ -5459,13 +5679,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 342
+          "line": 359
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-error)",
-          "line": 467
+          "line": 499
         }
       ]
     },
@@ -5503,13 +5723,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 336
+          "line": 353
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-light)",
-          "line": 474
+          "line": 506
         }
       ]
     },
@@ -5547,13 +5767,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 339
+          "line": 356
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-success)",
-          "line": 459
+          "line": 491
         }
       ]
     },
@@ -5591,13 +5811,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 345
+          "line": 362
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-warning)",
-          "line": 463
+          "line": 495
         }
       ]
     },
@@ -5629,7 +5849,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-orange)",
-          "line": 507
+          "line": 553
         }
       ]
     },
@@ -5661,7 +5881,95 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-orange)",
-          "line": 504
+          "line": 550
+        }
+      ]
+    },
+    {
+      "name": "--color-outline-hover",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-background-muted)",
+          "line": 71
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "color-mix(in oklab, var(--color-neutral) 30%, transparent)",
+          "line": 374
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-outline-hover)",
+          "line": 521
+        }
+      ]
+    },
+    {
+      "name": "--color-outline-surface",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-background-body)",
+          "line": 70
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "transparent",
+          "line": 373
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-outline-surface)",
+          "line": 520
         }
       ]
     },
@@ -5699,13 +6007,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-black) 80%, transparent)",
-          "line": 325
+          "line": 342
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-overlay)",
-          "line": 453
+          "line": 485
         }
       ]
     },
@@ -5743,13 +6051,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-white) 4%, transparent)",
-          "line": 326
+          "line": 343
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-overlay-hover)",
-          "line": 454
+          "line": 486
         }
       ]
     },
@@ -5787,13 +6095,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in srgb, var(--color-white) 10%, transparent)",
-          "line": 327
+          "line": 344
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-overlay-pressed)",
-          "line": 455
+          "line": 487
         }
       ]
     },
@@ -5825,7 +6133,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-pink)",
-          "line": 511
+          "line": 557
         }
       ]
     },
@@ -5857,7 +6165,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-pink)",
-          "line": 508
+          "line": 554
         }
       ]
     },
@@ -5889,7 +6197,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-popover)",
-          "line": 445
+          "line": 477
         }
       ]
     },
@@ -5921,7 +6229,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-primary)",
-          "line": 432
+          "line": 464
         }
       ]
     },
@@ -5953,7 +6261,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-purple)",
-          "line": 515
+          "line": 561
         }
       ]
     },
@@ -5985,7 +6293,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-purple)",
-          "line": 512
+          "line": 558
         }
       ]
     },
@@ -6017,7 +6325,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-red)",
-          "line": 519
+          "line": 565
         }
       ]
     },
@@ -6049,7 +6357,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-red)",
-          "line": 516
+          "line": 562
         }
       ]
     },
@@ -6081,7 +6389,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-secondary)",
-          "line": 433
+          "line": 465
         }
       ]
     },
@@ -6113,7 +6421,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-selection)",
-          "line": 448
+          "line": 480
         }
       ]
     },
@@ -6151,13 +6459,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-black)",
-          "line": 333
+          "line": 350
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-shadow)",
-          "line": 476
+          "line": 508
         }
       ]
     },
@@ -6189,7 +6497,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-sidebar)",
-          "line": 443
+          "line": 475
         }
       ]
     },
@@ -6227,23 +6535,23 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-700)",
-          "line": 332
+          "line": 349
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-skeleton)",
-          "line": 475
+          "line": 507
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-100)",
           "line": 77
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-700)",
           "line": 103
         }
@@ -6283,13 +6591,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-200)",
-          "line": 337
+          "line": 354
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-success)",
-          "line": 456
+          "line": 488
         }
       ]
     },
@@ -6321,7 +6629,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-success-fill)",
-          "line": 458
+          "line": 490
         }
       ]
     },
@@ -6353,13 +6661,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-green-700)",
-          "line": 63
+          "line": 80
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-400)",
-          "line": 349
+          "line": 381
         }
       ]
     },
@@ -6397,13 +6705,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-950)",
-          "line": 338
+          "line": 355
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-success-muted)",
-          "line": 457
+          "line": 489
         }
       ]
     },
@@ -6435,7 +6743,95 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-surface)",
-          "line": 442
+          "line": 474
+        }
+      ]
+    },
+    {
+      "name": "--color-switch-checked",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-background-body)",
+          "line": 75
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "var(--color-on-accent)",
+          "line": 378
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-switch-checked)",
+          "line": 525
+        }
+      ]
+    },
+    {
+      "name": "--color-switch-unchecked",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-background-body)",
+          "line": 76
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "var(--color-text-primary)",
+          "line": 379
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-switch-unchecked)",
+          "line": 526
         }
       ]
     },
@@ -6461,13 +6857,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "color-mix(in srgb, var(--color-success-muted) 25%, transparent)",
-          "line": 126
+          "line": 143
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-added)",
-          "line": 542
+          "line": 588
         }
       ]
     },
@@ -6493,13 +6889,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-syntax-punctuation)",
-          "line": 129
+          "line": 146
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-added-marker)",
-          "line": 545
+          "line": 591
         }
       ]
     },
@@ -6525,19 +6921,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-800)",
-          "line": 122
+          "line": 139
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-amber-300)",
-          "line": 406
+          "line": 438
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-attribute)",
-          "line": 538
+          "line": 584
         }
       ]
     },
@@ -6563,19 +6959,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-white)",
-          "line": 125
+          "line": 142
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-950)",
-          "line": 409
+          "line": 441
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-background)",
-          "line": 541
+          "line": 587
         }
       ]
     },
@@ -6601,19 +6997,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-600)",
-          "line": 114
+          "line": 131
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 398
+          "line": 430
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-comment)",
-          "line": 530
+          "line": 576
         }
       ]
     },
@@ -6639,19 +7035,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-700)",
-          "line": 120
+          "line": 137
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-orange-300)",
-          "line": 404
+          "line": 436
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-constant)",
-          "line": 536
+          "line": 582
         }
       ]
     },
@@ -6677,13 +7073,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "color-mix(in srgb, var(--color-black) 0%, transparent)",
-          "line": 128
+          "line": 145
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-diff-header)",
-          "line": 544
+          "line": 590
         }
       ]
     },
@@ -6709,19 +7105,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-blue-700)",
-          "line": 116
+          "line": 133
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-blue-300)",
-          "line": 400
+          "line": 432
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-function)",
-          "line": 532
+          "line": 578
         }
       ]
     },
@@ -6747,19 +7143,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-700)",
-          "line": 112
+          "line": 129
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-purple-300)",
-          "line": 396
+          "line": 428
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-keyword)",
-          "line": 528
+          "line": 574
         }
       ]
     },
@@ -6785,19 +7181,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-700)",
-          "line": 115
+          "line": 132
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-orange-300)",
-          "line": 399
+          "line": 431
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-number)",
-          "line": 531
+          "line": 577
         }
       ]
     },
@@ -6823,19 +7219,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-600)",
-          "line": 119
+          "line": 136
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 403
+          "line": 435
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-operator)",
-          "line": 535
+          "line": 581
         }
       ]
     },
@@ -6861,19 +7257,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-700)",
-          "line": 123
+          "line": 140
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-teal-300)",
-          "line": 407
+          "line": 439
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-property)",
-          "line": 539
+          "line": 585
         }
       ]
     },
@@ -6899,19 +7295,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-600)",
-          "line": 124
+          "line": 141
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 408
+          "line": 440
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-punctuation)",
-          "line": 540
+          "line": 586
         }
       ]
     },
@@ -6937,13 +7333,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "color-mix(in srgb, var(--color-error-muted) 25%, transparent)",
-          "line": 127
+          "line": 144
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-removed)",
-          "line": 543
+          "line": 589
         }
       ]
     },
@@ -6969,13 +7365,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-syntax-punctuation)",
-          "line": 130
+          "line": 147
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-removed-marker)",
-          "line": 546
+          "line": 592
         }
       ]
     },
@@ -7001,19 +7397,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-green-700)",
-          "line": 113
+          "line": 130
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-300)",
-          "line": 397
+          "line": 429
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-string)",
-          "line": 529
+          "line": 575
         }
       ]
     },
@@ -7039,19 +7435,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-700)",
-          "line": 121
+          "line": 138
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-300)",
-          "line": 405
+          "line": 437
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-tag)",
-          "line": 537
+          "line": 583
         }
       ]
     },
@@ -7077,19 +7473,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-700)",
-          "line": 117
+          "line": 134
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-purple-300)",
-          "line": 401
+          "line": 433
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-type)",
-          "line": 533
+          "line": 579
         }
       ]
     },
@@ -7115,19 +7511,151 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-950)",
-          "line": 118
+          "line": 135
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-200)",
-          "line": 402
+          "line": 434
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-variable)",
-          "line": 534
+          "line": 580
+        }
+      ]
+    },
+    {
+      "name": "--color-tab-active",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-background-body)",
+          "line": 73
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "color-mix(in oklab, var(--color-neutral) 30%, transparent)",
+          "line": 376
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-tab-active)",
+          "line": 523
+        }
+      ]
+    },
+    {
+      "name": "--color-tab-active-border",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "transparent",
+          "line": 74
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "var(--color-border-emphasized)",
+          "line": 377
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-tab-active-border)",
+          "line": 524
+        }
+      ]
+    },
+    {
+      "name": "--color-tab-muted",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "color-mix(in oklab, var(--color-text-primary) 60%, transparent)",
+          "line": 72
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "var(--color-text-secondary)",
+          "line": 375
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-tab-muted)",
+          "line": 522
         }
       ]
     },
@@ -7159,7 +7687,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-teal)",
-          "line": 523
+          "line": 569
         }
       ]
     },
@@ -7191,7 +7719,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-teal)",
-          "line": 520
+          "line": 566
         }
       ]
     },
@@ -7229,29 +7757,29 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-200)",
-          "line": 316
+          "line": 333
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-900)",
           "line": 71
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-200)",
           "line": 97
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"]),\n:root[data-web-palette]:not([data-web-palette=\"mono\"]) .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-800)",
           "line": 109
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"],\n:root[data-web-palette]:not([data-web-palette=\"mono\"])[data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--web-palette-200)",
           "line": 117
         }
@@ -7285,13 +7813,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-blue-800)",
-          "line": 73
+          "line": 90
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-blue-200)",
-          "line": 358
+          "line": 390
         }
       ]
     },
@@ -7329,17 +7857,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 314
+          "line": 331
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-600)",
           "line": 66
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-400)",
           "line": 92
         }
@@ -7373,13 +7901,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-cyan-800)",
-          "line": 77
+          "line": 94
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-cyan-200)",
-          "line": 362
+          "line": 394
         }
       ]
     },
@@ -7417,17 +7945,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-600)",
-          "line": 315
+          "line": 332
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-400)",
           "line": 67
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-600)",
           "line": 93
         }
@@ -7461,13 +7989,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-neutral-800)",
-          "line": 81
+          "line": 98
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-200)",
-          "line": 366
+          "line": 398
         }
       ]
     },
@@ -7499,13 +8027,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-green-800)",
-          "line": 85
+          "line": 102
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-green-200)",
-          "line": 370
+          "line": 402
         }
       ]
     },
@@ -7537,13 +8065,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-orange-800)",
-          "line": 89
+          "line": 106
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-orange-200)",
-          "line": 374
+          "line": 406
         }
       ]
     },
@@ -7575,13 +8103,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-pink-800)",
-          "line": 93
+          "line": 110
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-pink-200)",
-          "line": 378
+          "line": 410
         }
       ]
     },
@@ -7619,17 +8147,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-50)",
-          "line": 312
+          "line": 329
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-950)",
           "line": 64
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-50)",
           "line": 90
         }
@@ -7663,13 +8191,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-purple-800)",
-          "line": 97
+          "line": 114
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-purple-200)",
-          "line": 382
+          "line": 414
         }
       ]
     },
@@ -7701,13 +8229,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-red-800)",
-          "line": 101
+          "line": 118
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-red-200)",
-          "line": 386
+          "line": 418
         }
       ]
     },
@@ -7745,17 +8273,17 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-neutral-400)",
-          "line": 313
+          "line": 330
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-500)",
           "line": 65
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "var(--color-slate-400)",
           "line": 91
         }
@@ -7789,13 +8317,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-teal-800)",
-          "line": 105
+          "line": 122
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-teal-200)",
-          "line": 390
+          "line": 422
         }
       ]
     },
@@ -7827,13 +8355,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-800)",
-          "line": 109
+          "line": 126
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-yellow-200)",
-          "line": 394
+          "line": 426
         }
       ]
     },
@@ -7871,13 +8399,57 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-white)",
-          "line": 334
+          "line": 351
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-tint-hover)",
-          "line": 604
+          "line": 650
+        }
+      ]
+    },
+    {
+      "name": "--color-tooltip-text",
+      "id": "color.interface",
+      "source": "apps/ui/ui/theme.css",
+      "pattern": "^--(?:color-(?!data-|syntax-|brand$)[a-z0-9-]+|focus-outline-color|interaction-(?:hover|pressed))$",
+      "category": "color",
+      "layer": "semantic",
+      "type": "color",
+      "status": "active",
+      "axes": [
+        "mode",
+        "palette",
+        "neutral",
+        "state"
+      ],
+      "description": "Current UI semantic colors and Tailwind aliases; user palette overrides retain the same owner.",
+      "consumers": [
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/stories/theme.stories.tsx"
+      ],
+      "overrides": [
+        "apps/ui/ui/web/web-palette.css"
+      ],
+      "declarations": [
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": ":root,\n.ui-theme",
+          "value": "var(--color-on-dark)",
+          "line": 69
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "[data-ui-theme=\"dark\"]",
+          "value": "var(--color-on-light)",
+          "line": 372
+        },
+        {
+          "source": "apps/ui/ui/theme.css",
+          "scope": "@theme reference inline",
+          "value": "var(--color-tooltip-text)",
+          "line": 519
         }
       ]
     },
@@ -7915,23 +8487,23 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "color-mix(in oklab, var(--color-white) 13.5%, transparent)",
-          "line": 348
+          "line": 365
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-track)",
-          "line": 481
+          "line": 513
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"],\n:root[data-web-neutral=\"slate\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "color-mix(in oklab, var(--color-slate-200) 90%, transparent)",
           "line": 79
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme",
+          "scope": "[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"],\n:root[data-web-neutral=\"slate\"][data-ui-theme=\"dark\"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *)",
           "value": "color-mix(in oklab, var(--color-white) 13.5%, transparent)",
           "line": 105
         }
@@ -7971,13 +8543,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-yellow-200)",
-          "line": 343
+          "line": 360
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-warning)",
-          "line": 460
+          "line": 492
         }
       ]
     },
@@ -8009,7 +8581,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-warning-fill)",
-          "line": 462
+          "line": 494
         }
       ]
     },
@@ -8041,13 +8613,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-yellow-400)",
-          "line": 64
+          "line": 81
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-yellow-400)",
-          "line": 350
+          "line": 382
         }
       ]
     },
@@ -8085,13 +8657,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-yellow-950)",
-          "line": 344
+          "line": 361
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-warning-muted)",
-          "line": 461
+          "line": 493
         }
       ]
     },
@@ -8123,7 +8695,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-yellow)",
-          "line": 527
+          "line": 573
         }
       ]
     },
@@ -8155,7 +8727,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-yellow)",
-          "line": 524
+          "line": 570
         }
       ]
     },
@@ -8179,7 +8751,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--border-width)",
-          "line": 655
+          "line": 701
         }
       ]
     },
@@ -8205,7 +8777,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--duration-fast)",
-          "line": 656
+          "line": 702
         }
       ]
     },
@@ -8229,7 +8801,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--ease-standard)",
-          "line": 657
+          "line": 703
         }
       ]
     },
@@ -8255,13 +8827,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "600ms",
-          "line": 264
+          "line": 281
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 842
+          "line": 888
         }
       ]
     },
@@ -8287,13 +8859,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "125ms",
-          "line": 256
+          "line": 273
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 834
+          "line": 880
         }
       ]
     },
@@ -8319,13 +8891,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "165ms",
-          "line": 257
+          "line": 274
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 835
+          "line": 881
         }
       ]
     },
@@ -8351,13 +8923,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "95ms",
-          "line": 255
+          "line": 272
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 833
+          "line": 879
         }
       ]
     },
@@ -8383,13 +8955,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "300ms",
-          "line": 259
+          "line": 276
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 837
+          "line": 883
         }
       ]
     },
@@ -8415,13 +8987,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "400ms",
-          "line": 260
+          "line": 277
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 838
+          "line": 884
         }
       ]
     },
@@ -8447,13 +9019,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "225ms",
-          "line": 258
+          "line": 275
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 836
+          "line": 882
         }
       ]
     },
@@ -8479,13 +9051,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "700ms",
-          "line": 262
+          "line": 279
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 840
+          "line": 886
         }
       ]
     },
@@ -8511,13 +9083,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "935ms",
-          "line": 263
+          "line": 280
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 841
+          "line": 887
         }
       ]
     },
@@ -8543,13 +9115,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "525ms",
-          "line": 261
+          "line": 278
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 839
+          "line": 885
         }
       ]
     },
@@ -8573,7 +9145,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "cubic-bezier(0.22, 1, 0.36, 1)",
-          "line": 266
+          "line": 283
         }
       ]
     },
@@ -8597,13 +9169,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "cubic-bezier(0.24, 1, 0.4, 1)",
-          "line": 265
+          "line": 282
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--ease-standard)",
-          "line": 658
+          "line": 704
         }
       ]
     },
@@ -8635,19 +9207,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--color-blue-600)",
-          "line": 203
+          "line": 220
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "var(--color-blue-400)",
-          "line": 425
+          "line": 457
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (forced-colors: active) / :root, .ui-theme",
           "value": "CanvasText",
-          "line": 826
+          "line": 872
         }
       ]
     },
@@ -8671,7 +9243,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "2px",
-          "line": 204
+          "line": 221
         }
       ]
     },
@@ -8695,7 +9267,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "solid",
-          "line": 202
+          "line": 219
         }
       ]
     },
@@ -8719,7 +9291,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "2px",
-          "line": 201
+          "line": 218
         }
       ]
     },
@@ -8748,7 +9320,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
-          "line": 218
+          "line": 235
         },
         {
           "source": "apps/ui/ui/preview-appearance.css",
@@ -8783,7 +9355,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "ui-monospace, \"SF Mono\", Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
-          "line": 220
+          "line": 237
         }
       ]
     },
@@ -8812,7 +9384,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--font-family-body)",
-          "line": 219
+          "line": 236
         },
         {
           "source": "apps/ui/ui/preview-appearance.css",
@@ -8847,7 +9419,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-family-heading)",
-          "line": 612
+          "line": 658
         }
       ]
     },
@@ -8876,7 +9448,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-family-code)",
-          "line": 613
+          "line": 659
         }
       ]
     },
@@ -8905,7 +9477,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-family-body)",
-          "line": 611
+          "line": 657
         }
       ]
     },
@@ -8929,7 +9501,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.5rem",
-          "line": 233
+          "line": 250
         }
       ]
     },
@@ -8953,7 +9525,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": ".5rem",
-          "line": 227
+          "line": 244
         }
       ]
     },
@@ -8977,7 +9549,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.875rem",
-          "line": 234
+          "line": 251
         }
       ]
     },
@@ -9001,7 +9573,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": ".4375rem",
-          "line": 226
+          "line": 243
         }
       ]
     },
@@ -9025,7 +9597,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "2.25rem",
-          "line": 240
+          "line": 257
         }
       ]
     },
@@ -9049,7 +9621,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": ".375rem",
-          "line": 225
+          "line": 242
         }
       ]
     },
@@ -9073,7 +9645,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "3rem",
-          "line": 241
+          "line": 258
         }
       ]
     },
@@ -9097,7 +9669,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1rem",
-          "line": 230
+          "line": 247
         }
       ]
     },
@@ -9121,7 +9693,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.125rem",
-          "line": 231
+          "line": 248
         }
       ]
     },
@@ -9145,7 +9717,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "2rem",
-          "line": 235
+          "line": 252
         }
       ]
     },
@@ -9169,7 +9741,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": ".875rem",
-          "line": 229
+          "line": 246
         }
       ]
     },
@@ -9193,7 +9765,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.25rem",
-          "line": 232
+          "line": 249
         }
       ]
     },
@@ -9217,7 +9789,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": ".75rem",
-          "line": 228
+          "line": 245
         }
       ]
     },
@@ -9241,7 +9813,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "700",
-          "line": 224
+          "line": 241
         }
       ]
     },
@@ -9265,7 +9837,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "500",
-          "line": 222
+          "line": 239
         }
       ]
     },
@@ -9289,7 +9861,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "400",
-          "line": 221
+          "line": 238
         }
       ]
     },
@@ -9313,7 +9885,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "600",
-          "line": 223
+          "line": 240
         }
       ]
     },
@@ -9345,7 +9917,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility interaction-accent",
           "value": "var(--color-on-accent-overlay-hover)",
-          "line": 697
+          "line": 743
         }
       ]
     },
@@ -9377,7 +9949,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility interaction-accent",
           "value": "var(--color-on-accent-overlay-pressed)",
-          "line": 698
+          "line": 744
         }
       ]
     },
@@ -9406,7 +9978,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "calc(var(--radius-element) * 1.8)",
-          "line": 641
+          "line": 687
         }
       ]
     },
@@ -9435,7 +10007,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "calc(var(--radius-element) * 2.2)",
-          "line": 642
+          "line": 688
         }
       ]
     },
@@ -9464,7 +10036,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-page)",
-          "line": 643
+          "line": 689
         }
       ]
     },
@@ -9493,13 +10065,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 2.5)",
-          "line": 214
+          "line": 231
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-card)",
-          "line": 634
+          "line": 680
         }
       ]
     },
@@ -9528,13 +10100,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "28px",
-          "line": 216
+          "line": 233
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-chat)",
-          "line": 636
+          "line": 682
         }
       ]
     },
@@ -9563,13 +10135,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 1.4)",
-          "line": 211
+          "line": 228
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-container)",
-          "line": 631
+          "line": 677
         }
       ]
     },
@@ -9598,13 +10170,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--radius-full)",
-          "line": 208
+          "line": 225
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-control)",
-          "line": 628
+          "line": 674
         }
       ]
     },
@@ -9633,13 +10205,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0.5rem",
-          "line": 207
+          "line": 224
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-element)",
-          "line": 627
+          "line": 673
         },
         {
           "source": "apps/ui/ui/preview-appearance.css",
@@ -9674,7 +10246,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "9999px",
-          "line": 217
+          "line": 234
         }
       ]
     },
@@ -9703,13 +10275,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 0.6)",
-          "line": 206
+          "line": 223
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-inner)",
-          "line": 626
+          "line": 672
         }
       ]
     },
@@ -9738,13 +10310,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 1.5)",
-          "line": 212
+          "line": 229
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-item)",
-          "line": 632
+          "line": 678
         }
       ]
     },
@@ -9773,7 +10345,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-element)",
-          "line": 639
+          "line": 685
         }
       ]
     },
@@ -9802,7 +10374,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "calc(var(--radius-element) * 0.8)",
-          "line": 638
+          "line": 684
         }
       ]
     },
@@ -9831,7 +10403,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0px",
-          "line": 205
+          "line": 222
         }
       ]
     },
@@ -9860,13 +10432,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 2.6)",
-          "line": 215
+          "line": 232
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-page)",
-          "line": 635
+          "line": 681
         }
       ]
     },
@@ -9895,13 +10467,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 2.5)",
-          "line": 213
+          "line": 230
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-popover)",
-          "line": 633
+          "line": 679
         }
       ]
     },
@@ -9930,13 +10502,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 2.5)",
-          "line": 210
+          "line": 227
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-select-popover)",
-          "line": 630
+          "line": 676
         }
       ]
     },
@@ -9965,7 +10537,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-inner)",
-          "line": 637
+          "line": 683
         }
       ]
     },
@@ -9994,13 +10566,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--radius-element) * 1.5)",
-          "line": 209
+          "line": 226
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-textarea)",
-          "line": 629
+          "line": 675
         }
       ]
     },
@@ -10029,7 +10601,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-container)",
-          "line": 640
+          "line": 686
         }
       ]
     },
@@ -10056,13 +10628,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-scale-2)",
-          "line": 290
+          "line": 307
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-card-hover)",
-          "line": 650
+          "line": 696
         }
       ]
     },
@@ -10089,13 +10661,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-outlined-1), var(--surface-highlight-control)",
-          "line": 287
+          "line": 304
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-control)",
-          "line": 652
+          "line": 698
         }
       ]
     },
@@ -10122,13 +10694,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-outlined-3)",
-          "line": 289
+          "line": 306
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-document)",
-          "line": 654
+          "line": 700
         }
       ]
     },
@@ -10154,13 +10726,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0px 0px 0px 1px color-mix(in srgb, var(--color-shadow) 4%, transparent)",
-          "line": 274
+          "line": 291
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "0px 0px 0px 1px color-mix(in srgb, var(--color-white) 8%, transparent)",
-          "line": 423
+          "line": 455
         }
       ]
     },
@@ -10187,13 +10759,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-scale-0)",
-          "line": 283
+          "line": 300
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-flat)",
-          "line": 646
+          "line": 692
         }
       ]
     },
@@ -10220,13 +10792,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-outlined-2)",
-          "line": 288
+          "line": 305
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-floating)",
-          "line": 653
+          "line": 699
         }
       ]
     },
@@ -10253,13 +10825,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-outlined-4)",
-          "line": 286
+          "line": 303
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-high)",
-          "line": 649
+          "line": 695
         }
       ]
     },
@@ -10286,13 +10858,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-med)",
-          "line": 291
+          "line": 308
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-input-focus)",
-          "line": 651
+          "line": 697
         }
       ]
     },
@@ -10318,7 +10890,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "inset 0px 0px 0px 2px color-mix(in srgb, var(--color-error) 30%, transparent)",
-          "line": 299
+          "line": 316
         }
       ]
     },
@@ -10344,7 +10916,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 30%, transparent)",
-          "line": 295
+          "line": 312
         }
       ]
     },
@@ -10370,7 +10942,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 50%, transparent)",
-          "line": 296
+          "line": 313
         }
       ]
     },
@@ -10396,7 +10968,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "inset 0px 0px 0px 2px color-mix(in srgb, var(--color-success) 30%, transparent)",
-          "line": 297
+          "line": 314
         }
       ]
     },
@@ -10422,7 +10994,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "inset 0px 0px 0px 2px color-mix(in srgb, var(--color-warning) 30%, transparent)",
-          "line": 298
+          "line": 315
         }
       ]
     },
@@ -10449,13 +11021,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-outlined-2)",
-          "line": 284
+          "line": 301
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-low)",
-          "line": 647
+          "line": 693
         }
       ]
     },
@@ -10482,13 +11054,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-outlined-3)",
-          "line": 285
+          "line": 302
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-med)",
-          "line": 648
+          "line": 694
         }
       ]
     },
@@ -10513,7 +11085,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-edge)",
-          "line": 275
+          "line": 292
         }
       ]
     },
@@ -10538,7 +11110,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-scale-1), var(--shadow-edge)",
-          "line": 276
+          "line": 293
         }
       ]
     },
@@ -10563,7 +11135,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-scale-2), var(--shadow-edge)",
-          "line": 277
+          "line": 294
         }
       ]
     },
@@ -10588,7 +11160,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-scale-3), var(--shadow-edge)",
-          "line": 278
+          "line": 295
         }
       ]
     },
@@ -10613,7 +11185,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "var(--shadow-scale-4), var(--shadow-edge)",
-          "line": 279
+          "line": 296
         }
       ]
     },
@@ -10640,13 +11212,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent)",
-          "line": 269
+          "line": 286
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent), 0px 0px 0px 0px color-mix(in srgb, var(--color-shadow) 0%, transparent)",
-          "line": 418
+          "line": 450
         }
       ]
     },
@@ -10673,13 +11245,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0px 2px 4px 0px color-mix(in srgb, var(--color-shadow) 4%, transparent), 0px 1px 2px -1px color-mix(in srgb, var(--color-shadow) 2%, transparent)",
-          "line": 270
+          "line": 287
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "0px 2px 4px 0px color-mix(in srgb, var(--color-shadow) 16%, transparent), 0px 1px 2px -1px color-mix(in srgb, var(--color-shadow) 8%, transparent)",
-          "line": 419
+          "line": 451
         }
       ]
     },
@@ -10706,13 +11278,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0px 16px 32px -16px color-mix(in srgb, var(--color-shadow) 12%, transparent), 0px 4px 8px -4px color-mix(in srgb, var(--color-shadow) 4%, transparent)",
-          "line": 271
+          "line": 288
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "0px 16px 32px -16px color-mix(in srgb, var(--color-shadow) 48%, transparent), 0px 4px 8px -4px color-mix(in srgb, var(--color-shadow) 16%, transparent)",
-          "line": 420
+          "line": 452
         }
       ]
     },
@@ -10739,13 +11311,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0px 20px 30px -20px color-mix(in srgb, var(--color-shadow) 24%, transparent), 0px 8px 16px -8px color-mix(in srgb, var(--color-shadow) 4%, transparent), 0px 4px 8px -4px color-mix(in srgb, var(--color-shadow) 4%, transparent)",
-          "line": 272
+          "line": 289
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "0px 20px 30px -20px color-mix(in srgb, var(--color-shadow) 96%, transparent), 0px 8px 16px -8px color-mix(in srgb, var(--color-shadow) 16%, transparent), 0px 4px 8px -4px color-mix(in srgb, var(--color-shadow) 16%, transparent)",
-          "line": 421
+          "line": 453
         }
       ]
     },
@@ -10772,13 +11344,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0px 24px 36px 0px color-mix(in srgb, var(--color-shadow) 4%, transparent), 0px 16px 24px 0px color-mix(in srgb, var(--color-shadow) 8%, transparent), 0px 4px 8px -4px color-mix(in srgb, var(--color-shadow) 4%, transparent)",
-          "line": 273
+          "line": 290
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "0px 24px 36px 0px color-mix(in srgb, var(--color-shadow) 16%, transparent), 0px 16px 24px 0px color-mix(in srgb, var(--color-shadow) 32%, transparent), 0px 4px 8px -4px color-mix(in srgb, var(--color-shadow) 16%, transparent)",
-          "line": 422
+          "line": 454
         }
       ]
     },
@@ -10802,7 +11374,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "40px",
-          "line": 199
+          "line": 216
         }
       ]
     },
@@ -10826,7 +11398,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "36px",
-          "line": 198
+          "line": 215
         }
       ]
     },
@@ -10850,7 +11422,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "32px",
-          "line": 197
+          "line": 214
         }
       ]
     },
@@ -10874,7 +11446,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--spacing-1)",
-          "line": 607
+          "line": 653
         }
       ]
     },
@@ -10898,7 +11470,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0.25rem",
-          "line": 193
+          "line": 210
         }
       ]
     },
@@ -10922,7 +11494,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--size-element-lg)",
-          "line": 610
+          "line": 656
         }
       ]
     },
@@ -10946,7 +11518,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--size-element-md)",
-          "line": 609
+          "line": 655
         }
       ]
     },
@@ -10970,7 +11542,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--size-element-sm)",
-          "line": 608
+          "line": 654
         }
       ]
     },
@@ -10994,7 +11566,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "calc(var(--spacing-1) * 6)",
-          "line": 194
+          "line": 211
         }
       ]
     },
@@ -11018,7 +11590,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.25em",
-          "line": 196
+          "line": 213
         }
       ]
     },
@@ -11044,13 +11616,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "0 0 0 0 transparent, inset 0 0 0 0 transparent",
-          "line": 293
+          "line": 310
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "0 0 0 0 transparent, inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent)",
-          "line": 427
+          "line": 459
         }
       ]
     },
@@ -11076,13 +11648,13 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "inset color-mix(in srgb, var(--color-white) 88%, transparent) 0px 0px 0px 1px",
-          "line": 281
+          "line": 298
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
           "value": "inset color-mix(in srgb, var(--color-white) 4%, transparent) 0px 0px 0px 1px",
-          "line": 424
+          "line": 456
         }
       ]
     },
@@ -11606,7 +12178,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-2xl)",
-          "line": 622
+          "line": 668
         }
       ]
     },
@@ -11630,7 +12202,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-2xs)",
-          "line": 616
+          "line": 662
         }
       ]
     },
@@ -11654,7 +12226,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-3xl)",
-          "line": 623
+          "line": 669
         }
       ]
     },
@@ -11678,7 +12250,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-3xs)",
-          "line": 615
+          "line": 661
         }
       ]
     },
@@ -11702,7 +12274,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-4xl)",
-          "line": 624
+          "line": 670
         }
       ]
     },
@@ -11726,7 +12298,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-4xs)",
-          "line": 614
+          "line": 660
         }
       ]
     },
@@ -11750,7 +12322,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-5xl)",
-          "line": 625
+          "line": 671
         }
       ]
     },
@@ -11774,7 +12346,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-base)",
-          "line": 619
+          "line": 665
         }
       ]
     },
@@ -11798,7 +12370,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.4286",
-          "line": 242
+          "line": 259
         }
       ]
     },
@@ -11822,7 +12394,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.2381",
-          "line": 251
+          "line": 268
         }
       ]
     },
@@ -11846,7 +12418,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.2571",
-          "line": 252
+          "line": 269
         }
       ]
     },
@@ -11870,7 +12442,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.2414",
-          "line": 253
+          "line": 270
         }
       ]
     },
@@ -11894,7 +12466,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.3333",
-          "line": 245
+          "line": 262
         }
       ]
     },
@@ -11918,7 +12490,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.4",
-          "line": 246
+          "line": 263
         }
       ]
     },
@@ -11942,7 +12514,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.4118",
-          "line": 247
+          "line": 264
         }
       ]
     },
@@ -11966,7 +12538,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.4286",
-          "line": 248
+          "line": 265
         }
       ]
     },
@@ -11990,7 +12562,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.6667",
-          "line": 249
+          "line": 266
         }
       ]
     },
@@ -12014,7 +12586,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.6",
-          "line": 250
+          "line": 267
         }
       ]
     },
@@ -12038,7 +12610,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.4118",
-          "line": 254
+          "line": 271
         }
       ]
     },
@@ -12062,7 +12634,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-lg)",
-          "line": 620
+          "line": 666
         }
       ]
     },
@@ -12086,7 +12658,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.6",
-          "line": 237
+          "line": 254
         }
       ]
     },
@@ -12110,7 +12682,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.5556",
-          "line": 239
+          "line": 256
         }
       ]
     },
@@ -12134,7 +12706,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.2",
-          "line": 238
+          "line": 255
         }
       ]
     },
@@ -12158,7 +12730,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.25",
-          "line": 236
+          "line": 253
         }
       ]
     },
@@ -12182,7 +12754,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.75",
-          "line": 243
+          "line": 260
         }
       ]
     },
@@ -12206,7 +12778,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-sm)",
-          "line": 618
+          "line": 664
         }
       ]
     },
@@ -12230,7 +12802,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
           "value": "1.6667",
-          "line": 244
+          "line": 261
         }
       ]
     },
@@ -12254,7 +12826,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-xl)",
-          "line": 621
+          "line": 667
         }
       ]
     },
@@ -12278,7 +12850,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-xs)",
-          "line": 617
+          "line": 663
         }
       ]
     },
@@ -12302,43 +12874,43 @@
       "declarations": [
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"lime\"]",
+          "scope": "[data-web-palette=\"lime\"]",
           "value": "var(--color-lime-100)",
           "line": 3
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"green\"]",
+          "scope": "[data-web-palette=\"green\"]",
           "value": "var(--color-green-100)",
           "line": 11
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"emerald\"]",
+          "scope": "[data-web-palette=\"emerald\"]",
           "value": "var(--color-emerald-100)",
           "line": 19
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"teal\"]",
+          "scope": "[data-web-palette=\"teal\"]",
           "value": "var(--color-teal-100)",
           "line": 27
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"cyan\"]",
+          "scope": "[data-web-palette=\"cyan\"]",
           "value": "var(--color-cyan-100)",
           "line": 35
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"sky\"]",
+          "scope": "[data-web-palette=\"sky\"]",
           "value": "var(--color-sky-100)",
           "line": 43
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"blue\"]",
+          "scope": "[data-web-palette=\"blue\"]",
           "value": "var(--color-blue-100)",
           "line": 51
         }
@@ -12364,43 +12936,43 @@
       "declarations": [
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"lime\"]",
+          "scope": "[data-web-palette=\"lime\"]",
           "value": "var(--color-lime-200)",
           "line": 4
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"green\"]",
+          "scope": "[data-web-palette=\"green\"]",
           "value": "var(--color-green-200)",
           "line": 12
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"emerald\"]",
+          "scope": "[data-web-palette=\"emerald\"]",
           "value": "var(--color-emerald-200)",
           "line": 20
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"teal\"]",
+          "scope": "[data-web-palette=\"teal\"]",
           "value": "var(--color-teal-200)",
           "line": 28
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"cyan\"]",
+          "scope": "[data-web-palette=\"cyan\"]",
           "value": "var(--color-cyan-200)",
           "line": 36
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"sky\"]",
+          "scope": "[data-web-palette=\"sky\"]",
           "value": "var(--color-sky-200)",
           "line": 44
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"blue\"]",
+          "scope": "[data-web-palette=\"blue\"]",
           "value": "var(--color-blue-200)",
           "line": 52
         }
@@ -12426,43 +12998,43 @@
       "declarations": [
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"lime\"]",
+          "scope": "[data-web-palette=\"lime\"]",
           "value": "var(--color-lime-300)",
           "line": 5
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"green\"]",
+          "scope": "[data-web-palette=\"green\"]",
           "value": "var(--color-green-300)",
           "line": 13
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"emerald\"]",
+          "scope": "[data-web-palette=\"emerald\"]",
           "value": "var(--color-emerald-300)",
           "line": 21
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"teal\"]",
+          "scope": "[data-web-palette=\"teal\"]",
           "value": "var(--color-teal-300)",
           "line": 29
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"cyan\"]",
+          "scope": "[data-web-palette=\"cyan\"]",
           "value": "var(--color-cyan-300)",
           "line": 37
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"sky\"]",
+          "scope": "[data-web-palette=\"sky\"]",
           "value": "var(--color-sky-300)",
           "line": 45
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"blue\"]",
+          "scope": "[data-web-palette=\"blue\"]",
           "value": "var(--color-blue-300)",
           "line": 53
         }
@@ -12488,43 +13060,43 @@
       "declarations": [
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"lime\"]",
+          "scope": "[data-web-palette=\"lime\"]",
           "value": "var(--color-lime-700)",
           "line": 6
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"green\"]",
+          "scope": "[data-web-palette=\"green\"]",
           "value": "var(--color-green-700)",
           "line": 14
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"emerald\"]",
+          "scope": "[data-web-palette=\"emerald\"]",
           "value": "var(--color-emerald-700)",
           "line": 22
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"teal\"]",
+          "scope": "[data-web-palette=\"teal\"]",
           "value": "var(--color-teal-700)",
           "line": 30
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"cyan\"]",
+          "scope": "[data-web-palette=\"cyan\"]",
           "value": "var(--color-cyan-700)",
           "line": 38
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"sky\"]",
+          "scope": "[data-web-palette=\"sky\"]",
           "value": "var(--color-sky-700)",
           "line": 46
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"blue\"]",
+          "scope": "[data-web-palette=\"blue\"]",
           "value": "var(--color-blue-700)",
           "line": 54
         }
@@ -12550,43 +13122,43 @@
       "declarations": [
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"lime\"]",
+          "scope": "[data-web-palette=\"lime\"]",
           "value": "var(--color-lime-800)",
           "line": 7
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"green\"]",
+          "scope": "[data-web-palette=\"green\"]",
           "value": "var(--color-green-800)",
           "line": 15
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"emerald\"]",
+          "scope": "[data-web-palette=\"emerald\"]",
           "value": "var(--color-emerald-800)",
           "line": 23
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"teal\"]",
+          "scope": "[data-web-palette=\"teal\"]",
           "value": "var(--color-teal-800)",
           "line": 31
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"cyan\"]",
+          "scope": "[data-web-palette=\"cyan\"]",
           "value": "var(--color-cyan-800)",
           "line": 39
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"sky\"]",
+          "scope": "[data-web-palette=\"sky\"]",
           "value": "var(--color-sky-800)",
           "line": 47
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"blue\"]",
+          "scope": "[data-web-palette=\"blue\"]",
           "value": "var(--color-blue-800)",
           "line": 55
         }
@@ -12612,43 +13184,43 @@
       "declarations": [
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"lime\"]",
+          "scope": "[data-web-palette=\"lime\"]",
           "value": "var(--color-lime-950)",
           "line": 8
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"green\"]",
+          "scope": "[data-web-palette=\"green\"]",
           "value": "var(--color-green-950)",
           "line": 16
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"emerald\"]",
+          "scope": "[data-web-palette=\"emerald\"]",
           "value": "var(--color-emerald-950)",
           "line": 24
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"teal\"]",
+          "scope": "[data-web-palette=\"teal\"]",
           "value": "var(--color-teal-950)",
           "line": 32
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"cyan\"]",
+          "scope": "[data-web-palette=\"cyan\"]",
           "value": "var(--color-cyan-950)",
           "line": 40
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"sky\"]",
+          "scope": "[data-web-palette=\"sky\"]",
           "value": "var(--color-sky-950)",
           "line": 48
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
-          "scope": ":root[data-web-palette=\"blue\"]",
+          "scope": "[data-web-palette=\"blue\"]",
           "value": "var(--color-blue-950)",
           "line": 56
         }
@@ -13086,7 +13658,8 @@
       "sources": [
         "apps/ui/ui/preview-mode.tsx",
         "apps/ui/ui/preview-appearance.ts",
-        "apps/ui/ui/web/WebAppearance.tsx"
+        "apps/ui/ui/web/WebAppearance.tsx",
+        "apps/ui/ui/web/WorkspaceFrame.tsx"
       ],
       "consumers": [
         "apps/ui/ui/web/WebSettings.tsx"
@@ -13122,7 +13695,10 @@
         "apps/ui/ui/typeset.css",
         "apps/ui/ui/web/web-app.css",
         "apps/ui/ui/web/web-settings.css",
-        "apps/ui/ui/web/web-typography.css"
+        "apps/ui/ui/web/web-typography.css",
+        "apps/ui/ui/components/theme-scope.css",
+        "apps/ui/ui/web/layouts/topbar.css",
+        "apps/ui/ui/web/appearance/themes/minimal.css"
       ],
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx"
