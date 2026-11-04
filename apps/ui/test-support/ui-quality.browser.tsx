@@ -294,9 +294,9 @@ for (const mode of ["light", "dark"] as const) test(`property selector failures 
   } finally { view.unmount(); release(); }
 });
 
-for (const mode of ["light", "dark"] as const) test(`property editors preserve all field and selected-text positions in ${mode}`, async () => {
+for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 390]) test(`property editors preserve all field and selected-text positions in ${mode} at ${width}px`, async () => {
   await commands.setReducedMotion("reduce");
-  await page.viewport(1280, 1000);
+  await page.viewport(width, 1000);
   const changes: unknown[] = [];
   const release = setStorybookRequestHandler(async operation => {
     if (operation === "getStatus") return propertyLayoutStatus();
@@ -332,57 +332,54 @@ for (const mode of ["light", "dark"] as const) test(`property editors preserve a
     const canvas = within(view.container), body = within(document.body);
     await canvas.findByRole("button", { name: "编辑标签" });
     await document.fonts.ready;
-    for (const width of [1280, 1024, 390]) {
-      await page.viewport(width, 1000);
-      const origin = view.container.querySelector('.note-properties')!;
-      const layout = () => [...view.container.querySelectorAll('.note-property-row, [data-testid="following-content"]')].map(row => ({top: row.getBoundingClientRect().top - origin.getBoundingClientRect().top, height: row.getBoundingClientRect().height}));
-      for (const name of ["编辑标签", "编辑属性 单选", "编辑属性 多选", "编辑属性 日期", "预览图片 图片"]) {
-        const trigger = canvas.getByRole("button", { name });
-        const bounds = layout();
-        await userEvent.click(trigger);
-        const popup = await body.findByRole("dialog", { name: name === "编辑标签" ? name : name === "预览图片 图片" ? "图片预览 图片" : name });
-        await waitFor(() => expect(layout()).toEqual(bounds));
-        if (name === "编辑标签" || name === "编辑属性 单选" || name === "编辑属性 多选") {
-          await within(popup).findByRole("combobox");
-          if (name === "编辑标签") await waitFor(() => expect(within(popup).queryByRole("status", { name: "正在加载标签…" })).toBeNull());
-          if (width >= 768) await waitFor(() => {
-            const before = textRects(trigger), after = textRects(popup.querySelector('.note-tag-header')!);
-            expect(after.length).toBe(before.length);
-            before.forEach((lines, index) => {
-              expect(after[index].length, `${name} pill ${index}`).toBe(lines.length);
-              lines.forEach((rect, line) => {
-                expect(after[index][line].left, `${name} pill ${index}`).toBeCloseTo(rect.left, 1);
-                expect(after[index][line].top, `${name} pill ${index}`).toBeCloseTo(rect.top, 1);
-              });
+    const origin = view.container.querySelector('.note-properties')!;
+    const layout = () => [...view.container.querySelectorAll('.note-property-row, [data-testid="following-content"]')].map(row => ({top: row.getBoundingClientRect().top - origin.getBoundingClientRect().top, height: row.getBoundingClientRect().height}));
+    for (const name of ["编辑标签", "编辑属性 单选", "编辑属性 多选", "编辑属性 日期", "预览图片 图片"]) {
+      const trigger = canvas.getByRole("button", { name });
+      const bounds = layout();
+      await userEvent.click(trigger);
+      const popup = await body.findByRole("dialog", { name: name === "编辑标签" ? name : name === "预览图片 图片" ? "图片预览 图片" : name });
+      await waitFor(() => expect(layout()).toEqual(bounds));
+      if (name === "编辑标签" || name === "编辑属性 单选" || name === "编辑属性 多选") {
+        await within(popup).findByRole("combobox");
+        if (name === "编辑标签") await waitFor(() => expect(within(popup).queryByRole("status", { name: "正在加载标签…" })).toBeNull());
+        if (width >= 768) await waitFor(() => {
+          const before = textRects(trigger), after = textRects(popup.querySelector('.note-tag-header')!);
+          expect(after.length).toBe(before.length);
+          before.forEach((lines, index) => {
+            expect(after[index].length, `${name} pill ${index}`).toBe(lines.length);
+            lines.forEach((rect, line) => {
+              expect(after[index][line].left, `${name} pill ${index}`).toBeCloseTo(rect.left, 1);
+              expect(after[index][line].top, `${name} pill ${index}`).toBeCloseTo(rect.top, 1);
             });
           });
-        }
-        await userEvent.keyboard("{Escape}");
-        await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+        });
       }
-      const beforeError = layout();
-      await userEvent.click(canvas.getByRole("button", { name: "上传图片 空图片" }));
-      const failurePopup = await body.findByRole("dialog", { name: "图片操作 空图片" });
-      expect(within(failurePopup).getByRole("alert").textContent).toBe("无法读取图片");
-      expect(layout()).toEqual(beforeError);
-      expect(view.container.querySelector('[role="alert"]')).toBeNull();
       await userEvent.keyboard("{Escape}");
       await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
-      const checkbox = canvas.getByRole("checkbox", { name: "切换属性 复选框" });
-      const beforeToggle = layout();
-      await userEvent.click(checkbox);
-      await waitFor(() => expect(changes).toEqual([{ name: "复选框", type: "checkbox", value: true }]));
-      expect(layout()).toEqual(beforeToggle);
-      changes.length = 0;
-      const number = canvas.getByRole("button", { name: "编辑属性 数字" });
-      const numericStyle = getComputedStyle(number).fontVariantNumeric;
-      const bounds = layout();
-      await userEvent.click(number);
-      const input = await canvas.findByRole("textbox", { name: "属性值" });
-      expect(getComputedStyle(input).fontVariantNumeric).toBe(numericStyle);
-      expect(layout()).toEqual(bounds);
-      await userEvent.keyboard("{Escape}");
     }
+    const beforeError = layout();
+    await userEvent.click(canvas.getByRole("button", { name: "上传图片 空图片" }));
+    const failurePopup = await body.findByRole("dialog", { name: "图片操作 空图片" });
+    expect(within(failurePopup).getByRole("alert").textContent).toBe("无法读取图片");
+    expect(layout()).toEqual(beforeError);
+    expect(view.container.querySelector('[role="alert"]')).toBeNull();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+    const checkbox = canvas.getByRole("checkbox", { name: "切换属性 复选框" });
+    const beforeToggle = layout();
+    await userEvent.click(checkbox);
+    await waitFor(() => expect(changes).toEqual([{ name: "复选框", type: "checkbox", value: true }]));
+    expect(layout()).toEqual(beforeToggle);
+    changes.length = 0;
+    const number = canvas.getByRole("button", { name: "编辑属性 数字" });
+    const numericStyle = getComputedStyle(number).fontVariantNumeric;
+    const bounds = layout();
+    await userEvent.click(number);
+    const input = await canvas.findByRole("textbox", { name: "属性值" });
+    expect(getComputedStyle(input).fontVariantNumeric).toBe(numericStyle);
+    expect(layout()).toEqual(bounds);
+    await userEvent.keyboard("{Escape}");
     expect(changes).toEqual([]);
   } finally { view.unmount(); release(); }
 });

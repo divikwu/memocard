@@ -3,7 +3,7 @@
 
 import { ThemeScope, themeScopeForElement, useThemeScopeProps, type ThemeScopeValue } from "./theme-scope"
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
-import { createContext, useContext, useEffect, useId, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, type ReactNode } from "react"
 import { cnState } from "../lib/utils"
 import { useInputModality } from "../input-modality"
 
@@ -82,7 +82,9 @@ function TooltipHints({ children }: { children?: ReactNode }) {
 function TooltipHintController() {
   useInputModality()
   const id = useId()
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(false)
+  const openRef = useRef(false)
+  const setOpen = useCallback((value: boolean) => { openRef.current = value; setOpenState(value) }, [])
   const [hint, setHint] = useState<{ anchor: HTMLElement; target: HTMLElement; text: string; side: "left" | "top"; scope?: ThemeScopeValue } | null>(null)
 
   useEffect(() => {
@@ -143,7 +145,7 @@ function TooltipHintController() {
       document.removeEventListener("scroll", close, true)
       window.removeEventListener("blur", close)
     }
-  }, [id])
+  }, [id, setOpen])
 
   useEffect(() => {
     if (!open || !hint) return
@@ -160,10 +162,10 @@ function TooltipHintController() {
       if (previous === null) target.removeAttribute("aria-describedby")
       else target.setAttribute("aria-describedby", previous)
     }
-  }, [hint, id, open])
+  }, [hint, id, open, setOpen])
 
   // Keep the anchor, text and scope until Base UI finishes the closing animation.
-  return <ThemeScope value={hint?.scope ?? {}}><Tooltip open={open} onOpenChange={setOpen} onOpenChangeComplete={open => { if (!open) setHint(null) }}>
+  return <ThemeScope value={hint?.scope ?? {}}><Tooltip open={open} onOpenChange={setOpen} onOpenChangeComplete={completedOpen => { if (!completedOpen && !openRef.current) setHint(null) }}>
     <TooltipContent id={id} anchor={hint?.anchor} side={hint?.side} className="break-all">{hint?.text}</TooltipContent>
   </Tooltip></ThemeScope>
 }
