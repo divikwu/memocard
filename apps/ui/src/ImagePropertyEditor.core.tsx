@@ -40,6 +40,7 @@ function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, edita
   const [open, setOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [retryValue, setRetryValue] = useState<string | null>(null);
+  const anchor = useRef<HTMLDivElement>(null);
   const active = useRef(true);
   const pending = useRef(false);
   const interaction = useRef(onInteractionChange);
@@ -65,7 +66,7 @@ function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, edita
   }
   const failure = error && <div className="mt-2 space-y-2"><p role="alert" className="text-sm text-error">{error}</p><div className="flex gap-2">{retryValue !== null && <Button type="button" variant="outline" size="sm" disabled={busy || importing} onClick={() => { void changeImage(async () => retryValue); }}>重试保存</Button>}<Button type="button" variant="ghost" size="sm" disabled={busy || importing} onClick={() => { setRetryValue(null); setError(''); setOpen(false); }}>关闭</Button></div></div>;
   const upload = <Button type="button" variant="ghost" size="sm" className={value ? 'w-full justify-start font-normal' : 'note-property-edit w-full justify-start font-normal'} disabled={busy || importing} aria-label={`${value ? '替换' : '上传'}图片 ${name}`} onClick={() => { void pick(); }}>{value && <ImagePlus />}{value ? importing ? '正在导入…' : '替换图片' : <span className="note-property-empty">{importing ? '正在导入…' : '空白'}</span>}</Button>;
-  return <div className="flex min-w-0 flex-col items-start">
+  return <div ref={anchor} className="flex min-w-0 flex-col items-start">
     {value ? <Popover open={open} onOpenChange={next => { if (!importing) { setOpen(next); setError(''); } }}><PopoverTrigger render={<Button variant="ghost" className="note-property-image-trigger" aria-label={`预览图片 ${name}`} />}>{source ? <PropertyImage key={source} source={source} name={name} /> : <span className="text-sm text-secondary">图片路径无法显示</span>}</PopoverTrigger><PopoverContent align="start" className="note-property-image-popup p-2" aria-label={`图片预览 ${name}`}>
       <div className="note-property-image-toolbar flex pb-2"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`图片菜单 ${name}`} disabled={busy || importing} />}><MoreHorizontal /></DropdownMenuTrigger><DropdownMenuContent align="end">
         <DropdownMenuItem disabled={!source} onClick={() => { setOpen(false); setFullscreen(true); }}><Maximize />全屏</DropdownMenuItem>
@@ -75,7 +76,7 @@ function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, edita
       {editable && <div className="mt-2 border-t pt-2">{upload}</div>}
       {failure}
     </PopoverContent></Popover> : editable ? upload : <span className="note-property-value note-property-empty">空白</span>}
-    {!open && failure}
+    {!open && failure && <Popover open onOpenChange={next => { if (!next && !importing) { setRetryValue(null); setError(''); } }}><PopoverContent anchor={anchor.current} align="start" className="note-property-image-popup p-2" aria-label={`图片操作 ${name}`} finalFocus={() => anchor.current?.querySelector<HTMLButtonElement>('button')}>{failure}</PopoverContent></Popover>}
     {fullscreen && source && <ImageViewer source={source} alt={name} onClose={() => setFullscreen(false)} />}
   </div>;
 }

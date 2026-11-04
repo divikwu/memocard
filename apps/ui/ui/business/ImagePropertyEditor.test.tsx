@@ -50,6 +50,8 @@ it('shows import failures next to the action and ignores a picker that finishes 
   const view = render(<ImagePropertyEditor {...props} onSave={onSave} />);
   await user.click(screen.getByRole('button',{name:'上传图片 封面'}));
   expect(await screen.findByRole('alert')).toHaveProperty('textContent','无法读取图片');
+  expect(screen.getByRole('dialog',{name:'图片操作 封面'}).contains(screen.getByRole('alert'))).toBe(true);
+  expect(view.container.querySelector('[role=alert]')).toBeNull();
   let finish!:(value:unknown)=>void;
   vi.mocked(request).mockReturnValueOnce(new Promise(resolve => {finish=resolve;}));
   await user.click(screen.getByRole('button',{name:'上传图片 封面'}));

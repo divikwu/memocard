@@ -954,6 +954,11 @@
           "value": "inherit"
         },
         {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-property-load-failure .note-property-retry",
+          "value": "inherit"
+        },
+        {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-open",
           "value": "inherit"
@@ -1373,6 +1378,11 @@
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-create",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-property-load-failure",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2173,6 +2183,11 @@
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-create .note-property-type-option",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-property-load-failure .note-property-retry",
           "value": "var(--font-weight-normal)"
         },
         {

@@ -673,10 +673,6 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   const movingSection = selectedBlocks.length === 1 && firstSelected.node.type.name === 'heading' && !(editor.state.selection instanceof AllSelection);
   const moveSources = richBlockMoveSources(editor, toolbar.pos);
   const upTarget = richBlockMoveTarget(editor, moveSources, -1, movingSection), downTarget = richBlockMoveTarget(editor, moveSources, 1, movingSection);
-  const gripTitle = movingSection ? '拖动以移动标题，Option/Alt 拖动以移动整个章节；点击打开菜单，Shift 点击扩展块选择'
-    : isLayoutImage(firstSelected?.node) ? '拖到图片侧边并排，拖到上下方换行；Option/Alt 拖动整行，点击打开菜单'
-    : firstSelected && ['listItem', 'taskItem'].includes(firstSelected.node.type.name) ? '拖动以移动列表项，Option/Alt 拖动以移动整个列表；Shift 点击扩展块选择'
-    : '拖动以移动，点击打开菜单；Shift 点击扩展块选择';
   const query = filter.trim().toLowerCase();
   const items = insertItems.filter(item => (query ? `${item.label} ${item.keywords ?? ''}`.toLowerCase().includes(query) : !item.searchOnly));
   if (props.onImage && (!query || '图片 image photo'.includes(query))) items.push({ label: '图片', icon: ImageIcon, group: '其他内容', run: e => e });
@@ -744,7 +740,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null)) { cancelAnimationFrame(frame.current); frame.current = 0; setDropTop(null); } }}
   >
     <div ref={controlsRef} className="block-controls" data-heading={richBlockAt(editor, toolbar.pos)?.node.type.name === 'heading' && richSectionEnd(editor.state.doc, toolbar.pos) > toolbar.pos + editor.state.doc.nodeAt(toolbar.pos)!.nodeSize || undefined} style={{ top: toolbar.top, left: toolbar.left }}>
-      <button ref={gripRef} type="button" aria-label="内容块操作" data-ui-tooltip={gripTitle} disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
+      <button ref={gripRef} type="button" aria-label="内容块操作" disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
         if (editor.view.composing) { event.preventDefault(); return; }
         const selected = selectedRichBlocks(editor, toolbar.pos), row = isLayoutImage(editor.state.doc.nodeAt(toolbar.pos)) ? imageRow(editor, toolbar.pos) : null;
         if (row && selected.length === 1 && !event.altKey) { beginImageDrag(editor, toolbar.pos, event.nativeEvent); return; }

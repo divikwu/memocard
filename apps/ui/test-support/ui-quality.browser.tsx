@@ -133,8 +133,458 @@ function expectUnclippedOutline(element: Element) {
   }
 }
 
+function expectPropertyControlRadius(root: HTMLElement) {
+  for (const control of root.querySelectorAll('button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]')) {
+    if (control.getAttribute('aria-hidden') === 'true' || control.hasAttribute('hidden')) continue;
+    const radius = control.matches('.note-tag-search') ? "0px"
+      : control.matches('.note-tag-pill, .note-tag-color-trigger, .note-tag-remove') ? "9999px" : "8px";
+    expect(getComputedStyle(control).borderRadius, control.outerHTML.slice(0, 350)).toBe(radius);
+  }
+}
+
+function expectPropertyCaretInsideCorners(input: HTMLElement) {
+  const style = getComputedStyle(input);
+  expect(parseFloat(style.paddingLeft)).toBeGreaterThanOrEqual(parseFloat(style.borderTopLeftRadius));
+  expect(parseFloat(style.paddingRight)).toBeGreaterThanOrEqual(parseFloat(style.borderTopRightRadius));
+  expect(input.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)).toBeGreaterThanOrEqual(parseFloat(style.fontSize));
+}
+
 // The fixed touch project registers only the shared list flow below.
 if (!inject("uiQualityTouch")) {
+for (const mode of ["light", "dark"] as const) test(`property selectors expand in place and keep selected values during loading in ${mode}`, async () => {
+  await page.viewport(1280, 900);
+  await commands.setReducedMotion("reduce");
+  let finishTags!: (value: {tags: {name:string}[]}) => void;
+  const tags = new Promise<{tags: {name:string}[]}>(resolve => { finishTags = resolve; });
+  const release = setStorybookRequestHandler(async operation => {
+    if (operation === "getStatus") return propertyLayoutStatus();
+    if (operation === "getPropertyLabels") return { labels: {}, contentHash: "labels" };
+    if (operation === "getPropertyLayout") return emptyPropertyLayout();
+    if (operation === "listTags") return tags;
+    throw new Error(`Unexpected selector operation: ${operation}`);
+  });
+  const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode} style={{ maxWidth: 720, marginInline: "auto", padding: "80px 16px" }}>
+    <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async () => {}} savedProperties={{
+      contentHash: editorNote.contentHash, writable: true,
+      tagProperty: { name: "tags", type: "list", value: ["现有"], editable: true },
+      properties: [
+        { name: "单选", type: "select", value: "设计", options: [{ name: "设计", color: "blue" }], editable: true },
+        { name: "多选", type: "multiSelect", value: ["设计"], options: [{ name: "设计", color: "blue" }], editable: true },
+      ],
+    }} />
+  </main></PreviewModeProvider>);
+  try {
+    const canvas = within(view.container), body = within(document.body);
+    const trigger = await canvas.findByRole("button", { name: "编辑标签" });
+    const anchor = trigger.querySelector('.note-tag-pill')!.getBoundingClientRect();
+    await userEvent.hover(trigger);
+    await waitFor(() => expect(getComputedStyle(trigger).backgroundColor).not.toBe("rgba(0, 0, 0, 0)"));
+    await userEvent.click(trigger);
+    const loading = await body.findByRole("status", { name: "正在加载标签…" });
+    const popup = body.getByRole("dialog", { name: "编辑标签" });
+    expectPropertyCaretInsideCorners(within(popup).getByRole("combobox", { name: "搜索或新建属性标签" }));
+    const aligned = (element: HTMLElement, bounds: DOMRect) => {
+      const pill = element.querySelector('.note-tag-selected .note-tag-pill')!.getBoundingClientRect();
+      expect(pill.left).toBeCloseTo(bounds.left, 1);
+      expect(pill.top).toBeCloseTo(bounds.top, 1);
+    };
+    await waitFor(() => aligned(popup, anchor));
+    await waitFor(() => expect(getComputedStyle(trigger).backgroundColor).toBe("rgba(0, 0, 0, 0)"));
+    expect(loading.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3);
+    expect(getComputedStyle(loading.querySelector('[data-slot="skeleton"]')!).animationName).toBe("none");
+    expect(within(popup).getByRole("toolbar", { name: "已选标签" }).textContent).toContain("现有");
+    expect(body.queryByText("没有其他标签，输入名称可新建。")).toBeNull();
+    finishTags({ tags: [{ name: "现有" }, { name: "候选" }] });
+    await body.findByRole("option", { name: "属性标签 候选" });
+    await waitFor(() => aligned(popup, anchor));
+    expectPropertyControlRadius(popup);
+    const tagSearch = within(popup).getByRole("combobox", { name: "搜索或新建属性标签" });
+    await userEvent.type(tagSearch, "候选");
+    expect((tagSearch as HTMLInputElement).value).toBe("候选");
+    expectPropertyCaretInsideCorners(tagSearch);
+    await userEvent.clear(tagSearch);
+    await waitFor(() => aligned(popup, anchor));
+    expect(body.queryByRole("status", { name: "正在加载标签…" })).toBeNull();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(document.activeElement).toBe(trigger));
+    for (const name of ["单选", "多选"]) {
+      const button = canvas.getByRole("button", { name: `编辑属性 ${name}` });
+      const bounds = button.querySelector('.note-tag-pill')!.getBoundingClientRect();
+      await userEvent.click(button);
+      expectPropertyCaretInsideCorners(await body.findByRole("combobox", { name: "搜索或创建选项" }));
+      await waitFor(() => aligned(body.getByRole("dialog", { name: `编辑属性 ${name}` }), bounds));
+      expectPropertyControlRadius(body.getByRole("dialog", { name: `编辑属性 ${name}` }));
+      await waitFor(() => expect(getComputedStyle(button).backgroundColor).toBe("rgba(0, 0, 0, 0)"));
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(document.activeElement).toBe(button));
+    }
+    await page.viewport(390, 900);
+    await userEvent.click(trigger);
+    const sheet = await body.findByRole("dialog", { name: "编辑标签" });
+    expect(sheet.dataset.slot).toBe("sheet-content");
+    expectPropertyCaretInsideCorners(within(sheet).getByRole("combobox", { name: "搜索或新建属性标签" }));
+    expectPropertyControlRadius(sheet);
+    await waitFor(() => expect(getComputedStyle(canvas.getByRole("button", { name: "编辑标签", hidden: true })).backgroundColor).toBe("rgba(0, 0, 0, 0)"));
+    await waitFor(() => {
+      expect(sheet.getBoundingClientRect().left).toBeGreaterThanOrEqual(0);
+      expect(sheet.getBoundingClientRect().right).toBeLessThanOrEqual(390);
+      expect(sheet.getBoundingClientRect().bottom).toBeCloseTo(900, 0);
+    });
+    expect(within(sheet).getByRole("option", { name: "属性标签 候选" }).getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+  } finally { view.unmount(); release(); }
+});
+
+for (const mode of ["light", "dark"] as const) test(`property selector failures retain the header and recover in ${mode}`, async () => {
+  await commands.setReducedMotion("reduce");
+  await page.viewport(1280, 900);
+  let failing = true, reads = 0;
+  const release = setStorybookRequestHandler(async operation => {
+    if (operation === "getStatus") return propertyLayoutStatus();
+    if (operation === "getPropertyLabels") return { labels: {}, contentHash: "labels" };
+    if (operation === "getPropertyLayout") return emptyPropertyLayout();
+    if (operation === "listTags") {
+      reads++;
+      if (failing) throw new Error("unavailable");
+      return { tags: [{ name: "候选" }] };
+    }
+    throw new Error(`Unexpected failure-state operation: ${operation}`);
+  });
+  const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode} style={{ maxWidth: 720, marginInline: "auto", padding: "80px 16px" }}>
+    <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async () => { throw new Error("Recovery must not save"); }} savedProperties={{
+      contentHash: editorNote.contentHash, writable: true,
+      tagProperty: { name: "tags", type: "list", value: ["现有"], editable: true }, properties: [],
+    }} />
+  </main></PreviewModeProvider>);
+  try {
+    for (const width of [1280, 390]) {
+      failing = true;
+      await page.viewport(width, 900);
+      const trigger = await within(view.container).findByRole("button", { name: "编辑标签" });
+      const anchor = trigger.querySelector('.note-tag-pill')!.getBoundingClientRect();
+      await userEvent.click(trigger);
+      const popup = await within(document.body).findByRole("dialog", { name: "编辑标签" });
+      const alert = await within(popup).findByRole("alert");
+      expect(alert.textContent).toBe("加载失败重试");
+      const header = popup.querySelector('.note-tag-header')!;
+      expect(header.textContent).toContain("现有");
+      const pill = header.querySelector('.note-tag-pill')!.getBoundingClientRect();
+      const headerOffset = pill.top - popup.getBoundingClientRect().top;
+      if (width === 1280) {
+        expect(pill.left).toBeCloseTo(anchor.left, 1);
+        expect(pill.top).toBeCloseTo(anchor.top, 1);
+      }
+      const retry = within(alert).getByRole("button", { name: "重试加载标签" });
+      expect(retry.getBoundingClientRect().height).toBe(width < 768 ? 44 : 32);
+      expect(getComputedStyle(retry).borderRadius).toBe("8px");
+      expect(getComputedStyle(alert).padding).toBe("8px");
+      expectPropertyControlRadius(popup);
+      const input = within(popup).getByRole("combobox", { name: "搜索或新建属性标签" });
+      await userEvent.type(input, "候选");
+      failing = false;
+      const previousReads = reads;
+      await userEvent.click(retry);
+      await within(popup).findByRole("option", { name: "属性标签 候选" });
+      expect(reads).toBe(previousReads + 1);
+      expect(within(popup).queryByRole("alert")).toBeNull();
+      expect(input).toHaveProperty("value", "候选");
+      expect(document.activeElement).toBe(input);
+      expect(header.querySelector('.note-tag-pill')!.getBoundingClientRect().top - popup.getBoundingClientRect().top).toBeCloseTo(headerOffset, 1);
+      await userEvent.keyboard("{Escape}");
+    }
+  } finally { view.unmount(); release(); }
+});
+
+for (const mode of ["light", "dark"] as const) test(`property editors preserve all field and selected-text positions in ${mode}`, async () => {
+  await commands.setReducedMotion("reduce");
+  await page.viewport(1280, 1000);
+  const changes: unknown[] = [];
+  const release = setStorybookRequestHandler(async operation => {
+    if (operation === "getStatus") return propertyLayoutStatus();
+    if (operation === "getPropertyLabels") return { labels: {}, contentHash: "labels" };
+    if (operation === "getPropertyLayout") return emptyPropertyLayout();
+    if (operation === "listTags") return { tags: [] };
+    if (operation === "pickImage") throw new Error("无法读取图片");
+    throw new Error(`Unexpected property review operation: ${operation}`);
+  });
+  const selected = ["设计", "开发", "有多个字的选项", "another selected value", "最后一个选项"];
+  const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode} style={{ maxWidth: 720, marginInline: "auto", padding: "32px 16px" }}>
+    <NoteProperties note={editorNote} tags={["正文", "共享"]} onLocateTag={() => { throw new Error("Opening must not navigate"); }} canEdit busy={false} onApply={async change => { changes.push(change); }} savedProperties={{
+      contentHash: editorNote.contentHash, writable: true,
+      tagProperty: { name: "tags", type: "list", value: [...selected, "共享"], editable: true },
+      properties: [
+        { name: "数字", type: "number", value: "1100.25", editable: true },
+        { name: "日期", type: "date", value: "2026-11-04", editable: true },
+        { name: "单选", type: "select", value: "设计", options: [{ name: "设计", color: "blue" }], editable: true },
+        { name: "多选", type: "multiSelect", value: selected, editable: true },
+        { name: "复选框", type: "checkbox", value: false, editable: true },
+        { name: "图片", type: "image", value: "../assets/review.png", editable: true },
+        { name: "空图片", type: "image", value: "", editable: true },
+      ],
+    }} />
+    <p data-testid="following-content">后续正文位置保持不变</p>
+  </main></PreviewModeProvider>);
+  const textRects = (root: Element) => [...root.querySelectorAll('.note-tag-pill')].map(pill => {
+    const walker = document.createTreeWalker(pill, NodeFilter.SHOW_TEXT), node = walker.nextNode()!;
+    const range = document.createRange(); range.selectNodeContents(node);
+    return [...range.getClientRects()].map(rect => ({left: rect.left, top: rect.top}));
+  });
+  try {
+    const canvas = within(view.container), body = within(document.body);
+    await canvas.findByRole("button", { name: "编辑标签" });
+    await document.fonts.ready;
+    for (const width of [1280, 1024, 390]) {
+      await page.viewport(width, 1000);
+      const origin = view.container.querySelector('.note-properties')!;
+      const layout = () => [...view.container.querySelectorAll('.note-property-row, [data-testid="following-content"]')].map(row => ({top: row.getBoundingClientRect().top - origin.getBoundingClientRect().top, height: row.getBoundingClientRect().height}));
+      for (const name of ["编辑标签", "编辑属性 单选", "编辑属性 多选", "编辑属性 日期", "预览图片 图片"]) {
+        const trigger = canvas.getByRole("button", { name });
+        const bounds = layout();
+        await userEvent.click(trigger);
+        const popup = await body.findByRole("dialog", { name: name === "编辑标签" ? name : name === "预览图片 图片" ? "图片预览 图片" : name });
+        await waitFor(() => expect(layout()).toEqual(bounds));
+        if (name === "编辑标签" || name === "编辑属性 单选" || name === "编辑属性 多选") {
+          await within(popup).findByRole("combobox");
+          if (name === "编辑标签") await waitFor(() => expect(within(popup).queryByRole("status", { name: "正在加载标签…" })).toBeNull());
+          if (width >= 768) await waitFor(() => {
+            const before = textRects(trigger), after = textRects(popup.querySelector('.note-tag-header')!);
+            expect(after.length).toBe(before.length);
+            before.forEach((lines, index) => {
+              expect(after[index].length, `${name} pill ${index}`).toBe(lines.length);
+              lines.forEach((rect, line) => {
+                expect(after[index][line].left, `${name} pill ${index}`).toBeCloseTo(rect.left, 1);
+                expect(after[index][line].top, `${name} pill ${index}`).toBeCloseTo(rect.top, 1);
+              });
+            });
+          });
+        }
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+      }
+      const beforeError = layout();
+      await userEvent.click(canvas.getByRole("button", { name: "上传图片 空图片" }));
+      const failurePopup = await body.findByRole("dialog", { name: "图片操作 空图片" });
+      expect(within(failurePopup).getByRole("alert").textContent).toBe("无法读取图片");
+      expect(layout()).toEqual(beforeError);
+      expect(view.container.querySelector('[role="alert"]')).toBeNull();
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+      const checkbox = canvas.getByRole("checkbox", { name: "切换属性 复选框" });
+      const beforeToggle = layout();
+      await userEvent.click(checkbox);
+      await waitFor(() => expect(changes).toEqual([{ name: "复选框", type: "checkbox", value: true }]));
+      expect(layout()).toEqual(beforeToggle);
+      changes.length = 0;
+      const number = canvas.getByRole("button", { name: "编辑属性 数字" });
+      const numericStyle = getComputedStyle(number).fontVariantNumeric;
+      const bounds = layout();
+      await userEvent.click(number);
+      const input = await canvas.findByRole("textbox", { name: "属性值" });
+      expect(getComputedStyle(input).fontVariantNumeric).toBe(numericStyle);
+      expect(layout()).toEqual(bounds);
+      await userEvent.keyboard("{Escape}");
+    }
+    expect(changes).toEqual([]);
+  } finally { view.unmount(); release(); }
+});
+
+for (const mode of ["light", "dark"] as const) test(`property controls share 32px display rows, 36px floating editors and 8px radius in ${mode}`, async () => {
+  await commands.setReducedMotion("reduce");
+  await page.viewport(390, 900);
+  const fixture = propertyLayoutFixture(`property-control-heights-${mode}`);
+  const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode} style={{ maxWidth: 640, marginInline: "auto", padding: 16 }}>
+    <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async () => {}} savedProperties={{
+      contentHash: editorNote.contentHash, writable: true,
+      tagProperty: { name: "tags", type: "list", value: ["设计"], editable: true },
+      properties: [
+        { name: "文本", type: "text", value: "一行内容", editable: true },
+        { name: "空值", type: "text", value: "", editable: true },
+        { name: "数字", type: "number", value: "0", editable: true },
+        { name: "日期", type: "date", value: "2026-11-04", editable: true },
+        { name: "单选", type: "select", value: "设计", options: [{ name: "设计", color: "blue" }], editable: true },
+        { name: "多选", type: "multiSelect", value: ["设计"], options: [{ name: "设计", color: "blue" }], editable: true },
+        { name: "复选框", type: "checkbox", value: false, editable: true },
+        { name: "空图片", type: "image", value: "", editable: true },
+        { name: "图片", type: "image", value: "../assets/height.png", editable: true },
+        { name: "多行文本", type: "text", value: "多行内容自然增高。".repeat(30), editable: true },
+        { name: "多行选项", type: "multiSelect", value: Array.from({ length: 20 }, (_, index) => `选项${index}`), editable: true },
+      ],
+    }} />
+  </main></PreviewModeProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("button", { name: "编辑属性 文本" });
+    await document.fonts.ready;
+    for (const width of [320, 1024]) {
+      await page.viewport(width, 900);
+      for (let state = 0; state < 2; state++) {
+        const toggle = canvas.getByRole("button", { name: /^(更多属性|收起)$/ });
+        expect(toggle.getBoundingClientRect().height, toggle.textContent ?? '').toBe(32);
+        await userEvent.click(toggle);
+        const addRow = view.container.querySelector(".note-property-add-row");
+        if (addRow) expect(addRow.getBoundingClientRect().height).toBe(32);
+      }
+      await waitFor(() => {
+        for (const row of view.container.querySelectorAll<HTMLElement>(".note-property-row[data-property-key]")) {
+          const label = row.querySelector<HTMLElement>(".note-property-label")!;
+          const value = row.querySelector<HTMLElement>("dd")!;
+          const control = value.matches(".note-property-value") ? value : value.querySelector<HTMLElement>(".note-property-edit, .note-property-value, .note-property-image-trigger")!;
+          const multiline = row.dataset.propertyKey === "property:多行文本" || row.dataset.propertyKey === "property:多行选项";
+          expect(label.getBoundingClientRect().height, row.dataset.propertyKey).toBe(32);
+          const grip = row.querySelector<HTMLElement>('.note-property-grip');
+          if (grip) {
+            expect(grip.getBoundingClientRect().height).toBe(32);
+            expect(grip.getBoundingClientRect().top).toBeCloseTo(label.getBoundingClientRect().top, 1);
+          }
+          if (multiline) expect(control.getBoundingClientRect().height, row.dataset.propertyKey).toBeGreaterThan(32);
+          else {
+            expect(control.getBoundingClientRect().height, row.dataset.propertyKey).toBe(32);
+          }
+          expect(row.getBoundingClientRect().height, row.dataset.propertyKey).toBe(control.getBoundingClientRect().height);
+          expect(value.getBoundingClientRect().height, row.dataset.propertyKey).toBe(control.getBoundingClientRect().height);
+          expect(control.getBoundingClientRect().top, row.dataset.propertyKey).toBeCloseTo(label.getBoundingClientRect().top, 1);
+        }
+        for (const control of view.container.querySelectorAll('.note-properties :is(button, input, textarea, select, .note-property-inline):not(.note-tag-pill, [aria-hidden="true"], [hidden])')) {
+          expect(getComputedStyle(control).borderRadius, control.outerHTML.slice(0, 350)).toBe("8px");
+        }
+        for (const tag of view.container.querySelectorAll('.note-properties .note-tag-pill')) {
+          expect(getComputedStyle(tag).borderRadius).toBe("9999px");
+        }
+      });
+      for (const name of ["文本", "数字", "空值"]) {
+        const rowBefore = canvas.getByRole("button", { name: `编辑属性 ${name}` }).closest(".note-property-row")!;
+        const nextOffset = rowBefore.nextElementSibling!.getBoundingClientRect().top - rowBefore.getBoundingClientRect().top;
+        await userEvent.click(canvas.getByRole("button", { name: `编辑属性 ${name}` }));
+        const input = await canvas.findByRole("textbox", { name: "属性值" });
+        expect(input.getBoundingClientRect().height).toBe(36);
+        expect(input.closest('.note-property-row')!.getBoundingClientRect().height).toBe(32);
+        expect(getComputedStyle(input).paddingTop).toBe("7px");
+        expect(getComputedStyle(input).paddingBottom).toBe("7px");
+        expect(getComputedStyle(input).paddingLeft).toBe("8px");
+        expect(getComputedStyle(input).paddingRight).toBe("8px");
+        const display = rowBefore.querySelector<HTMLElement>('.note-property-edit')!;
+        const displayStyle = getComputedStyle(display), inputStyle = getComputedStyle(input);
+        expect(input.getBoundingClientRect().left + parseFloat(inputStyle.paddingLeft)).toBeCloseTo(display.getBoundingClientRect().left + parseFloat(displayStyle.paddingLeft), 1);
+        expect(input.getBoundingClientRect().top + parseFloat(inputStyle.paddingTop)).toBeCloseTo(display.getBoundingClientRect().top + parseFloat(displayStyle.paddingTop), 1);
+        expect(input.clientWidth - parseFloat(inputStyle.paddingLeft) - parseFloat(inputStyle.paddingRight)).toBeCloseTo(display.clientWidth - parseFloat(displayStyle.paddingLeft) - parseFloat(displayStyle.paddingRight), 1);
+        expect(getComputedStyle(input).borderRadius).toBe("8px");
+        expect(getComputedStyle(input.closest('form')!).borderRadius).toBe("8px");
+        expect(getComputedStyle(input.closest('form')!).position).toBe("absolute");
+        expect(rowBefore.nextElementSibling!.getBoundingClientRect().top - rowBefore.getBoundingClientRect().top).toBeCloseTo(nextOffset, 1);
+        if (name === "文本") {
+          await userEvent.fill(input, "第一行\n第二行\n第三行");
+          await waitFor(() => expect(input.getBoundingClientRect().height).toBeGreaterThan(36));
+          expect(rowBefore.getBoundingClientRect().height).toBe(32);
+          expect(rowBefore.nextElementSibling!.getBoundingClientRect().top - rowBefore.getBoundingClientRect().top).toBeCloseTo(nextOffset, 1);
+        }
+        await userEvent.keyboard("{Escape}");
+      }
+      await userEvent.click(canvas.getByRole("button", { name: "编辑属性 日期" }));
+      await within(document.body).findByRole("textbox", { name: "属性值" });
+      expectPropertyControlRadius(within(document.body).getByRole("dialog", { name: "编辑属性 日期" }));
+      await userEvent.keyboard("{Escape}");
+      await userEvent.click(canvas.getByRole("button", { name: "预览图片 图片" }));
+      const imagePopup = await within(document.body).findByRole("dialog", { name: "图片预览 图片" });
+      expectPropertyControlRadius(imagePopup);
+      await userEvent.keyboard("{Escape}");
+    }
+  } finally { view.unmount(); fixture.release(); }
+});
+
+test("property hints avoid pointer noise and prefer the left side on desktop", async () => {
+  await commands.setReducedMotion("reduce");
+  const longName = "这是一条需要完整显示的属性名称";
+  const fixture = propertyLayoutFixture("property-hints");
+  const view = render(<PreviewModeProvider mode="light"><TooltipHints><main className="ui-theme" style={{ maxWidth: 480, marginInline: "auto", padding: "80px 16px" }}>
+    <button>焦点起点</button>
+    <NoteProperties note={editorNote} tags={[]} canEdit busy={false} savedProperties={{ ...preferenceProperties, properties: [...preferenceProperties.properties, { name: longName, type: "text", value: "内容", editable: true }] }} onApply={async () => {}} />
+  </main></TooltipHints></PreviewModeProvider>);
+  try {
+    const canvas = within(view.container), body = within(document.body);
+    const grip = await canvas.findByRole("button", { name: "拖动属性 摘要" });
+    await waitFor(() => expect(grip.draggable).toBe(true));
+    for (const width of [390, 1024]) {
+      await page.viewport(width, 900);
+      const name = canvas.getByRole("button", { name: "属性菜单 摘要" });
+      await userEvent.hover(name);
+      const background = getComputedStyle(name).backgroundColor;
+      expect(background).not.toBe("rgba(0, 0, 0, 0)");
+      await userEvent.hover(grip);
+      expect(getComputedStyle(name).backgroundColor).toBe(background);
+      expect(body.queryByRole("tooltip")).toBeNull();
+      await userEvent.click(canvas.getByRole("button", { name: "焦点起点" }));
+      await userEvent.tab();
+      grip.focus();
+      const hint = await body.findByRole("tooltip");
+      await waitFor(() => expect(hint.getAttribute("data-side")).toBe(width >= 768 ? "left" : "top"));
+      expect(hint.textContent).toBe("↑↓ 调整顺序");
+      expect(grip.getAttribute("aria-describedby")).toBe(hint.id);
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
+      await userEvent.hover(canvas.getByText(longName));
+      const nameHint = await body.findByRole("tooltip");
+      expect(nameHint.textContent).toBe(longName);
+      await waitFor(() => expect(nameHint.getAttribute("data-side")).toBe(width >= 768 ? "left" : "top"));
+      await userEvent.unhover(canvas.getByText(longName));
+      await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
+    }
+    view.container.querySelector("main")!.style.marginInline = "0";
+    await userEvent.hover(canvas.getByText(longName));
+    await waitFor(() => expect(body.getByRole("tooltip").getAttribute("data-side")).toBe("right"));
+  } finally { view.unmount(); fixture.release(); }
+});
+
+test("collection search spinner stays centered throughout its rotation", async () => {
+  const view = render(<PreviewModeProvider mode="light"><NoteCollection loading notes={[]} query="" onQueryChange={() => {}} searchPlaceholder="搜索笔记内容" searchDisabled hasMore={false} paging={false} loadMoreDisabled canOpen={false} canCreate={false} onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
+  const input = within(view.container).getByRole("textbox", { name: "搜索当前视图笔记" });
+  const spinner = view.container.querySelector<SVGElement>('.ui-collection-search-icon[data-slot="spinner"]')!;
+  const animation = spinner.getAnimations()[0];
+  expect(animation).toBeDefined();
+  animation.pause();
+  await animation.ready;
+  const duration = Number(animation.effect!.getTiming().duration);
+  for (const width of [390, 1440]) {
+    await page.viewport(width, 900);
+    const inputBox = input.getBoundingClientRect();
+    for (const progress of [0, 0.25, 0.5, 0.75, 0.99]) {
+      animation.currentTime = duration * progress;
+      const box = spinner.getBoundingClientRect();
+      expect(box.top + box.height / 2, `${width}px at ${progress} rotation`).toBeCloseTo(inputBox.top + inputBox.height / 2, 1);
+      expect(box.left + box.width / 2).toBeCloseTo(inputBox.left + 20, 1);
+    }
+  }
+});
+
+for (const close of ["pointer leave", "Escape", "click", "scroll"]) test(`delegated tooltip preserves its content, position and theme during ${close} exit`, async () => {
+  const view = render(<PreviewModeProvider mode="light"><TooltipHints>
+    <div className="ui-theme" data-appearance-scope="" data-ui-theme="dark" style={{ padding: 160 }}>
+      <Button data-ui-tooltip="project/yami">yami</Button>
+    </div>
+  </TooltipHints></PreviewModeProvider>);
+  const button = within(view.container).getByRole("button", { name: "yami" });
+  await userEvent.hover(button);
+  const tooltip = await within(document.body).findByRole("tooltip");
+  await Promise.all(tooltip.getAnimations().map(animation => animation.finished));
+  const positioner = tooltip.parentElement!;
+  const width = tooltip.offsetWidth;
+  const position = positioner.getBoundingClientRect().toJSON();
+  const background = getComputedStyle(tooltip).backgroundColor;
+  const closed = new Promise<{ text: string | null; width: number; position: object; background: string }>(resolve => {
+    const observer = new MutationObserver(() => {
+      if (!tooltip.hasAttribute("data-closed")) return;
+      resolve({ text: tooltip.textContent, width: tooltip.offsetWidth, position: positioner.getBoundingClientRect().toJSON(), background: getComputedStyle(tooltip).backgroundColor });
+      observer.disconnect();
+    });
+    observer.observe(tooltip, { attributes: true });
+  });
+  if (close === "pointer leave") await userEvent.unhover(button);
+  else if (close === "Escape") await userEvent.keyboard("{Escape}");
+  else if (close === "click") await userEvent.click(button);
+  else act(() => { document.dispatchEvent(new Event("scroll")); });
+  expect(await closed).toEqual({ text: "project/yami", width, position, background });
+  expect(button.hasAttribute("aria-describedby")).toBe(false);
+  await waitFor(() => expect(tooltip.isConnected).toBe(false));
+});
+
 test("tooltip review reveals clipped labels and icon actions without repeating visible text", async () => {
   const fullName = "完整属性名称";
   const view = render(<PreviewModeProvider mode="light"><TooltipHints>
@@ -1054,10 +1504,12 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
           if (width < 768) expect(Math.abs(rect.bottom - window.innerHeight)).toBeLessThan(1);
         });
         if (width < 768) expect(popup.dataset.side).toBe("bottom");
+        expectPropertyControlRadius(popup);
         await userEvent.click(within(popup).getByRole("button", { name: "取消" }));
         await waitFor(() => expect(body.queryByRole("alertdialog")).toBeNull());
       };
       await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
+      expectPropertyControlRadius(await body.findByRole("menu", { name: "管理属性 摘要" }));
       await userEvent.click(await body.findByRole("menuitem", { name: "删除属性" }));
       await checkConfirmation();
       await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
@@ -1068,11 +1520,24 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       for (const kind of ["选项", "标签"]) {
         await userEvent.click(canvas.getByRole("button", { name: kind === "选项" ? "编辑属性 领域" : "编辑标签" }));
         await userEvent.click(await body.findByRole("button", { name: `管理${kind} ${kind === "选项" ? "设计" : "开发"}` }));
+        await body.findByRole("textbox", { name: `${kind}名称` });
+        expectPropertyControlRadius(body.getByRole("menu", { name: `${kind}设置 ${kind === "选项" ? "设计" : "开发"}` }));
         await userEvent.click(await body.findByRole("menuitem", { name: `删除${kind}` }));
         await checkConfirmation();
         await userEvent.keyboard("{Escape}");
         await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
       }
+      await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
+      await userEvent.click(await body.findByRole("menuitem", { name: "重命名" }));
+      const rename = await body.findByRole("textbox", { name: "新属性名" });
+      expectPropertyControlRadius(rename.closest('[role="dialog"]')!);
+      await userEvent.keyboard("{Escape}");
+      const more = canvas.queryByRole("button", { name: "更多属性" });
+      if (more) await userEvent.click(more);
+      await userEvent.click(canvas.getByRole("button", { name: "添加属性" }));
+      const create = await body.findByRole("textbox", { name: "属性名" });
+      expectPropertyControlRadius(create.closest('[role="dialog"]')!);
+      await userEvent.keyboard("{Escape}");
       expect(changes).toEqual([]);
     } finally {
       release();
@@ -2627,11 +3092,12 @@ test("inline property editing preserves multiline geometry, resizes and returns 
     for (const width of [1024, 390, 320]) {
       await page.viewport(width, 900);
       const trigger = await canvas.findByRole("button", {name: "编辑属性 摘要"});
-      const before = trigger.getBoundingClientRect().height;
+      const before = trigger.closest("dd")!.getBoundingClientRect().height;
       await userEvent.click(trigger);
       const input = await canvas.findByRole("textbox", {name: "属性值"}) as HTMLTextAreaElement;
       await waitFor(() => {
-        expect(Math.abs(input.getBoundingClientRect().height - before)).toBeLessThanOrEqual(1);
+        expect(input.placeholder).toBe("");
+        expect(Math.abs(input.closest("dd")!.getBoundingClientRect().height - before)).toBeLessThanOrEqual(1);
         expect(input.scrollHeight).toBeLessThanOrEqual(input.clientHeight + 1);
         expect(input.scrollWidth).toBeLessThanOrEqual(input.clientWidth + 1);
       });
@@ -2665,7 +3131,7 @@ test("inline property editing preserves multiline geometry, resizes and returns 
     await userEvent.keyboard("{Enter}");
     await waitFor(() => {
       const saved = canvas.getByRole("button", {name: "编辑属性 摘要"});
-      expect(Math.abs(saved.getBoundingClientRect().height - editedHeight)).toBeLessThanOrEqual(1);
+      expect(Math.abs(saved.closest("dd")!.getBoundingClientRect().height - editedHeight + 4)).toBeLessThanOrEqual(1);
       expect(document.activeElement).toBe(saved);
     });
     expect(changes).toEqual([{name: "摘要", type: "text", value: "换行测试\n"}]);
@@ -2686,6 +3152,7 @@ test("inline property editing preserves multiline geometry, resizes and returns 
     await waitFor(() => expect(body.queryByRole("menuitemradio", {name: "为空时隐藏"})).toBeNull());
     await userEvent.click(canvas.getByRole("button", {name: "编辑属性 摘要"}));
     await userEvent.clear(await canvas.findByRole("textbox", {name: "属性值"}));
+    await waitFor(() => expect(canvas.getByRole("textbox", {name: "属性值"}).getBoundingClientRect().height).toBe(36));
     await userEvent.click(outside);
     await waitFor(() => expect(canvas.queryByRole("button", {name: "编辑属性 摘要"})).toBeNull());
     expect(document.activeElement).toBe(outside);

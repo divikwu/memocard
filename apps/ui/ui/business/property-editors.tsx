@@ -1,4 +1,5 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
+import { PropertyOptionsFailure } from "../../src/PropertyOptionsFailure";
 import { Collapsible as CollapsiblePrimitive } from "@base-ui/react/collapsible";
 import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react";
 import type { RichIcon } from "../../src/rich-editor-core";
@@ -36,9 +37,18 @@ import { PropertyConfirmationPortal, PropertyConfirmationPopup } from "./propert
 import "./tag.css";
 import "./note-properties.css";
 
-export const DatePropertyPicker = recoverableLazy(() => import("./DatePropertyPicker").then(module => ({ default: module.DatePropertyPicker })), "日期");
-export const TagPropertyEditor = recoverableLazy(() => import("./TagPropertyEditor").then(module => ({ default: module.TagPropertyEditor })), "标签");
-export const ChoicePropertyEditor = recoverableLazy(() => import("./ChoicePropertyEditor").then(module => ({ default: module.ChoicePropertyEditor })), "选项");
+function PropertyEditorFailure({ values, retry, title }: { values?:ReactNode; retry:()=>void; title:string }) {
+  const failure = <PropertyOptionsFailure retry={<Button variant="ghost" className="note-property-retry" onClick={retry} aria-label={`重试加载${title}`}>重试</Button>} />;
+  if (values === undefined) return failure;
+  return <div className="note-tag-editor">
+    <div className="note-tag-header"><div className="note-tag-selected">{values}</div></div>
+    <div className="note-tag-body">{failure}</div>
+  </div>;
+}
+
+export const DatePropertyPicker = recoverableLazy(() => import("./DatePropertyPicker").then(module => ({ default: module.DatePropertyPicker })), "日期", (_, retry) => <PropertyEditorFailure retry={retry} title="日期" />);
+export const TagPropertyEditor = recoverableLazy(() => import("./TagPropertyEditor").then(module => ({ default: module.TagPropertyEditor })), "标签", (props, retry) => <PropertyEditorFailure values={[...new Set([...props.tags, ...(props.bodyTags ?? [])])].map(tag => <TagPill key={tag} name={tag} className={props.tags.includes(tag) ? "note-tag-reserved" : undefined} />)} retry={retry} title="标签" />);
+export const ChoicePropertyEditor = recoverableLazy(() => import("./ChoicePropertyEditor").then(module => ({ default: module.ChoicePropertyEditor })), "选项", ({ property }, retry) => <PropertyEditorFailure values={<span className="note-property-tags">{(Array.isArray(property.value) ? property.value : property.value ? [String(property.value)] : []).map(value => <ChoicePill key={value} name={value} options={property.options} />)}</span>} retry={retry} title="选项" />);
 export { ChoicePill };
 
 const icon = (data: HugeiconsIconProps["icon"]): RichIcon => props => <HugeiconsIcon icon={data} {...props} strokeWidth={Number(props.strokeWidth ?? 2)} />;

@@ -1,5 +1,7 @@
 import type { ComponentType, ComponentProps, SVGProps } from "react";
 import PropertyOptionList from './PropertyOptionList';
+import { PropertyOptionsLoading } from './PropertyOptionsLoading';
+import { PropertyOptionsFailure } from './PropertyOptionsFailure';
 import VirtualTagOptions, { type TagVirtualizer } from './VirtualTagOptions';
 import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
@@ -11,6 +13,7 @@ type View = {
   TagColorMenu: ComponentType<ComponentProps<typeof import("@ui/business/property-editors")["TagColorMenu"]>>;
   X: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Button: ComponentType<Omit<ComponentProps<typeof import("@ui/components/button")["Button"]>, "render">>;
+  Skeleton: ComponentType<{className?:string}>;
   TagPill: ComponentType<Omit<ComponentProps<typeof import("@ui/business/property-editors")["TagPill"]>, "variant" | "render">>;
   Tooltip: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["Tooltip"]>>;
   TooltipContent: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["TooltipContent"]>>;
@@ -19,7 +22,7 @@ type View = {
 };
 
 export function createTagPropertyEditor(view: View) {
-  const { TagColorMenu, X, Button, TagPill, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } = view;
+  const { TagColorMenu, X, Button, Skeleton, TagPill, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } = view;
   const OptionColorMenu = memo(TagColorMenu);
   const TagOption = memo(function TagOption({tag,index,count,creating,disabled,onChangeTag}: {tag:string;index:number;count:number;creating:boolean;disabled:boolean;onChangeTag?: (from:string,to:string | null)=>Promise<void>}) {
     return <div className="note-tag-option-row">
@@ -54,6 +57,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], bu
   const virtualizer = useRef<TagVirtualizer>(null);
   useEffect(() => {
     let active = true;
+    setLoading(true); setSuggestionError('');
     void request<{tags:{name:string}[]}>('listTags').then(result => { if (active) setOptions(result.tags.map(tag => tagKey(tag.name))); }).catch(cause => { if (active) setSuggestionError(errorMessage(cause)); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [revision]);
@@ -84,7 +88,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], bu
     return <Tooltip><TooltipTrigger aria-describedby={descriptionId} render={<Button type="button" variant="ghost" size="sm" className={cn('h-5 shrink text-sm font-normal whitespace-normal', shared ? 'min-w-0 px-0' : 'note-tag-chip note-tag-pill')} disabled={disabled} data-tag={encodeURIComponent(tag)} aria-label={`定位正文标签 ${tag}`} onClick={() => onLocateTag?.(tag)} onKeyDown={event => { if (shared && (event.key === 'Enter' || event.key === ' ')) event.stopPropagation(); }} />}>{tag}</TooltipTrigger><TooltipContent id={descriptionId} role="tooltip" sideOffset={6} className="animate-none">{shared ? '属性和正文均有，点击定位' : '正文标签，点击定位'}</TooltipContent></Tooltip>;
   }
   const renderOption = (tag:string,index:number) => <TagOption key={tag} tag={tag} index={index} count={candidates.length} creating={tag === create} disabled={disabled} onChangeTag={onChangeTag ? changeTag : undefined} />;
-  return <TooltipProvider delay={300}><div className="note-tag-editor" aria-busy={pending}>
+  return <TooltipProvider delay={300}><div className="note-tag-editor" aria-busy={pending || loading}>
     <Combobox.Root multiple inline open autoHighlight virtualized={virtualized} items={candidates} filter={null} value={selected} inputValue={query} readOnly={disabled}
       onItemHighlighted={(_, {index,reason}) => { if (virtualized && index >= 0 && reason !== 'pointer') queueMicrotask(() => virtualizer.current?.scrollToIndex(index,{align:'auto'})); }}
       onInputValueChange={(value, details) => { if (details.reason === 'input-change') setQuery(value); else details.cancel(); }}
@@ -102,12 +106,16 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], bu
           <Combobox.Input ref={input} autoFocus className="note-tag-search" aria-label="搜索或新建属性标签" aria-describedby={`${tooltipId}-search-hint`} onKeyDownCapture={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); } }} />
         </div></div>
       </Combobox.Chips>
-      <p id={`${tooltipId}-search-hint`} className="note-tag-hint text-xs text-secondary">选择或创建</p>
-      {virtualized ? <VirtualTagOptions items={candidates} virtualizerRef={virtualizer}>{renderOption}</VirtualTagOptions> : <PropertyOptionList label="可选属性标签" count={candidates.length}>{renderOption}</PropertyOptionList>}
-      {!candidates.length && <p className="text-xs text-secondary">{loading ? '正在加载标签…' : query.trim() ? normalized ? '没有匹配的标签' : '标签不能包含空格或纯数字，可用 / 分层。' : known.length ? '没有其他标签，输入名称可新建。' : '输入名称，创建第一个标签。'}</p>}
+      <div className="note-tag-body">
+      <p id={`${tooltipId}-search-hint`} className={suggestionError ? 'sr-only' : 'note-tag-hint text-xs text-secondary'}>选择或创建</p>
+      {suggestionError ? <PropertyOptionsFailure retry={<Button variant="ghost" className="note-property-retry" disabled={disabled} onClick={() => { input.current?.focus(); setRevision(value => value + 1); }} aria-label="重试加载标签">重试</Button>} /> : <>
+      {loading ? <PropertyOptionsLoading label="正在加载标签…" Skeleton={Skeleton} /> : virtualized ? <VirtualTagOptions items={candidates} virtualizerRef={virtualizer}>{renderOption}</VirtualTagOptions> : <PropertyOptionList label="可选属性标签" count={candidates.length}>{renderOption}</PropertyOptionList>}
+      {!loading && !candidates.length && <p className="text-xs text-secondary">{query.trim() ? normalized ? '没有匹配的标签' : '标签不能包含空格或纯数字，可用 / 分层。' : known.length ? '没有其他标签，输入名称可新建。' : '输入名称，创建第一个标签。'}</p>}
+      </>}
+    {pending && <p role="status" className="sr-only">正在保存标签…</p>}
+    {error && <p role="alert" className="text-sm text-error">{error}</p>}
+      </div>
     </Combobox.Root>
-    {pending && <p role="status" className="text-xs text-secondary">正在保存标签…</p>}
-    {(error || suggestionError) && <p role="alert" className="text-sm text-error">{error || suggestionError}</p>}
   </div></TooltipProvider>;
 }
 

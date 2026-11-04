@@ -82,7 +82,8 @@ function TooltipHints({ children }: { children?: ReactNode }) {
 function TooltipHintController() {
   useInputModality()
   const id = useId()
-  const [hint, setHint] = useState<{ anchor: HTMLElement; target: HTMLElement; text: string; scope?: ThemeScopeValue } | null>(null)
+  const [open, setOpen] = useState(false)
+  const [hint, setHint] = useState<{ anchor: HTMLElement; target: HTMLElement; text: string; side: "left" | "top"; scope?: ThemeScopeValue } | null>(null)
 
   useEffect(() => {
     let current: HTMLElement | null = null
@@ -100,14 +101,15 @@ function TooltipHintController() {
       const text = anchor?.getAttribute("data-ui-tooltip")
       current = text ? anchor : null
       const target = anchor?.closest<HTMLElement>('button, a[href], [tabindex], [role="menuitem"], [role="button"]') ?? anchor
-      setHint(text && anchor && target ? { anchor, target, text, scope: themeScopeForElement(anchor) } : null)
+      if (text && anchor && target) setHint({ anchor, target, text, side: anchor.dataset.uiTooltipSide === "left" && window.matchMedia("(min-width: 768px)").matches ? "left" : "top", scope: themeScopeForElement(anchor) })
+      setOpen(!!text && !!anchor && !!target)
     }
     const over = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return
       if (popup(event.target)) { clearTimeout(closeTimer); return }
       const anchor = find(event.target)
-      hovered = anchor
-      if (anchor && anchor !== current) { dismissed = false; show(anchor) }
+      hovered = anchor?.hasAttribute("data-ui-tooltip-focus-only") ? null : anchor
+      if (hovered && hovered !== current) { dismissed = false; show(hovered) }
     }
     const out = (event: PointerEvent) => {
       if (find(event.relatedTarget) === current || popup(event.relatedTarget)) return
@@ -144,12 +146,12 @@ function TooltipHintController() {
   }, [id])
 
   useEffect(() => {
-    if (!hint) return
+    if (!open || !hint) return
     const { anchor, target } = hint
     const previous = target.getAttribute("aria-describedby")
     target.setAttribute("aria-describedby", [previous, id].filter(Boolean).join(" "))
     const observer = new MutationObserver(records => {
-      if (!anchor.isConnected || !anchor.getAttribute("data-ui-tooltip")) setHint(null)
+      if (!anchor.isConnected || !anchor.getAttribute("data-ui-tooltip")) setOpen(false)
       else if (records.some(record => record.target === anchor.closest("[data-appearance-scope]"))) setHint(value => value ? { ...value, scope: themeScopeForElement(anchor) } : null)
     })
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-ui-tooltip", "data-ui-theme", "data-interface-theme", "data-workspace-layout", "data-web-palette", "data-web-neutral", "style"] })
@@ -158,10 +160,11 @@ function TooltipHintController() {
       if (previous === null) target.removeAttribute("aria-describedby")
       else target.setAttribute("aria-describedby", previous)
     }
-  }, [hint, id])
+  }, [hint, id, open])
 
-  return <ThemeScope value={hint?.scope ?? {}}><Tooltip open={!!hint} onOpenChange={open => { if (!open) setHint(null) }}>
-    <TooltipContent id={id} anchor={hint?.anchor} className="break-all">{hint?.text}</TooltipContent>
+  // Keep the anchor, text and scope until Base UI finishes the closing animation.
+  return <ThemeScope value={hint?.scope ?? {}}><Tooltip open={open} onOpenChange={setOpen} onOpenChangeComplete={open => { if (!open) setHint(null) }}>
+    <TooltipContent id={id} anchor={hint?.anchor} side={hint?.side} className="break-all">{hint?.text}</TooltipContent>
   </Tooltip></ThemeScope>
 }
 

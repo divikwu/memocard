@@ -929,8 +929,9 @@ it('moves peer sections from the heading menu with one-step undo and redo',async
  const original='## 标题 A\n\n正文 A\n\n### 子标题\n\n子正文\n\n## 标题 B\n\n正文 B';
  const moved='## 标题 B\n\n正文 B\n\n## 标题 A\n\n正文 A\n\n### 子标题\n\n子正文';
  const {editor,change}=await setup(original);
- await waitFor(()=>expect(screen.getByRole('button',{name:'内容块操作'}).getAttribute('data-ui-tooltip')).toContain('移动标题'));
- expect(screen.getByRole('button',{name:'内容块操作'}).getAttribute('data-ui-tooltip')).toContain('Option/Alt');
+ const grip=screen.getByRole('button',{name:'内容块操作'});
+ expect(grip.hasAttribute('data-ui-tooltip')).toBe(false);expect(grip.hasAttribute('title')).toBe(false);
+ expect(grip.getAttribute('aria-haspopup')).toBe('menu');
  fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
  expect(screen.getByRole('status').textContent).toContain('章节移动包含 4 个块');
  expect(screen.getByRole('menuitem',{name:'上移章节'}).getAttribute('aria-disabled')).toBe('true');
@@ -1086,7 +1087,7 @@ it('uses Option/Alt dragging to move a complete list instead of one item',async(
  const {editor,field,change}=await setup(original),root=field.closest('.rich-editor')!;
  let item=0,last=0;editor.state.doc.descendants((node,pos)=>{if(node.type.name==='listItem'&&node.textContent==='second')item=pos;});
  editor.state.doc.forEach((_node,pos)=>{last=pos;});act(()=>{editor.commands.setTextSelection(item+2);});
- const grip=screen.getByRole('button',{name:'内容块操作'});expect(grip.getAttribute('data-ui-tooltip')).toContain('Option/Alt');
+ const grip=screen.getByRole('button',{name:'内容块操作'});expect(grip.hasAttribute('data-ui-tooltip')).toBe(false);
  vi.spyOn(editor.view,'posAtCoords').mockReturnValue({pos:last+1,inside:last});
  vi.spyOn(editor.view.nodeDOM(last) as HTMLElement,'getBoundingClientRect').mockReturnValue(new DOMRect(60,40,200,30));
  const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};

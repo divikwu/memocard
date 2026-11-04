@@ -93,7 +93,8 @@ it('waits for suggestions before offering creation and keeps existing tags remov
   expect(onSave).not.toHaveBeenCalled();
   expect(screen.getByText('正在加载标签…')).toBeTruthy();
   fail(new Error('标签读取失败'));
-  expect(await screen.findByRole('alert')).toHaveProperty('textContent','标签读取失败');
+  expect(await screen.findByRole('alert')).toHaveProperty('textContent','加载失败重试');
+  expect(screen.getByRole('button',{name:'重试加载标签'})).toBeTruthy();
   expect(screen.queryByRole('option',{name:/新建标签/})).toBeNull();
   await user.click(screen.getByRole('button',{name:'移除属性标签 现有'}));
   await waitFor(()=>expect(onSave).toHaveBeenCalledWith([]));

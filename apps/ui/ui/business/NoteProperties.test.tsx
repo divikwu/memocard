@@ -200,6 +200,8 @@ it('edits text in its existing value cell, cancels with Escape and saves with En
  await user.click(screen.getByRole('button',{name:'编辑属性 摘要'}));
  const input = await screen.findByRole('textbox',{name:'属性值'});
  await waitFor(() => expect(document.activeElement).toBe(input));
+ expect(input).toHaveProperty('placeholder','');
+ expect(input).toHaveProperty('value','原值');
  expect(input.closest('dd')).toBeTruthy();
  expect(screen.queryByRole('dialog')).toBeNull();
  expect(screen.queryByRole('button',{name:'保存属性'})).toBeNull();
@@ -639,6 +641,7 @@ it('validates number input and saves zero, negative decimals and empty values',a
  const {user,onApply}=await setup();
  await user.click(screen.getByRole('button',{name:'编辑属性 数量'}));
  let input=await screen.findByRole('textbox',{name:'属性值'});
+ expect(input).toHaveProperty('placeholder','');
  expect(input.tagName).toBe('TEXTAREA');
  expect(input.closest('form')?.classList.contains('note-property-inline')).toBe(true);
  expect(screen.queryByRole('dialog',{name:'编辑属性 数量'})).toBeNull();

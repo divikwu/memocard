@@ -67,6 +67,7 @@
   :where(.web-app[data-web-client]) .web-app-shell:has(> .web-app-main > .web-app-scroll[data-detail]) > [data-slot=sidebar][data-state=expanded] [data-slot=sidebar-rail]::after { transform: translateX(calc(-50% - var(--spacing-1) / 2)); }
   .web-app-main::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; z-index: 20; height: var(--spacing-glass-fade); pointer-events: none; mask-image: linear-gradient(to top, var(--color-black), transparent); }
   .web-page-content { padding-block: calc(var(--spacing-1) * 8); }
+  .web-app[data-web-client] .web-page-content[data-detail] { padding-block-start: calc(var(--spacing-1) * 8); }
   .web-app-scroll[data-detail] { --note-rail: calc(var(--spacing-1) * 12); }
   .web-app-scroll[data-settings] { padding-inline: calc(var(--spacing-1) * 16); }
   :where(.web-app[data-web-client]) .web-page-content:has(.ui-note-list, .ui-tag-directory) { display: flex; flex-direction: column; min-height: 100%; padding-block-end: 0; }
