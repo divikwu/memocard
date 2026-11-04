@@ -149,6 +149,19 @@ function expectPropertyCaretInsideCorners(input: HTMLElement) {
   expect(input.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom)).toBeGreaterThanOrEqual(parseFloat(style.fontSize));
 }
 
+// Geometry and focus assertions must run after Base UI's opening/closing lifecycle.
+async function settlePropertyPopup(popup: HTMLElement) {
+  await expect.element(popup).not.toHaveAttribute("data-starting-style");
+  await Promise.all(popup.getAnimations().map(animation => animation.finished));
+}
+
+async function dismissPropertyPopup(popup: HTMLElement, trigger?: HTMLElement) {
+  await userEvent.keyboard("{Escape}");
+  await Promise.all(popup.getAnimations().map(animation => animation.finished));
+  await expect.element(popup).not.toBeInTheDocument();
+  if (trigger) await expect.element(trigger).toHaveFocus();
+}
+
 // The fixed touch project registers only the shared list flow below.
 if (!inject("uiQualityTouch")) {
 for (const mode of ["light", "dark"] as const) test(`property selectors expand in place and keep selected values during loading in ${mode}`, async () => {
@@ -180,8 +193,11 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
     await userEvent.hover(trigger);
     await waitFor(() => expect(getComputedStyle(trigger).backgroundColor).not.toBe("rgba(0, 0, 0, 0)"));
     await userEvent.click(trigger);
-    const loading = await body.findByRole("status", { name: "正在加载标签…" });
+    // The first lazy import can still be showing its module-loading fallback.
+    await expect.element(page.getByRole("combobox", { name: "搜索或新建属性标签" })).toBeVisible();
+    const loading = body.getByRole("status", { name: "正在加载标签…" });
     const popup = body.getByRole("dialog", { name: "编辑标签" });
+    await settlePropertyPopup(popup);
     expectPropertyCaretInsideCorners(within(popup).getByRole("combobox", { name: "搜索或新建属性标签" }));
     const aligned = (element: HTMLElement, bounds: DOMRect) => {
       const pill = element.querySelector('.note-tag-selected .note-tag-pill')!.getBoundingClientRect();
@@ -205,22 +221,23 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
     await userEvent.clear(tagSearch);
     await waitFor(() => aligned(popup, anchor));
     expect(body.queryByRole("status", { name: "正在加载标签…" })).toBeNull();
-    await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(document.activeElement).toBe(trigger));
+    await dismissPropertyPopup(popup, trigger);
     for (const name of ["单选", "多选"]) {
       const button = canvas.getByRole("button", { name: `编辑属性 ${name}` });
       const bounds = button.querySelector('.note-tag-pill')!.getBoundingClientRect();
       await userEvent.click(button);
       expectPropertyCaretInsideCorners(await body.findByRole("combobox", { name: "搜索或创建选项" }));
       await waitFor(() => aligned(body.getByRole("dialog", { name: `编辑属性 ${name}` }), bounds));
-      expectPropertyControlRadius(body.getByRole("dialog", { name: `编辑属性 ${name}` }));
+      const choicePopup = body.getByRole("dialog", { name: `编辑属性 ${name}` });
+      await settlePropertyPopup(choicePopup);
+      expectPropertyControlRadius(choicePopup);
       await waitFor(() => expect(getComputedStyle(button).backgroundColor).toBe("rgba(0, 0, 0, 0)"));
-      await userEvent.keyboard("{Escape}");
-      await waitFor(() => expect(document.activeElement).toBe(button));
+      await dismissPropertyPopup(choicePopup, button);
     }
     await page.viewport(390, 900);
     await userEvent.click(trigger);
     const sheet = await body.findByRole("dialog", { name: "编辑标签" });
+    await settlePropertyPopup(sheet);
     expect(sheet.dataset.slot).toBe("sheet-content");
     expectPropertyCaretInsideCorners(within(sheet).getByRole("combobox", { name: "搜索或新建属性标签" }));
     expectPropertyControlRadius(sheet);
@@ -264,6 +281,7 @@ for (const mode of ["light", "dark"] as const) test(`property selector failures 
       await userEvent.click(trigger);
       const popup = await within(document.body).findByRole("dialog", { name: "编辑标签" });
       const alert = await within(popup).findByRole("alert");
+      await settlePropertyPopup(popup);
       expect(alert.textContent).toBe("加载失败重试");
       const header = popup.querySelector('.note-tag-header')!;
       expect(header.textContent).toContain("现有");
@@ -289,7 +307,7 @@ for (const mode of ["light", "dark"] as const) test(`property selector failures 
       expect(input).toHaveProperty("value", "候选");
       expect(document.activeElement).toBe(input);
       expect(header.querySelector('.note-tag-pill')!.getBoundingClientRect().top - popup.getBoundingClientRect().top).toBeCloseTo(headerOffset, 1);
-      await userEvent.keyboard("{Escape}");
+      await dismissPropertyPopup(popup);
     }
   } finally { view.unmount(); release(); }
 });
@@ -339,6 +357,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 
       const bounds = layout();
       await userEvent.click(trigger);
       const popup = await body.findByRole("dialog", { name: name === "编辑标签" ? name : name === "预览图片 图片" ? "图片预览 图片" : name });
+      await settlePropertyPopup(popup);
       await waitFor(() => expect(layout()).toEqual(bounds));
       if (name === "编辑标签" || name === "编辑属性 单选" || name === "编辑属性 多选") {
         await within(popup).findByRole("combobox");
@@ -355,8 +374,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 
           });
         });
       }
-      await userEvent.keyboard("{Escape}");
-      await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+      await dismissPropertyPopup(popup);
     }
     const beforeError = layout();
     await userEvent.click(canvas.getByRole("button", { name: "上传图片 空图片" }));
@@ -364,8 +382,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 
     expect(within(failurePopup).getByRole("alert").textContent).toBe("无法读取图片");
     expect(layout()).toEqual(beforeError);
     expect(view.container.querySelector('[role="alert"]')).toBeNull();
-    await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+    await dismissPropertyPopup(failurePopup);
     const checkbox = canvas.getByRole("checkbox", { name: "切换属性 复选框" });
     const beforeToggle = layout();
     await userEvent.click(checkbox);
