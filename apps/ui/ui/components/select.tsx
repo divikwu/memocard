@@ -1,6 +1,7 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/themes/ui-luma.sources.json.
 "use client"
 
+import { useThemeScopeProps } from "./theme-scope"
 import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cnState } from "../lib/utils"
@@ -47,7 +48,7 @@ function SelectTrigger({
       data-size={size}
       className={cnState(
         className,
-        "flex w-fit items-center justify-between gap-1.5 rounded-control border border-transparent bg-control px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow,background-color] outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-placeholder:text-control-secondary data-[size=default]:h-element-md data-[size=sm]:h-element-sm *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:aria-invalid:border-error/50 dark:aria-invalid:ring-error/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-visible:focus-ring"
+        "flex w-fit items-center justify-between gap-1.5 rounded-control border border-transparent bg-control px-3 py-2 text-sm whitespace-nowrap transition-[color,box-shadow,background-color] outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-control-error-border aria-invalid:ring-3 aria-invalid:ring-control-error-ring data-placeholder:text-control-secondary data-[size=default]:h-element-md data-[size=sm]:h-element-sm *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 focus-visible:focus-ring"
       )}
       {...props}
     >
@@ -75,8 +76,9 @@ function SelectContent({
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
+  const scope = useThemeScopeProps()
   return (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal {...scope}>
       <SelectPrimitive.Positioner
         side={side}
         sideOffset={sideOffset}
@@ -126,7 +128,7 @@ function SelectItem({
       data-slot="select-item"
       className={cnState(
         className,
-        "relative flex w-full cursor-default items-center gap-2.5 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-accent dark:focus:text-primary not-data-[variant=destructive]:focus:**:text-accent dark:not-data-[variant=destructive]:focus:**:text-primary data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+        "relative flex w-full cursor-default items-center gap-2.5 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus not-data-[variant=destructive]:focus:**:text-menu-focus data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
       )}
       {...props}
     >

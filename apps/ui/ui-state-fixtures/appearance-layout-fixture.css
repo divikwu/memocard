@@ -1,0 +1,3 @@
+.web-app[data-workspace-layout=experimental] { height: 100dvh; min-height: 0; display: flex; flex-direction: column; }
+.web-app[data-workspace-layout=experimental] > .web-app-shell { flex: 1; height: auto; }
+.web-app[data-workspace-layout=experimental] > nav { flex: 0 0 40px; }

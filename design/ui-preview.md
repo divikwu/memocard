@@ -18,6 +18,8 @@ pnpm --filter @memocard/ui dev:states
 
 字体/外观故障通过显式 fixture 注入；预期的“模拟字体加载失败”错误须与意外 console error 区分。Preview 不进入生产依赖图，也不改变生产外观偏好。
 
+界面主题预览使用 [NavigationPrototype](../apps/ui/ui/preview/NavigationPrototype.tsx)，沿用隔离存储与模拟笔记，直接渲染正式 Web 组件。入口为 <http://127.0.0.1:5182/navigation-prototype.html?variant=top#/notes>，可在设置中切换「经典 / 简约」；`variant=sidebar` 以经典启动。
+
 ## 检查命令
 
 ```sh
@@ -27,7 +29,7 @@ pnpm --filter @memocard/ui build:states
 pnpm verify:ui
 ```
 
-静态输出为 `apps/ui/preview-static`，包含首页、场景 iframe 与吉祥物三入口，与产品 `apps/ui/dist`、Storybook 输出和 Apple Web 资源分离。共享场景控制器回归现位于 [app-controller-states.test.tsx](../apps/ui/ui-state-fixtures/app-controller-states.test.tsx)。
+静态输出为 `apps/ui/preview-static`，包含首页、场景 iframe、吉祥物与界面主题四个入口，与产品 `apps/ui/dist`、Storybook 输出和 Apple Web 资源分离。共享场景控制器回归现位于 [app-controller-states.test.tsx](../apps/ui/ui-state-fixtures/app-controller-states.test.tsx)。
 
 ## 验收边界
 

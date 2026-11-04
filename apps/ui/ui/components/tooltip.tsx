@@ -1,6 +1,7 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/themes/ui-luma.sources.json.
 "use client"
 
+import { ThemeScope, themeScopeForElement, useThemeScopeProps, type ThemeScopeValue } from "./theme-scope"
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 import { createContext, useContext, useEffect, useId, useState, type ReactNode } from "react"
 import { cnState } from "../lib/utils"
@@ -41,8 +42,9 @@ function TooltipContent({
     TooltipPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "anchor"
   >) {
+  const scope = useThemeScopeProps()
   return (
-    <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Portal {...scope}>
       <TooltipPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
@@ -56,7 +58,7 @@ function TooltipContent({
           role="tooltip"
           className={cnState(
             className,
-            "duration-fast ease-standard z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-xl bg-inverted px-3 py-1.5 text-xs text-on-dark dark:text-on-light has-data-[slot=kbd]:pr-1.5 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-lg data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            "duration-fast ease-standard z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-xl bg-inverted px-3 py-1.5 text-xs text-tooltip-text has-data-[slot=kbd]:pr-1.5 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-lg data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           )}
           {...props}
         >
@@ -80,7 +82,7 @@ function TooltipHints({ children }: { children?: ReactNode }) {
 function TooltipHintController() {
   useInputModality()
   const id = useId()
-  const [hint, setHint] = useState<{ anchor: HTMLElement; target: HTMLElement; text: string } | null>(null)
+  const [hint, setHint] = useState<{ anchor: HTMLElement; target: HTMLElement; text: string; scope?: ThemeScopeValue } | null>(null)
 
   useEffect(() => {
     let current: HTMLElement | null = null
@@ -98,7 +100,7 @@ function TooltipHintController() {
       const text = anchor?.getAttribute("data-ui-tooltip")
       current = text ? anchor : null
       const target = anchor?.closest<HTMLElement>('button, a[href], [tabindex], [role="menuitem"], [role="button"]') ?? anchor
-      setHint(text && anchor && target ? { anchor, target, text } : null)
+      setHint(text && anchor && target ? { anchor, target, text, scope: themeScopeForElement(anchor) } : null)
     }
     const over = (event: PointerEvent) => {
       if (event.pointerType !== "mouse") return
@@ -146,10 +148,11 @@ function TooltipHintController() {
     const { anchor, target } = hint
     const previous = target.getAttribute("aria-describedby")
     target.setAttribute("aria-describedby", [previous, id].filter(Boolean).join(" "))
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver(records => {
       if (!anchor.isConnected || !anchor.getAttribute("data-ui-tooltip")) setHint(null)
+      else if (records.some(record => record.target === anchor.closest("[data-appearance-scope]"))) setHint(value => value ? { ...value, scope: themeScopeForElement(anchor) } : null)
     })
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-ui-tooltip"] })
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-ui-tooltip", "data-ui-theme", "data-interface-theme", "data-workspace-layout", "data-web-palette", "data-web-neutral", "style"] })
     return () => {
       observer.disconnect()
       if (previous === null) target.removeAttribute("aria-describedby")
@@ -157,9 +160,9 @@ function TooltipHintController() {
     }
   }, [hint, id])
 
-  return <Tooltip open={!!hint} onOpenChange={open => { if (!open) setHint(null) }}>
+  return <ThemeScope value={hint?.scope ?? {}}><Tooltip open={!!hint} onOpenChange={open => { if (!open) setHint(null) }}>
     <TooltipContent id={id} anchor={hint?.anchor} className="break-all">{hint?.text}</TooltipContent>
-  </Tooltip>
+  </Tooltip></ThemeScope>
 }
 
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipHints }

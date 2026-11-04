@@ -1,13 +1,15 @@
 import type { ComponentType, ComponentProps, SVGProps } from "react";
 import { useEffect, useRef, useState } from 'react';
-import type { NoteProperty, PropertyChange, PropertyOption } from '@memocard/contracts';
+import type { NoteProperty, PropertyChange } from '@memocard/contracts';
 import { Combobox } from '@base-ui/react/combobox';
 import PropertyOptionList from './PropertyOptionList';
+import { ChoicePill } from './ChoicePill';
 
 type View = {
   X: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   PropertyOptionMenu: ComponentType<ComponentProps<typeof import("@ui/business/property-editors")["PropertyOptionMenu"]>>;
 };
+
 
 export function createChoicePropertyEditor(view: View) {
   const { X, PropertyOptionMenu } = view;
@@ -16,10 +18,6 @@ function normalizeOptionName(value:string) {
   return name.length > 0 && name.length <= 100 && ![...name].some(character => character.charCodeAt(0) < 32) ? name : null;
 }
 
-function ChoicePill({name, options}: {name:string; options?:PropertyOption[]}) {
-  const color = options?.find(option => option.name === name)?.color ?? 'default';
-  return <span className={`note-tag-pill note-tag-color-${color}`}>{name}</span>;
-}
 function ChoicePropertyEditor({property, busy, error, onSave}: {property:NoteProperty; busy:boolean; error:string; onSave:(change:PropertyChange, keepOpen?:boolean)=>Promise<void>}) {
   const multiple = property.type === 'multiSelect';
   const [options, setOptions] = useState(property.options ?? []);

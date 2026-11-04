@@ -1,4 +1,4 @@
-import { Suspense, forwardRef, useCallback, useEffect, useId, useLayoutEffect, useImperativeHandle, useRef, useState, type ComponentType, type SVGProps, type DragEventHandler } from 'react';
+import { Suspense, forwardRef, useCallback, useEffect, useId, useLayoutEffect, useImperativeHandle, useRef, useState, type ComponentType, type ComponentProps, type SVGProps, type DragEventHandler } from 'react';
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, useEditorState, type NodeViewProps, type ReactNodeViewProps, type NodeViewRendererProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown as MarkdownExtension } from '@tiptap/markdown';
@@ -41,6 +41,8 @@ export type RichEditorProps = {
 };
 export type RichIcon = ComponentType<Omit<SVGProps<SVGSVGElement>, 'strokeWidth'> & { size?: number; strokeWidth?: number }>;
 export type RichEditorUI = {
+  PopoverPortal?: ComponentType<ComponentProps<typeof Popover.Portal>>;
+  MenuPortal?: ComponentType<ComponentProps<typeof Menu.Portal>>;
   RichHeadingFolding: ReturnType<typeof import('./rich-heading-fold-core').createRichHeadingFolding>;
   icons: Record<'Plus' | 'GripVertical' | 'Type' | 'Heading' | 'List' | 'ListOrdered' | 'ListTodo' | 'Quote' | 'Code' | 'Minus' | 'Table' | 'Sigma' | 'ImageIcon' | 'Search' | 'ArrowUp' | 'ArrowDown' | 'Copy' | 'Trash2' | 'RefreshCw' | 'Check' | 'ChevronRight' | 'MessageSquareQuote', RichIcon>;
   Markdown: ComponentType<{ body: string; notePath: string; onError?: (message: string) => void }>;
@@ -56,9 +58,9 @@ export type RichEditorUI = {
 };
 
 // Extensions and node views close over one view adapter without duplicating editor behavior.
-export function createRichMarkdownEditor({ RichHeadingFolding, icons, Markdown, NoteImage, RichCodeBlock, RichFormatTools, RichImageTools, CalloutColorsMenu, CalloutIconPicker, NoteOutline, contentClassName = 'markdown typeset rich-editor-content', uiClassName = '' }: RichEditorUI) {
+export function createRichMarkdownEditor({ PopoverPortal = Popover.Portal, MenuPortal = Menu.Portal, RichHeadingFolding, icons, Markdown, NoteImage, RichCodeBlock, RichFormatTools, RichImageTools, CalloutColorsMenu, CalloutIconPicker, NoteOutline, contentClassName = 'markdown typeset rich-editor-content', uiClassName = '' }: RichEditorUI) {
 const { Plus, GripVertical, Type, Heading, List, ListOrdered, ListTodo, Quote, Code, Minus, Table, Sigma, ImageIcon, Search, ArrowUp, ArrowDown, Copy, Trash2, RefreshCw, Check, ChevronRight, MessageSquareQuote } = icons;
-const RichTableTools = createRichTableTools(icons, uiClassName);
+const RichTableTools = createRichTableTools(icons, uiClassName, MenuPortal);
 function SafeImage({ node, extension, editor, getPos }: NodeViewProps) {
   const path = extension.options.notePath() as string;
   const source = imageSource(String(node.attrs.src), path, node.type.name === 'wikiImage');
@@ -793,7 +795,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     {dropTop != null && <div className="block-drop-indicator" style={{ top: dropTop }} />}
     {!props.disabled && editor.state.selection instanceof TextSelection && !editor.state.selection.empty && !menu && !tableMenuOpen && <Suspense fallback={null}><RichFormatTools editor={editor} /></Suspense>}
     {/* Gutter menus slide inside the viewport instead of flipping their horizontal alignment. */}
-    {menu === 'insert' && <Popover.Portal><Popover.Positioner anchor={controlsRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup ref={menuRef} initialFocus={() => slash.current ? false : true} finalFocus={false} className={`rich-menu block-menu rich-insert-menu ${uiClassName}`} role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
+    {menu === 'insert' && <PopoverPortal><Popover.Positioner anchor={controlsRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup ref={menuRef} initialFocus={() => slash.current ? false : true} finalFocus={false} className={`rich-menu block-menu rich-insert-menu ${uiClassName}`} role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Escape') { event.preventDefault(); closeMenu(); return; }
       if (event.target !== event.currentTarget.querySelector('.rich-insert-close')) handleInsertKey(event.nativeEvent);
@@ -810,17 +812,17 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
         </div>
         <button className="rich-insert-close" onClick={closeMenu}>关闭菜单<kbd>esc</kbd></button>
       </>
-    </Popover.Popup></Popover.Positioner></Popover.Portal>}
-    {menu === 'block' && <Menu.Portal><Menu.Positioner anchor={gripRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Menu.Popup ref={menuRef} className={`rich-block-menu ${uiClassName}`} aria-label="内容块操作菜单" finalFocus={() => calloutIconOpen.current ? false : editor.view.dom}>
+    </Popover.Popup></Popover.Positioner></PopoverPortal>}
+    {menu === 'block' && <MenuPortal><Menu.Positioner anchor={gripRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Menu.Popup ref={menuRef} className={`rich-block-menu ${uiClassName}`} aria-label="内容块操作菜单" finalFocus={() => calloutIconOpen.current ? false : editor.view.dom}>
       <Menu.SubmenuRoot open={conversionOpen} onOpenChange={setConversionOpen}>
         <Menu.SubmenuTrigger disabled={!canConvertText && !canConvertCallout && !selectedCallout}><RefreshCw aria-hidden="true" /><span>转换为</span><ChevronRight className="rich-menu-check" aria-hidden="true" /></Menu.SubmenuTrigger>
-        <Menu.Portal><Menu.Positioner collisionPadding={12} sideOffset={isMobile ? -260 : 6} alignOffset={-5} className="z-50"><Menu.Popup className={`rich-block-menu rich-convert-menu ${uiClassName}`} aria-label="转换为">
+        <MenuPortal><Menu.Positioner collisionPadding={12} sideOffset={isMobile ? -260 : 6} alignOffset={-5} className="z-50"><Menu.Popup className={`rich-block-menu rich-convert-menu ${uiClassName}`} aria-label="转换为">
           {insertItems.filter(item => item.convertible && (canConvertText || item.label === '标注')).map((item, index) => { const Icon = item.icon ?? Type; const current = isCurrentType(item); const label = item.icon === Heading ? `标题 ${item.hint!.length}` : item.label; return <div key={item.label}>
             {(index === 7 || index === 10) && <Menu.Separator />}
             <Menu.Item aria-label={label} disabled={item.label === '标注' && !selectedCallout && !canConvertCallout} onClick={() => { if (current) { closeMenu(); return; } if (item.label === '标注') { wrapCallout(editor, selectedBlocks); closeMenu(); return; } insertion.current = null; slash.current = null; editor.commands.setTextSelection(toolbar.pos + 1); choose(item); }}><Icon aria-hidden="true" /><span>{label}</span>{current && <Check className="rich-menu-check" aria-label="当前类型" />}</Menu.Item>
           </div>; })}
           {selectedCallout && <Menu.Item onClick={() => { unwrapCallout(editor, firstSelected.pos); closeMenu(); }}><Type aria-hidden="true" /><span>普通区块</span></Menu.Item>}
-        </Menu.Popup></Menu.Positioner></Menu.Portal>
+        </Menu.Popup></Menu.Positioner></MenuPortal>
       </Menu.SubmenuRoot>
       {selectedCallout && <><CalloutColorsMenu editor={editor} pos={firstSelected.pos} onClose={closeMenu} /><Menu.Item onClick={() => { const dom = editor.view.nodeDOM(firstSelected.pos); if (dom instanceof HTMLElement) dom.querySelector<HTMLButtonElement>('.rich-callout-icon')?.click(); setMenu(null); }}><MessageSquareQuote aria-hidden="true" /><span>编辑图标</span></Menu.Item></>}
       {firstSelected && lastSelected && arrangeImageRows(editor, firstSelected.pos, lastSelected.pos + lastSelected.node.nodeSize, 2, false) && <>
@@ -834,7 +836,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       <Menu.Separator />
       <Menu.Item data-variant="destructive" onClick={() => { if (!props.disabled && editor.isEditable && firstSelected && lastSelected) editRichStructure(editor, () => { editor.commands.deleteRange({ from: firstSelected.pos, to: lastSelected.pos + lastSelected.node.nodeSize }); }); closeMenu(); }}><Trash2 aria-hidden="true" /><span>删除</span></Menu.Item>
       {(selectedBlocks.length > 1 || movingSection) && <><Menu.Separator /><div className="rich-block-menu-note" role="status">{movingSection ? `章节移动包含 ${moveSources.length} 个块；其他操作仅作用于标题` : `已选择 ${selectedBlocks.length} 个块`}</div></>}
-    </Menu.Popup></Menu.Positioner></Menu.Portal>}
+    </Menu.Popup></Menu.Positioner></MenuPortal>}
     {calloutIcon !== null && <Suspense fallback={<span role="status">正在打开图标选择器…</span>}><CalloutIconPicker editor={editor} target={calloutIcon} onClose={() => setCalloutIcon(null)} /></Suspense>}
     <RichTableTools editor={editor} blocked={props.disabled || menu !== null || isDragging || selectionBox !== null} onMenuOpenChange={setTableMenuOpen} />
 

@@ -3,6 +3,11 @@ import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { useIsMobile } from '../../src/hooks/use-mobile';
 import { SheetCloseButton, SheetHeader, SheetPopup } from '../components/sheet';
 import { cnState } from '../lib/utils';
+import { useThemeScopeProps } from '../components/theme-scope';
+
+export function PropertyConfirmationPortal(props: ComponentProps<typeof AlertDialog.Portal>) {
+  return <AlertDialog.Portal {...useThemeScopeProps()} {...props} />;
+}
 
 // AlertDialog retains its dismissal and confirmation semantics; only its shell changes.
 export function PropertyConfirmationPopup({ children, className, ...props }: ComponentProps<typeof AlertDialog.Popup>) {

@@ -16,7 +16,7 @@ vi.mock("../preview-fonts", async original => ({ ...await original<typeof import
 
 beforeAll(async () => {
   await preloadWebEditor();
-  await Promise.all([import("../business/property-editors"), import("../business/NoteSearchDialog")]);
+  await Promise.all([import("../business/DatePropertyPicker"), import("../business/NoteSearchDialog")]);
 }, 30_000);
 beforeEach(() => {
   localStorage.clear();

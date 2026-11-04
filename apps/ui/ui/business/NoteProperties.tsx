@@ -9,8 +9,8 @@ import { PropertyPopover as Popover, PropertyPopoverContent as PopoverContent, P
 import * as menus from "../components/dropdown-menu";
 import * as tooltips from "../components/tooltip";
 import { PageNotice } from "./PageNotice";
-import { PropertyConfirmationPopup } from "./property-confirmation";
+import { PropertyConfirmationPortal, PropertyConfirmationPopup } from "./property-confirmation";
 import { propertyIcons, collapsibles, NameEditor, TagPill, ChoicePropertyEditor, ChoicePill, DatePropertyPicker, ImagePropertyEditor, TagPropertyEditor } from "./property-editors";
 
-export const NoteProperties = createNoteProperties({ ConfirmationPopup: PropertyConfirmationPopup, Checkbox: { Root: Checkbox, Indicator: CheckboxPrimitive.Indicator }, ...propertyIcons, ...collapsibles, Popover, PopoverContent, PopoverTrigger, ...menus, ...tooltips, Button, Input, Textarea, Skeleton, PageNotice, NameEditor, TagPill, ChoicePropertyEditor, ChoicePill, DatePropertyPicker, ImagePropertyEditor, TagPropertyEditor });
+export const NoteProperties = createNoteProperties({ ConfirmationPortal: PropertyConfirmationPortal, ConfirmationPopup: PropertyConfirmationPopup, Checkbox: { Root: Checkbox, Indicator: CheckboxPrimitive.Indicator }, ...propertyIcons, ...collapsibles, Popover, PopoverContent, PopoverTrigger, ...menus, ...tooltips, Button, Input, Textarea, Skeleton, PageNotice, NameEditor, TagPill, ChoicePropertyEditor, ChoicePill, DatePropertyPicker, ImagePropertyEditor, TagPropertyEditor });
 export default NoteProperties;

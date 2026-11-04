@@ -1,0 +1,5 @@
+.ui-appearance-scope[data-interface-theme=minimal] {
+  --workspace-max-width: 80rem;
+  --workspace-menu-width: calc(var(--spacing-1) * 64);
+  --workspace-menu-padding: calc(var(--spacing-1) * 1.5);
+}

@@ -1,12 +1,17 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/themes/ui-luma.sources.json.
 "use client"
 
+import { useThemeScopeProps } from "./theme-scope"
 import * as React from "react"
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
 import { cn, cnState } from "../lib/utils"
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
+}
+
+function PopoverPortal(props: PopoverPrimitive.Portal.Props) {
+  return <PopoverPrimitive.Portal {...useThemeScopeProps()} {...props} />
 }
 
 function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
@@ -28,7 +33,7 @@ function PopoverContent({
     "align" | "alignOffset" | "side" | "sideOffset" | "anchor" | "collisionPadding"
   >) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPortal>
       <PopoverPrimitive.Positioner
         align={align}
         alignOffset={alignOffset}
@@ -47,7 +52,7 @@ function PopoverContent({
           {...props}
         />
       </PopoverPrimitive.Positioner>
-    </PopoverPrimitive.Portal>
+    </PopoverPortal>
   )
 }
 
@@ -87,6 +92,7 @@ function PopoverDescription({
 export {
   Popover,
   PopoverContent,
+  PopoverPortal,
   PopoverDescription,
   PopoverHeader,
   PopoverTitle,

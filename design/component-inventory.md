@@ -1,6 +1,6 @@
 # 已使用组件维护表
 
-本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **92 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
+本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **103 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
 
 当前产品和唯一 Storybook 共用当前组件。iOS 的 SwiftUI/UIKit 导航、搜索、快速记录及系统确认通过表面协议保持；正文继续消费同一 Web 输出。共享core仍可直接消费Base UI/Tiptap，不称作无界面依赖的纯算法。
 
@@ -9,6 +9,7 @@
 | 实现路径 / 组件家族 | 平台与适配职责 | 主要消费 / 状态契约 | Token 族 | Storybook / 预览 / 测试维护入口 | 未覆盖状态 / 独立 Story 策略 |
 | --- | --- | --- | --- | --- | --- |
 | `apps/ui/src/App.tsx` | 共享控制器；宿主/路由/草稿编排 | 笔记库绑定、读取、保存、权限、搜索会话、草稿和原生投影 | vault / editor / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 整页夹具不代替真实文件系统、权限与设备验收 |
+| `apps/ui/src/ChoicePill.tsx` | 共享选项只读呈现 | 属性展示无需加载选项编辑器、Combobox 或虚拟列表 | property / color | `apps/ui/ui/business/ChoicePropertyEditor.test.tsx` | 随属性组合维护；完整颜色矩阵另验 |
 | `apps/ui/src/ChoicePropertyEditor.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/DatePropertyPicker.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/ImagePropertyEditor.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
@@ -41,7 +42,11 @@
 | `apps/ui/ui/business/MobileTagActions.tsx` | 当前H5标题操作 | 布局切换、标签置顶/重命名/Emoji与回焦 | sidebar / menu / responsive | `apps/ui/ui/business/MobileTagActions.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 软键盘和真实触摸关闭另验 |
 | `apps/ui/ui/business/NoteCollection.tsx` | 当前集合视图 | 卡片/列表、布局偏好、标签、搜索、空态与分页 | collection / type / space | `apps/ui/ui/business/NoteCollection.test.tsx`；`apps/ui/ui/stories/business-note-collection.stories.tsx` | 真实大库性能和设备滚动另验 |
 | `apps/ui/ui/business/NoteDeleteDialog.tsx` | 当前删除确认与原生投影 | 版本保护、取消、busy与成功/失败 | destructive / overlay | `apps/ui/ui/business/TrashPage.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 真实写入与系统确认组合另验 |
-| `apps/ui/ui/business/NoteMarkdown.tsx` | 当前正文/附件/图表渲染 | 共享清洗管线、本库链接、图片、表格、数学和Mermaid | typeset / content / overlay | `apps/ui/ui/business/note-content.test.tsx`；`apps/ui/ui/business/NoteImage.test.tsx`；`apps/ui/ui/business/MermaidRendering.test.tsx` | 真实文件路径、超大图和全部图表语法另验 |
+| `apps/ui/ui/business/ChoicePropertyEditor.tsx` | 按需选项编辑器适配 | 首次打开加载，保留共享状态与保存控制器 | property / overlay / state | `apps/ui/ui/business/ChoicePropertyEditor.test.tsx` | 随属性弹层维护；真实设备另验 |
+| `apps/ui/ui/business/DatePropertyPicker.tsx` | 按需日期编辑器适配 | 日历与控件一次加载，保留日期校验及本地输入 | property / overlay / state | `apps/ui/ui/business/NoteProperties.test.tsx` | 随属性弹层维护；真机软键盘另验 |
+| `apps/ui/ui/business/TagPropertyEditor.tsx` | 按需标签编辑器适配 | 标签选择、虚拟列表与菜单；局部等待不重建编辑器 | property / overlay / state | `apps/ui/test-support/ui-quality.browser.tsx` | 随属性弹层维护；真实设备另验 |
+| `apps/ui/ui/business/NoteMedia.tsx` | 共享正文媒体呈现 | 本库图片、查看器与 Mermaid；不引入 Markdown 解析管线 | content / overlay / media | `apps/ui/ui/business/NoteImage.test.tsx` | `apps/ui/ui/business/MermaidRendering.test.tsx`；真实文件与设备另验 |
+| `apps/ui/ui/business/NoteMarkdown.tsx` | 按需正文渲染 | 共享清洗管线、本库链接、表格和数学；媒体由 NoteMedia 复用 | typeset / content / overlay | `apps/ui/ui/business/note-content.test.tsx`；`apps/ui/ui/business/NoteImage.test.tsx`；`apps/ui/ui/business/MermaidRendering.test.tsx` | 真实文件路径、超大图和全部图表语法另验 |
 | `apps/ui/ui/business/NotePreview.tsx` | 当前笔记摘要 | 安全正文预览、标签独立选择、溢出省略 | editor / preview / type | `apps/ui/ui/business/NoteCollection.recipe.test.tsx`；`apps/ui/ui/stories/business-note-preview.stories.tsx` | 长文、辅助技术与全部嵌套内容未全覆盖 |
 | `apps/ui/ui/business/NoteProperties.tsx` | 当前属性适配 | 字段、排序、可见性、类型转换、命名、只读、日期/图片/标签与错误 | property / state / destructive | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 全部类型转换、时区和系统picker矩阵另验 |
 | `apps/ui/ui/business/NoteSearchDialog.tsx` | 当前搜索视图与原生投影 | 共享查询会话；分页、预览、键盘选择与返回位置 | search / type / overlay | `apps/ui/ui/business/note-search.test.tsx`；`apps/ui/ui/stories/business-note-search.stories.tsx` | 真实服务断线、辅助技术与大库性能另验 |
@@ -95,7 +100,13 @@
 | `apps/ui/ui/preview-mode.tsx` | 当前产品与Storybook共享外观上下文 | 模式、字体加载结果、重试及CSS偏好输出 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx` | 生产偏好与示例存储隔离；真实字体加载另验 |
 | `apps/ui/ui/showcase-icons.tsx` | 当前图标适配与目录 | 生产图标引用、运行时组件和静态映射 | icon / color / size | `apps/ui/ui/stories/icons.stories.tsx` | 内部映射无需独立Story；全图标组合另验 |
 | `apps/ui/ui/web/WebAppView.tsx` | 当前产品视图编排 | AppViewState；主页/编辑/设置/回收站、通知和草稿 | theme / layout / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 内存夹具不替代真实库和WKWebView生命周期 |
-| `apps/ui/ui/web/WebAppearance.tsx` | 当前外观偏好 | 明暗/系统、强调色、中性色、字体与圆角；兼容旧设备值 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/web/WebFontRecovery.test.tsx` | 全字体与所有组合不等于已逐项真机验收 |
+| `apps/ui/ui/web/WorkspaceFrame.tsx` | 稳定工作区宿主 | 固定内容路径、布局区域与外观作用域 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 编辑器和业务弹层不因主题更换宿主 |
+| `apps/ui/ui/web/appearance/AppearanceRuntime.tsx` | 外观解析与资源提交 | 只读目录、环境回退、按需加载、竞态和重试 | theme / layout / state | `apps/ui/ui/web/appearance/AppearanceRuntime.test.tsx` | 不迁移偏好 v2，不注册第三方运行时代码 |
+| `apps/ui/ui/web/layouts/sidebar.tsx` | 侧栏及抽屉布局出口 | 复用 AppSidebar 和现有页头入口 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 原生仍走已有外框 |
+| `apps/ui/ui/web/layouts/topbar.tsx` | 顶部布局出口 | 受控顶部导航；与视觉主题分开 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 同一布局供多个视觉主题使用 |
+| `apps/ui/ui/components/theme-scope.tsx` | 页面及 Portal 样式作用域 | 保留 Base UI Portal 根与焦点管理，复制已解析属性/变量 | theme / focus / overlay | `apps/ui/ui/components/theme-scope.test.tsx`；`apps/ui/test-support/interface-themes.browser.tsx` | 不移动 Portal 容器，局部模式继续优先 |
+| `apps/ui/ui/web/WebTopNavigation.tsx` | Web 简约界面导航 | 主页/所有笔记、共享标签树、更多与笔记库操作；桌面 Web 专用 | theme / layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉，原生端不消费简约导航 |
+| `apps/ui/ui/web/WebAppearance.tsx` | 当前外观偏好 | 界面主题、明暗/系统、强调色、中性色、字体与圆角；兼容旧设备值 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/web/WebFontRecovery.test.tsx` | 全字体与所有组合不等于已逐项真机验收 |
 | `apps/ui/ui/web/WebSettingSelect.tsx` | 当前设置选择控件 | label关联、受控值、键盘和回焦 | input / focus / type | `apps/ui/ui/web/WebAppearance.test.tsx` | 内部组合无需独立Story；辅助技术另验 |
 | `apps/ui/ui/web/WebSettings.tsx` | 当前设置页面 | 库操作、文件状态、外观、正文风格、MCP和本机Web | theme / property / state | `apps/ui/ui/web/WebSettings.test.tsx`；`apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 系统授权、跨窗口与全部字体矩阵另验 |
 | `apps/ui/ui/web/WebTypographyProvider.tsx` | 正文风格适配 | 共享TypographyProvider；实际字体与笔记变量 | typeset / typography | `apps/ui/ui/web/WebTypography.test.tsx` | 浏览器实际字形与字体失败另验 |

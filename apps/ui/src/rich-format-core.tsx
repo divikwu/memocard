@@ -20,6 +20,7 @@ function markState(editor: Editor, name: string): boolean | 'mixed' {
   return marked ? plain ? 'mixed' : true : false;
 }
 export type RichFormatUI = {
+  PopoverPortal?: ComponentType<ComponentProps<typeof Popover.Portal>>;
   uiClassName?: string;
   icons: Record<'Link' | 'Highlighter' | 'MoreHorizontal' | 'Superscript' | 'Subscript' | 'Keyboard' | 'Info' | 'Check' | 'Minus' | 'Code' | 'Strikethrough' | 'Unlink' | 'RemoveFormatting' | 'FileText' | 'X', import('./rich-editor-core').RichIcon>;
   Dialog: typeof import('@ui/components/dialog').Dialog;
@@ -35,7 +36,7 @@ export type RichFormatUI = {
   SelectTrigger: ComponentType<ComponentProps<typeof import('@ui/components/select').SelectTrigger>>;
   SelectValue: ComponentType<ComponentProps<typeof import('@ui/components/select').SelectValue>>;
 };
-export function createRichFormatTools({ uiClassName = '', icons, Dialog, DialogContent, DialogTitle, MobileDialogHeader, Toolbar = 'div', Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue }: RichFormatUI) {
+export function createRichFormatTools({ PopoverPortal = Popover.Portal, uiClassName = '', icons, Dialog, DialogContent, DialogTitle, MobileDialogHeader, Toolbar = 'div', Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue }: RichFormatUI) {
 const { Link, Highlighter, MoreHorizontal, Superscript, Subscript, Keyboard, Info, Check, Minus, Code, Strikethrough, Unlink, RemoveFormatting, FileText, X } = icons;
 return function RichFormatTools({ editor }: { editor: Editor }) {
   const [open, setOpen] = useState(false);
@@ -165,12 +166,12 @@ return function RichFormatTools({ editor }: { editor: Editor }) {
       <button ref={linkAnchor} aria-label="链接" data-ui-tooltip="编辑链接" aria-pressed={state.link} onMouseDown={event => event.preventDefault()} onClick={() => show('link')}><Link aria-hidden="true" /></button>
       {formatButton(4, <Highlighter aria-hidden="true" />)}
       <Popover.Root open={!mobile && open} onOpenChange={next => { setOpen(next); if (next) { setProperties(null); setPropertiesOpen(false); bookmark.current = editor.state.selection.getBookmark(); } else if (!properties) { restore(); bookmark.current = null; } }}><Popover.Trigger ref={moreAnchor} aria-label="更多格式" data-ui-tooltip="更多格式" onClick={mobile ? () => { setProperties(null); setPropertiesOpen(false); bookmark.current = editor.state.selection.getBookmark(); setOpen(true); } : undefined}><MoreHorizontal aria-hidden="true" /></Popover.Trigger>
-        <Popover.Portal><Popover.Positioner align="end" sideOffset={8} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup className={`rich-menu rich-format-menu ${uiClassName}`} aria-label="更多格式" finalFocus={properties ? false : () => editor.view.dom}>{more}</Popover.Popup></Popover.Positioner></Popover.Portal>
+        <PopoverPortal><Popover.Positioner align="end" sideOffset={8} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup className={`rich-menu rich-format-menu ${uiClassName}`} aria-label="更多格式" finalFocus={properties ? false : () => editor.view.dom}>{more}</Popover.Popup></Popover.Positioner></PopoverPortal>
       </Popover.Root>
     </Toolbar>
-    <Popover.Root open={!mobile && propertiesOpen} onOpenChange={next => { if (!next && propertiesOpen) close(); }} onOpenChangeComplete={finishPropertyClose}><Popover.Portal><Popover.Positioner anchor={properties?.kind === 'abbr' ? moreAnchor : linkAnchor} sideOffset={8} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup className={`rich-properties rich-link-popup ${uiClassName}`} aria-label={propertyTitle} initialFocus={() => propertyInput.current} finalFocus={() => editor.view.dom}>
+    <Popover.Root open={!mobile && propertiesOpen} onOpenChange={next => { if (!next && propertiesOpen) close(); }} onOpenChangeComplete={finishPropertyClose}><PopoverPortal><Popover.Positioner anchor={properties?.kind === 'abbr' ? moreAnchor : linkAnchor} sideOffset={8} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup className={`rich-properties rich-link-popup ${uiClassName}`} aria-label={propertyTitle} initialFocus={() => propertyInput.current} finalFocus={() => editor.view.dom}>
       <div className="rich-format-header"><Popover.Title>{propertyTitle}</Popover.Title><Popover.Close aria-label="关闭弹窗" render={<Button variant="ghost" size="icon-sm" />}><X aria-hidden="true" /></Popover.Close></div>{fields}
-    </Popover.Popup></Popover.Positioner></Popover.Portal></Popover.Root>
+    </Popover.Popup></Popover.Positioner></PopoverPortal></Popover.Root>
     <Dialog open={mobile && (open || propertiesOpen)} onOpenChangeComplete={finishPropertyClose} onOpenChange={next => { if (!next) { if (propertiesOpen) close(); else { setOpen(false); restore(); bookmark.current = null; } } }}><DialogContent aria-describedby={undefined} className={`rich-properties rich-format-sheet ${uiClassName}`} showCloseButton={false} style={{ translate: 'none', bottom: `calc(${position.sheetBottom}px + env(safe-area-inset-bottom))`, maxHeight: position.sheetHeight }} initialFocus={properties ? () => propertyInput.current : undefined} finalFocus={() => editor.view.dom}>
       {MobileDialogHeader ? <MobileDialogHeader title={properties ? propertyTitle : '更多格式'} onClose={() => { if (properties) close(); else { setOpen(false); restore(); bookmark.current = null; } }} /> : <div className="rich-format-header"><DialogTitle>{properties ? propertyTitle : '更多格式'}</DialogTitle><Button variant="ghost" size="icon-sm" aria-label="关闭弹窗" onClick={() => { if (properties) close(); else { setOpen(false); restore(); bookmark.current = null; } }}><X aria-hidden="true" /></Button></div>}{properties ? fields : more}
     </DialogContent></Dialog>

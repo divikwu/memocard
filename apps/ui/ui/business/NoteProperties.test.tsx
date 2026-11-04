@@ -8,7 +8,7 @@ import { PropertyPopover, PropertyPopoverContent, PropertyPopoverTrigger } from 
 import { request } from '../../src/bridge';
 vi.mock('../../src/bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
 // Keep cold calendar compilation outside the property interaction deadline.
-beforeAll(async()=>{await import('./property-editors');},15000);
+beforeAll(async()=>{await import('./DatePropertyPicker');},15000);
 const note = {id:'note',contentHash:'hash',updatedAt:'2026-10-10T00:00:00Z'} as Note;
 const properties = [
  {name:'摘要',type:'text',value:'原值',editable:true},

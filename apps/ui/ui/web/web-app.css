@@ -41,7 +41,7 @@
 .web-page-content > :is(.web-notice, .ui-page-notice):has(+ :is(.web-notice, .ui-page-notice)) { margin-block-end: calc(var(--spacing-1) * 2); }
 .web-page-content > :is(.web-notice, .ui-page-notice):has(+ .web-collection-heading) { margin-block-end: calc(var(--spacing-1) * 8); }
 .web-page-content[data-view=home] > .ui-quick-capture { max-width: 48rem; margin-inline: auto; margin-block-end: calc(var(--spacing-1) * 14); }
-.web-page-content:is([data-view=home], [data-view=notes], [data-view=tags]):not([data-detail]) { max-width: 80rem; }
+.web-page-content:is([data-view=home], [data-view=notes], [data-view=tags]):not([data-detail]) { max-width: var(--workspace-max-width, 80rem); }
 .web-page-content[data-view=home]:not([data-detail]) { padding-block-start: calc(var(--spacing-1) * 4); }
 .web-page-content[data-detail] { max-width: var(--note-measure, 45rem); }
 .web-page-content > .web-home-mascot { display: flex; justify-content: center; margin-block: calc(var(--spacing-1) * 6) calc(var(--spacing-1) * 2); }
@@ -160,3 +160,8 @@
 
 /* SwiftUI supplies navigation and safe-area insets for the native editor host. */
 .web-app[data-native-chrome="true"] { padding: 0; }
+
+@media (min-width: 768px) {
+  :where(.web-app[data-web-client]) .web-page-content[data-view=home]:not([data-detail]) > .ui-note-collection:has(.ui-note-list) { flex: 0 0 auto; }
+  :where(.web-app[data-web-client]) .web-page-content[data-view=home]:not([data-detail]) .ui-note-list { padding-block-end: calc(var(--spacing-1) * 4); }
+}

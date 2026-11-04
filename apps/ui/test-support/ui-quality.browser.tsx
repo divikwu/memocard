@@ -874,7 +874,7 @@ for (const width of [320, 1024]) for (const type of ["select", "multiSelect"] as
     try {
       await userEvent.click(await within(view.container).findByRole("button", {name: "编辑属性 状态"}));
       const popup = await within(document.body).findByRole("dialog", {name: "编辑属性 状态"});
-      await userEvent.type(within(popup).getByRole("combobox", {name: "搜索或创建选项"}), "a");
+      await userEvent.type(await within(popup).findByRole("combobox", {name: "搜索或创建选项"}), "a");
       const create = await within(popup).findByRole("option", {name: "创建选项 a"});
       const list = within(popup).getByRole("listbox", {name: "可选选项"});
       expect(create.getBoundingClientRect().bottom).toBeLessThanOrEqual(list.getBoundingClientRect().bottom);
@@ -895,9 +895,10 @@ for (const width of [320, 1024]) {
     try {
       await userEvent.click(await within(view.container).findByRole("button", {name:"编辑标签"}));
       const popup = await within(document.body).findByRole("dialog", {name:"编辑标签"});
+      const search = await within(popup).findByRole("combobox", {name:"搜索或新建属性标签"});
+      // Suggestions replace the initial empty list with a virtualized list.
+      await within(popup).findByRole("option", {name:`属性标签 ${tags[0].name}`});
       const list = within(popup).getByRole("listbox", {name:"可选属性标签"});
-      const search = within(popup).getByRole("combobox", {name:"搜索或新建属性标签"});
-      await within(list).findByRole("option", {name:`属性标签 ${tags[0].name}`});
       await userEvent.type(search,"a");
       await userEvent.keyboard("{End}");
       const last = await within(list).findByRole("option", {name:`属性标签 ${tags[199].name}`});
@@ -922,9 +923,9 @@ for (const width of [320, 1024]) {
     try {
       await userEvent.click(await within(view.container).findByRole("button", {name: "编辑标签"}));
       const popup = await within(document.body).findByRole("dialog", {name: "编辑标签"});
-      const search = within(popup).getByRole("combobox", {name: "搜索或新建属性标签"});
+      const search = await within(popup).findByRole("combobox", {name: "搜索或新建属性标签"});
+      await within(popup).findByRole("option", {name: "属性标签 area/tag0000"});
       let list = within(popup).getByRole("listbox", {name: "可选属性标签"});
-      await within(list).findByRole("option", {name: "属性标签 area/tag0000"});
       expect(within(list).getAllByRole("option").length).toBeLessThan(40);
       await userEvent.type(search, "a");
       await within(list).findByRole("option", {name: "新建标签 a"});
@@ -2032,11 +2033,12 @@ test("Web home and all-notes collections share responsive widths", async () => {
         if (layout === "list") {
           const list = canvas.getByRole("list", {name: "笔记列表"});
           const scroll = view.container.querySelector<HTMLElement>("#web-main-content")!;
-          const naturalHeight = () => Array.from(list.children).reduce((height, item) => height + item.getBoundingClientRect().height, 16);
+          const naturalHeight = () => Array.from(list.children).reduce((height, item) => height + item.getBoundingClientRect().height, parseFloat(getComputedStyle(list).paddingTop) + parseFloat(getComputedStyle(list).paddingBottom));
           for (const height of [1200, 1600]) {
             await page.viewport(1440, height);
             await waitFor(() => {
-              expect(list.getBoundingClientRect().bottom).toBeCloseTo(scroll.getBoundingClientRect().bottom, 1);
+              if (route === "home") expect(list.getBoundingClientRect().height).toBeCloseTo(naturalHeight(), 1);
+              else expect(list.getBoundingClientRect().bottom).toBeCloseTo(scroll.getBoundingClientRect().bottom, 1);
               expect(scroll.scrollHeight).toBeLessThanOrEqual(scroll.clientHeight + 1);
             });
             expect(getComputedStyle(list).overflowY).toBe("visible");
@@ -3025,3 +3027,46 @@ test("lazy vault images wait for every ancestor clip and read once after nested 
   } finally { view.unmount(); releaseAssets(); }
 });
 }
+
+
+test("minimal Web theme aligns navigation, collections and detail surfaces across breakpoints", async () => {
+  await commands.setReducedMotion("reduce");
+  const previousHash = location.hash;
+  localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  let current: AppViewState | undefined;
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={state => { current = state; return renderWebApp(state); }} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    for (const width of [768, 900, 1024, 1440, 1920]) {
+      await page.viewport(width, 1000);
+      await waitFor(() => expect(current!.isMobile).toBe(false));
+      await canvas.findByRole("button", { name: "打开 今天的手冲记录" });
+      await canvas.findByRole("navigation", { name: "顶部导航" });
+      const navigation = view.container.querySelector<HTMLElement>(".web-topbar-inner")!;
+      const content = view.container.querySelector<HTMLElement>(".web-page-content")!;
+      const bounds = navigation.getBoundingClientRect();
+      expect(bounds.width).toBeCloseTo(Math.min(1280, width - (width >= 1024 ? 64 : 48)), 1);
+      expect(content.getBoundingClientRect().left).toBeCloseTo(bounds.left, 1);
+      expect(content.getBoundingClientRect().width).toBeCloseTo(bounds.width, 1);
+      const logo = navigation.querySelector("img")!.getBoundingClientRect();
+      expect(logo.width).toBe(28); expect(logo.height).toBe(28);
+      await userEvent.click(canvas.getByRole("button", { name: "打开 今天的手冲记录" }));
+      await canvas.findByRole("textbox", { name: "笔记内容" });
+      const detail = view.container.querySelector<HTMLElement>(".web-app-main")!.getBoundingClientRect();
+      expect(detail.left).toBeCloseTo(bounds.left, 1);
+      expect(detail.width).toBeCloseTo(bounds.width, 1);
+      expect(view.container.querySelector<HTMLElement>(".web-page-content")!.getBoundingClientRect().width).toBeLessThanOrEqual(720);
+      expect(canvas.queryByRole("button", { name: "展开侧栏" })).toBeNull();
+      await act(async () => { await current!.onNavigate("notes"); });
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
+    }
+    await page.viewport(390, 844);
+    await waitFor(() => expect(current!.isMobile).toBe(true));
+    expect(canvas.queryByRole("navigation", { name: "顶部导航" })).toBeNull();
+    expect(canvas.getByRole("button", { name: "打开导航" })).toBeVisible();
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+}, 30_000);

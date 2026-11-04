@@ -1,5 +1,5 @@
-/* Web-only appearance choices. Mono / neutral retain the Luma base unchanged. */
-:root[data-web-palette="lime"] {
+/* Explicit appearance attributes opt roots and portals into Web palettes. */
+[data-web-palette="lime"] {
   --web-palette-100: var(--color-lime-100);
   --web-palette-200: var(--color-lime-200);
   --web-palette-300: var(--color-lime-300);
@@ -7,7 +7,7 @@
   --web-palette-800: var(--color-lime-800);
   --web-palette-950: var(--color-lime-950);
 }
-:root[data-web-palette="green"] {
+[data-web-palette="green"] {
   --web-palette-100: var(--color-green-100);
   --web-palette-200: var(--color-green-200);
   --web-palette-300: var(--color-green-300);
@@ -15,7 +15,7 @@
   --web-palette-800: var(--color-green-800);
   --web-palette-950: var(--color-green-950);
 }
-:root[data-web-palette="emerald"] {
+[data-web-palette="emerald"] {
   --web-palette-100: var(--color-emerald-100);
   --web-palette-200: var(--color-emerald-200);
   --web-palette-300: var(--color-emerald-300);
@@ -23,7 +23,7 @@
   --web-palette-800: var(--color-emerald-800);
   --web-palette-950: var(--color-emerald-950);
 }
-:root[data-web-palette="teal"] {
+[data-web-palette="teal"] {
   --web-palette-100: var(--color-teal-100);
   --web-palette-200: var(--color-teal-200);
   --web-palette-300: var(--color-teal-300);
@@ -31,7 +31,7 @@
   --web-palette-800: var(--color-teal-800);
   --web-palette-950: var(--color-teal-950);
 }
-:root[data-web-palette="cyan"] {
+[data-web-palette="cyan"] {
   --web-palette-100: var(--color-cyan-100);
   --web-palette-200: var(--color-cyan-200);
   --web-palette-300: var(--color-cyan-300);
@@ -39,7 +39,7 @@
   --web-palette-800: var(--color-cyan-800);
   --web-palette-950: var(--color-cyan-950);
 }
-:root[data-web-palette="sky"] {
+[data-web-palette="sky"] {
   --web-palette-100: var(--color-sky-100);
   --web-palette-200: var(--color-sky-200);
   --web-palette-300: var(--color-sky-300);
@@ -47,7 +47,7 @@
   --web-palette-800: var(--color-sky-800);
   --web-palette-950: var(--color-sky-950);
 }
-:root[data-web-palette="blue"] {
+[data-web-palette="blue"] {
   --web-palette-100: var(--color-blue-100);
   --web-palette-200: var(--color-blue-200);
   --web-palette-300: var(--color-blue-300);
@@ -55,8 +55,8 @@
   --web-palette-800: var(--color-blue-800);
   --web-palette-950: var(--color-blue-950);
 }
-:root[data-web-neutral="slate"],
-:root[data-web-neutral="slate"] .ui-theme {
+[data-web-neutral="slate"],
+:root[data-web-neutral="slate"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *) {
   --color-background-body: var(--color-slate-100);
   --color-background-sidebar: color-mix(in srgb, var(--color-slate-100) 97%, var(--color-black));
   --color-background-muted: var(--color-slate-100);
@@ -78,8 +78,8 @@
   --color-background-inverted: var(--color-slate-900);
   --color-track: color-mix(in oklab, var(--color-slate-200) 90%, transparent);
 }
-:root[data-web-neutral="slate"][data-ui-theme="dark"],
-:root[data-web-neutral="slate"][data-ui-theme="dark"] .ui-theme {
+[data-web-neutral="slate"][data-ui-theme="dark"],
+:root[data-web-neutral="slate"][data-ui-theme="dark"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *) {
   --color-background-body: var(--color-slate-950);
   --color-background-surface: var(--color-slate-900);
   --color-background-card: var(--color-slate-900);
@@ -104,16 +104,16 @@
   --color-background-inverted: var(--color-slate-200);
   --color-track: color-mix(in oklab, var(--color-white) 13.5%, transparent);
 }
-:root[data-web-palette]:not([data-web-palette="mono"]),
-:root[data-web-palette]:not([data-web-palette="mono"]) .ui-theme {
+[data-web-palette]:not([data-web-palette="mono"]),
+:root[data-web-palette]:not([data-web-palette="mono"]) .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *) {
   --color-text-accent: var(--web-palette-800);
   --color-accent: var(--web-palette-700);
   --color-accent-muted: var(--web-palette-100);
   --color-icon-accent: var(--web-palette-800);
   --color-on-accent: var(--color-white);
 }
-:root[data-web-palette]:not([data-web-palette="mono"])[data-ui-theme="dark"],
-:root[data-web-palette]:not([data-web-palette="mono"])[data-ui-theme="dark"] .ui-theme {
+[data-web-palette]:not([data-web-palette="mono"])[data-ui-theme="dark"],
+:root[data-web-palette]:not([data-web-palette="mono"])[data-ui-theme="dark"] .ui-theme:not(.ui-appearance-scope, .ui-appearance-scope *) {
   --color-text-accent: var(--web-palette-200);
   --color-accent: var(--web-palette-300);
   --color-accent-muted: var(--web-palette-950);

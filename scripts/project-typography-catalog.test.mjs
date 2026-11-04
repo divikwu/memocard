@@ -78,7 +78,7 @@ test('production catalog is reachable and stable; drift checks preserve the file
     assert.ok(catalog.entries.every(row => row.locations.every(location => !/stories|\.(?:test|spec)\./.test(location.source))));
     assert.ok(catalog.entries.find(row => row.property === 'font-size' && row.value === 'var(--font-size-note-title)').locations.some(location => location.scope === '.ui-note-editor .note-page-title'));
     assert.ok(catalog.entries.find(row => row.property === 'font-size' && row.value === '2rem').locations.some(location => location.variable === '--font-size-note-title' && location.source === 'apps/ui/ui/theme.css'));
-    assert.ok(catalog.entries.find(row => row.property === 'font-family' && row.value === 'var(--font-family-body)').locations.some(location => location.source.endsWith('/NoteMarkdown.tsx')));
+    assert.ok(catalog.entries.find(row => row.property === 'font-family' && row.value === 'var(--font-family-body)').locations.some(location => location.source.endsWith('/NoteMedia.tsx')));
     assert.ok(!catalog.entries.some(row => row.locations.some(location => location.source.endsWith('/LiveMarkdownEditor.tsx'))));
     assert.ok(catalog.native.find(row => row.property === 'lineSpacing' && row.value === '6').locations.some(location => location.source.endsWith('/NativeDesignedPanel.swift')));
     assert.ok(catalog.native.some(row => row.value === '.system(size: bodyFontSize)'));
