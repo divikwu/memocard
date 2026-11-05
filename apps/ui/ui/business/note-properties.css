@@ -1,6 +1,6 @@
 .note-properties {
   --property-label-width: 160px;
-  --property-row-height: calc(var(--size-element-sm) + var(--border-width) * 2);
+  --property-row-height: var(--size-element-sm);
   container-type: inline-size;
   padding: var(--spacing-1) calc(var(--spacing-1) * .5) calc(var(--spacing-1) * 3);
   border-bottom: var(--border-width) solid var(--color-border);
@@ -8,11 +8,14 @@
   font-size: var(--font-size-sm);
   line-height: 1.5;
 }
-.note-properties :is(button, input, textarea, select, .note-tag-pill, .note-property-inline) { border-radius: calc(var(--spacing-1) * 1.5); }
-:is(.note-property-popup, .note-property-option-menu, .note-property-name-popup) :is(input, textarea, select) { border-radius: var(--radius-item); }
+.note-properties :is(button, input, textarea, select, .note-property-inline) { border-radius: var(--radius-element); }
+:is(.note-property-popup, .note-property-create-popup, .note-property-option-menu, .note-property-name-popup, .note-property-image-popup, .note-property-image-menu, .note-property-menu, .note-property-confirm, .ui-property-sheet, .mobile-tag-menu)
+  :is(button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]) { border-radius: var(--radius-element); }
+:is(.ui-property-sheet, .ui-property-confirm-sheet, .mobile-tag-menu).ui-sheet-swipe[data-side="bottom"] .ui-sheet-close-button:not([data-action-group]) { border-radius: var(--radius-element); }
 .ui-property-sheet { max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); overflow: hidden; }
 .ui-property-sheet > .ui-property-sheet-body { width: 100%; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; padding: 0; }
-.note-property-group { display: grid; gap: var(--spacing-1); }
+/* A vertical stack keeps wrapped row heights current when WebKit resizes nested grids. */
+.note-property-group { display: flex; flex-direction: column; gap: var(--spacing-1); }
 .note-property-add-row { margin-top: var(--spacing-1); }
 .note-property-row {
   position: relative;
@@ -28,7 +31,7 @@
   gap: var(--spacing-1);
   min-width: 0;
   height: var(--size-element-sm);
-  margin-block: var(--border-width);
+  margin-block: 0;
   padding: 0 calc(var(--spacing-1) * 1.5);
   border: 0;
   line-height: var(--text-body-leading);
@@ -37,12 +40,12 @@
 .note-property-label > svg { width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); flex-shrink: 0; }
 .note-property-label > span { color: var(--color-text-control-secondary); }
 .note-property-empty { color: var(--color-text-secondary); }
-.note-property-edit .note-property-empty { color: var(--color-text-control-secondary); }
 .note-property-label > svg, .note-property-action svg { opacity: 0.8; }
 .note-property-value {
   min-width: 0;
-  min-height: var(--property-row-height);
-  padding: calc(var(--spacing-1) * 1.5);
+  min-height: var(--size-element-sm);
+  margin-block: 0;
+  padding: calc(var(--spacing-1) * 1.25) calc(var(--spacing-1) * 1.5);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
@@ -50,12 +53,12 @@
 @container (max-width: 28rem) {
   .note-property-row { grid-template-columns: 120px minmax(0, 1fr); }
 }
-.note-property-popup.note-tag-popup { padding: 0; max-height: var(--available-height); overflow-y: auto; }
-.note-tag-options-wrap { position: relative; margin: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 1.5) 0; }
+.note-property-popup.note-tag-popup { padding: 0; border: 0; max-height: var(--available-height); overflow-y: auto; }
+.note-tag-options-wrap { position: relative; margin: calc(var(--spacing-1) * 1.5) var(--spacing-1) 0; }
 .note-tag-options-wrap[data-overflow="true"]::after { content: ""; position: absolute; inset: auto 0 0; height: calc(var(--spacing-1) * 6); background: linear-gradient(to bottom, transparent, var(--color-background-popover)); pointer-events: none; }
 .note-tag-options { padding-bottom: calc(var(--spacing-1) * 1.5); max-height: 240px; overflow-y: auto; }
-.note-tag-option { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-height: var(--size-element-md); padding: calc(var(--spacing-1) * 1.5); border-radius: var(--radius-item); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
-.note-tag-option-row { display: flex; align-items: center; border-radius: var(--radius-item); }
+.note-tag-option { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-height: var(--size-element-sm); padding: calc(var(--spacing-1) * 1.5) var(--spacing-1); border-radius: var(--radius-element); font-size: var(--font-size-sm); overflow-wrap: anywhere; }
+.note-tag-option-row { display: flex; align-items: center; border-radius: var(--radius-element); }
 .note-tag-option-row:hover, .note-tag-option-row:has([data-highlighted]), .note-tag-option-row:has(:focus-visible), .note-tag-option-row:has(> .note-tag-color-trigger[data-popup-open]) { background: var(--color-overlay-hover); }
 .note-tag-option-row > .note-tag-option { flex: 1; min-width: 0; }
 .note-tag-color-trigger { margin-right: var(--spacing-1); opacity: 0; }
@@ -63,26 +66,40 @@
 @media (hover: none) { .note-tag-color-trigger { opacity: 1; } }
 .note-tag-option[data-disabled] { opacity: .5; pointer-events: none; }
 .note-tag-input { display: flex; flex-direction: column; }
-.note-tag-header { padding: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 3); border-bottom: var(--border-width) solid var(--color-border); background: color-mix(in oklab, var(--color-background-muted) 50%, var(--color-background-body)); }
-.note-tag-editor > p:not(.note-tag-hint) { margin: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 3); }
-.note-tag-selected { display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: calc(var(--spacing-1) * 2); }
+.note-tag-editor { background: var(--color-background-property-header); }
+.note-tag-header { min-height: var(--size-element-sm); padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 2); }
+/* Keep the translucent divider over the same gray backing when owned by the body. */
+.note-tag-body { display: flow-root; border-top: var(--border-width) solid var(--color-border-subtle); background: var(--color-background-popover); background-clip: padding-box; }
+.note-tag-body > p:not(.note-tag-hint) { margin: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 3); }
+.note-tag-selected { display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; gap: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); }
 .note-tag-chip { display: inline-flex; align-items: center; gap: calc(var(--spacing-1) * .5); }
+.note-tag-chip > button:not(.note-tag-remove) { border: 0; }
 .note-tag-selected-item { display: inline-flex; align-items: center; max-width: 100%; }
 .note-tag-chip:has(.note-tag-remove) { padding-right: calc(var(--spacing-1) * .5); }
+/* Reserve the remove control before opening so every selected label keeps its place. */
+.note-property-edit > .note-property-tags > .note-tag-pill, .note-tag-reserved,
+.note-tag-header .note-property-tags > .note-tag-pill { padding-inline-end: calc(var(--spacing-1) * 6); }
 .note-tag-chip:focus-visible, .note-tag-remove:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
-.note-tag-search { border: 0; color: var(--color-text-primary); font-family: inherit; flex: 1 1 80px; width: 0; min-width: 80px; height: calc(var(--spacing-1) * 5); line-height: calc(var(--spacing-1) * 5); outline: none; background: transparent; font-size: var(--font-size-sm); }
+.note-tag-search { border: 0; padding: 0; color: var(--color-text-primary); font-family: inherit; flex: 1 1 80px; width: 0; min-width: 80px; height: calc(var(--spacing-1) * 5); line-height: calc(var(--spacing-1) * 5); outline: none; background: transparent; font-size: var(--font-size-sm); }
 .note-tag-header .note-tag-search { border-radius: var(--radius-none); }
 .note-tag-header .note-tag-search:focus { background-color: transparent; }
-.note-tag-hint { margin: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 2); }
+.note-tag-hint { margin: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 2) var(--spacing-1); }
+.note-tag-loading { padding: calc(var(--spacing-1) * 1.5) var(--spacing-1); }
+.note-tag-loading-row { display: flex; align-items: center; min-height: var(--size-element-sm); padding-inline: var(--spacing-1); }
+.note-property-load-failure { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); padding: calc(var(--spacing-1) * 2); color: var(--color-text-secondary); font-size: var(--font-size-sm); }
+.note-property-load-failure .note-property-retry { height: var(--size-element-sm); min-height: var(--size-element-sm); padding: 0 calc(var(--spacing-1) * 2); border: 0; border-radius: var(--radius-element); font-size: inherit; font-weight: var(--font-weight-normal); }
+@media (prefers-reduced-motion: reduce) { .note-tag-editor [data-slot="skeleton"] { animation: none; } }
+/* Header insets are 12px vertically / 8px horizontally; the property uses 6px. */
+@media (min-width: 768px) { .note-property-popup.note-tag-popup { width: min(calc(var(--anchor-width) + var(--spacing-1)), var(--available-width)); } }
 .note-tag-editor[data-empty] .note-tag-hint { margin-bottom: calc(var(--spacing-1) * 3); }
 .note-tag-editor[data-empty] .note-tag-options-wrap { margin: 0; }
 .note-tag-editor[data-empty] .note-tag-options { padding-bottom: 0; }
-.note-tag-remove { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-full); }
-.note-tag-remove { width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); padding: calc(var(--spacing-1) * .5); }
+.note-tag-remove, .note-tag-editor .note-tag-remove { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-full); }
+.note-tag-remove { flex-shrink: 0; width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); padding: calc(var(--spacing-1) * .5); }
 
 .note-properties .note-property-action {
   height: var(--size-element-sm);
-  margin-block: var(--border-width);
+  margin-block: 0;
   border: 0;
   gap: var(--spacing-1);
   padding: 0 calc(var(--spacing-1) * 1.5);
@@ -92,12 +109,13 @@
 }
 .note-property-row > .note-property-action { justify-content: flex-start; }
 .note-property-footer { padding-top: var(--spacing-1); }
-.note-properties .note-property-toggle { display: flex; justify-content: flex-start; width: fit-content; max-width: 100%; height: var(--property-row-height); margin: 0; padding-inline: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); background: transparent; }
+.note-properties .note-property-toggle { display: flex; justify-content: flex-start; width: fit-content; max-width: 100%; height: var(--size-element-sm); margin: 0; padding-inline: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); background: transparent; }
 
 .note-properties .note-property-edit {
   height: auto;
-  min-height: var(--property-row-height);
-  padding: calc(var(--spacing-1) * 1.5);
+  min-height: var(--size-element-sm);
+  margin-block: 0;
+  padding: calc(var(--spacing-1) * 1.25) calc(var(--spacing-1) * 1.5);
   border: 0;
   font-size: var(--font-size-sm);
   line-height: inherit;
@@ -106,7 +124,7 @@
 }
 .note-properties .note-property-edit:not(.note-property-tags) { display: block; }
 .note-properties .note-property-edit:not([aria-haspopup])::after { content: "\200b"; }
-.note-properties :is(.note-property-edit, .note-property-value):is(.note-property-tags, :has(> .note-property-tags)) { padding-block: calc((var(--property-row-height) - var(--spacing-1) * 5) / 2); line-height: calc(var(--spacing-1) * 5); }
+.note-properties :is(.note-property-edit, .note-property-value):is(.note-property-tags, :has(> .note-property-tags)) { padding-block: calc((var(--size-element-sm) - var(--spacing-1) * 5) / 2); line-height: calc(var(--spacing-1) * 5); }
 
 .note-property-checkbox-value { display: flex; align-items: center; }
 .note-properties[data-updating] :is(.note-property-label, .note-property-edit, .note-property-action, .note-property-checkbox):disabled { opacity: 1; }
@@ -130,7 +148,10 @@
 
 .note-properties .note-property-name { width: 100%; justify-content: flex-start; font-size: inherit; font-weight: var(--font-weight-normal); }
 .note-property-name-cell { position: relative; min-width: 0; }
-.note-property-grip { position: absolute; z-index: 1; top: var(--border-width); left: calc(var(--spacing-1) * 1.5); display: flex; align-items: center; justify-content: center; width: calc(var(--spacing-1) * 4); height: var(--size-element-sm); padding: 0; border: 0; background: transparent; opacity: 0; cursor: grab; touch-action: manipulation; }
+@media (hover: hover) {
+  .note-property-name-cell:has(> .note-property-grip:hover) > .note-property-name:not(:disabled) { background: var(--color-overlay-hover); }
+}
+.note-property-grip { position: absolute; z-index: 1; top: 0; left: calc(var(--spacing-1) * 1.5); display: flex; align-items: center; justify-content: center; width: calc(var(--spacing-1) * 4); height: var(--size-element-sm); padding: 0; border: 0; background: transparent; opacity: 0; cursor: grab; touch-action: manipulation; }
 .note-property-grip > svg { width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); }
 .note-property-grip:active { cursor: grabbing; }
 .note-property-name-cell:is(:hover, :has(:focus-visible), :has([data-popup-open])) > .note-property-grip { opacity: 1; }
@@ -150,14 +171,15 @@
 .note-property-create > input { height: var(--size-element-md); }
 .note-property-type-list { display: grid; border-top: var(--border-width) solid var(--color-border); padding-top: var(--spacing-1); }
 .note-property-type-label { padding: var(--spacing-1) calc(var(--spacing-1) * 2); font-size: var(--font-size-xs); color: var(--color-text-secondary); }
-.note-property-create .note-property-type-option { width: 100%; height: var(--size-element-md); justify-content: flex-start; gap: calc(var(--spacing-1) * 2); padding-inline: calc(var(--spacing-1) * 2); border-radius: var(--radius-item); font-weight: var(--font-weight-normal); }
+.note-property-create .note-property-type-option { width: 100%; height: var(--size-element-md); justify-content: flex-start; gap: calc(var(--spacing-1) * 2); padding-inline: calc(var(--spacing-1) * 2); border-radius: var(--radius-element); font-weight: var(--font-weight-normal); }
 .note-property-type-option > svg { opacity: .8; }
 
-.note-property-inline { border-radius: calc(var(--spacing-1) * 1.5); outline: var(--border-width) solid var(--color-border); background: var(--color-background-surface); box-shadow: var(--shadow-scale-2); }
+.note-property-row > dd:has(.note-property-inline) { position: relative; z-index: 2; }
+.note-property-inline { position: absolute; inset-inline: calc(var(--spacing-1) * -.5); top: calc(var(--spacing-1) * -.5); margin-block: 0; border-radius: var(--radius-element); outline: var(--border-width) solid var(--color-border); background: var(--color-background-surface); box-shadow: var(--shadow-scale-2); }
 .note-property-inline textarea {
-  min-height: var(--property-row-height);
+  min-height: var(--size-element-md);
   max-height: none;
-  padding: calc(var(--spacing-1) * 1.5);
+  padding: calc(var(--spacing-1) * 1.75) calc(var(--spacing-1) * 2);
   border: 0;
   border-radius: inherit;
   background: transparent;
@@ -175,15 +197,16 @@
 
 
 .note-properties :is(.note-property-name, .note-property-edit, .note-property-action):is(:hover, [data-popup-open]) { background: var(--color-overlay-hover); }
+.note-properties .note-property-edit[data-popup-open] { background: transparent; }
 .note-property-menu { width: min(220px, calc(100vw - calc(var(--spacing-1) * 6))); }
 .note-property-popup, .note-property-menu, .note-property-option-menu, .note-property-image-popup, .note-property-image-menu, .note-property-name-popup, .note-property-confirm { border-radius: calc(var(--radius-element) * 2); }
 :is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) { padding: var(--spacing-1); }
-:is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) { min-height: var(--size-element-md); border-radius: var(--radius-item); }
+:is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) { min-height: var(--size-element-md); border-radius: var(--radius-element); }
 :is(.note-property-menu, .note-property-option-menu) :is([data-highlighted], [data-slot="dropdown-menu-sub-trigger"][data-popup-open]) { background: var(--color-overlay-hover); }
 .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]), .note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]) > svg { color: var(--color-error); }
 
 .note-property-image-thumbnail { width: auto; max-width: 100%; height: calc(var(--spacing-1) * 6); object-fit: contain; }
-.note-property-image-trigger { width: 100%; min-height: var(--property-row-height, 34px); height: auto; justify-content: flex-start; padding: calc(var(--spacing-1) * 1.25) calc(var(--spacing-1) * 1.5); border: 0; }
+.note-property-image-trigger { width: 100%; min-height: var(--size-element-sm); height: auto; margin-block: 0; justify-content: flex-start; padding: var(--spacing-1) calc(var(--spacing-1) * 1.5); border: 0; }
 .note-property-image-preview { max-height: 24rem; }
 .note-property-image-popup { width: min(24rem, var(--available-width)); }
 .note-property-image-toolbar { justify-content: flex-end; }
@@ -195,7 +218,8 @@
 .note-date-time-input { margin-top: calc(var(--spacing-1) * 2); font-variant-numeric: tabular-nums; }
 .mobile-tag-menu { max-height: 90dvh; overflow-y: auto; overscroll-behavior: contain; }
 
-.note-properties .note-tag-pill { height: auto; border-radius: calc(var(--spacing-1) * 2.5); }
+.note-properties .note-tag-pill { height: auto; }
+:is(.note-properties, .note-property-popup, .note-property-option-menu) .note-tag-pill { border-radius: var(--radius-full); }
 .note-tag-color-swatch { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); border-radius: var(--radius-inner); background: var(--tag-bg); color: var(--tag-fg); border: var(--border-width) solid color-mix(in oklab, var(--tag-fg) 20%, transparent); }
 .note-tag-color-option { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-height: var(--size-element-md); padding: calc(var(--spacing-1) * 1.5) calc(var(--spacing-1) * 2); border-radius: var(--radius-item); font-size: var(--font-size-sm); outline: none; }
 .note-tag-color-option[data-checked] { background: var(--color-overlay-hover); }
@@ -204,7 +228,7 @@
 .note-tag-color-check { color: var(--tag-fg); }
 .note-tag-remove, .note-tag-chip > button { color: inherit; }
 button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hover, :focus-visible) { background: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)), var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); }
-.note-tag-color-trigger { border-radius: var(--radius-full); color: var(--color-text-secondary); }
+.note-tag-color-trigger, .note-tag-editor .note-tag-color-trigger { border-radius: var(--radius-full); color: var(--color-text-secondary); }
 .note-tag-color-trigger:is(:hover, :focus-visible, [data-popup-open]) { background: var(--color-overlay-hover); color: var(--color-text-primary); }
 
 /* Property popups retain their touch input sizing on narrow screens. */
@@ -219,7 +243,6 @@ button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hov
   :is(.ui-property-sheet-body, .mobile-tag-menu, .note-property-confirm, .note-property-option-menu) :is([data-slot="input"], textarea, [data-slot="select-trigger"], [data-slot="button"]):not(.ui-sheet-close-button) { min-height: calc(var(--spacing-1) * 11); }
   :is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]), .note-tag-option, .note-tag-color-option { min-height: calc(var(--spacing-1) * 11); }
   :is(.ui-property-sheet-body, .note-property-option-menu) .note-tag-color-trigger { width: calc(var(--spacing-1) * 11); height: calc(var(--spacing-1) * 11); opacity: 1; }
-  .ui-property-sheet-body .note-tag-header { padding-block: calc(var(--spacing-1) * 3); }
   .ui-property-sheet-body .note-date-picker [data-slot="calendar"] { --cell-size: calc(var(--spacing-1) * 11); }
   .ui-property-sheet-body .note-date-picker [role="gridcell"] { aspect-ratio: auto; }
   .ui-property-sheet-body .note-date-picker [data-day] { width: min(100%, calc(var(--spacing-1) * 11)); min-width: 0; height: calc(var(--spacing-1) * 11); aspect-ratio: auto; margin-inline: auto; }

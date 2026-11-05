@@ -70,6 +70,7 @@ function ChoicePropertyEditor({property, busy, error, onSave}: {property:NotePro
         <Combobox.Input ref={input} autoFocus aria-label="搜索或创建选项" placeholder={selected.length ? '' : '搜索或创建选项…'} className="note-tag-search" onKeyDownCapture={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); } }} />
         </div></div>
       </Combobox.Chips>
+      <div className="note-tag-body">
       <p className="note-tag-hint text-xs text-secondary">选择或创建{multiple ? '多个选项' : '一个选项'}</p>
       <PropertyOptionList label="可选选项" count={candidates.length} multiple={multiple}>
         {(value:string,index:number) => <div key={value} className="note-tag-option-row">
@@ -90,8 +91,9 @@ function ChoicePropertyEditor({property, busy, error, onSave}: {property:NotePro
         </div>}
       </PropertyOptionList>
       {!candidates.length && name && <p className="note-tag-hint text-xs text-secondary">没有匹配的选项，名称最多 100 个字。</p>}
-    </Combobox.Root>
     {error && <p role="alert" className="px-3 pb-2 text-sm text-error">{error}</p>}
+      </div>
+    </Combobox.Root>
   </div>;
 }
 

@@ -73,6 +73,30 @@ it("does not open on touch hover or swallow native title metadata", async () => 
   expect(screen.getByText("HTML").getAttribute("title")).toBe("Hypertext Markup Language");
 });
 
+it("only shows focus-only hints after keyboard focus, with Escape and blur dismissal", async () => {
+  const user = userEvent.setup();
+  render(<TooltipHints><button>起点</button><button data-ui-tooltip="使用上、下方向键排序" data-ui-tooltip-focus-only>拖动柄</button><button>下一个</button></TooltipHints>);
+  const grip = screen.getByRole("button", { name: "拖动柄" });
+  await user.hover(grip);
+  expect(screen.queryByRole("tooltip")).toBeNull();
+  await user.click(grip);
+  expect(screen.queryByRole("tooltip")).toBeNull();
+  await user.unhover(grip);
+  await user.click(screen.getByRole("button", { name: "起点" }));
+  await user.tab();
+  const tooltip = await screen.findByRole("tooltip");
+  expect(grip.getAttribute("aria-describedby")).toBe(tooltip.id);
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+  expect(document.activeElement).toBe(grip);
+  await user.tab();
+  await user.tab({ shift: true });
+  await screen.findByRole("tooltip");
+  await user.tab();
+  await waitFor(() => expect(screen.queryByRole("tooltip")).toBeNull());
+  expect(grip.hasAttribute("aria-describedby")).toBe(false);
+});
+
 it("only reveals overflow hints when the visible label is clipped, including keyboard focus", async () => {
   const user = userEvent.setup();
   render(<TooltipHints><button data-ui-tooltip="完整名称"><span data-ui-tooltip-overflow>名称</span></button><button>下一个</button></TooltipHints>);

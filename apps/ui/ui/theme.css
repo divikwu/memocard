@@ -17,6 +17,7 @@
   --color-background-card: var(--color-white);
   --color-background-popover: var(--color-white);
   --color-background-muted: var(--color-neutral-100);
+  --color-background-property-header: var(--color-neutral-100);
   --color-background-control: color-mix(in oklab, var(--color-neutral-200) 50%, transparent);
   --color-background-glass: color-mix(in srgb, var(--color-background-body) 75%, transparent);
   --color-background-selection: color-mix(in srgb, var(--color-blue-500) 14%, transparent);
@@ -324,6 +325,7 @@
   --color-background-card: var(--color-neutral-900);
   --color-background-popover: var(--color-neutral-900);
   --color-background-muted: var(--color-neutral-800);
+  --color-background-property-header: var(--color-neutral-900);
   --color-background-control: color-mix(in oklab, var(--color-white) 7.5%, transparent);
   --color-background-selection: color-mix(in srgb, var(--color-blue-400) 24%, transparent);
   --color-text-primary: var(--color-neutral-50);

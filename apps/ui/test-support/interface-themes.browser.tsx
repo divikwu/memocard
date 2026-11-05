@@ -18,6 +18,8 @@ import type { Editor } from "@tiptap/react";
 import { Dialog, DialogContent, DialogTitle } from "../ui/components/dialog";
 import { RichMarkdownEditor } from "../ui/business/RichMarkdownEditor";
 import { PropertyOptionMenu } from "../ui/business/property-editors";
+import { NoteProperties } from "../ui/business/NoteProperties";
+import { editorNote } from "./editor-note";
 import { Sheet, SheetContent, SheetTitle } from "../ui/components/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/components/dropdown-menu";
 import "../.storybook/preview.css";
@@ -196,4 +198,28 @@ test("delegated sheet hints retain inherited font inputs and follow a live layou
   view.rerender(fixture("drawer"));
   await waitFor(() => expect(portal?.getAttribute("data-workspace-layout")).toBe("drawer"));
   expect(tooltip.closest("[data-appearance-scope]")).toBe(portal);
+});
+
+for (const mode of ["light", "dark"] as const) test(`property selector header follows its local ${mode} scope inside the opposite global mode`, async () => {
+  await page.viewport(1280, 900);
+  const release = setStorybookRequestHandler(async operation => {
+    if (operation === "getStatus") return { vaultId: "property-theme-scope", capabilities: [] };
+    if (operation === "getPropertyLabels") return { labels: {}, contentHash: "labels" };
+    if (operation === "getPropertyLayout") return { order: [], visibility: {}, contentHash: "layout" };
+    if (operation === "listTags") return { tags: [] };
+    throw new Error(`Unexpected property theme operation: ${operation}`);
+  });
+  const view = render(<PreviewModeProvider mode={mode === "light" ? "dark" : "light"}><ThemeScope value={{ mode }}><ScopeRoot>
+    <main style={{ maxWidth: 720, marginInline: "auto", padding: 60 }}>
+      <span data-testid="expected-header" style={{ backgroundColor: `var(--color-neutral-${mode === "light" ? "100" : "900"})` }}>局部主题</span>
+      <NoteProperties note={editorNote} tags={[]} canEdit busy={false} savedProperties={{ contentHash: editorNote.contentHash, writable: true, tagProperty: { name: "tags", type: "list", value: ["现有"], editable: true }, properties: [] }} onApply={async () => { throw new Error("Opening must not save"); }} />
+    </main>
+  </ScopeRoot></ThemeScope></PreviewModeProvider>);
+  try {
+    await userEvent.click(await within(view.container).findByRole("button", { name: "编辑标签" }));
+    const popup = await within(document.body).findByRole("dialog", { name: "编辑标签" });
+    await within(popup).findByRole("combobox");
+    expect(getComputedStyle(popup.closest('[data-appearance-scope]')!).colorScheme).toBe(mode);
+    expect(getComputedStyle(popup.querySelector('.note-tag-editor')!).backgroundColor).toBe(getComputedStyle(within(view.container).getByTestId("expected-header")).backgroundColor);
+  } finally { view.unmount(); release(); }
 });
