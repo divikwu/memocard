@@ -56,6 +56,34 @@ it('reapplies only the intended change after a conflict, preserving another clie
   expect(remote.pinned).toEqual(['other','area/coffee']);
   expect(remote.icons).toEqual({other:'🎨'});
 });
+it('shows the latest queued icon immediately and rolls back to the last saved icon after a failure', async () => {
+  await connect();
+  let finishFirst!: () => void;
+  let rejectSecond!: (error: Error) => void;
+  const firstWrite = new Promise<void>(resolve => { finishFirst = resolve; });
+  const secondWrite = new Promise<void>((_, reject) => { rejectSecond = reject; });
+  const original = bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation(async (operation, params) => {
+    if (operation === 'setTagPreferences') await (params.icons.work === '☕' ? firstWrite : secondWrite);
+    return original(operation, params);
+  });
+  const icon = () => JSON.parse(sharedTagPreferences('vault')!.raw!).icons.work;
+  const savedIcon = () => JSON.parse(localStorage.getItem(tagPreferenceKey('vault'))!).icons.work;
+  const first = updateSharedTagPreferences('vault', current => ({...current, icons:{work:'☕'}}), {optimistic:true});
+  const second = updateSharedTagPreferences('vault', current => ({...current, icons:{work:'🎨'}}), {optimistic:true});
+  const failed = expect(second).rejects.toThrow('只读文件夹');
+  expect(icon()).toBe('🎨');
+  expect(savedIcon()).toBeUndefined();
+  finishFirst();
+  await first;
+  expect(icon()).toBe('🎨');
+  expect(savedIcon()).toBe('☕');
+  rejectSecond(new Error('只读文件夹'));
+  await failed;
+  expect(icon()).toBe('☕');
+  expect(savedIcon()).toBe('☕');
+  expect(bridge.request.mock.calls.map(([operation]) => operation)).toEqual(['getTagPreferences', 'setTagPreferences', 'setTagPreferences']);
+});
 it('does not publish a late reply after leaving the vault', async () => {
   let resolve!: (value: TagPreferenceState) => void;
   bridge.request.mockImplementation(() => new Promise<TagPreferenceState>(done => {resolve=done;}));

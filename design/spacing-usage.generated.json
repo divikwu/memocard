@@ -220,6 +220,7 @@
       "consumers": [
         "apps/ui/ui/business/MobileTagActions.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
+        "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/components/badge.tsx",
         "apps/ui/ui/components/button.tsx",
         "apps/ui/ui/components/calendar.tsx",
@@ -251,11 +252,10 @@
       "consumers": [
         "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/NoteProperties.core.tsx",
-        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/NoteCollection.tsx",
+        "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/sidebar.tsx",
-        "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/components/dialog.tsx",
         "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/empty.tsx",
@@ -305,6 +305,14 @@
       "value": "6",
       "consumers": [
         "apps/ui/ui/components/dialog.tsx"
+      ]
+    },
+    {
+      "utility": "gap-x-1",
+      "step": "1",
+      "value": "1",
+      "consumers": [
+        "apps/ui/src/components/name-editor.core.tsx"
       ]
     },
     {
@@ -617,6 +625,7 @@
         "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/ui/business/CalloutIconPicker.tsx",
         "apps/ui/ui/business/NotePreview.tsx",
+        "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/components/calendar.tsx"
       ]
     },
@@ -678,14 +687,6 @@
       ]
     },
     {
-      "utility": "my-1",
-      "step": "1",
-      "value": "1",
-      "consumers": [
-        "apps/ui/src/DatePropertyPicker.core.tsx"
-      ]
-    },
-    {
       "utility": "my-1.5",
       "step": "1.5",
       "value": "1.5",
@@ -719,7 +720,6 @@
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/QuickCapture.tsx",
         "apps/ui/ui/business/sidebar.tsx",
-        "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/components/calendar.tsx",
         "apps/ui/ui/components/input-group.tsx",
         "apps/ui/ui/components/sidebar.tsx"
@@ -740,16 +740,9 @@
       "value": "1",
       "consumers": [
         "apps/ui/ui/business/sidebar.tsx",
+        "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/tabs.tsx"
-      ]
-    },
-    {
-      "utility": "p-1.5",
-      "step": "1.5",
-      "value": "1.5",
-      "consumers": [
-        "apps/ui/ui/components/dropdown-menu.tsx"
       ]
     },
     {
@@ -766,7 +759,10 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/ImagePropertyEditor.core.tsx",
+        "apps/ui/src/NoteProperties.core.tsx",
+        "apps/ui/ui/business/NameEditor.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
+        "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/components/sidebar.tsx"
@@ -942,6 +938,7 @@
       "value": "1",
       "consumers": [
         "apps/ui/src/components/name-editor.core.tsx",
+        "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/web/WebAppView.tsx"
@@ -961,6 +958,8 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
+        "apps/ui/ui/business/PropertyIconPicker.tsx",
+        "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/business/tag-navigation.tsx",
         "apps/ui/ui/components/badge.tsx",
         "apps/ui/ui/components/dropdown-menu.tsx",
@@ -983,7 +982,6 @@
       "value": "3",
       "consumers": [
         "apps/ui/src/ChoicePropertyEditor.core.tsx",
-        "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/MobileTagActions.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/sidebar.tsx",
@@ -1040,6 +1038,7 @@
       "value": "1",
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
+        "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/input.tsx",
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/tabs.tsx"
@@ -1061,9 +1060,9 @@
       "consumers": [
         "apps/ui/ui/business/MobileTagActions.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
+        "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/business/tag-navigation.tsx",
-        "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/input-group.tsx",
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/sidebar.tsx"

@@ -87,5 +87,5 @@ export function AppSidebar(props: AppSidebarProps) {
 }
 
 function VaultMenuItem({ mobile, children, ...props }: { mobile: boolean; children: ReactNode; disabled?: boolean; onClick?: () => void; "aria-label"?: string; "aria-current"?: "page"; "data-ui-tooltip"?: string }) {
-  return mobile ? <SheetClose render={<Button type="button" variant="ghost" className="ui-sidebar-vault-menu-item" />} {...props}>{children}</SheetClose> : <DropdownMenuItem className="gap-2 p-2" {...props}>{children}</DropdownMenuItem>;
+  return mobile ? <SheetClose render={<Button type="button" variant="ghost" className="ui-sidebar-vault-menu-item" />} {...props}>{children}</SheetClose> : <DropdownMenuItem className="gap-2" {...props}>{children}</DropdownMenuItem>;
 }

@@ -1,7 +1,6 @@
 // Keep specific file names, partial results and unfamiliar causes intact.
 const conciseMessages:Record<string,string> = {
   '操作暂未完成。内容仍保留在编辑器中，请稍后重试。':'操作超时，请重试。',
-  '此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。':'本机服务已停止，编辑内容仍在此页。',
   '此页面的本机 Web 授权已失效。请重新打开本机 Web；编辑中的内容仍保留在此页面。':'访问授权已失效，编辑内容仍在此页。',
   '文件操作未完成，请检查目录权限和文件可用性。':'文件读写失败，请检查权限和文件状态。',
   '部分文件尚不可读取，暂时无法确认此笔记。':'笔记文件暂时无法读取，请稍后重试。',

@@ -51,7 +51,7 @@ function DropdownMenuContent({
           data-slot="dropdown-menu-content"
           className={cnState(
             className,
-            "z-50 max-h-(--available-height) w-(--anchor-width) min-w-48 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-popover bg-popover p-1.5 text-primary surface-floating shadow-high border duration-fast-min ease-standard outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95"
+            "z-50 max-h-(--available-height) w-(--anchor-width) min-w-48 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-item bg-popover p-1 text-primary surface-floating shadow-high border duration-fast-min ease-standard outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:overflow-hidden data-closed:fade-out-0 data-closed:zoom-out-95"
           )}
           {...props}
         />
@@ -97,7 +97,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cnState(
         className,
-        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus not-data-[variant=destructive]:focus:**:text-menu-focus data-inset:pl-8.5 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-danger-surface data-[variant=destructive]:focus:text-error data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-error"
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-element min-h-element-sm px-2 py-1 text-sm font-normal outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus data-inset:pl-8.5 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-danger-surface data-[variant=destructive]:focus:text-error data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-secondary [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     />
@@ -122,7 +122,7 @@ function DropdownMenuSubTrigger({
       data-inset={inset}
       className={cnState(
         className,
-        "flex cursor-default items-center gap-2 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus not-data-[variant=destructive]:focus:**:text-menu-focus data-inset:pl-8.5 data-popup-open:bg-accent-muted data-popup-open:text-menu-focus data-open:bg-accent-muted data-open:text-menu-focus [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "flex cursor-default items-center gap-2 rounded-element min-h-element-sm px-2 py-1 text-sm font-normal outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus data-inset:pl-8.5 data-popup-open:bg-accent-muted data-popup-open:text-menu-focus data-open:bg-accent-muted data-open:text-menu-focus [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-secondary [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >
@@ -145,7 +145,7 @@ function DropdownMenuSubContent({
       data-slot="dropdown-menu-sub-content"
       className={cnState(
         className,
-        "w-auto min-w-36 rounded-popover bg-popover p-1.5 text-primary surface-floating shadow-high border duration-fast-min ease-standard data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+        "w-auto min-w-36 rounded-item bg-popover p-1 text-primary surface-floating shadow-high border duration-fast-min ease-standard data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
       )}
       align={align}
       alignOffset={alignOffset}
@@ -171,7 +171,7 @@ function DropdownMenuCheckboxItem({
       data-inset={inset}
       className={cnState(
         className,
-        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus focus:**:text-menu-focus data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex cursor-default items-center gap-2.5 rounded-element min-h-element-sm py-1 pr-8 pl-2 text-sm font-normal outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-secondary [&_svg:not([class*='size-'])]:size-4"
       )}
       checked={checked}
       {...props}
@@ -212,7 +212,7 @@ function DropdownMenuRadioItem({
       data-inset={inset}
       className={cnState(
         className,
-        "relative flex cursor-default items-center gap-2.5 rounded-item py-2 pr-8 pl-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus focus:**:text-menu-focus data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        "relative flex cursor-default items-center gap-2.5 rounded-element min-h-element-sm py-1 pr-8 pl-2 text-sm font-normal outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus data-inset:pl-8.5 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-secondary [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     >

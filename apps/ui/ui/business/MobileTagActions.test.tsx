@@ -10,7 +10,7 @@ import { swipeSheet } from "../components/sheet-swipe.test-utils";
 const vaultId = "ui-mobile-tag-actions-test";
 const key = `memocard:tags:${vaultId}`;
 beforeEach(() => {
-  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   localStorage.clear();
   vi.stubGlobal("innerWidth", 390);
   vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
@@ -56,11 +56,14 @@ it("pins from the H5 header, edits name and icon through the sheet, and restores
   // The first edit loads the shared tag editor and Emoji data through Suspense.
   const sheet = await screen.findByRole("dialog", { name: "编辑标签" }, { timeout: 5000 });
   expect(sheet.getAttribute("data-side")).toBe("bottom");
-  fireEvent.change(within(sheet).getByRole("textbox", { name: "标签名称" }), { target: { value: "项目/系统" } });
+  const name = within(sheet).getByRole("textbox", { name: "标签名称" });
+  fireEvent.change(name, { target: { value: "项目/系统" } });
+  await user.click(within(sheet).getByRole("tab", { name: "Emoji" }));
   const search = within(sheet).getByRole("textbox", { name: "搜索 Emoji" });
   await user.type(search, "🧑🏽‍💻{Enter}");
   expect(screen.getByRole("dialog", { name: "编辑标签" })).toBe(sheet);
-  await user.click(within(sheet).getByRole("button", { name: "保存" }));
+  await user.click(name);
+  await user.keyboard("{Enter}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(rename).toHaveBeenCalledWith("项目/设计", "项目/系统");
   const saved = JSON.parse(localStorage.getItem(key) || "{}");
@@ -114,8 +117,10 @@ it("protects a pending H5 rename from header close, swipe and Escape", async () 
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称／图标" }));
   const sheet = await screen.findByRole("dialog", { name: "编辑标签" }, { timeout: 5000 });
   await waitFor(() => expect(sheet.hasAttribute("data-swipe-ready")).toBe(true));
-  fireEvent.change(within(sheet).getByRole("textbox", { name: "标签名称" }), { target: { value: "界面" } });
-  await user.click(within(sheet).getByRole("button", { name: "保存" }));
+  const name = within(sheet).getByRole("textbox", { name: "标签名称" });
+  fireEvent.change(name, { target: { value: "界面" } });
+  await user.click(name);
+  await user.keyboard("{Enter}");
   const close = within(sheet).getByRole("button", { name: "关闭编辑标签" });
   expect((close as HTMLButtonElement).disabled).toBe(true);
   await user.click(close);

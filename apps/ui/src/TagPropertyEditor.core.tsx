@@ -3,11 +3,23 @@ import PropertyOptionList from './PropertyOptionList';
 import { PropertyOptionsLoading } from './PropertyOptionsLoading';
 import { PropertyOptionsFailure } from './PropertyOptionsFailure';
 import VirtualTagOptions, { type TagVirtualizer } from './VirtualTagOptions';
-import { memo, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Combobox } from '@base-ui/react/combobox';
 import { cn } from '@ui/lib/utils';
 import { request, errorMessage } from './bridge';
 import { normalizePropertyTag, tagKey } from './inline-tags';
+
+let cachedTags: {binding:string; tags:string[]; expires:number} | undefined;
+let tagRevision = 0;
+function invalidatePropertyTagSuggestions() { cachedTags = undefined; tagRevision++; }
+if (typeof window !== 'undefined') {
+  const invalidate = (event:Event) => {
+    const type = (event as CustomEvent<{type?:string}>).detail?.type;
+    if (type === 'notesChanged' || type === 'statusChanged') invalidatePropertyTagSuggestions();
+  };
+  window.addEventListener('memocard:event',invalidate);
+  import.meta.hot?.dispose(() => window.removeEventListener('memocard:event',invalidate));
+}
 
 type View = {
   TagColorMenu: ComponentType<ComponentProps<typeof import("@ui/business/property-editors")["TagColorMenu"]>>;
@@ -33,9 +45,9 @@ export function createTagPropertyEditor(view: View) {
       {!creating && <OptionColorMenu tag={tag} disabled={disabled} onChangeTag={onChangeTag} />}
     </div>;
   });
-function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], busy, error, onSave, onLocateTag, onChangeTag }: { tags:string[]; bodyTags?:string[]; busy:boolean; error:string; onSave:(tags:string[])=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
+function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], vaultBinding, busy, error, onSave, onLocateTag, onChangeTag }: { tags:string[]; bodyTags?:string[]; vaultBinding?:string; busy:boolean; error:string; onSave:(tags:string[])=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
   const tags = [...new Set(propertyValues.map(tagKey))];
-  const bodyTags = [...new Set(bodyValues.map(tagKey))];
+  const bodyTags = useMemo(() => [...new Set(bodyValues.map(tagKey))], [bodyValues]);
   const tooltipId = useId();
   const [selected, setSelected] = useState(tags);
   const propertyKey = JSON.stringify(tags);
@@ -47,7 +59,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], bu
   const [revision, setRevision] = useState(0);
   const changeTag = useCallback(async (from:string,to:string | null) => {
     try { await onChangeTag?.(from, to); }
-    finally { setRevision(value => value + 1); }
+    finally { invalidatePropertyTagSuggestions(); setRevision(value => value + 1); }
   }, [onChangeTag]);
   const [loading, setLoading] = useState(true);
   const [suggestionError, setSuggestionError] = useState('');
@@ -57,15 +69,26 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], bu
   const virtualizer = useRef<TagVirtualizer>(null);
   useEffect(() => {
     let active = true;
+    if (vaultBinding && cachedTags?.binding === vaultBinding && cachedTags.expires > Date.now()) {
+      setOptions(cachedTags.tags); setLoading(false); setSuggestionError('');
+      return;
+    }
+    const requestedRevision = tagRevision;
     setLoading(true); setSuggestionError('');
-    void request<{tags:{name:string}[]}>('listTags').then(result => { if (active) setOptions(result.tags.map(tag => tagKey(tag.name))); }).catch(cause => { if (active) setSuggestionError(errorMessage(cause)); }).finally(() => { if (active) setLoading(false); });
+    void request<{tags:{name:string}[]}>('listTags', vaultBinding ? {vaultBinding} : undefined).then(result => {
+      if (!active) return;
+      const tags = result.tags.map(tag => tagKey(tag.name));
+      if (vaultBinding && requestedRevision === tagRevision) cachedTags = {binding:vaultBinding,tags,expires:Date.now()+15_000};
+      setOptions(tags);
+    }).catch(cause => { if (active) setSuggestionError(errorMessage(cause)); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [revision]);
+  }, [revision,vaultBinding]);
   const normalized = normalizePropertyTag(query);
   const search = tagKey(query.trim().replace(/^#/, ''));
-  const known = [...new Set([...selected, ...bodyTags, ...options])];
-  const matches = known.filter(tag => !bodyTags.includes(tag) && !selected.includes(tag) && tag.includes(search));
-  const create = !loading && !suggestionError && normalized && !known.includes(normalized) ? normalized : null;
+  const picked = useMemo(() => new Set([...selected, ...bodyTags]), [selected,bodyTags]);
+  const known = useMemo(() => new Set([...picked, ...options]), [picked,options]);
+  const matches = [...known].filter(tag => !picked.has(tag) && tag.includes(search));
+  const create = !loading && !suggestionError && normalized && !known.has(normalized) ? normalized : null;
   const candidates = create ? [create, ...matches] : matches;
   const virtualized = candidates.length > 100;
   const bodyOnly = [...new Set(bodyTags)].filter(tag => !selected.includes(tag));
@@ -76,6 +99,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], bu
     const revision = propertyRevision.current.revision;
     try {
       await onSave(next);
+      invalidatePropertyTagSuggestions();
       if (revision === propertyRevision.current.revision) { setSelected(next); input.current?.focus(); }
       setOptions(previous => [...new Set([...previous, ...next])]);
       if (next.length > selected.length) setQuery('');
@@ -110,7 +134,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], bu
       <p id={`${tooltipId}-search-hint`} className={suggestionError ? 'sr-only' : 'note-tag-hint text-xs text-secondary'}>选择或创建</p>
       {suggestionError ? <PropertyOptionsFailure retry={<Button variant="ghost" className="note-property-retry" disabled={disabled} onClick={() => { input.current?.focus(); setRevision(value => value + 1); }} aria-label="重试加载标签">重试</Button>} /> : <>
       {loading ? <PropertyOptionsLoading label="正在加载标签…" Skeleton={Skeleton} /> : virtualized ? <VirtualTagOptions items={candidates} virtualizerRef={virtualizer}>{renderOption}</VirtualTagOptions> : <PropertyOptionList label="可选属性标签" count={candidates.length}>{renderOption}</PropertyOptionList>}
-      {!loading && !candidates.length && <p className="text-xs text-secondary">{query.trim() ? normalized ? '没有匹配的标签' : '标签不能包含空格或纯数字，可用 / 分层。' : known.length ? '没有其他标签，输入名称可新建。' : '输入名称，创建第一个标签。'}</p>}
+      {!loading && !candidates.length && <p className="text-xs text-secondary">{query.trim() ? normalized ? '没有匹配的标签' : '标签不能包含空格或纯数字，可用 / 分层。' : known.size ? '没有其他标签，输入名称可新建。' : '输入名称，创建第一个标签。'}</p>}
       </>}
     {pending && <p role="status" className="sr-only">正在保存标签…</p>}
     {error && <p role="alert" className="text-sm text-error">{error}</p>}

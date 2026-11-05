@@ -17,7 +17,7 @@ beforeEach(() => {
  HTMLElement.prototype.setPointerCapture=vi.fn();
  HTMLElement.prototype.releasePointerCapture=vi.fn();
  HTMLElement.prototype.hasPointerCapture=vi.fn(()=>true);
- vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} });
+ vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
  vi.stubGlobal('matchMedia', vi.fn(()=>({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
  Range.prototype.getClientRects=()=>[] as unknown as DOMRectList;
  Range.prototype.getBoundingClientRect=()=>new DOMRect();

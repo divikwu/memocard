@@ -22,7 +22,7 @@ before(async () => {
 });
 after(async () => { if (buildDirectory) await rm(buildDirectory, { recursive: true, force: true }); });
 
-async function webHost(t) {
+async function webHost(t, vault = null) {
   const directory = await mkdtemp(join(tmpdir(), 'memocard-web-session-'));
   const resources = join(directory, 'resources');
   await mkdir(resources);
@@ -41,9 +41,14 @@ async function webHost(t) {
   await symlink(join(directory, 'private.js'), join(resources, 'escape.js'));
   await symlink(join(directory, 'private.js'), join(resources, 'assets/escape.woff2'));
   const configFile = join(directory, 'connection.json');
-  const host = spawn(executable, [configFile, resources], { stdio: ['pipe', 'pipe', 'pipe'] });
+  const restartFile = join(directory, 'state', 'restart.json');
   let stderr = '';
-  host.stderr.on('data', bytes => { stderr += bytes.toString(); });
+  const launch = scope => {
+    const child = spawn(executable, [configFile, resources, ...(scope ? [restartFile, scope.id, scope.binding] : [])], { stdio: ['pipe', 'pipe', 'pipe'] });
+    child.stderr.on('data', bytes => { stderr += bytes.toString(); });
+    return child;
+  };
+  let host = launch(vault);
   const signal = expected => new Promise((resolve, reject) => {
     const onExit = code => { clearTimeout(timer); reject(new Error(`Test host exited: ${code}`)); };
     const timer = setTimeout(() => { host.off('exit', onExit); reject(new Error('Test host readiness timeout')); }, 5000);
@@ -54,12 +59,15 @@ async function webHost(t) {
     });
     host.once('exit', onExit);
   });
-  t.after(async () => {
-    if (host.exitCode === null) {
+  const stopProcess = async () => {
+    if (host.exitCode === null && host.signalCode === null) {
       const exited = new Promise(resolve => host.once('exit', resolve));
       host.kill('SIGTERM');
       await exited;
     }
+  };
+  t.after(async () => {
+    await stopProcess();
     await rm(directory, { recursive: true, force: true });
     assert.equal(stderr, '', 'Host must not log credentials or note contents.');
   });
@@ -72,7 +80,13 @@ async function webHost(t) {
     config = JSON.parse(await readFile(configFile, 'utf8'));
     return config;
   };
-  return { get config() { return config; }, command, resourceIndex: join(resources, 'index.html') };
+  const restartProcess = async (scope = vault) => {
+    await stopProcess();
+    host = launch(scope);
+    await signal('READY');
+    config = JSON.parse(await readFile(configFile, 'utf8'));
+  };
+  return { get config() { return config; }, command, restartProcess, restartFile, resourceIndex: join(resources, 'index.html') };
 }
 function token(config) { return new URLSearchParams(new URL(config.launchURL).hash.split('?')[1]).get('token'); }
 function envelope(params = {}, overrides = {}) { return { version: 1, requestId: randomUUID(), operation: 'getNote', params, ...overrides }; }
@@ -216,15 +230,27 @@ test('requires authentication for draft reminder review before dispatch', async 
 
 test('authenticates presentation metadata reads and writes before dispatch', async t => {
   const host = await webHost(t);
-  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences', 'getPropertyLayout', 'setPropertyLayout']) {
+  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences', 'getPropertyLayout', 'setPropertyLayout', 'getPropertyIcons', 'setPropertyIcon']) {
     assert.equal((await call(host.config, {body:envelope({}, {operation})})).status, 401);
   }
   const cookie = await authenticate(host);
-  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences', 'getPropertyLayout', 'setPropertyLayout']) {
+  for (const operation of ['getNotePins', 'setNotePinned', 'getTagPreferences', 'setTagPreferences', 'getPropertyLayout', 'setPropertyLayout', 'getPropertyIcons', 'setPropertyIcon']) {
     const reply = await call(host.config, {body:envelope({}, {operation}), headers:{Cookie:cookie}});
     assert.equal(reply.status, 200);
     assert.equal(JSON.parse(reply.body).data.operation, operation);
   }
+});
+
+test('waits for the result of a property write past the HTTP read deadline', { timeout: 45_000 }, async t => {
+  const host = await webHost(t);
+  const cookie = await authenticate(host);
+  const delayed = operation => exchange(host.config, [requestBytes(host.config, {
+    body: envelope({delayMilliseconds:31_000}, {operation}), headers: {Cookie:cookie},
+  })], {timeoutMs:40_000});
+  const [read, write] = await Promise.all([delayed('getNoteProperties'), delayed('updateNoteProperty')]);
+  assert.equal(read, null);
+  assert.equal(write?.status, 200);
+  assert.equal(JSON.parse(write.body).data.operation, 'updateNoteProperty');
 });
 
 test('requires exact Host and Origin and refuses cross-site requests and duplicate cookies', async t => {
@@ -312,6 +338,31 @@ test('new launch supersedes unused links and stop closes clients and invalidates
   assert.equal((await call(host.config, { headers: { Cookie: newCookie } })).status, 200);
 });
 
+test('a fresh service process resumes the same origin and vault session but never an unused launch link', async t => {
+  const vault = { id: 'test-vault', binding: randomUUID() };
+  const host = await webHost(t, vault);
+  const origin = host.config.baseURL;
+  const cookie = await authenticate(host);
+  await host.command('launch');
+  const unused = token(host.config);
+  const persisted = await readFile(host.restartFile, 'utf8');
+  assert.ok(!persisted.includes(cookie.split('=')[1]));
+  assert.ok(!persisted.includes(unused));
+  await host.restartProcess();
+  assert.equal(host.config.baseURL, origin);
+  assert.equal((await call(host.config, { headers: { Cookie: cookie } })).status, 200);
+  assert.equal((await call(host.config, { path: '/api/session', body: { token: unused } })).status, 401);
+  assert.equal((await call(host.config, { headers: { Cookie: cookie, Origin: 'http://127.0.0.1:9' } })).status, 403);
+
+  await host.command('stop', 'STOPPED');
+  await host.restartProcess();
+  assert.equal(host.config.baseURL, origin);
+  assert.equal((await call(host.config, { headers: { Cookie: cookie } })).status, 401);
+  const nextCookie = await authenticate(host);
+  await host.restartProcess({ id: 'another-vault', binding: randomUUID() });
+  assert.equal(host.config.baseURL, origin);
+  assert.equal((await call(host.config, { headers: { Cookie: nextCookie } })).status, 401);
+});
 
 test('reopening from the same browser reuses its session instead of exhausting authorization slots', async t => {
   const host = await webHost(t);

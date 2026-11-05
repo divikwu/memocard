@@ -15,9 +15,9 @@
 .web-top-tag-tree { flex-direction: column; min-height: 0; width: 100%; gap: 0; background: transparent; }
 .web-top-tag-tree > [data-sidebar=group] { padding: 0; }
 .web-top-tag-tree > [data-sidebar=separator] { width: auto; margin: calc(var(--spacing-1) * 1.5) calc(var(--workspace-menu-padding, calc(var(--spacing-1) * 1.5)) * -1); }
-.web-top-tag-tree .ui-sidebar-row, .web-top-tag-tree .ui-sidebar-tree-row { border-radius: var(--radius-item); }
-.web-top-tag-tree .ui-sidebar-row { gap: calc(var(--spacing-1) * 2.5); padding-block: calc(var(--spacing-1) * 2); padding-inline-start: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-medium); }
-.web-top-tag-tree .ui-sidebar-row-icon > svg { color: inherit; }
+.web-top-tag-tree .ui-sidebar-row, .web-top-tag-tree .ui-sidebar-tree-row { border-radius: var(--radius-element); }
+.web-top-tag-tree .ui-sidebar-row { gap: calc(var(--spacing-1) * 2.5); min-height: var(--size-element-sm); padding-block: var(--spacing-1); padding-inline-start: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-normal); }
+.web-top-tag-tree .ui-sidebar-row-icon > svg { color: var(--color-text-secondary); }
 .web-top-tag-tree :is([data-sidebar=menu], [data-sidebar=menu-sub]) { gap: 0; }
 .web-top-tag-tree [data-sidebar=group-label] { height: calc(var(--spacing-1) * 9); font-weight: var(--font-weight-normal); color: var(--color-text-secondary); }
 .web-top-tag-tree .ui-sidebar-section-toggle { padding-inline: calc(var(--spacing-1) * 2); }

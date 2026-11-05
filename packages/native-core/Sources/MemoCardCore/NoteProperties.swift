@@ -47,6 +47,7 @@ struct NoteProperty: Encodable {
     let value: PropertyValue
     let editable: Bool
     var options: [PropertyOption]? = nil
+    var missing: Bool? = nil
 }
 struct NoteProperties: Encodable {
     let properties: [NoteProperty]
@@ -395,11 +396,16 @@ func newPropertyDefinition(_ properties: [NoteProperty], type: String, options: 
 
 // Preview and first save share the same library schema, never another note's values.
 func inheritedProperties(_ properties: [NoteProperty], stored: [String: PropertyDefinition]) throws -> [NoteProperty] {
-    let properties = properties.map(listAsMultiSelect)
+    try inheritedProperties(groups: Dictionary(grouping: properties.map(listAsMultiSelect), by: \.name), stored: stored)
+}
+
+func inheritedProperties(groups: [String: [NoteProperty]], stored: [String: PropertyDefinition]) throws -> [NoteProperty] {
     var definitions = stored
-    for (name, definition) in stored { definitions[name] = resolvedPropertyDefinition(definition, properties: properties.filter { $0.name == name }) }
-    for property in properties where property.editable && property.type != "unsupported" && definitions[property.name] == nil {
-        definitions[property.name] = newPropertyDefinition(properties.filter { $0.name == property.name }, type: property.type, options: nil, includeValues: false)
+    for (name, definition) in stored { definitions[name] = resolvedPropertyDefinition(definition, properties: groups[name] ?? []) }
+    for (name, group) in groups where definitions[name] == nil {
+        let types = Set(group.map(\.type).filter { $0 != "unsupported" })
+        guard let type = types.first else { continue }
+        definitions[name] = newPropertyDefinition(group, type: types.count == 1 ? type : "text", options: nil, includeValues: false)
     }
     return try definitions.keys.sorted().map { name in
         let definition = definitions[name]!

@@ -6,6 +6,7 @@ import type { Note, NotePins, VaultStatus } from "@memocard/contracts";
 import type { Draft } from "./bridge";
 import { App } from "./App";
 import { noteSourceButton, readEditorText, replaceEditorText } from "./editor-test-utils";
+import { localWebReconnected } from "./web-connection";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn(), reconnect: vi.fn(), native: true, web: false, browser: false }));
 vi.mock("./bridge", () => ({
@@ -669,13 +670,12 @@ describe("note workspace", () => {
     expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=other");
   });
 
-  it("retains the web editor and offers a fresh service URL when its local host disconnects", async () => {
+  it("keeps the same note editor and resumes saving after the local service reconnects", async () => {
     bridge.native = false; bridge.web = true;
+    const noteRoute = `#/notes/${note.id}`;
+    window.history.replaceState(null, "", noteRoute);
     render(<App />);
-    await screen.findByText(note.body);
-    await createNote();
-    await screen.findByRole("textbox", { name: "笔记内容" });
-    replaceEditorText("断开时还在编辑的内容");
+    const editor = await screen.findByRole("textbox", { name: "笔记内容" });
     const implementation = bridge.request.getMockImplementation()!;
     const disconnected = Object.assign(new Error("此页面连接的 MemoCard 本机服务已停止。请重新打开；编辑中的内容仍保留在此页面。"), { code: "BRIDGE_UNAVAILABLE", retryable: false });
     bridge.request.mockImplementation((operation, params) => ["getStatus", "saveDraft", "saveNote"].includes(operation) ? Promise.reject(disconnected) : implementation(operation, params));
@@ -685,8 +685,17 @@ describe("note workspace", () => {
     expect(screen.getByRole("link", { name: "重新打开", hidden: true }).getAttribute("href")).toBe("memocard-service://open-web");
     expect(screen.queryByRole("button", { name: "重试", hidden: true })).toBeNull();
     expect(screen.getByRole("button", { name: "新建笔记" })).toHaveProperty("disabled", true);
-    fireEvent.click(noteSourceButton());
-    await waitFor(() => expect(within(screen.getByRole("region", { name: "新建笔记" })).getByText(disconnected.message)).toBeTruthy());
+    replaceEditorText("断开时还在编辑的内容", editor);
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveDraft", expect.objectContaining({ id: note.id, body: "断开时还在编辑的内容" })));
+    expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
+
+    bridge.request.mockImplementation(implementation);
+    fireEvent.focus(window);
+    fireEvent(window, new Event(localWebReconnected));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({ id: note.id, body: "断开时还在编辑的内容", baseHash: note.contentHash })));
+    expect(screen.queryByText("连接已断开")).toBeNull();
+    expect(screen.getByRole("textbox", { name: "笔记内容" })).toBe(editor);
+    expect(window.location.hash).toBe(noteRoute);
     expect(readEditorText()).toBe("断开时还在编辑的内容");
   });
 

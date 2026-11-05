@@ -47,16 +47,19 @@ it('retires a rejected lossy conversion without losing later input or replaying 
  expect(transport.mock.calls.filter(([op])=>op==='saveNote').at(-1)?.[1].body).toBe('Latest body');
  session.dispose();
 });
-it.each([false,true])('continues property edits after a rejected conversion without replaying it (queued=%s)',async queued=>{
+it.each([
+ ['LOSSY_PROPERTY_CONVERSION', false], ['LOSSY_PROPERTY_CONVERSION', true],
+ ['INVALID_PROPERTY', false], ['INVALID_PROPERTY', true],
+] as const)('continues property edits after %s without replaying it (queued=%s)',async (code,queued)=>{
  const transport=vi.fn(async(op:string,params:Record<string,unknown>)=>{
   if(op==='updateNoteProperty') {
-   if(params.definition)throw Object.assign(new Error('No source changed'),{code:'LOSSY_PROPERTY_CONVERSION'});
+   if(params.name==='summary')throw Object.assign(new Error('No source changed'),{code});
    return {id:'a',contentHash:'property-saved'};
   }
  });
  const committed=vi.fn();
  const session=new EditorSession({...initial,body:'Original body',baseHash:'original'},transport as never,true,vi.fn(),committed);
- const rejected=expect(session.changeProperty({name:'summary',type:'date',definition:true})).rejects.toMatchObject({code:'LOSSY_PROPERTY_CONVERSION'});
+ const rejected=expect(session.changeProperty({name:'summary',type:'date',...(code==='INVALID_PROPERTY'?{create:true}:{definition:true})})).rejects.toMatchObject({code});
  if(!queued)await rejected;
  const next=session.changeProperty({name:'stage',type:'select',value:'done'});
  await rejected;await next;

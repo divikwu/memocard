@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import type { BridgeRequest, Note, NotePage, NotePins, TagPreferenceState, VaultStatus, PropertyLabels, PropertyLayout } from "@memocard/contracts";
+import type { BridgeRequest, Note, NotePage, NotePins, TagPreferenceState, VaultStatus, PropertyLabels, PropertyLayout, PropertyIcons } from "@memocard/contracts";
 import { BrowserVault } from "./browser-vault";
 import { parseBrowserNote } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserWritable } from "./browser-files";
@@ -1210,6 +1210,23 @@ it.each([false,true])('persists property order and visibility without rewriting 
  await expect(call(h.core,'setPropertyLayout',{...settings,baseHash:initial.contentHash,vaultId})).rejects.toMatchObject({code:'VAULT_CHANGED'});
 });
 
+it('persists property icons and per-note emoji without changing note contents', async () => {
+ const h=await open();
+ const before=await call<Note>(h.core,'getNote',{id:noteId});
+ const initial=await call<PropertyIcons>(h.core,'getPropertyIcons');
+ const key='property:summary', filenameKey=`note:${noteId}`;
+ const icons=await call<PropertyIcons>(h.core,'setPropertyIcon',{key,icon:'icon:star',baseHash:initial.contentHash});
+ await expect(call(h.core,'setPropertyIcon',{key,icon:'emoji:🚀',baseHash:icons.contentHash})).rejects.toMatchObject({code:'INVALID_PROPERTY_ICON'});
+ await expect(call(h.core,'setPropertyIcon',{key,icon:null,baseHash:initial.contentHash})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+ const saved=await call<PropertyIcons>(h.core,'setPropertyIcon',{key:filenameKey,icon:'emoji:🚀',baseHash:icons.contentHash});
+ expect(saved.icons).toEqual({[key]:'icon:star',[filenameKey]:'emoji:🚀'});
+ const reopened=harness(h.root,h.storage); await call(reopened.core,'selectVault');
+ expect(await call(reopened.core,'getPropertyIcons')).toEqual(saved);
+ expect(await call<Note>(reopened.core,'getNote',{id:noteId})).toMatchObject({body:before.body,contentHash:before.contentHash,updatedAt:before.updatedAt});
+ const restored=await call<PropertyIcons>(reopened.core,'setPropertyIcon',{key:filenameKey,icon:null,baseHash:saved.contentHash});
+ expect(restored.icons).toEqual({[key]:'icon:star'});
+});
+
 it('rejects stale layout writes, invalid settings and malformed configuration without overwriting it', async () => {
  const h=await open();
  const initial=await call<PropertyLayout>(h.core,'getPropertyLayout');
@@ -1408,6 +1425,27 @@ it.each([false,true])('inherits library fields on first save, with empty values 
  // Later body saves keep inherited type metadata and the note's own values.
  await call(h.core,'saveNote',{id:saved.id,body:'Edited',tags:[],baseHash:saved.contentHash});
  expect((await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:saved.id})).properties).toEqual(preview.properties);
+});
+it.each([false,true])('uses one schema order and inferred type across existing notes (shared=%s)',async shared => {
+ const root=shared ? new TestDirectory('shared') : await fixture();
+ const notes=shared ? root : await root.getDirectoryHandle('notes');
+ const a=await notes.getFileHandle(shared ? 'A.md' : `${noteId}.md`,{create:true});
+ const b=await notes.getFileHandle(shared ? 'B.md' : `${secondId}.md`,{create:true});
+ const fieldsA='tail: A\nfield: 12\nchecked: false\n', fieldsB='field: Text\ntail: B\n';
+ a.bytes=bytes(shared ? `---\n${fieldsA}---\nBody A` : source(noteId,'Body A',fieldsA));
+ b.bytes=bytes(shared ? `---\n${fieldsB}---\nBody B` : source(secondId,'Body B',fieldsB));
+ const original=[a.text,b.text], h=harness(root);
+ await call(h.core,'selectVault');
+ const page=await call<NotePage>(h.core,'queryNotes');
+ const get=async(body:string)=>(await call<import('@memocard/contracts').NoteProperties>(h.core,'getNoteProperties',{id:page.notes.find(note=>note.body===body)!.id})).properties;
+ const first=await get('Body A'), second=await get('Body B');
+ expect(first.map(p=>p.name)).toEqual(['checked','field','tail']);
+ expect(second.map(p=>p.name)).toEqual(first.map(p=>p.name));
+ expect(first[1]).toMatchObject({type:'text',value:'12'});
+ expect(second[1]).toMatchObject({type:'text',value:'Text'});
+ expect(first[0]).not.toHaveProperty('missing');
+ expect(second[0]).toMatchObject({type:'checkbox',value:false,missing:true});
+ expect([a.text,b.text]).toEqual(original);
 });
 it.each([false,true])('shows missing library fields without writing them and saves only edited values (shared=%s)',async shared => {
  const root=shared ? new TestDirectory('shared') : await fixture();

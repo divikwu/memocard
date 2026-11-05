@@ -58,6 +58,13 @@ it('reports real discovery failures and retries discovery', async () => {
   expect(result.current.error).toBe('');
 });
 
+it('uses the editor vault connection without requesting status again', async () => {
+  connect();
+  const {result} = renderHook(() => usePropertyLayout('note',true,'editor-binding',{vaultId:'vault-a',read:true,write:true}));
+  await waitFor(() => expect(result.current.writable).toBe(true));
+  expect(bridge.request.mock.calls).toEqual([['getPropertyLayout',{vaultId:'vault-a',vaultBinding:'editor-binding'}]]);
+});
+
 it('silently retries startup indexing after one second and then loads the layout', async () => {
   vi.useFakeTimers();
   connect();

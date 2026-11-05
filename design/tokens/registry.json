@@ -844,6 +844,15 @@
           "type": "position"
         }
       }
+    },
+    {
+      "source": "apps/ui/node_modules/@base-ui/react/collapsible/panel/CollapsiblePanelCssVars.d.ts",
+      "contract": "platform.positioning",
+      "tokens": {
+        "--collapsible-panel-height": {
+          "type": "dimension"
+        }
+      }
     }
   ],
   "optionalStylesheets": [],

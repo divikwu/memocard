@@ -154,7 +154,7 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func enableMCP() { run { try await self.host.enableMCP() } }
     @objc private func copyMCPPath() { host.copyMCPConfigurationPath() }
     @objc private func disableMCP() { host.disableMCP(); rebuildMenu() }
-    @objc private func quit() { NSApp.terminate(nil) }
+    @objc private func quit() { host.stopWeb(); NSApp.terminate(nil) }
     @objc private func openLoginSettings() { SMAppService.openSystemSettingsLoginItems() }
 
     @objc private func toggleLogin() {

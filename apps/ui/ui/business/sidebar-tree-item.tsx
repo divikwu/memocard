@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Collapsible } from "@base-ui/react/collapsible";
+import { useRender } from "@base-ui/react/use-render";
 import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSubButton, SidebarMenuSubItem } from "../components/sidebar";
 import { Button } from "../components/button";
 import { cn } from "../lib/utils";
@@ -19,13 +20,21 @@ export type SidebarTreeItemProps = {
   children?: ReactNode;
 };
 
+export function TreeRow({ render, className, ...props }: useRender.ComponentProps<"div">) {
+  return useRender({
+    defaultTagName: "div",
+    render,
+    props: { ...props, className: cn("min-h-element-sm rounded-element", className) },
+  });
+}
+
 export function SidebarTreeItem({ label, className, icon, buttonProps, isActive, nested = false, defaultOpen = true, toggleLabel, accessories, children }: SidebarTreeItemProps) {
   const Item = nested ? SidebarMenuSubItem : SidebarMenuItem;
   const MenuButton = nested ? SidebarMenuSubButton : SidebarMenuButton;
   const { className: buttonClassName, ...button } = buttonProps;
   return <Item className="w-full min-w-0">
     <Collapsible.Root defaultOpen={defaultOpen} className="w-full min-w-0">
-      <div className={cn("ui-sidebar-tree-row group/tree-row relative min-w-0", className)}>
+      <TreeRow className={cn("ui-sidebar-tree-row group/tree-row relative min-w-0", className)}>
         <MenuButton isActive={isActive} aria-current={isActive ? "page" : undefined} className={cn("ui-sidebar-row w-full translate-x-0", buttonClassName)} render={<button type="button" {...button} />}>
           <span aria-hidden="true" className={cn("ui-sidebar-row-icon flex size-4 shrink-0 items-center justify-center", children && "ui-sidebar-branch-icon", typeof icon === "string" && "ui-sidebar-emoji")}>{icon}</span>
           <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -34,7 +43,7 @@ export function SidebarTreeItem({ label, className, icon, buttonProps, isActive,
         <div className="ui-sidebar-row-actions absolute inset-y-0 right-1 flex items-center gap-0.5">
           {accessories}
         </div>
-      </div>
+      </TreeRow>
       {children && <Collapsible.Panel className="ui-sidebar-tree-panel">{children}</Collapsible.Panel>}
     </Collapsible.Root>
   </Item>;

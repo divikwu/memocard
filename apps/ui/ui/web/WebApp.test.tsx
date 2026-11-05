@@ -140,9 +140,9 @@ it("renames a tag and its descendants in the library from the directory", async 
   const directory = await screen.findByRole("region", { name: "标签目录" });
   await user.click(await within(directory).findByRole("button", { name: "编辑标签图标 生活" }));
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
-  await user.clear(within(dialog).getByRole("textbox", { name: "标签名称" }));
-  await user.type(within(dialog).getByRole("textbox", { name: "标签名称" }), "日常");
-  await user.click(within(dialog).getByRole("button", { name: "保存" }));
+  const name = within(dialog).getByRole("textbox", { name: "标签名称" });
+  await user.clear(name);
+  await user.type(name, "日常{Enter}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await within(directory).findByRole("button", { name: "编辑标签名称 日常/咖啡" });
   const coffee = fixture.snapshot().notes.find(note => note.id === coffeeId)!;

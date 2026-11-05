@@ -43,6 +43,6 @@ export function MobileTagActions({ tag, title, home = false, vaultId, onRename }
         {error && <p role="alert" className="px-3 py-2 text-sm text-error">{error}</p>}
       </DropdownMenuContent>
     </DropdownMenu>
-    {editing && titleButton.current && <Suspense fallback={null}><TagEditor path={editing} anchor={titleButton.current} mobile initialIcon={preferences.icons[editing] || ""} onClose={() => setEditing(null)} onSave={(name, icon) => saveAppearance(editing, name, icon, onRename)} /></Suspense>}
+    {editing && titleButton.current && <Suspense fallback={null}><TagEditor path={editing} anchor={titleButton.current} mobile icon={preferences.icons[editing] || ""} onClose={() => setEditing(null)} onSave={(name, icon) => saveAppearance(editing, name, icon, onRename)} /></Suspense>}
   </>;
 }

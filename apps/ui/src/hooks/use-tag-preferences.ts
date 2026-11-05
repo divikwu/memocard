@@ -39,21 +39,23 @@ export function useTagPreferences(vaultId?: string | null) {
       if (pending) return pending.then(() => true, () => false);
       return save(change(preferences));
     },
-    saveAppearance: async (from: string, name: string, icon: string, onRename?: (from: string, to: string) => Promise<void>) => {
+    saveAppearance: async (from: string, name: string, icon: string | undefined, onRename?: (from: string, to: string) => Promise<void>) => {
       name = tagKey(name);
-      if (name !== from) {
+      const renamed = name !== tagKey(from);
+      if (renamed) {
         if (!onRename) throw new Error("当前连接不支持标签重命名。");
         await onRename(from, name);
         renameTagColors(vaultId, from, name);
       }
       const change = (current: Preferences) => {
+        if (!renamed) return icon === undefined ? current : {...current, icons:{...current.icons, [name]:icon}};
         const next = { pinned: [...new Set(current.pinned.map(path => renamedTag(path, from, name)))], icons: Object.fromEntries(Object.entries(current.icons).map(([path, value]) => [renamedTag(path, from, name), value])) };
-        next.icons[name] = icon;
+        if (icon !== undefined) next.icons[name] = icon;
         return next;
       };
-      const pending = vaultId && updateSharedTagPreferences(vaultId, change);
+      const pending = vaultId && updateSharedTagPreferences(vaultId, change, {optimistic:!renamed});
       if (pending) { await pending; return; }
-      if (!save(change(preferences))) throw new Error("笔记已保存，但标签外观未能保存，请检查存储权限。");
+      if (!save(change(parse(read(key))))) throw new Error("笔记已保存，但标签外观未能保存，请检查存储权限。");
     },
   };
 }

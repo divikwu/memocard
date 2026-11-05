@@ -53,10 +53,10 @@ describe("native bridge", () => {
     await vi.advanceTimersByTimeAsync(51);
     await assertion;
   });
-  it("allows a native picker to remain open past the data timeout", async () => {
+  it.each(["selectVault", "saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout"])("waits for %s past the read timeout", async (operation) => {
     vi.useFakeTimers();
     let finish: ((value: unknown) => void) | undefined;
-    const call = createBridge(() => new Promise((resolve) => { finish = resolve; }), 50)("selectVault");
+    const call = createBridge(() => new Promise((resolve) => { finish = resolve; }), 50)(operation);
     await vi.advanceTimersByTimeAsync(500);
     finish?.({ ok: true, data: { connected: true } });
     await expect(call).resolves.toEqual({ connected: true });

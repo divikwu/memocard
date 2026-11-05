@@ -27,11 +27,12 @@ function PropertyImage({source, name, preview = false}:{source:string; name:stri
   const ref = useRef<HTMLImageElement>(null);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  useEffect(() => ref.current ? bindNoteImage(ref.current,source, () => setFailed(true)) : undefined,[source]);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => ref.current ? bindNoteImage(ref.current,source, () => setFailed(true), {lazy:!preview}) : undefined,[source,preview,attempt]);
   return <><span aria-busy={!loaded && !failed} className={preview ? `relative block w-full${!loaded && !failed ? ' min-h-20' : ''}` : 'relative block h-6 min-w-6 max-w-full'}>
-    <img ref={ref} alt={name} onLoad={() => setLoaded(true)} onError={() => setFailed(true)} className={preview ? 'note-property-image-preview w-full rounded-md object-contain' : 'note-property-image-thumbnail rounded-md'} />
+    <img key={attempt} ref={ref} alt={name} loading={preview ? 'eager' : 'lazy'} decoding="async" onLoad={() => { setLoaded(true); setFailed(false); }} onError={() => setFailed(true)} className={preview ? 'note-property-image-preview w-full rounded-md object-contain' : 'note-property-image-thumbnail rounded-md'} />
     {!loaded && !failed && <span role="status" aria-label="正在读取图片"><span className="sr-only">正在读取图片…</span><Skeleton className={preview ? 'absolute inset-0 min-h-20 w-full' : 'absolute inset-0 h-6 w-full min-w-6'} /></span>}
-  </span>{failed && <span className="text-xs text-secondary">图片暂时无法读取</span>}</>;
+  </span>{failed && <span className="text-xs text-secondary">图片暂时无法读取</span>}{preview && failed && <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => { setLoaded(false); setFailed(false); setAttempt(value => value+1); }}>重试读取图片</Button>}</>;
 }
 
 function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, editable, busy, onSave, onInteractionChange}:{name:string; value:string; noteId?:string; notePath:string; vaultBinding?:string; editable:boolean; busy:boolean; onSave:(value:string)=>Promise<void>; onInteractionChange?:(active:boolean)=>void}) {
@@ -65,7 +66,7 @@ function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, edita
     return changeImage(async () => (await request<Attachment | null>('pickImage',{noteId,notePath,...(vaultBinding ? {vaultBinding} : {})}))?.markdownPath ?? null);
   }
   const failure = error && <div className="mt-2 space-y-2"><p role="alert" className="text-sm text-error">{error}</p><div className="flex gap-2">{retryValue !== null && <Button type="button" variant="outline" size="sm" disabled={busy || importing} onClick={() => { void changeImage(async () => retryValue); }}>重试保存</Button>}<Button type="button" variant="ghost" size="sm" disabled={busy || importing} onClick={() => { setRetryValue(null); setError(''); setOpen(false); }}>关闭</Button></div></div>;
-  const upload = <Button type="button" variant="ghost" size="sm" className={value ? 'w-full justify-start font-normal' : 'note-property-edit w-full justify-start font-normal'} disabled={busy || importing} aria-label={`${value ? '替换' : '上传'}图片 ${name}`} onClick={() => { void pick(); }}>{value && <ImagePlus />}{value ? importing ? '正在导入…' : '替换图片' : <span className="note-property-empty">{importing ? '正在导入…' : '空白'}</span>}</Button>;
+  const upload = <Button type="button" variant="ghost" size="sm" className={value ? 'w-full justify-start font-normal' : 'note-property-edit w-full text-left font-normal'} disabled={busy || importing} aria-label={`${value ? '替换' : '上传'}图片 ${name}`} onClick={() => { void pick(); }}>{value && <ImagePlus />}{importing ? '正在导入…' : value ? '替换图片' : <span className="note-property-empty">空</span>}</Button>;
   return <div ref={anchor} className="flex min-w-0 flex-col items-start">
     {value ? <Popover open={open} onOpenChange={next => { if (!importing) { setOpen(next); setError(''); } }}><PopoverTrigger render={<Button variant="ghost" className="note-property-image-trigger" aria-label={`预览图片 ${name}`} />}>{source ? <PropertyImage key={source} source={source} name={name} /> : <span className="text-sm text-secondary">图片路径无法显示</span>}</PopoverTrigger><PopoverContent align="start" className="note-property-image-popup p-2" aria-label={`图片预览 ${name}`}>
       <div className="note-property-image-toolbar flex pb-2"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`图片菜单 ${name}`} disabled={busy || importing} />}><MoreHorizontal /></DropdownMenuTrigger><DropdownMenuContent align="end">
@@ -75,7 +76,7 @@ function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, edita
       {source && <PropertyImage key={source} source={source} name={name} preview />}
       {editable && <div className="mt-2 border-t pt-2">{upload}</div>}
       {failure}
-    </PopoverContent></Popover> : editable ? upload : <span className="note-property-value note-property-empty">空白</span>}
+    </PopoverContent></Popover> : editable ? upload : <span className="note-property-value note-property-empty">空</span>}
     {!open && failure && <Popover open onOpenChange={next => { if (!next && !importing) { setRetryValue(null); setError(''); } }}><PopoverContent anchor={anchor.current} align="start" className="note-property-image-popup p-2" aria-label={`图片操作 ${name}`} finalFocus={() => anchor.current?.querySelector<HTMLButtonElement>('button')}>{failure}</PopoverContent></Popover>}
     {fullscreen && source && <ImageViewer source={source} alt={name} onClose={() => setFullscreen(false)} />}
   </div>;

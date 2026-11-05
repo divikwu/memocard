@@ -1,44 +1,86 @@
 import Foundation
 import Network
 import Security
+import CryptoKit
 
 // Listener, peers, bootstrap tokens and sessions are confined to queue.
 public final class LocalWebServer: @unchecked Sendable {
     public typealias Handler = ([String: Any]) async -> [String: Any]
     public typealias AssetHandler = (String) async throws -> Data
+    public struct VaultScope: Codable, Equatable, Sendable {
+        public let id: String
+        public let binding: UUID
+        public init(id: String, binding: UUID) { self.id = id; self.binding = binding }
+    }
+    private struct RestartState: Codable {
+        let port: UInt16
+        let cookieID: UUID
+        let scope: VaultScope?
+        let sessionDigests: Set<Data>
+
+        static func read(_ file: URL?) -> Self? {
+            guard let file, let data = try? Data(contentsOf: file), data.count < 4096,
+                  let state = try? JSONDecoder().decode(Self.self, from: data),
+                  state.port > 0, state.sessionDigests.count <= LocalWebServer.maximumSessions,
+                  state.sessionDigests.allSatisfy({ $0.count == 32 }) else { return nil }
+            return state
+        }
+    }
+    public static func restoredBinding(from file: URL, vaultID: String) -> UUID? {
+        guard let scope = RestartState.read(file)?.scope, scope.id == vaultID else { return nil }
+        return scope.binding
+    }
     private let resourceRoot: URL
     private let handler: Handler
     private let assetHandler: AssetHandler
     private let queue = DispatchQueue(label: "dev.memocard.local-web")
-    private let cookieName = "memocard_" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
+    private let restartFile: URL?
+    private var vaultScope: VaultScope?
+    private var cookieID = UUID()
+    private var cookieName: String { "memocard_" + cookieID.uuidString.replacingOccurrences(of: "-", with: "") }
     private var listener: NWListener?
     private var origin: String?
     private var peers: [UUID: NWConnection] = [:]
     private var bootstraps: [String: Date] = [:]
-    private var sessions: Set<String> = []
+    private var sessionDigests: Set<Data> = []
     private var authorizationEpoch: Int
-    private var interactivePeers: Set<UUID> = []
+    private var awaitingCompletion: Set<UUID> = []
     public static let maximumSessions = 16
     private let maximumBodyBytes = 32 * 1024 * 1024
     private let maximumResponseBytes = 64 * 1024 * 1024
     private let maximumHeaderBytes = 16 * 1024
     private final class StartState: @unchecked Sendable { var resumed = false }
-    private static let operations: Set<String> = ["getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "importAttachment"]
+    private static let operations: Set<String> = ["getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getPropertyIcons", "setPropertyIcon", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "importAttachment"]
+    // Once dispatched, a write can still commit even if its HTTP connection is closed.
+    private static let completionOperations: Set<String> = ["selectVault", "saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout", "setPropertyIcon", "importAttachment"]
 
-    public init(resourceRoot: URL, authorizationEpoch: Int = 0, handler: @escaping Handler, assetHandler: @escaping AssetHandler) {
+    public init(resourceRoot: URL, authorizationEpoch: Int = 0, restartFile: URL? = nil,
+                vaultScope: VaultScope? = nil, handler: @escaping Handler, assetHandler: @escaping AssetHandler) {
         self.resourceRoot = resourceRoot.standardizedFileURL.resolvingSymlinksInPath()
         self.authorizationEpoch = authorizationEpoch
+        self.restartFile = restartFile
+        self.vaultScope = vaultScope
         self.handler = handler
         self.assetHandler = assetHandler
     }
 
     public func start() async throws -> URL {
+        let saved = RestartState.read(restartFile)
+        do { return try await listen(restoring: saved) }
+        catch NWError.posix(.EADDRINUSE) where saved != nil {
+            // A different process owns the old origin. Never reuse its sessions on another port.
+            return try await listen(restoring: nil)
+        }
+    }
+
+    private func listen(restoring saved: RestartState?) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             queue.async { [self] in
                 guard listener == nil else { continuation.resume(throwing: failure("ALREADY_RUNNING")); return }
                 do {
                     let parameters = NWParameters.tcp
-                    parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+                    let port = saved.flatMap { NWEndpoint.Port(rawValue: $0.port) } ?? .any
+                    parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: port)
                     let service = try NWListener(using: parameters)
                     listener = service
                     let startState = StartState()
@@ -49,12 +91,22 @@ public final class LocalWebServer: @unchecked Sendable {
                             guard !startState.resumed, let port = service.port else { return }
                             guard self.listener === service else { startState.resumed = true; continuation.resume(throwing: self.failure("APP_NOT_RUNNING")); return }
                             startState.resumed = true
+                            if let saved, port.rawValue == saved.port, let scope = self.vaultScope, scope == saved.scope {
+                                self.cookieID = saved.cookieID
+                                self.sessionDigests = saved.sessionDigests
+                            }
                             let address = "http://127.0.0.1:\(port.rawValue)"
                             self.origin = address
-                            continuation.resume(returning: URL(string: address + "/")!)
+                            do {
+                                try self.saveRestartState()
+                                continuation.resume(returning: URL(string: address + "/")!)
+                            } catch {
+                                self.invalidate(service)
+                                continuation.resume(throwing: error)
+                            }
                         case .failed(let error):
-                            if !startState.resumed { startState.resumed = true; continuation.resume(throwing: error) }
                             self.invalidate(service)
+                            if !startState.resumed { startState.resumed = true; continuation.resume(throwing: error) }
                         case .cancelled:
                             if !startState.resumed { startState.resumed = true; continuation.resume(throwing: self.failure("APP_NOT_RUNNING")) }
                             self.invalidate(service)
@@ -68,7 +120,7 @@ public final class LocalWebServer: @unchecked Sendable {
         }
     }
 
-    public func makeLaunchURL(revokingSessions: Bool = false) async throws -> URL {
+    public func makeLaunchURL(revokingSessions: Bool = false, vaultScope: VaultScope? = nil) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             queue.async { [self] in
                 guard let origin, listener != nil else { continuation.resume(throwing: failure("APP_NOT_RUNNING")); return }
@@ -76,8 +128,8 @@ public final class LocalWebServer: @unchecked Sendable {
                 // A newly requested launch supersedes unused launch links.
                 bootstraps.removeAll()
                 if revokingSessions {
-                    sessions.removeAll()
-                    authorizationEpoch &+= 1
+                    do { try rotateSessions(to: vaultScope) }
+                    catch { continuation.resume(throwing: error); return }
                 }
                 let token = Self.randomToken()
                 bootstraps[token] = Date().addingTimeInterval(120)
@@ -86,23 +138,33 @@ public final class LocalWebServer: @unchecked Sendable {
         }
     }
 
-    public func revokeSessions() async {
-        await withCheckedContinuation { continuation in
+    public func revokeSessions(vaultScope: VaultScope? = nil) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             queue.async { [self] in
                 bootstraps.removeAll()
-                sessions.removeAll()
-                authorizationEpoch &+= 1
-                continuation.resume()
+                do { try rotateSessions(to: vaultScope); continuation.resume() }
+                catch { continuation.resume(throwing: error) }
             }
         }
     }
 
-    public func stop() {
-        queue.async { [self] in
+    private func rotateSessions(to scope: VaultScope?) throws {
+        try saveRestartState(scope: scope, digests: [])
+        vaultScope = scope
+        sessionDigests.removeAll()
+        authorizationEpoch &+= 1
+    }
+
+    public func stop(preservingSessions: Bool = false) {
+        queue.sync {
+            if !preservingSessions, origin != nil {
+                do { try saveRestartState(scope: vaultScope, digests: []) }
+                catch { if let restartFile { try? FileManager.default.removeItem(at: restartFile) } }
+            }
             let service = listener
             listener = nil; origin = nil
-            bootstraps.removeAll(); sessions.removeAll()
-            interactivePeers.removeAll()
+            bootstraps.removeAll(); sessionDigests.removeAll()
+            awaitingCompletion.removeAll()
             peers.values.forEach { $0.cancel() }; peers.removeAll()
             service?.cancel()
         }
@@ -111,8 +173,8 @@ public final class LocalWebServer: @unchecked Sendable {
     private func invalidate(_ service: NWListener) {
         guard listener === service else { return }
         listener = nil; origin = nil
-        bootstraps.removeAll(); sessions.removeAll()
-        interactivePeers.removeAll()
+        bootstraps.removeAll(); sessionDigests.removeAll()
+        awaitingCompletion.removeAll()
         peers.values.forEach { $0.cancel() }; peers.removeAll()
         service.cancel()
     }
@@ -122,12 +184,12 @@ public final class LocalWebServer: @unchecked Sendable {
         let id = UUID()
         peers[id] = connection
         connection.stateUpdateHandler = { [weak self] state in
-            if case .failed = state { self?.peers.removeValue(forKey: id); connection.cancel() }
-            if case .cancelled = state { self?.peers.removeValue(forKey: id) }
+            if case .failed = state { self?.awaitingCompletion.remove(id); self?.peers.removeValue(forKey: id); connection.cancel() }
+            if case .cancelled = state { self?.awaitingCompletion.remove(id); self?.peers.removeValue(forKey: id) }
         }
         connection.start(queue: queue)
         queue.asyncAfter(deadline: .now() + 30) { [weak self] in
-            guard let self, !self.interactivePeers.contains(id) else { return }
+            guard let self, !self.awaitingCompletion.contains(id) else { return }
             self.peers.removeValue(forKey: id)?.cancel()
         }
         receive(id, buffer: Data())
@@ -225,8 +287,14 @@ public final class LocalWebServer: @unchecked Sendable {
                   let expires = bootstraps.removeValue(forKey: token), expires > Date() else { reply(id, status: 401); return }
             // Bound independently authorized browser sessions; existing sessions stay valid.
             let existingSession = authenticatedSession(request.headers)
-            guard existingSession != nil || sessions.count < Self.maximumSessions else { reply(id, status: 429); return }
-            let session = existingSession ?? Self.randomToken(); sessions.insert(session)
+            guard existingSession != nil || sessionDigests.count < Self.maximumSessions else { reply(id, status: 429); return }
+            let session = existingSession ?? Self.randomToken()
+            if existingSession == nil {
+                let digest = Self.sessionDigest(session)
+                sessionDigests.insert(digest)
+                do { try saveRestartState() }
+                catch { sessionDigests.remove(digest); reply(id, status: 503); return }
+            }
             replyJSON(id, value: ["ok": true], headers: ["Set-Cookie": "\(cookieName)=\(session); Path=/; HttpOnly; SameSite=Strict"])
             return
         }
@@ -241,7 +309,7 @@ public final class LocalWebServer: @unchecked Sendable {
                 }
                 var dispatched = message
                 dispatched["_authorizationEpoch"] = authorizationEpoch
-                if operation == "selectVault" { interactivePeers.insert(id) }
+                if Self.completionOperations.contains(operation) { awaitingCompletion.insert(id) }
                 Task { [self] in
                     var response = await handler(dispatched)
                     response["requestId"] = requestID
@@ -299,7 +367,20 @@ public final class LocalWebServer: @unchecked Sendable {
             let pair = field.trimmingCharacters(in: .whitespaces).split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
             return pair.count == 2 && pair[0] == cookieName ? String(pair[1]) : nil
         }
-        return values.count == 1 && sessions.contains(values[0]) ? values[0] : nil
+        return values.count == 1 && values[0].utf8.count == 64 && sessionDigests.contains(Self.sessionDigest(values[0])) ? values[0] : nil
+    }
+    private static func sessionDigest(_ session: String) -> Data { Data(SHA256.hash(data: Data(session.utf8))) }
+
+    private func saveRestartState() throws {
+        try saveRestartState(scope: vaultScope, digests: sessionDigests)
+    }
+
+    private func saveRestartState(scope: VaultScope?, digests: Set<Data>) throws {
+        guard let restartFile, let port = listener?.port?.rawValue else { return }
+        let directory = restartFile.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let state = RestartState(port: port, cookieID: cookieID, scope: scope, sessionDigests: scope == nil ? [] : digests)
+        try JSONEncoder().encode(state).write(to: restartFile, options: .atomic)
     }
     private func sameOriginFetch(_ headers: [String: String]) -> Bool {
         headers["sec-fetch-site"] == nil || headers["sec-fetch-site"] == "same-origin"
@@ -309,7 +390,7 @@ public final class LocalWebServer: @unchecked Sendable {
     }
     private func reply(_ id: UUID, status: Int, body: Data = Data(), mime: String = "text/plain; charset=utf-8", headers: [String: String] = [:]) {
         guard let connection = peers[id], origin != nil else { return }
-        let reason = [200: "OK", 400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found", 405: "Method Not Allowed", 411: "Length Required", 413: "Content Too Large", 429: "Too Many Requests", 431: "Request Header Fields Too Large"][status] ?? "Error"
+        let reason = [200: "OK", 400: "Bad Request", 401: "Unauthorized", 403: "Forbidden", 404: "Not Found", 405: "Method Not Allowed", 411: "Length Required", 413: "Content Too Large", 429: "Too Many Requests", 431: "Request Header Fields Too Large", 503: "Service Unavailable"][status] ?? "Error"
         var fields = [
             "Content-Type": mime, "Content-Length": String(body.count), "Connection": "close",
             "Cache-Control": "no-store, private", "X-Content-Type-Options": "nosniff", "Cross-Origin-Resource-Policy": "same-origin", "Referrer-Policy": "no-referrer",
@@ -318,7 +399,7 @@ public final class LocalWebServer: @unchecked Sendable {
         fields.merge(headers) { _, new in new }
         let head = "HTTP/1.1 \(status) \(reason)\r\n" + fields.sorted { $0.key < $1.key }.map { "\($0.key): \($0.value)\r\n" }.joined() + "\r\n"
         connection.send(content: Data(head.utf8) + body, completion: .contentProcessed { [weak self] _ in
-            self?.interactivePeers.remove(id)
+            self?.awaitingCompletion.remove(id)
             self?.peers.removeValue(forKey: id)?.cancel()
         })
     }

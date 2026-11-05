@@ -8,11 +8,15 @@ private actor RequestCounter {
 @main
 struct LocalWebServerHarness {
     static func main() async throws {
-        guard CommandLine.arguments.count == 3 else { exit(2) }
+        guard [3, 6].contains(CommandLine.arguments.count) else { exit(2) }
         let configurationURL = URL(fileURLWithPath: CommandLine.arguments[1])
         let resources = URL(fileURLWithPath: CommandLine.arguments[2])
         let counter = RequestCounter()
-        let server = LocalWebServer(resourceRoot: resources, handler: { message in
+        let restartFile = CommandLine.arguments.count == 6 ? URL(fileURLWithPath: CommandLine.arguments[3]) : nil
+        let scope = restartFile.flatMap { _ in UUID(uuidString: CommandLine.arguments[5]).map {
+            LocalWebServer.VaultScope(id: CommandLine.arguments[4], binding: $0)
+        } }
+        let server = LocalWebServer(resourceRoot: resources, restartFile: restartFile, vaultScope: scope, handler: { message in
             let params = message["params"] as? [String: Any] ?? [:]
             if let delay = params["delayMilliseconds"] as? Int { try? await Task.sleep(for: .milliseconds(delay)) }
             return ["ok": true, "data": ["operation": message["operation"] ?? "", "echo": params["echo"] ?? "", "count": await counter.next()]]

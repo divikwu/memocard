@@ -64,7 +64,9 @@ test("interface theme scopes isolate light/dark palettes across independent stab
 
 test("interface theme fixture extends CSS and layout independently without replacing the editor", async () => {
   const previousHash = location.hash;
-  localStorage.clear(); localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: "minimal" }));
   history.replaceState(null, "", "#/notes");
   await page.viewport(1440, 1000);
   const fixture = await createWorkspaceFixture(); const release = setStorybookRequestHandler(fixture.request);
@@ -72,11 +74,11 @@ test("interface theme fixture extends CSS and layout independently without repla
   const view = render(<AppearanceCatalogProvider catalog={appearanceFixture}><WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={state => { current = state; return renderWebApp(state); }} /></WebAppearanceProvider></AppearanceCatalogProvider>);
   try {
     const canvas = within(view.container);
-    const navigation = await canvas.findByRole("navigation", { name: "顶部导航" });
+    const navigation = await canvas.findByRole("navigation", { name: "顶部导航" }, { timeout: 5000 });
     await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
     const editor = await canvas.findByRole("textbox", { name: "笔记内容" });
     const change = async (interfaceTheme: string) => {
-      act(() => window.dispatchEvent(new StorageEvent("storage", { key: "memocard-web-appearance-v1", newValue: JSON.stringify({ interfaceTheme }), storageArea: localStorage })));
+      act(() => window.dispatchEvent(new StorageEvent("storage", { key: appearanceKey, newValue: JSON.stringify({ interfaceTheme }), storageArea: localStorage })));
       await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-interface-theme", interfaceTheme));
     };
     await change("paper");
@@ -109,7 +111,11 @@ test("interface theme fixture extends CSS and layout independently without repla
     await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", "drawer"));
     expect(view.container.querySelector(".web-app")).toHaveAttribute("data-interface-theme", "experimental");
     expect(canvas.getByRole("textbox", { name: "笔记内容" })).toBe(reopenedEditor);
-  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
 }, 30_000);
 
 
@@ -130,6 +136,11 @@ test("real editor menus and property confirmation inherit a local dialog scope",
     act(() => { editor.chain().focus().setTextSelection(1).run(); });
     await userEvent.click(body.getByRole("button", { name: "内容块操作" }));
     const menu = await body.findByRole("menu", { name: "内容块操作菜单" });
+    expect(getComputedStyle(menu).borderRadius).toBe("12px");
+    for (const item of menu.querySelectorAll<HTMLElement>('[role^="menuitem"]')) {
+      expect(getComputedStyle(item).height).toBe("32px");
+      expect(getComputedStyle(item).fontWeight).toBe("400");
+    }
     const scope = menu.closest("[data-appearance-scope]")!;
     expect(scope.getAttribute("data-ui-theme")).toBe("dark");
     expect(scope.getAttribute("data-interface-theme")).toBe("paper");

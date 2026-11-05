@@ -49,6 +49,7 @@ final class ServiceHost {
     var mcpWritesEnabled: Bool { mcp.writesEnabled }
     var mcpEnabled: Bool { defaults.bool(forKey: "mcpEnabled") }
     var registeredVaults: [(id: String, name: String, active: Bool)] { vaultRegistry.listed }
+    private var webRestartFile: URL { localDataURL.appendingPathComponent("LocalWeb/restart.json") }
 
     func waitUntilRestored() async { await restoreTask?.value }
 
@@ -67,10 +68,10 @@ final class ServiceHost {
         stateChanged?()
     }
 
-    func stopWeb() {
+    func stopWeb(preservingSessions: Bool = false) {
         webAuthorizationEpoch &+= 1
-        webServer?.stop()
-        startingWebServer?.stop()
+        webServer?.stop(preservingSessions: preservingSessions)
+        startingWebServer?.stop(preservingSessions: preservingSessions)
         webServer = nil
         startingWebServer = nil
         webStartTask = nil
@@ -80,7 +81,7 @@ final class ServiceHost {
     func shutdown() {
         vaultAttempt = UUID()
         stopMCP()
-        stopWeb()
+        stopWeb(preservingSessions: true)
         if let presenter { NSFileCoordinator.removeFilePresenter(presenter) }
         presenter = nil
         Task { await store.close() }
@@ -108,13 +109,15 @@ final class ServiceHost {
             restored = url
             let candidate = try VaultStore(localDataURL: localDataURL)
             pendingStore = candidate
-            let generation = UUID()
+            let resumedBinding = record.flatMap { LocalWebServer.restoredBinding(from: webRestartFile, vaultID: $0.id) }
+            let generation = resumedBinding ?? UUID()
             try await candidate.open(url: url, create: false, binding: generation)
             try await vaultRestoreCheckpoint?(candidate)
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库恢复已被新的选择取代") }
             let status = try await status(of: candidate, binding: generation)
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库恢复已被新的选择取代") }
             guard let id = status["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
+            guard resumedBinding == nil || id == record?.id else { throw fault("UNAUTHORIZED", "笔记库身份已经变化，请重新打开文件夹") }
             let previous = store
             store = candidate
             pendingStore = nil
@@ -146,7 +149,9 @@ final class ServiceHost {
         guard let root = Bundle.main.resourceURL?.appendingPathComponent("Web", isDirectory: true) else {
             throw fault("STORE_UNAVAILABLE", "应用内的网页资源不可用，请重新安装")
         }
-        let candidate = LocalWebServer(resourceRoot: root, authorizationEpoch: webAuthorizationEpoch, handler: { [weak self] request in
+        let scope = vaultID.map { LocalWebServer.VaultScope(id: $0, binding: vaultGeneration) }
+        let candidate = LocalWebServer(resourceRoot: root, authorizationEpoch: webAuthorizationEpoch,
+                                       restartFile: webRestartFile, vaultScope: scope, handler: { [weak self] request in
             guard let self else { return Self.failure(Self.fault("APP_NOT_RUNNING", "菜单栏服务已退出")) }
             return await self.webRequest(request)
         }, assetHandler: { [weak self] path in
@@ -183,7 +188,7 @@ final class ServiceHost {
 
     private let webOperations: Set<String> = [
         "getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "listTags", "listFolders",
-        "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "importAttachment",
+        "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getPropertyIcons", "setPropertyIcon", "importAttachment",
     ]
 
     private func webRequest(_ request: [String: Any]) async -> [String: Any] {
@@ -266,7 +271,7 @@ final class ServiceHost {
             guard let id = candidateStatus["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
 
-            let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
+            let reconnectURL = try await rotateAuthorization(reconnect: reconnect, vaultID: id, binding: candidateGeneration)
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
             let previousStore = store
             let previousURL = vaultURL
@@ -309,7 +314,7 @@ final class ServiceHost {
             let candidateStatus = try await status(of: candidate, binding: candidateGeneration)
             guard candidateStatus["vaultId"] as? String == id else { throw fault("UNAUTHORIZED", "笔记库身份已经变化，请重新打开文件夹") }
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
-            let reconnectURL = try await rotateAuthorization(reconnect: reconnect)
+            let reconnectURL = try await rotateAuthorization(reconnect: reconnect, vaultID: id, binding: candidateGeneration)
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
             let previousStore = store
             let previousURL = vaultURL
@@ -334,11 +339,13 @@ final class ServiceHost {
         }
     }
 
-    private func rotateAuthorization(reconnect: Bool) async throws -> URL? {
+    private func rotateAuthorization(reconnect: Bool, vaultID: String, binding: UUID) async throws -> URL? {
+        if let webStartTask { try await webStartTask.value }
         guard let webServer else { return nil }
+        let scope = LocalWebServer.VaultScope(id: vaultID, binding: binding)
         let reconnectURL: URL?
-        if reconnect { reconnectURL = try await webServer.makeLaunchURL(revokingSessions: true) }
-        else { await webServer.revokeSessions(); reconnectURL = nil }
+        if reconnect { reconnectURL = try await webServer.makeLaunchURL(revokingSessions: true, vaultScope: scope) }
+        else { try await webServer.revokeSessions(vaultScope: scope); reconnectURL = nil }
         webAuthorizationEpoch &+= 1
         return reconnectURL
     }
