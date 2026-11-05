@@ -13,7 +13,6 @@
       "--font-weight-medium": "500",
       "--font-weight-semibold": "600",
       "--font-weight-bold": "700",
-      "--leading-normal": "1.5",
       "--leading-relaxed": "1.625"
     }
   },
@@ -1357,11 +1356,6 @@
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".note-date-time-option",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties",
           "value": "var(--font-size-sm)"
         },
@@ -1803,11 +1797,6 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/src/components/name-editor.core.tsx",
-          "scope": "text-xs",
-          "value": "var(--font-size-xs)"
-        },
-        {
           "source": "apps/ui/src/DatePropertyPicker.core.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
@@ -1884,6 +1873,11 @@
         },
         {
           "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/PropertyIconPicker.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -2147,7 +2141,8 @@
       "property": "font-weight",
       "value": "var(--font-weight-normal)",
       "utilities": [
-        "font-normal"
+        "font-normal",
+        "[&_button]:font-normal"
       ],
       "locations": [
         {
@@ -2167,6 +2162,26 @@
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ":is(.note-properties, .note-property-popup, .note-property-option-menu) .note-tag-pill",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ":is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) :is([data-slot=\"dropdown-menu-item\"], [data-slot=\"dropdown-menu-radio-item\"], [data-slot=\"dropdown-menu-sub-trigger\"])",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ":is(.note-property-popup, .note-property-create-popup, .note-property-option-menu, .note-property-image-popup, .note-property-name-popup, .ui-property-sheet) :is(button, [role=\"option\"], .rdp-caption_label, [data-slot=\"sheet-title\"])",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".mobile-tag-menu :is(button, [data-slot=\"sheet-title\"])",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-date-picker .note-date-today",
           "value": "var(--font-weight-normal)"
         },
@@ -2182,12 +2197,37 @@
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-property-confirm > h2",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-property-confirm button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-create .note-property-type-option",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-load-failure .note-property-retry",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-tag-color-option",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-tag-option",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2222,7 +2262,27 @@
         },
         {
           "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-suggestions > button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/QuickCapture.css",
           "scope": ".ui-capture-tag-options > button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu button), :where(.ui-rich-ui) :is(.block-menu button)",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.block-menu-label), :where(.ui-rich-ui) :is(.block-menu-label)",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2233,6 +2293,11 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-link-results button), :where(.ui-rich-ui) :is(.rich-link-results button)",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2262,7 +2327,17 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions button), :where(.ui-rich-ui) :is(.rich-tag-suggestions button)",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-sheet.rich-format-sheet [data-slot=\"sheet-title\"]",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2271,8 +2346,28 @@
           "value": "var(--font-weight-normal)"
         },
         {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui .rich-format-item, .ui-rich-ui.rich-insert-menu [role=\"menuitem\"]",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-editor.css",
+          "scope": ".ui-rich-ui.rich-properties button",
+          "value": "var(--font-weight-normal)"
+        },
+        {
           "source": "apps/ui/ui/business/sidebar.css",
           "scope": ".ui-sidebar-vault-menu-item",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/sidebar.css",
+          "scope": ".ui-sidebar-vault-sheet [data-slot=\"sheet-title\"]",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
+          "scope": "font-normal",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2297,6 +2392,26 @@
         },
         {
           "source": "apps/ui/ui/components/calendar.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/components/dropdown-menu.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/components/popover.tsx",
+          "scope": "[&_button]:font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/components/popover.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/components/select.tsx",
           "scope": "font-normal",
           "value": "var(--font-weight-normal)"
         },
@@ -2337,6 +2452,11 @@
         },
         {
           "source": "apps/ui/ui/web/layouts/topbar.css",
+          "scope": ".web-top-tag-tree .ui-sidebar-row",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/web/layouts/topbar.css",
           "scope": ".web-top-tag-tree [data-sidebar=group-label]",
           "value": "var(--font-weight-normal)"
         }
@@ -2371,7 +2491,7 @@
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".note-property-confirm > h2",
+          "scope": ".tag-icon-tabs [data-slot=\"tabs-trigger\"]",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2420,11 +2540,6 @@
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
-          "scope": "font-medium",
-          "value": "var(--font-weight-medium)"
-        },
-        {
           "source": "apps/ui/ui/business/TagsPage.css",
           "scope": ".ui-tag-directory-table th",
           "value": "var(--font-weight-medium)"
@@ -2460,11 +2575,6 @@
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui/components/dropdown-menu.tsx",
-          "scope": "font-medium",
-          "value": "var(--font-weight-medium)"
-        },
-        {
           "source": "apps/ui/ui/components/empty.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
@@ -2481,16 +2591,6 @@
         },
         {
           "source": "apps/ui/ui/components/label.tsx",
-          "scope": "font-medium",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/components/popover.tsx",
-          "scope": "font-medium",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/components/select.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
@@ -2557,11 +2657,6 @@
         {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(thead th)",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/web/layouts/topbar.css",
-          "scope": ".web-top-tag-tree .ui-sidebar-row",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2637,11 +2732,6 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "var(--font-weight-semibold)"
@@ -2658,22 +2748,12 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu-label), :where(.ui-rich-ui) :is(.block-menu-label)",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui):is(.rich-callout-swatch), :where(.ui-rich-ui) :is(.rich-callout-swatch)",
           "value": "var(--font-weight-semibold)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui):is(.rich-editor-content tr[data-footer]), :where(.ui-rich-ui) :is(.rich-editor-content tr[data-footer])",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
           "value": "var(--font-weight-semibold)"
         },
         {
@@ -2861,6 +2941,11 @@
         "leading-none"
       ],
       "locations": [
+        {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": ".note-property-file-emoji",
+          "value": "1"
+        },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui):is(.rich-callout-icon), :where(.ui-rich-ui) :is(.rich-callout-icon)",
@@ -3089,25 +3174,6 @@
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(table)",
           "value": "1.5"
-        }
-      ]
-    },
-    {
-      "property": "line-height",
-      "value": "var(--leading-normal)",
-      "utilities": [
-        "leading-normal"
-      ],
-      "locations": [
-        {
-          "source": "apps/ui/src/components/name-editor.core.tsx",
-          "scope": "leading-normal",
-          "value": "var(--leading-normal)"
-        },
-        {
-          "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
-          "scope": "leading-normal",
-          "value": "var(--leading-normal)"
         }
       ]
     },
@@ -4129,11 +4195,6 @@
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
-          "source": "apps/ui/src/components/name-editor.core.tsx",
-          "scope": "text-xs",
-          "value": "var(--tw-leading, var(--text-xs--line-height))"
-        },
-        {
           "source": "apps/ui/src/DatePropertyPicker.core.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
@@ -4170,6 +4231,11 @@
         },
         {
           "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--text-xs--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/business/PropertyIconPicker.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },

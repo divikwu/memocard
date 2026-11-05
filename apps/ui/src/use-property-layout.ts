@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PropertyLayout, PropertyLayoutPreferences } from '@memocard/contracts';
 import { request } from './bridge';
+import { localWebReconnected } from './web-connection';
 import { validatePropertyLayout } from './property-layout';
 
 export const propertyLayoutEvent = 'memocard:property-layout';
@@ -28,8 +29,11 @@ async function readLayout(session:Session) {
   return value;
 }
 
-export function usePropertyLayout(scopeKey:string, canRead:boolean, vaultBinding?:string) {
-  const identity = JSON.stringify([scopeKey,canRead,vaultBinding]);
+export type PropertyLayoutConnection = {vaultId:string; read:boolean; write:boolean};
+export function usePropertyLayout(scopeKey:string, canRead:boolean, vaultBinding?:string, connection?:PropertyLayoutConnection) {
+  const {vaultId,read,write} = connection ?? {};
+  canRead = canRead && read !== false;
+  const identity = JSON.stringify([scopeKey,canRead,vaultBinding,vaultId,write]);
   const current = useRef<Session | null>(null);
   const [state,setState] = useState(() => initial(identity));
   const publish = useCallback((session:Session) => {
@@ -40,6 +44,10 @@ export function usePropertyLayout(scopeKey:string, canRead:boolean, vaultBinding
 
   useEffect(() => {
     const session:Session = {active:true,identity,token:Symbol(),canWrite:false,layout:emptyLayout,ready:!canRead,writable:false,error:'',pending:0,revision:0,reading:false,queue:Promise.resolve(),refresh:async () => undefined};
+    if (vaultId) {
+      session.params = {vaultId,...(vaultBinding ? {vaultBinding} : {})};
+      session.canWrite = Boolean(write);
+    }
     let retryTimer:number | undefined;
     current.current = session;
     publish(session);
@@ -82,15 +90,17 @@ export function usePropertyLayout(scopeKey:string, canRead:boolean, vaultBinding
     if (canRead) {
       void refresh();
       window.addEventListener('focus',focus);
+      window.addEventListener(localWebReconnected,focus);
       window.addEventListener(propertyLayoutEvent,changed);
     }
     return () => {
       session.active = false;
       window.clearTimeout(retryTimer);
       window.removeEventListener('focus',focus);
+      window.removeEventListener(localWebReconnected,focus);
       window.removeEventListener(propertyLayoutEvent,changed);
     };
-  }, [identity,canRead,vaultBinding,publish]);
+  }, [identity,canRead,vaultBinding,vaultId,write,publish]);
 
   const update = useCallback((change:(current:PropertyLayoutPreferences)=>PropertyLayoutPreferences):Promise<void> => {
     const session = current.current;

@@ -10,7 +10,14 @@ export default defineConfig({
   root: fileURLToPath(new URL("./ui", import.meta.url)),
   cacheDir: fileURLToPath(new URL("./node_modules/.vite-ui", import.meta.url)),
   resolve: { alias: { "@ui": path.join(uiRoot, "ui"), "@": path.join(uiRoot, "src") } },
-  optimizeDeps: { include: ["@tanstack/react-virtual", "react-markdown", "rehype-katex", "rehype-raw", "rehype-sanitize", "remark-gfm", "remark-math"] },
+  optimizeDeps: { include: [
+    "@tanstack/react-virtual", "react-markdown", "rehype-katex", "rehype-raw", "rehype-sanitize", "remark-gfm", "remark-math",
+    ...[
+      "BookOpen01", "Bookmark01", "CheckmarkCircle02", "Code", "Comment01", "Database01", "Fire", "Gift",
+      "Headphones", "Home01", "Leaf01", "Location01", "Mail01", "Moon02", "MusicNote01", "Star", "Sun01",
+      "Target01", "Task01", "UserGroup",
+    ].map(icon => `@hugeicons/core-free-icons/${icon}Icon`),
+  ] },
   plugins: [{
     name: "isolated-ui-data",
     enforce: "pre",

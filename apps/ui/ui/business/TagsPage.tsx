@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../components/empty";
 import { Skeleton } from "../components/skeleton";
 import { SidebarIcon } from "./sidebar-icons";
+import { TreeRow } from "./sidebar-tree-item";
+import { TagIcon } from "./property-icon-catalog";
 import "./TagsPage.css";
 
 const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
@@ -66,7 +68,7 @@ export function TagsPage({ tags, vaultId, loading, connected, disabled, canRenam
       <TagRow tag={tag} depth={depth} lastSibling={lastSibling} icon={preferences.icons[tag.name]} pinned={preferences.pinned.includes(tag.name)} iconEditorOpen={editing?.path === tag.name && editing.picker} expanded={!flat && children.length ? open : undefined} childIds={open ? children.map(child => rowId(child.name)).join(" ") : undefined} flat={flat}
         disabled={disabled || !connected} pinDisabled={pinning} canRename={canRename}
         onToggle={() => setExpanded(current => ({...current, [tag.name]: !open}))} onSelect={() => onSelect(tag.name)} onPin={() => void pin(tag.name)} onEdit={(anchor, picker) => edit(tag.name, anchor, picker)}
-        onRename={async (name, restoreFocus) => { await saveAppearance(tag.name, name, preferences.icons[tag.name] ?? "", onRename); if (restoreFocus) setFocusPath(tagKey(name)); }} />
+        onRename={async (name, restoreFocus) => { await saveAppearance(tag.name, name, undefined, onRename); if (restoreFocus) setFocusPath(tagKey(name)); }} />
       {!flat && open && children.map((child, position) => row(child, depth + 1, false, position === children.length - 1))}
     </Fragment>;
   };
@@ -80,12 +82,12 @@ export function TagsPage({ tags, vaultId, loading, connected, disabled, canRenam
       {loading && !tags.length ? <div role="status" aria-label="正在读取标签" className="grid gap-2 p-2">{[0, 1, 2, 3].map(item => <Skeleton key={item} className="h-8 rounded-xl" />)}</div>
         : matches.length ? <Table className="ui-tag-directory-table" aria-label={needle ? "标签搜索结果" : "标签层级"}>
           <colgroup><col /><col className="ui-tag-directory-count-column" /><col className="ui-tag-directory-actions-column" /></colgroup>
-          <TableHeader><TableRow><TableHead scope="col" className="ui-tag-directory-label-heading">标签</TableHead><TableHead scope="col" className="ui-tag-directory-count-heading" data-ui-tooltip="包含子标签，按笔记去重">笔记数</TableHead><TableHead scope="col" className="ui-tag-directory-actions-heading">置顶</TableHead></TableRow></TableHeader>
+          <TableHeader><TreeRow render={<TableRow />}><TableHead scope="col" className="ui-tag-directory-label-heading">标签</TableHead><TableHead scope="col" className="ui-tag-directory-count-heading" data-ui-tooltip="包含子标签，按笔记去重">笔记数</TableHead><TableHead scope="col" className="ui-tag-directory-actions-heading">置顶</TableHead></TreeRow></TableHeader>
           <TableBody>{(needle ? matches : index.roots).map(tag => row(tag, 0, Boolean(needle)))}</TableBody>
         </Table>
         : <Empty><EmptyHeader><EmptyTitle>{!connected ? "连接笔记库后查看标签" : needle ? "没有找到相关标签" : "还没有标签"}</EmptyTitle><EmptyDescription>{!connected ? "从左上角选择笔记库。" : needle ? "换个关键词，或清空搜索。" : "在笔记中添加标签后，会显示在这里。"}</EmptyDescription></EmptyHeader>{needle && <EmptyContent><Button variant="outline" onClick={() => { setQuery(""); search.current?.focus(); }}>清空搜索</Button></EmptyContent>}</Empty>}
     </div>
-    {editing && <Suspense fallback={null}><TagEditor key={editing.path} path={editing.path} anchor={editing.anchor} anchorIsTrigger={editing.picker} initialIcon={preferences.icons[editing.path] ?? ""} mobile={mobile} initialPickerOpen={editing.picker} onClose={() => setEditing(null)} finalFocus={() => editing.anchor.isConnected ? editing.anchor : [...directory.current?.querySelectorAll<HTMLButtonElement>("[data-tag-path]") ?? []].find(button => button.dataset.tagPath === returnPath.current) ?? search.current ?? false}
+    {editing && <Suspense fallback={null}><TagEditor key={editing.path} path={editing.path} anchor={editing.anchor} anchorIsTrigger={editing.picker} icon={preferences.icons[editing.path] ?? ""} mobile={mobile} initialPickerOpen={editing.picker} onClose={() => setEditing(null)} finalFocus={() => editing.anchor.isConnected ? editing.anchor : [...directory.current?.querySelectorAll<HTMLButtonElement>("[data-tag-path]") ?? []].find(button => button.dataset.tagPath === returnPath.current) ?? search.current ?? false}
       onSave={async (name, icon) => { await saveAppearance(editing.path, name, icon, onRename); returnPath.current = tagKey(name); }} /></Suspense>}
   </section>;
 }
@@ -148,11 +150,11 @@ function TagRow({ tag, depth, lastSibling, icon, pinned, iconEditorOpen, expande
     finally { submitting.current = false; setSaving(false); }
   };
   return <>
-    <TableRow id={rowId(tag.name)} className="ui-tag-directory-row" data-flat={flat || undefined} aria-busy={saving || undefined}>
+    <TreeRow render={<TableRow />} id={rowId(tag.name)} className="ui-tag-directory-row" data-flat={flat || undefined} aria-busy={saving || undefined}>
       <TableCell><div className="ui-tag-directory-label" style={{"--tag-depth": depth} as CSSProperties}>
         {depth > 0 && <span className="ui-tag-directory-guide" data-end={lastSibling || undefined} aria-hidden="true" style={{"--tag-guide-depth": depth - 1} as CSSProperties} />}
         {expanded === undefined ? <span className="ui-tag-directory-toggle-space" /> : <Button variant="ghost" size="icon-sm" className="ui-tag-directory-toggle" aria-label={`${expanded ? "收起" : "展开"}标签 ${tag.name}`} aria-expanded={expanded} aria-controls={childIds} disabled={disabled || saving} onClick={onToggle}><SidebarIcon name={expanded ? "down" : "right"} /></Button>}
-        <Button variant="ghost" size="icon-sm" className="ui-tag-directory-icon" aria-label={`编辑标签图标 ${tag.name}`} aria-haspopup="dialog" aria-expanded={iconEditorOpen} disabled={disabled || !canRename || saving} onClick={event => onEdit(event.currentTarget, true)}>{icon || <SidebarIcon name="hash" />}</Button>
+        <Button variant="ghost" size="icon-sm" className="ui-tag-directory-icon" aria-label={`编辑标签图标 ${tag.name}`} aria-haspopup="dialog" aria-expanded={iconEditorOpen} disabled={disabled || !canRename || saving} onClick={event => onEdit(event.currentTarget, true)}><TagIcon value={icon} /></Button>
         <div className="ui-tag-directory-name">
           {renaming ? <form className="ui-tag-directory-name-form" onSubmit={event => { event.preventDefault(); void save(); }} onBlur={event => {
             if (cancelled.current || event.currentTarget.contains(event.relatedTarget as Node | null)) return;
@@ -174,7 +176,7 @@ function TagRow({ tag, depth, lastSibling, icon, pinned, iconEditorOpen, expande
       <TableCell><div className="ui-tag-directory-actions">
         <Button variant="ghost" size="icon-sm" className="ui-tag-directory-pin" aria-label={`${pinned ? "取消置顶" : "置顶标签"} ${tag.name}`} aria-pressed={pinned} disabled={disabled || pinDisabled || saving} onClick={onPin}><HugeiconsIcon icon={PinIcon} fill={pinned ? "currentColor" : "none"} aria-hidden="true" /></Button>
       </div></TableCell>
-    </TableRow>
+    </TreeRow>
     {error && <TableRow className="ui-tag-directory-error"><TableCell colSpan={3}><p id={errorId} role="alert">{error}</p></TableCell></TableRow>}
   </>;
 }

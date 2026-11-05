@@ -3,12 +3,14 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { EmojiPicker } from "./tag-navigation-editor";
 
-let resize: () => void;
+const observers = new Set<() => void>();
+const resize = () => observers.forEach(callback => callback());
 beforeEach(() => {
   vi.stubGlobal("ResizeObserver", class {
-    constructor(callback: () => void) { resize = callback; }
-    observe() {}
-    disconnect() {}
+    constructor(private readonly callback: () => void) {}
+    observe() { observers.add(this.callback); }
+    unobserve() { observers.delete(this.callback); }
+    disconnect() { observers.delete(this.callback); }
   });
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });

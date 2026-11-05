@@ -1551,6 +1551,24 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: journal.path))
     }
 
+    func testExistingNotesShareInferredPropertyTypesAndOrder() async throws {
+        let core = try await store()
+        let firstID = UUID().uuidString.lowercased(), secondID = UUID().uuidString.lowercased()
+        let a = try writeNote(id: firstID, filename: "A", body: "Body A", extra: "tail: A\nfield: 12\nchecked: false\n")
+        let b = try writeNote(id: secondID, filename: "B", body: "Body B", extra: "field: Text\ntail: B\n")
+        let originals = try [Data(contentsOf: a), Data(contentsOf: b)]
+        let first = try await call(core, "getNoteProperties", ["id": firstID])["properties"] as! [[String: Any]]
+        let second = try await call(core, "getNoteProperties", ["id": secondID])["properties"] as! [[String: Any]]
+        XCTAssertEqual(first.compactMap { $0["name"] as? String }, ["checked", "field", "tail"])
+        XCTAssertEqual(second.compactMap { $0["name"] as? String }, ["checked", "field", "tail"])
+        XCTAssertEqual(first.first { $0["name"] as? String == "field" }?["type"] as? String, "text")
+        XCTAssertEqual(first.first { $0["name"] as? String == "field" }?["value"] as? String, "12")
+        XCTAssertEqual(second.first { $0["name"] as? String == "field" }?["type"] as? String, "text")
+        XCTAssertNil(first.first { $0["name"] as? String == "checked" }?["missing"])
+        XCTAssertEqual(second.first { $0["name"] as? String == "checked" }?["missing"] as? Bool, true)
+        XCTAssertEqual(try [Data(contentsOf: a), Data(contentsOf: b)], originals)
+    }
+
     func testVaultPropertyDefinitionsSynchronizeTypesOptionsAndKeepValuesIndependent() async throws {
         try await verifySharedPropertyDefinitions(shared: false)
     }
@@ -1752,6 +1770,30 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: outside), original)
     }
 
+    func testPropertyIconsPersistWithoutRewritingNotes() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let file = try writeNote(id: id, body: "First", extra: "summary: One\n")
+        let original = try Data(contentsOf: file)
+        let initial = try await call(core, "getPropertyIcons")
+        let key = "property:summary", filenameKey = "note:\(id)"
+        let icons = try await call(core, "setPropertyIcon", ["key": key, "icon": "icon:star", "baseHash": initial["contentHash"]!])
+        await expectCode("INVALID_PROPERTY_ICON") {
+            _ = try await self.call(core, "setPropertyIcon", ["key": key, "icon": "emoji:🚀", "baseHash": icons["contentHash"]!])
+        }
+        await expectCode("HASH_CONFLICT") {
+            _ = try await self.call(core, "setPropertyIcon", ["key": key, "icon": NSNull(), "baseHash": initial["contentHash"]!])
+        }
+        let saved = try await call(core, "setPropertyIcon", ["key": filenameKey, "icon": "emoji:🚀", "baseHash": icons["contentHash"]!])
+        let reopened = try await store(create: false)
+        let persisted = try await call(reopened, "getPropertyIcons")
+        XCTAssertEqual(persisted["icons"] as? [String: String], [key: "icon:star", filenameKey: "emoji:🚀"])
+        XCTAssertEqual(persisted["contentHash"] as? String, saved["contentHash"] as? String)
+        let restored = try await call(reopened, "setPropertyIcon", ["key": filenameKey, "icon": NSNull(), "baseHash": persisted["contentHash"]!])
+        XCTAssertEqual(restored["icons"] as? [String: String], [key: "icon:star"])
+        XCTAssertEqual(try Data(contentsOf: file), original)
+    }
+
     func testVaultPropertyLabelsPersistWithoutRewritingNotesAndRejectConflicts() async throws {
         let core = try await store()
         let first = try writeNote(id: UUID().uuidString.lowercased(), body: "First", extra: "summary: One\n")
@@ -1890,9 +1932,9 @@ final class VaultStoreTests: XCTestCase {
         let reopened = try await store(create: false)
         let fields = try await call(reopened, "getNoteProperties", ["id": id])
         let properties = try XCTUnwrap(fields["properties"] as? [[String: Any]])
-        XCTAssertEqual(properties.map { $0["name"] as! String }, ["新名称: 引用", "别名", "日期"])
-        XCTAssertEqual(properties.map { $0["type"] as! String }, ["select", "multiSelect", "date"])
-        XCTAssertEqual((properties[0]["options"] as? [[String: String]])?.first?["color"], "purple")
+        XCTAssertEqual(properties.map { $0["name"] as! String }, ["别名", "新名称: 引用", "日期"])
+        XCTAssertEqual(properties.map { $0["type"] as! String }, ["multiSelect", "select", "date"])
+        XCTAssertEqual((properties[1]["options"] as? [[String: String]])?.first?["color"], "purple")
         XCTAssertTrue(try String(contentsOf: url, encoding: .utf8).contains("\"别名\":\n  - One # item\n  - Two"))
     }
     func testPropertyRenamePreservesBOMCRLFAndQuotedKeys() throws {
@@ -1959,7 +2001,7 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertTrue(raw.hasSuffix("# Body\n\n<!-- raw -->\n"))
         let fields = try await call(core, "getNoteProperties", ["id": id])
         let values = try XCTUnwrap(fields["properties"] as? [[String: Any]])
-        XCTAssertEqual(values.map { $0["type"] as! String }, ["text", "unsupported", "multiSelect", "date", "checkbox"])
+        XCTAssertEqual(values.map { $0["type"] as! String }, ["multiSelect", "checkbox", "date", "text", "unsupported"])
         await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": oldHash, "name": "summary", "remove": true]) }
         await expectCode("INVALID_PROPERTY") { _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "id", "type": "text", "value": "bad"]) }
         note = try await call(core, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "summary", "remove": true])
@@ -2000,8 +2042,8 @@ final class VaultStoreTests: XCTestCase {
         let renamedURL = vault.appendingPathComponent(note["relativePath"] as! String)
         let fields = try await call(reopened, "getNoteProperties", ["id": id])
         let values = try XCTUnwrap(fields["properties"] as? [[String: Any]])
-        XCTAssertEqual(values.map { $0["type"] as! String }, ["text", "multiSelect", "date", "checkbox"])
-        XCTAssertEqual(values[2]["value"] as? String, "")
+        XCTAssertEqual(values.map { $0["type"] as! String }, ["date", "multiSelect", "text", "checkbox"])
+        XCTAssertEqual(values[0]["value"] as? String, "")
         XCTAssertEqual(values[3]["value"] as? Bool, false)
         note = try await call(reopened, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "empty date", "type": "date", "value": "2028-02-29"])
         note = try await call(reopened, "updateNoteProperty", ["id": id, "baseHash": note["contentHash"]!, "name": "empty date", "type": "date", "value": ""])

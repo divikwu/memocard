@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createBridge, createWebTransport, imageBase64 } from "./bridge";
+import { localWebReconnected } from "./web-connection";
 
 const response = (data: unknown = {}, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 
@@ -45,15 +46,20 @@ describe("local web bridge", () => {
     expect(window.location.hash).toBe("#/home");
   });
 
-  it("reports a stopped local service as requiring a fresh launch URL", async () => {
+  it("reports the outage and signals recovery once the same session answers", async () => {
+    window.history.replaceState(null, "", "#/notes/current-note");
     const fetcher = vi.fn<typeof fetch>().mockRejectedValueOnce(new TypeError("Failed to fetch")).mockResolvedValueOnce(response({ ok: true, data: { connected: true } }));
     const call = createBridge(createWebTransport(fetcher));
-    await expect(call("saveNote", { body: "retain me" })).rejects.toMatchObject({
-      code: "BRIDGE_UNAVAILABLE",
-      message: "此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。",
-      retryable: false,
-    });
-    await expect(call("getStatus")).resolves.toEqual({ connected: true });
+    const reconnected = vi.fn();
+    window.addEventListener(localWebReconnected, reconnected);
+    try {
+      await expect(call("saveNote", { body: "retain me" })).rejects.toMatchObject({ code: "BRIDGE_UNAVAILABLE" });
+      expect(reconnected).not.toHaveBeenCalled();
+      await expect(call("getStatus")).resolves.toEqual({ connected: true });
+      expect(reconnected).toHaveBeenCalledOnce();
+      expect(window.location.hash).toBe("#/notes/current-note");
+      expect(fetcher.mock.calls.map(([path]) => path)).toEqual(["/api/bridge", "/api/bridge"]);
+    } finally { window.removeEventListener(localWebReconnected, reconnected); }
   });
 
   it("preserves the native conflict response", async () => {

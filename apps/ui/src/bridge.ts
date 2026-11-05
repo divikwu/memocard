@@ -1,6 +1,7 @@
 import type { BridgeRequest, BridgeResponse, PropertyChange } from "@memocard/contracts";
 import { createId } from "./uuid";
 import { isBrowserVault, isLocalWeb } from "./client-mode";
+import { localWebReconnected } from "./web-connection";
 import { browserTransport } from "./browser-runtime";
 import { externalUrl } from "./urls";
 
@@ -8,6 +9,8 @@ export { isBrowserVault, isLocalWeb } from "./client-mode";
 
 type Transport = (request: BridgeRequest) => Promise<unknown>;
 const pickerOperations = new Set(["selectVault", "reauthorizeVault", "pickImage", "setMCPEnabled"]);
+// These writes can still commit after a UI timeout. Keep the queue waiting for the actual reply.
+const commitOperations = new Set(["saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout", "setPropertyIcon"]);
 
 declare global {
   interface Window {
@@ -29,7 +32,7 @@ export function createBridge(transport?: Transport, timeoutMs = 15_000) {
     try {
       // Invoke within the click's user activation, before any asynchronous initialization.
       const pendingReply = transport({ version: 1, requestId: createId(), operation, params });
-      const reply = pickerOperations.has(operation) || timeoutMs === 0 ? await pendingReply : await Promise.race([
+      const reply = pickerOperations.has(operation) || commitOperations.has(operation) || timeoutMs === 0 ? await pendingReply : await Promise.race([
         pendingReply,
         new Promise<never>((_, reject) => {
           timer = setTimeout(() => reject(new BridgeFailure("TIMEOUT", "操作暂未完成。内容仍保留在编辑器中，请稍后重试。", true)), timeoutMs);
@@ -85,13 +88,15 @@ export function createWebTransport(fetcher: typeof fetch = fetch): Transport {
   // The one-time credential must not remain in browser history or in copied links.
   if (connecting) window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#/home`);
   let session: Promise<void> | undefined;
+  let interrupted = false;
 
   async function post(path: string, value: unknown): Promise<unknown> {
     let response: Response;
     try {
       response = await fetcher(path, { method: "POST", credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify(value) });
     } catch {
-      throw new BridgeFailure("BRIDGE_UNAVAILABLE", "此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。");
+      interrupted = true;
+      throw new BridgeFailure("BRIDGE_UNAVAILABLE", "正在等待本机服务恢复，编辑中的内容仍保留在此页面。");
     }
     if (response.status === 401 || response.status === 403) throw new BridgeFailure("WEB_UNAUTHORIZED", "此页面的本机 Web 授权已失效。请重新打开本机 Web；编辑中的内容仍保留在此页面。");
     if (!response.ok) throw new BridgeFailure("WEB_UNAVAILABLE", "本机 Web 暂时无法完成操作，请重试。", true);
@@ -118,7 +123,12 @@ export function createWebTransport(fetcher: typeof fetch = fetch): Transport {
       const params = { ...message.params, name: file.name, base64: await imageBase64(file) };
       return post("/api/bridge", { ...message, operation: "importAttachment", params });
     }
-    return post("/api/bridge", message);
+    const response = await post("/api/bridge", message);
+    if (interrupted && message.operation === "getStatus" && (response as Partial<BridgeResponse> | null)?.ok === true) {
+      interrupted = false;
+      window.dispatchEvent(new Event(localWebReconnected));
+    }
+    return response;
   };
 }
 

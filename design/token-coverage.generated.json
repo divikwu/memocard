@@ -13929,6 +13929,12 @@
       "type": "position",
       "contract": "platform.positioning",
       "source": "apps/ui/node_modules/@base-ui/react/select/positioner/SelectPositionerCssVars.d.ts"
+    },
+    {
+      "name": "--collapsible-panel-height",
+      "type": "dimension",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/collapsible/panel/CollapsiblePanelCssVars.d.ts"
     }
   ]
 }

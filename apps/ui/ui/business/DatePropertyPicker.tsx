@@ -2,6 +2,5 @@ import { createDatePropertyPicker } from "../../src/DatePropertyPicker.core";
 import { Calendar } from "../components/calendar";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
-import { Switch } from "../components/switch";
 
-export const DatePropertyPicker = createDatePropertyPicker({ DayPicker: Calendar, Button, Input, Switch });
+export const DatePropertyPicker = createDatePropertyPicker({ DayPicker: Calendar, Button, Input });

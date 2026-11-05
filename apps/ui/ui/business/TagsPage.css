@@ -1,4 +1,4 @@
-.ui-tag-directory { --tag-control-size: calc(var(--spacing-1) * 7); --tag-control-gap: calc(var(--spacing-1) / 2); --tag-indent: calc(var(--tag-control-size) + var(--tag-control-gap)); display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 3); min-width: 0; }
+.ui-tag-directory { --tag-directory-row-height: var(--size-element-sm); --tag-control-size: calc(var(--spacing-1) * 7); --tag-control-gap: calc(var(--spacing-1) / 2); --tag-indent: calc(var(--tag-control-size) + var(--tag-control-gap)); display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 3); min-width: 0; }
 .ui-tag-directory-toolbar { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); }
 .ui-tag-directory-panel { flex: 1; min-width: 0; padding: calc(var(--spacing-1) * 2); border-radius: var(--radius-card); background: var(--color-background-surface); }
 .ui-tag-directory-table { min-width: calc(var(--spacing-1) * 120); table-layout: fixed; border-collapse: separate; border-spacing: 0 calc(var(--spacing-1) / 2); }
@@ -10,13 +10,13 @@
 .ui-tag-directory-table .ui-tag-directory-label-heading { padding-inline-start: calc(var(--tag-control-size) * 2 + var(--tag-control-gap) * 2 + var(--spacing-1) * 2); }
 .ui-tag-directory-table .ui-tag-directory-count-heading { padding-inline: calc(var(--spacing-1) * 3); text-align: end; }
 .ui-tag-directory-table .ui-tag-directory-actions-heading { padding-inline: calc(var(--spacing-1) * 1.5); text-align: end; }
-.ui-tag-directory-table .ui-tag-directory-row { height: var(--size-element-md); border: 0; background: transparent; }
-.ui-tag-directory-row > td { height: var(--size-element-md); padding: 0 var(--spacing-1); border: 0; transition: background-color var(--duration-fast) var(--ease-standard); }
+.ui-tag-directory-table .ui-tag-directory-row { height: var(--tag-directory-row-height); border: 0; background: transparent; }
+.ui-tag-directory-row > td { padding: 0 var(--spacing-1); border: 0; transition: background-color var(--duration-fast) var(--ease-standard); }
 .ui-tag-directory-row > td:last-child { padding-inline-end: calc(var(--spacing-1) / 2); }
-.ui-tag-directory-table th:first-child, .ui-tag-directory-row > td:first-child { border-start-start-radius: var(--radius-full); border-end-start-radius: var(--radius-full); }
-.ui-tag-directory-table th:last-child, .ui-tag-directory-row > td:last-child { border-start-end-radius: var(--radius-full); border-end-end-radius: var(--radius-full); }
+.ui-tag-directory-table th:first-child, .ui-tag-directory-row > td:first-child { border-start-start-radius: inherit; border-end-start-radius: inherit; }
+.ui-tag-directory-table th:last-child, .ui-tag-directory-row > td:last-child { border-start-end-radius: inherit; border-end-end-radius: inherit; }
 .ui-tag-directory-row:is(:hover, :has(:focus-visible)) > td { background: var(--color-overlay-hover); }
-.ui-tag-directory-label { position: relative; display: flex; min-width: 0; height: var(--size-element-md); align-items: center; gap: var(--tag-control-gap); padding-inline-start: calc(var(--tag-depth) * var(--tag-indent)); }
+.ui-tag-directory-label { position: relative; display: flex; min-width: 0; height: var(--tag-directory-row-height); align-items: center; gap: var(--tag-control-gap); padding-inline-start: calc(var(--tag-depth) * var(--tag-indent)); }
 /* Extend each segment halfway across the row gap to keep sibling guides continuous. */
 .ui-tag-directory-guide { position: absolute; inset-block: calc(var(--spacing-1) / -4); inset-inline-start: calc(var(--tag-guide-depth) * var(--tag-indent) + var(--tag-indent) + var(--tag-control-size) / 2 - var(--border-width) / 2); width: var(--border-width); background: var(--color-divider); pointer-events: none; }
 .ui-tag-directory-guide[data-end] { clip-path: inset(0 0 50%); }
@@ -29,7 +29,7 @@
 .ui-tag-directory-row button:hover { background: transparent; }
 .ui-tag-directory-row :is(.ui-tag-directory-toggle, .ui-tag-directory-icon, .ui-tag-directory-pin):hover { background: var(--color-overlay-hover); }
 .ui-tag-directory-name { position: relative; display: flex; flex: 1; flex-direction: column; min-width: 0; }
-.ui-tag-directory-name-button { display: block; width: 100%; min-width: 0; height: var(--size-element-sm); padding: 0 var(--spacing-1); overflow: hidden; border-width: 0; border-radius: var(--radius-full); text-align: start; text-overflow: ellipsis; font-weight: var(--font-weight-normal); }
+.ui-tag-directory-name-button { display: block; width: 100%; min-width: 0; height: var(--size-element-sm); padding: 0 var(--spacing-1); overflow: hidden; border-width: 0; border-radius: var(--radius-element); text-align: start; text-overflow: ellipsis; font-weight: var(--font-weight-normal); }
 .ui-tag-directory-name-button:active { background: var(--color-overlay-hover); }
 .ui-tag-directory-path { padding-inline: var(--spacing-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: calc(var(--spacing-1) * 3.5); }
 .ui-tag-directory-row[data-flat] .ui-tag-directory-name-button { height: calc(var(--spacing-1) * 4.5); line-height: calc(var(--spacing-1) * 4.5); }
@@ -38,7 +38,7 @@
 [data-ui-theme="dark"] .ui-tag-directory-name-form { box-shadow: var(--shadow-outlined-2); }
 .ui-tag-directory-table .ui-tag-directory-count { width: 100%; height: var(--size-element-sm); justify-content: flex-end; padding-inline: calc(var(--spacing-1) * 2); color: var(--color-text-secondary); font-size: var(--font-size-xs); font-weight: var(--font-weight-normal); font-variant-numeric: tabular-nums; }
 .ui-tag-directory-count:hover { color: var(--color-text-primary); }
-.ui-tag-directory-actions { display: flex; height: var(--size-element-md); align-items: center; justify-content: flex-end; gap: var(--spacing-1); }
+.ui-tag-directory-actions { display: flex; height: var(--tag-directory-row-height); align-items: center; justify-content: flex-end; gap: var(--spacing-1); }
 .ui-tag-directory-pin { flex-shrink: 0; width: var(--size-element-sm); height: var(--size-element-sm); color: var(--color-icon-secondary); }
 .ui-tag-directory-pin[aria-pressed="true"] { color: var(--color-icon-primary); }
 .ui-tag-directory-table .ui-tag-directory-error { background: transparent; }
@@ -48,5 +48,6 @@
   .ui-tag-directory-row:is(:hover, :has(:focus-visible)) .ui-tag-directory-pin { opacity: 1; }
 }
 @media (max-width: 767px) {
+  .ui-tag-directory { --tag-directory-row-height: var(--size-element-md); }
   .ui-tag-directory-toolbar .ui-collection-search-input { min-height: calc(var(--spacing-1) * 11); }
 }

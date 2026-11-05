@@ -15,12 +15,5 @@ export function parsePropertyDate(value:string) {
 }
 
 export function formatPropertyDate(value:string) {
-  return parsePropertyDate(value) ? `${value.slice(5,7)}/${value.slice(8,10)}/${value.slice(0,4)}${value.includes('T') ? ` ${value.slice(11)}` : ''}` : value;
-}
-
-export function propertyDateTime(day:string, time:string, original:string):string {
-  const existingZone = original.match(/(Z|[+-]\d{2}:\d{2})$/)?.[1];
-  const offset = -new Date(`${day}T${time}`).getTimezoneOffset();
-  const zone = existingZone ?? `${offset < 0 ? '-' : '+'}${String(Math.floor(Math.abs(offset)/60)).padStart(2,'0')}:${String(Math.abs(offset)%60).padStart(2,'0')}`;
-  return `${day}T${time.length === 5 ? `${time}:00` : time}${zone}`;
+  return validPropertyDate(value) ? `${value.slice(5,7)}/${value.slice(8,10)}/${value.slice(0,4)}` : value;
 }

@@ -7,16 +7,17 @@ type Transport = <T>(operation: string, params?: Record<string, unknown>) => Pro
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error' | 'conflict' | 'indexing';
 const key = (draft: Draft) => JSON.stringify([draft.title, draft.body, draft.tags, draft.inheritedTags, draft.relativePath]);
 export const conflictError = (error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && ['REVISION_CONFLICT', 'HASH_CONFLICT', 'SOURCE_CONFLICT', 'NOTE_NOT_FOUND', 'NOTE_DELETED'].includes(String(error.code)));
-const rejectedConversion = (error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'LOSSY_PROPERTY_CONVERSION');
+const isPropertyRejection = (error: unknown) => Boolean(error && typeof error === 'object' && 'code' in error && (error.code === 'INVALID_PROPERTY' || error.code === 'LOSSY_PROPERTY_CONVERSION'));
 
 /** One queue owns both recovery and source writes, so an old commit cannot erase newer recovery. */
 export class EditorSession {
   current: Draft;
   state: SaveState = 'idle';
   error: unknown = null;
+  propertyRejected = false;
   private persisted: string;
   private tail: Promise<unknown> = Promise.resolve();
-  private recoveryQueued = false;
+  private recoveryQueued?: Promise<unknown>;
   private hadRecovery = false;
   private timer?: ReturnType<typeof setTimeout>;
   private disposed = false;
@@ -38,9 +39,10 @@ export class EditorSession {
   private get bodyDirty() { return key(this.current) !== this.persisted && Boolean(this.current.baseHash || this.current.title?.trim() || this.current.body.trim() || this.hasPropertyInput()); }
   get dirty() { return this.bodyDirty || Boolean(this.current.baseHash && this.current.pendingProperties?.length); }
   private emit() { if (!this.disposed) this.notify(); }
-  private failed(error: unknown) {
+  private failed(error: unknown, propertyRejected = false) {
     const indexing = Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'INDEXING');
     this.error = indexing ? null : error;
+    this.propertyRejected = propertyRejected;
     this.state = indexing ? 'indexing' : conflictError(error) ? 'conflict' : 'error';
     if (indexing && !this.disposed) {
       clearTimeout(this.timer);
@@ -57,16 +59,16 @@ export class EditorSession {
     this.current = { ...this.current, body, tags: inlineTags(body), relativePath, ...(title === undefined ? {} : { title }) };
     if (this.state !== 'conflict') this.state = this.dirty ? 'idle' : this.writing ? 'saving' : 'saved';
     this.emit();
-    void this.recover().catch(error => { this.error = error; if (this.state !== 'conflict') this.state = 'error'; this.emit(); });
+    void this.recover().catch(error => { this.error = error; this.propertyRejected = false; if (this.state !== 'conflict') this.state = 'error'; this.emit(); });
     clearTimeout(this.timer);
     if (this.dirty && this.state !== 'conflict') this.timer = setTimeout(() => { void this.save().catch(() => undefined); }, 650);
   }
   recover(): Promise<unknown> {
-    if (!this.canDraft || (!this.dirty && !this.hadRecovery) || this.recoveryQueued) return this.tail;
-    this.recoveryQueued = true;
+    if (!this.canDraft || (!this.dirty && !this.hadRecovery)) return Promise.resolve();
+    if (this.recoveryQueued) return this.recoveryQueued;
     this.hadRecovery = true;
-    return this.enqueue(async () => {
-      this.recoveryQueued = false;
+    return this.recoveryQueued = this.enqueue(async () => {
+      this.recoveryQueued = undefined;
       if (this.dirty || key(this.current) !== this.persisted) await this.transport('saveDraft', this.params(this.current));
       else if (this.hadRecovery) {
         // Undo can return to the saved source while an older recovery still exists.
@@ -88,11 +90,10 @@ export class EditorSession {
     // An empty field alone does not create a new page.
     if (!this.dirty) return Promise.resolve();
     this.propertyRecovery = true;
-    // Preserve intent before attempting any source write. A failed intent stays at the head.
-    void this.recover().catch(error => { this.error = error; this.state = 'error'; this.emit(); });
+    // Preserve intent before attempting any source write.
+    void this.recover().catch(error => { if (this.state !== 'conflict') this.failed(error); });
     return this.enqueue(async () => {
-      // Rejected conversions are retired; write and recovery failures still need an explicit retry.
-      if (this.state === 'conflict' || (this.state === 'error' && !rejectedConversion(this.error))) throw this.error;
+      if (this.state === 'conflict' || (this.state === 'error' && !this.propertyRejected)) throw this.error;
       await this.drain(true);
     });
   }
@@ -109,7 +110,7 @@ export class EditorSession {
       this.persisted = key({ ...snapshot, title, body, inheritedTags: undefined, relativePath: path });
       this.current = { ...this.current, title: this.current.title === snapshot.title ? title : this.current.title, body: this.current.body === snapshot.body ? body : this.current.body, inheritedTags: undefined, relativePath: this.current.relativePath === snapshot.relativePath ? path : this.current.relativePath, baseHash: note.contentHash };
       this.hadRecovery = this.dirty;
-      this.state = this.dirty ? 'idle' : 'saved'; this.error = null;
+      this.state = this.dirty ? 'idle' : 'saved'; this.error = null; this.propertyRejected = false;
       // The source bridge removes only the matching recovery. Restore the newest version immediately.
       if (this.dirty && this.canDraft) await this.transport('saveDraft', this.params(this.current));
       if (this.bodyDirty && !this.disposed) {
@@ -125,6 +126,7 @@ export class EditorSession {
   private async drain(oneProperty = false): Promise<void> {
     if (this.state === 'conflict') throw this.error;
     if (!this.dirty && !this.propertyRecovery && !this.hadRecovery) return;
+    let propertyRejected = false;
     try {
       while (this.dirty) {
         await this.saveBody();
@@ -140,10 +142,11 @@ export class EditorSession {
           id: this.current.id, baseHash: this.current.baseHash, deferWhileIndexing: true,
           ...(this.current.vaultBinding ? { vaultBinding: this.current.vaultBinding } : {}),
         }); } catch (error) {
-          if (rejectedConversion(error)) {
+          if (isPropertyRejection(error)) {
             // The backend guarantees rejection before any source or schema changes.
             this.current = {...this.current,pendingProperties:this.current.pendingProperties!.slice(1)};
             if (this.canDraft) await this.transport('saveDraft',this.params(this.current));
+            propertyRejected = true;
           }
           throw error;
         }
@@ -159,9 +162,9 @@ export class EditorSession {
         await this.transport('saveDraft', { ...this.params(this.current), pendingProperties: [], title: '', body: '', tags: [], baseHash: null });
       }
       if (!this.dirty) { this.propertyRecovery = false; this.hadRecovery = false; }
-      this.state = this.dirty ? 'idle' : 'saved'; this.error = null; this.emit();
+      this.state = this.dirty ? 'idle' : 'saved'; this.error = null; this.propertyRejected = false; this.emit();
     } catch (error) {
-      this.failed(error); throw error;
+      this.failed(error, propertyRejected); throw error;
     }
   }
   save(): Promise<void> {
@@ -181,7 +184,7 @@ export class EditorSession {
     this.hadRecovery = clearRecovery;
     this.propertyRecovery = Boolean(initial.pendingProperties?.length);
     this.definitionHash = undefined;
-    this.state = 'idle'; this.error = null; this.emit();
+    this.state = 'idle'; this.error = null; this.propertyRejected = false; this.emit();
   }
   activate() { this.disposed = false; }
   dispose() { this.disposed = true; clearTimeout(this.timer); }

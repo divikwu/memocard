@@ -97,7 +97,7 @@ export function IOSAppChrome(p:IOSAppChromeProps) {
     if(action === "pin-tag" && p.tag && !await togglePinned(p.tag))setNavigationOpen(true);
     if(action === "edit-tag" && p.tag)setEditingTag(p.tag);
   });
-  const navigationTags=p.tags.map(item=>({id:`tag:${item.name}`,path:item.name,title:item.name.slice(item.name.lastIndexOf("/")+1),icon:"number",emoji:preferences.icons[item.name],selected:p.view === "notes" && p.tag === item.name}));
+  const navigationTags=p.tags.map(item=>({id:`tag:${item.name}`,path:item.name,title:item.name.slice(item.name.lastIndexOf("/")+1),icon:"number",emoji:preferences.icons[item.name]?.startsWith("icon:") ? undefined : preferences.icons[item.name],selected:p.view === "notes" && p.tag === item.name}));
   useIOSSurface("navigation", {
     kind:"list",title:"MemoCard",presented:navigationOpen,error:tagError,resetKey:vaultId || "disconnected",
     rowRadius:themeRadius ?? Number.parseFloat(getPreviewRadius(radius).radius) * 16,
@@ -174,7 +174,7 @@ function IOSTagEditor({path,icon:initialIcon,onClose,onSave}:{path:string;icon:s
   useIOSSurface("tag-editor", {
     kind:"form",title:"编辑标签",presented:true,busy,error,message:"使用 / 分隔多级标签；改名会更新笔记中的标签。",
     primary:{id:"save",title:"保存",disabled:busy || !name.trim()},
-    sections:[{id:"name",fields:[{id:"name",title:"标签名称",value:name,disabled:busy},{id:"icon",title:"图标 Emoji（可留空）",value:icon,disabled:busy}]}],
+    sections:[{id:"name",fields:[{id:"name",title:"标签名称",value:name,disabled:busy},{id:"icon",title:"图标 Emoji（可留空）",value:icon.startsWith("icon:") ? "" : icon,disabled:busy}]}],
   }, async(action,value)=>{
     if(saving.current)return;
     if(action === "close")onClose();

@@ -51,6 +51,11 @@ test("floating note outline follows heading edits, duplicate titles, and its two
   const nav = await findByRole("navigation", { name: "笔记目录" });
   expect(within(nav).getAllByRole("button", { name: "Same" })).toHaveLength(2);
   const links = within(nav).getAllByRole("button", { name: "Same" });
+  expect(getComputedStyle(nav.closest('[data-slot="popover-content"]')!).borderRadius).toBe("12px");
+  for (const link of links) {
+    expect(getComputedStyle(link).height).toBe("32px");
+    expect(getComputedStyle(link).fontWeight).toBe("400");
+  }
   expect(links[1].getBoundingClientRect().left).toBeGreaterThan(links[0].getBoundingClientRect().left);
   act(() => { editor.commands.setContent("<h2>Renamed</h2><p>Body</p><h3>Second</h3>"); });
   await waitFor(() => expect(within(nav).getByRole("button", { name: "Renamed" })).toBeTruthy());
@@ -486,11 +491,11 @@ for (const size of ["14", "16"]) for (const width of [390, 1024]) {
     expect(getComputedStyle(section).paddingTop).toBe("0px");
     if (width >= 768) {
       expect(getComputedStyle(popup).padding).toBe("12px");
-      expect(getComputedStyle(popup).borderRadius).toBe("20px");
+      expect(getComputedStyle(popup).borderRadius).toBe("12px");
       document.documentElement.style.setProperty("--radius-element", "4px");
-      await waitFor(() => expect(getComputedStyle(popup).borderRadius).toBe("10px"));
+      await waitFor(() => expect(getComputedStyle(popup).borderRadius).toBe("6px"));
       document.documentElement.style.removeProperty("--radius-element");
-      await waitFor(() => expect(getComputedStyle(popup).borderRadius).toBe("20px"));
+      await waitFor(() => expect(getComputedStyle(popup).borderRadius).toBe("12px"));
     }
     const picker = popup.getBoundingClientRect();
     expect(picker.width).toBeGreaterThan(0);

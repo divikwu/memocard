@@ -63,7 +63,7 @@ final class LocalWebServerTests: XCTestCase {
         XCTAssertEqual(result["operation"] as? String, "getStatus")
         XCTAssertEqual(result["epoch"] as? Int, 7)
 
-        await server.revokeSessions()
+        try await server.revokeSessions()
         let revoked = try await post(origin.appendingPathComponent("api/bridge"), origin: origin, cookie: cookie, body: [
             "version": 1, "requestId": "request-2", "operation": "getStatus", "params": [:],
         ])

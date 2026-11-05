@@ -13,7 +13,7 @@ const tags = [{ name: "项目", count: 8 }, { name: "项目/MemoCard", count: 5 
 const props = (): AppSidebarProps => ({ view: "notes", tag: null, tags, vaultName: "我的笔记", vaultId, registeredVaults: [{ vaultId, name: "我的笔记", active: true }, { vaultId: "other", name: "工作笔记", active: false }], connected: true, canTrash: true, vaultStatusText: "已连接", hasVaultIssue: false, canCreate: true, canChooseVault: true, canCreateVault: true, needsPermission: true, working: false, filterCounts: { untagged: 2, images: 4, links: 6 }, onNavigate: vi.fn(), onNewNote: vi.fn(), onSearch: vi.fn(), onSelectVault: vi.fn(), onActivateVault: vi.fn(), onReauthorize: vi.fn(), onRenameTag: vi.fn(async () => {}) });
 
 beforeEach(() => {
-  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
   Object.defineProperty(window, "matchMedia", { configurable: true, value: vi.fn((query: string) => ({ matches: query.includes("max-width") && window.innerWidth < 768, media: query, onchange: null, addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn() })) });
   localStorage.removeItem(preferencesKey);
@@ -103,15 +103,23 @@ it("edits tag name and icon through the existing rename callback and preference 
   const name = within(dialog).getByRole("textbox", { name: "标签名称" });
   await user.clear(name);
   await user.type(name, "项目/设计");
-  await user.click(within(dialog).getByRole("button", { name: "选择 Emoji" }));
-  await user.click(within(dialog).getByRole("button", { name: "清除图标" }));
-  await user.click(within(dialog).getByRole("button", { name: "保存" }));
+  const trigger = within(dialog).getByRole("button", { name: "更换图标" });
+  await user.click(trigger);
+  await user.click(within(dialog).getByRole("tab", { name: "图标" }));
+  await user.type(within(dialog).getByRole("textbox", { name: "搜索图标" }), "star");
+  await user.click(within(dialog).getByRole("button", { name: "星标" }));
+  await waitFor(() => expect(within(dialog).queryByRole("region", { name: "标签图标选项" })).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
+  expect(name).toHaveProperty("value", "项目/设计");
+  expect(args.onRenameTag).not.toHaveBeenCalled();
+  expect(JSON.parse(localStorage.getItem(preferencesKey)!).icons["项目/memocard"]).toBe("icon:star");
+  await user.type(name, "{Enter}");
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBeNull());
   expect(args.onRenameTag).toHaveBeenCalledWith("项目/MemoCard", "项目/设计");
   const saved = JSON.parse(localStorage.getItem(preferencesKey) || "{}");
   expect(saved.pinned).toEqual(["项目/设计"]);
-  expect(saved.icons["项目/设计"]).toBe("");
-  expect(saved.icons["项目/MemoCard"]).toBeUndefined();
+  expect(saved.icons["项目/设计"]).toBe("icon:star");
+  expect(saved.icons["项目/memocard"]).toBeUndefined();
 });
 
 it("keeps failed rename drafts open and does not write appearance preferences", async () => {
@@ -120,10 +128,11 @@ it("keeps failed rename drafts open and does not write appearance preferences", 
   await user.click(screen.getByRole("button", { name: "标签操作 生活" }));
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
-  fireEvent.change(within(dialog).getByRole("textbox", { name: "标签名称" }), { target: { value: "工作" } });
-  await user.click(within(dialog).getByRole("button", { name: "保存" }));
+  const name = within(dialog).getByRole("textbox", { name: "标签名称" });
+  await user.clear(name);
+  await user.type(name, "工作{Enter}");
   expect((await screen.findByRole("alert")).textContent).toBe("标签名称已存在");
-  expect((within(dialog).getByRole("textbox", { name: "标签名称" }) as HTMLInputElement).value).toBe("工作");
+  expect((name as HTMLInputElement).value).toBe("工作");
   expect(localStorage.getItem(preferencesKey)).toBeNull();
 });
 
@@ -133,7 +142,8 @@ it("keeps ordinary Emoji search Enter inside the picker without saving the tag",
   await user.click(screen.getByRole("button", { name: "标签操作 生活" }));
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
-  await user.click(within(dialog).getByRole("button", { name: "选择 Emoji" }));
+  await user.click(within(dialog).getByRole("button", { name: "更换图标" }));
+  await user.click(within(dialog).getByRole("tab", { name: "Emoji" }));
   const search = within(dialog).getByRole("textbox", { name: "搜索 Emoji" });
   await user.type(search, "警告{Enter}");
   expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBe(dialog);
@@ -141,7 +151,7 @@ it("keeps ordinary Emoji search Enter inside the picker without saving the tag",
   expect(within(dialog).getByRole("button", { name: "警告、小心" })).not.toBeNull();
 });
 
-it("focuses the anchored editor and discards unsaved name and Emoji changes on outside dismissal", async () => {
+it("focuses the anchored editor and saves the name on outside dismissal", async () => {
   const user = userEvent.setup();
   const args = mount();
   await user.click(screen.getByRole("button", { name: "标签操作 生活" }));
@@ -151,15 +161,9 @@ it("focuses the anchored editor and discards unsaved name and Emoji changes on o
   await waitFor(() => expect(document.activeElement).toBe(name));
   await user.clear(name);
   await user.type(name, "工作");
-  await user.click(within(dialog).getByRole("button", { name: "选择 Emoji" }));
-  const search = within(dialog).getByRole("textbox", { name: "搜索 Emoji" });
-  await waitFor(() => expect(document.activeElement).toBe(search));
-  await user.type(search, "🧑🏽‍💻{Enter}");
-  expect(within(dialog).getByRole("button", { name: "选择 Emoji" }).textContent).toBe("🧑🏽‍💻");
   await user.click(screen.getByRole("button", { name: /^主页$/ }));
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBeNull());
-  expect(args.onRenameTag).not.toHaveBeenCalled();
-  expect(localStorage.getItem(preferencesKey)).toBeNull();
+  expect(args.onRenameTag).toHaveBeenCalledWith("生活", "工作");
 });
 
 it("protects an anchored rename from Escape and outside dismissal while saving", async () => {
@@ -172,9 +176,9 @@ it("protects an anchored rename from Escape and outside dismissal while saving",
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
   const name = within(dialog).getByRole("textbox", { name: "标签名称" });
   fireEvent.change(name, { target: { value: "工作" } });
-  await user.click(within(dialog).getByRole("button", { name: "保存" }));
+  await user.type(name, "{Enter}");
   expect(name).toHaveProperty("disabled", true);
-  await user.click(within(dialog).getByRole("button", { name: "保存中…" }));
+  expect(within(dialog).getByRole("status").textContent).toBe("保存中…");
   await user.keyboard("{Escape}");
   await user.click(screen.getByRole("button", { name: /^主页$/ }));
   expect(screen.getByRole("dialog", { name: "编辑标签" })).toBe(dialog);
@@ -202,8 +206,9 @@ it("returns keyboard focus to the renamed tag when its original trigger is repla
   await user.click(screen.getByRole("button", { name: "标签操作 生活" }));
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
-  fireEvent.change(within(dialog).getByRole("textbox", { name: "标签名称" }), { target: { value: "工作" } });
-  await user.click(within(dialog).getByRole("button", { name: "保存" }));
+  const name = within(dialog).getByRole("textbox", { name: "标签名称" });
+  fireEvent.change(name, { target: { value: "工作" } });
+  await user.type(name, "{Enter}");
   await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "工作" })));
 });
 

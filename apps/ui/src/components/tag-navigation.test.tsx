@@ -75,24 +75,25 @@ it("selects nested tags and saves icons without a tag search control", async () 
   await user.click(screen.getByRole("button", { name: "标签操作 工作/设计" }));
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
   await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "标签名称" })));
-  expect(screen.getByRole("button", { name: "选择 Emoji" }).textContent).toBe("");
+  expect(screen.getByRole("button", { name: "更换图标" }).textContent).toBe("");
   expect(screen.queryByRole("button", { name: "使用图标 🎨" })).toBeNull();
-  await user.click(screen.getByRole("button", { name: "选择 Emoji" }));
-  expect(screen.getByRole("region", { name: "选择图标" })).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "更换图标" }));
+  expect(screen.getByRole("region", { name: "标签图标选项" })).toBeTruthy();
+  await user.click(screen.getByRole("tab", { name: "Emoji" }));
   expect(screen.getByRole("button", { name: "清除图标" }).hasAttribute("disabled")).toBe(true);
   await user.type(screen.getByRole("textbox", { name: "搜索 Emoji" }), "🎨");
   await user.click(await screen.findByRole("button", { name: /调色板/ }));
-  expect(screen.getByRole("button", { name: "选择 Emoji" }).textContent).toBe("🎨");
-  expect(screen.getByRole("button", { name: "清除图标" }).hasAttribute("disabled")).toBe(false);
-  await user.click(screen.getByRole("button", { name: "保存" }));
-  expect(screen.queryByLabelText("编辑标签")).toBeNull();
+  await waitFor(() => expect(screen.queryByRole("region", { name: "标签图标选项" })).toBeNull());
+  expect(screen.getByRole("dialog", { name: "编辑标签" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByLabelText("编辑标签")).toBeNull());
   expect(screen.getByRole("button", { name: "工作/设计" }).textContent).toContain("🎨");
   cleanup();
   render(<TagNavigation {...props} />);
   expect(screen.getByRole("button", { name: "工作/设计" }).textContent).toContain("🎨");
 });
 
-it("renames before saving display preferences and discards unsaved edits", async () => {
+it("renames with Enter before saving display preferences", async () => {
   const onRename = vi.fn().mockResolvedValue(undefined);
   const user = userEvent.setup();
   render(<TagNavigation {...props} onRename={onRename} />);
@@ -100,7 +101,7 @@ it("renames before saving display preferences and discards unsaved edits", async
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
   await user.clear(screen.getByRole("textbox", { name: "标签名称" }));
   await user.type(screen.getByRole("textbox", { name: "标签名称" }), "职业");
-  await user.click(screen.getByRole("button", { name: "保存" }));
+  await user.keyboard("{Enter}");
   expect(onRename).toHaveBeenCalledWith("工作", "职业");
 });
 

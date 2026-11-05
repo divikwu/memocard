@@ -57,11 +57,22 @@ export function losslessPropertyConversion(original:NoteProperty, converted:Note
 }
 
 // Preview and first save share the same library schema, never another note's values.
-export function inheritedProperties(properties:NoteProperty[], stored:Record<string,PropertyDefinition>):NoteProperty[] {
-  properties = properties.map(listAsMultiSelect);
-  const definitions:Record<string,PropertyDefinition> = Object.assign(Object.create(null),Object.fromEntries(Object.entries(stored).map(([name,definition]) => [name,resolvedPropertyDefinition(definition,properties.filter(property => property.name === name))])));
-  for (const property of properties) if (property.editable && property.type !== 'unsupported' && !definitions[property.name]) {
-    definitions[property.name] = newPropertyDefinition(properties.filter(item => item.name === property.name),property.type);
+export function groupProperties(properties:NoteProperty[]) {
+  const groups = new Map<string, NoteProperty[]>();
+  for (const raw of properties) {
+    const property = listAsMultiSelect(raw);
+    const group = groups.get(property.name);
+    if (group) group.push(property);
+    else groups.set(property.name,[property]);
+  }
+  return groups;
+}
+
+export function inheritedProperties(properties:NoteProperty[], stored:Record<string,PropertyDefinition>, groups = groupProperties(properties)):NoteProperty[] {
+  const definitions:Record<string,PropertyDefinition> = Object.assign(Object.create(null),Object.fromEntries(Object.entries(stored).map(([name,definition]) => [name,resolvedPropertyDefinition(definition,groups.get(name) ?? [])])));
+  for (const [name, group] of groups) if (!definitions[name]) {
+    const types = group.map(item => item.type).filter(type => type !== 'unsupported');
+    if (types.length) definitions[name] = newPropertyDefinition(group,types.every(type => type === types[0]) ? types[0]! : 'text');
   }
   return Object.keys(definitions).sort().map(name => {
     const definition = definitions[name];

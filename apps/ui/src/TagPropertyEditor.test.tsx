@@ -105,6 +105,23 @@ it('does not truncate the available tags to the first twelve',async () => {
   await screen.findByRole('option',{name:'属性标签 标签19'});
   expect(screen.getAllByRole('option')).toHaveLength(20);
 });
+it('reuses suggestions on reopen and refreshes them after a vault change event',async () => {
+  vi.mocked(request).mockClear();
+  const props = {vaultBinding:'tag-cache-test',tags:[],busy:false,error:'',onSave:vi.fn()};
+  const first = render(<TagPropertyEditor {...props} />);
+  await screen.findByRole('option',{name:'属性标签 work'});
+  first.unmount();
+  const second = render(<TagPropertyEditor {...props} />);
+  await screen.findByRole('option',{name:'属性标签 work'});
+  expect(request).toHaveBeenCalledTimes(1);
+  second.unmount();
+  window.dispatchEvent(new CustomEvent('memocard:event',{detail:{type:'notesChanged'}}));
+  vi.mocked(request).mockResolvedValue({tags:[{name:'new-tag'}]});
+  render(<TagPropertyEditor {...props} />);
+  await screen.findByRole('option',{name:'属性标签 new-tag'});
+  expect(screen.queryByRole('option',{name:'属性标签 work'})).toBeNull();
+  expect(request).toHaveBeenCalledTimes(2);
+});
 
 it('returns to the search after deleting a focused chip from the keyboard',async () => {
   const {user,input,onSave} = await setup(['work','项目/设计']);

@@ -277,7 +277,7 @@ it('responds immediately to a checkbox click and retains the value during the sa
 
 it('uses the matching save snapshot, ignores an older read and reloads on a later body revision',async () => {
  let complete!: (value:unknown) => void;
- vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels'} : new Promise(resolve => { complete = resolve; }));
+ vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels'} : operation === 'getStatus' ? {capabilities:[]} : new Promise(resolve => { complete = resolve; }));
  const props = {note,tags:[],canEdit:true,busy:false,onApply:vi.fn()};
  const view = render(<NoteProperties {...props} />);
  fireEvent.click(screen.getByRole('button',{name:/^更多属性$/}));
@@ -447,7 +447,8 @@ it('renames vault-wide labels and retains the input on a failed save',async () =
  await user.keyboard('{Enter}');
  expect(await screen.findByRole('alert')).toHaveProperty('textContent','属性名称已存在。');
  expect(input).toHaveProperty('value','新摘要');
- await user.click(within(dialog).getByRole('button',{name:'保存'}));
+ await waitFor(()=>expect(document.activeElement).toBe(input));
+ await user.keyboard('{Enter}');
  await waitFor(()=>expect(screen.queryByRole('dialog',{name:'重命名属性'})).toBeNull());
  expect(request).toHaveBeenLastCalledWith('renamePropertyLabel',{key:'property:摘要',label:'新摘要',baseHash:'new-hash'});
  expect(screen.getByRole('button',{name:'属性菜单 新摘要'})).toBeTruthy();
@@ -457,14 +458,19 @@ it('cancels rename with Escape and skips saving an unchanged name',async () => {
  const {user,onApply}=await setup();
  await user.click(screen.getByRole('button',{name:'属性菜单 摘要'}));
  await user.click(await screen.findByRole('menuitem',{name:'重命名'}));
- await screen.findByRole('textbox',{name:'新属性名'});
- await user.keyboard('{Escape}');
+ const input=await screen.findByRole('textbox',{name:'新属性名'});
+ await user.clear(input); await user.type(input,'放弃改名{Escape}');
  await waitFor(()=>expect(screen.queryByRole('dialog',{name:'重命名属性'})).toBeNull());
  await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('button',{name:'属性菜单 摘要'})));
  expect(onApply).not.toHaveBeenCalled();
  await user.click(screen.getByRole('button',{name:'属性菜单 摘要'}));
  await user.click(await screen.findByRole('menuitem',{name:'重命名'}));
- await user.click(await screen.findByRole('button',{name:'保存'}));
+ const unchanged=await screen.findByRole('textbox',{name:'新属性名'});
+ expect(screen.queryByRole('button',{name:'保存'})).toBeNull();
+ await waitFor(()=>expect(document.activeElement).toBe(unchanged));
+ await user.keyboard('{Enter}');
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'重命名属性'})).toBeNull());
+ expect(vi.mocked(request).mock.calls.some(([operation])=>operation==='renamePropertyLabel')).toBe(false);
  expect(onApply).not.toHaveBeenCalled();
 });
 it('duplicates a choice property with a unique name and preserves values and colors',async () => {
@@ -625,11 +631,16 @@ it.each(['getNoteProperties','getPropertyLabels'])('retries failed %s reads with
    return implementation(op,params);
  });
  const onApply=vi.fn(), user=userEvent.setup();
- render(<NoteProperties note={note} tags={[]} canRead canEdit={false} busy={false} onApply={onApply} />);
+ render(<NoteProperties note={note} tags={[]} canRead canEdit={operation === 'getPropertyLabels'} busy={false} onApply={onApply} />);
  await user.click(screen.getByRole('button',{name:'更多属性'}));
  expect((await screen.findByRole('alert')).textContent).toContain('配置文件暂时无法读取');
+ if (operation === 'getPropertyLabels') {
+   await user.click(await screen.findByRole('button',{name:'编辑属性 摘要'}));
+   expect(screen.getByRole('button',{name:'重试读取名称'})).toBeTruthy();
+   await user.keyboard('{Escape}');
+ }
  failed=false;
- await user.click(screen.getByRole('button',{name:'重试读取'}));
+ await user.click(screen.getByRole('button',{name:operation === 'getPropertyLabels' ? '重试读取名称' : '重试读取'}));
  await waitFor(()=>expect(screen.queryByRole('alert')).toBeNull());
  expect(screen.getByText('原值')).toBeTruthy();
  expect(vi.mocked(request).mock.calls.filter(([op])=>op === operation)).toHaveLength(2);
@@ -657,27 +668,21 @@ it('validates number input and saves zero, negative decimals and empty values',a
   if(value!=='') { await user.click(screen.getByRole('button',{name:'编辑属性 数量'})); input=await screen.findByRole('textbox',{name:'属性值'}); }
  }
 });
-it('enables time on an existing date and saves it when clicking outside',async () => {
- const {user,onApply}=await setup();
- await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
- await user.click(await screen.findByRole('switch',{name:'包含时间'}));
- fireEvent.input(screen.getByLabelText('时间'),{target:{value:'14:30:15.123'}});
- await user.click(document.body);
- await waitFor(()=>expect(onApply).toHaveBeenCalledWith({name:'日期',type:'date',value:expect.stringMatching(/^2026-10-12T14:30:15\.123[+-]\d{2}:\d{2}$/)}));
-});
-it('preserves existing time and timezone when changing the day, and can remove time',async () => {
+it.each(['calendar', 'input'])('shows only the day and preserves stored time when editing via %s',async method => {
  vi.mocked(request).mockImplementation(async operation => operation === 'getPropertyLabels' ? {labels:{},contentHash:'labels-hash'} : {properties:[...properties.filter(item=>item.name!=='日期'),{name:'日期',type:'date',value:'2026-10-12T14:30:15.123+08:00',editable:true}],writable:true,contentHash:'hash'});
  const {user,onApply}=await setup();
- await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
- expect((await screen.findByRole('switch',{name:'包含时间'})).getAttribute('aria-checked')).toBe('true');
- expect(screen.getByLabelText('时间')).toHaveProperty('value','14:30:15.123');
- await user.click(screen.getByRole('button',{name:'2026年10月15日'}));
+ const date = screen.getByRole('button',{name:'编辑属性 日期'});
+ expect(date.textContent).toBe('10/12/2026');
+ await user.click(date);
+ const input = await screen.findByRole('textbox',{name:'属性值'});
+ expect(screen.queryByRole('switch',{name:'包含时间'})).toBeNull();
+ if (method === 'calendar') {
+  await user.click(screen.getByRole('button',{name:'2026年10月15日'}));
+ } else {
+  await user.clear(input);
+  await user.type(input,'10/15/2026{Enter}');
+ }
  await waitFor(()=>expect(onApply).toHaveBeenLastCalledWith({name:'日期',type:'date',value:'2026-10-15T14:30:15.123+08:00'}));
- await user.click(screen.getByRole('button',{name:'编辑属性 日期'}));
- await user.click(await screen.findByRole('switch',{name:'包含时间'}));
- expect(screen.queryByLabelText('时间')).toBeNull();
- await user.click(screen.getByRole('button',{name:'2026年10月15日'}));
- await waitFor(()=>expect(onApply).toHaveBeenLastCalledWith({name:'日期',type:'date',value:'2026-10-15'}));
 });
 
 function responsivePropertyViewport(initialMobile=false) {
@@ -808,7 +813,7 @@ it('preserves mobile date Escape cancellation and commits a changed date when cl
  await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑属性 日期'})).toBeNull());
 });
 
-it('uses the common mobile sheet for a property rename and cancels without writing its label', async () => {
+it('saves a changed property name when closing the mobile sheet', async () => {
  vi.stubGlobal('innerWidth',390);
  vi.stubGlobal('matchMedia',()=>({matches:true,addEventListener(){},removeEventListener(){}}));
  const {user}=await setup();
@@ -817,11 +822,12 @@ it('uses the common mobile sheet for a property rename and cancels without writi
  const sheet=await screen.findByRole('dialog',{name:'重命名属性'});
  expect(sheet.dataset.side).toBe('bottom');
  const input=within(sheet).getByRole('textbox',{name:'新属性名'});
- await user.clear(input);await user.type(input,'未保存名称');
+ vi.mocked(request).mockResolvedValueOnce({labels:{'property:摘要':'新摘要'},contentHash:'saved'});
+ await user.clear(input);await user.type(input,'新摘要');
  await user.click(within(sheet).getByRole('button',{name:'关闭重命名属性'}));
  await waitFor(()=>expect(screen.queryByRole('dialog',{name:'重命名属性'})).toBeNull());
- expect(vi.mocked(request).mock.calls.some(([operation])=>operation==='renamePropertyLabel')).toBe(false);
- expect(screen.getByRole('button',{name:'属性菜单 摘要'})).toBeTruthy();
+ expect(request).toHaveBeenLastCalledWith('renamePropertyLabel',{key:'property:摘要',label:'新摘要',baseHash:'labels-hash'});
+ expect(screen.getByRole('button',{name:'属性菜单 新摘要'})).toBeTruthy();
 });
 
 it('saves inline number input on blur and discards changes on Escape like text input',async () => {

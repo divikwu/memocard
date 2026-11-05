@@ -1,5 +1,5 @@
-import { afterEach, expect, inject, test } from "vitest";
-import type { NoteProperties as Properties, PropertyLayout } from "@memocard/contracts";
+import { afterEach, expect, inject, test, vi } from "vitest";
+import type { NoteProperties as Properties, PropertyLayout, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { commands, page, server, userEvent } from "vitest/browser";
 import { act, cleanup, render, waitFor, within } from "@testing-library/react";
@@ -8,6 +8,8 @@ import { ComponentDocs } from "../ui/ComponentDocs";
 import { ComponentDocsExample } from "../ui/ComponentDocsTemplate";
 import { componentDocs, type ComponentKey } from "../ui/component-docs.data";
 import { Button } from "../ui/components/button";
+import { Tabs, TabsList, TabsTrigger } from "../ui/components/tabs";
+import { Checkbox } from "../ui/components/checkbox";
 import { TooltipHints } from "../ui/components/tooltip";
 import { Sidebar, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "../ui/components/sidebar";
 import { ActionGroup, MobileActionGroupProvider } from "../ui/components/action-group";
@@ -75,6 +77,7 @@ const preferenceProperties: Properties = {
     {name: "零值", type: "number", value: "0", editable: true},
     {name: "未完成", type: "checkbox", value: false, editable: true},
     {name: "空值", type: "text", value: "", editable: true},
+    {name: "尚未设置", type: "checkbox", value: false, editable: true, missing: true},
   ],
 };
 
@@ -137,7 +140,7 @@ function expectPropertyControlRadius(root: HTMLElement) {
   for (const control of root.querySelectorAll('button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]')) {
     if (control.getAttribute('aria-hidden') === 'true' || control.hasAttribute('hidden')) continue;
     const radius = control.matches('.note-tag-search') ? "0px"
-      : control.matches('.note-tag-pill, .note-tag-color-trigger, .note-tag-remove') ? "9999px" : "8px";
+      : control.matches('.note-tag-pill, .note-tag-color-trigger, .note-tag-remove, [data-day], .note-date-picker .rdp-nav > button') ? "9999px" : "8px";
     expect(getComputedStyle(control).borderRadius, control.outerHTML.slice(0, 350)).toBe(radius);
   }
 }
@@ -198,6 +201,7 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
     const loading = body.getByRole("status", { name: "正在加载标签…" });
     const popup = body.getByRole("dialog", { name: "编辑标签" });
     await settlePropertyPopup(popup);
+    expect(getComputedStyle(popup.querySelector('.note-tag-header')!).padding).toBe("8px");
     expectPropertyCaretInsideCorners(within(popup).getByRole("combobox", { name: "搜索或新建属性标签" }));
     const aligned = (element: HTMLElement, bounds: DOMRect) => {
       const pill = element.querySelector('.note-tag-selected .note-tag-pill')!.getBoundingClientRect();
@@ -211,7 +215,10 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
     expect(within(popup).getByRole("toolbar", { name: "已选标签" }).textContent).toContain("现有");
     expect(body.queryByText("没有其他标签，输入名称可新建。")).toBeNull();
     finishTags({ tags: [{ name: "现有" }, { name: "候选" }] });
-    await body.findByRole("option", { name: "属性标签 候选" });
+    const candidate = await body.findByRole("option", { name: "属性标签 候选" });
+    expect(getComputedStyle(popup).borderRadius).toBe("12px");
+    expect(getComputedStyle(candidate).height).toBe("32px");
+    expect(getComputedStyle(candidate.querySelector('.note-tag-pill')!).fontWeight).toBe("400");
     await waitFor(() => aligned(popup, anchor));
     expectPropertyControlRadius(popup);
     const tagSearch = within(popup).getByRole("combobox", { name: "搜索或新建属性标签" });
@@ -221,6 +228,10 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
     await userEvent.clear(tagSearch);
     await waitFor(() => aligned(popup, anchor));
     expect(body.queryByRole("status", { name: "正在加载标签…" })).toBeNull();
+    const remove = within(popup).getByRole("button", { name: "移除属性标签 现有" });
+    await userEvent.hover(remove);
+    const removeStyle = getComputedStyle(remove);
+    expect(removeStyle.backgroundClip).toMatch(/^content-box(?:,\s*content-box)*$/);
     await dismissPropertyPopup(popup, trigger);
     for (const name of ["单选", "多选"]) {
       const button = canvas.getByRole("button", { name: `编辑属性 ${name}` });
@@ -230,6 +241,12 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
       await waitFor(() => aligned(body.getByRole("dialog", { name: `编辑属性 ${name}` }), bounds));
       const choicePopup = body.getByRole("dialog", { name: `编辑属性 ${name}` });
       await settlePropertyPopup(choicePopup);
+      expect(getComputedStyle(choicePopup.querySelector('.note-tag-header')!).padding).toBe("8px");
+      expect(getComputedStyle(choicePopup).borderRadius).toBe("12px");
+      for (const option of within(choicePopup).getAllByRole("option")) {
+        expect(getComputedStyle(option).height).toBe("32px");
+        expect(getComputedStyle(option.querySelector('.note-tag-pill')!).fontWeight).toBe("400");
+      }
       expectPropertyControlRadius(choicePopup);
       await waitFor(() => expect(getComputedStyle(button).backgroundColor).toBe("rgba(0, 0, 0, 0)"));
       await dismissPropertyPopup(choicePopup, button);
@@ -247,7 +264,8 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
       expect(sheet.getBoundingClientRect().right).toBeLessThanOrEqual(390);
       expect(sheet.getBoundingClientRect().bottom).toBeCloseTo(900, 0);
     });
-    expect(within(sheet).getByRole("option", { name: "属性标签 候选" }).getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+    expect(getComputedStyle(sheet).borderTopLeftRadius).toBe("12px");
+    expect(within(sheet).getByRole("option", { name: "属性标签 候选" }).getBoundingClientRect().height).toBe(32);
   } finally { view.unmount(); release(); }
 });
 
@@ -312,7 +330,7 @@ for (const mode of ["light", "dark"] as const) test(`property selector failures 
   } finally { view.unmount(); release(); }
 });
 
-for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 390]) test(`property editors preserve all field and selected-text positions in ${mode} at ${width}px`, async () => {
+for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 390]) test(`property editors preserve field positions and align selected text in ${mode} at ${width}px`, async () => {
   await commands.setReducedMotion("reduce");
   await page.viewport(width, 1000);
   const changes: unknown[] = [];
@@ -354,6 +372,10 @@ for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 
     const layout = () => [...view.container.querySelectorAll('.note-property-row, [data-testid="following-content"]')].map(row => ({top: row.getBoundingClientRect().top - origin.getBoundingClientRect().top, height: row.getBoundingClientRect().height}));
     for (const name of ["编辑标签", "编辑属性 单选", "编辑属性 多选", "编辑属性 日期", "预览图片 图片"]) {
       const trigger = canvas.getByRole("button", { name });
+      for (const pill of trigger.querySelectorAll('.note-tag-pill')) {
+        const style = getComputedStyle(pill);
+        expect(style.paddingInlineEnd).toBe(style.paddingInlineStart);
+      }
       const bounds = layout();
       await userEvent.click(trigger);
       const popup = await body.findByRole("dialog", { name: name === "编辑标签" ? name : name === "预览图片 图片" ? "图片预览 图片" : name });
@@ -365,13 +387,9 @@ for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 
         if (width >= 768) await waitFor(() => {
           const before = textRects(trigger), after = textRects(popup.querySelector('.note-tag-header')!);
           expect(after.length).toBe(before.length);
-          before.forEach((lines, index) => {
-            expect(after[index].length, `${name} pill ${index}`).toBe(lines.length);
-            lines.forEach((rect, line) => {
-              expect(after[index][line].left, `${name} pill ${index}`).toBeCloseTo(rect.left, 1);
-              expect(after[index][line].top, `${name} pill ${index}`).toBeCloseTo(rect.top, 1);
-            });
-          });
+          // Remove buttons can reflow the chips after the first one.
+          expect(after[0][0].left, name).toBeCloseTo(before[0][0].left, 1);
+          expect(after[0][0].top, name).toBeCloseTo(before[0][0].top, 1);
         });
       }
       await dismissPropertyPopup(popup);
@@ -401,10 +419,12 @@ for (const mode of ["light", "dark"] as const) for (const width of [1280, 1024, 
   } finally { view.unmount(); release(); }
 });
 
-for (const mode of ["light", "dark"] as const) test(`property controls share 32px display rows, 36px floating editors and 8px radius in ${mode}`, async () => {
+for (const mode of ["light", "dark"] as const) test(`property controls share 32px display rows, 36px floating editors and control radii in ${mode}`, async () => {
   await commands.setReducedMotion("reduce");
   await page.viewport(390, 900);
   const fixture = propertyLayoutFixture(`property-control-heights-${mode}`);
+  const today = new Date();
+  const selectedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${today.getDate() === 1 ? "02" : "01"}`;
   const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode} style={{ maxWidth: 640, marginInline: "auto", padding: 16 }}>
     <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async () => {}} savedProperties={{
       contentHash: editorNote.contentHash, writable: true,
@@ -413,7 +433,7 @@ for (const mode of ["light", "dark"] as const) test(`property controls share 32p
         { name: "文本", type: "text", value: "一行内容", editable: true },
         { name: "空值", type: "text", value: "", editable: true },
         { name: "数字", type: "number", value: "0", editable: true },
-        { name: "日期", type: "date", value: "2026-11-04", editable: true },
+        { name: "日期", type: "date", value: selectedDate, editable: true },
         { name: "单选", type: "select", value: "设计", options: [{ name: "设计", color: "blue" }], editable: true },
         { name: "多选", type: "multiSelect", value: ["设计"], options: [{ name: "设计", color: "blue" }], editable: true },
         { name: "复选框", type: "checkbox", value: false, editable: true },
@@ -458,7 +478,7 @@ for (const mode of ["light", "dark"] as const) test(`property controls share 32p
           expect(control.getBoundingClientRect().top, row.dataset.propertyKey).toBeCloseTo(label.getBoundingClientRect().top, 1);
         }
         for (const control of view.container.querySelectorAll('.note-properties :is(button, input, textarea, select, .note-property-inline):not(.note-tag-pill, [aria-hidden="true"], [hidden])')) {
-          expect(getComputedStyle(control).borderRadius, control.outerHTML.slice(0, 350)).toBe("8px");
+          expect(getComputedStyle(control).borderRadius, control.outerHTML.slice(0, 350)).toBe(control.matches('[role="checkbox"]') ? "4px" : "8px");
         }
         for (const tag of view.container.querySelectorAll('.note-properties .note-tag-pill')) {
           expect(getComputedStyle(tag).borderRadius).toBe("9999px");
@@ -494,7 +514,44 @@ for (const mode of ["light", "dark"] as const) test(`property controls share 32p
       }
       await userEvent.click(canvas.getByRole("button", { name: "编辑属性 日期" }));
       await within(document.body).findByRole("textbox", { name: "属性值" });
-      expectPropertyControlRadius(within(document.body).getByRole("dialog", { name: "编辑属性 日期" }));
+      const datePopup = within(document.body).getByRole("dialog", { name: "编辑属性 日期" });
+      expectPropertyControlRadius(datePopup);
+      const dateInput = within(datePopup).getByRole("textbox", { name: "属性值" });
+      expect(getComputedStyle(dateInput).paddingInline).toBe("8px");
+      for (const name of ["上个月", "下个月"]) {
+        const { width, height } = within(datePopup).getByRole("button", { name }).getBoundingClientRect();
+        expect(width).toBeCloseTo(height, 1);
+      }
+      if (width >= 768) {
+        expect(getComputedStyle(datePopup).padding).toBe("8px");
+        const todayButton = datePopup.querySelector<HTMLElement>("[data-today] [data-day]")!;
+        const selectedButton = datePopup.querySelector<HTMLElement>('[data-selected-single="true"]')!;
+        const colors = (button: HTMLElement) => {
+          const { backgroundColor, backgroundImage, color } = getComputedStyle(button);
+          return { backgroundColor, backgroundImage, color };
+        };
+        const todayColors = colors(todayButton);
+        const selectedColors = colors(selectedButton);
+        expect(todayColors.backgroundColor).not.toBe(selectedColors.backgroundColor);
+        await userEvent.hover(todayButton);
+        expect(colors(todayButton)).toMatchObject({ backgroundColor: todayColors.backgroundColor, color: todayColors.color });
+        expect(colors(todayButton).backgroundImage).not.toBe(todayColors.backgroundImage);
+        await userEvent.hover(selectedButton);
+        expect(colors(selectedButton)).toEqual(selectedColors);
+        expect(colors(todayButton)).toEqual(todayColors);
+        const weekdays = datePopup.querySelectorAll(".rdp-weekday");
+        for (const day of datePopup.querySelectorAll("button[data-day]")) {
+          const button = day.getBoundingClientRect();
+          const dayCell = day.closest("td")!;
+          const cell = dayCell.getBoundingClientRect();
+          const weekday = weekdays[dayCell.cellIndex].getBoundingClientRect();
+          expect(button.width).toBe(32);
+          expect(button.height).toBe(32);
+          expect(button.left - cell.left).toBeCloseTo(cell.right - button.right, 1);
+          expect(button.top - cell.top).toBeCloseTo(cell.bottom - button.bottom, 1);
+          expect(button.left + button.width / 2).toBeCloseTo(weekday.left + weekday.width / 2, 1);
+        }
+      }
       await userEvent.keyboard("{Escape}");
       await userEvent.click(canvas.getByRole("button", { name: "预览图片 图片" }));
       const imagePopup = await within(document.body).findByRole("dialog", { name: "图片预览 图片" });
@@ -515,7 +572,7 @@ test("property hints avoid pointer noise and prefer the left side on desktop", a
   try {
     const canvas = within(view.container), body = within(document.body);
     const grip = await canvas.findByRole("button", { name: "拖动属性 摘要" });
-    await waitFor(() => expect(grip.draggable).toBe(true));
+    await waitFor(() => expect(grip.hasAttribute("aria-disabled")).toBe(false));
     for (const width of [390, 1024]) {
       await page.viewport(width, 900);
       const name = canvas.getByRole("button", { name: "属性菜单 摘要" });
@@ -1442,6 +1499,89 @@ for (const width of [320, 1024]) {
   });
 }
 
+for (const width of [320, 1024]) {
+  test(`property icon picker in rename preserves drafts and replaces a saved filename Emoji at ${width}px`, async () => {
+    await page.viewport(width, 900);
+    await commands.setReducedMotion("reduce");
+    const note = {...editorNote, id: "11111111-1111-4111-8111-111111111111"};
+    const icons: Record<string, string> = {[`note:${note.id}`]: "emoji:🚀"};
+    const renames: string[] = [];
+    const release = setStorybookRequestHandler((operation, params) => {
+      if (operation === "getPropertyLayout") return emptyPropertyLayout();
+      if (operation === "getPropertyLabels") return {labels: {}, contentHash: "labels"};
+      if (operation === "renamePropertyLabel") {
+        renames.push(String(params.label));
+        return {labels: {[String(params.key)]: params.label}, contentHash: "new-labels"};
+      }
+      if (operation === "getPropertyIcons") return {icons: {...icons}, contentHash: "initial"};
+      if (operation === "setPropertyIcon") {
+        const key = String(params.key);
+        if (params.icon === null) delete icons[key];
+        else icons[key] = String(params.icon);
+        return {icons: {...icons}, contentHash: "saved"};
+      }
+      throw new Error(`Unexpected property operation: ${operation}`);
+    });
+    const view = render(<PreviewModeProvider mode="light"><main className="ui-theme" data-ui-theme="light">
+      <button type="button" className="fixed top-4 right-4 z-10">弹层外部</button>
+      <NoteProperties note={note} tags={[]} canEdit busy={false} iconAccess layoutConnection={{vaultId:"icon-test",read:true,write:true}}
+        savedProperties={{contentHash:note.contentHash,writable:true,properties:[{name:"摘要",type:"text",value:"内容",editable:true}]}} onApply={async () => undefined} />
+    </main></PreviewModeProvider>);
+    const canvas = within(view.container), body = within(document.body);
+    async function openRename(name: string) {
+      const trigger = await canvas.findByRole("button", {name: `属性菜单 ${name}`});
+      await waitFor(() => expect(trigger).toBeEnabled());
+      // Assistive technology can open a menu without focusing its trigger first.
+      act(() => trigger.click());
+      expect(body.queryByRole("menuitem", {name: "更换图标"})).toBeNull();
+      await userEvent.click(await body.findByRole("menuitem", {name: "重命名"}));
+      const rename = within(await body.findByRole("dialog", {name: "重命名属性"}));
+      expect(rename.queryByRole("button", {name: "保存"})).toBeNull();
+      return rename;
+    }
+    async function openPicker(rename: ReturnType<typeof within>) {
+      await userEvent.click(rename.getByRole("button", {name: "更换图标"}));
+      return within(await rename.findByRole("region", {name: "属性图标选项"}));
+    }
+    try {
+      let rename = await openRename("摘要");
+      const input = rename.getByRole("textbox", {name: "新属性名"});
+      const iconTrigger = rename.getByRole("button", {name: "更换图标"});
+      expect(iconTrigger.getBoundingClientRect().right).toBeLessThan(input.getBoundingClientRect().left);
+      await userEvent.fill(input, "临时名称");
+      let picker = await openPicker(rename);
+      expect(picker.queryByRole("tab", {name: "Emoji"})).toBeNull();
+      const tile = await picker.findByRole("button", {name: "笔记"});
+      expect(getComputedStyle(tile).width).toBe("32px");
+      expect(getComputedStyle(tile).height).toBe("32px");
+      expect(getComputedStyle(tile.parentElement!).gap).toBe("4px");
+      await userEvent.fill(await picker.findByRole("textbox", {name: "搜索图标"}), "star");
+      await userEvent.click(picker.getByRole("button", {name: "星标"}));
+      await waitFor(() => expect(icons["property:摘要"]).toBe("icon:star"));
+      expect(input).toHaveValue("临时名称");
+      await waitFor(() => expect(iconTrigger).toHaveAttribute("aria-expanded", "false"));
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("dialog", {name: "重命名属性"})).toBeNull());
+      expect(renames).toEqual([]);
+      rename = await openRename("文件名");
+      expect(rename.getByRole("button", {name: "更换图标"})).toHaveTextContent("🚀");
+      picker = await openPicker(rename);
+      expect(picker.queryByRole("tab")).toBeNull();
+      await userEvent.fill(await picker.findByRole("textbox", {name: "搜索图标"}), "star");
+      await userEvent.click(picker.getByRole("button", {name: "星标"}));
+      await waitFor(() => expect(icons[`note:${note.id}`]).toBe("icon:star"));
+      picker = await openPicker(rename);
+      expect(picker.queryByRole("button", {name: "恢复默认图标"})).toBeNull();
+      await userEvent.fill(rename.getByRole("textbox", {name: "新属性名"}), "文件");
+      if (width < 768) await userEvent.click(rename.getByRole("button", {name: "关闭重命名属性"}));
+      else await userEvent.click(canvas.getByRole("button", {name: "弹层外部"}));
+      await waitFor(() => expect(body.queryByRole("dialog", {name: "重命名属性"})).toBeNull());
+      expect(renames).toEqual(["文件"]);
+      expect(await canvas.findByRole("button", {name: "属性菜单 文件"})).toBeTruthy();
+    } finally { view.unmount(); release(); }
+  });
+}
+
 for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const) {
   test(`single-letter tag creation is first with many matches at ${width}px in ${theme}`, async () => {
     await page.viewport(width, 900);
@@ -1496,7 +1636,7 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
     const canvas = within(view.container), body = within(document.body);
     try {
       for (const name of ["摘要", "得分"]) {
-        await userEvent.click(canvas.getByRole("button", { name: `编辑属性 ${name}` }));
+        await userEvent.click(await canvas.findByRole("button", { name: `编辑属性 ${name}` }));
         const input = await body.findByRole("textbox", { name: "属性值" });
         const style = getComputedStyle(input.closest("form")!);
         const reference = getComputedStyle(canvas.getByTestId("inline-reference"));
@@ -1536,6 +1676,10 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
         await userEvent.click(await body.findByRole("button", { name: `管理${kind} ${kind === "选项" ? "设计" : "开发"}` }));
         await body.findByRole("textbox", { name: `${kind}名称` });
         expectPropertyControlRadius(body.getByRole("menu", { name: `${kind}设置 ${kind === "选项" ? "设计" : "开发"}` }));
+        for (const option of body.getByRole("menu", { name: `${kind}设置 ${kind === "选项" ? "设计" : "开发"}` }).querySelectorAll('.note-tag-color-option')) {
+          expect(getComputedStyle(option).height).toBe("32px");
+          expect(getComputedStyle(option).fontWeight).toBe("400");
+        }
         await userEvent.click(await body.findByRole("menuitem", { name: `删除${kind}` }));
         await checkConfirmation();
         await userEvent.keyboard("{Escape}");
@@ -1544,7 +1688,12 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
       await userEvent.click(await body.findByRole("menuitem", { name: "重命名" }));
       const rename = await body.findByRole("textbox", { name: "新属性名" });
-      expectPropertyControlRadius(rename.closest('[role="dialog"]')!);
+      const renameDialog = rename.closest<HTMLElement>('[role="dialog"]')!;
+      expectPropertyControlRadius(renameDialog);
+      if (width >= 768) {
+        const {paddingTop, paddingRight, paddingBottom, paddingLeft} = getComputedStyle(renameDialog);
+        expect([paddingTop, paddingRight, paddingBottom, paddingLeft]).toEqual(["8px", "8px", "8px", "8px"]);
+      }
       await userEvent.keyboard("{Escape}");
       const more = canvas.queryByRole("button", { name: "更多属性" });
       if (more) await userEvent.click(more);
@@ -1579,9 +1728,14 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       const summary = await canvas.findByRole("button", {name: "编辑属性 摘要"});
       expect(summary.closest(".note-property-row")!.getBoundingClientRect().height).toBeGreaterThan(canvas.getByRole("button", {name: "编辑属性 零值"}).closest(".note-property-row")!.getBoundingClientRect().height);
       await userEvent.click(canvas.getByRole("button", {name: "属性菜单 摘要"}));
-      const move = await body.findByRole("menuitem", {name: "下移"});
-      move.focus();
-      await userEvent.keyboard("{Enter}");
+      await body.findByRole("menuitem", {name: "重命名"});
+      expect(body.queryByRole("menuitem", {name: "上移"})).toBeNull();
+      expect(body.queryByRole("menuitem", {name: "下移"})).toBeNull();
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
+      await waitFor(() => expect(document.activeElement).toBe(canvas.getByRole("button", {name: "属性菜单 摘要"})));
+      canvas.getByRole("button", {name: "拖动属性 摘要"}).focus();
+      await userEvent.keyboard("{ArrowDown}");
       await waitFor(() => expect(names().indexOf("零值")).toBeLessThan(names().indexOf("摘要")));
       await visibility("空值", "为空时隐藏");
       await waitFor(() => expect(canvas.queryByRole("button", {name: "属性菜单 空值"})).toBeNull());
@@ -1589,12 +1743,15 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       expect(canvas.getByRole("button", {name: "编辑属性 零值"})).toHaveProperty("textContent", "0");
       await visibility("未完成", "为空时隐藏");
       expect(canvas.getByRole("checkbox", {name: "切换属性 未完成"}).getAttribute("aria-checked")).toBe("false");
+      await visibility("尚未设置", "为空时隐藏");
+      await waitFor(() => expect(canvas.queryByRole("checkbox", {name: "切换属性 尚未设置"})).toBeNull());
       await visibility("摘要", "始终隐藏");
       await waitFor(() => expect(canvas.queryByRole("button", {name: "属性菜单 摘要"})).toBeNull());
       const hidden = await canvas.findByRole("button", {name: "更多属性"});
       await waitFor(() => expect(document.activeElement).toBe(hidden));
       await userEvent.click(hidden);
       await canvas.findByRole("button", {name: "属性菜单 空值"});
+      expect(canvas.getByRole("checkbox", {name: "切换属性 尚未设置"}).getAttribute("aria-checked")).toBe("false");
       await visibility("摘要", "始终显示");
       await userEvent.click(await canvas.findByRole("button", {name: "收起"}));
       await waitFor(() => expect(canvas.queryByRole("button", {name: "属性菜单 空值"})).toBeNull());
@@ -1673,6 +1830,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
     const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme p-4" data-ui-theme={mode}>
       <div data-testid="border-reference" className="border border-border" />
       <div data-testid="floating-reference" className="surface-floating border shadow-high" />
+      <span data-testid="menu-icon-reference" className="text-secondary" />
       <InputFocusFixture mode={mode} />
       <MobileActionGroupProvider enabled={width < 768}><Slider defaultValue={[50]} aria-label="Web边缘滑块" /></MobileActionGroupProvider>
       <Popover><PopoverTrigger render={<Button />}>打开边缘浮层</PopoverTrigger><PopoverContent><PopoverTitle>边缘浮层</PopoverTitle></PopoverContent></Popover>
@@ -1725,6 +1883,16 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
       });
       await expect.element(surface).toBeVisible();
       checkFloating(surface);
+      if ([1, 3, 4].includes(index)) {
+        expect(getComputedStyle(surface).borderRadius).toBe("12px");
+        const rows = surface.querySelectorAll<HTMLElement>('[role^="menuitem"], [role="option"]');
+        expect(rows.length).toBeGreaterThan(0);
+        for (const row of rows) {
+          expect(getComputedStyle(row).height).toBe("32px");
+          expect(getComputedStyle(row).fontWeight).toBe("400");
+          for (const icon of row.querySelectorAll("svg")) expect(getComputedStyle(icon).color).toBe(getComputedStyle(canvas.getByTestId("menu-icon-reference")).color);
+        }
+      }
       await userEvent.keyboard("{Escape}");
       await expect.element(surface).not.toBeVisible();
       await waitFor(() => expect(document.activeElement).toBe(trigger));
@@ -2268,6 +2436,145 @@ test("Web collection headings align with the sidebar brand and retain compact sp
   }
 });
 
+test("tag picker tabs stay anchored near the viewport edge and use shared controls", async () => {
+  await page.viewport(1495, 720);
+  await commands.setReducedMotion("reduce");
+  const { TagEditor } = await import("../ui/business/tag-navigation-editor");
+  const view = render(<PreviewModeProvider mode="light"><main className="ui-theme" data-ui-theme="light">
+    <button className="fixed bottom-6 left-48">标签操作</button>
+    <Tabs defaultValue="emoji"><TabsList variant="line"><TabsTrigger value="emoji">参考标签页</TabsTrigger></TabsList></Tabs>
+  </main></PreviewModeProvider>);
+  const canvas = within(view.container);
+  const anchor = canvas.getByRole("button", {name: "标签操作"});
+  const reference = canvas.getByRole("tab", {name: "参考标签页"});
+  const editor = render(<PreviewModeProvider mode="light">
+    <TagEditor path="work/design" icon="😀" anchor={anchor} mobile={false} initialPickerOpen onClose={() => undefined} onSave={async () => undefined} />
+  </PreviewModeProvider>);
+  try {
+    const dialog = await within(document.body).findByRole("dialog", {name: "编辑标签"});
+    const controls = within(dialog);
+    const emoji = controls.getByRole("tab", {name: "Emoji"});
+    const icon = controls.getByRole("tab", {name: "图标"});
+    const sharedSearch = controls.getByRole("textbox", {name: "搜索 Emoji"});
+    for (const name of ["标签名称", "搜索 Emoji"]) {
+      const input = getComputedStyle(controls.getByRole("textbox", {name}));
+      expect(input.paddingLeft).toBe("8px");
+      expect(input.paddingRight).toBe("8px");
+    }
+    await waitFor(() => {
+      const bounds = dialog.getBoundingClientRect();
+      expect(bounds.bottom).toBeLessThanOrEqual(720);
+      expect(bounds.width).toBeCloseTo(dialog.offsetWidth, 0);
+    });
+    const bounds = dialog.getBoundingClientRect();
+    const checkBounds = () => {
+      const current = dialog.getBoundingClientRect();
+      expect(current.x).toBeCloseTo(bounds.x, 0);
+      expect(current.y).toBeCloseTo(bounds.y, 0);
+      expect(current.height).toBeCloseTo(bounds.height, 0);
+    };
+    const checkGridEdges = () => {
+      const grid = dialog.querySelector<HTMLElement>('[role="tabpanel"] .note-property-icon-grid')!;
+      const tiles = [...grid.querySelectorAll("button")].map(button => button.getBoundingClientRect());
+      const firstRow = tiles.filter(tile => tile.top === tiles[0].top);
+      const left = grid.getBoundingClientRect().left;
+      expect(firstRow[0].left).toBeCloseTo(left, 0);
+      expect(firstRow.at(-1)!.right).toBeCloseTo(left + grid.clientWidth, 0);
+    };
+    checkGridEdges();
+    await userEvent.click(icon);
+    const iconSearch = await controls.findByRole("textbox", {name: "搜索图标"});
+    expect(iconSearch).toBe(sharedSearch);
+    for (const element of [iconSearch, controls.getByText("笔记与组织")]) {
+      const style = getComputedStyle(element);
+      expect(style.paddingLeft).toBe("8px");
+      expect(style.paddingRight).toBe("8px");
+    }
+    checkBounds();
+    checkGridEdges();
+    await userEvent.fill(controls.getByRole("textbox", {name: "搜索图标"}), "star");
+    await waitFor(() => expect(controls.getByRole("button", {name: "星标"})).toBeVisible());
+    checkBounds();
+    await userEvent.click(emoji);
+    await waitFor(() => expect(controls.getByRole("textbox", {name: "搜索 Emoji"})).toBeVisible());
+    expect(controls.getByRole("textbox", {name: "搜索 Emoji"})).toBe(sharedSearch);
+    expect(sharedSearch).toHaveValue("");
+    checkBounds();
+    expect(document.activeElement).toBe(emoji);
+    expect(getComputedStyle(emoji).fontWeight).toBe(getComputedStyle(reference).fontWeight);
+    expect(emoji.getBoundingClientRect().height).toBe(reference.getBoundingClientRect().height);
+    expect(controls.queryByRole("button", {name: "保存"})).toBeNull();
+    expect(controls.queryByText(/使用 \/ 分隔多级标签/)).toBeNull();
+  } finally { editor.unmount(); }
+});
+
+test("tag icon picker expands and collapses its controls as one panel", async () => {
+  await page.viewport(1440, 900);
+  await commands.setReducedMotion("no-preference");
+  const { TagEditor } = await import("../ui/business/tag-navigation-editor");
+  const anchor = render(<button className="fixed top-24 left-24">标签操作</button>).getByRole("button");
+  let finishSave!: () => void;
+  const pending = new Promise<void>(resolve => { finishSave = resolve; });
+  const save = vi.fn(() => pending);
+  render(<PreviewModeProvider mode="light">
+    <TagEditor path="work/design" icon="icon:star" anchor={anchor} mobile={false} onClose={() => undefined} onSave={save} />
+  </PreviewModeProvider>);
+  const dialog = await within(document.body).findByRole("dialog", {name: "编辑标签"});
+  const controls = within(dialog);
+  const trigger = controls.getByRole("button", {name: "更换图标"});
+
+  function trackHeightChange(searchLabel: string) {
+    return new Promise<{ height: number; contentHeight: number; hasTabs: boolean; hasSearch: boolean }>(resolve => {
+      const onTransition = (event: TransitionEvent) => {
+        const panel = event.target;
+        if (!(panel instanceof HTMLElement) || !panel.matches('section[aria-label="标签图标选项"]') || event.propertyName !== "height") return;
+        dialog.removeEventListener("transitionrun", onTransition);
+        const transition = panel.getAnimations().find(animation => animation instanceof CSSTransition && animation.transitionProperty === "height");
+        if (transition?.effect) transition.currentTime = Number(transition.effect.getTiming().duration) / 2;
+        resolve({
+          height: panel.clientHeight,
+          contentHeight: panel.scrollHeight,
+          hasTabs: Boolean(panel.querySelector('[role="tablist"]')),
+          hasSearch: Boolean(panel.querySelector(`input[aria-label="${searchLabel}"]`)),
+        });
+      };
+      dialog.addEventListener("transitionrun", onTransition);
+    });
+  }
+
+  const opening = trackHeightChange("搜索 Emoji");
+  await userEvent.click(trigger);
+  const expanded = await opening;
+  expect(expanded.height).toBeGreaterThan(0);
+  expect(expanded.height).toBeLessThan(expanded.contentHeight);
+  expect(expanded).toMatchObject({hasTabs: true, hasSearch: true});
+  const panel = controls.getByRole("region", {name: "标签图标选项"});
+  await Promise.all(panel.getAnimations().map(animation => animation.finished));
+  expect(controls.getByRole("tab", {name: "Emoji", selected: true})).toBeVisible();
+  const grid = controls.getByRole("group", {name: "Emoji"});
+  expect(grid.querySelectorAll("button").length).toBeLessThan(150);
+  grid.scrollTop = grid.scrollHeight;
+  expect(await controls.findByRole("button", {name: /^指纹、/})).toBeVisible();
+  await userEvent.click(controls.getByRole("tab", {name: "图标"}));
+  await userEvent.fill(controls.getByRole("textbox", {name: "搜索图标"}), "coffee");
+  const closing = trackHeightChange("搜索图标");
+  await userEvent.click(controls.getByRole("button", {name: "咖啡"}));
+  expect(trigger).toHaveAttribute("aria-expanded", "false");
+  expect(controls.getByRole("textbox", {name: "标签名称"})).toBeEnabled();
+  const collapsed = await closing;
+  expect(collapsed.height).toBeGreaterThan(0);
+  expect(collapsed.height).toBeLessThan(collapsed.contentHeight);
+  expect(collapsed).toMatchObject({hasTabs: true, hasSearch: true});
+  expect(panel.inert).toBe(true);
+  await waitFor(() => expect(panel.isConnected).toBe(false));
+  expect(document.activeElement).toBe(trigger);
+  expect(controls.getByRole("textbox", {name: "标签名称"})).toBeVisible();
+  expect(save).toHaveBeenCalledWith("work/design", "icon:coffee");
+  await userEvent.click(trigger);
+  expect(await controls.findByRole("tab", {name: "Emoji", selected: true})).toBeVisible();
+  finishSave();
+});
+
 test("Web tag directory supports hierarchy, shared pins, renaming and responsive layouts", async () => {
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -2286,14 +2593,30 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     for (const width of [320, 390, 767, 768, 1024, 1440]) {
       await page.viewport(width, 1000);
       const row = directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"}).closest<HTMLElement>(".ui-tag-directory-row")!;
-      await waitFor(() => expect(row.getBoundingClientRect().height).toBe(36));
+      const rowHeight = width < 768 ? 36 : 32;
+      await waitFor(() => expect(row.getBoundingClientRect().height).toBe(rowHeight));
       expect(row.nextElementSibling!.getBoundingClientRect().top - row.getBoundingClientRect().bottom).toBeCloseTo(2, 1);
-      expect(Number.parseFloat(getComputedStyle(row.querySelector("td:first-child")!).borderTopLeftRadius)).toBeGreaterThanOrEqual(row.getBoundingClientRect().height / 2);
-      expect(Number.parseFloat(getComputedStyle(row.querySelector("td:last-child")!).borderTopRightRadius)).toBeGreaterThanOrEqual(row.getBoundingClientRect().height / 2);
+      expect(getComputedStyle(row.querySelector("td:first-child")!).borderTopLeftRadius).toBe("8px");
+      expect(getComputedStyle(row.querySelector("td:last-child")!).borderTopRightRadius).toBe("8px");
+      if (width >= 768) {
+        const sidebarTags = within(canvas.getByRole("navigation", {name: "标签"}));
+        const sidebarRow = sidebarTags.getByRole("button", {name: "生活/咖啡"});
+        expect(sidebarRow.getBoundingClientRect().height).toBe(rowHeight);
+        expect(getComputedStyle(sidebarRow).borderRadius).toBe("8px");
+        for (const name of ["生活", "生活/植物"]) {
+          const toggle = sidebarTags.getByRole("button", {name: `展开或收起标签 ${name}`}).getBoundingClientRect();
+          const rowButton = sidebarTags.getByRole("button", {name});
+          const icon = rowButton.querySelector(".ui-sidebar-row-icon")!.getBoundingClientRect();
+          const guide = rowButton.closest("li")!.querySelector("[data-sidebar='menu-sub']")!;
+          const guideCenter = guide.getBoundingClientRect().left + Number.parseFloat(getComputedStyle(guide).borderLeftWidth) / 2;
+          expect(guideCenter).toBeCloseTo(toggle.left + toggle.width / 2, 1);
+          expect(guideCenter).toBeCloseTo(icon.left + icon.width / 2, 1);
+        }
+      }
       expect(directory.getByRole("table", {name: "标签层级"}).getAttribute("data-slot")).toBe("table");
       for (const header of directory.getAllByRole("columnheader")) expect(header.getBoundingClientRect().height).toBe(32);
-      expect(Number.parseFloat(getComputedStyle(directory.getAllByRole("columnheader")[0]).borderTopLeftRadius)).toBeGreaterThanOrEqual(16);
-      expect(Number.parseFloat(getComputedStyle(directory.getAllByRole("columnheader")[2]).borderTopRightRadius)).toBeGreaterThanOrEqual(16);
+      expect(getComputedStyle(directory.getAllByRole("columnheader")[0]).borderTopLeftRadius).toBe("8px");
+      expect(getComputedStyle(directory.getAllByRole("columnheader")[2]).borderTopRightRadius).toBe("8px");
       for (const control of view.container.querySelectorAll(".ui-tag-directory-toggle, .ui-tag-directory-icon, .ui-tag-directory-pin")) {
         const rect = control.getBoundingClientRect(), parent = control.closest(".ui-tag-directory-row")!.getBoundingClientRect();
         const size = control.classList.contains("ui-tag-directory-pin") ? 32 : 28;
@@ -2333,7 +2656,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
       await userEvent.click(directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"}));
       const editor = directory.getByRole("textbox", {name: "标签名称 生活/咖啡"});
       expect(editor.closest("form")!.getBoundingClientRect().width).toBeLessThanOrEqual(280);
-      expect(editor.closest("tr")!.getBoundingClientRect().height).toBe(36);
+      expect(editor.closest("tr")!.getBoundingClientRect().height).toBe(rowHeight);
       await userEvent.keyboard("{Escape}");
     }
     const coffeeRow = directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"}).closest<HTMLElement>(".ui-tag-directory-row")!;
@@ -2382,12 +2705,18 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     await waitFor(() => expect(desktopEditor.getAttribute("data-slot")).toBe("popover-content"));
     expect(desktopEditor.getBoundingClientRect().left).toBeGreaterThanOrEqual(0);
     expect(desktopEditor.getBoundingClientRect().right).toBeLessThanOrEqual(1440);
-    await userEvent.type(within(desktopEditor).getByRole("textbox", {name: "搜索 Emoji"}), "咖啡");
-    await userEvent.click(within(desktopEditor).getByRole("button", {name: /^茶、热饮、咖啡/}));
-    await userEvent.click(within(desktopEditor).getByRole("button", {name: "保存"}));
+    await userEvent.click(within(desktopEditor).getByRole("tab", {name: "图标"}));
+    await userEvent.type(within(desktopEditor).getByRole("textbox", {name: "搜索图标"}), "咖啡");
+    await userEvent.click(within(desktopEditor).getByRole("button", {name: "咖啡"}));
+    await waitFor(() => expect(within(desktopEditor).queryByRole("region", {name: "标签图标选项"})).toBeNull());
+    expect(body.getByRole("dialog", {name: "编辑标签"})).toBe(desktopEditor);
+    await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
-    expect(directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"}).textContent).toContain("☕");
-    expect(within(canvas.getByRole("navigation", {name: "标签"})).getByRole("button", {name: "生活/咖啡"}).textContent).toContain("☕");
+    const directoryGlyph = directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"}).querySelector("svg")!;
+    const sidebarGlyph = within(canvas.getByRole("navigation", {name: "标签"})).getByRole("button", {name: "生活/咖啡"}).querySelector("svg")!;
+    expect(directoryGlyph.innerHTML).toBe(sidebarGlyph.innerHTML);
+    expect(sidebarGlyph.innerHTML).not.toBe(within(canvas.getByRole("navigation", {name: "标签"})).getByRole("button", {name: "生活/植物"}).querySelector("svg")!.innerHTML);
+    expect((await fixture.request<TagPreferenceState>("getTagPreferences")).icons["生活/咖啡"]).toBe("icon:coffee");
     const name = directory.getByRole("button", {name: "编辑标签名称 生活/咖啡"});
     const nameLeft = name.getBoundingClientRect().left;
     const nameRow = name.closest("tr")!.getBoundingClientRect();
@@ -2435,7 +2764,10 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
     await userEvent.type(input, "日常");
     await userEvent.type(dialog.getByRole("textbox", {name: "搜索 Emoji"}), "图书馆");
     await userEvent.click(dialog.getByRole("button", {name: /^书、书本、书籍/}));
-    await userEvent.click(dialog.getByRole("button", {name: "保存"}));
+    await waitFor(() => expect(dialog.queryByRole("region", {name: "标签图标选项"})).toBeNull());
+    expect(input).toHaveValue("日常");
+    await userEvent.click(input);
+    await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
     const renamed = await directory.findByRole("button", {name: "编辑标签名称 日常"});
     await waitFor(() => expect(document.activeElement).toBe(renamed));
@@ -3028,10 +3360,26 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
         expect(scroll.scrollWidth, overflow.join("\n")).toBeLessThanOrEqual(scroll.clientWidth + 1);
       };
       await waitFor(checkLayout);
+      const propertyOffsets = () => {
+        const titleTop = title.getBoundingClientRect().top;
+        return Object.fromEntries(Array.from(view.container.querySelectorAll<HTMLElement>(".note-property-row[data-property-key]"), row => [
+          row.dataset.propertyKey!,
+          row.querySelector("dd")!.getBoundingClientRect().top - titleTop,
+        ]));
+      };
+      const collapsedOffsets = propertyOffsets();
+      const checkPropertyOffsets = () => {
+        const current = propertyOffsets();
+        for (const [key, top] of Object.entries(collapsedOffsets)) {
+          expect(current[key], `${width}px ${key} offset from title`).toBeCloseTo(top, 1);
+        }
+      };
       await userEvent.click(canvas.getByRole("button", {name: "更多属性"}));
       await waitFor(checkLayout);
+      checkPropertyOffsets();
       await userEvent.click(canvas.getByRole("button", {name: "收起"}));
       await waitFor(checkLayout);
+      checkPropertyOffsets();
       await userEvent.hover(body.querySelector("li")!);
       await waitFor(() => expect(view.container.querySelector<HTMLElement>(".block-controls")!.style.left).not.toBe(""));
       canvas.getByRole("button", {name: "更多属性"}).focus();
@@ -3084,6 +3432,87 @@ test("pointer blur save keeps the next value clickable when an empty property hi
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(document.activeElement).toBe(canvas.getByRole("button", {name: "编辑属性 零值"})));
   } finally { fixture.release(); }
+}, 15_000);
+
+test("filling and clearing properties keeps adjacent rows stable when saving", async () => {
+  await commands.setReducedMotion("reduce");
+  await page.viewport(390, 900);
+  const fixture = propertyLayoutFixture("layout-compact-empty");
+  let properties: Properties = {
+    ...preferenceProperties,
+    properties: [
+      {name:"摘要", type:"text", value:"", editable:true},
+      {name:"数字", type:"number", value:"", editable:true},
+    ],
+  };
+  const widget = () => <PreviewModeProvider mode="light"><main className="ui-theme p-4">
+    <NoteProperties note={editorNote} tags={[]} canEdit busy={false} reserveBodySpace savedProperties={properties} onApply={async change => {
+      properties = {...properties, properties: properties.properties.map(property => property.name === change.name ? {...property, value: change.value ?? ""} : property)};
+      view.rerender(widget());
+    }} />
+    <p data-testid="following-content">正文</p>
+  </main></PreviewModeProvider>;
+  const view = render(widget());
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("button", {name:"编辑属性 摘要"});
+    await document.fonts.ready;
+    const viewport = canvas.getByRole("region", {name:"属性列表"});
+    const origin = view.container.querySelector(".note-properties")!;
+    const layout = () => [...viewport.querySelectorAll(".note-property-row"), canvas.getByTestId("following-content")].map(row => ({
+      top: row.getBoundingClientRect().top - origin.getBoundingClientRect().top,
+      height: row.getBoundingClientRect().height,
+    }));
+    const textOrigin = (element:HTMLElement) => {
+      const rect = element.getBoundingClientRect(), style = getComputedStyle(element);
+      const cell = element.closest("dd")!.getBoundingClientRect();
+      return {left: rect.left - cell.left + parseFloat(style.paddingLeft), top: rect.top - cell.top + parseFloat(style.paddingTop)};
+    };
+    for (const [name, value] of [["摘要", "输入内容"], ["数字", "123"]]) {
+      const button = canvas.getByRole("button", {name:`编辑属性 ${name}`});
+      expect(button.textContent).toBe("空");
+      const before = layout(), beforeText = textOrigin(button);
+      await userEvent.click(button);
+      const input = await canvas.findByRole("textbox", {name:"属性值"});
+      expect(layout()).toEqual(before);
+      expect(textOrigin(input)).toEqual(beforeText);
+      await userEvent.fill(input, value);
+      expect(layout()).toEqual(before);
+      await userEvent.keyboard("{Enter}");
+      await waitFor(() => {
+        expect(canvas.getByRole("button", {name:`编辑属性 ${name}`}).textContent).toBe(value);
+        expect(layout()).toEqual(before);
+      });
+    }
+    for (const expanded of [false, true]) {
+      if (expanded) await userEvent.click(canvas.getByRole("button", {name:"更多属性"}));
+      const write = async (name:string, value:string, before?:ReturnType<typeof layout>) => {
+        const button = canvas.getByRole("button", {name:`编辑属性 ${name}`});
+        const beforeText = textOrigin(button);
+        await userEvent.click(button);
+        const input = await canvas.findByRole("textbox", {name:"属性值"});
+        expect(textOrigin(input)).toEqual(beforeText);
+        await userEvent.fill(input, value);
+        const edited = layout();
+        if (before) expect(edited).toEqual(before);
+        await userEvent.keyboard("{Enter}");
+        await waitFor(() => {
+          const saved = canvas.getByRole("button", {name:`编辑属性 ${name}`});
+          expect(saved.textContent).toBe(value || "空");
+          expect(document.activeElement).toBe(saved);
+          expect(layout()).toEqual(edited);
+        });
+      };
+      if (expanded) {
+        await write("摘要", "输入内容", layout());
+        await write("数字", "123", layout());
+      }
+      await write("摘要", "", layout());
+      await write("数字", "", layout());
+      await write("摘要", "第一行\n第二行");
+      await write("摘要", "");
+    }
+  } finally { view.unmount(); fixture.release(); }
 }, 15_000);
 
 test("inline property editing preserves multiline geometry, resizes and returns keyboard focus", async () => {
@@ -3219,10 +3648,175 @@ test("collapsing properties preserves always-visible tags and custom properties"
   } finally { fixture.release(); }
 }, 20_000);
 
-test("property grips reorder rows with native drag without editing note data", async () => {
-  await page.viewport(1024, 900);
+for (const width of [390, 1100]) test(`cold Web detail shows the body during slow reads and scrolls 40 properties with the note at ${width}px`, async () => {
+  await page.viewport(width, 900);
   await commands.setReducedMotion("reduce");
-  const fixture = propertyLayoutFixture("layout-native-drag"), changes: unknown[] = [];
+  const previousHash = location.hash;
+  const fixture = await createWorkspaceFixture();
+  const note = fixture.snapshot().notes[0];
+  const properties: Properties = {
+    ...preferenceProperties, contentHash: note.contentHash,
+    properties: Array.from({length:40}, (_, index) => ({
+      name: `字段${index}`, type: "text", value: index === 0 ? "需要换行的属性内容".repeat(30) : "属性内容", editable: true,
+    })),
+  };
+  const layout: PropertyLayout = {
+    ...emptyPropertyLayout(), order: ["property:字段0", "system:tags"],
+    visibility: {"property:字段1":"hidden"},
+  };
+  let finishProperties!: () => void, finishLayout!: () => void;
+  const propertyRead = new Promise<void>(resolve => { finishProperties = resolve; });
+  const layoutRead = new Promise<void>(resolve => { finishLayout = resolve; });
+  let pendingProperties = false, pendingLayout = false;
+  history.replaceState(null, "", `#/notes/${note.id}`);
+  const release = setStorybookRequestHandler(async (operation, params) => {
+    if (operation === "getStatus") {
+      const status = await fixture.request<VaultStatus>(operation, params);
+      return {...status, capabilities:[...status.capabilities, "getPropertyLayout"]};
+    }
+    if (operation === "getNoteProperties") {
+      pendingProperties = true;
+      await propertyRead;
+      return properties;
+    }
+    if (operation === "getPropertyLayout") {
+      pendingLayout = true;
+      await layoutRead;
+      return layout;
+    }
+    return fixture.request(operation, params);
+  });
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    const body = await canvas.findByRole("textbox", {name:"笔记内容"});
+    const title = await canvas.findByRole("textbox", {name:"页面标题"});
+    await waitFor(() => expect(pendingProperties && pendingLayout).toBe(true));
+    await document.fonts.ready;
+    expect(body.textContent?.trim()).toBeTruthy();
+    expect(body.getAttribute("contenteditable")).toBe("true");
+    expect(body.getBoundingClientRect().top).toBeLessThan(window.innerHeight);
+    const initialBodyTop = body.getBoundingClientRect().top;
+    const initialTitleTop = title.getBoundingClientRect().top;
+    expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
+    expect(canvas.getByRole("button", {name:"更多属性"})).toBeDisabled();
+    expect(view.container.querySelector("[data-property-key]")).toBeNull();
+    if (width < 768) finishLayout(); else finishProperties();
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
+    expect(body.getBoundingClientRect().top).toBeCloseTo(initialBodyTop, 1);
+    finishProperties();
+    finishLayout();
+    const lastField = await canvas.findByRole("button", {name:"编辑属性 字段39"});
+    expect(view.container.querySelector("[data-property-key]")?.getAttribute("data-property-key")).toBe("property:字段0");
+    expect(canvas.queryByRole("button", {name:"编辑属性 字段1"})).toBeNull();
+    expect(view.container.querySelectorAll('[data-property-key^="property:"]')).toHaveLength(39);
+    expect(canvas.getByRole("textbox", {name:"笔记内容"})).toBe(body);
+    expect(title.getBoundingClientRect().top).toBeCloseTo(initialTitleTop, 1);
+    expect(body.getBoundingClientRect().top).toBeGreaterThan(initialBodyTop);
+    const viewport = lastField.closest<HTMLElement>(".note-property-viewport")!;
+    const scroll = viewport.closest<HTMLElement>(".web-app-scroll")!;
+    expect(viewport.scrollHeight).toBe(viewport.clientHeight);
+    viewport.scrollTop = viewport.scrollHeight;
+    expect(viewport.scrollTop).toBe(0);
+    expect(lastField.getBoundingClientRect().bottom).toBeLessThanOrEqual(viewport.getBoundingClientRect().bottom);
+    const collapsedOffset = body.getBoundingClientRect().top - title.getBoundingClientRect().top;
+    lastField.scrollIntoView({block:"center"});
+    expect(scroll.scrollTop).toBeGreaterThan(0);
+    expect(viewport.scrollTop).toBe(0);
+    await userEvent.click(lastField);
+    const input = await canvas.findByRole("textbox", {name:"属性值"});
+    await waitFor(() => expect(input.getBoundingClientRect().bottom).toBeLessThanOrEqual(viewport.getBoundingClientRect().bottom + 1));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(canvas.queryByRole("textbox", {name:"属性值"})).toBeNull());
+    await userEvent.click(canvas.getByRole("button", {name:"更多属性"}));
+    expect(canvas.getByRole("button", {name:"编辑属性 字段1"})).toBeTruthy();
+    expect(viewport.scrollHeight).toBe(viewport.clientHeight);
+    await userEvent.click(canvas.getByRole("button", {name:"收起"}));
+    expect(body.getBoundingClientRect().top - title.getBoundingClientRect().top).toBeCloseTo(collapsedOffset, 1);
+  } finally {
+    finishProperties(); finishLayout(); view.unmount(); release();
+    history.replaceState(null, "", previousHash || "#/notes");
+  }
+}, 25_000);
+
+test("Web detail fits a short property list without blank rows above the body", async () => {
+  await page.viewport(390, 900);
+  const previousHash = location.hash;
+  const fixture = await createWorkspaceFixture();
+  const note = fixture.snapshot().notes[0];
+  history.replaceState(null, "", `#/notes/${note.id}`);
+  const release = setStorybookRequestHandler((operation, params) => operation === "getNoteProperties"
+    ? {...preferenceProperties, contentHash: note.contentHash, properties: [{name:"摘要", type:"text", value:"短值", editable:true}]}
+    : fixture.request(operation, params));
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("button", {name:"编辑属性 摘要"});
+    const viewport = canvas.getByRole("region", {name:"属性列表"});
+    const list = viewport.querySelector("dl")!;
+    expect(list.children).toHaveLength(5);
+    const {paddingTop, paddingBottom} = getComputedStyle(viewport);
+    const fittedHeight = list.getBoundingClientRect().height + parseFloat(paddingTop) + parseFloat(paddingBottom);
+    expect(viewport.getBoundingClientRect().height).toBeCloseTo(fittedHeight, 1);
+    expect(viewport.scrollHeight).toBe(viewport.clientHeight);
+  } finally {
+    view.unmount(); release();
+    history.replaceState(null, "", previousHash || "#/notes");
+  }
+}, 15_000);
+
+test("property loading keeps the persisted order and holds the warm note body position", async () => {
+  await page.viewport(1100, 900);
+  const binding = "layout-skeleton-vault";
+  const loaded: Properties = {...preferenceProperties, properties: Array.from({length:40}, (_,index) => ({
+    name: `字段${index}`, type: "text", value: "属性内容", editable: true,
+  }))};
+  const layout: PropertyLayout = {
+    order: ["property:字段39", "system:tags"],
+    visibility: Object.fromEntries(loaded.properties.slice(0,32).map(property => [`property:${property.name}`, "hidden"])),
+    contentHash: "0".repeat(64),
+  };
+  let finishLayout!: () => void;
+  const release = setStorybookRequestHandler(async operation => {
+    if (operation === "getStatus") return propertyLayoutStatus();
+    if (operation === "getPropertyLabels") return {labels: {}, contentHash: "labels"};
+    if (operation === "getPropertyLayout") { await new Promise<void>(resolve => { finishLayout = resolve; }); return layout; }
+    throw new Error(`Unexpected property operation: ${operation}`);
+  });
+  const fixture = (key: string) => <PreviewModeProvider mode="light"><main className="ui-theme p-4">
+    <NoteProperties key={key} note={editorNote} vaultBinding={binding} tags={[]} canEdit busy={false} savedProperties={loaded} onApply={async () => {}} />
+    <p>正文定位</p>
+  </main></PreviewModeProvider>;
+  const view = render(fixture("first"));
+  const canvas = within(view.container);
+  try {
+    await waitFor(() => expect(finishLayout).toBeTypeOf("function"));
+    expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
+    expect(view.container.querySelector("[data-property-key]")).toBeNull();
+    finishLayout();
+    await canvas.findByRole("button", {name:"编辑属性 字段39"});
+    expect(view.container.querySelector("[data-property-key]")?.getAttribute("data-property-key")).toBe("property:字段39");
+    expect(canvas.queryByRole("button", {name:"编辑属性 字段0"})).toBeNull();
+    const body = canvas.getByText("正文定位");
+    const readyY = body.getBoundingClientRect().top;
+    const firstRead = finishLayout;
+    view.rerender(fixture("reopen"));
+    expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
+    expect(body.getBoundingClientRect().top).toBeCloseTo(readyY, 1);
+    await waitFor(() => expect(finishLayout).not.toBe(firstRead));
+    finishLayout();
+    await canvas.findByRole("button", {name:"编辑属性 字段39"});
+    expect(body.getBoundingClientRect().top).toBeCloseTo(readyY, 1);
+  } finally { finishLayout?.(); release(); }
+}, 15_000);
+
+test("property grips move a row vertically and shift its neighbors before saving the order", async () => {
+  await page.viewport(1024, 900);
+  await commands.setReducedMotion("no-preference");
+  let finishSave!: () => void;
+  const saving = new Promise<void>(resolve => { finishSave = resolve; });
+  const fixture = propertyLayoutFixture("layout-pointer-drag", () => saving), changes: unknown[] = [];
   const view = render(<PreviewModeProvider mode="light"><main className="ui-theme p-4">
     <NoteProperties note={editorNote} tags={[]} canEdit busy={false} savedProperties={preferenceProperties} onApply={async change => { changes.push(change); }} />
   </main></PreviewModeProvider>);
@@ -3241,11 +3835,50 @@ test("property grips reorder rows with native drag without editing note data", a
     expect(getComputedStyle(name.querySelector("svg")!).visibility).toBe("visible");
     await userEvent.hover(name);
     const grip = await canvas.findByRole("button", {name: "拖动属性 摘要"});
-    expect(grip.draggable).toBe(true);
+    expect(grip.draggable).toBe(false);
     expect(within(name).getByText("摘要").getBoundingClientRect().left).toBeCloseTo(textLeft, 1);
-    await userEvent.dragAndDrop(grip, target, {targetPosition: {x: 30, y: target.getBoundingClientRect().height - 2}});
-    // Release again: WebKit's native drag can suppress the next pointerdown.
-    if (server.browser === "webkit") await commands.releaseLeftMouseButton();
+    const source = grip.closest<HTMLElement>(".note-property-row")!;
+    const start = source.getBoundingClientRect();
+    const targetStart = target.getBoundingClientRect();
+    const bodyBounds = document.body.getBoundingClientRect();
+    let pointerId = 0;
+    grip.addEventListener("pointerdown", event => { pointerId = event.pointerId; });
+    for (const cancel of [true, false]) {
+      await userEvent.hover(grip);
+      await commands.pressLeftMouseButton();
+      try {
+        await userEvent.hover(document.body, { force: true, position: {
+          x: targetStart.left + targetStart.width / 2 - bodyBounds.left,
+          y: targetStart.bottom - 2 - bodyBounds.top,
+        } });
+        expect(source.getBoundingClientRect().left).toBeCloseTo(start.left, 1);
+        await waitFor(() => expect(source.getBoundingClientRect().top).toBeGreaterThan(start.top));
+        expect(getComputedStyle(source).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        expect(getComputedStyle(name).borderRadius).toBe("6px");
+        expect(getComputedStyle(grip).opacity).toBe("1");
+        await waitFor(() => expect(target.getBoundingClientRect().top).toBeCloseTo(start.top, 1));
+        expect(fixture.writes).toHaveLength(0);
+        if (cancel) {
+          const list = source.parentElement!;
+          const bounds = vi.spyOn(list,"getBoundingClientRect");
+          try {
+            for (let index = 0; index < 120; index++) grip.dispatchEvent(new PointerEvent("pointermove", {
+              pointerId, isPrimary:true, bubbles:true, clientY: targetStart.bottom - 3 + index / 120,
+            }));
+            expect(bounds).not.toHaveBeenCalled();
+            await waitFor(() => expect(bounds).toHaveBeenCalledTimes(1));
+          } finally { bounds.mockRestore(); }
+          await userEvent.keyboard("{Escape}");
+          expect(source.getBoundingClientRect().top).toBeCloseTo(start.top, 1);
+          expect(target.getBoundingClientRect().top).toBeCloseTo(targetStart.top, 1);
+        }
+      } finally { await commands.releaseLeftMouseButton(); }
+    }
+    await waitFor(() => expect(fixture.writes).toHaveLength(1));
+    expect(source.hasAttribute("data-dragging")).toBe(false);
+    expect(getComputedStyle(name).borderRadius).toBe("8px");
+    expect(source.getBoundingClientRect().top).toBeCloseTo(targetStart.bottom - start.height, 1);
+    finishSave();
     await waitFor(() => {
       const order = fixture.layout().order;
       expect(order.indexOf("property:零值")).toBeGreaterThanOrEqual(0);
@@ -3266,7 +3899,7 @@ test("property grips reorder rows with native drag without editing note data", a
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(body.queryByRole("menu", {name: "管理属性 标签"})).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(trigger));
-  } finally { fixture.release(); }
+  } finally { finishSave(); fixture.release(); }
 }, 20_000);
 
 for (const direction of ["ArrowUp", "ArrowDown"] as const) {
@@ -3283,7 +3916,7 @@ for (const direction of ["ArrowUp", "ArrowDown"] as const) {
     try {
       const canvas = within(view.container);
       const grip = await canvas.findByRole("button", {name: "拖动属性 摘要"});
-      await waitFor(() => expect(grip.draggable).toBe(true));
+      await waitFor(() => expect(grip.hasAttribute("aria-disabled")).toBe(false));
       const row = grip.closest(".note-property-row")!;
       const neighbor = (direction === "ArrowUp" ? row.previousElementSibling : row.nextElementSibling)!.getAttribute("data-property-key")!;
       grip.focus();
@@ -3293,14 +3926,13 @@ for (const direction of ["ArrowUp", "ArrowDown"] as const) {
       expect(document.activeElement).toBe(grip);
       expect(grip).toHaveProperty("disabled", false);
       expect(grip.getAttribute("aria-disabled")).toBe("true");
-      expect(grip.draggable).toBe(false);
       await userEvent.keyboard("{ArrowDown}{ArrowUp}");
       await frames();
       expect(fixture.writes).toHaveLength(1);
       expect(document.activeElement).toBe(grip);
       expect(changes).toEqual([]);
       completeSave();
-      await waitFor(() => expect(grip.draggable).toBe(true));
+      await waitFor(() => expect(grip.hasAttribute("aria-disabled")).toBe(false));
       await frames();
       const order = fixture.layout().order;
       expect(order.indexOf("property:摘要")).toBeGreaterThanOrEqual(0);
@@ -3340,7 +3972,7 @@ test("removing the last tag hides its empty row and closes editing before reveal
     await waitFor(() => expect(document.activeElement).toBe(hidden));
     expect(changes).toEqual([{name: "tags", type: "list", value: []}]);
     await userEvent.click(hidden);
-    expect(await canvas.findByRole("button", {name: "编辑标签"})).toHaveProperty("textContent", "添加标签");
+    expect(await canvas.findByRole("button", {name: "编辑标签"})).toHaveProperty("textContent", "空");
     expect(body.queryByRole("combobox", {name: "搜索或新建属性标签"})).toBeNull();
     await userEvent.click(canvas.getByRole("button", {name: "编辑标签"}));
     await body.findByRole("combobox", {name: "搜索或新建属性标签"});
@@ -3551,3 +4183,60 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
     expect(canvas.getByRole("button", { name: "打开导航" })).toBeVisible();
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 }, 30_000);
+
+for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) {
+  test(`capture suggestions and link properties share compact popup styles at ${width}px in ${mode}`, async () => {
+    await page.viewport(width, 900);
+    await commands.setReducedMotion("reduce");
+    let editor: import("@tiptap/react").Editor | null = null;
+    const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme p-4" data-ui-theme={mode}>
+      <span data-testid="muted-icon" className="text-secondary" />
+      <QuickCapture vaultId={`compact-popups-${width}-${mode}`} rootNotes tags={["设计"]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
+      <RichMarkdownEditor value="验证链接属性" notePath="notes/popup-style.md" disabled={false} onChange={() => {}} onSave={() => {}} onError={() => {}} onEditorReady={value => { editor = value; }} />
+    </main></PreviewModeProvider>);
+    const canvas = within(view.container), body = within(document.body);
+    const entry = canvas.queryByRole("button", {name: "打开快速记录"});
+    if (entry) await userEvent.click(entry);
+    await userEvent.click(body.getByRole("button", {name: "选择标签"}));
+    const picker = await body.findByRole("dialog", {name: "选择标签"});
+    expect(getComputedStyle(picker).borderRadius).toBe("12px");
+    const option = within(picker).getByRole("button", {name: "设计"});
+    expect(getComputedStyle(option).height).toBe("32px");
+    expect(getComputedStyle(option).fontWeight).toBe("400");
+    expect(getComputedStyle(option.querySelector("svg")!).color).toBe(getComputedStyle(canvas.getByTestId("muted-icon")).color);
+    await userEvent.keyboard("{Escape}");
+    await userEvent.type(body.getByRole("textbox", {name: "快速输入内容"}), "#设");
+    const suggestions = await body.findByRole("group", {name: "标签建议"});
+    expect(getComputedStyle(suggestions).borderRadius).toBe("12px");
+    for (const button of within(suggestions).getAllByRole("button")) {
+      expect(getComputedStyle(button).height).toBe("32px");
+      expect(getComputedStyle(button).fontWeight).toBe("400");
+    }
+    await userEvent.keyboard("{Escape}");
+    if (entry) await userEvent.click(body.getByRole("button", {name: "收起快速记录"}));
+    await userEvent.click(canvas.getByRole("textbox", {name: "笔记内容"}));
+    act(() => { editor!.chain().focus().setTextSelection({from: 1, to: 3}).run(); });
+    await userEvent.click(await body.findByRole("button", {name: "链接"}));
+    const input = await body.findByRole("textbox", {name: "链接地址"});
+    const popup = input.closest<HTMLElement>('[role="dialog"]')!;
+    expect(getComputedStyle(popup).borderTopLeftRadius).toBe("12px");
+    if (width >= 768) expect(getComputedStyle(input).height).toBe("32px");
+    for (const button of popup.querySelectorAll("button")) expect(getComputedStyle(button).fontWeight).toBe("400");
+    await userEvent.click(within(popup).getByRole("button", {name: "取消"}));
+  });
+}
+
+for (const mode of ["light", "dark"] as const) test(`checkboxes share 4px corners across controls and note tasks in ${mode}`, async () => {
+  await page.viewport(1024, 900);
+  const tasks = "- [ ] 未完成\n- [x] 已完成";
+  const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme p-4" data-ui-theme={mode}>
+    <Checkbox aria-label="未选复选框" /><Checkbox checked aria-label="已选复选框" />
+    <Checkbox indeterminate aria-label="部分选中复选框" /><Checkbox disabled aria-label="禁用复选框" />
+    <NoteMarkdown body={tasks} /><NoteMarkdown body={tasks} compact interactive={false} />
+    <RichMarkdownEditor value={tasks} notePath="notes/checkbox-style.md" disabled={false} onChange={() => {}} onSave={() => {}} onError={() => {}} />
+  </main></PreviewModeProvider>);
+  await within(view.container).findByRole("textbox", {name: "笔记内容"});
+  const controls = view.container.querySelectorAll('[data-slot="checkbox"], .ui-note-markdown input[type="checkbox"], .note-task-indicator');
+  expect(controls.length).toBeGreaterThanOrEqual(10);
+  for (const control of controls) expect(getComputedStyle(control).borderRadius).toBe("4px");
+});

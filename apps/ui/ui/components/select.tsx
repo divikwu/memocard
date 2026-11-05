@@ -92,7 +92,7 @@ function SelectContent({
           data-align-trigger={alignItemWithTrigger}
           className={cnState(
             className,
-            "relative isolate z-50 max-h-(--available-height) w-[calc(var(--anchor-width)+var(--spacing-1)*2)] min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-select-popover bg-popover text-primary surface-floating shadow-high border duration-fast-min ease-standard data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            "relative isolate z-50 max-h-(--available-height) w-[calc(var(--anchor-width)+var(--spacing-1)*2)] min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-item bg-popover text-primary surface-floating shadow-high border duration-fast-min ease-standard data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           )}
           {...props}
         >
@@ -128,7 +128,7 @@ function SelectItem({
       data-slot="select-item"
       className={cnState(
         className,
-        "relative flex w-full cursor-default items-center gap-2.5 rounded-item px-2 py-2 text-sm font-medium outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus not-data-[variant=destructive]:focus:**:text-menu-focus data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
+        "relative flex w-full cursor-default items-center gap-2.5 rounded-element min-h-element-sm px-2 py-1 text-sm font-normal outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-secondary [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2"
       )}
       {...props}
     >

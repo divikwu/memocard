@@ -3,6 +3,7 @@ import { request, errorMessage, type Attachment, type Draft } from './bridge';
 import type { Note, NoteProperties as Properties, PropertyChange, PropertyUpdateResult } from '@memocard/contracts';
 import { EditorSession } from './editor-session';
 import { isBrowserVault } from './client-mode';
+import { localWebReconnected } from './web-connection';
 import { createId } from './uuid';
 import { useTagColorVault } from './TagColorProvider';
 import { changeTagSettings } from './tag-settings';
@@ -99,8 +100,15 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     if (initialDraft.updatedAt && canSave) session.update(session.current.body);
     const unload = (event: BeforeUnloadEvent) => { if (session.dirty) { event.preventDefault(); event.returnValue = ''; } };
     const hidden = () => { if (document.visibilityState === 'hidden') void session.recover().catch(() => undefined); };
+    const reconnected = () => { if (session.dirty) void session.save().catch(() => undefined); };
     window.addEventListener('beforeunload', unload); document.addEventListener('visibilitychange', hidden);
-    return () => { session.dispose(); window.removeEventListener('beforeunload', unload); document.removeEventListener('visibilitychange', hidden); };
+    window.addEventListener(localWebReconnected, reconnected);
+    return () => {
+      session.dispose();
+      window.removeEventListener('beforeunload', unload);
+      document.removeEventListener('visibilitychange', hidden);
+      window.removeEventListener(localWebReconnected, reconnected);
+    };
   }, [session, initialDraft, canSave, titleFirst, autoFocus]);
   function applyNoteEdit(next: NoteEdit, previous: NoteEdit) {
     if (recordingSavedValue.current) return;
@@ -214,7 +222,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     finally { setWorking(false); }
   }
   const error = localError || (session.error ? errorMessage(session.error) : '');
-  const conversionRejected = Boolean(session.error && typeof session.error === 'object' && 'code' in session.error && session.error.code === 'LOSSY_PROPERTY_CONVERSION');
+  const propertyRejected = session.propertyRejected;
   const heading = <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新内容" className="note-page-title" value={titleValue} readOnly={working || !canSave} onChange={event => {
       const value = event.target.value.replace(/[\r\n]+/g, ' ');
       lastEnteredTitle.current = value;
@@ -242,19 +250,19 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [undoKey]);
-  const saveStatus = session.state === 'conflict' ? '存在冲突，尚未保存' : conversionRejected ? '属性未更改' : '保存失败，请重试';
+  const saveStatus = session.state === 'conflict' ? '存在冲突，尚未保存' : propertyRejected ? '属性未更改' : '保存失败，请重试';
   const showSaveStatus = isMobile && canSave && (session.state === 'error' || session.state === 'conflict');
   return <section ref={page} tabIndex={!autoFocus ? -1 : undefined} aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className={className} onKeyDownCapture={undoKey}>
-    <NoteProperties scopeKey={initialDraft.id} saveError={error} renderHeader={(notice, ownsSaveError) => <>
-      {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : conversionRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !conversionRejected || session.state === 'conflict') ? <>
-        {session.state === 'error' && !conversionRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
+    <NoteProperties scopeKey={initialDraft.id} reserveBodySpace={Boolean(initialDraft.baseHash && capabilities.has('getNoteProperties'))} saveError={error} renderHeader={(notice, ownsSaveError) => <>
+      {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : propertyRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !propertyRejected || session.state === 'conflict') ? <>
+        {session.state === 'error' && !propertyRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
         {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
       </> : undefined}>{error}</PageNotice>}
       {notice}
       {pendingLink && <PageNotice tone="info" title="有待打开的笔记">完成当前记录后，将打开收到的笔记链接。</PageNotice>}
       {heading}
       {showSaveStatus && <div className="mobile-save-status" role="status" aria-live="polite" aria-atomic="true">{saveStatus}</div>}
-    </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} vaultBinding={session.current.vaultBinding} onChangeTag={changeTag} note={metadata} tags={tags} inheritedTags={session.current.inheritedTags} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onApplyValue={applyProperty} onLocateTag={tag => {
+    </>} pendingChanges={session.current.pendingProperties} savedProperties={propertyData} vaultBinding={session.current.vaultBinding} iconAccess={capabilities.has('getPropertyIcons') && capabilities.has('setPropertyIcon')} layoutConnection={vaultId ? {vaultId,read:capabilities.has('getPropertyLayout'),write:capabilities.has('setPropertyLayout')} : undefined} onChangeTag={changeTag} note={metadata} tags={tags} inheritedTags={session.current.inheritedTags} relativePath={relativePath} canRead={capabilities.has('getNoteProperties')} canEdit={canSave && capabilities.has('updateNoteProperty')} busy={working} onApply={applyProperty} onApplyValue={applyProperty} onLocateTag={tag => {
       const target = Array.from(field.current?.querySelectorAll('.rich-inline-tag') ?? []).find(element => element.getAttribute('data-tag') === encodeURIComponent(tag));
       if (!target) return;
       field.current?.focus();

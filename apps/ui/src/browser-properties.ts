@@ -3,12 +3,21 @@ import type { BrowserDirectoryHandle, ParsedBrowserNote } from './browser-files'
 import type { BrowserVaultStorage } from './browser-storage';
 import { BrowserVaultError, canonicalId, fileAt, readBytes, sha256, parseObsidianNote, parseBrowserNote } from './browser-files';
 import { readProperties, patchProperty } from './note-properties';
-import { inheritedProperties, convertedProperty, losslessPropertyConversion, mergedPropertyOptions, newPropertyDefinition, parsePropertyDefinitions, propertyDefinitionPath, validPropertyDefinition, resolvedPropertyDefinition } from './property-definitions';
+import { inheritedProperties, groupProperties, convertedProperty, losslessPropertyConversion, mergedPropertyOptions, newPropertyDefinition, parsePropertyDefinitions, propertyDefinitionPath, validPropertyDefinition, resolvedPropertyDefinition } from './property-definitions';
 import { listAsMultiSelect } from './property-type-change';
 import { commitRename, commitSource, renameSource } from './browser-rename';
 
 const bytes = (value:string) => new TextEncoder().encode(value);
 const invalid = (message:string):never => { throw new BrowserVaultError('INVALID_PROPERTY',message); };
+// The scan replaces parsed notes on a new hash; entries are released with that snapshot.
+const parsedProperties = new WeakMap<ParsedBrowserNote, ReturnType<typeof readProperties>>();
+function cachedProperties(item:ParsedBrowserNote) {
+  const cached = parsedProperties.get(item);
+  if (cached) return cached;
+  const data = readProperties(item.header ?? item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash);
+  parsedProperties.set(item,data);
+  return data;
+}
 export async function propertyOperation(operation:string, params:Record<string,unknown>, binding:{handle:BrowserDirectoryHandle; vaultId:string; binding:string; directoryId:string}, compatible:boolean, storage:BrowserVaultStorage, active:()=>Promise<unknown>, scan:()=>Promise<{parsed:ParsedBrowserNote[]; duplicateIds:Set<string>; coverage:Coverage}>) {
   const {handle:root, vaultId, binding:vaultBinding} = binding;
   const scope = `${binding.directoryId}:${vaultId}`;
@@ -17,36 +26,49 @@ export async function propertyOperation(operation:string, params:Record<string,u
   let definitions:Record<string,PropertyDefinition>;
   try { definitions = parsePropertyDefinitions(config ?? ''); } catch { return invalid('属性定义配置无法读取，请检查 .memocard/property-definitions.json。'); }
   const definitionHash = await sha256(bytes(config ?? ''));
-  const propertiesByPath = new Map(snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).map(item => [item.note.relativePath,readProperties(item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash).properties.map(listAsMultiSelect)]));
+  const propertiesByPath = new Map(snapshot.parsed.filter(item => !item.note.deletedAt).sort((a,b) => a.note.relativePath.localeCompare(b.note.relativePath)).map(item => [item.note.relativePath,cachedProperties(item).properties]));
   const all = [...propertiesByPath.values()].flat();
-  for (const [name,definition] of Object.entries(definitions)) definitions[name] = resolvedPropertyDefinition(definition,all.filter(property => property.name === name));
+  const groups = groupProperties(all);
+  for (const [name,definition] of Object.entries(definitions)) definitions[name] = resolvedPropertyDefinition(definition,groups.get(name) ?? []);
   if (operation === 'getNoteProperties' && params.id === undefined) {
     await active();
-    return {properties:inheritedProperties(all,definitions),contentHash:'',writable:false,definitionHash};
+    return {properties:inheritedProperties(all,definitions,groups),contentHash:'',writable:false,definitionHash};
   }
   const id = canonicalId(params.id);
   if (snapshot.duplicateIds.has(id)) throw new BrowserVaultError('DUPLICATE_ID', '笔记 ID 重复，无法修改属性。');
-  const existing = snapshot.parsed.find(item => item.note.id === id)?.note;
+  const parsed = snapshot.parsed.find(item => item.note.id === id);
+  const existing = parsed?.note;
   if (!existing || existing.deletedAt) throw new BrowserVaultError('NOTE_NOT_FOUND', '找不到可编辑的笔记。');
   if (operation === 'updateNoteProperty' && !snapshot.coverage.complete) throw new BrowserVaultError('SCAN_INCOMPLETE', '笔记库尚未完整读取，无法安全修改属性。');
   const path = existing.relativePath;
   const file = await fileAt(root, path, compatible ? 'vault' : 'notes');
   const before = await readBytes(file), hash = await sha256(before);
   const source = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(before);
-  function effective(property:NoteProperty, library = all):NoteProperty {
+  function effective(property:NoteProperty, inherited?:NoteProperty):NoteProperty {
     if (property.type === 'unsupported') return property;
     property = listAsMultiSelect(property);
     const definition = definitions[property.name];
     if (definition) return convertedProperty(property,definition);
-    return property.options ? {...property,options:mergedPropertyOptions(library.filter(item => item.name === property.name))} : property;
+    if (inherited && property.type !== inherited.type && inherited.type !== 'unsupported') return convertedProperty(property,{type:inherited.type,options:inherited.options});
+    return property.options ? {...property,options:inherited?.options ?? mergedPropertyOptions(groups.get(property.name) ?? [])} : property;
   }
   function effectiveData(data:ReturnType<typeof readProperties>, library = all) {
     const names = new Set(data.properties.map(property => property.name));
-    return {...data,properties:[...data.properties.map(property => effective(property,library)),...inheritedProperties(library,definitions).filter(property => !names.has(property.name)).map(property => ({...property,editable:data.writable}))],definitionHash};
+    const index = library === all ? groups : groupProperties(library);
+    const inherited = inheritedProperties(library,definitions,index);
+    const byName = new Map(inherited.map(property => [property.name,property]));
+    const properties:NoteProperty[] = [
+      ...data.properties.map(property => effective(property,byName.get(property.name))),
+      ...inherited.filter(property => !names.has(property.name)).map(property => ({
+        ...property,editable:data.writable,...(property.type === 'checkbox' ? {missing:true as const} : {}),
+      })),
+    ];
+    properties.sort((a,b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    return {...data,properties,definitionHash};
   }
   await active();
   if (operation === 'getNoteProperties') {
-    const data = readProperties(source,hash);
+    const data = parsed && hash === existing.contentHash && parsed.header !== undefined ? cachedProperties(parsed) : readProperties(source,hash);
     return effectiveData(data);
   }
   if (hash !== params.baseHash) throw new BrowserVaultError('HASH_CONFLICT','文件已在其他位置修改，属性未被覆盖，请重新加载。');
@@ -57,13 +79,13 @@ export async function propertyOperation(operation:string, params:Record<string,u
   if (change.definition || change.remove) {
     const removing = change.remove === true;
     if (!current?.editable || change.create || change.renameTo || change.copyFrom !== undefined || (!removing && !change.type)) return invalid('只有可编辑的自定义属性支持修改库级定义。');
-    const properties = all.filter(property => property.name === change.name);
+    const properties = groups.get(change.name) ?? [];
     if (properties.some(property => !property.editable)) return invalid('此属性包含只读值，库级修改未保存。');
-    const typeChanged = effective(current).type !== change.type;
+    const typeChanged = current.type !== change.type;
     const definition = newPropertyDefinition(properties,change.type ?? current.type as PropertyDefinition['type'],change.options,typeChanged);
     if (!removing && !validPropertyDefinition(definition)) return invalid('属性类型或选项定义无效，最多支持 200 个选项。');
     if (!removing && change.optionRename) {
-      const previous = effective(current).options ?? [];
+      const previous = current.options ?? [];
       const {from,to} = change.optionRename;
       if (typeChanged || !previous.some(option => option.name === from) || previous.some(option => option.name === to) || !definition.options?.some(option => option.name === to) || definition.options.some(option => option.name === from)) return invalid('选项重命名无效。');
     }

@@ -221,7 +221,7 @@ public actor VaultStore {
     public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) async throws -> Data {
         do {
             try requireBinding(expectedBinding)
-            if ["getTagPreferences", "setTagPreferences", "getPropertyLayout", "setPropertyLayout", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
+            if ["getTagPreferences", "setTagPreferences", "getPropertyLayout", "setPropertyLayout", "getPropertyIcons", "setPropertyIcon", "getNoteProperties", "getPropertyLabels", "renamePropertyLabel", "listTags", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
                 struct Scope: Decodable { var vaultId: String?; var vaultBinding: UUID? }
                 let scope = try decode(Scope.self, params)
                 try requireBinding(scope.vaultBinding)
@@ -288,6 +288,11 @@ public actor VaultStore {
                 return try encode(effectiveNoteProperties(data, snapshot: snapshot, config: readPropertyDefinitions(root)))
             case "getPropertyLabels": return try encode(readPropertyLabels())
             case "getPropertyLayout": return try encode(readPropertyLayout())
+            case "getPropertyIcons": return try encode(propertyIcons())
+            case "setPropertyIcon":
+                struct Request: Decodable { let key: String; let icon: String?; let baseHash: String }
+                let request = try decode(Request.self, params)
+                return try encode(propertyIcons(change: (request.key, request.icon, request.baseHash)))
             case "setPropertyLayout":
                 struct Request: Decodable { let order: [String]; let visibility: [String: String]; let baseHash: String }
                 let request: Request
@@ -814,7 +819,7 @@ public actor VaultStore {
                 try values.encode(capabilities, forKey: .capabilities)
             }
         }
-        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"]
+        let capabilities = ["getStatus", "queryNotes", "getNote", "saveNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getPropertyIcons", "setPropertyIcon", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "saveDraft", "getDrafts", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"]
         guard let root, let metadata else {
             return try encode(Status(connected: false, vaultId: nil, vaultName: nil,
                 coverage: Coverage(complete: false, indexed: 0, pending: 0, issues: 0, indexedAt: nil),
@@ -1077,6 +1082,7 @@ public actor VaultStore {
     }
 
     private struct PropertyLabels: Encodable { let labels: [String: String]; let contentHash: String }
+    private struct PropertyIcons: Encodable { let icons: [String: String]; let contentHash: String }
     private struct PropertyLayoutValue: Codable, Equatable { let order: [String]; let visibility: [String: String] }
     private struct PropertyLayout: Encodable { let order: [String]; let visibility: [String: String]; let contentHash: String }
     private let systemPropertyLabels = ["system:tags": "标签", "system:updatedAt": "更新时间", "system:createdAt": "创建时间", "system:filename": "文件名"]
@@ -1088,6 +1094,52 @@ public actor VaultStore {
         (systemPropertyLabels[key] != nil || key.hasPrefix("property:") && key.count > 9)
             && key == key.trimmingCharacters(in: .whitespacesAndNewlines)
             && !key.unicodeScalars.contains { $0.value < 32 || $0.value == 127 }
+    }
+    private func validNoteIconKey(_ key: String) -> Bool {
+        guard key.hasPrefix("note:") else { return false }
+        let id = String(key.dropFirst(5))
+        return (try? canonicalID(id)) == id
+    }
+    private func validPropertyIconKey(_ key: String) -> Bool {
+        validNoteIconKey(key) || (key != "system:filename" && validPropertyLayoutKey(key))
+    }
+    private func validPropertyIcon(_ icon: String, for key: String) -> Bool {
+        if icon.range(of: #"\Aicon:[a-z][a-z0-9-]{0,63}\z"#, options: .regularExpression) != nil { return true }
+        guard validNoteIconKey(key), icon.hasPrefix("emoji:") else { return false }
+        let emoji = icon.dropFirst(6)
+        return emoji.count == 1 && emoji.utf16.count <= 32
+            && !emoji.unicodeScalars.contains { $0.value < 32 || $0.value == 127 }
+            && emoji.unicodeScalars.contains { $0.value == 0x20e3 || ($0.value > 127 && $0.properties.isEmoji) }
+    }
+    private func decodedPropertyIcons(_ bytes: Data) throws -> PropertyIcons {
+        let icons = bytes.isEmpty ? [:] : (try? JSONDecoder().decode([String: String].self, from: bytes))
+        guard let icons, icons.allSatisfy({ validPropertyIconKey($0.key) && validPropertyIcon($0.value, for: $0.key) }) else {
+            throw VaultError(code: "INVALID_PROPERTY_ICON", message: "无法读取属性图标设置。")
+        }
+        return PropertyIcons(icons: icons, contentHash: sha256(bytes))
+    }
+    private func propertyIcons(change: (key: String, icon: String?, baseHash: String)? = nil) throws -> PropertyIcons {
+        let (root, _) = try active()
+        let path = root.appendingPathComponent(".memocard/property-icons.json")
+        try validate(path, inside: root)
+        guard let change else {
+            if !fm.fileExists(atPath: path.path) { return try decodedPropertyIcons(Data()) }
+            return try coordinateRead(path, inside: root) { try self.decodedPropertyIcons(self.propertyMetadataBytes($0)) }
+        }
+        guard validPropertyIconKey(change.key), change.icon.map({ validPropertyIcon($0, for: change.key) }) ?? true else {
+            throw VaultError(code: "INVALID_PROPERTY_ICON", message: "这个位置不支持该图标。")
+        }
+        return try coordinateWrite(path, inside: root) { url in
+            try self.requireNoConflict(url)
+            let current = try self.decodedPropertyIcons(self.propertyMetadataBytes(url))
+            guard current.contentHash == change.baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "图标设置已更新，请重试。", retryable: true) }
+            if current.icons[change.key] == change.icon { return current }
+            var icons = current.icons
+            icons[change.key] = change.icon
+            let bytes = try encode(icons)
+            try bytes.write(to: url, options: .atomic)
+            return PropertyIcons(icons: icons, contentHash: sha256(bytes))
+        }
     }
     private func validPropertyLayout(_ value: PropertyLayoutValue) -> Bool {
         Set(value.order).count == value.order.count && value.order.allSatisfy(validPropertyLayoutKey)
@@ -1107,7 +1159,7 @@ public actor VaultStore {
         guard validPropertyLayout(value) else { throw VaultError(code: "INVALID_PROPERTY_LAYOUT", message: "属性布局配置无法读取，请检查 .memocard/property-layout.json。") }
         return PropertyLayout(order: value.order, visibility: value.visibility, contentHash: sha256(data))
     }
-    private func propertyLayoutBytes(_ url: URL) throws -> Data {
+    private func propertyMetadataBytes(_ url: URL) throws -> Data {
         guard fm.fileExists(atPath: url.path) else { return Data() }
         return try readSource(url)
     }
@@ -1116,7 +1168,7 @@ public actor VaultStore {
         let path = root.appendingPathComponent(".memocard/property-layout.json")
         try validate(path, inside: root)
         if !fm.fileExists(atPath: path.path) { return try decodedPropertyLayout(Data()) }
-        return try coordinateRead(path, inside: root) { try self.decodedPropertyLayout(self.propertyLayoutBytes($0)) }
+        return try coordinateRead(path, inside: root) { try self.decodedPropertyLayout(self.propertyMetadataBytes($0)) }
     }
     private func setPropertyLayout(_ value: PropertyLayoutValue, baseHash: String) throws -> PropertyLayout {
         guard validPropertyLayout(value) else { throw VaultError(code: "INVALID_PROPERTY_LAYOUT", message: "属性布局设置无效。") }
@@ -1124,7 +1176,7 @@ public actor VaultStore {
         let path = root.appendingPathComponent(".memocard/property-layout.json")
         return try coordinateWrite(path, inside: root) { url in
             try self.requireNoConflict(url)
-            let current = try self.decodedPropertyLayout(self.propertyLayoutBytes(url))
+            let current = try self.decodedPropertyLayout(self.propertyMetadataBytes(url))
             guard current.contentHash == baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "属性布局已在其他位置修改，请重新加载后重试。", retryable: true) }
             if current.order == value.order && current.visibility == value.visibility { return current }
             let bytes = try encode(value)
@@ -1263,17 +1315,24 @@ public actor VaultStore {
     private func effectiveNoteProperties(_ data: Data, snapshot: Snapshot, config: (before: Data?, values: [String: PropertyDefinition], hash: String)) throws -> NoteProperties {
         let raw = try readNoteProperties(data)
         let all = try libraryProperties(snapshot).map(listAsMultiSelect)
+        let groups = Dictionary(grouping: all, by: \.name)
+        let inherited = try inheritedProperties(groups: groups, stored: config.values)
+        let byName = Dictionary(uniqueKeysWithValues: inherited.map { ($0.name, $0) })
         var properties = raw.properties.map { property -> NoteProperty in
             guard property.type != "unsupported" else { return property }
             let property = listAsMultiSelect(property)
-            if let definition = config.values[property.name] { return convertedProperty(property, definition: resolvedPropertyDefinition(definition, properties: all.filter { $0.name == property.name })) }
-            guard property.options != nil else { return property }
-            return NoteProperty(name: property.name, type: property.type, value: property.value, editable: property.editable, options: mergedPropertyOptions(all.filter { $0.name == property.name }))
+            if let definition = config.values[property.name] { return convertedProperty(property, definition: resolvedPropertyDefinition(definition, properties: groups[property.name] ?? [])) }
+            guard let inherited = byName[property.name] else { return property }
+            if property.type != inherited.type {
+                return convertedProperty(property, definition: PropertyDefinition(type: inherited.type, options: inherited.options))
+            }
+            return NoteProperty(name: property.name, type: property.type, value: property.value, editable: property.editable, options: inherited.options)
         }
         let names = Set(properties.map(\.name))
-        properties += try inheritedProperties(all, stored: config.values).filter { !names.contains($0.name) }.map {
-            NoteProperty(name: $0.name, type: $0.type, value: $0.value, editable: raw.writable, options: $0.options)
+        properties += inherited.filter { !names.contains($0.name) }.map {
+            NoteProperty(name: $0.name, type: $0.type, value: $0.value, editable: raw.writable, options: $0.options, missing: $0.type == "checkbox" ? true : nil)
         }
+        properties.sort { $0.name.utf16.lexicographicallyPrecedes($1.name.utf16) }
         return NoteProperties(properties: properties, tagProperty: raw.tagProperty, contentHash: raw.contentHash, writable: raw.writable, definitionHash: config.hash)
     }
     private func updatePropertyDefinition(_ change: PropertyChange, snapshot: Snapshot, existing: ParsedNote, root: URL, metadata: VaultMetadata) throws -> PropertyUpdateResult {

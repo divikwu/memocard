@@ -96,9 +96,10 @@ export const NestedAlignmentRegression: Story = {
         await expect(iconBox.width).toBeGreaterThan(0);
         await expect(getComputedStyle(row).textAlign).toBe("left");
         await expect(getComputedStyle(label).textAlign).toBe("left");
-        await expect(labelBox.left - iconBox.right).toBeCloseTo(8, 0);
+        const gap = !mobile && row.closest(".ui-sidebar-tag-section") ? 10 : 8;
+        await expect(labelBox.left - iconBox.right).toBeCloseTo(gap, 0);
         // A flexing label box alone misses native button text centering: measure the text itself.
-        await expect(textBox.left - iconBox.right).toBeCloseTo(8, 0);
+        await expect(textBox.left - iconBox.right).toBeCloseTo(gap, 0);
         const badge = row.closest(".ui-sidebar-tree-row")?.querySelector<HTMLElement>(".ui-sidebar-row-actions > [data-sidebar=menu-badge]");
         if (badge && getComputedStyle(badge).display !== "none") {
           await expect(row.getBoundingClientRect().right - badge.getBoundingClientRect().right).toBeCloseTo(4, 0);

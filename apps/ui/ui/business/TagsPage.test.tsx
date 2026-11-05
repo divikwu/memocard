@@ -83,7 +83,7 @@ it("shares pinned preferences and migrates pinned descendants and icons after re
   const dialog = await screen.findByRole("dialog", {name: "编辑标签"});
   await user.clear(within(dialog).getByRole("textbox", {name: "标签名称"}));
   await user.type(within(dialog).getByRole("textbox", {name: "标签名称"}), "topics");
-  await user.click(within(dialog).getByRole("button", {name: "保存"}));
+  await user.keyboard("{Enter}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(args.onRename).toHaveBeenCalledWith("area", "topics");
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({pinned: ["journal", "topics/coffee"], icons: {"topics/coffee": "☕"}});
@@ -96,7 +96,7 @@ it("keeps failed renames editable and prevents renaming a read-only library", as
   await user.click(screen.getByRole("button", {name: "编辑标签图标 area"}));
   const dialog = await screen.findByRole("dialog", {name: "编辑标签"});
   await user.type(within(dialog).getByRole("textbox", {name: "标签名称"}), "2");
-  await user.click(within(dialog).getByRole("button", {name: "保存"}));
+  await user.keyboard("{Enter}");
   expect(await within(dialog).findByRole("alert")).toHaveProperty("textContent", "目标标签已存在");
   await user.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
@@ -104,30 +104,25 @@ it("keeps failed renames editable and prevents renaming a read-only library", as
   expect(screen.getByRole("button", {name: "编辑标签图标 area"})).toHaveProperty("disabled", true);
 });
 
-it("saves and clears icons without renaming and discards unsaved icon changes", async () => {
+it("saves and clears icons while keeping the tag editor open", async () => {
   const user = userEvent.setup(), args = props();
   render(<TagsPage {...args} />);
-  const edit = async () => {
-    await user.click(screen.getByRole("button", {name: "编辑标签图标 journal/coffee"}));
-    const dialog = within(await screen.findByRole("dialog", {name: "编辑标签"}));
-    return dialog;
-  };
-  let dialog = await edit();
+  await user.click(screen.getByRole("button", {name: "编辑标签图标 journal/coffee"}));
+  const editor = await screen.findByRole("dialog", {name: "编辑标签"});
+  const dialog = within(editor);
+  const trigger = dialog.getByRole("button", {name: "更换图标"});
+  await user.click(dialog.getByRole("tab", {name: "Emoji"}));
   await user.type(dialog.getByRole("textbox", {name: "搜索 Emoji"}), "咖啡");
   await user.click(dialog.getByRole("button", {name: /^茶、热饮、咖啡/}));
-  await user.click(dialog.getByRole("button", {name: "保存"}));
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await waitFor(() => expect(dialog.queryByRole("region", {name: "标签图标选项"})).toBeNull());
+  expect(screen.getByRole("dialog", {name: "编辑标签"})).toBe(editor);
+  await waitFor(() => expect(document.activeElement).toBe(trigger));
   expect(JSON.parse(localStorage.getItem(key)!).icons["journal/coffee"]).toBe("☕");
   expect(screen.getByRole("button", {name: "编辑标签图标 journal/coffee"}).textContent).toContain("☕");
-  dialog = await edit();
+  await user.click(trigger);
   await user.click(dialog.getByRole("button", {name: "清除图标"}));
-  await user.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  expect(JSON.parse(localStorage.getItem(key)!).icons["journal/coffee"]).toBe("☕");
-  dialog = await edit();
-  await user.click(dialog.getByRole("button", {name: "清除图标"}));
-  await user.click(dialog.getByRole("button", {name: "保存"}));
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await waitFor(() => expect(dialog.queryByRole("region", {name: "标签图标选项"})).toBeNull());
+  expect(screen.getByRole("dialog", {name: "编辑标签"})).toBe(editor);
   expect(JSON.parse(localStorage.getItem(key)!).icons["journal/coffee"]).toBe("");
   expect(args.onRename).not.toHaveBeenCalled();
 });
@@ -227,7 +222,7 @@ it("keeps the icon editor open when its trigger is clicked during a save", async
   await user.click(trigger);
   const dialog = within(await screen.findByRole("dialog", {name: "编辑标签"}));
   await user.type(dialog.getByRole("textbox", {name: "标签名称"}), "2");
-  await user.click(dialog.getByRole("button", {name: "保存"}));
+  await user.keyboard("{Enter}");
   await user.click(trigger);
   expect(screen.getByRole("dialog", {name: "编辑标签"})).toBeTruthy();
   expect(trigger.getAttribute("aria-expanded")).toBe("true");

@@ -1,4 +1,6 @@
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Collapsible } from "@base-ui/react/collapsible";
+import { defaultRangeExtractor, observeElementRect, useVirtualizer } from "@tanstack/react-virtual";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Airplane01Icon from "@hugeicons/core-free-icons/Airplane01Icon";
 import BulbIcon from "@hugeicons/core-free-icons/BulbIcon";
@@ -9,14 +11,15 @@ import SmileIcon from "@hugeicons/core-free-icons/SmileIcon";
 import SpoonAndForkIcon from "@hugeicons/core-free-icons/SpoonAndForkIcon";
 import TrophyIcon from "@hugeicons/core-free-icons/TrophyIcon";
 import emojiData from "../../src/lib/emoji-zh.json";
+import { errorMessage } from "../../src/bridge";
 import { tagKey } from "../../src/inline-tags";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
-import { Label } from "../components/label";
-import { Popover, PopoverContent } from "../components/popover";
-import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "../components/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
-import { SidebarIcon } from "./sidebar-icons";
+import { NameEditor } from "./NameEditor";
+import { IconOptions, useIconPickerScroll } from "./PropertyIconPicker";
+import { TagIcon } from "./property-icon-catalog";
 import { cn } from "../lib/utils";
 import "./sidebar.css";
 
@@ -33,81 +36,168 @@ const categories = {
 const emojis = emojiData.emojis as Record<string, { n: string[]; u: string }[]>;
 const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 const nativeEmoji = (code: string) => String.fromCodePoint(...code.split("-").map(value => parseInt(value, 16)));
+const isSingleEmoji = (value: string) => value.length <= 32 && [...segmenter.segment(value)].length === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20e3/u.test(value);
 
-export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false }: { selected: string; disabled: boolean; onSelect: (emoji: string) => void; autoFocus?: boolean }) {
-  const [query, setQuery] = useState("");
+function submitEmojiSearch(event: React.KeyboardEvent<HTMLInputElement>, query: string, onSelect: (emoji: string) => void) {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  const value = query.trim();
+  if (!event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229 && isSingleEmoji(value)) onSelect(value);
+}
+
+export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false, search }: { selected: string; disabled: boolean; onSelect: (emoji: string) => void; autoFocus?: boolean; search?: { query: string; onChange: (query: string) => void } }) {
+  const [localQuery, setLocalQuery] = useState("");
+  const embedded = search !== undefined;
+  const query = search?.query ?? localQuery;
+  const setQuery = search?.onChange ?? setLocalQuery;
   const [category, setCategory] = useState("smileys_people");
   const custom = query.trim();
   const needle = custom.toLocaleLowerCase();
-  const customEmoji = custom.length <= 32 && [...segmenter.segment(custom)].length === 1 && /\p{Extended_Pictographic}|\p{Regional_Indicator}|\u20e3/u.test(custom);
-  const items = (needle ? Object.values(emojis).flat() : emojis[category]).filter(item => !needle || nativeEmoji(item.u) === custom || item.n.some(name => name.toLocaleLowerCase().includes(needle)));
-  const grid = useRef<HTMLDivElement>(null);
+  const customEmoji = isSingleEmoji(custom);
+  const items = useMemo(() => needle
+    ? Object.values(emojis).flat().filter(item => nativeEmoji(item.u) === custom || item.n.some(name => name.toLocaleLowerCase().includes(needle)))
+    : emojis[category], [category, custom, needle]);
+  const [geometry, setGeometry] = useState({ columns: 8, tile: 36, gap: 4, padding: 4 });
+  const [focusedRow, setFocusedRow] = useState<number | null>(null);
+  const { columns, tile, gap, padding } = geometry;
+  const grid = useIconPickerScroll(`${items.length}:${columns}:${tile}`);
+  const rowCount = Math.ceil(items.length / columns);
+  const rows = useVirtualizer<HTMLDivElement, HTMLDivElement>({
+    count: rowCount,
+    getScrollElement: () => grid.current,
+    estimateSize: () => tile,
+    gap,
+    paddingStart: padding,
+    overscan: 2,
+    initialRect: { width: 0, height: 240 },
+    useAnimationFrameWithResizeObserver: true,
+    observeElementRect: (instance, notify) => observeElementRect(instance, rect => {
+      const element = instance.scrollElement;
+      if (!rect.width || !rect.height || !element) return;
+      const style = getComputedStyle(element);
+      const tileSize = parseFloat(style.gridAutoRows);
+      const columnGap = parseFloat(style.columnGap);
+      const width = Math.min(element.clientWidth, parseFloat(style.width));
+      const next = {
+        columns: Math.max(1, Math.floor((width + columnGap) / (tileSize + columnGap))),
+        tile: tileSize,
+        gap: parseFloat(style.rowGap),
+        padding: parseFloat(style.paddingTop),
+      };
+      if (next.tile > 0) setGeometry(current => current.columns === next.columns && current.tile === next.tile && current.gap === next.gap && current.padding === next.padding ? current : next);
+      notify(rect);
+    }),
+    rangeExtractor: range => {
+      const visible = defaultRangeExtractor(range);
+      if (focusedRow === null || focusedRow >= rowCount || visible.includes(focusedRow)) return visible;
+      return [...visible, focusedRow].sort((a, b) => a - b);
+    },
+  });
+  useLayoutEffect(() => { rows.measure(); }, [rows, tile]);
   useLayoutEffect(() => {
-    const element = grid.current;
-    if (!element) return;
-    const updateEdges = () => {
-      element.toggleAttribute("data-overflow-top", element.scrollTop > 1);
-      element.toggleAttribute("data-overflow-bottom", element.scrollTop + element.clientHeight < element.scrollHeight - 1);
-    };
-    updateEdges();
-    const observer = new ResizeObserver(updateEdges);
-    observer.observe(element);
-    element.addEventListener("scroll", updateEdges, { passive: true });
-    return () => { observer.disconnect(); element.removeEventListener("scroll", updateEdges); };
-  }, [items.length]);
+    if (grid.current) grid.current.scrollTop = 0;
+  }, [grid, category, needle]);
   return <section aria-label="选择图标" className="ui-sidebar-emoji-picker">
-    <div className="flex items-center justify-between"><span className="text-xs font-medium text-secondary">选择图标</span><Button type="button" size="xs" variant="ghost" aria-label="清除图标" disabled={disabled || !selected} onClick={() => onSelect("")}>清除</Button></div>
-    <Input autoFocus={autoFocus} aria-label="搜索 Emoji" placeholder="搜索 Emoji" value={query} disabled={disabled} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); if (!event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229 && customEmoji && !disabled) onSelect(custom); } }} />
+    {!embedded && <div className="flex items-center justify-between"><span className="text-xs font-normal text-secondary">选择图标</span><Button type="button" size="xs" variant="ghost" aria-label="清除图标" disabled={disabled || !selected} onClick={() => onSelect("")}>清除</Button></div>}
+    {!embedded && <Input autoFocus={autoFocus} aria-label="搜索 Emoji" placeholder="搜索 Emoji" value={query} disabled={disabled} onChange={event => setQuery(event.target.value)} onKeyDown={event => submitEmojiSearch(event, query, onSelect)} />}
     {customEmoji && !items.length && <Button type="button" variant="outline" disabled={disabled} onClick={() => onSelect(custom)}>使用 <span className="ui-sidebar-emoji">{custom}</span></Button>}
-    <div ref={grid} aria-label="Emoji" className="ui-sidebar-emoji-grid">{items.map(item => {
-      const emoji = nativeEmoji(item.u);
-      return <Button key={item.u} type="button" size="icon" variant="ghost" className={cn("text-xl", selected === emoji && "bg-control")} aria-label={item.n.join("、")} aria-pressed={selected === emoji} disabled={disabled} onClick={() => onSelect(emoji)}><span className="ui-sidebar-emoji">{emoji}</span></Button>;
-    })}</div>
+    <div ref={grid} role="group" aria-label="Emoji" className={cn("ui-sidebar-emoji-grid icon-picker-scroll-fade", embedded && "note-property-icon-grid")}
+      style={{ gridTemplateRows: rowCount ? `repeat(${rowCount}, ${tile}px)` : undefined }}
+      onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocusedRow(null); }}>
+      {rows.getVirtualItems().flatMap(({ index }) => items.slice(index * columns, (index + 1) * columns).map((item, column) => {
+        const emoji = nativeEmoji(item.u);
+        return <Button key={item.u} type="button" size={embedded ? "icon-sm" : "icon"} variant="ghost" className={cn("text-xl", selected === emoji && "bg-control")}
+          style={{ gridRow: index + 1, gridColumn: column + 1 }} aria-label={item.n.join("、")} aria-pressed={selected === emoji} disabled={disabled}
+          onFocus={() => setFocusedRow(index)} onClick={() => onSelect(emoji)}><span className="ui-sidebar-emoji">{emoji}</span></Button>;
+      }))}
+    </div>
     {!items.length && !customEmoji && <p role="status" className="text-sm text-secondary">没有匹配的 Emoji</p>}
-    <TooltipProvider><div role="group" aria-label="Emoji 分类" className="ui-sidebar-emoji-categories">{Object.entries(categories).map(([key, { label, icon }]) => <Tooltip key={key}><TooltipTrigger render={<Button type="button" size="icon" variant="ghost" className={cn("text-icon-secondary", category === key && !needle && "bg-control text-primary")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} disabled={disabled} onClick={() => { setCategory(key); setQuery(""); }}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></Button>} /><TooltipContent>{label}</TooltipContent></Tooltip>)}</div></TooltipProvider>
+    <TooltipProvider><div role="group" aria-label="Emoji 分类" className="ui-sidebar-emoji-categories">{Object.entries(categories).map(([key, { label, icon }]) => <Tooltip key={key}><TooltipTrigger render={<Button type="button" size={embedded ? "icon-sm" : "icon"} variant="ghost" className={cn("text-icon-secondary", category === key && !needle && "bg-control text-primary")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} disabled={disabled} onClick={() => { setCategory(key); setQuery(""); }}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></Button>} /><TooltipContent>{label}</TooltipContent></Tooltip>)}</div></TooltipProvider>
   </section>;
 }
 
-export function TagEditor({ path, initialIcon, anchor, mobile, onClose, onSave, finalFocus, initialPickerOpen = false, anchorIsTrigger = false }: { path: string; initialIcon: string; anchor: HTMLElement; mobile: boolean; onClose: () => void; onSave: (name: string, icon: string) => Promise<void>; finalFocus?: () => HTMLElement | false; initialPickerOpen?: boolean; anchorIsTrigger?: boolean }) {
-  const id = useId();
-  const [name, setName] = useState(path);
-  const [icon, setIcon] = useState(initialIcon);
+export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, finalFocus, initialPickerOpen = false, anchorIsTrigger = false }: { path: string; icon: string; anchor: HTMLElement; mobile: boolean; onClose: () => void; onSave: (name: string, icon?: string) => Promise<void>; finalFocus?: () => HTMLElement | false; initialPickerOpen?: boolean; anchorIsTrigger?: boolean }) {
+  const pickerId = useId();
+  const [iconError, setIconError] = useState("");
+  const pendingIcon = useRef<Promise<void> | null>(null);
   const [pickerOpen, setPickerOpen] = useState(mobile || initialPickerOpen);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const submitting = useRef(false);
-  const input = useRef<HTMLInputElement>(null);
+  const [pickerTab, setPickerTab] = useState<React.ComponentProps<typeof Tabs>["value"]>("emoji");
+  const [pickerQuery, setPickerQuery] = useState("");
+  const search = useRef<HTMLInputElement>(null);
+  const pickerTrigger = useRef<HTMLButtonElement>(null);
+  const restorePickerFocus = useRef(false);
   const navigation = useRef(anchor.closest('[data-slot="sidebar-content"]'));
+  const savedPath = useRef(path);
   useLayoutEffect(() => {
-    if (!anchorIsTrigger || mobile) return;
-    const toggle = (event: MouseEvent) => { event.stopPropagation(); if (!submitting.current) onClose(); };
-    anchor.addEventListener("click", toggle);
-    return () => anchor.removeEventListener("click", toggle);
-  }, [anchor, anchorIsTrigger, mobile, onClose]);
+    if (pickerOpen && !mobile && !initialPickerOpen) search.current?.focus({ preventScroll: true });
+    if (!pickerOpen && restorePickerFocus.current) {
+      const frame = requestAnimationFrame(() => {
+        restorePickerFocus.current = false;
+        const trigger = pickerTrigger.current;
+        if (!trigger) return;
+        const { activeElement, body } = trigger.ownerDocument;
+        if (activeElement === body || trigger.ownerDocument.getElementById(pickerId)?.contains(activeElement)) {
+          trigger.focus({ preventScroll: true });
+        }
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+  }, [pickerOpen, mobile, initialPickerOpen, pickerId]);
   const returnFocus = () => {
     if (anchor.isConnected) return anchor;
     const buttons = [...navigation.current?.querySelectorAll<HTMLButtonElement>("button") ?? []];
-    return buttons.find(button => button.getAttribute("aria-label") === tagKey(name)) ?? buttons[0] ?? false;
+    return buttons.find(button => button.getAttribute("aria-label") === savedPath.current) ?? buttons[0] ?? false;
   };
-  const content = <div className="ui-sidebar-tag-editor-content"><form className="grid gap-2" onSubmit={async event => {
-    event.preventDefault();
-    if (submitting.current || !name.trim()) return;
-    submitting.current = true; setSaving(true); setError("");
-    try { await onSave(name.trim(), icon); onClose(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "保存失败，请重试。"); }
-    finally { submitting.current = false; setSaving(false); }
-  }}>
-    <Label htmlFor={id} className="sr-only">标签名称</Label>
-    <div className="ui-sidebar-tag-editor-controls"><Button type="button" variant="outline" size="icon" aria-label="选择 Emoji" aria-expanded={pickerOpen} disabled={saving} className="text-xl" onClick={() => setPickerOpen(!pickerOpen)}>{icon ? <span className="ui-sidebar-emoji">{icon}</span> : <SidebarIcon name="hash" />}</Button><Input ref={input} id={id} value={name} disabled={saving} aria-describedby={`${id}-description`} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && event.nativeEvent.isComposing) event.preventDefault(); }} /><Button type="submit" disabled={saving || !name.trim()}>{saving ? "保存中…" : "保存"}</Button></div>
-    <p id={`${id}-description`} className="px-1 text-pretty text-xs leading-normal text-secondary">使用 / 分隔多级标签；改名会更新笔记中的标签。</p>
-    {error && <p role="alert" className="text-sm text-error">{error}</p>}
-  </form>{pickerOpen && <EmojiPicker selected={icon} disabled={saving} autoFocus={!mobile} onSelect={setIcon} />}</div>;
-  if (mobile) return <Sheet open onOpenChange={(open, details) => { if (!open) { if (saving) details.cancel(); else onClose(); } }}><SheetContent side="bottom" className="ui-sidebar-vault-sheet ui-sidebar-tag-editor" showCloseButton={false} swipeToClose swipeDisabled={saving} initialFocus={initialPickerOpen ? () => input.current?.closest(".ui-sidebar-tag-editor-content")?.querySelector<HTMLInputElement>('[aria-label="搜索 Emoji"]') ?? input.current ?? false : input} finalFocus={finalFocus ?? returnFocus}><SheetHeader className="flex-row items-center justify-between p-0"><div><SheetTitle>编辑标签</SheetTitle><SheetDescription>调整标签名称与图标。</SheetDescription></div><SheetCloseButton aria-label="关闭编辑标签" disabled={saving} /></SheetHeader>{content}</SheetContent></Sheet>;
-  return <Popover open onOpenChange={(open, details) => {
-    if (!open) {
-      const target = details.reason === "focus-out" ? (details.event as FocusEvent).relatedTarget : details.event.target;
-      if (saving || (anchorIsTrigger && (details.reason === "outside-press" || details.reason === "focus-out") && target instanceof Node && anchor.contains(target))) details.cancel();
-      else onClose();
+  const rename = async (name: string) => {
+    await onSave(name);
+    savedPath.current = tagKey(name);
+  };
+  const selectIcon = (value: string) => {
+    restorePickerFocus.current = true;
+    setPickerOpen(false);
+    if (value === icon) return;
+    setIconError("");
+    const pending = onSave(path, value);
+    pendingIcon.current = pending;
+    void pending.catch(cause => {
+      if (pendingIcon.current === pending) setIconError(errorMessage(cause));
+    });
+  };
+  const togglePicker = () => {
+    if (!pickerOpen) {
+      setPickerTab("emoji");
+      setPickerQuery("");
     }
-  }}><PopoverContent anchor={anchor} side="right" align="start" sideOffset={8} collisionPadding={12} aria-label="编辑标签" className="ui-sidebar-tag-editor" initialFocus={initialPickerOpen ? () => input.current?.closest(".ui-sidebar-tag-editor-content")?.querySelector<HTMLInputElement>('[aria-label="搜索 Emoji"]') ?? input.current ?? false : input} finalFocus={finalFocus ?? returnFocus}>{content}</PopoverContent></Popover>;
+    setPickerOpen(!pickerOpen);
+  };
+  const emoji = icon.startsWith("icon:") ? "" : icon;
+  const searchLabel = pickerTab === "emoji" ? "搜索 Emoji" : "搜索图标";
+  return <NameEditor initialName={path} anchor={anchor} anchorIsTrigger={anchorIsTrigger} sheet={mobile}
+    title="编辑标签" inputLabel="标签名称"
+    side="right" align="start" initialFocus={initialPickerOpen ? () => search.current : undefined} finalFocus={finalFocus ?? returnFocus}
+    onClose={onClose} onSave={rename}
+    leading={disabled => <Button ref={pickerTrigger} type="button" variant="secondary" size="icon-sm" className="note-property-icon-trigger border-0" aria-label="更换图标" aria-expanded={pickerOpen} aria-controls={pickerOpen ? pickerId : undefined} disabled={disabled} onClick={togglePicker}><TagIcon value={icon} /></Button>}
+  >
+    {disabled => <Collapsible.Root open={pickerOpen} className="tag-icon-disclosure">
+        {iconError && <p role="alert" className="mt-2 px-1 text-sm text-error">{iconError}</p>}
+        <Collapsible.Panel id={pickerId} render={<section />} aria-label="标签图标选项" aria-hidden={!pickerOpen || undefined} inert={disabled || !pickerOpen} className="tag-icon-disclosure-panel">
+          <div className="note-property-icon-picker">
+            <Tabs value={pickerTab} onValueChange={value => { setPickerTab(value); setPickerQuery(""); }} className="tag-icon-tabs">
+              <div className="flex items-center justify-between gap-1">
+                <TabsList variant="line" aria-label="标签图标类型">
+                  <TabsTrigger value="emoji">Emoji</TabsTrigger>
+                  <TabsTrigger value="icon">图标</TabsTrigger>
+                </TabsList>
+                <Button type="button" size="sm" variant="ghost" className="px-2 text-secondary" disabled={disabled || !icon} onClick={() => selectIcon("")}>清除图标</Button>
+              </div>
+              <div className="tag-icon-tab-body">
+                <Input ref={search} className="px-2" aria-label={searchLabel} placeholder={searchLabel} value={pickerQuery} disabled={disabled} onChange={event => setPickerQuery(event.target.value)} onKeyDown={pickerTab === "emoji" ? event => submitEmojiSearch(event, pickerQuery, selectIcon) : undefined} />
+                <TabsContent value="icon"><IconOptions selected={icon} disabled={disabled} query={pickerQuery} onSelect={selectIcon} /></TabsContent>
+                <TabsContent value="emoji"><EmojiPicker selected={emoji} disabled={disabled} search={{ query: pickerQuery, onChange: setPickerQuery }} onSelect={selectIcon} /></TabsContent>
+              </div>
+            </Tabs>
+          </div>
+        </Collapsible.Panel>
+      </Collapsible.Root>}
+  </NameEditor>;
 }
