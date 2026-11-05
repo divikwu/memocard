@@ -2599,7 +2599,7 @@ test("Web tag directory supports hierarchy, shared pins, renaming and responsive
       expect(getComputedStyle(row.querySelector("td:first-child")!).borderTopLeftRadius).toBe("8px");
       expect(getComputedStyle(row.querySelector("td:last-child")!).borderTopRightRadius).toBe("8px");
       if (width >= 768) {
-        const sidebarTags = within(canvas.getByRole("navigation", {name: "标签"}));
+        const sidebarTags = within(await canvas.findByRole("navigation", {name: "标签"}));
         const sidebarRow = sidebarTags.getByRole("button", {name: "生活/咖啡"});
         expect(sidebarRow.getBoundingClientRect().height).toBe(rowHeight);
         expect(getComputedStyle(sidebarRow).borderRadius).toBe("8px");
@@ -3314,7 +3314,8 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
   await fixture.request("updateNoteProperty", {id: note.id, name: "阶段", type: "multiSelect", value: ["进行中", "完成"]});
   history.replaceState(null, "", `#/notes/${note.id}`);
   const release = setStorybookRequestHandler(fixture.request);
-  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  let current!: AppViewState;
+  const view = render(<WebAppearanceProvider><App renderView={state => { current = state; return renderWebApp(state); }} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
     const title = await canvas.findByRole("textbox", {name: "页面标题"});
@@ -3323,6 +3324,8 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
     await document.fonts.ready;
     for (const width of [320, 390, 640, 767, 768, 820, 1024, 1180, 1440]) {
       await page.viewport(width, 900);
+      await waitFor(() => expect(current.isMobile).toBe(width < 768));
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       const checkLayout = () => {
         const titleBox = title.getBoundingClientRect(), titleStyle = getComputedStyle(title);
         const start = titleBox.left + parseFloat(titleStyle.paddingLeft);
