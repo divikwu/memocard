@@ -1,3 +1,6 @@
+[data-slot="action-group"][data-size="compact"] { gap: 4px; padding: 2px; border-radius: 8px; box-shadow: var(--shadow-floating), var(--surface-edge-floating); }
+[data-slot="action-group"][data-size="compact"] button { width: 28px; height: 28px; padding: 0; border-radius: 4px; }
+
 @media (max-width: 767px) {
   [data-slot="action-group"][data-mobile-actions] button { translate: none; }
   [data-slot="action-group"][data-mobile-actions] button:not(:disabled, [aria-disabled="true"], [data-disabled], [aria-pressed="true"], [aria-pressed="mixed"], [aria-selected="true"], [data-active], [aria-expanded="true"], [data-popup-open]):is(:hover, :active) { background: var(--color-overlay-hover); }

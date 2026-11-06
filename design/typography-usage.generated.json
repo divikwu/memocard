@@ -695,7 +695,7 @@
         },
         {
           "source": "apps/ui/ui/typeset.css",
-          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(figcaption, caption)",
+          "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(figcaption, caption, .note-image-caption)",
           "value": "0.875em"
         },
         {
@@ -1382,6 +1382,11 @@
         },
         {
           "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-markdown :is(blockquote, aside[data-callout])",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
           "scope": ".ui-note-markdown[data-compact]",
           "value": "var(--font-size-sm)"
         },
@@ -1448,17 +1453,12 @@
         },
         {
           "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, .footnotes, [data-footnotes])",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(table, figcaption, caption, .note-image-caption, .rich-footnote, .footnotes, [data-footnotes])",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) table",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1889,7 +1889,7 @@
         },
         {
           "source": "apps/ui/ui/business/note-typography.css",
-          "scope": "[data-small-text] .ui-note-markdown:not([data-compact]) → & :is(pre, table)",
+          "scope": "[data-small-text] .ui-note-markdown:not([data-compact]) → & pre",
           "value": "var(--font-size-xs)"
         },
         {
@@ -2795,6 +2795,11 @@
           "value": "var(--font-weight-semibold)"
         },
         {
+          "source": "apps/ui/ui/business/NoteOutline.css",
+          "scope": ".ui-note-outline-popup .ui-note-outline-link[aria-current]",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
           "source": "apps/ui/ui/business/NotePageTitle.css",
           "scope": ".note-page-title",
           "value": "var(--font-weight-semibold)"
@@ -3343,7 +3348,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, .footnotes, [data-footnotes])",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(table, figcaption, caption, .note-image-caption, .rich-footnote, .footnotes, [data-footnotes])",
           "value": "1.25rem"
         },
         {
@@ -3354,11 +3359,6 @@
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre",
-          "value": "1.25rem"
-        },
-        {
-          "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) table",
           "value": "1.25rem"
         }
       ]

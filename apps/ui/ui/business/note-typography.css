@@ -32,9 +32,10 @@
   & :is(li.task-list-item > input[type="checkbox"], .note-task-indicator) { margin-inline-end: calc(var(--spacing-1) * 2); vertical-align: -0.125rem; }
 
   & :where(h2, h5, h6, hr, pre:not(.note-mermaid-source pre)) { margin-block-start: var(--note-block-gap); }
+  & blockquote { padding-inline-start: var(--note-panel-padding-block); }
   & :is(th, td) {
     position: relative;
-    padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4);
+    padding: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 3);
     border-block-start: 0;
     border-block-end: var(--border-width) solid transparent;
   }
@@ -68,9 +69,8 @@
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :is(h5, h6) { --note-before: 16px; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) li { margin-block: 0; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) li + li { margin-block-start: 6px; }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre { font-size: var(--font-size-sm); line-height: 1.25rem; padding: var(--note-panel-padding-block) calc(var(--spacing-1) * 4); }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) table { font-size: var(--font-size-sm); line-height: 1.25rem; }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, .footnotes, [data-footnotes]) { font-size: var(--font-size-sm); line-height: 1.25rem; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre { font-size: var(--font-size-sm); line-height: 1.25rem; padding: var(--note-panel-padding-block); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(table, figcaption, caption, .note-image-caption, .rich-footnote, .footnotes, [data-footnotes]) { font-size: var(--font-size-sm); line-height: 1.25rem; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > span:has(math[display="block"]) { display: block; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > * > [data-node-view-wrapper],
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > .typeset-scroll > table,
@@ -88,6 +88,50 @@
 }
 .ui-note-markdown.typeset-memocard.rich-editor-content > .rich-block-frame > :is(p, .rich-footnote) { padding: var(--editor-block-space) var(--editor-block-inline-inset); }
 .ui-note-markdown.typeset-memocard.rich-editor-content li + li { margin-block-start: calc(6px - var(--editor-block-space) * 2); }
+
+.ui-note-markdown.typeset-memocard.rich-editor-content {
+  & li[data-type="taskItem"] > label {
+    flex-basis: calc(var(--spacing-1) * 6);
+    margin-inline: calc(-1 * var(--spacing-1));
+  }
+
+  /* Center markers in the checkbox column and on the first line, even for wrapped items. */
+  & :is(ul:not([data-type="taskList"]), ol) > li { position: relative; }
+  & :is(ul:not([data-type="taskList"]), ol) > li::marker { color: transparent; }
+  & :is(ul:not([data-type="taskList"]), ol) > li::before {
+    position: absolute;
+    inset-block-start: calc(var(--editor-block-space) + .5lh);
+    translate: 0 -50%;
+    pointer-events: none;
+  }
+  & ul:not([data-type="taskList"]) > li::before {
+    content: "";
+    inset-inline-end: calc(100% + var(--spacing-1) * 3);
+    inline-size: var(--spacing-1);
+    block-size: var(--spacing-1);
+    border: var(--border-width) solid currentColor;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  & ul ul:not([data-type="taskList"]) > li::before { background: transparent; }
+  & ul ul ul:not([data-type="taskList"]) > li::before { border-radius: 0; background: currentColor; }
+  & ol { --note-list-counter: decimal; }
+  & ol[type="a"] { --note-list-counter: lower-alpha; }
+  & ol[type="A"] { --note-list-counter: upper-alpha; }
+  & ol[type="i"] { --note-list-counter: lower-roman; }
+  & ol[type="I"] { --note-list-counter: upper-roman; }
+  & ol > li::before {
+    content: counter(list-item, var(--note-list-counter)) "." / "";
+    inset-inline-end: calc(100% + var(--editor-block-inline-inset));
+    min-inline-size: calc(var(--spacing-1) * 6);
+    text-align: center;
+    white-space: nowrap;
+  }
+  @media (forced-colors: active) {
+    & :is(ul:not([data-type="taskList"]), ol) > li::marker { color: currentColor; }
+    & :is(ul:not([data-type="taskList"]), ol) > li::before { content: none; }
+  }
+}
 
 .ui-note-markdown.typeset-memocard.rich-editor-content {
   --note-frame-padding: var(--editor-block-gutter, var(--editor-block-space));
@@ -138,8 +182,7 @@
 }
 
 [data-small-text] .ui-note-markdown:not([data-compact]) {
-  & :is(pre, table) { font-size: var(--font-size-xs); }
-  & pre { line-height: 1.125rem; }
+  & pre { font-size: var(--font-size-xs); line-height: 1.125rem; }
 
   &:not(.rich-editor-content) > :is(ul, ol) + :is(ul, ol) {
     --note-before: calc(var(--spacing-1) * 2);

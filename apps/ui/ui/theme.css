@@ -20,7 +20,7 @@
   --color-background-property-header: var(--color-neutral-100);
   --color-background-control: color-mix(in oklab, var(--color-neutral-200) 50%, transparent);
   --color-background-glass: color-mix(in srgb, var(--color-background-body) 75%, transparent);
-  --color-background-selection: color-mix(in srgb, var(--color-blue-500) 14%, transparent);
+  --color-background-selection: color-mix(in srgb, var(--color-blue-500) 8%, transparent);
   --color-text-primary: var(--color-neutral-950);
   --color-text-secondary: var(--color-neutral-500);
   --color-text-control-secondary: var(--color-neutral-600);

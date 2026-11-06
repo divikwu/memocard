@@ -8,10 +8,10 @@ import Image, { type ImageOptions } from '@tiptap/extension-image';
 import { InlineMath, BlockMath } from '@tiptap/extension-mathematics';
 import { AllSelection, EditorState, NodeSelection, TextSelection } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { Slice } from '@tiptap/pm/model';
+import { DOMSerializer, Slice } from '@tiptap/pm/model';
 import { richBlock, richBlockAt, richSectionEnd, selectedRichBlocks, richBlockMoveSources, richBlockMoveTarget, selectRichBlocks, selectRichBlockRange, extendRichBlocksTo, blockMoveTransaction, moveRichBlocks, duplicateRichBlocks, editRichStructure, type RichBlock } from './rich-blocks';
 import { BlockRangeSelection } from './rich-block-selection';
-import { RichBlockHighlight } from './rich-block-highlight';
+import { RichBlockHighlight, selectedRichBlockSelector } from './rich-block-highlight';
 import { framedRichBlockView, richBlockBody, richBlockBounds, wrapRichBlock } from './rich-block-frame';
 import { pastedInlineTags, RichInlineTags } from './rich-inline-tags';
 import { unfoldRichHeadings } from './rich-heading-fold-core';
@@ -50,7 +50,7 @@ export type RichEditorUI = {
   NoteImage: ComponentType<{ source: string; alt: string; width?: number | string; height?: number | string; onDragStart?: DragEventHandler<HTMLElement> }>;
   RichCodeBlock: ComponentType<ReactNodeViewProps>;
   RichFormatTools: ComponentType<{ editor: TiptapEditor }>;
-  RichImageTools: ComponentType<{ editor: TiptapEditor; getPos: () => number | undefined; alt: string }>;
+  RichImageTools: ComponentType<{ editor: TiptapEditor; getPos: () => number | undefined; alt: string; onEditCaption: () => void }>;
   CalloutColorsMenu: ComponentType<{ editor: TiptapEditor; pos: number; onClose: () => void }>;
   CalloutIconPicker: ComponentType<{ editor: TiptapEditor; target: CalloutIconTarget; onClose: () => void }>;
   NoteOutline?: ComponentType<{ editor: TiptapEditor }>;
@@ -66,11 +66,34 @@ function SafeImage({ node, extension, editor, getPos }: NodeViewProps) {
   const path = extension.options.notePath() as string;
   const source = imageSource(String(node.attrs.src), path, node.type.name === 'wikiImage');
   const editable = useEditorState({ editor, selector: ({ editor }) => editor.isEditable });
+  const [editingCaption, setEditingCaption] = useState(false);
+  const caption = String(node.attrs.caption ?? '');
+  const alt = String(node.attrs.alt || '图片');
+  const saveCaption = (value: string) => {
+    setEditingCaption(false);
+    const pos = getPos();
+    if (!editor.isEditable || pos == null) return;
+    const current = editor.state.doc.nodeAt(pos);
+    const next = value.trim() || null;
+    if (current?.type !== node.type || current.attrs.caption === next) return;
+    editRichStructure(editor, () => editor.view.dispatch(editor.state.tr.setNodeAttribute(pos, 'caption', next)));
+  };
   return <NodeViewWrapper className="rich-image">{source ? <NoteImage source={source} alt={String(node.attrs.alt ?? '图片')} width={node.attrs.width ?? undefined} height={node.attrs.height ?? undefined} onDragStart={editable ? event => {
     event.stopPropagation();
     const pos = getPos();
     if (pos == null) event.preventDefault(); else beginImageDrag(editor, pos, event.nativeEvent);
-  } : undefined} /> : <span>图片链接不可用</span>}<RichImageTools editor={editor} getPos={getPos} alt={String(node.attrs.alt || '图片')} /></NodeViewWrapper>;
+  } : undefined} /> : <span>图片链接不可用</span>}
+    {editable && editingCaption ? <input className="note-image-caption" aria-label={`图注：${alt}`} autoFocus defaultValue={caption} onBlur={event => saveCaption(event.currentTarget.value)}
+      onKeyDown={event => {
+        if (event.nativeEvent.isComposing || !['Enter', 'Escape'].includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.key === 'Escape') event.currentTarget.value = caption;
+        event.currentTarget.blur();
+        editor.view.focus();
+      }} /> : caption && <span className="note-image-caption">{caption}</span>}
+    <RichImageTools editor={editor} getPos={getPos} alt={alt} onEditCaption={() => setEditingCaption(true)} />
+  </NodeViewWrapper>;
 }
 function PreservedContent({ node, extension }: NodeViewProps) {
   return <NodeViewWrapper className="rich-preserved" contentEditable={false}>
@@ -78,8 +101,17 @@ function PreservedContent({ node, extension }: NodeViewProps) {
     <span className="rich-preserved-label">原格式内容 · 保留原文</span>
   </NodeViewWrapper>;
 }
+function captionedImage(node: Parameters<NonNullable<typeof Image.config.renderMarkdown>>[0], editor: TiptapEditor | null) {
+  return node.attrs?.caption && editor
+    ? (DOMSerializer.fromSchema(editor.schema).serializeNode(editor.schema.nodeFromJSON(node)) as HTMLElement).outerHTML
+    : null;
+}
 const SafeImageExtension = Image.extend<ImageOptions & { notePath: () => string }>({
   addOptions() { return { ...this.parent!(), notePath: () => 'notes/note.md' }; },
+  addAttributes() {
+    return { ...this.parent!(), caption: { default: null, parseHTML: element => element.getAttribute('data-image-caption')?.trim() || null,
+      renderHTML: attrs => attrs.caption ? { 'data-image-caption': attrs.caption } : {} } };
+  },
   addNodeView() { return ReactNodeViewRenderer(SafeImage); },
 });
 const WikiImageExtension = SafeImageExtension.extend({
@@ -196,7 +228,12 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     enablePasteRules: false,
     extensions: [RichNoteHistory, RichInlineTags, RichHeadingFolding, RichImageDrag.configure({ uiClassName }), RichStarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current, target => setCalloutIcon({ ...target, anchor: target.anchor.hidden ? gripRef.current ?? target.anchor : target.anchor })),
       richTable(() => editorRef.current), RichTableRow, RichTableHeader, TableCell, TaskList.extend({ addNodeView: () => framedRichBlockView }), TaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' }, a11y: { checkboxLabel: node => `待办：${node.textContent}` } }),
-      SafeImageExtension.configure({ notePath: () => latest.current.notePath }), WikiImageExtension.configure({ notePath: () => latest.current.notePath }),
+      ...[SafeImageExtension, WikiImageExtension].map(extension => {
+        const renderMarkdown = extension.config.renderMarkdown ?? Image.config.renderMarkdown;
+        return extension.extend({
+          renderMarkdown: (node, helpers, context) => captionedImage(node, editorRef.current) ?? renderMarkdown?.(node, helpers, context) ?? '',
+        }).configure({ notePath: () => latest.current.notePath });
+      }),
       PreservedExtension.configure({ notePath: () => latest.current.notePath }),
       InlineMath.extend({ addNodeView() { return ReactNodeViewRenderer(RichMath); } }),
       BlockMath.extend({ addNodeView() { return ReactNodeViewRenderer(RichMath); } }),
@@ -397,7 +434,8 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       const frame = richBlockBounds(rowElement instanceof HTMLElement ? rowElement : element, 'highlight');
       const host = root.current.getBoundingClientRect();
       const { node } = block;
-      const firstLine = (node.isTextblock && !node.type.spec.code) || node.type.name === 'listItem' || node.type.name === 'taskItem';
+      const listItem = node.type.name === 'listItem' || node.type.name === 'taskItem';
+      const firstLine = (node.isTextblock && !node.type.spec.code) || listItem;
       const controlHeight = controlsRef.current?.getBoundingClientRect().height ?? 28;
       // Tall surfaces align at the top. Short blocks, such as rules, stay centered.
       let center = frame.top + Math.min(frame.height / 2, 8 + controlHeight / 2);
@@ -409,7 +447,9 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
         center = rect.top + paddingTop + Math.min(contentHeight, line) / 2;
       }
       const top = center - host.top;
-      const blockLeft = frame.left - host.left;
+      // A selected list paints one outer frame. Keep each item's first-line alignment.
+      const selectedListFrame = listItem && blockSelection ? element.parentElement?.closest<HTMLElement>(selectedRichBlockSelector) : null;
+      const blockLeft = (selectedListFrame ? richBlockBounds(selectedListFrame, 'highlight').left : frame.left) - host.left;
       setToolbar(current => current.pos === from && current.top === top && current.blockLeft === blockLeft ? current : { pos: from, top, blockLeft });
     }
   }

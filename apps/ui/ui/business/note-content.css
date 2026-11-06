@@ -9,6 +9,7 @@
 .ui-note-markdown { --note-block-radius: 4px; --note-panel-padding-block: calc(var(--spacing-1) * 3); min-width: 0; }
 .ui-note-markdown :where(code:not(pre code)) { background-color: var(--tag-default-bg, transparent); }
 .ui-note-markdown :is(pre, table, blockquote, aside[data-callout], figure, figcaption, img, video, .ui-note-image, .rich-code-block, .rich-image-row, .rich-preserved, .rich-footnote, .rich-math-block) { border-radius: var(--note-block-radius); }
+.ui-note-markdown :is(blockquote, aside[data-callout]) { font-size: var(--font-size-sm); }
 .ui-note-markdown blockquote { position: relative; border-inline-start-color: transparent; }
 .ui-note-markdown blockquote::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: calc(var(--border-width) * -2); width: calc(var(--border-width) * 2); border-radius: var(--border-width); background: var(--typeset-rule); pointer-events: none; }
 .ui-note-markdown :is(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"], .note-task-indicator) { appearance: none; display: inline-grid; place-items: center; width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); border: var(--border-width) solid var(--color-border-gray); border-radius: 4px; background: transparent; }
@@ -31,7 +32,7 @@
 .ui-note-markdown .typeset-scroll { max-width: 100%; min-width: 0; }
 .ui-note-markdown .typeset-scroll[data-overflow="true"]::after { content: "左右滚动查看完整表格"; display: block; position: sticky; left: 0; width: fit-content; padding-block: calc(var(--spacing-1) * 1.5); color: var(--color-text-secondary); font-family: var(--font-family-body); font-size: var(--font-size-xs); line-height: var(--text-supporting-leading); }
 .ui-note-markdown .typeset-scroll:focus-visible, .note-diagram-scroll:focus-visible, .note-diagram-enlarged:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
-.ui-note-markdown aside[data-callout] { --note-callout-bg: var(--color-background-muted); position: relative; margin-block: var(--typeset-flow) 0; padding: var(--note-panel-padding-block) calc(var(--spacing-1) * 4); border-radius: var(--note-block-radius); background: var(--note-callout-bg); color: var(--color-text-primary); }
+.ui-note-markdown aside[data-callout] { --note-callout-bg: var(--color-background-muted); position: relative; margin-block: var(--typeset-flow) 0; padding-block: var(--note-panel-padding-block); padding-inline: calc(var(--spacing-1) * 4) var(--note-panel-padding-block); border-radius: var(--note-block-radius); background: var(--note-callout-bg); color: var(--color-text-primary); }
 .ui-note-markdown aside[data-callout][data-callout-icon] { padding-inline-start: calc(var(--spacing-1) * 12); }
 .ui-note-markdown aside[data-callout-icon]::before { content: attr(data-callout-icon); position: absolute; inset-inline-start: calc(var(--spacing-1) * 4); top: var(--note-panel-padding-block); }
 .ui-note-markdown aside[data-callout] > :first-child { margin-block-start: 0; }
@@ -59,7 +60,10 @@
 .ui-note-markdown figure[data-image-columns] > * { min-width: 0; margin: 0; }
 .ui-note-markdown figure[data-image-columns] img { margin: 0; width: 100%; height: auto; }
 .ui-note-markdown figure[data-image-columns] figcaption { grid-column: 1 / -1; }
-.ui-note-markdown figure:not([data-image-columns]) > figcaption { margin-block-start: calc(var(--spacing-1) * 2); }
+.ui-note-markdown :is(figure:not([data-image-columns]) > figcaption, .note-image-caption) { margin-block-start: calc(var(--spacing-1) * 2); }
+.ui-note-markdown figure > figcaption:is(:empty, :has(> .ProseMirror-trailingBreak:only-child)) { display: none; }
+.note-captioned-image, .note-image-caption { display: block; }
+.note-image-caption { width: 100%; overflow-wrap: anywhere; }
 .ui-note-image { display: block; width: fit-content; max-width: 100%; height: auto; padding: 0; border: 0; border-radius: var(--note-block-radius, var(--radius-element)); background: transparent; white-space: normal; }
 .ui-note-image:hover { background: transparent; }
 .ui-note-image img { display: block; max-width: 100%; height: auto; margin: 0; border-radius: inherit; }
@@ -67,8 +71,9 @@
 .ui-note-image[data-image-state="loading"]:not([data-image-sized]) { position: relative; min-width: min(160px,100%); min-height: 80px; background: var(--color-background-muted); }
 .ui-note-image[data-image-state="loading"] img { opacity: 0; }
 .ui-note-markdown figure[data-image-columns] .ui-note-image { width: 100%; }
-.ui-note-markdown:not([data-compact]) :is(figure, p:has(> .ui-note-image:only-child), .rich-image) > .ui-note-image:not([data-image-width]),
-.ui-note-markdown:not([data-compact]) :is(figure, p:has(> .ui-note-image:only-child), .rich-image) > .ui-note-image:not([data-image-width]) > img { width: 100%; }
+.ui-note-markdown:not([data-compact]) :is(figure, p:has(> .ui-note-image:only-child), .rich-image, .note-captioned-image) > .ui-note-image:not([data-image-width]) {
+  &, & > img { width: 100%; }
+}
 .ui-note-viewer { top: 0; left: 0; display: flex; align-items: center; justify-content: center; width: 100%; max-width: 100%; height: 100dvh; max-height: none; translate: none; border: 0; border-radius: 0; box-shadow: none; background: transparent; padding: max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left)); }
 .ui-note-viewer::before { display: none; }
 .note-viewer-image { max-width: min(960px,85%); max-height: 80%; object-fit: contain; }
@@ -77,11 +82,9 @@
 .ui-note-mermaid { position: relative; min-width: 0; gap: 0; margin-block-start: var(--typeset-flow); }
 .note-mermaid-toolbar { position: absolute; inset-block-start: calc(var(--spacing-1) * 2); inset-inline-end: calc(var(--spacing-1) * 2); z-index: 1; opacity: 0; pointer-events: none; }
 .ui-note-mermaid:is(:hover, :has(:focus-visible)) > .note-mermaid-toolbar { opacity: 1; pointer-events: auto; }
-.note-mermaid-toolbar [data-slot="tabs-list"] { max-width: 100%; height: var(--size-element-md); padding: calc(var(--spacing-1) * .75); border-radius: calc(var(--radius-element) + var(--spacing-1) * .5); background: var(--color-background-surface); box-shadow: var(--shadow-floating), var(--surface-edge-floating); }
-.ui-note-mermaid [data-slot="tabs-trigger"] { flex: none; height: calc(100% - var(--border-width)); padding: var(--spacing-1) calc(var(--spacing-1) * 2); border-radius: var(--radius-element); transition-property: color, background-color, border-color, opacity; }
+.note-mermaid-toolbar [data-slot="tabs-list"] { height: 100%; gap: inherit; padding: 0; background: transparent; }
+.ui-note-mermaid [data-slot="tabs-trigger"] { flex: none; padding: 0; transition-property: color, background-color, border-color, opacity; }
 .ui-note-mermaid [data-slot="tabs-trigger"][data-active] { background: var(--color-background-muted); }
-.note-mermaid-toolbar > [data-slot="action-group"] > [data-slot="tabs-list"] { height: 100%; padding: 0; border-radius: inherit; background: transparent; box-shadow: none; }
-.note-mermaid-toolbar > [data-slot="action-group"] [data-slot="tabs-trigger"] { width: var(--size-element-md); min-width: var(--size-element-md); height: var(--size-element-md); min-height: var(--size-element-md); padding: 0; border-radius: var(--radius-full); }
 .ui-note-mermaid [hidden] { display: none; }
 .note-mermaid-panel {
   --note-mermaid-radius: var(--note-block-radius, var(--radius-element));
@@ -94,15 +97,15 @@
 }
 .note-mermaid-panel .note-mermaid-source pre {
   margin: 0;
-  padding: var(--note-panel-padding-block, calc(var(--spacing-1) * 3)) calc(var(--spacing-1) * 4);
+  padding: var(--note-panel-padding-block, calc(var(--spacing-1) * 3));
   border-radius: max(0px, calc(var(--note-mermaid-radius) - var(--border-width)));
   overflow-x: auto;
   background: var(--color-background-muted);
   font: var(--font-size-sm)/var(--text-supporting-leading) var(--font-family-code);
 }
 .note-mermaid-panel .note-mermaid-source:has(+ :not([hidden])) pre { border-end-start-radius: 0; border-end-end-radius: 0; }
-.note-diagram-scroll { max-width: 100%; overflow: auto; }
-.note-diagram-scroll, .note-mermaid-diagram > p { padding: var(--note-panel-padding-block, calc(var(--spacing-1) * 3)) calc(var(--spacing-1) * 4); }
+.note-diagram-scroll { max-width: 100%; overflow: auto; padding: var(--note-panel-padding-block, calc(var(--spacing-1) * 3)); }
+.note-mermaid-diagram > p { padding: var(--note-panel-padding-block, calc(var(--spacing-1) * 3)) calc(var(--spacing-1) * 4); }
 .note-diagram-trigger { display: block; width: fit-content; height: auto; margin-inline: auto; padding: 0; background: transparent; }
 .note-diagram-enlarged { max-width: 90vw; max-height: 80dvh; overflow: auto; padding: calc(var(--spacing-1) * 4); border-radius: var(--radius-element); background: var(--color-background-surface); }
 @media (max-width: 640px) { .ui-note-markdown figure[data-image-columns] { grid-template-columns: minmax(0,1fr) !important; } }

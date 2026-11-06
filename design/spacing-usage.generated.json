@@ -266,6 +266,7 @@
         "apps/ui/ui/components/sheet.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/components/tabs.tsx",
+        "apps/ui/ui/web/NoteAppearanceMenu.tsx",
         "apps/ui/ui/web/WebAppView.tsx"
       ]
     },
@@ -1089,8 +1090,7 @@
         "apps/ui/ui/business/tag-navigation.tsx",
         "apps/ui/ui/components/input-group.tsx",
         "apps/ui/ui/components/select.tsx",
-        "apps/ui/ui/components/sidebar.tsx",
-        "apps/ui/ui/web/NoteAppearanceMenu.tsx"
+        "apps/ui/ui/components/sidebar.tsx"
       ]
     },
     {
@@ -1111,7 +1111,8 @@
       "value": "3",
       "consumers": [
         "apps/ui/ui/business/NoteSearchDialog.tsx",
-        "apps/ui/ui/components/textarea.tsx"
+        "apps/ui/ui/components/textarea.tsx",
+        "apps/ui/ui/web/NoteAppearanceMenu.tsx"
       ]
     },
     {

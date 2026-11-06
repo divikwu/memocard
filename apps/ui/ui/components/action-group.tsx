@@ -13,7 +13,7 @@ function useMobileActionGroup() {
   return useContext(MobileActionGroupContext)
 }
 
-function ActionGroup({ className, size = "default", ...props }: React.ComponentProps<"div"> & { size?: "default" | "lg" }) {
+function ActionGroup({ className, size = "default", ...props }: React.ComponentProps<"div"> & { size?: "compact" | "default" | "lg" }) {
   const mobile = useMobileActionGroup()
   return (
     <div
@@ -23,7 +23,8 @@ function ActionGroup({ className, size = "default", ...props }: React.ComponentP
       role="group"
       className={cn(
         "inline-flex w-fit shrink-0 items-center gap-0 rounded-full bg-surface p-0.5 shadow-control [&_button]:shadow-none",
-        size === "lg" ? "h-12 [&_button]:size-11 [&_button]:min-h-11 [&_button]:min-w-11" : "h-10 [&_button]:size-element-md [&_button]:min-h-element-md [&_button]:min-w-element-md",
+        size === "lg" && "h-12 [&_button]:size-11 [&_button]:min-h-11 [&_button]:min-w-11",
+        size === "default" && "h-10 [&_button]:size-element-md [&_button]:min-h-element-md [&_button]:min-w-element-md",
         className
       )}
       {...props}

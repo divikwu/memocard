@@ -6,8 +6,15 @@ import { MermaidContent, VaultImage } from "./NoteMedia";
 export { MermaidContent, VaultImage, ImageViewer } from "./NoteMedia";
 export type { VaultImageProps } from "./NoteMedia";
 
-const imageRenderer: Components["img"] = ({ src, alt, width, height }) => typeof src === "string" && src ? <VaultImage source={src} alt={alt ?? "笔记图片"} loading="lazy" width={width} height={height} /> : <span className="blocked-image">{alt || "图片"} · 仅显示笔记库中的图片</span>;
-const compactImageRenderer: Components["img"] = ({ src, alt, width, height }) => typeof src === "string" && src ? <VaultImage source={src} alt={alt ?? "笔记图片"} loading="lazy" width={width} height={height} interactive={false} /> : <span className="blocked-image">{alt || "图片"} · 仅显示笔记库中的图片</span>;
+function renderImage(interactive: boolean): Components["img"] {
+  return ({ node, src, alt, width, height }) => {
+    const image = typeof src === "string" && src ? <VaultImage source={src} alt={alt ?? "笔记图片"} loading="lazy" width={width} height={height} interactive={interactive} /> : <span className="blocked-image">{alt || "图片"} · 仅显示笔记库中的图片</span>;
+    const caption = String(node?.properties.dataImageCaption ?? "").trim();
+    return caption ? <span className="note-captioned-image">{image}<span className="note-image-caption">{caption}</span></span> : image;
+  };
+}
+const imageRenderer = renderImage(true);
+const compactImageRenderer = renderImage(false);
 const preRenderer: Components["pre"] = ({ children }) => {
   const code = children as ReactElement<{ className?: string; children?: string }>;
   return code?.props?.className === "language-mermaid" ? <MermaidContent source={String(code.props.children ?? "").replace(/\n$/, "")}><pre>{children}</pre></MermaidContent> : <pre>{children}</pre>;

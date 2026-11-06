@@ -58,7 +58,7 @@ test("floating note outline follows heading edits, duplicate titles, and its two
   expect(getComputedStyle(nav.closest('[data-slot="popover-content"]')!).borderRadius).toBe("12px");
   for (const link of links) {
     expect(getComputedStyle(link).height).toBe("32px");
-    expect(getComputedStyle(link).fontWeight).toBe("400");
+    expect(getComputedStyle(link).fontWeight).toBe(link.hasAttribute("aria-current") ? "600" : "400");
   }
   expect(links[1].getBoundingClientRect().left).toBeGreaterThan(links[0].getBoundingClientRect().left);
   act(() => { editor.commands.setContent("<h2>Renamed</h2><p>Body</p><h3>Second</h3>"); });
@@ -198,6 +198,26 @@ test("portaled search preview keeps compact typography when note preferences cha
     expect(second.getBoundingClientRect().top - first.getBoundingClientRect().bottom).toBeCloseTo(11.9, 1);
     expect(getComputedStyle(root.querySelector("h1")!).fontSize).toBe("24.5px");
   }
+});
+
+test("search preview reserves space for individual captions inside an image row", async () => {
+  await page.viewport(1024, 900);
+  const canvas = document.createElement("canvas");
+  canvas.width = 2; canvas.height = 1;
+  const png = await new Promise<Blob>(resolve => canvas.toBlob(blob => resolve(blob!), "image/png"));
+  const restoreAssets = setStorybookBrowserAssets({ "assets/search-caption.png": png });
+  try {
+    const image = '<img src="../assets/search-caption.png" width="240" height="120" alt="Sample">';
+    const captioned = image.replace(' alt=', ' data-image-caption="Search caption" alt=');
+    const { container } = render(<div className="ui-note-search-preview-content" style={{ width: 320 }}><NoteMarkdown notePath="notes/search.md" body={`<figure data-image-columns="50,50">${captioned}${image}</figure>\n\nNext paragraph`} /></div>);
+    const figure = container.querySelector("figure")!;
+    for (const image of figure.querySelectorAll("img")) await waitFor(() => expect(image.complete && image.naturalWidth > 0).toBe(true));
+    const caption = within(figure).getByText("Search caption").getBoundingClientRect();
+    const imageBox = figure.querySelector("img")!.getBoundingClientRect();
+    expect(caption.top - imageBox.bottom).toBeCloseTo(8, 1);
+    expect(caption.bottom).toBeLessThanOrEqual(figure.getBoundingClientRect().bottom);
+    expect(caption.bottom).toBeLessThan(within(container).getByText("Next paragraph").getBoundingClientRect().top);
+  } finally { restoreAssets(); }
 });
 
 test("editor keyboard exit hint stays screen-reader-only while editing", async () => {
@@ -389,6 +409,7 @@ for (const size of ["14", "16"]) test(`headings and paragraphs use the same sele
     const paths = path()?.getAttribute("d")?.match(/M[^M]+/g);
     expect(paths).toHaveLength(doc.childCount);
     expect(paths?.slice(1, 4)).toEqual(singlePaths);
+    expect(getComputedStyle(path()!.ownerSVGElement!).mixBlendMode).toBe("darken");
   });
 });
 
@@ -426,29 +447,35 @@ for (const size of ["14", "16"]) for (const rootSize of [16, 20]) {
         expect(inline.borderRadius).toBe("4px");
         expect(parseFloat(code.fontSize)).toBe((small ? 12 : 14) * scale);
         expect(parseFloat(code.lineHeight)).toBe((small ? 18 : 20) * scale);
-        expect(code.padding).toBe(`${12 * scale}px ${16 * scale}px`);
+        expect(code.padding).toBe(`${12 * scale}px`);
         expect(code.borderRadius).toBe("4px");
-        expect(parseFloat(table.fontSize)).toBe((small ? 12 : 14) * scale);
+        expect(parseFloat(table.fontSize)).toBe(14 * scale);
+        expect(header.fontSize).toBe(table.fontSize);
+        expect(cell.fontSize).toBe(table.fontSize);
         expect(parseFloat(table.lineHeight)).toBe(20 * scale);
         expect(table.borderBlockEndWidth).toBe(editing ? "0px" : "1px");
         if (editing) {
           expect(table.borderBlockStartWidth).toBe("1px");
           expect(getComputedStyle(tableElement, "::after").borderBlockEndWidth).toBe("1px");
         }
-        expect(header.padding).toBe(`${12 * scale}px ${16 * scale}px`);
+        expect(header.padding).toBe(`${8 * scale}px ${12 * scale}px`);
         expect(cell.padding).toBe(header.padding);
         expect(cell.borderBlockStartWidth).toBe("0px");
-        for (const row of tableElement.rows) expect(row.getBoundingClientRect().height).toBe(44 * scale + 1);
-        expect(tableElement.getBoundingClientRect().height).toBe(tableElement.rows.length * (44 * scale + 1) + 1);
+        for (const row of tableElement.rows) expect(row.getBoundingClientRect().height).toBe(36 * scale + 1);
+        expect(tableElement.getBoundingClientRect().height).toBe(tableElement.rows.length * (36 * scale + 1) + 1);
         const divider = getComputedStyle(tableElement.rows[1].cells[0], "::before");
         expect(divider.borderBlockStartWidth).toBe("1px");
         expect(divider.borderBlockStartStyle).toBe("solid");
         expect(getComputedStyle(tableElement.rows[0].cells[0], "::before").content).toBe("none");
         const [quoteOne, quoteTwo] = root.querySelectorAll("blockquote p");
+        expect(getComputedStyle(quoteOne).fontSize).toBe(`${14 * scale}px`);
+        expect(getComputedStyle(quoteOne.closest("blockquote")!).paddingInlineStart).toBe(`${12 * scale}px`);
         expect(quoteTwo.getBoundingClientRect().top - quoteOne.getBoundingClientRect().bottom).toBe(small ? 8 * scale : 16);
         const callout = root.querySelector("aside")!;
         const [calloutFirst, calloutLast] = callout.querySelectorAll("p");
+        expect(getComputedStyle(calloutFirst).fontSize).toBe(`${14 * scale}px`);
         const bounds = callout.getBoundingClientRect();
+        expect(getComputedStyle(callout).paddingInlineEnd).toBe(`${12 * scale}px`);
         expect(calloutFirst.getBoundingClientRect().top - bounds.top).toBe(12 * scale);
         expect(bounds.bottom - calloutLast.getBoundingClientRect().bottom).toBe(12 * scale);
         expect(getComputedStyle(root.querySelector("ol")!).paddingInlineStart).toBe(`${(editing ? 26 : 24) * scale}px`);
@@ -460,6 +487,10 @@ for (const size of ["14", "16"]) for (const rootSize of [16, 20]) {
       }
       const icon = field.querySelector<HTMLElement>(".rich-callout-icon")!, text = field.querySelector<HTMLElement>(".rich-callout-content > p")!;
       const a = icon.getBoundingClientRect(), b = text.getBoundingClientRect();
+      expect(a.width).toBe(24 * scale);
+      expect(a.height).toBe(24 * scale);
+      expect(a.left - icon.closest("aside")!.getBoundingClientRect().left).toBe(12 * scale);
+      expect(getComputedStyle(icon).borderRadius).toBe("4px");
       expect(a.top + a.height / 2).toBeCloseTo(b.top + b.height / 2, 1);
       expect(editor.state.doc.eq(original)).toBe(true);
     }
@@ -487,7 +518,8 @@ test("resizing image columns keeps the note scrolled away from the existing care
   try {
     const image = '<img src="../assets/resize.png" width="240" height="120" alt="Sample">';
     const paragraphs = "Paragraph\n\n".repeat(24);
-    const { field, editor, scroller, findByRole } = await outlineFixture(`${paragraphs}<figure data-image-columns="50,50">${image}${image}</figure>\n\n${paragraphs}`);
+    const captioned = image.replace(' alt=', ' data-image-caption="Image caption" alt=');
+    const { field, editor, scroller, findByRole } = await outlineFixture(`${paragraphs}<figure data-image-columns="50,50">${captioned}${captioned}</figure>\n\n${paragraphs}`);
     const figure = field.querySelector("figure")!;
     const handle = await findByRole("separator", { name: "调整第 1、2 列宽度" });
     await Promise.all([...figure.querySelectorAll("img")].map(img => img.decode()));
@@ -505,6 +537,7 @@ test("resizing image columns keeps the note scrolled away from the existing care
     const y = gripBox.y + gripBox.height / 2;
     expect(divider.left).toBeCloseTo(left.right, 1);
     expect(divider.right).toBeCloseTo(right.left, 1);
+    expect(divider.bottom).toBeCloseTo(Math.min(left.bottom, right.bottom), 1);
     expect(document.elementFromPoint(divider.x + divider.width / 2, y)).toBe(handle);
     expect(document.elementFromPoint(right.left + 2, y)).toBe(figure.querySelectorAll("img")[1]);
     await userEvent.dragAndDrop(handle, figure, { targetPosition: { x: figure.clientWidth * .6, y: figure.clientHeight / 2 } });
@@ -529,9 +562,9 @@ test("small note rows grow with wrapped text and single images sit 8px above the
     const { field } = await editorFixture(`${images}\n\n| A | B |\n| --- | --- |\n| Short | Short |\n| ${longText} | Short |`);
     const [, shortRow, wrappedRow] = field.querySelector("table")!.rows;
     const wrappedText = wrappedRow.cells[0].querySelector("p")!.getBoundingClientRect().height;
-    expect(shortRow.getBoundingClientRect().height).toBe(45);
+    expect(shortRow.getBoundingClientRect().height).toBe(37);
     expect(wrappedText).toBeGreaterThan(20);
-    expect(wrappedRow.getBoundingClientRect().height).toBe(wrappedText + 25);
+    expect(wrappedRow.getBoundingClientRect().height).toBe(wrappedText + 17);
 
     for (const size of ["14", "16"]) {
       typography(size);
@@ -563,6 +596,8 @@ for (const size of ["14", "16"]) for (const width of [390, 1024]) {
       await waitFor(() => expect(field.querySelectorAll("table")).toHaveLength(5));
       const diagram = await within(field).findByRole("img", { name: "Mermaid 图表" });
       await waitFor(() => expect(diagram.shadowRoot?.querySelector("svg")).toBeTruthy());
+      expect(getComputedStyle(field.querySelector(".note-mermaid-source pre")!).padding).toBe("12px");
+      expect(getComputedStyle(diagram.closest(".note-diagram-scroll")!).padding).toBe("12px");
       for (const image of field.querySelectorAll<HTMLImageElement>("img")) await waitFor(() => expect(image.complete && image.naturalWidth > 0).toBe(true));
       const original = editor.state.doc, seen = new Set<string>(), positions: number[] = [];
       original.descendants((node, pos) => {
@@ -636,6 +671,16 @@ for (const size of ["14", "16"]) for (const width of [390, 1024]) {
       if (width >= 768) {
         for (const selection of [new AllSelection(original), BlockRangeSelection.between(original, 0, original.content.size)]) {
           editor.view.dispatch(editor.state.tr.setSelection(selection));
+          for (const text of ["第一项：检查列表标记与文字的距离", "第二级第一项", "第一步：收集信息", "嵌套步骤一", "未完成任务", "已完成的子任务"]) {
+            const item = within(field).getByText(text, { exact: true });
+            const frame = item.closest(".rich-selected-block")!;
+            expect(frame.parentElement).toBe(field);
+            await userEvent.hover(item);
+            const bounds = frame.getBoundingClientRect(), control = grip.getBoundingClientRect();
+            expect(bounds.left - control.right, `${text} gap`).toBeCloseTo(2, 1);
+            const line = item.getBoundingClientRect().top + parseFloat(getComputedStyle(item).lineHeight) / 2;
+            expect(control.top + control.height / 2, `${text} first line`).toBeCloseTo(line, 0);
+          }
           for (const alt of ["单张带说明的图片", "并排左图", "并排右图"]) {
             const image = getByAltText(alt), frame = image.closest(".rich-image-row")!;
             await userEvent.hover(image);
@@ -651,6 +696,30 @@ for (const size of ["14", "16"]) for (const width of [390, 1024]) {
 }
 
 const adjacentBlocks = "start\n\n- first\n- second\n\n1. ordered\n2. next\n\n- [ ] task\n- [x] done\n\n> quote\n\n<aside data-callout=\"gray\"><p>callout</p></aside>\n\n```txt\ncode\n```\n\n| A | B |\n| --- | --- |\n| a | b |\n\n---\n\nend";
+
+for (const size of ["14", "16"]) test(`list markers share the checkbox column and first-line center at ${size}px`, async () => {
+  await page.viewport(390, 900);
+  document.documentElement.style.fontSize = "20px";
+  typography(size);
+  const long = "wrapped bullet ".repeat(12).trim();
+  const { field } = await editorFixture(`- ${long}\n  - nested bullet\n\n9. ordered\n   1. nested ordered\n10. next\n\n- [ ] task\n  - [x] nested task`);
+  const lists = within(field);
+  const bullet = lists.getByText(long);
+  expect(bullet.getBoundingClientRect().height).toBeGreaterThan(parseFloat(getComputedStyle(bullet).lineHeight));
+  expect(field.querySelector("ol")?.start).toBe(9);
+  for (const [task, ...markers] of [["task", long, "ordered", "next"], ["nested task", "nested bullet", "nested ordered"]]) {
+    const taskText = lists.getByText(task, { exact: true });
+    const checkbox = taskText.closest("li")!.querySelector("input")!.getBoundingClientRect();
+    expect(checkbox.top + checkbox.height / 2).toBeCloseTo(taskText.getBoundingClientRect().top + parseFloat(getComputedStyle(taskText).lineHeight) / 2, 1);
+    for (const label of markers) {
+      const text = lists.getByText(label, { exact: true });
+      const item = text.closest("li")!;
+      const box = item.getBoundingClientRect(), marker = getComputedStyle(item, "::before");
+      expect(box.left + parseFloat(marker.left) + parseFloat(marker.width) / 2, label).toBeCloseTo(checkbox.left + checkbox.width / 2, 1);
+      expect(box.top + parseFloat(marker.top), label).toBeCloseTo(text.getBoundingClientRect().top + parseFloat(getComputedStyle(text).lineHeight) / 2, 1);
+    }
+  }
+});
 
 for (const rootSize of [16, 20]) for (const size of ["14", "16"]) for (const flow of ["16px", "1em", "1.25em", "2em"]) for (const width of [390, 1024]) {
   test(`adjacent blocks and list items share visible gaps: root ${rootSize}, size ${size}, flow ${flow}, width ${width}`, async () => {

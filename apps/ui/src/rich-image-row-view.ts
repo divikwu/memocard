@@ -13,7 +13,7 @@ export function imageRowView({ node, editor, getPos }: NodeViewRendererProps) {
   let preview: number[] | null = null;
   const imageColumnsInView = () => [...contentDOM.children].filter(child => child.matches('.node-image, .node-wikiImage'));
   function positionHandles() {
-    const columns = imageColumnsInView().map(column => column.getBoundingClientRect());
+    const columns = imageColumnsInView().map(column => (column.querySelector('.ui-note-image') ?? column).getBoundingClientRect());
     const origin = controls.getBoundingClientRect();
     [...controls.children].forEach((child, index) => {
       const handle = child as HTMLElement, left = columns[index], right = columns[index + 1];
