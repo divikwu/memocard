@@ -176,7 +176,7 @@ it.each(['pointer', 'keyboard'] as const)('keeps the block handle on the heading
   });
   const { editor, field, onChange } = await rich('# 一级标题\n\n## 二级标题\n\n### 三级标题\n\n正文');
   const headings = Array.from(field.querySelectorAll<HTMLElement>('h1, h2, h3'));
-  headings.forEach((heading, index) => vi.spyOn(heading, 'getBoundingClientRect').mockReturnValue(new DOMRect(64, 100 + index * 80, 400, 26)));
+  headings.forEach((heading, index) => vi.spyOn(heading.querySelector('.rich-heading-text')!, 'getBoundingClientRect').mockReturnValue(new DOMRect(64, 100 + index * 80, 400, 26)));
   vi.spyOn(field.closest('.rich-editor')!, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 500, 500));
   const second = editor.view.posAtDOM(headings[1], 0);
   act(() => { editor.commands.setTextSelection(second); });
@@ -199,7 +199,7 @@ it.each(['pointer', 'keyboard'] as const)('keeps the block handle on the heading
 it('retargets the block handle when scrolling puts another heading under a stationary pointer', async () => {
   const { editor, field, onChange } = await rich('# 一级标题\n\n## 二级标题\n\n### 三级标题\n\n正文');
   const headings = Array.from(field.querySelectorAll<HTMLElement>('h1, h2, h3'));
-  headings.forEach((heading, index) => vi.spyOn(heading, 'getBoundingClientRect').mockReturnValue(new DOMRect(64, 100 + index * 80, 400, 26)));
+  headings.forEach((heading, index) => vi.spyOn(heading.querySelector('.rich-heading-text')!, 'getBoundingClientRect').mockReturnValue(new DOMRect(64, 100 + index * 80, 400, 26)));
   vi.spyOn(field.closest('.rich-editor')!, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 500, 500));
   const second = editor.view.posAtDOM(headings[1], 0), third = editor.view.posAtDOM(headings[2], 0);
   const coordinates = vi.spyOn(editor.view, 'posAtCoords').mockReturnValue({ pos: second, inside: second - 1 });

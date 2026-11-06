@@ -1,7 +1,7 @@
 import { useId } from "react";
 import { defaults, measurePresets, options, type Typography } from "../../src/features/typography/preferences";
 import { useTypography } from "../../src/features/typography/TypographyProvider";
-import { noteLineHeights } from "../../src/features/typography/scale";
+import { noteLineHeights, noteParagraphGap, STANDARD_PARAGRAPH_GAP } from "../../src/features/typography/scale";
 import { Button } from "../components/button";
 import { Card, CardContent } from "../components/card";
 import { Label } from "../components/label";
@@ -10,9 +10,9 @@ import { ChevronDownIcon } from "../icons";
 import { NoteMarkdown } from "../business/NoteMarkdown";
 
 const labels: Record<keyof Typography, string> = { measure: "行宽", size: "字号", leading: "行高", flow: "段落间距" };
-const names: Record<string, string> = { "1.5": "标准", "1.6": "舒适", "1.75": "宽松", "1.9": "更宽松", "16px": "标准（16px）", "1em": "随字号（1em）", "1.25em": "随字号（1.25em）", "2em": "随字号（2em）" };
+const names: Record<string, string> = { "1.5": "标准", "1.6": "舒适", "1.75": "宽松", "1.9": "更宽松" };
 const sizeNames: Record<string, string> = { "14": "小字号（14px）", "16": "标准（16px）" };
-const choiceLabel = (key: keyof Typography, value: string, size: string) => key === "measure" ? measurePresets[value].label : key === "size" ? sizeNames[value] : key === "leading" ? `${names[value]}（${noteLineHeights[size][value]}px）` : names[value] ?? value;
+const choiceLabel = (key: keyof Typography, value: string, size: string) => key === "measure" ? measurePresets[value].label : key === "size" ? sizeNames[value] : key === "leading" ? `${names[value]}（${noteLineHeights[size][value]}px）` : value === defaults.flow ? `标准（${STANDARD_PARAGRAPH_GAP}px）` : `随字号（${noteParagraphGap(size, value)}px）`;
 const preview = `# 把一闪而过的想法留下来
 
 打开 MemoCard，记下今天的发现，留待日后慢慢整理。

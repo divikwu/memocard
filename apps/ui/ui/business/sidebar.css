@@ -15,8 +15,10 @@
   .ui-sidebar-tag-scroll { mask-image: none; }
 }
 .ui-business-sidebar [data-sidebar="menu"], .ui-business-sidebar [data-sidebar="menu-sub"] { gap: calc(var(--spacing-1) * .5); }
-.ui-business-sidebar .ui-sidebar-brand { height: calc(var(--size-element-md) + var(--spacing-1)); gap: calc(var(--spacing-1) * 2); padding-inline-start: calc(var(--spacing-1) / 2 - var(--border-width)); padding-inline-end: calc(var(--size-element-sm) + var(--spacing-1) * 1.5); border-radius: var(--radius-full); background: transparent; font-family: var(--font-family-body); }
-.ui-sidebar-logo { width: var(--size-element-md); height: var(--size-element-md); flex-shrink: 0; object-fit: contain; }
+.ui-business-sidebar .ui-sidebar-brand { height: calc(var(--size-element-md) + var(--spacing-1)); gap: calc(var(--spacing-1) * 2); padding-inline-start: calc(var(--spacing-1) / 2); padding-inline-end: calc(var(--size-element-sm) + var(--spacing-1) * 1.5); border-radius: var(--radius-full); background: transparent; font-family: var(--font-family-body); }
+.ui-sidebar-logo { width: var(--size-element-sm); height: var(--size-element-sm); flex-shrink: 0; object-fit: contain; }
+/* Center the logo in the toggle area after accounting for the home button border. */
+.ui-sidebar-brand > .ui-sidebar-logo { margin-inline-start: calc((var(--size-element-md) - var(--size-element-sm)) / 2 - var(--border-width)); }
 .ui-sidebar-brand-header { position: relative; border-radius: var(--radius-full); }
 .ui-sidebar-brand-header:hover { background: var(--color-overlay-hover); }
 .ui-sidebar-brand-header .ui-sidebar-brand-menu { position: absolute; inset-inline-end: calc(var(--spacing-1) * 1.5); top: 50%; transform: translateY(-50%); opacity: 0; }

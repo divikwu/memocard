@@ -161,14 +161,17 @@ export const ColoredInlineTagRegression: Story = {
   play: async ({ canvasElement }) => {
     const field = await within(canvasElement).findByRole("textbox", { name: "快速输入内容" });
     await expect(field).toHaveTextContent("");
-    await userEvent.type(field, "保留标签配色 #工作 ");
+    await userEvent.type(field, "保留标签配色 #工作 #未设色 ");
     await userEvent.keyboard("{Escape}");
     const tag = field.querySelector<HTMLElement>(`.rich-inline-tag[data-tag="${encodeURIComponent("工作")}"]`)!;
+    const defaultTag = field.querySelector<HTMLElement>(`.rich-inline-tag[data-tag="${encodeURIComponent("未设色")}"]`)!;
     const probe = canvasElement.ownerDocument.createElement("span");
     probe.style.cssText = "color:var(--color-text-green);background:color-mix(in oklab,var(--color-text-green) var(--tag-bg-opacity),transparent)";
     canvasElement.append(probe);
     await expect(getComputedStyle(tag).color).toBe(getComputedStyle(probe).color);
     await expect(getComputedStyle(tag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
+    probe.style.backgroundColor = "var(--tag-default-bg)";
+    await expect(getComputedStyle(defaultTag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
     probe.remove();
   },
 };

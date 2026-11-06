@@ -6,7 +6,7 @@ it('keeps the two sizes independent of reading width and retains custom rhythm c
   // These factors are the compatibility baseline, independent of the shared preset definitions.
   const factors: Record<string, number> = { '60': 28, '70': 33, '80': 37, '90': 45 };
   const relativeGaps: Record<string, Record<string, string>> = {
-    '14': { '1em': '0.875rem', '1.25em': '1.09375rem', '2em': '1.75rem' },
+    '14': { '1em': '0.875rem', '1.25em': '1.125rem', '2em': '1.75rem' },
     '16': { '1em': '1rem', '1.25em': '1.25rem', '2em': '2rem' },
   };
   const lines: Record<string, Record<string, number>> = {
@@ -14,8 +14,8 @@ it('keeps the two sizes independent of reading width and retains custom rhythm c
     '16': { '1.5': 24, '1.6': 26, '1.75': 28, '1.9': 30 },
   };
   const headings: Record<string, string[]> = {
-    '14': ['1.625rem', '2.125rem', '1.375rem', '1.75rem', '1.125rem', '1.5rem'],
-    '16': ['1.875rem', '2.5rem', '1.5rem', '2rem', '1.25rem', '1.625rem'],
+    '14': ['1.625rem', '2.125rem', '1.375rem', '1.75rem', '1.125rem', '1.5rem', '1rem', '1.5rem'],
+    '16': ['2rem', '2.5rem', '1.625rem', '2.125rem', '1.375rem', '1.75rem', '1.125rem', '1.5rem'],
   };
   expect(options.measure).toEqual(Object.keys(factors));
   expect(Object.values(measurePresets).map(preset => preset.label)).toEqual(['窄', '适中', '宽', '宽松']);
@@ -30,9 +30,13 @@ it('keeps the two sizes independent of reading width and retains custom rhythm c
       '--note-h2-line-height': headings[size][3],
       '--note-h3-size': headings[size][4],
       '--note-h3-line-height': headings[size][5],
+      '--note-h4-size': headings[size][6],
+      '--note-h4-line-height': headings[size][7],
       '--note-leading': `${lines[size][leading] / Number(size)}`,
       '--note-line-height': `${lines[size][leading] / 16}rem`,
       '--note-flow': relativeGaps[size][flow] ?? flow,
+      '--note-paragraph-flow': relativeGaps[size][flow] ?? '8px',
+      '--note-editor-gap': relativeGaps[size][flow] ?? 'var(--spacing-1)',
       '--note-measure': `${16 * factors[measure]}px`,
     });
   }

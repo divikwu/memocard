@@ -125,6 +125,7 @@ test("real editor menus and property confirmation inherit a local dialog scope",
   let editor!: Editor;
   const view = render(<PreviewModeProvider mode="light"><ThemeScope value={{ themeId: "paper", palette: "green", neutral: "slate" }}>
     <Dialog open><DialogContent data-ui-theme="dark"><DialogTitle>局部编辑器</DialogTitle>
+      <span data-testid="local-delete-color" style={{ color: "var(--color-icon-red)" }} />
       <RichMarkdownEditor value="A scoped paragraph" notePath="scope.md" disabled={false} onChange={() => {}} onSave={() => {}} onError={() => {}} onEditorReady={value => { if (value) editor = value; }} />
       <PropertyOptionMenu name="测试" kind="标签" color="default" disabled={false} normalizeName={name => name} onChangeName={async () => {}} onChangeColor={() => {}} deleteDescription="作用域确认" />
     </DialogContent></Dialog>
@@ -147,6 +148,10 @@ test("real editor menus and property confirmation inherit a local dialog scope",
     expect(scope.getAttribute("data-web-palette")).toBe("green");
     expect(getComputedStyle(menu).getPropertyValue("--workspace-menu-padding").trim()).toBe("10px");
     expect(getComputedStyle(menu).backgroundColor).not.toBe("rgb(255, 255, 255)");
+    const deleteBlock = within(menu).getByRole("menuitem", { name: "删除" });
+    const deleteColor = getComputedStyle(body.getByTestId("local-delete-color")).color;
+    expect(getComputedStyle(deleteBlock).color).toBe(deleteColor);
+    expect(getComputedStyle(deleteBlock.querySelector("svg")!).color).toBe(deleteColor);
     await userEvent.keyboard("{Escape}");
     await userEvent.click(body.getByRole("button", { name: "管理标签 测试" }));
     await userEvent.click(await body.findByRole("menuitem", { name: "删除标签" }));

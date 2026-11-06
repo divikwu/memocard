@@ -195,6 +195,21 @@ it("keeps existing results while loading and preserves caller empty and error fe
   expect(screen.getByText("记下第一条笔记")).toBeTruthy();
 });
 
+it("uses the compact list columns for loading titles, tags and dates", async () => {
+  const user = userEvent.setup();
+  const { container } = render(<NoteCollection {...props({ notes: [], loading: true })} />);
+  await user.click(screen.getByRole("button", { name: "列表布局" }));
+  const skeleton = container.querySelector('[data-slot="collection-skeleton"]');
+  expect(skeleton?.getAttribute("aria-hidden")).toBe("true");
+  const rows = skeleton?.querySelectorAll(".ui-note-list-content");
+  expect(rows).toHaveLength(6);
+  for (const row of rows ?? []) {
+    expect(row.querySelector('.ui-note-list-title [data-slot="skeleton"]')).toBeTruthy();
+    expect(row.querySelector('.ui-note-tags [data-slot="skeleton"]')).toBeTruthy();
+    expect(row.querySelector('.ui-note-list-date [data-slot="skeleton"]')).toBeTruthy();
+  }
+});
+
 it("loads the next page once and prevents duplicate requests while paging", async () => {
   const user = userEvent.setup();
   const options = props({ hasMore: true });

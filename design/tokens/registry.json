@@ -475,11 +475,13 @@
       "sources": [
         "apps/ui/src/features/typography/preferences.ts",
         "apps/ui/src/features/typography/TypographyProvider.tsx",
-        "apps/ui/src/features/typography/scale.ts"
+        "apps/ui/src/features/typography/scale.ts",
+        "apps/ui/ui/web/note-appearance.ts"
       ],
       "consumers": [
         "apps/ui/ui/web/WebTypographyProvider.tsx",
-        "apps/ui/ui/web/WebTypographySettings.tsx"
+        "apps/ui/ui/web/WebTypographySettings.tsx",
+        "apps/ui/ui/web/NoteAppearanceMenu.tsx"
       ]
     },
     {
@@ -516,6 +518,7 @@
         "apps/ui/ui/business/Editor.css",
         "apps/ui/ui/business/NoteCollection.css",
         "apps/ui/ui/business/NoteOutline.css",
+        "apps/ui/ui/business/NotePageTitle.css",
         "apps/ui/ui/business/TagsPage.css",
         "apps/ui/ui/business/PageNotice.css",
         "apps/ui/ui/business/QuickCapture.css",
@@ -734,6 +737,20 @@
             "rem"
           ]
         },
+        "--note-paragraph-flow": {
+          "type": "dimension",
+          "unit": [
+            "px",
+            "rem"
+          ]
+        },
+        "--note-editor-gap": {
+          "type": "dimension",
+          "unit": [
+            "px",
+            "rem"
+          ]
+        },
         "--note-line-height": {
           "type": "dimension",
           "unit": "rem"
@@ -761,7 +778,24 @@
         "--note-h3-line-height": {
           "type": "dimension",
           "unit": "rem"
+        },
+        "--note-h4-size": {
+          "type": "dimension",
+          "unit": "rem"
+        },
+        "--note-h4-line-height": {
+          "type": "dimension",
+          "unit": "rem"
         }
+      }
+    },
+    {
+      "source": "apps/ui/ui/web/note-appearance.ts",
+      "defaults": "apps/ui/ui/web/note-appearance.ts",
+      "contract": "typography.note-preferences",
+      "tokens": {
+        "--note-font-heading": { "type": "fontFamily", "unit": null },
+        "--note-font-body": { "type": "fontFamily", "unit": null }
       }
     },
     {

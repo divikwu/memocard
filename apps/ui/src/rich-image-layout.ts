@@ -109,7 +109,10 @@ export function setImageWidths(editor: Editor, pos: number, widths: number[]): b
   const normalize = (values: number[]) => values.map(width => Math.round(width / values.reduce((a, b) => a + b, 0) * 100000) / 1000);
   const normalized = normalize(widths);
   if (normalized.join(',') === normalize(row.widths).join(',')) return false;
-  return applyImageTransaction(editor, editor.state.tr.setNodeMarkup(row.pos, undefined, { ...row.node.attrs, columns: normalized.join(',') }));
+  const tr = editor.state.tr.setNodeMarkup(row.pos, undefined, { ...row.node.attrs, columns: normalized.join(',') });
+  // Resizing preserves the viewport even when the text caret is offscreen.
+  editRichStructure(editor, () => editor.view.dispatch(tr));
+  return true;
 }
 
 export function splitImageRow(editor: Editor, pos: number, onlySelected = false): boolean {

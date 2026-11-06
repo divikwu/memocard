@@ -1,0 +1,13 @@
+.note-page-title {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 1lh;
+  margin: 0;
+  padding: 0 calc(var(--spacing-1) * 2);
+  color: var(--color-text-primary);
+  font-family: var(--note-font-heading, var(--font-family-heading));
+  font-size: var(--font-size-note-title);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--text-note-title-leading);
+}

@@ -67,6 +67,21 @@ it('edits semantic HTML, Wiki labels and footnotes without exposing source marke
  editor.commands.insertContentAt(position,'新');
  expect(text()).toContain('<p>新内部正文</p>');expect(text()).toContain('[[笔记|名字]]');
 });
+it.each([
+ 'Sample **bold**, *italic*, ~~strike~~, <u>underline</u>, [link](https://example.com/), `code` and <mark>highlight</mark>.',
+ 'Sample <b>bold</b>, <i>italic</i>, <del>strike</del>, <u>underline</u>, [link](https://example.com/), `code` and <mark>highlight</mark>.',
+])('keeps mixed inline formatting editable after saving and reopening: %s', body => {
+ const {editor,text}=setup(body);
+ expect(editor.state.doc.firstChild?.type.name).toBe('paragraph');
+ expect(text()).toBe(body);
+ editor.commands.insertContentAt(1,'Edited ');
+ const reopened=setup(text());
+ expect(reopened.editor.state.doc.firstChild?.type.name).toBe('paragraph');
+ expect(reopened.editor.state.doc.firstChild?.textContent).toBe('Edited Sample bold, italic, strike, underline, link, code and highlight.');
+ for (const [tag, content] of [['strong','bold'],['em','italic'],['s','strike'],['u','underline'],['a','link'],['code','code'],['mark','highlight']]) {
+  expect(reopened.editor.view.dom.querySelector(tag)?.textContent).toBe(content);
+ }
+});
 it('moves a list item with its children within and across compatible lists reversibly',()=>{
  const body='* parent\n  * child\n* second\n\nparagraph\n\n- other';
  const {editor,text}=setup(body);
@@ -130,10 +145,11 @@ it('preserves table captions, footer rows and merged cells when edited',()=>{
  const {editor,text}=setup(body);
  expect(editor.state.doc.firstChild?.type.name).toBe('table');
  expect(editor.state.doc.firstChild?.attrs.caption).toBe('Summary');
+ expect(editor.view.dom.querySelector('table > caption')?.textContent).toBe('Summary');
  let pos=0;editor.state.doc.descendants((node,at)=>{if(node.isText&&node.text==='Total')pos=at;});
  editor.commands.insertContentAt(pos,'New ');
  expect(text()).toContain('<caption>Summary</caption>');expect(text()).toContain('<tfoot>');expect(text()).toContain('colspan="2"');
- expect(setup(text()).editor.state.doc.firstChild?.attrs.caption).toBe('Summary');
+ expect(setup(text()).editor.view.dom.querySelector('table > caption')?.textContent).toBe('Summary');
  editor.commands.undo();expect(text()).toBe(body);
 });
 it('saves changed table alignment as Markdown and semantic formatting as HTML',()=>{
