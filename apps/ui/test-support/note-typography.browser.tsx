@@ -702,11 +702,11 @@ for (const size of ["14", "16"]) test(`list markers share the checkbox column an
   document.documentElement.style.fontSize = "20px";
   typography(size);
   const long = "wrapped bullet ".repeat(12).trim();
-  const { field } = await editorFixture(`- ${long}\n  - nested bullet\n\n9. ordered\n   1. nested ordered\n10. next\n\n- [ ] task\n  - [x] nested task`);
+  const { field } = await editorFixture(`- ${long}\n  - nested bullet\n\n99. ordered\n    1. nested ordered\n100. next\n\n- [ ] task\n  - [x] nested task`);
   const lists = within(field);
   const bullet = lists.getByText(long);
   expect(bullet.getBoundingClientRect().height).toBeGreaterThan(parseFloat(getComputedStyle(bullet).lineHeight));
-  expect(field.querySelector("ol")?.start).toBe(9);
+  expect(field.querySelector("ol")?.start).toBe(99);
   for (const [task, ...markers] of [["task", long, "ordered", "next"], ["nested task", "nested bullet", "nested ordered"]]) {
     const taskText = lists.getByText(task, { exact: true });
     const checkbox = taskText.closest("li")!.querySelector("input")!.getBoundingClientRect();

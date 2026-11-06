@@ -123,8 +123,9 @@
   & ol > li::before {
     content: counter(list-item, var(--note-list-counter)) "." / "";
     inset-inline-end: calc(100% + var(--editor-block-inline-inset));
-    min-inline-size: calc(var(--spacing-1) * 6);
-    text-align: center;
+    inline-size: calc(var(--spacing-1) * 6);
+    display: grid;
+    place-content: center;
     white-space: nowrap;
   }
   @media (forced-colors: active) {
