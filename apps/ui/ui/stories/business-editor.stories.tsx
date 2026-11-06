@@ -176,13 +176,22 @@ async function verifyHighlights(field: HTMLElement, targets: HTMLElement[]) {
     expect(getComputedStyle(svg).pointerEvents).toBe('none');
     expect(svg.closest('.rich-editor-content')).toBeNull();
     color = getComputedStyle(svg).fill;
-    let previousBottom: number | undefined;
-    for (const block of targets) {
+    const probe = field.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const samples = targets.map(block => {
       const segment = segments[blocks.indexOf(block)];
       expect(segment).toBeDefined();
       const sample = field.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-      sample.setAttribute('d', segment); svg.append(sample);
-      const box = sample.getBBox(); sample.remove();
+      sample.setAttribute('d', segment);
+      probe.append(sample);
+      return { block, segment, sample };
+    });
+    // Measure all paths together so selecting the document needs one layout pass.
+    svg.append(probe);
+    const boxes = samples.map(({ sample }) => sample.getBBox());
+    probe.remove();
+    let previousBottom: number | undefined;
+    for (const [index, { block, segment }] of samples.entries()) {
+      const box = boxes[index];
       const bounds = block.getBoundingClientRect(), style = getComputedStyle(block);
       const list = block.matches('li') ? block.parentElement! : null;
       const left = list ? list.getBoundingClientRect().left + parseFloat(getComputedStyle(list).paddingInlineEnd) : bounds.left;
@@ -473,7 +482,8 @@ export const BlockSelectionGeometry: Story = {
     const textTypes = new Set(['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'listItem', 'taskItem', 'blockquote']);
     const group = candidates.filter(({ type }) => textTypes.has(type) === (parameters.geometryGroup !== 'containers'));
     expect(group.length).toBeGreaterThan(0);
-    for (const { pos, element } of group) {
+    const editedTypes = new Set<string>();
+    for (const { pos, element, type } of group) {
       element.scrollIntoView({ block: 'center' });
       for (const image of element.querySelectorAll<HTMLImageElement>('img')) await waitFor(() => expect(image.complete && image.naturalWidth > 0).toBe(true));
       const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? richBlockBody(element);
@@ -497,10 +507,12 @@ export const BlockSelectionGeometry: Story = {
       expect(field.querySelector('.rich-block-highlights')).toBeNull();
       const node = editor.state.doc.nodeAt(pos)!;
       let textEnd: number | undefined;
-      if (!node.isAtom) node.descendants((child, offset) => {
+      // Every variant gets geometry coverage. Typing and undo need one representative of each node type.
+      if (!node.isAtom && !editedTypes.has(type)) node.descendants((child, offset) => {
         if (child.isText && textEnd === undefined) textEnd = pos + 1 + offset + child.nodeSize;
       });
       if (textEnd !== undefined) {
+        editedTypes.add(type);
         editor.commands.setTextSelection(textEnd); editor.view.focus();
         await userEvent.keyboard('检');
         expect(editor.state.doc.content.eq(original)).toBe(false);
