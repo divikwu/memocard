@@ -98,7 +98,7 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     const result = await buildTokenCatalog(options);
     assert.equal(result.categories, 9);
     assert.equal(result.portable, 28);
-    assert.equal(result.runtime, 17);
+    assert.equal(result.runtime, 23);
     assert.ok(result.consumerFiles > 90);
     assert.equal(result.nativeConsumerFiles, 2);
     assert.ok(result.css > 300);
@@ -107,15 +107,16 @@ test('production coverage follows the current UI, preserves mtimes and refuses d
     assert.equal(catalog.css.length, result.css);
     assert.equal(catalog.runtime.length, result.runtime);
     assert.deepEqual(catalog.runtime.find(token => token.name === '--note-flow').unit, ['px', 'rem']);
+    for (const name of ['--note-font-heading', '--note-font-body']) assert.equal(catalog.runtime.find(token => token.name === name)?.type, 'fontFamily');
     for (const name of ['--note-body-font', '--note-heading-font', '--note-mono-font', '--note-scale']) assert.ok(!catalog.runtime.some(token => token.name === name));
-    for (const name of ['--note-line-height', ...[1, 2, 3].flatMap(level => [`--note-h${level}-size`, `--note-h${level}-line-height`])]) assert.ok(catalog.runtime.some(token => token.name === name));
+    for (const name of ['--note-line-height', '--note-paragraph-flow', '--note-editor-gap', ...[1, 2, 3, 4].flatMap(level => [`--note-h${level}-size`, `--note-h${level}-line-height`])]) assert.ok(catalog.runtime.some(token => token.name === name));
     assert.equal(catalog.portable.length, result.portable);
     assert.equal(catalog.optionalStylesheets.length, 0);
     assert.ok(catalog.css.every(token => token.declarations.length && token.source.startsWith('apps/ui/ui/') && token.type));
     assert.ok(catalog.css.find(token => token.name === '--color-accent').declarations.some(declaration => declaration.source.endsWith('/web-palette.css')));
     assert.ok(catalog.css.find(token => token.name === '--radius-element').declarations.some(declaration => declaration.source.endsWith('/preview-appearance.css')));
     assert.ok(catalog.css.find(token => token.name === '--color-brand').status === 'reserved');
-    for (const [path, token] of [['TagColorStyles.core.tsx', '--tag-default-fg'], ['NoteMarkdown.tsx', '--color-background-body'], ['WebView.swift', '--ios-top'], ['select.tsx', '--anchor-width'], ['QuickCapture.tsx', '--shadow-flat'], ['QuickCapture.css', '--shadow-scale-2']]) {
+    for (const [path, token] of [['TagColorStyles.core.tsx', '--tag-default-fg'], ['NoteMarkdown.tsx', '--color-border-gray'], ['WebView.swift', '--ios-top'], ['select.tsx', '--anchor-width'], ['QuickCapture.tsx', '--shadow-flat'], ['QuickCapture.css', '--shadow-scale-2']]) {
       assert.ok(content.split('\n').some(line => line.startsWith('| [') && line.includes(path) && line.includes(`\`${token}\``)), `${path} consumes ${token}`);
     }
     assert.ok(!content.includes('/src/components/ui/') && !content.includes('/apps/ui/stories/'));

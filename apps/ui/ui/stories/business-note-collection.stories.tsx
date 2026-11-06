@@ -86,11 +86,14 @@ export const ColoredTagsRegression: Story = {
   tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const tag = await within(canvasElement).findByRole("button", { name: "筛选标签 area/coffee" });
+    const defaultTag = await within(canvasElement).findByRole("button", { name: "筛选标签 日常" });
     const probe = canvasElement.ownerDocument.createElement("span");
     probe.style.cssText = "color:var(--color-text-blue);background:color-mix(in oklab,var(--color-text-blue) var(--tag-bg-opacity),transparent)";
     canvasElement.append(probe);
     await expect(getComputedStyle(tag).color).toBe(getComputedStyle(probe).color);
     await expect(getComputedStyle(tag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
+    probe.style.backgroundColor = "var(--tag-default-bg)";
+    await expect(getComputedStyle(defaultTag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
     probe.remove();
     await expect(tag).not.toHaveAttribute("title");
     await userEvent.hover(tag);

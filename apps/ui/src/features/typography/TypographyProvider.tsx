@@ -1,13 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useLayoutEffect, useState, type ReactNode } from 'react';
-import { noteHeadings, noteLineHeights, REFERENCE_ROOT_SIZE } from './scale';
+import { noteHeadings, noteLineHeights, noteParagraphGap, REFERENCE_ROOT_SIZE, STANDARD_PARAGRAPH_GAP } from './scale';
 import { defaults, measurePresets, parseTypography, STORAGE_KEY, type Typography } from './preferences';
 
 const Context = createContext<{ value: Typography; save: (next: Typography) => void; error: string }>({ value: defaults, save: () => {}, error: '' });
 export const useTypography = () => useContext(Context);
-// Keep the persisted choices and emitted CSS contract separate from React lifecycle work.
-export function resolveTypography(value: Typography) {
+export function resolveNoteTextMetrics(value: Pick<Typography, 'size' | 'leading' | 'flow'>) {
   const headings = noteHeadings[value.size], line = noteLineHeights[value.size][value.leading];
+  const flow = value.flow.endsWith('em') ? `${noteParagraphGap(value.size, value.flow) / REFERENCE_ROOT_SIZE}rem` : value.flow;
   return {
     '--note-size': value.size === '14' ? 'var(--font-size-sm)' : 'var(--font-size-base)',
     '--note-h1-size': `${headings[0][0] / REFERENCE_ROOT_SIZE}rem`,
@@ -16,10 +16,20 @@ export function resolveTypography(value: Typography) {
     '--note-h2-line-height': `${headings[1][1] / REFERENCE_ROOT_SIZE}rem`,
     '--note-h3-size': `${headings[2][0] / REFERENCE_ROOT_SIZE}rem`,
     '--note-h3-line-height': `${headings[2][1] / REFERENCE_ROOT_SIZE}rem`,
-    '--note-summary-size': 'var(--font-size-sm)',
+    '--note-h4-size': `${headings[3][0] / REFERENCE_ROOT_SIZE}rem`,
+    '--note-h4-line-height': `${headings[3][1] / REFERENCE_ROOT_SIZE}rem`,
     '--note-leading': `${line / Number(value.size)}`,
     '--note-line-height': `${line / REFERENCE_ROOT_SIZE}rem`,
-    '--note-flow': value.flow.endsWith('em') ? `${parseFloat(value.flow) * Number(value.size) / REFERENCE_ROOT_SIZE}rem` : value.flow,
+    '--note-flow': flow,
+    '--note-paragraph-flow': value.flow === defaults.flow ? `${STANDARD_PARAGRAPH_GAP}px` : flow,
+    '--note-editor-gap': value.flow === defaults.flow ? 'var(--spacing-1)' : flow,
+  };
+}
+// Keep the persisted choices and emitted CSS contract separate from React lifecycle work.
+export function resolveTypography(value: Typography) {
+  return {
+    ...resolveNoteTextMetrics(value),
+    '--note-summary-size': 'var(--font-size-sm)',
     '--note-measure': `${measurePresets[value.measure].factor * REFERENCE_ROOT_SIZE}px`,
   };
 }

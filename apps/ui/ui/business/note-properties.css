@@ -11,6 +11,10 @@
 }
 .note-properties :is(button, input, textarea, select, .note-property-inline) { border-radius: var(--radius-element); }
 .note-properties .note-property-checkbox { border-radius: 4px; }
+.note-properties .note-property-checkbox[aria-checked="false"] {
+  border: var(--border-width) solid var(--color-border-gray);
+  background: transparent;
+}
 :is(.note-property-popup, .note-property-create-popup, .note-property-option-menu, .note-property-name-popup, .note-property-image-popup, .note-property-image-menu, .note-property-menu, .note-property-confirm, .ui-property-sheet, .mobile-tag-menu)
   :is(button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]) { border-radius: var(--radius-element); }
 :is(.ui-property-sheet, .ui-property-confirm-sheet, .mobile-tag-menu).ui-sheet-swipe[data-side="bottom"] .ui-sheet-close-button:not([data-action-group]) { border-radius: var(--radius-element); }
@@ -270,7 +274,9 @@
 :is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) { min-height: calc(var(--spacing-1) * 8); padding-block: var(--spacing-1); border-radius: var(--radius-element); font-weight: var(--font-weight-normal); }
 :is(.note-property-menu, .note-property-option-menu, .note-property-image-menu) :is([data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-radio-item"], [data-slot="dropdown-menu-sub-trigger"]) > svg:first-child { color: var(--color-text-secondary); }
 :is(.note-property-menu, .note-property-option-menu) :is([data-highlighted], [data-slot="dropdown-menu-sub-trigger"][data-popup-open]) { background: var(--color-overlay-hover); }
-.note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]) { color: var(--color-error); }
+.note-property-delete:is(:hover, :focus, [data-highlighted]) { color: var(--color-icon-red); }
+.note-property-delete:is(:hover, :focus, [data-highlighted]) > svg:first-child { color: inherit; }
+.note-property-menu .note-property-delete:is(:hover, :focus, [data-highlighted]) { background: var(--color-danger-surface); }
 
 .note-property-image-thumbnail { width: auto; max-width: 100%; height: calc(var(--spacing-1) * 6); object-fit: contain; }
 .note-property-image-trigger { width: 100%; min-height: var(--size-element-sm); height: auto; margin-block: 0; justify-content: flex-start; padding: var(--spacing-1) calc(var(--spacing-1) * 1.5); border: 0; }

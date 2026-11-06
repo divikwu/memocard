@@ -12,6 +12,7 @@ import { editorContentReview } from '../../test-support/editor-content.fixture';
 import { blockSpacingBody } from '../../ui-state-fixtures/block-spacing';
 import { defaults } from '../../src/features/typography/preferences';
 import { resolveTypography } from '../../src/features/typography/TypographyProvider';
+import { richBlockBody } from '../../src/rich-block-frame';
 
 const body = `## 把思考写进上下文
 
@@ -156,11 +157,11 @@ export const DetailLayoutMobile: Story = {
   decorators: [Story => <div style={{ maxWidth: 390, marginInline: 'auto' }}><Story /></div>],
 };
 
-function verifyHighlight(field: HTMLElement, block: HTMLElement, target = block) {
-  return verifyHighlights(field, [[block, target]]);
+function verifyHighlight(field: HTMLElement, block: HTMLElement) {
+  return verifyHighlights(field, [block]);
 }
 
-async function verifyHighlights(field: HTMLElement, targets: [HTMLElement, HTMLElement][]) {
+async function verifyHighlights(field: HTMLElement, targets: HTMLElement[]) {
   let color = '';
   // Temporary SVG probes must not retrigger the observer before the next paint.
   await waitFor(() => {
@@ -175,33 +176,35 @@ async function verifyHighlights(field: HTMLElement, targets: [HTMLElement, HTMLE
     expect(getComputedStyle(svg).pointerEvents).toBe('none');
     expect(svg.closest('.rich-editor-content')).toBeNull();
     color = getComputedStyle(svg).fill;
-    for (const [block, target] of targets) {
+    const probe = field.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const samples = targets.map(block => {
       const segment = segments[blocks.indexOf(block)];
       expect(segment).toBeDefined();
       const sample = field.ownerDocument.createElementNS('http://www.w3.org/2000/svg', 'path');
-      sample.setAttribute('d', segment); svg.append(sample);
-      const box = sample.getBBox(); sample.remove();
-      const bounds = target.getBoundingClientRect(), style = getComputedStyle(target);
-      let { left, right, top, bottom } = bounds;
-      if (target.matches('p, h1, h2, h3, h4, h5, h6, ul, ol, li')) {
-        top += parseFloat(style.paddingTop) || 0; bottom -= parseFloat(style.paddingBottom) || 0;
-        if (target.matches('p, h1, h2, h3, h4, h5, h6')) {
-          left += parseFloat(style.paddingLeft) || 0; right -= parseFloat(style.paddingRight) || 0;
-        }
-        if (target.matches('li')) left = target.parentElement!.getBoundingClientRect().left;
+      sample.setAttribute('d', segment);
+      probe.append(sample);
+      return { block, segment, sample };
+    });
+    // Measure all paths together so selecting the document needs one layout pass.
+    svg.append(probe);
+    const boxes = samples.map(({ sample }) => sample.getBBox());
+    probe.remove();
+    let previousBottom: number | undefined;
+    for (const [index, { block, segment }] of samples.entries()) {
+      const box = boxes[index];
+      const bounds = block.getBoundingClientRect(), style = getComputedStyle(block);
+      const list = block.matches('li') ? block.parentElement! : null;
+      const left = list ? list.getBoundingClientRect().left + parseFloat(getComputedStyle(list).paddingInlineEnd) : bounds.left;
+      expect(origin.left + box.x).toBeCloseTo(left, 1);
+      expect(origin.left + box.x + box.width).toBeCloseTo(bounds.right, 1);
+      if (block.parentElement === field) {
+        if (previousBottom !== undefined) expect(box.y - previousBottom).toBeCloseTo(parseFloat(getComputedStyle(field).rowGap), 1);
+        previousBottom = box.y + box.height;
       }
-      if (target.matches('table')) {
-        const clip = target.closest('.tableWrapper')!.getBoundingClientRect();
-        left = Math.max(left, clip.left); right = Math.min(right, clip.right);
-      }
-      expect(Math.max(
-        Math.abs(left - (origin.left + box.x) - 4),
-        Math.abs(top - (origin.top + box.y) - 4),
-        Math.abs(origin.left + box.x + box.width - right - 4),
-        Math.abs(origin.top + box.y + box.height - bottom - 4),
-      )).toBeLessThan(0.1);
+      expect(origin.top + box.y).toBeCloseTo(bounds.top, 1);
+      expect(origin.top + box.y + box.height).toBeCloseTo(bounds.bottom, 1);
       const radii = [style.borderTopRightRadius, style.borderBottomRightRadius, style.borderBottomLeftRadius, style.borderTopLeftRadius]
-        .map(corner => Math.min((parseFloat(corner) || 0) + 4, box.width / 2, box.height / 2));
+        .map(corner => Math.min(parseFloat(corner) || 0, box.width / 2, box.height / 2));
       expect(Array.from(segment.matchAll(/A([\d.]+) ([\d.]+)/g), match => [Number(match[1]), Number(match[2])])).toEqual(radii.map(radius => [radius, radius]));
     }
   }, { mutationObserverOptions: { attributes: true, subtree: true } });
@@ -259,23 +262,24 @@ export const DetailLayoutRegression: Story = {
       await expect(Math.abs(after.height - before.height)).toBeLessThan(0.5);
       await expect(getComputedStyle(block).backgroundColor).toBe(background);
       await expect(block.scrollWidth).toBe(scrollWidth);
-      const overlay = await verifyHighlight(field, block, block.querySelector('table') ?? block);
+      const overlay = await verifyHighlight(field, block);
       await userEvent.keyboard('{Escape}');
       await waitFor(() => expect(within(canvasElement.ownerDocument.body).queryByRole('menu', { name: '内容块操作菜单' })).not.toBeInTheDocument());
       await waitFor(() => expect(field).toHaveFocus());
       return overlay;
     };
-    const paragraph = field.querySelectorAll<HTMLElement>(':scope > p')[1];
+    const paragraph = field.querySelectorAll<HTMLElement>(':scope > .rich-paragraph-block')[1];
     const paragraphSelection = await verifyBlockSelection(paragraph);
     const code = Array.from(field.querySelectorAll('pre')).find(element => element.textContent?.includes('const message'))!;
-    await verifyBlockSelection(code);
+    await expect(getComputedStyle(code).padding).toBe('12px 16px');
+    await verifyBlockSelection(code.closest<HTMLElement>('.rich-block-frame')!);
     const table = field.querySelector('table')!, tableWrapper = table.closest<HTMLElement>('.tableWrapper')!, tableBlock = table.closest<HTMLElement>('.rich-table-block')!;
     const tableBlockSelection = await verifyBlockSelection(tableBlock);
     await expect(tableBlockSelection).toEqual(paragraphSelection);
     await expect(richEditor.state.selection.toJSON().type).toBe('node');
     await expect(table.querySelectorAll('.selectedCell')).toHaveLength(0);
-    await expect(getComputedStyle(tableBlock).paddingBlock).toBe('6px');
-    await expect(getComputedStyle(tableBlock).paddingBlock).toBe(getComputedStyle(paragraph).paddingBlock);
+    await expect(getComputedStyle(tableBlock).padding).toBe('6px');
+    await expect(getComputedStyle(tableWrapper.parentElement!).paddingInline).toBe('2px');
     await waitFor(() => expect(tableWrapper.dataset.overflow).toBe(String(table.scrollWidth > tableWrapper.clientWidth + 1)));
     const overflowHint = getComputedStyle(tableWrapper, '::after').content;
     if (tableWrapper.dataset.overflow === 'true') await expect(overflowHint).toContain('左右滚动查看完整表格');
@@ -289,7 +293,7 @@ export const DetailLayoutRegression: Story = {
       await expect(Math.abs(after.height - tableBefore.height)).toBeLessThan(0.5);
       await expect(getComputedStyle(table).backgroundColor).toBe(tableBackground);
       await expect(tableWrapper.scrollWidth).toBe(tableScrollWidth);
-      await expect(getComputedStyle(tableBlock).paddingBlock).toBe(getComputedStyle(paragraph).paddingBlock);
+      await expect(getComputedStyle(tableBlock).padding).toBe('6px');
       for (const [index, cell] of cells.entries()) {
         const rect = cell.getBoundingClientRect();
         await expect(getComputedStyle(cell).padding).toBe(cellsBefore[index].padding);
@@ -300,7 +304,7 @@ export const DetailLayoutRegression: Story = {
       await expect(richEditor.state.doc.content.eq(originalContent)).toBe(true);
     };
     const verifyTableBlockOverlay = async () => {
-      const selection = await verifyHighlight(field, tableBlock, table);
+      const selection = await verifyHighlight(field, tableBlock);
       await expect(selection.backgroundColor).toBe(paragraphSelection.backgroundColor);
       await expect(table.querySelectorAll('.selectedCell')).toHaveLength(0);
       for (const cell of cells) await expect(getComputedStyle(cell, '::after').backgroundColor).toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
@@ -316,11 +320,11 @@ export const DetailLayoutRegression: Story = {
       await verifyTableBlockOverlay();
     }
     const followingBlock = tableBlock.nextElementSibling as HTMLElement;
-    await expect(followingBlock.tagName).toBe('P');
+    await expect(followingBlock).toHaveClass('rich-paragraph-block');
     await userEvent.keyboard('{Shift>}{ArrowDown}{/Shift}');
     await waitFor(() => expect(richEditor.state.selection.toJSON().type).toBe('blockRange'));
     await expect(Array.from(field.querySelectorAll('.rich-selected-block'))).toEqual([tableBlock, followingBlock]);
-    const followingSelection = await verifyHighlight(field, followingBlock);
+    const followingSelection = await verifyHighlights(field, [tableBlock, followingBlock]);
     await expect(followingSelection.backgroundColor).toBe(paragraphSelection.backgroundColor);
     await verifyTableBlockOverlay();
     await userEvent.keyboard('{Shift>}{ArrowUp}{/Shift}');
@@ -478,22 +482,24 @@ export const BlockSelectionGeometry: Story = {
     const textTypes = new Set(['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'listItem', 'taskItem', 'blockquote']);
     const group = candidates.filter(({ type }) => textTypes.has(type) === (parameters.geometryGroup !== 'containers'));
     expect(group.length).toBeGreaterThan(0);
-    for (const { pos, element } of group) {
+    const editedTypes = new Set<string>();
+    for (const { pos, element, type } of group) {
       element.scrollIntoView({ block: 'center' });
       for (const image of element.querySelectorAll<HTMLImageElement>('img')) await waitFor(() => expect(image.complete && image.naturalWidth > 0).toBe(true));
-      const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? element;
+      const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? richBlockBody(element);
       const target = body.matches('.rich-table-block') ? body.querySelector<HTMLElement>('table')!
         : body.matches('.rich-image') ? body.querySelector<HTMLElement>('.ui-note-image')! : body;
-      if (!target.matches('p, h1, h2, h3, h4, h5, h6, ul, ol, li, hr')) expect(getComputedStyle(target).borderRadius, `${element.tagName}.${element.className}`).toBe('8px');
+      if (target !== element && !target.matches('p, ul, ol, hr, .rich-heading-text')) expect(getComputedStyle(target).borderRadius, `${element.tagName}.${element.className}`).toBe('4px');
+      if (target.matches('aside[data-callout][data-callout-icon]')) expect(getComputedStyle(target).padding).toBe('12px 16px 12px 48px');
       const nodes = [element, ...element.querySelectorAll<HTMLElement>('p, li, pre, td, th, img, .rich-callout-content')];
       const layout = () => nodes.map(node => ({ width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height, padding: getComputedStyle(node).padding, background: getComputedStyle(node).backgroundColor }));
       const before = layout();
       editor.commands.setNodeSelection(pos); editor.view.focus();
-      await verifyHighlight(field, element, target);
+      await verifyHighlight(field, element);
       if (target.matches('pre') && target.scrollWidth > target.clientWidth + 1) {
         target.scrollLeft = target.scrollWidth;
         await waitFor(() => expect(target.scrollLeft).toBeGreaterThan(0));
-        await verifyHighlight(field, element, target);
+        await verifyHighlight(field, element);
         target.scrollLeft = 0;
       }
       expect(layout()).toEqual(before);
@@ -501,10 +507,12 @@ export const BlockSelectionGeometry: Story = {
       expect(field.querySelector('.rich-block-highlights')).toBeNull();
       const node = editor.state.doc.nodeAt(pos)!;
       let textEnd: number | undefined;
-      if (!node.isAtom) node.descendants((child, offset) => {
+      // Every variant gets geometry coverage. Typing and undo need one representative of each node type.
+      if (!node.isAtom && !editedTypes.has(type)) node.descendants((child, offset) => {
         if (child.isText && textEnd === undefined) textEnd = pos + 1 + offset + child.nodeSize;
       });
       if (textEnd !== undefined) {
+        editedTypes.add(type);
         editor.commands.setTextSelection(textEnd); editor.view.focus();
         await userEvent.keyboard('检');
         expect(editor.state.doc.content.eq(original)).toBe(false);
@@ -517,14 +525,7 @@ export const BlockSelectionGeometry: Story = {
     editor.commands.setTextSelection(2); editor.view.focus();
     await userEvent.keyboard('{Control>}a{/Control}{Control>}a{/Control}');
     await waitFor(() => expect(editor.state.selection.toJSON().type).toBe('all'));
-    const selected: [HTMLElement, HTMLElement][] = [];
-    for (const element of Array.from(field.children) as HTMLElement[]) {
-      if (!element.matches('.rich-selected-block, .ProseMirror-selectednode')) continue;
-      const body = element.querySelector<HTMLElement>(':scope > [data-node-view-wrapper]') ?? element;
-      const target = body.matches('.rich-table-block') ? body.querySelector<HTMLElement>('table')!
-        : body.matches('.rich-image') ? body.querySelector<HTMLElement>('.ui-note-image')! : body;
-      selected.push([element, target]);
-    }
+    const selected = Array.from(field.querySelectorAll<HTMLElement>(':scope > .rich-selected-block, :scope > .ProseMirror-selectednode'));
     await verifyHighlights(field, selected);
     expect(field.closest('.rich-editor')!.querySelectorAll('.rich-block-highlights > path')).toHaveLength(1);
     expect(editor.state.doc.content.eq(original)).toBe(true);
@@ -559,7 +560,7 @@ export const QuoteRailRegression: Story = {
     for (const quote of quotes) {
       const style = getComputedStyle(quote), rail = getComputedStyle(quote, '::before');
       const bounds = quote.getBoundingClientRect(), first = quote.querySelector('p')!.getBoundingClientRect();
-      expect(style.borderRadius).toBe('8px');
+      expect(style.borderRadius).toBe('4px');
       expect(style.borderInlineStartColor).toBe('rgba(0, 0, 0, 0)');
       expect(parseFloat(style.paddingInlineStart)).toBe(parseFloat(style.fontSize));
       expect(first.left - bounds.left).toBeCloseTo(parseFloat(style.paddingInlineStart) + parseFloat(style.borderInlineStartWidth), 1);
@@ -568,14 +569,14 @@ export const QuoteRailRegression: Story = {
       expect(parseFloat(rail.insetInlineStart)).toBe(-parseFloat(style.borderInlineStartWidth));
       expect(rail.top).toBe('0px'); expect(rail.bottom).toBe('0px');
       expect(parseFloat(rail.height)).toBeCloseTo(bounds.height, 1);
-      expect(rail.borderRadius).toBe('0px');
+      expect(rail.borderRadius).toBe('1px');
       expect(rail.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
       expect(rail.pointerEvents).toBe('none');
     }
     const editor = (field as HTMLElement & { editor: TiptapEditor }).editor;
     const original = editor.state.doc.content;
     editor.commands.setNodeSelection(0); editor.view.focus();
-    await verifyHighlight(field, field.querySelector('blockquote')!);
+    await verifyHighlight(field, editor.view.nodeDOM(0) as HTMLElement);
     expect(editor.state.doc.content.eq(original)).toBe(true);
   },
 };
@@ -605,15 +606,25 @@ export const NoteRhythmRegression: Story = {
       const editing = root === field;
       expect(getComputedStyle(root).fontSize).toBe(`${size}px`);
       expect(parseFloat(getComputedStyle(root).lineHeight)).toBe(size === 14 ? 22 : 24);
-      const find = (selector: string, text: string) => Array.from(root.querySelectorAll<HTMLElement>(selector)).find(n => n.textContent?.includes(text))!;
+      const find = (selector: string, text: string) => Array.from(root.querySelectorAll<HTMLElement>(editing && selector === ':scope > p' ? ':scope > .rich-paragraph-block > p' : selector)).find(n => n.textContent?.includes(text))!;
       const bounds = (el: HTMLElement) => {
-        const r = el.getBoundingClientRect(), s = getComputedStyle(el);
-        return { top: r.top + (editing && el.matches('p,h1,h2,h3') ? parseFloat(s.paddingTop) : 0), bottom: r.bottom - (editing && el.matches('p,h1,h2,h3') ? parseFloat(s.paddingBottom) : 0) };
+        const body = richBlockBody(el);
+        const r = body.getBoundingClientRect(), s = getComputedStyle(body);
+        const text = editing && body.matches('p, .rich-heading-text');
+        return { top: r.top + (text ? parseFloat(s.paddingTop) : 0), bottom: r.bottom - (text ? parseFloat(s.paddingBottom) : 0) };
       };
-      const gap = (a: HTMLElement, b: HTMLElement, expected = 16) => expect(bounds(b).top - bounds(a).bottom, `${editing ? '编辑' : '阅读'} ${a.tagName}→${b.tagName}`).toBeCloseTo(expected, 1);
-      gap(find(':scope > p', '第一段正文。'), find(':scope > p', '第二段正文稍长'));
-      for (const [level, expected, small, line, smallLine] of [[1, 30, 26, 40, 34], [2, 24, 22, 32, 28], [3, 20, 18, 26, 24]] as const) {
-        const heading = find(`h${level}`, `${['一级','二级','三级'][level - 1]}标题`);
+      const frame = (element: HTMLElement) => {
+        while (element.parentElement && element.parentElement !== root) element = element.parentElement;
+        return element.getBoundingClientRect();
+      };
+      const gap = (a: HTMLElement, b: HTMLElement, expected = 16) => {
+        const withinList = a.closest('li') && b.closest('li');
+        if (editing && !withinList) expect(frame(b).top - frame(a).bottom).toBeCloseTo(4, 1);
+        else expect(bounds(b).top - bounds(a).bottom).toBeCloseTo(expected, 1);
+      };
+      gap(find(':scope > p', '第一段正文。'), find(':scope > p', '第二段正文稍长'), 8);
+      for (const [level, expected, small, line, smallLine] of [[1, 32, 26, 40, 34], [2, 26, 22, 34, 28], [3, 22, 18, 28, 24], [4, 18, 16, 24, 24]] as const) {
+        const heading = find(`h${level}`, `${['一级','二级','三级','四级'][level - 1]}标题`);
         expect(parseFloat(getComputedStyle(heading).fontSize)).toBe(size === 14 ? small : expected);
         expect(parseFloat(getComputedStyle(heading).lineHeight)).toBe(size === 14 ? smallLine : line);
         gap(heading, heading.nextElementSibling as HTMLElement);

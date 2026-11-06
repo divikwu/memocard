@@ -47,7 +47,7 @@ async function createNote() {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/sidebar"), import("@ui/business/QuickCapture"), import("@ui/business/HomeMascot"), import("@ui/business/Editor")]);
+  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/sidebar"), import("@ui/business/QuickCapture"), import("@ui/business/HomeMascot"), import("@ui/business/Editor"), import("@ui/web/WebSettings")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -1035,6 +1035,13 @@ it('opens a direct note route only after recovery has loaded', async () => {
   await screen.findByRole('textbox', { name: '笔记内容' });
   expect(readEditorText()).toBe('恢复版本');
 });
+it('keeps the note list usable when the URL contains an invalid encoded note ID', async () => {
+  window.history.replaceState(null, '', '#/notes/%E0%A4');
+  render(<App />);
+  expect(await screen.findByRole('heading', { name: '所有笔记' })).toBeTruthy();
+  expect(bridge.request).not.toHaveBeenCalledWith('getNote', expect.anything());
+  expect(screen.queryByRole('status', { name: '正在读取内容' })).toBeNull();
+});
 it('keeps a refreshed note route in the detail loading view until recovery and the note are ready', async () => {
   bridge.native = false; bridge.web = true;
   const recovery: Draft = { id: note.id, body: '恢复版本', tags: [], baseHash: 'old-hash' };
@@ -1169,20 +1176,43 @@ it('leaves an untouched page created under a tag without writing a note or recov
 
 
 it('enters detail loading immediately on a list click and edits only the latest read', async () => {
+  const titledNote = { ...note, title: '周末记录' };
+  const appearanceKey = `memocard.note-appearance.v1:${JSON.stringify([status.vaultId, note.id])}`;
   let resolveNote!: (value: Note) => void;
   const result = new Promise<Note>(resolve => { resolveNote = resolve; });
   const implementation = bridge.request.getMockImplementation()!;
-  bridge.request.mockImplementation((operation, params) => operation === 'getNote' ? result : implementation(operation, params));
-  render(<App />);
-  fireEvent.click(await screen.findByRole('button', { name: /^打开 / }));
+  bridge.request.mockImplementation((operation, params) => {
+    if (operation === 'getNote') return result;
+    if (operation === 'queryNotes') return Promise.resolve({ notes: [titledNote], nextCursor: null, coverage: status.coverage });
+    return implementation(operation, params);
+  });
+  const { container } = render(<App />);
+  const card = await screen.findByRole('button', { name: '打开 周末记录' });
+  const placeholder = () => container.querySelector('[data-slot="note-detail-skeleton"]');
+  vi.useFakeTimers();
+  try {
+    localStorage.setItem(appearanceKey, JSON.stringify({ headingFont: 'system-mono' }));
+    fireEvent.click(card);
+    const title = screen.getByRole('heading', { name: '周末记录', level: 1 });
+    expect(title.classList.contains('sr-only')).toBe(false);
+    expect(title.closest<HTMLElement>('.web-page-content')?.style.getPropertyValue('--note-font-heading')).toContain('ui-monospace');
+    act(() => { vi.advanceTimersByTime(149); });
+    expect(placeholder()).toBeNull();
+    act(() => { vi.advanceTimersByTime(1); });
+    expect(placeholder()?.getAttribute('aria-hidden')).toBe('true');
+  } finally {
+    localStorage.removeItem(appearanceKey);
+    vi.useRealTimers();
+  }
   expect(window.location.hash).toBe(`#/notes/${note.id}`);
   expect(screen.getByRole('status', { name: '正在读取内容' })).toBeTruthy();
   expect(screen.queryByRole('list', { name: '笔记列表' })).toBeNull();
   expect(screen.queryByRole('textbox', { name: '笔记内容' })).toBeNull();
   expect(bridge.request).not.toHaveBeenCalledWith('saveDraft', expect.anything());
-  await act(async () => { resolveNote({ ...note, body: '读取后的最新正文', contentHash: 'latest-hash' }); });
+  await act(async () => { resolveNote({ ...titledNote, body: '读取后的最新正文', contentHash: 'latest-hash' }); });
   await screen.findByRole('textbox', { name: '笔记内容' });
   expect(readEditorText()).toBe('读取后的最新正文');
+  expect(placeholder()).toBeNull();
   expect(screen.queryByRole('status', { name: '正在读取内容' })).toBeNull();
   replaceEditorText('继续编辑最新正文');
   fireEvent.click(noteSourceButton());

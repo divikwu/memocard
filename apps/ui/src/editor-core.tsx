@@ -63,9 +63,14 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     if (!element) return;
     const resize = () => { element.style.height = 'auto'; element.style.height = `${element.scrollHeight}px`; };
     resize();
-    const observer = new ResizeObserver(resize);
+    let frame = 0;
+    // Updating the observed element inside the callback can cause a resize loop.
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(resize);
+    });
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
   }, [title]);
   useEffect(() => { callbacks.current.onTitleChange?.(title); }, [title]);
   const canSave = capabilities.has('saveNote');

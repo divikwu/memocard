@@ -1,30 +1,76 @@
-/* Reading and editing share visible block gaps; search previews retain compact Typeset rules. */
+/* Search previews retain compact Typeset rules. */
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) {
   --note-block-gap: var(--note-flow, 16px);
+  --note-inline-radius: 4px;
+  --typeset-flow: var(--note-block-gap);
   font-size: var(--note-size, var(--font-size-base));
-  line-height: var(--note-leading, 1.5);
+  line-height: var(--note-line-height, 1.5rem);
+
+  & :where(code:not(pre code), kbd) {
+    font-size: calc(1em - 0.125rem);
+    line-height: calc(1lh - 0.25rem);
+    border-radius: var(--note-inline-radius);
+    padding-inline: var(--spacing-1);
+  }
+  & :where(code:not(pre code)) { padding-block: calc(var(--spacing-1) / 2); }
+  & :where(kbd) { padding-block: 0; }
+  & :where(mark) { padding: 0 calc(var(--spacing-1) / 2); border-radius: var(--note-inline-radius); }
+  & :where(abbr[title]) { text-underline-offset: calc(var(--spacing-1) / 2); }
+  & :where(sup, sub) { font-size: calc(1em - 0.25rem); }
+  & :where(sup) { top: -0.375rem; }
+  & :where(sub) { bottom: -0.125rem; }
+  & :where(a:focus-visible) { border-radius: var(--note-inline-radius); }
+
+  & :where(ul, ol):not(:where([data-type="taskList"], .contains-task-list)) { padding-inline-start: calc(var(--spacing-1) * 6); }
+  & :where(ul > li, ol > li)::marker { color: currentColor; }
+  & :where(ul.contains-task-list) { padding-inline-start: var(--spacing-1); }
+  &:not(.rich-editor-content) {
+    & :where(li) { padding-inline-start: var(--spacing-1); }
+    & :where(li > :is(p, ul, ol, blockquote, table, figure, pre)) { margin-block-start: calc(var(--spacing-1) * 2); }
+  }
+  & :where(li[data-type="taskItem"]) { gap: calc(var(--spacing-1) * 2); }
+  & :is(li.task-list-item > input[type="checkbox"], .note-task-indicator) { margin-inline-end: calc(var(--spacing-1) * 2); vertical-align: -0.125rem; }
+
+  & :where(h2, h5, h6, hr, pre:not(.note-mermaid-source pre)) { margin-block-start: var(--note-block-gap); }
+  & :is(th, td) {
+    position: relative;
+    padding: calc(var(--spacing-1) * 3) calc(var(--spacing-1) * 4);
+    border-block-start: 0;
+    border-block-end: var(--border-width) solid transparent;
+  }
+  /* Reserve one pixel per row and paint separators between rows only. */
+  & :is(tr + tr, :is(thead, tbody) ~ :is(tbody, tfoot) > tr:first-child) > :is(th, td)::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    border-block-start: var(--border-width) solid var(--typeset-rule);
+    pointer-events: none;
+  }
+  & :where(math[display="block"]) { padding-block: var(--spacing-1); }
+  & :where(.rich-preserved-label, .note-image-message), & :where(.typeset-scroll[data-overflow="true"])::after { line-height: 1.25rem; }
 }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :where(:not(.ProseMirror-gapcursor, .ProseMirror-widget)) {
-  --note-frame-inset: 0px;
-  --note-previous-inset: 0px;
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *, .rich-editor-content) > * {
   --note-before: var(--note-block-gap);
-  /* Hit padding can exceed the chosen gap; compensate without changing that padding. */
-  margin-block: calc(var(--note-before) - var(--note-frame-inset) - var(--note-previous-inset)) 0;
+  margin-block: var(--note-before) 0;
 }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :first-child { margin-block-start: 0; }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h1 { font-size: var(--note-h1-size, 1.875rem); line-height: var(--note-h1-line-height, 2.5rem); }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h2 { font-size: var(--note-h2-size, 1.5rem); line-height: var(--note-h2-line-height, 2rem); }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h3 { font-size: var(--note-h3-size, 1.25rem); line-height: var(--note-h3-line-height, 1.625rem); }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h4, h5, h6) { font-size: 1em; line-height: var(--note-leading, 1.5); letter-spacing: normal; text-transform: none; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *, .rich-editor-content) > :first-child { margin-block-start: 0; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *, .rich-editor-content) > p + p { --note-before: var(--note-paragraph-flow, 8px); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h1 { font-size: var(--note-h1-size, 2rem); line-height: var(--note-h1-line-height, 2.5rem); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h2 { font-size: var(--note-h2-size, 1.625rem); line-height: var(--note-h2-line-height, 2.125rem); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h3 { font-size: var(--note-h3-size, 1.375rem); line-height: var(--note-h3-line-height, 1.75rem); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h4 { font-size: var(--note-h4-size, 1.125rem); line-height: var(--note-h4-line-height, 1.5rem); letter-spacing: normal; text-transform: none; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h5, h6) { font-size: 1em; line-height: var(--note-line-height, 1.5rem); letter-spacing: normal; text-transform: none; }
+:where(.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *)) :is(h5, h6) { color: var(--color-text-primary); }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > h1 { --note-before: 40px; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > h2 { --note-before: 36px; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > h3 { --note-before: 32px; }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :is(h4, h5, h6) { --note-before: 24px; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > h4 { --note-before: 24px; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :is(h5, h6) { --note-before: 16px; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) li { margin-block: 0; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) li + li { margin-block-start: 6px; }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre { font-size: var(--font-size-sm); line-height: 1.25rem; }
-.ui-note-markdown.typeset-memocard:not([data-compact], .rich-editor-content, .ui-note-search-preview-content *) table { font-size: var(--font-size-base); }
-.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, [data-footnotes]) { font-size: var(--font-size-sm); line-height: 1.25rem; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre { font-size: var(--font-size-sm); line-height: 1.25rem; padding: var(--note-panel-padding-block) calc(var(--spacing-1) * 4); }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) table { font-size: var(--font-size-sm); line-height: 1.25rem; }
+.ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, .footnotes, [data-footnotes]) { font-size: var(--font-size-sm); line-height: 1.25rem; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > span:has(math[display="block"]) { display: block; }
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > * > [data-node-view-wrapper],
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > .typeset-scroll > table,
@@ -33,10 +79,70 @@
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > .katex-display math,
 .ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) > :has(math[display="block"]) math[display="block"] { margin-block: 0; }
 
-.ui-note-markdown.typeset-memocard.rich-editor-content > :is(p, h1, h2, h3, h4, h5, h6, .rich-table-block) { --note-frame-inset: var(--editor-block-space, 6px); }
-.ui-note-markdown.typeset-memocard.rich-editor-content > :is(ul, ol) { --note-frame-inset: calc(var(--editor-block-space, 6px) + var(--spacing-1) * .5); }
-.ui-note-markdown.typeset-memocard.rich-editor-content > :is(p, h1, h2, h3, h4, h5, h6, .rich-table-block) + * { --note-previous-inset: var(--editor-block-space, 6px); }
-.ui-note-markdown.typeset-memocard.rich-editor-content > :is(ul, ol) + * { --note-previous-inset: calc(var(--editor-block-space, 6px) + var(--spacing-1) * .5); }
-/* A folded section ends at a heading; its previous visible block is the folded heading. */
-.ui-note-markdown.typeset-memocard.rich-editor-content > .rich-folded-content + :is(h1, h2, h3, h4, h5, h6) { --note-previous-inset: var(--editor-block-space, 6px); }
-.ui-note-markdown.typeset-memocard.rich-editor-content li + li { margin-block-start: calc(6px - var(--spacing-1)); }
+.ui-note-markdown.typeset-memocard.rich-editor-content > * > :is(.rich-heading-text, .rich-block-content, .rich-image, .rich-math-block, .rich-code-block, .rich-preserved),
+.ui-note-markdown.typeset-memocard.rich-editor-content > .rich-block-frame > :is(ul, ol) {
+  padding-inline: var(--editor-block-inline-inset);
+}
+.ui-note-markdown.typeset-memocard.rich-editor-content > .rich-block-frame > :is(ul, ol):not([data-type="taskList"]) {
+  padding-inline-start: calc(var(--spacing-1) * 6 + var(--editor-block-inline-inset));
+}
+.ui-note-markdown.typeset-memocard.rich-editor-content > .rich-block-frame > :is(p, .rich-footnote) { padding: var(--editor-block-space) var(--editor-block-inline-inset); }
+.ui-note-markdown.typeset-memocard.rich-editor-content li + li { margin-block-start: calc(6px - var(--editor-block-space) * 2); }
+
+.ui-note-markdown.typeset-memocard.rich-editor-content {
+  --note-frame-padding: var(--editor-block-gutter, var(--editor-block-space));
+  --note-frame-gap: var(--note-editor-gap, var(--spacing-1));
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--note-frame-gap);
+
+  & > :where(:not(.ProseMirror-gapcursor, .ProseMirror-widget)) {
+    flex: none;
+    min-width: 0;
+    margin: 0;
+    padding: var(--note-frame-padding);
+  }
+
+  /* Keep the cursor in the existing gap without adding another row of space. */
+  & > .ProseMirror-gapcursor {
+    flex: none;
+    position: relative;
+    height: 0;
+    margin-block: calc(var(--note-frame-gap) / -2);
+    &:first-child { margin-block: 0 calc(-1 * var(--note-frame-gap)); }
+    &:last-child { margin-block: calc(-1 * var(--note-frame-gap)) 0; }
+  }
+
+  & > .rich-image-row > .rich-image-column-controls {
+    inset-block: var(--note-frame-padding);
+    inset-inline: calc(var(--editor-block-gutter, 0px) + var(--editor-block-inline-inset));
+  }
+
+  & > :not(.ProseMirror-gapcursor, .ProseMirror-widget) ~ :is(h1, h2, h3, h4) {
+    --note-heading-top-padding: max(0px, calc(var(--note-before) - var(--note-frame-gap) - var(--note-frame-padding) - var(--note-heading-previous-inner, 0px) - var(--editor-block-space)));
+    padding-block-start: var(--note-heading-top-padding);
+  }
+
+  /* Text and list items have an extra inset inside their block frame. */
+  & > :is(h1, h2, h3, h4, h5, h6, .rich-paragraph-block, .rich-block-frame:has(> :is(ul, ol, .rich-footnote)), .rich-folded-content) {
+    & + :is(h1, h2, h3, h4),
+    & + :is(.ProseMirror-gapcursor, .ProseMirror-widget) + :is(h1, h2, h3, h4) {
+      --note-heading-previous-inner: var(--editor-block-space);
+    }
+  }
+
+  & > :is(h1, h2, h3, h4, h5, h6) > .rich-heading-text {
+    display: block;
+    padding-block: var(--editor-block-space);
+  }
+}
+
+[data-small-text] .ui-note-markdown:not([data-compact]) {
+  & :is(pre, table) { font-size: var(--font-size-xs); }
+  & pre { line-height: 1.125rem; }
+
+  &:not(.rich-editor-content) > :is(ul, ol) + :is(ul, ol) {
+    --note-before: calc(var(--spacing-1) * 2);
+  }
+  & blockquote > p + p { margin-block-start: calc(var(--spacing-1) * 2); }
+}

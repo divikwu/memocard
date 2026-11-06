@@ -48,12 +48,20 @@ export type NoteCollectionProps = {
 
 function CollectionSkeleton({ cards }: { cards: boolean }) {
   return <div className={cn("ui-note-items", cards ? "ui-note-cards" : "ui-note-list")} data-slot="collection-skeleton" aria-hidden="true">
-    {[0, 1, 2, 3, 4, 5].map(item => <Card key={item} className={cn("ui-note-card", !cards && "ui-note-list-card")}>
-      <CardContent className="ui-note-skeleton-content">
+    {[0, 1, 2, 3, 4, 5].map(item => <Card key={item} className={cn("ui-note-card", !cards && "ui-note-list-card shadow-none ring-0")}>
+      {cards ? <CardContent className="ui-note-skeleton-content">
         <Skeleton className={item % 2 ? "h-5 w-3/4" : "h-5 w-2/3"} />
-        {cards && <><Skeleton className="h-4 w-28" /><Skeleton className="mt-3 h-4 w-full" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" /></>}
+        <Skeleton className="h-4 w-28" /><Skeleton className="mt-3 h-4 w-full" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" />
         <div className="flex gap-2"><Skeleton className="h-5 w-14 rounded-full" /><Skeleton className="h-5 w-20 rounded-full" /></div>
-      </CardContent>
+      </CardContent> : <CardContent className="ui-note-content ui-note-list-content">
+        <div className="ui-note-list-heading">
+          <div className="ui-note-row-open">
+            <div className="ui-note-list-title min-h-lh content-center"><Skeleton className={item % 2 ? "h-4 w-1/2" : "h-4 w-2/5"} /></div>
+            <div className="ui-note-list-date"><Skeleton className="ms-auto h-3 w-16" /></div>
+          </div>
+        </div>
+        <div className="ui-note-tags"><Skeleton className="h-5 w-12" /><Skeleton className="h-5 w-16" /></div>
+      </CardContent>}
     </Card>)}
   </div>;
 }

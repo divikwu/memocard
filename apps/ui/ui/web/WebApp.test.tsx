@@ -290,7 +290,9 @@ it("honors missing write/delete capabilities across sidebar, detail and page act
   await user.click(screen.getByRole("button", { name: "打开 今天的手冲记录" }));
   const field = await screen.findByRole("textbox", { name: "笔记内容" });
   expect(field.getAttribute("contenteditable")).toBe("false");
-  expect(screen.queryByRole("button", { name: "页面操作" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "页面操作" }));
+  const menu = await screen.findByRole("menu");
+  expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["外观和布局"]);
   expect(request.mock.calls.some(([operation]) => ["saveNote", "deleteNote", "deleteDraft"].includes(operation))).toBe(false);
 });
 
@@ -441,14 +443,49 @@ it("opens retained drafts from the vault menu on desktop tags without page actio
   expect(request.mock.calls.some(([operation]) => ["saveNote", "deleteNote", "deleteDraft"].includes(operation))).toBe(false);
 });
 
-it("keeps only current-note actions in the desktop detail menu", async () => {
+it("keeps typography choices with the current note without saving its content", async () => {
   const user = userEvent.setup();
-  await mount();
-  await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
-  await screen.findByRole("textbox", { name: "笔记内容" });
+  const { request } = await mount();
+  const openNote = async (title: string) => {
+    await user.click(await screen.findByRole("button", { name: `打开 ${title}` }));
+    return (await screen.findByRole("textbox", { name: "笔记内容" })).closest<HTMLElement>(".web-page-content")!;
+  };
+  const back = () => user.click(within(screen.getByRole("navigation", { name: "当前位置" })).getByRole("button", { name: "所有笔记" }));
+  const detail = await openNote("今天的手冲记录");
+  expect(detail.hasAttribute("data-small-text")).toBe(false);
   await user.click(screen.getByRole("button", { name: "页面操作" }));
   const menu = await screen.findByRole("menu");
-  expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["移入回收站"]);
+  expect(within(menu).getAllByRole("menuitem").map(item => item.textContent)).toEqual(["外观和布局", "移入回收站"]);
+  await user.click(within(menu).getByRole("menuitem", { name: "外观和布局" }));
+  const appearance = await screen.findByRole("menu", { name: "外观和布局" });
+  const choose = async (group: string, name: string) => {
+    const choice = within(within(appearance).getByRole("group", { name: group })).getByRole("menuitemradio", { name });
+    act(() => choice.focus());
+    await user.keyboard("{Enter}");
+    expect(choice.getAttribute("aria-checked")).toBe("true");
+  };
+  const smallText = await within(appearance).findByRole("menuitemcheckbox", { name: "小字号" });
+  expect(smallText.getAttribute("aria-checked")).toBe("false");
+  expect(within(appearance).queryByText("跟随全局")).toBeNull();
+  await choose("标题字体", "等宽体");
+  await choose("正文字体", "无衬线体");
+  act(() => smallText.focus());
+  await user.keyboard("{Enter}");
+  expect(smallText.getAttribute("aria-checked")).toBe("true");
+  expect(detail.hasAttribute("data-small-text")).toBe(true);
+  expect(detail.style.getPropertyValue("--note-font-heading")).toContain("ui-monospace");
+  expect(detail.style.getPropertyValue("--note-font-body")).toContain("system-ui");
+  expect(detail.style.getPropertyValue("--note-size")).toBe("var(--font-size-sm)");
+  await user.keyboard("{Escape}{Escape}");
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  await back();
+  const other = await openNote("让设计语言走进真实页面");
+  expect(other.hasAttribute("data-small-text")).toBe(false);
+  expect(other.style.getPropertyValue("--note-font-heading")).toBe("");
+  expect(other.style.getPropertyValue("--note-size")).toBe("");
+  await back();
+  expect((await openNote("今天的手冲记录")).style.getPropertyValue("--note-size")).toBe("var(--font-size-sm)");
+  expect(request.mock.calls.some(([operation]) => operation === "saveNote")).toBe(false);
 });
 
 it("keeps H5 navigation in its drawer and the global search/capture in the record bar", async () => {

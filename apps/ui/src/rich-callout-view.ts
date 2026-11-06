@@ -1,5 +1,6 @@
 import type { NodeViewRendererProps } from '@tiptap/react';
 import { calloutColor } from './import-layout';
+import { wrapRichBlock } from './rich-block-frame';
 
 export type CalloutIconTarget = { anchor: HTMLButtonElement; getPos: () => number | undefined };
 
@@ -12,6 +13,7 @@ export function calloutView({ node, editor, getPos }: NodeViewRendererProps, edi
   button.addEventListener('mousedown', event => event.preventDefault());
   button.addEventListener('click', () => { if (editor.isEditable) editIcon({ anchor: button, getPos }); });
   dom.append(button, contentDOM);
+  const frame = wrapRichBlock(dom, true);
   function update(current: typeof node) {
     if (current.type !== node.type) return false;
     for (const [name, value] of Object.entries({ 'data-callout': calloutColor(current.attrs.color), 'data-callout-text-color': calloutColor(current.attrs.textColor), 'data-callout-icon': current.attrs.icon || null, role: current.attrs.color ? 'note' : null })) {
@@ -26,5 +28,5 @@ export function calloutView({ node, editor, getPos }: NodeViewRendererProps, edi
   update(node);
   const editable = () => { button.hidden = !dom.hasAttribute('data-callout-icon') || !dom.hasAttribute('data-callout') || !editor.isEditable; };
   editor.on('transaction', editable);
-  return { dom, contentDOM, update, stopEvent: (event: Event) => button.contains(event.target as globalThis.Node), ignoreMutation: (mutation: MutationRecord | { type: 'selection'; target: globalThis.Node }) => button.contains(mutation.target) || mutation.type === 'attributes' && mutation.target === dom, destroy: () => editor.off('transaction', editable) };
+  return { dom: frame, contentDOM, update, stopEvent: (event: Event) => button.contains(event.target as globalThis.Node), ignoreMutation: (mutation: MutationRecord | { type: 'selection'; target: globalThis.Node }) => button.contains(mutation.target) || mutation.type === 'attributes' && (mutation.target === dom || mutation.target === frame), destroy: () => editor.off('transaction', editable) };
 }

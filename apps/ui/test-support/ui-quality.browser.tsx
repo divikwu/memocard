@@ -18,6 +18,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "..
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../ui/components/dropdown-menu";
 import { WebSettings } from "../ui/web/WebSettings";
 import { App, type AppViewState } from "../src/App";
+import { richBlockBody } from "../src/rich-block-frame";
 import { WebAppearanceProvider } from "../ui/web/WebAppearance";
 import { preloadWebEditor, renderWebApp } from "../ui/web/WebAppView";
 import { createWorkspaceFixture } from "../ui/web/workspace-fixture";
@@ -1623,6 +1624,7 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
     const view = render(<PreviewModeProvider mode={theme}><main className="ui-theme" data-ui-theme={theme}>
       <div data-testid="floating-reference" className="surface-floating shadow-high border" />
       <div data-testid="inline-reference" className="bg-surface" style={{ boxShadow: "var(--shadow-scale-2)" }} />
+      <span data-testid="danger-reference" style={{ color: "var(--color-icon-red)", backgroundColor: "var(--color-danger-surface)" }} />
       <NoteProperties note={editorNote} tags={[]} canEdit busy={false} onApply={async change => { changes.push(change); }} onChangeTag={async (from, to) => { changes.push({ from, to }); }} savedProperties={{
         contentHash: editorNote.contentHash, writable: true,
         tagProperty: { name: "tags", type: "list", value: ["设计"], editable: true },
@@ -1664,7 +1666,14 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       };
       await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
       expectPropertyControlRadius(await body.findByRole("menu", { name: "管理属性 摘要" }));
-      await userEvent.click(await body.findByRole("menuitem", { name: "删除属性" }));
+      const deleteProperty = await body.findByRole("menuitem", { name: "删除属性" });
+      const dangerStyle = getComputedStyle(canvas.getByTestId("danger-reference"));
+      expect(getComputedStyle(deleteProperty).color).not.toBe(dangerStyle.color);
+      deleteProperty.focus();
+      await waitFor(() => expect(getComputedStyle(deleteProperty).backgroundColor).toBe(dangerStyle.backgroundColor));
+      expect(getComputedStyle(deleteProperty).color).toBe(dangerStyle.color);
+      expect(getComputedStyle(deleteProperty.querySelector("svg")!).color).toBe(dangerStyle.color);
+      await userEvent.click(deleteProperty);
       await checkConfirmation();
       await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
       const types = await body.findByRole("menuitem", { name: /^类型/ });
@@ -1680,7 +1689,11 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
           expect(getComputedStyle(option).height).toBe("32px");
           expect(getComputedStyle(option).fontWeight).toBe("400");
         }
-        await userEvent.click(await body.findByRole("menuitem", { name: `删除${kind}` }));
+        const deleteOption = await body.findByRole("menuitem", { name: `删除${kind}` });
+        deleteOption.focus();
+        expect(getComputedStyle(deleteOption).color).toBe(dangerStyle.color);
+        expect(getComputedStyle(deleteOption.querySelector("svg")!).color).toBe(dangerStyle.color);
+        await userEvent.click(deleteOption);
         await checkConfirmation();
         await userEvent.keyboard("{Escape}");
         await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
@@ -2431,6 +2444,13 @@ test("Web collection headings align with the sidebar brand and retain compact sp
     await page.viewport(390, 900);
     await waitFor(() => expect(within(header).getByRole("button", {name: "页面操作"})).toBeDefined());
     expect(header.getBoundingClientRect().height).toBe(56);
+    await userEvent.click(within(header).getByRole("button", {name: "打开导航"}));
+    const mobileBrand = await within(document.body).findByRole("button", {name: "MemoCard，返回主页"});
+    const mobileLogo = mobileBrand.querySelector("img")!.getBoundingClientRect();
+    expect([mobileLogo.width, mobileLogo.height]).toEqual([32, 32]);
+    expect(mobileBrand.getBoundingClientRect().height).toBe(44);
+    expect(getComputedStyle(mobileBrand).borderRadius).toBe("9999px");
+    expect(getComputedStyle(mobileBrand).paddingInlineStart).toBe("2px");
   } finally {
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/notes");
   }
@@ -2970,6 +2990,15 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
     expect(getComputedStyle(logo).opacity).toBe("1");
     expect(getComputedStyle(collapse).opacity).toBe("0");
     const logoBox = logo.getBoundingClientRect(), controlBox = collapse.getBoundingClientRect();
+    expect([logoBox.width, logoBox.height]).toEqual([32, 32]);
+    expect([controlBox.width, controlBox.height]).toEqual([36, 36]);
+    expect(getComputedStyle(brand).borderRadius).toBe("9999px");
+    expect(getComputedStyle(brand.parentElement!).borderRadius).toBe("9999px");
+    expect(getComputedStyle(brand).paddingInlineStart).toBe("2px");
+    const headerBox = brand.parentElement!.getBoundingClientRect();
+    expect(controlBox.top - headerBox.top).toBe(2);
+    expect(headerBox.bottom - controlBox.bottom).toBe(2);
+    expect(controlBox.left - headerBox.left).toBe(2);
     expect(controlBox.left + controlBox.width / 2).toBeCloseTo(logoBox.left + logoBox.width / 2, 1);
     expect(controlBox.top + controlBox.height / 2).toBeCloseTo(logoBox.top + logoBox.height / 2, 1);
     await userEvent.hover(collapse);
@@ -2996,6 +3025,8 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
     expect(getComputedStyle(expand).opacity).toBe("0");
     expect(getComputedStyle(collapsedLogo).opacity).toBe("1");
     const collapsedLogoBox = collapsedLogo.getBoundingClientRect(), expandBox = expand.getBoundingClientRect();
+    expect([collapsedLogoBox.width, collapsedLogoBox.height]).toEqual([32, 32]);
+    expect([expandBox.width, expandBox.height]).toEqual([36, 36]);
     expect(expandBox.left + expandBox.width / 2).toBeCloseTo(collapsedLogoBox.left + collapsedLogoBox.width / 2, 1);
     expect(expandBox.top + expandBox.height / 2).toBeCloseTo(collapsedLogoBox.top + collapsedLogoBox.height / 2, 1);
     await userEvent.hover(expand);
@@ -3057,6 +3088,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
   const hoverReference = document.createElement("div");
   hoverReference.className = "ui-theme bg-overlay-hover";
   hoverReference.dataset.uiTheme = mode;
+  hoverReference.style.color = "var(--color-icon-red)";
   view.container.append(hoverReference);
   try {
     const canvas = within(view.container), body = within(document.body);
@@ -3137,7 +3169,12 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
       await waitFor(() => expect(controls.getByRole("button", {name: "固定到主页"}).getAttribute("aria-pressed")).toBe("false"));
       await userEvent.click(more);
       const menu = await body.findByRole("menu");
-      expect(within(menu).getByRole("menuitem", {name: "移入回收站"})).toBeTruthy();
+      const moveToTrash = within(menu).getByRole("menuitem", {name: "移入回收站"});
+      const deleteColor = getComputedStyle(hoverReference).color;
+      expect(getComputedStyle(moveToTrash).color).toBe(deleteColor);
+      expect(getComputedStyle(moveToTrash.querySelector("svg")!).color).toBe(deleteColor);
+      moveToTrash.focus();
+      expect(getComputedStyle(moveToTrash).color).toBe(deleteColor);
       const menuBox = menu.getBoundingClientRect();
       expect(menuBox.left).toBeGreaterThanOrEqual(0);
       expect(menuBox.right).toBeLessThanOrEqual(width);
@@ -3335,8 +3372,10 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
           expect(start - panel.left).toBeCloseTo(16, 1);
           expect(panel.right - end).toBeCloseTo(16, 1);
         }
-        expect(body.getBoundingClientRect().left, `${width}px body start`).toBeCloseTo(start, 1);
-        expect(body.getBoundingClientRect().right, `${width}px body end`).toBeCloseTo(end, 1);
+        const text = richBlockBody(body.firstElementChild as HTMLElement);
+        const textBox = text.getBoundingClientRect(), textStyle = getComputedStyle(text);
+        expect(textBox.left + parseFloat(textStyle.paddingLeft), `${width}px body start`).toBeCloseTo(start, 1);
+        expect(textBox.right - parseFloat(textStyle.paddingRight), `${width}px body end`).toBeCloseTo(end, 1);
         const rows = Array.from(view.container.querySelectorAll<HTMLElement>(".note-property-row[data-property-key]"));
         expect(rows.length).toBeGreaterThan(4);
         for (const row of rows) {
@@ -3384,7 +3423,7 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
       await waitFor(checkLayout);
       checkPropertyOffsets();
       await userEvent.hover(body.querySelector("li")!);
-      await waitFor(() => expect(view.container.querySelector<HTMLElement>(".block-controls")!.style.left).not.toBe(""));
+      await waitFor(() => expect(view.container.querySelector<HTMLElement>(".block-controls")!.style.getPropertyValue("--editor-block-left")).not.toBe(""));
       canvas.getByRole("button", {name: "更多属性"}).focus();
       if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
       else await userEvent.tab();
@@ -4229,17 +4268,49 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
   });
 }
 
+for (const mode of ["light", "dark"] as const) test(`note inline code uses the translucent tag fill in ${mode}`, async () => {
+  const body = '正文 `inline`\n\n<aside data-callout="purple"><p><code>Steering</code></p></aside>\n\n```txt\nblock\n```';
+  const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme" data-ui-theme={mode}>
+    <span className="note-tag-pill">默认标签</span>
+    <NoteMarkdown body={body} /><NoteMarkdown body={body} compact interactive={false} />
+    <RichMarkdownEditor value={body} notePath="notes/inline-code.md" disabled={false} autoFocus={false} onChange={() => {}} onSave={() => {}} onError={() => {}} />
+  </main></PreviewModeProvider>);
+  const canvas = within(view.container);
+  await canvas.findByRole("textbox", {name: "笔记内容"});
+  const fill = getComputedStyle(canvas.getByText("默认标签")).backgroundColor;
+  expect(fill).not.toBe("rgba(0, 0, 0, 0)");
+  const inlineCode = view.container.querySelectorAll(".ui-note-markdown code:not(pre code)");
+  expect(inlineCode).toHaveLength(6);
+  for (const code of inlineCode) expect(getComputedStyle(code).backgroundColor).toBe(fill);
+  const blockCode = view.container.querySelectorAll(".ui-note-markdown pre code");
+  expect(blockCode).toHaveLength(3);
+  for (const code of blockCode) expect(getComputedStyle(code).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+});
+
 for (const mode of ["light", "dark"] as const) test(`checkboxes share 4px corners across controls and note tasks in ${mode}`, async () => {
   await page.viewport(1024, 900);
   const tasks = "- [ ] 未完成\n- [x] 已完成";
   const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme p-4" data-ui-theme={mode}>
+    <span data-testid="note-checkbox-outline" style={{ borderColor: "var(--color-border-gray)" }} />
     <Checkbox aria-label="未选复选框" /><Checkbox checked aria-label="已选复选框" />
     <Checkbox indeterminate aria-label="部分选中复选框" /><Checkbox disabled aria-label="禁用复选框" />
+    <NoteProperties note={editorNote} tags={[]} canEdit canRead={false} busy={false} onApply={async () => {}} savedProperties={{
+      contentHash: editorNote.contentHash, writable: true,
+      properties: [{ name: "属性复选框", type: "checkbox", value: false, editable: true }],
+    }} />
     <NoteMarkdown body={tasks} /><NoteMarkdown body={tasks} compact interactive={false} />
     <RichMarkdownEditor value={tasks} notePath="notes/checkbox-style.md" disabled={false} onChange={() => {}} onSave={() => {}} onError={() => {}} />
   </main></PreviewModeProvider>);
-  await within(view.container).findByRole("textbox", {name: "笔记内容"});
+  const canvas = within(view.container);
+  const editor = await canvas.findByRole("textbox", {name: "笔记内容"});
   const controls = view.container.querySelectorAll('[data-slot="checkbox"], .ui-note-markdown input[type="checkbox"], .note-task-indicator');
   expect(controls.length).toBeGreaterThanOrEqual(10);
   for (const control of controls) expect(getComputedStyle(control).borderRadius).toBe("4px");
+  const property = getComputedStyle(canvas.getByRole("checkbox", {name: "切换属性 属性复选框"}));
+  const task = getComputedStyle(editor.querySelector('input[type="checkbox"]:not(:checked)')!);
+  expect(task.borderTopColor).toBe(getComputedStyle(canvas.getByTestId("note-checkbox-outline")).borderTopColor);
+  expect(property.borderTopColor).toBe(task.borderTopColor);
+  expect(property.borderTopWidth).toBe(task.borderTopWidth);
+  expect(task.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+  expect(property.backgroundColor).toBe(task.backgroundColor);
 });

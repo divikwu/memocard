@@ -76,7 +76,12 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         await page.getByRole('button', { name: '搜索', exact: true }).click();
         await page.getByRole('combobox', { name: '搜索笔记', exact: true }).fill('migrationproof');
         await page.getByRole('option', { name: 'Migration filesystem proof', exact: true }).click();
-        await page.getByRole('textbox', { name: '笔记内容', exact: true }).waitFor();
+        const noteBody = page.getByRole('textbox', { name: '笔记内容', exact: true });
+        await noteBody.waitFor();
+        const detailURL = page.url();
+        await page.reload({ waitUntil: 'networkidle' });
+        assert.match(await noteBody.textContent(), /Persisted through the default UI\. migrationproof/);
+        assert.equal(page.url(), detailURL);
         await page.getByRole('button', { name: '页面操作', exact: true }).click();
         await page.getByRole('menuitem', { name: '移入回收站', exact: true }).click();
         const dialog = page.getByRole('dialog', { name: '将「Migration filesystem proof」移入回收站？', exact: true });

@@ -29,7 +29,8 @@ beforeEach(() => {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
   Range.prototype.getBoundingClientRect = () => new DOMRect();
   style = document.createElement("style");
-  style.textContent = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "web-typography.css"), "utf8");
+  const source = dirname(fileURLToPath(import.meta.url));
+  style.textContent = ["web-typography.css", "../business/NotePageTitle.css"].map(path => readFileSync(join(source, path), "utf8")).join("\n");
   document.head.append(style);
 });
 afterEach(() => {
@@ -69,7 +70,7 @@ it("restores reading layout, ignores retired font choices and uses UI font roles
   localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
   mount();
   fireEvent.click(screen.getByText("高级排版"));
-  for (const [label, text] of [["行宽", "窄"], ["字号", "标准（16px）"], ["行高", "更宽松（30px）"], ["段落间距", "随字号（2em）"]]) expect(screen.getByRole("combobox", { name: label }).textContent).toBe(text);
+  for (const [label, text] of [["行宽", "窄"], ["字号", "标准（16px）"], ["行高", "更宽松（30px）"], ["段落间距", "随字号（32px）"]]) expect(screen.getByRole("combobox", { name: label }).textContent).toBe(text);
   const root = document.documentElement.style;
   expect(root.getPropertyValue("--note-measure")).toBe("448px");
   expect(root.getPropertyValue("--note-size")).toBe("var(--font-size-base)");
@@ -106,8 +107,9 @@ it("persists note styles independently, retains a live editor and undo history, 
   await choose(user, "行宽", "适中");
   await user.click(screen.getByText("高级排版"));
   await choose(user, "行高", "更宽松（28px）");
-  await choose(user, "段落间距", "随字号（2em）");
-  expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ measure: "70", size: "14", leading: "1.9", flow: "2em" });
+  await choose(user, "段落间距", "随字号（18px）");
+  expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ measure: "70", size: "14", leading: "1.9", flow: "1.25em" });
+  expect(document.documentElement.style.getPropertyValue("--note-flow")).toBe("1.125rem");
   expect(document.documentElement.style.getPropertyValue("--note-measure")).toBe("528px");
   expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(uiBody);
   expect(document.documentElement.style.getPropertyValue("--ui-preview-heading")).toBe(uiHeading);

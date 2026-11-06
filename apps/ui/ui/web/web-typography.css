@@ -1,17 +1,16 @@
-/* Fonts follow UI appearance; note preferences only adjust reading/editing layout. */
+/* Note overrides apply to document content; other surfaces use UI appearance. */
 :root[data-web-typography] .ui-note-markdown.typeset-memocard {
-  --typeset-font-body: var(--font-family-body);
-  --typeset-font-heading: var(--font-family-heading);
+  --typeset-font-body: var(--note-font-body, var(--font-family-body));
+  --typeset-font-heading: var(--note-font-heading, var(--font-family-heading));
   --typeset-font-mono: var(--font-family-code);
 }
 :root[data-web-typography] .ui-note-markdown.typeset-memocard:not([data-compact]) {
   --typeset-size: var(--note-size, var(--font-size-base));
   --typeset-leading: var(--note-leading, var(--text-reading-leading));
-  --typeset-flow: var(--note-flow, var(--spacing-reading-flow));
+  --typeset-flow: var(--note-flow, 16px);
   font-size: var(--typeset-size);
   max-width: var(--note-measure, 90ch);
 }
-:root[data-web-typography] .ui-note-editor textarea.note-page-title { font-family: var(--font-family-heading); }
 /* Search and card summaries retain their compact density and use the UI fonts. */
 :root[data-web-typography] .ui-note-search-preview-content .ui-note-markdown.typeset-memocard {
   --typeset-size: var(--font-size-sm);
@@ -19,6 +18,9 @@
   --typeset-flow: .85em;
 }
 :root[data-web-typography] .ui-note-markdown .note-mermaid-source pre { font-family: var(--font-family-code); }
+.web-note-font-choice[aria-checked=true] { background: var(--color-accent-muted); color: var(--color-text-accent); }
+.web-note-font-choice > [data-slot=dropdown-menu-radio-item-indicator],
+.web-note-small-text > [data-slot=dropdown-menu-checkbox-item-indicator] { display: none; }
 .web-note-style-preview { min-width: 0; overflow: hidden; border: var(--border-width) solid var(--color-border); border-radius: var(--radius-card); background: var(--color-background-card); }
 .web-note-style-preview > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: calc(var(--spacing-1) * 2); margin-inline: calc(var(--spacing-1) * 4); padding-block: calc(var(--spacing-1) * 3); border-bottom: var(--border-width) solid var(--color-divider); font-size: var(--font-size-sm); }
 .web-note-style-preview > header > p:last-child { color: var(--color-text-secondary); }

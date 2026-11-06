@@ -71,7 +71,7 @@ function ImagePropertyEditor({name, value, noteId, notePath, vaultBinding, edita
     {value ? <Popover open={open} onOpenChange={next => { if (!importing) { setOpen(next); setError(''); } }}><PopoverTrigger render={<Button variant="ghost" className="note-property-image-trigger" aria-label={`预览图片 ${name}`} />}>{source ? <PropertyImage key={source} source={source} name={name} /> : <span className="text-sm text-secondary">图片路径无法显示</span>}</PopoverTrigger><PopoverContent align="start" className="note-property-image-popup p-2" aria-label={`图片预览 ${name}`}>
       <div className="note-property-image-toolbar flex pb-2"><DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`图片菜单 ${name}`} disabled={busy || importing} />}><MoreHorizontal /></DropdownMenuTrigger><DropdownMenuContent align="end">
         <DropdownMenuItem disabled={!source} onClick={() => { setOpen(false); setFullscreen(true); }}><Maximize />全屏</DropdownMenuItem>
-        {editable && <DropdownMenuItem onClick={() => { void changeImage(async () => ''); }}><Trash2 />移除</DropdownMenuItem>}
+        {editable && <DropdownMenuItem className="note-property-delete" onClick={() => { void changeImage(async () => ''); }}><Trash2 />移除</DropdownMenuItem>}
       </DropdownMenuContent></DropdownMenu></div>
       {source && <PropertyImage key={source} source={source} name={name} preview />}
       {editable && <div className="mt-2 border-t pt-2">{upload}</div>}

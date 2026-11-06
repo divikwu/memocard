@@ -56,6 +56,15 @@ it('sanitizes active HTML, styles, remote images and embedded content', () => {
   expect(html).toContain('<aside');
   for (const unsafe of ['onclick', 'onerror', 'onload', '<iframe', '<svg', 'position:fixed', 'src="https://']) expect(html).not.toContain(unsafe);
 });
+it('renders underline in reading views without accepting styles or event handlers', () => {
+  const html = renderToStaticMarkup(<Markdown body={'Read <u style="position:fixed" onclick="alert(1)">underline</u>.'} />);
+  expect(html).toContain('<u>underline</u>');
+  expect(html).not.toMatch(/position:fixed|onclick/);
+});
+it('renders a table caption as part of the table in reading views', () => {
+  const html = renderToStaticMarkup(<Markdown body={'<table><caption>Summary</caption><tbody><tr><td>Value</td></tr></tbody></table>'} />);
+  expect(html).toContain('<table><caption>Summary</caption><tbody>');
+});
 it.each([true, false])('unwraps removed HTML block types without hiding their text (interactive: %s)', interactive => {
   const html = renderToStaticMarkup(<Markdown interactive={interactive} body={'<details><summary>旧摘要</summary><p>旧正文</p></details>\n\n<dl><dt>旧术语</dt><dd><p>旧释义</p></dd></dl>'} />);
   for (const tag of ['details', 'summary', 'dl', 'dt', 'dd']) expect(html).not.toContain(`<${tag}`);

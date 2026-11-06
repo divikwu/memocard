@@ -1,20 +1,43 @@
 import type { NodeViewRendererProps } from '@tiptap/react';
 import { imageRow, setImageWidths } from './rich-image-layout';
 import { imageColumns } from './import-layout';
+import { insetRichBlockSurface } from './rich-block-frame';
 
 export function imageRowView({ node, editor, getPos }: NodeViewRendererProps) {
   const dom = document.createElement('div'), contentDOM = document.createElement('figure'), controls = document.createElement('div');
   dom.className = 'rich-image-row'; controls.className = 'rich-image-column-controls'; controls.contentEditable = 'false';
-  dom.append(contentDOM, controls);
+  dom.append(insetRichBlockSurface(contentDOM), controls);
   let current = node;
   let lastEditable = editor.isEditable;
   let gesture: { pointer: number; x: number; width: number; widths: number[]; index: number; doc: typeof editor.state.doc; button: HTMLButtonElement } | null = null;
   let preview: number[] | null = null;
+  const imageColumnsInView = () => [...contentDOM.children].filter(child => child.matches('.node-image, .node-wikiImage'));
+  function positionHandles() {
+    const columns = imageColumnsInView().map(column => column.getBoundingClientRect());
+    const origin = controls.getBoundingClientRect();
+    [...controls.children].forEach((child, index) => {
+      const handle = child as HTMLElement, left = columns[index], right = columns[index + 1];
+      if (!left || !right) { handle.style.height = '0px'; return; }
+      const top = Math.max(left.top, right.top);
+      const bottom = Math.min(left.bottom, right.bottom);
+      handle.style.left = `${left.right - origin.left}px`;
+      handle.style.width = `${Math.max(0, right.left - left.right)}px`;
+      handle.style.top = `${top - origin.top}px`;
+      handle.style.height = `${Math.max(0, bottom - top)}px`;
+    });
+  }
+  const resize = new ResizeObserver(positionHandles);
+  const columnsChanged = new MutationObserver(() => {
+    resize.disconnect();
+    resize.observe(contentDOM);
+    imageColumnsInView().forEach(column => resize.observe(column));
+    positionHandles();
+  });
+  resize.observe(contentDOM);
+  columnsChanged.observe(contentDOM, { childList: true });
   function paint(widths: number[] | null) {
     contentDOM.style.gridTemplateColumns = widths?.map(width => `${width}fr`).join(' ') ?? '';
     if (widths) [...controls.children].forEach((control, i) => {
-      const total = widths.reduce((a, b) => a + b, 0), fraction = widths.slice(0, i + 1).reduce((a, b) => a + b, 0) / total;
-      (control as HTMLElement).style.left = `calc(${fraction * 100}% + ${(i + .5 - fraction * (widths.length - 1)) * 16}px)`;
       control.setAttribute('aria-valuenow', String(Math.round(widths[i] / (widths[i] + widths[i + 1]) * 100)));
     });
   }
@@ -73,6 +96,7 @@ export function imageRowView({ node, editor, getPos }: NodeViewRendererProps) {
       }
     }
     if (!gesture) paint(widths);
+    positionHandles();
     return true;
   }
   update(node);
@@ -84,6 +108,11 @@ export function imageRowView({ node, editor, getPos }: NodeViewRendererProps) {
   editor.on('transaction', editable);
   return { dom, contentDOM, update, stopEvent: (event: Event) => controls.contains(event.target as globalThis.Node),
     ignoreMutation: (mutation: MutationRecord | { type: 'selection'; target: globalThis.Node }) => controls.contains(mutation.target) || mutation.type === 'attributes' && mutation.target === contentDOM,
-    destroy() { cancel(); editor.off('transaction', editable); window.removeEventListener('blur', cancel); window.removeEventListener('keydown', key, true); },
+    destroy() {
+      resize.disconnect();
+      columnsChanged.disconnect();
+      cancel();
+      editor.off('transaction', editable);
+    },
   };
 }

@@ -1,4 +1,4 @@
-import { Fragment, Suspense, useRef, type ReactNode } from "react";
+import { Fragment, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-labels";
 import { errorMessage } from "../../src/error-messages";
@@ -8,7 +8,7 @@ import { ActionGroup, MobileActionGroupProvider } from "../components/action-gro
 import { isNative } from "../../src/bridge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../components/breadcrumb";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/empty";
 import { Skeleton } from "../components/skeleton";
 import { Spinner } from "../components/spinner";
@@ -24,9 +24,12 @@ import MoreHorizontalIcon from "@hugeicons/core-free-icons/MoreHorizontalIcon";
 import PinIcon from "@hugeicons/core-free-icons/PinIcon";
 import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon";
+import TextFontIcon from "@hugeicons/core-free-icons/TextFontIcon";
 import { WebTypographyProvider } from "./WebTypographyProvider";
+import { useNoteAppearance } from "./note-appearance";
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { WorkspaceFrame, LayoutNavigationControls } from "./WorkspaceFrame";
+import "../business/NotePageTitle.css";
 import "./web-app.css";
 
 const WebSettings = recoverableLazy(() => import("./WebSettings").then(module => ({ default: module.WebSettings })), "设置");
@@ -36,6 +39,8 @@ const NoteSearchDialog = recoverableLazy(() => import("../business/NoteSearchDia
 const TrashPage = recoverableLazy(() => import("../business/TrashPage").then(module => ({ default: module.TrashPage })), "回收站");
 const TagsPage = recoverableLazy(() => import("../business/TagsPage").then(module => ({ default: module.TagsPage })), "标签");
 const NoteDeleteDialog = recoverableLazy(() => import("../business/NoteDeleteDialog").then(module => ({ default: module.NoteDeleteDialog })), "删除确认");
+const NoteAppearanceMenu = recoverableLazy(() => import("./NoteAppearanceMenu").then(module => ({ default: module.NoteAppearanceMenu })), "笔记外观",
+  (_props, retry) => <DropdownMenuItem closeOnClick={false} onClick={retry}>重试加载笔记外观</DropdownMenuItem>);
 
 export const preloadWebEditor = () => import("../business/Editor");
 export const renderWebApp = (state: AppViewState) => <WebTypographyProvider><WebAppView state={state} /></WebTypographyProvider>;
@@ -47,6 +52,32 @@ export function Notice({ title, children, action, error = false }: { title: stri
 
 function PageLoading() {
   return <div className="web-page-loading" role="status" aria-label="正在读取内容"><Skeleton className="h-8 w-40" /><Skeleton className="h-5 w-3/4" /><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-5/6" /><span className="sr-only">正在读取内容…</span></div>;
+}
+
+function NoteDetail({ title, titleKnown, showProperties, children }: { title: string; titleKnown: boolean; showProperties: boolean; children?: ReactNode }) {
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  useEffect(() => {
+    // Keep one delay across the note read and the editor's lazy load.
+    const timeout = window.setTimeout(() => setShowSkeleton(true), 150);
+    return () => window.clearTimeout(timeout);
+  }, []);
+
+  const loading = <div className="web-note-loading">
+    <h1 className={titleKnown ? "note-page-title" : "sr-only"}>{title}</h1>
+    <span className="sr-only" role="status" aria-label="正在读取内容">正在读取内容…</span>
+    {showSkeleton && <div data-slot="note-detail-skeleton" aria-hidden="true">
+      {!titleKnown && <div className="note-page-title web-note-loading-title"><Skeleton className="h-6 w-1/2" /></div>}
+      {showProperties && <div className="web-note-loading-properties">
+        {[0, 1, 2, 3, 4, 5].map(row => <div className="web-note-loading-property" key={row}>
+          <Skeleton className="h-4 w-20 max-w-full" /><Skeleton className={row % 2 ? "h-4 w-24 max-w-full" : "h-4 w-32 max-w-full"} />
+        </div>)}
+      </div>}
+      <div className="web-note-loading-body">
+        <Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" />
+      </div>
+    </div>}
+  </div>;
+  return children ? <Suspense fallback={loading}>{children}</Suspense> : loading;
 }
 
 function WorkspaceEmpty({ title, description, children, guide = false, role, connection = false }: { title: string; description: string; children?: ReactNode; guide?: boolean; role?: "alert" | "status"; connection?: boolean }) {
@@ -71,8 +102,16 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
 }
 
 function WorkspaceContent({ state: s }: { state: AppViewState }) {
-  if (s.openingNote) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed ? <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty> : s.error ? null : <PageLoading />}</>;
-  if (s.editor) return <><h1 className="sr-only">{s.title}</h1><Suspense fallback={<PageLoading />}><Editor key={s.editor.initial.id} {...s.editor} /></Suspense></>;
+  if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
+  const editor = s.editor;
+  if (s.openingNote || editor) return <NoteDetail
+    key={editor?.initial.id ?? s.openingNoteId}
+    title={s.title}
+    titleKnown={Boolean(editor ? editor.initial.title?.trim() : s.openingTitle)}
+    showProperties={!s.status || s.capabilities.has("getNoteProperties")}
+  >
+    {editor && <><h1 className="sr-only">{s.title}</h1><Editor {...editor} /></>}
+  </NoteDetail>;
   if (s.view === "tags") return <Suspense fallback={<PageLoading />}><TagsPage key={s.sidebar.vaultId || "disconnected"} tags={s.sidebar.tags} vaultId={s.sidebar.vaultId} loading={Boolean(s.sidebar.loadingTags)} connected={Boolean(s.status?.connected)} disabled={s.working || s.switchingVault} canRename={s.canCreate && !s.working && !s.switchingVault} onSelect={path => void s.onNavigate("notes", path)} onRename={s.sidebar.onRenameTag} /></Suspense>;
   if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
@@ -93,6 +132,10 @@ const IOSAppChrome = recoverableLazy(() => import("../native/IOSAppChrome").then
 
 export function WebAppView({ state: s }: { state: AppViewState }) {
   const menuDelete = useRef(false);
+  const savedNoteId = s.editor?.initial.baseHash ? s.editor.initial.id : undefined;
+  const loadingNoteId = s.openingNoteId === "new" ? undefined : s.openingNoteId;
+  const noteAppearance = useNoteAppearance(s.status?.vaultId, savedNoteId ?? loadingNoteId);
+  const showNoteAppearance = Boolean(savedNoteId && noteAppearance.available);
   const tagParts = s.sidebar.tag?.split("/") ?? [];
   const detailBreadcrumbs = s.view === "home" ? ["主页"] : ["所有笔记", ...tagParts, ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : [])];
   const showBreadcrumb = s.isMobile || s.detailView;
@@ -125,14 +168,23 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           </div>
           <HeaderActions aria-label={mobileActions ? "页面操作组" : undefined} className="web-header-actions">
             {s.editor && s.capabilities.has("setNotePinned") && <TooltipProvider><Tooltip><TooltipTrigger render={<span className="web-pin-tooltip-trigger" tabIndex={s.pinDisabled ? 0 : undefined} />}><Button variant="ghost" size="icon" className={`web-header-icon${s.pinned ? " text-accent" : ""}`} aria-label={s.pinned ? "取消固定" : "固定到主页"} aria-description={!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : undefined} aria-pressed={s.pinned} disabled={s.pinDisabled} onClick={s.onTogglePin}><HugeiconsIcon icon={PinIcon} fill={s.pinned ? "currentColor" : "none"} aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>{!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : s.pinned ? "取消固定" : "固定到主页"}</TooltipContent></Tooltip></TooltipProvider>}
-            {(s.isMobile || (s.detailView && Boolean(s.onRequestDelete))) && <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="web-header-icon" aria-label="页面操作" />}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56" finalFocus={() => { if (menuDelete.current) { menuDelete.current = false; s.onRequestDelete?.(); return false; } return true; }}>
+            {(s.isMobile || s.detailView && (showNoteAppearance || Boolean(s.onRequestDelete))) && <DropdownMenu><DropdownMenuTrigger render={<Button variant="ghost" size="icon" className="web-header-icon" aria-label="页面操作" />}><HugeiconsIcon icon={MoreHorizontalIcon} aria-hidden="true" /></DropdownMenuTrigger><DropdownMenuContent align="end" className="w-56" finalFocus={() => { if (menuDelete.current) { menuDelete.current = false; s.onRequestDelete?.(); return false; } return true; }}>
               {s.isMobile && <><DropdownMenuItem disabled={!s.canCreate} onClick={() => void s.onNew()}><AddIcon aria-hidden="true" />新建笔记</DropdownMenuItem><DropdownMenuItem disabled={!s.canRefresh} onClick={s.onRefresh}><HugeiconsIcon icon={RefreshIcon} className={s.loading ? "animate-spin motion-reduce:animate-none" : undefined} aria-hidden="true" />刷新笔记库</DropdownMenuItem></>}
+              {showNoteAppearance && <>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger><HugeiconsIcon icon={TextFontIcon} strokeWidth={2} aria-hidden="true" />外观和布局</DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent aria-label="外观和布局" side={s.isMobile ? "bottom" : "left"} align={s.isMobile ? "end" : "start"} sideOffset={4} className="w-72 max-w-[calc(100dvw-1.5rem)]">
+                    <Suspense fallback={<p className="px-2 py-2.5 text-xs text-secondary" role="status">正在读取笔记外观…</p>}><NoteAppearanceMenu appearance={noteAppearance} /></Suspense>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                {s.onRequestDelete && <DropdownMenuSeparator />}
+              </>}
               {s.onRequestDelete && <DropdownMenuItem variant="destructive" disabled={!s.canDeleteNote} onClick={() => { menuDelete.current = true; }}><DeleteIcon aria-hidden="true" />移入回收站</DropdownMenuItem>}
               {s.isMobile && <>{s.drafts.records.length > 0 && <DropdownMenuItem onClick={() => s.drafts.onOpenChange(true)}>保留草稿（{s.drafts.records.length}）</DropdownMenuItem>}<DropdownMenuSeparator /><DropdownMenuItem onClick={() => void s.onNavigate("settings")}><SettingsIcon aria-hidden="true" />设置</DropdownMenuItem></>}
             </DropdownMenuContent></DropdownMenu>}
           </HeaderActions>
         </header>}
-        <div ref={s.scrollContainer} id="web-main-content" tabIndex={-1} className={`web-app-scroll${s.detailView ? " note-page-scroll" : ""}`} data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined}><div className="web-page-content" data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined} data-view={s.view}>
+        <div ref={s.scrollContainer} id="web-main-content" tabIndex={-1} className={`web-app-scroll${s.detailView ? " note-page-scroll" : ""}`} data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined}><div className="web-page-content" data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined} data-view={s.view} data-small-text={noteAppearance.value.smallText || undefined} style={noteAppearance.available ? noteAppearance.style : undefined}>
           {s.switchingVault && <Notice title="正在打开笔记库"><Spinner aria-hidden="true" className="mr-2 inline" />首次读取可能需要一些时间。</Notice>}
           {Boolean(s.error) && !s.detailReadFailed && !(s.connectionState && s.localWebReconnectRequired) && <Notice title={s.localWebReconnectRequired ? "连接已断开" : "操作未完成"} error action={s.localWebReconnectRequired ? <Button role="link" nativeButton={false} variant="outline" size="sm" render={<a href="memocard-service://open-web" />}>重新打开</Button> : s.retryableError && <Button variant="outline" size="sm" disabled={!s.canRefresh || s.switchingVault} onClick={s.openingNote ? s.onRetryDetail : s.onRefresh}>重试</Button>}>{errorMessage(s.error)}</Notice>}
           {s.pinReadError != null && <Notice title="固定状态暂不可用" error action={<Button variant="outline" size="sm" disabled={s.pinRetryDisabled} onClick={s.onRefreshBackground}>重试</Button>}>{errorMessage(s.pinReadError)}</Notice>}

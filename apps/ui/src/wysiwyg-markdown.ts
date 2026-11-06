@@ -84,7 +84,7 @@ export class MarkdownSource {
       markdownParser.parse(raw).iterate({ enter(node) {
         if (node.name === 'HTMLTag' || node.name === 'HTMLBlock' || node.name === 'CommentBlock' || node.name === 'Comment') { html.push(raw.slice(node.from, node.to)); return false; }
       } });
-      const knownTags = [...semanticTags, 'p', 'strong', 'em', 's', 'a', 'code', 'pre', 'br', 'ul', 'ol', 'li', 'blockquote', 'hr', 'img', 'table', 'caption', 'tfoot', 'thead', 'tbody', 'tr', 'th', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+      const knownTags = [...semanticTags, 'p', 'strong', 'b', 'em', 'i', 's', 'del', 'strike', 'u', 'a', 'code', 'pre', 'br', 'ul', 'ol', 'li', 'blockquote', 'hr', 'img', 'table', 'caption', 'tfoot', 'thead', 'tbody', 'tr', 'th', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
       const unsupported = parsed[0]?.type !== 'codeBlock' && (
         /^\s*\[[^\]^][^\]]*\]:/im.test(raw) || html.some(fragment => fragment.includes('<!--') || Array.from(fragment.matchAll(/<\/?([a-z][a-z0-9]*)\b/gi)).some(match => !knownTags.includes(match[1].toLowerCase())))
       );

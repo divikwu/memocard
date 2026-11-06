@@ -97,7 +97,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cnState(
         className,
-        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-element min-h-element-sm px-2 py-1 text-sm font-normal outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus data-inset:pl-8.5 data-[variant=destructive]:text-error data-[variant=destructive]:focus:bg-danger-surface data-[variant=destructive]:focus:text-error data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-secondary [&_svg:not([class*='size-'])]:size-4"
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-2.5 rounded-element min-h-element-sm px-2 py-1 text-sm font-normal outline-hidden select-none focus-visible:focus-ring focus:bg-accent-muted focus:text-menu-focus data-inset:pl-8.5 data-[variant=destructive]:text-icon-red data-[variant=destructive]:focus:bg-danger-surface data-[variant=destructive]:focus:text-icon-red data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-secondary data-[variant=destructive]:[&_svg]:text-current [&_svg:not([class*='size-'])]:size-4"
       )}
       {...props}
     />

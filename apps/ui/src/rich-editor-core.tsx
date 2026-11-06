@@ -1,4 +1,4 @@
-import { Suspense, forwardRef, useCallback, useEffect, useId, useLayoutEffect, useImperativeHandle, useRef, useState, type ComponentType, type ComponentProps, type SVGProps, type DragEventHandler } from 'react';
+import { Suspense, forwardRef, useCallback, useEffect, useId, useLayoutEffect, useImperativeHandle, useRef, useState, type ComponentType, type ComponentProps, type CSSProperties, type SVGProps, type DragEventHandler } from 'react';
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, useEditorState, type NodeViewProps, type ReactNodeViewProps, type NodeViewRendererProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Markdown as MarkdownExtension } from '@tiptap/markdown';
@@ -12,6 +12,7 @@ import { Slice } from '@tiptap/pm/model';
 import { richBlock, richBlockAt, richSectionEnd, selectedRichBlocks, richBlockMoveSources, richBlockMoveTarget, selectRichBlocks, selectRichBlockRange, extendRichBlocksTo, blockMoveTransaction, moveRichBlocks, duplicateRichBlocks, editRichStructure, type RichBlock } from './rich-blocks';
 import { BlockRangeSelection } from './rich-block-selection';
 import { RichBlockHighlight } from './rich-block-highlight';
+import { framedRichBlockView, richBlockBody, richBlockBounds, wrapRichBlock } from './rich-block-frame';
 import { pastedInlineTags, RichInlineTags } from './rich-inline-tags';
 import { unfoldRichHeadings } from './rich-heading-fold-core';
 import { RichTagSuggestions } from './RichTagSuggestions';
@@ -96,30 +97,39 @@ const PreservedExtension = PreservedMarkdown.extend({
   addOptions: () => ({ notePath: () => 'notes/note.md' }),
   addNodeView() { return ReactNodeViewRenderer(PreservedContent); },
 });
+const framedBlocks = new Set(['paragraph', 'heading', 'blockquote', 'bulletList', 'orderedList', 'horizontalRule']);
 const RichStarterKit = StarterKit.extend({
   addExtensions() {
-    return this.parent!().map(extension => extension.name === 'codeBlock' ? extension.extend({
-      addNodeView() {
-        const mermaid = (node: { attrs: Record<string, unknown> }) => String(node.attrs.language ?? '').toLowerCase() === 'mermaid';
-        const render = ReactNodeViewRenderer(RichCodeBlock, { update: ({ newNode, updateProps }) => {
-          if (!mermaid(newNode)) return false;
-          updateProps(); return true;
-        } });
-        return (props: NodeViewRendererProps) => {
-          if (mermaid(props.node)) return render(props);
-          const dom = document.createElement('pre'), code = document.createElement('code');
-          code.spellcheck = false;
-          dom.append(code);
-          const update = (node: typeof props.node) => {
-            if (node.type !== props.node.type || mermaid(node)) return false;
-            code.className = node.attrs.language ? `language-${node.attrs.language}` : '';
-            return true;
+    return this.parent!().map(extension => {
+      if (framedBlocks.has(extension.name)) return extension.extend({ addNodeView: () => framedRichBlockView });
+      if (extension.name === 'underline') return extension.extend({
+        // Use the same underline syntax in the editor and in Markdown reading views.
+        renderMarkdown: (node, helpers) => `<u>${helpers.renderChildren(node)}</u>`,
+      });
+      if (extension.name !== 'codeBlock') return extension;
+      return extension.extend({
+        addNodeView() {
+          const mermaid = (node: { attrs: Record<string, unknown> }) => String(node.attrs.language ?? '').toLowerCase() === 'mermaid';
+          const render = ReactNodeViewRenderer(RichCodeBlock, { update: ({ newNode, updateProps }) => {
+            if (!mermaid(newNode)) return false;
+            updateProps(); return true;
+          } });
+          return (props: NodeViewRendererProps) => {
+            if (mermaid(props.node)) return render(props);
+            const dom = document.createElement('pre'), code = document.createElement('code');
+            code.spellcheck = false;
+            dom.append(code);
+            const update = (node: typeof props.node) => {
+              if (node.type !== props.node.type || mermaid(node)) return false;
+              code.className = node.attrs.language ? `language-${node.attrs.language}` : '';
+              return true;
+            };
+            update(props.node);
+            return { dom: wrapRichBlock(dom, true), contentDOM: code, update };
           };
-          update(props.node);
-          return { dom, contentDOM: code, update };
-        };
-      },
-    }) : extension);
+        },
+      });
+    });
   },
 });
 
@@ -154,7 +164,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   // Menu exit focus runs after the picker opens, including after the menu unmounts.
   const calloutIconOpen = useRef(false); calloutIconOpen.current = calloutIcon !== null;
   const isMobile = useIsMobile();
-  const [toolbar, setToolbar] = useState<{ top: number; pos: number; left?: number }>({ top: 14, pos: 0 });
+  const [toolbar, setToolbar] = useState<{ top: number; pos: number; blockLeft?: number }>({ top: 14, pos: 0 });
   const toolbarTarget = useRef<{ position: number; pointer: { clientX: number; clientY: number; buttons: number } | null }>({ position: 0, pointer: null });
   const [, setRevision] = useState(0);
   const [dropTop, setDropTop] = useState<number | null>(null);
@@ -185,7 +195,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     // Plain Markdown is parsed explicitly; rich/literal clipboard content must not run Markdown paste rules.
     enablePasteRules: false,
     extensions: [RichNoteHistory, RichInlineTags, RichHeadingFolding, RichImageDrag.configure({ uiClassName }), RichStarterKit.configure({ link: { openOnClick: false }, trailingNode: false }), MarkdownExtension, SourceMetadata, WikiLink, FootnoteReference, FootnoteDefinition, ...semanticExtensions(() => editorRef.current, target => setCalloutIcon({ ...target, anchor: target.anchor.hidden ? gripRef.current ?? target.anchor : target.anchor })),
-      richTable(() => editorRef.current), RichTableRow, RichTableHeader, TableCell, TaskList, TaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' }, a11y: { checkboxLabel: node => `待办：${node.textContent}` } }),
+      richTable(() => editorRef.current), RichTableRow, RichTableHeader, TableCell, TaskList.extend({ addNodeView: () => framedRichBlockView }), TaskItem.configure({ nested: true, HTMLAttributes: { 'data-type': 'taskItem' }, a11y: { checkboxLabel: node => `待办：${node.textContent}` } }),
       SafeImageExtension.configure({ notePath: () => latest.current.notePath }), WikiImageExtension.configure({ notePath: () => latest.current.notePath }),
       PreservedExtension.configure({ notePath: () => latest.current.notePath }),
       InlineMath.extend({ addNodeView() { return ReactNodeViewRenderer(RichMath); } }),
@@ -369,22 +379,38 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   }
   function positionToolbar(e: TiptapEditor, pos = e.state.selection.from) {
     if (!root.current) return;
+    const selection = e.state.selection;
     const image = isLayoutImage(e.state.doc.nodeAt(pos));
-    const block = image ? richBlockAt(e, pos) : richBlock(e, pos);
+    const exactSelection = selection instanceof NodeSelection && selection.from === pos && selection.node.isBlock;
+    const row = image ? imageRow(e, pos) : null;
+    const blockSelection = selection instanceof NodeSelection || selection instanceof AllSelection || selection instanceof BlockRangeSelection;
+    // Keep the block grip outside grouped images so it cannot cover a column divider.
+    const target = row && (row.images.length > 1 || blockSelection && selection.from <= row.pos && selection.to >= row.pos + row.node.nodeSize) ? row.pos : pos;
+    const block = image || exactSelection ? richBlockAt(e, target) : richBlock(e, pos);
     if (!block) return;
     const from = block.pos;
     const element = e.view.nodeDOM(from);
     if (element instanceof HTMLElement) {
       toolbarTarget.current.position = from;
-      const rect = element.getBoundingClientRect();
-      const style = getComputedStyle(element);
-      const line = parseFloat(style.lineHeight) || 26;
-      const paddingTop = image ? 0 : Math.min(rect.height, parseFloat(style.paddingTop) || 0);
-      const contentHeight = image ? rect.height : Math.max(0, rect.height - paddingTop - (parseFloat(style.paddingBottom) || 0));
-      const top = rect.top - root.current.getBoundingClientRect().top + paddingTop + Math.min(contentHeight, line) / 2;
-      const frame = image ? element.querySelector<HTMLElement>('.ui-note-image') ?? element : element.matches('li') ? element.parentElement : null;
-      const left = frame ? frame.getBoundingClientRect().left - root.current.getBoundingClientRect().left - (controlsRef.current?.getBoundingClientRect().width ?? 24) - 6 : undefined;
-      setToolbar(current => current.pos === from && current.top === top && current.left === left ? current : { pos: from, top, left });
+      // A captioned single image shares its outer frame with the caption.
+      const rowElement = !exactSelection && row?.images.length === 1 && row.pos !== from ? e.view.nodeDOM(row.pos) : null;
+      const frame = richBlockBounds(rowElement instanceof HTMLElement ? rowElement : element, 'highlight');
+      const host = root.current.getBoundingClientRect();
+      const { node } = block;
+      const firstLine = (node.isTextblock && !node.type.spec.code) || node.type.name === 'listItem' || node.type.name === 'taskItem';
+      const controlHeight = controlsRef.current?.getBoundingClientRect().height ?? 28;
+      // Tall surfaces align at the top. Short blocks, such as rules, stay centered.
+      let center = frame.top + Math.min(frame.height / 2, 8 + controlHeight / 2);
+      if (firstLine) {
+        const body = richBlockBody(element), rect = body.getBoundingClientRect(), style = getComputedStyle(body);
+        const line = parseFloat(style.lineHeight) || 26;
+        const paddingTop = Math.min(rect.height, parseFloat(style.paddingTop) || 0);
+        const contentHeight = Math.max(0, rect.height - paddingTop - (parseFloat(style.paddingBottom) || 0));
+        center = rect.top + paddingTop + Math.min(contentHeight, line) / 2;
+      }
+      const top = center - host.top;
+      const blockLeft = frame.left - host.left;
+      setToolbar(current => current.pos === from && current.top === top && current.blockLeft === blockLeft ? current : { pos: from, top, blockLeft });
     }
   }
   function positionFoldToolbar(e: TiptapEditor, target: EventTarget | null) {
@@ -460,7 +486,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     // Undo and external replacements can rebuild widgets without moving the toolbar.
     const sync = () => {
       const element = editor.view.nodeDOM(toolbar.pos);
-      const fold = element instanceof HTMLElement ? element.querySelector(':scope > .rich-heading-fold-widget') : null;
+      const fold = element instanceof HTMLElement ? richBlockBody(element).querySelector(':scope > .rich-heading-fold-widget') : null;
       const headingChanged = controlsRef.current?.hasAttribute('data-heading') !== (fold !== null);
       if (fold === active && !headingChanged) return;
       active?.removeAttribute('data-block-active');
@@ -537,7 +563,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       if (!(target instanceof Element) || !element || menu || rangeGesture.current || dragging.current || isImageDragging(editor) || event.buttons || root.current?.hasAttribute('data-menu-open') || target.closest('.block-controls, .rich-menu, .rich-table-tools, .rich-inline-tools')) return;
       if (positionFoldToolbar(editor, target)) return;
       const controls = controlsRef.current?.getBoundingClientRect();
-      if (toolbar.left != null && controls && event.clientY >= controls.top && event.clientY <= controls.bottom && event.clientX >= controls.left && event.clientX <= controls.right + 12) return;
+      if (controls && !editor.view.dom.contains(target) && event.clientY >= controls.top && event.clientY <= controls.bottom && event.clientX >= controls.left && event.clientX <= controls.right + 12) return;
       const image = target.closest('.rich-image');
       if (image && editor.view.dom.contains(image)) { positionToolbar(editor, editor.view.posAtDOM(image, 0)); return; }
       const rect = editor.view.dom.getBoundingClientRect();
@@ -642,7 +668,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       seen.add(block.pos);
       const dom = editor!.view.nodeDOM(block.pos);
       if (!(dom instanceof HTMLElement)) return;
-      const bounds = dom.getBoundingClientRect();
+      const bounds = richBlockBounds(dom);
       if (box.width > 0 && box.height > 0 && bounds.width > 0 && bounds.height > 0 && left < bounds.right && left + box.width > bounds.left && top < bounds.bottom && top + box.height > bounds.top) hits.push(block);
     });
     if (hits.length) selectRichBlockRange(editor!, y >= gesture.y ? hits[0] : hits[hits.length - 1], y >= gesture.y ? hits[hits.length - 1] : hits[0]);
@@ -657,7 +683,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     }
     const dom = block ? editor.view.nodeDOM(block.pos) : null;
     if (!block || !(dom instanceof HTMLElement)) return null;
-    const rect = dom.getBoundingClientRect(), after = top >= (rect.top + rect.bottom) / 2;
+    const rect = richBlockBounds(dom), after = top >= (rect.top + rect.bottom) / 2;
     if (!blockMoveTransaction(editor, dragging.current, block, after)) return null;
     return { block, after, rect };
   }
@@ -739,7 +765,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     }}
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as globalThis.Node | null)) { cancelAnimationFrame(frame.current); frame.current = 0; setDropTop(null); } }}
   >
-    <div ref={controlsRef} className="block-controls" data-heading={richBlockAt(editor, toolbar.pos)?.node.type.name === 'heading' && richSectionEnd(editor.state.doc, toolbar.pos) > toolbar.pos + editor.state.doc.nodeAt(toolbar.pos)!.nodeSize || undefined} style={{ top: toolbar.top, left: toolbar.left }}>
+    <div ref={controlsRef} className="block-controls" data-heading={richBlockAt(editor, toolbar.pos)?.node.type.name === 'heading' && richSectionEnd(editor.state.doc, toolbar.pos) > toolbar.pos + editor.state.doc.nodeAt(toolbar.pos)!.nodeSize || undefined} style={{ top: toolbar.top, '--editor-block-left': toolbar.blockLeft == null ? undefined : `${toolbar.blockLeft}px` } as CSSProperties}>
       <button ref={gripRef} type="button" aria-label="内容块操作" disabled={props.disabled} draggable={!props.disabled} aria-haspopup="menu" aria-expanded={menu === 'block'} onKeyDown={event => { if (event.key === 'ArrowDown') { event.preventDefault(); openBlockMenu(); } }} onDragStart={event => {
         if (editor.view.composing) { event.preventDefault(); return; }
         const selected = selectedRichBlocks(editor, toolbar.pos), row = isLayoutImage(editor.state.doc.nodeAt(toolbar.pos)) ? imageRow(editor, toolbar.pos) : null;

@@ -32,8 +32,8 @@ export function VaultImage({ source, alt, width, height, loading, interactive = 
     {state === "failed" && <span className="note-image-message">图片暂时无法读取</span>}
   </>;
   return <>
-    {interactive ? <Button variant="ghost" type="button" className="ui-note-image" data-image-state={state} data-image-sized={Boolean((width && height) || dimensions) || undefined} aria-label={alt ? `查看大图 ${alt}` : "查看大图"} aria-busy={state === "loading"} onClick={event => { event.stopPropagation(); if (!dragged.current || event.detail === 0) setOpen(true); }}>{visual}</Button>
-      : <span className="ui-note-image" data-image-state={state} data-image-sized={Boolean((width && height) || dimensions) || undefined}>{visual}</span>}
+    {interactive ? <Button variant="ghost" type="button" className="ui-note-image" data-image-state={state} data-image-width={Boolean(width) || undefined} data-image-sized={Boolean((width && height) || dimensions) || undefined} aria-label={alt ? `查看大图 ${alt}` : "查看大图"} aria-busy={state === "loading"} onClick={event => { event.stopPropagation(); if (!dragged.current || event.detail === 0) setOpen(true); }}>{visual}</Button>
+      : <span className="ui-note-image" data-image-state={state} data-image-width={Boolean(width) || undefined} data-image-sized={Boolean((width && height) || dimensions) || undefined}>{visual}</span>}
     {interactive && state === 'failed' && <Button type="button" variant="ghost" size="sm" aria-label={`重试读取图片 ${alt}`} onClick={event => { event.stopPropagation(); retry(); }}>重试</Button>}
     {open && <ImageViewer source={source} alt={alt || "笔记图片"} onClose={() => setOpen(false)} />}
   </>;
@@ -79,7 +79,7 @@ function MermaidDiagram({ source }: { source: string }) {
         const svg = mermaidSVG(renderMermaidSVG(source, {
           bg: "var(--color-background-surface)", fg: "var(--color-text-primary)", line: "var(--color-text-secondary)",
           accent: "var(--color-accent)", muted: "var(--color-text-secondary)", surface: "var(--color-background-muted)", border: "var(--color-border)",
-          font: "var(--font-family-body)", transparent: true,
+          font: "var(--font-family-body)", transparent: true, padding: 4,
         }));
         setResult({ source, svg });
       }).catch(() => { if (!disposed) setResult({ source, failed: true }); });
@@ -117,7 +117,7 @@ export function MermaidContent({ source, children }: { source: string; children:
     <div className="note-mermaid-toolbar" contentEditable={false}>
       {grouped ? <ActionGroup aria-label="Mermaid 操作">{modes}</ActionGroup> : modes}
     </div>
-    <TabsContent value={mode} keepMounted>
+    <TabsContent className="note-mermaid-panel" value={mode} keepMounted>
       <div className="note-mermaid-source" hidden={mode === "preview"}>{children}</div>
       <div contentEditable={false} hidden={mode === "source"}><MermaidDiagram source={source} /></div>
     </TabsContent>

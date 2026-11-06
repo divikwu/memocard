@@ -1,22 +1,39 @@
 import { Table, TableRow, TableHeader, TableView } from '@tiptap/extension-table';
-import { DOMSerializer, DOMParser } from '@tiptap/pm/model';
+import { DOMSerializer, DOMParser, type Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { CellSelection, TableMap } from '@tiptap/pm/tables';
 import { editRichStructure } from './rich-blocks';
 import type { Editor } from '@tiptap/react';
 import { observeTableOverflow } from './table-overflow';
+import { insetRichBlockSurface } from './rich-block-frame';
 
 class ScrollableTableView extends TableView {
   private dispose: () => void;
   constructor(...args: ConstructorParameters<typeof TableView>) {
     super(...args);
+    this.syncCaption();
     const scroller = this.dom;
     this.dom = document.createElement('div');
     this.dom.className = 'rich-table-block';
-    this.dom.append(scroller);
+    this.dom.append(insetRichBlockSurface(scroller));
     scroller.setAttribute('role', 'region');
     scroller.setAttribute('aria-label', '表格，可左右滚动');
     scroller.tabIndex = 0;
     this.dispose = observeTableOverflow(scroller, this.table);
+  }
+  update(node: ProseMirrorNode) {
+    if (!super.update(node)) return false;
+    this.syncCaption();
+    return true;
+  }
+  private syncCaption() {
+    const text = String(this.node.attrs.caption ?? '');
+    if (!text) {
+      this.table.deleteCaption();
+      return;
+    }
+    const caption = this.table.createCaption();
+    caption.contentEditable = 'false';
+    if (caption.textContent !== text) caption.textContent = text;
   }
   destroy() { this.dispose(); }
 }

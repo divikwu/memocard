@@ -5,6 +5,7 @@ import { calloutColor, imageColumns } from './import-layout';
 import { calloutView, type CalloutIconTarget } from './rich-callout-view';
 import { imageRowView } from './rich-image-row-view';
 import { copyForNotion } from './rich-notion-clipboard';
+import { framedRichBlockView } from './rich-block-frame';
 
 export const semanticTags = ['mark', 'abbr', 'kbd', 'sup', 'sub', 'figure', 'figcaption', 'aside'];
 export function semanticExtensions(getEditor: () => Editor | null, editIcon?: (target: CalloutIconTarget) => void) {
@@ -82,6 +83,7 @@ export const FootnoteReference = Node.create({
 });
 export const FootnoteDefinition = Node.create({
   name: 'footnoteDefinition', group: 'block', content: 'block+', defining: true,
+  addNodeView: () => framedRichBlockView,
   addAttributes: () => ({ label: { default: '' } }),
   parseHTML: () => [{ tag: 'div[data-footnote-definition]' }],
   renderHTML: ({ node }) => ['div', { 'data-footnote-definition': node.attrs.label, class: 'rich-footnote' }, 0],

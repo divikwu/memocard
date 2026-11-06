@@ -34,6 +34,12 @@ async function setup(value: string, extra: Partial<RichEditorProps> = {}, page =
  await waitFor(()=> value.startsWith('<!--') ? expect(editor.state.doc.firstChild?.type.name).toBe('preservedMarkdown') : expect(editor.getText()).toContain(value.startsWith('#') ? '标题' : value.split('\n')[0].replace(/\[\^[^\]]+\]/g, '')));
  return {editor,field,change,save,rerender:rendered.rerender};
 }
+it('saves new underlines in a format shared by the editor and reading view', async () => {
+ const {editor,field,change}=await setup('word');
+ act(()=>{editor.chain().setTextSelection({from:1,to:5}).toggleUnderline().run();});
+ expect(field.querySelector('u')?.textContent).toBe('word');
+ expect(change).toHaveBeenLastCalledWith('<u>word</u>');
+});
 async function chooseCalloutColor(name: string) {
  fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
  await act(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>resolve())));
@@ -562,28 +568,24 @@ it('hides layout controls and refuses layout writes in a disabled editor',async(
  act(()=>editor.setEditable(true));expect(screen.getByRole('img',{name:'甲'}).draggable).toBe(true);
  act(()=>editor.setEditable(false));expect(screen.getByRole('img',{name:'甲'}).draggable).toBe(false);
 });
-it('uses the left block handle for a hovered grouped image and can drag the whole row with Alt',async()=>{
+it('uses the left block handle to drag the entire image row from either column',async()=>{
  const original='开头\n\n'+layoutImages+'\n\n![丙](../assets/c.png)';
  const {editor,field,change}=await setup(original);
  expect(screen.queryByRole('button',{name:'拖动图片 乙'})).toBeNull();
- const second=screen.getByRole('button',{name:'查看大图 乙'}),dom=editor.view.nodeDOM(imagePos(editor,'乙')) as HTMLElement;
- dom.getBoundingClientRect=()=>new DOMRect(350,100,280,400);
- second.getBoundingClientRect=()=>new DOMRect(350,100,280,400);
+ const frame=field.querySelector('.rich-image-row')!;
+ frame.getBoundingClientRect=()=>new DOMRect(60,100,570,400);
  const controls=field.closest('.rich-editor')!.querySelector<HTMLElement>('.block-controls')!;
  controls.getBoundingClientRect=()=>new DOMRect(0,0,20,28);
- fireEvent.mouseMove(second,{clientX:400,clientY:120});
- expect(controls.style.left).toBe('324px');
  const transfer={setData:vi.fn(),setDragImage:vi.fn(),effectAllowed:'',dropEffect:''};
- fireEvent.dragStart(screen.getByRole('button',{name:'内容块操作'}),{dataTransfer:transfer,altKey:true});
- expect(editor.state.doc.nodeAt(editor.state.selection.from)?.type.name).toBe('figure');
- fireEvent.dragEnd(screen.getByRole('button',{name:'内容块操作'}));
- fireEvent.mouseMove(second,{clientX:400,clientY:120});
- fireEvent.dragStart(screen.getByRole('button',{name:'内容块操作'}),{dataTransfer:transfer});
- const target=screen.getByRole('button',{name:'查看大图 丙'}).closest('.rich-image')!;
- field.getBoundingClientRect=()=>new DOMRect(0,0,700,900);target.getBoundingClientRect=()=>new DOMRect(0,600,300,200);
- fireEvent.drop(target,{clientX:290,clientY:700,dataTransfer:transfer});
- await waitFor(()=>expect([...field.querySelectorAll('img')].map(img=>img.getAttribute('alt'))).toEqual(['甲','丙','乙']));
- act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith(original);
+ const grip=screen.getByRole('button',{name:'内容块操作'});
+ for (const [alt,clientX] of [['甲',150],['乙',400]] as const) {
+  fireEvent.mouseMove(screen.getByRole('button',{name:`查看大图 ${alt}`}),{clientX,clientY:120});
+  expect(controls.style.getPropertyValue('--editor-block-left')).toBe('60px');
+  fireEvent.dragStart(grip,{dataTransfer:transfer});
+  expect(editor.state.doc.nodeAt(editor.state.selection.from)?.type.name).toBe('figure');
+  fireEvent.dragEnd(grip);
+ }
+ expect(change).not.toHaveBeenCalled();
 });
 it('moves an individual image before text without losing its former row caption',async()=>{
  const {editor,field,change}=await setup('开头\n\n'+layoutImages+'\n\n结束');
@@ -601,7 +603,7 @@ it('folds a heading section up to its next peer without changing Markdown or und
  fireEvent.click(toggle);
  expect(toggle.getAttribute('aria-expanded')).toBe('false');
  expect(field.querySelector('h3')?.getAttribute('hidden')).toBe('');
- expect([...field.querySelectorAll('p')].filter(p=>p.hasAttribute('hidden')).map(p=>p.textContent)).toEqual(['正文 A','子正文']);
+ expect([...field.querySelectorAll('.rich-paragraph-block[hidden]')].map(block=>block.textContent)).toEqual(['正文 A','子正文']);
  expect(field.querySelectorAll('h2')[1].hasAttribute('hidden')).toBe(false);
  expect(editor.getJSON()).toEqual(before);expect(change).not.toHaveBeenCalled();expect(save).not.toHaveBeenCalled();
  expect(editor.can().undo()).toBe(false);
@@ -614,7 +616,7 @@ it('reveals folded chapters when switching to mobile without changing content or
  vi.stubGlobal('matchMedia',vi.fn((query:string)=>query.includes('767px')?media:{matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()}));
  const {editor,field,change}=await setup('## 标题\n\n正文');
  fireEvent.click(await screen.findByRole('button',{name:'收起“标题”章节'}));
- expect(field.querySelector('p')?.hasAttribute('hidden')).toBe(true);
+ expect(field.querySelector('.rich-paragraph-block')?.hasAttribute('hidden')).toBe(true);
  const before=editor.getJSON();
  act(()=>{media.matches=true;resize();});
  expect(field.querySelector('[hidden]')).toBeNull();
@@ -650,7 +652,7 @@ it('keeps a folded heading closed while opening its block menu',async()=>{
  act(()=>{editor.commands.setNodeSelection(0);});
  fireEvent.click(screen.getByRole('button',{name:'内容块操作'}));
  expect(screen.getByRole('button',{name:'展开“标题”章节'})).toBeTruthy();
- expect(field.querySelector('p')?.hasAttribute('hidden')).toBe(true);
+ expect(field.querySelector('.rich-paragraph-block')?.hasAttribute('hidden')).toBe(true);
  expect(change).not.toHaveBeenCalled();
 });
 it('maps folds after preceding edits and refreshes heading labels',async()=>{
@@ -658,7 +660,7 @@ it('maps folds after preceding edits and refreshes heading labels',async()=>{
  fireEvent.click(await screen.findByRole('button',{name:'收起“标题”章节'}));
  act(()=>{editor.commands.insertContentAt(1,'新');});
  const toggle=await screen.findByRole('button',{name:'展开“标题”章节'});
- expect(field.querySelector('p[hidden]')?.textContent).toBe('正文');
+ expect(field.querySelector('.rich-paragraph-block[hidden]')?.textContent).toBe('正文');
  let heading=0;editor.state.doc.descendants((node,pos)=>{if(node.type.name==='heading')heading=pos;});
  act(()=>{editor.commands.insertContentAt(heading+1,'新');});
  expect(await screen.findByRole('button',{name:'展开“新标题”章节'})).toBeTruthy();
@@ -1450,25 +1452,25 @@ it.each([
  const {editor,field,change}=await setup(`开头\n\n${heading?'## 标题':'正文'}`);
  const root=field.closest('.rich-editor')!,pos=editor.state.doc.firstChild!.nodeSize;
  const block=editor.view.nodeDOM(pos) as HTMLElement;
- block.style.cssText=`padding:${padding}px 0;line-height:24px`;
+ const text=block.querySelector<HTMLElement>(heading?'.rich-heading-text':'p')!;
+ text.style.cssText=`padding:${padding}px 0;line-height:24px`;
  vi.spyOn(root,'getBoundingClientRect').mockReturnValue(new DOMRect(0,100,720,300));
- vi.spyOn(block,'getBoundingClientRect').mockReturnValue(new DOMRect(8,200,704,height));
+ vi.spyOn(text,'getBoundingClientRect').mockReturnValue(new DOMRect(8,200,704,height));
  act(()=>{editor.commands.setTextSelection(pos+1);});
  expect(screen.getByRole('button',{name:'内容块操作'}).parentElement!.style.top).toBe(`${expected}px`);
  expect(change).not.toHaveBeenCalled();
 });
-it('keeps the image block handle 6px before the visible image without changing vertical geometry',async()=>{
+it('anchors the image block handle to the top of its frame',async()=>{
  const {editor,field,change}=await setup('开头\n\n![图片](../assets/a.png)');
  const root=field.closest('.rich-editor')!,pos=editor.state.doc.firstChild!.nodeSize;
  const block=editor.view.nodeDOM(pos) as HTMLElement;
- block.style.cssText='padding:6px;line-height:24px';
+ block.style.cssText='padding:2px;line-height:24px';
  vi.spyOn(root,'getBoundingClientRect').mockReturnValue(new DOMRect(0,100,720,300));
- vi.spyOn(block,'getBoundingClientRect').mockReturnValue(new DOMRect(8,200,704,60));
- vi.spyOn(block.querySelector<HTMLElement>('.ui-note-image')!,'getBoundingClientRect').mockReturnValue(new DOMRect(64,200,480,60));
+ vi.spyOn(block,'getBoundingClientRect').mockReturnValue(new DOMRect(62,198,484,64));
  const controls=screen.getByRole('button',{name:'内容块操作'}).parentElement!;
  vi.spyOn(controls,'getBoundingClientRect').mockReturnValue(new DOMRect(0,0,20,28));
  act(()=>{editor.commands.setNodeSelection(pos);});
- expect(controls.style.top).toBe('112px');expect(controls.style.left).toBe('38px');
+ expect(controls.style.top).toBe('120px');expect(controls.style.getPropertyValue('--editor-block-left')).toBe('62px');
  expect(change).not.toHaveBeenCalled();
 });
 it('targets the hovered block when opening its properties from a different caret',async()=>{

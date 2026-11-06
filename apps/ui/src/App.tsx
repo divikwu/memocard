@@ -22,11 +22,17 @@ import { isIOSNative } from "./ios-mode";
 type View = "home" | "notes" | "tags" | "settings" | "trash";
 type TagCount = { name: string; count: number };
 const getView = (): View => window.location.hash === "#/trash" ? "trash" : window.location.hash === "#/settings" ? "settings" : window.location.hash === "#/tags" ? "tags" : window.location.hash.startsWith("#/notes") ? "notes" : "home";
+function getNoteRouteId(hash: string) {
+  const encoded = /^#\/notes\/([^/]+)$/.exec(hash)?.[1];
+  if (!encoded) return null;
+  try { return decodeURIComponent(encoded); } catch { return null; }
+}
 const bridgeErrorCode = (error: unknown): string | null => typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" ? error.code : null;
 const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error === "object" && error !== null && "retryable" in error && typeof error.retryable === "boolean" ? error.retryable : null;
 // Web/H5 can replace the view while sharing the existing request, route and draft lifecycle.
 export type AppViewState = {
   view: View; title: string; backLabel: string; isMobile: boolean; detailView: boolean; openingNote: boolean;
+  openingNoteId?: string; openingTitle?: string;
   loading: boolean; working: boolean; switchingVault: boolean; refreshingPages: boolean;
   status: VaultStatus | null; environment: Environment | null; capabilities: Set<string>;
   error: unknown; notice: string; selectionNotice: string; pinReadError: unknown;
@@ -96,7 +102,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const routeHandler = useRef<() => void>(() => {});
   const routeLoading = useRef('');
   const attemptedRoute = useRef('');
-  const [pendingRoute, setPendingRoute] = useState<string | null>(() => /^#\/notes\/[^/]+$/.test(window.location.hash) ? window.location.hash : null);
+  const [pendingNoteId, setPendingNoteId] = useState(() => getNoteRouteId(window.location.hash));
   const returnFocus = useRef<HTMLElement | null>(null);
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
@@ -160,7 +166,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     if (editingRef.current && (!editorHandle.current || !(await editorHandle.current.flush()))) return false;
     editorGeneration.current++;
     editingRef.current = null; setEditing(null);
-    setPendingRoute(null); setWorking(false);
+    setPendingNoteId(null); setWorking(false);
     editorHash.current = '';
     attemptedRoute.current = '';
     window.history.replaceState(null, '', `#/${returnView.current}`);
@@ -214,9 +220,8 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       listKey = JSON.stringify([nextStatus.vaultId, resetFilters ? "" : debouncedQuery, resetFilters ? null : tag, resetFilters ? null : quickFilter, view, homeTab]);
       if (connectionLost.current) { connectionLost.current = false; setError(""); }
       const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
-      const deepLink = /^#\/notes\/([^/]+)$/.exec(window.location.hash);
-      if (nextStatus.connected && !editingRef.current && deepLink && deepLink[1] !== "new" && allowed.has("getNote")) {
-        const id = decodeURIComponent(deepLink[1]);
+      const id = getNoteRouteId(window.location.hash);
+      if (nextStatus.connected && !editingRef.current && id && window.location.hash !== "#/notes/new" && allowed.has("getNote")) {
         const promise = request<Note & { vaultBinding?: string }>("getNote", { id });
         void promise.catch(() => undefined);
         routeNoteRequest.current = { id, generation: current, promise };
@@ -415,7 +420,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     setView(returnView.current);
     editingRef.current = draft;
     setEditing({ ...draft, note });
-    setPendingRoute(null);
+    setPendingNoteId(null);
     setWorking(false);
   }, [view]);
 
@@ -433,7 +438,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     const hash = `#/notes/${id}`;
     editorHash.current = hash; attemptedRoute.current = hash;
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
-    setPendingRoute(hash); setView(returnView.current); setMenuOpen(false);
+    setPendingNoteId(id); setView(returnView.current); setMenuOpen(false);
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
     const candidates = drafts.filter(item => item.id === id && !item.unscoped);
     const pending = draft ?? (candidates.length === 1 ? candidates[0] : undefined);
@@ -469,7 +474,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     editorGeneration.current++;
     editingRef.current = null;
     setEditing(null);
-    setPendingRoute(null);
+    setPendingNoteId(null);
     editorHash.current = '';
     attemptedRoute.current = '';
     window.history.replaceState(null, '', `#/${returnView.current}`);
@@ -569,12 +574,13 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     : status.coverage.issues > 0 ? `${status.coverage.issues} 个文件需处理`
     : status.coverage.pending > 0 ? `${status.coverage.pending} 个文件待读取`
     : !status.coverage.complete ? "部分文件待读取" : "已连接文件夹";
-  const openingNote = !editing && pendingRoute !== null && (loading || Boolean(status?.connected));
+  const openingNote = !editing && pendingNoteId !== null && (loading || Boolean(status?.connected));
   const detailView = Boolean(editing) || openingNote;
   const showMobileRecord = !detailView && (view === "home" || view === "notes");
   const detailReadFailed = openingNote && Boolean(error) && !localWebReconnectRequired;
   const canRetryDetail = retryableError && bridgeErrorCode(error) !== "NOTE_NOT_FOUND";
-  const openingTitle = pendingRoute ? notes.find(note => note.id === decodeURIComponent(pendingRoute.slice("#/notes/".length)))?.title?.trim() : undefined;
+  const openingNoteId = openingNote ? pendingNoteId : undefined;
+  const openingTitle = openingNoteId ? notes.find(note => note.id === openingNoteId)?.title?.trim() : undefined;
   const connectionState = !detailView && view !== "settings" && view !== "tags" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
   const listTimeoutVisible = !detailView && view !== "settings" && view !== "tags" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
   const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "tags" ? "标签" : view === "home" ? "主页" : tag ? `# ${tag}` : quickFilter ? noteFilterLabels[quickFilter] : "所有笔记";
@@ -694,15 +700,15 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       if (requested === editorHash.current || routeLoading.current === requested) return;
       routeLoading.current = requested;
       attemptedRoute.current = requested;
-      setPendingRoute(/^#\/notes\/[^/]+$/.test(requested) ? requested : null);
+      const noteId = getNoteRouteId(requested);
+      setPendingNoteId(noteId);
       void (async () => {
-        if (!(await leaveEditor())) { setPendingRoute(null); window.history.replaceState(null, '', editorHash.current); return; }
+        if (!(await leaveEditor())) { setPendingNoteId(null); window.history.replaceState(null, '', editorHash.current); return; }
         openingLink.current = null;
         window.history.replaceState(null, '', requested);
-        const match = /^#\/notes\/([^/]+)$/.exec(requested);
-        if (match && status?.connected) {
-          if (match[1] === 'new') await newNote();
-          else await openNote(decodeURIComponent(match[1]));
+        if (noteId && status?.connected) {
+          if (requested === '#/notes/new') await newNote();
+          else await openNote(noteId);
         } else {
           setView(getView()); setMenuOpen(false);
           if (getView() === 'home') { setCaptureOpened(true); setQuery(''); setDebouncedQuery(''); setTag(null); setQuickFilter(null); }
@@ -793,7 +799,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const onRequestDelete = editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => setNoteToDelete({ id: editing.id, title, vaultId: status.vaultId!, vaultBinding: editing.vaultBinding ?? environment?.vaultBinding }) : undefined;
   return <TagColorProvider vaultId={status?.vaultId}>{renderView({
     view, title, backLabel: isMobile && searchNoteReturn.current ? "返回搜索结果" : returnView.current === "home" ? "返回主页" : "返回笔记列表", isMobile, detailView, openingNote, loading, working, switchingVault, refreshingPages,
-    status, environment, capabilities, error, notice, selectionNotice, pinReadError, needsPermission, unsupportedBrowser,
+    openingNoteId, openingTitle, status, environment, capabilities, error, notice, selectionNotice, pinReadError, needsPermission, unsupportedBrowser,
     localWebReconnectRequired, connectionState, detailReadFailed, canRetryDetail,
     retryableError, canRefresh: isConnectedClient && !loading && !working,
     pinRetryDisabled: pinWorking || refreshingPages || switchingVault,
@@ -807,7 +813,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     onNavigate: navigate, onBack: () => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish(),
     onNew: newNote, onSearch: searchNotes, onRefresh: refreshCurrentView, onRefreshBackground: () => void refresh(true),
     onToggleMCP: toggleMCP, onOpenLocalWeb: openLocalWeb,
-    onRetryDetail: () => { routeNoteRequest.current = null; if (pendingRoute) void openNote(decodeURIComponent(pendingRoute.slice("#/notes/".length))); },
+    onRetryDetail: () => { routeNoteRequest.current = null; if (pendingNoteId) void openNote(pendingNoteId); },
     drafts: { open: recoveryOpen, onOpenChange: changeRecoveryOpen, records: recoveryRecords, issues: draftIssues, busy: reminderWorking,
       error: recoveryError, onRefresh: refreshDrafts, onResume: resumeDraft, onDismiss: dismissDraftReminder,
       onDelete: draft => { setRecoveryError(null); if (status?.vaultId) setDraftToDelete({draft, vaultId: status.vaultId, vaultBinding: draft.vaultBinding ?? environment?.vaultBinding}); },

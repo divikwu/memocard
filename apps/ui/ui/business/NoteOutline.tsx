@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createPortal } from "react-dom";
 import { useEditorState, type Editor } from "@tiptap/react";
 import { TextSelection } from "@tiptap/pm/state";
-import { richBlockHighlightPath } from "../../src/rich-block-highlight";
+import { richBlockBounds, richBlockHighlightPath } from "../../src/rich-block-frame";
 import { useIsMobile } from "../hooks/use-mobile";
 import { Button } from "../components/button";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "../components/popover";
@@ -64,7 +64,7 @@ function OutlineNavigation({ editor, headings, host, scroller }: { editor: Edito
       let current: number | undefined = visible[0]?.item.pos;
       for (const { item, target } of visible) {
         // Native scroll offsets can round a fractional heading position to a device pixel.
-        if (target!.getBoundingClientRect().top > top + 1) break;
+        if (richBlockBounds(target!).top > top + 1) break;
         current = item.pos;
       }
       const requested = jumpTarget.current;
@@ -107,7 +107,7 @@ function OutlineNavigation({ editor, headings, host, scroller }: { editor: Edito
     const target = targetAt(heading.pos);
     if (!target) return;
     const padding = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 56;
-    scroller.scrollTo({ top: scroller.scrollTop + target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - padding - 8, behavior: "instant" });
+    scroller.scrollTo({ top: scroller.scrollTop + richBlockBounds(target).top - scroller.getBoundingClientRect().top - padding - 8, behavior: "instant" });
     jumpTarget.current = { element: target, scrollTop: scroller.scrollTop };
     setActive(heading.pos);
     flashTarget.current = target;

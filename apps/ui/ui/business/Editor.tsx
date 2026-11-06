@@ -3,6 +3,7 @@ import { Button } from '../components/button';
 import { PageNotice } from './PageNotice';
 import NoteProperties from './NoteProperties';
 import { RichMarkdownEditor } from './RichMarkdownEditor';
+import './NotePageTitle.css';
 import './Editor.css';
 
 export type { EditorHandle, EditorProps } from '../../src/editor-core';

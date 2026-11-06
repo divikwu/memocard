@@ -9,6 +9,7 @@
       "--text-base--line-height": "calc(1.5 / 1)",
       "--text-lg--line-height": "calc(1.75 / 1.125)",
       "--text-xl--line-height": "calc(1.75 / 1.25)",
+      "--text-2xl--line-height": "calc(2 / 1.5)",
       "--font-weight-normal": "400",
       "--font-weight-medium": "500",
       "--font-weight-semibold": "600",
@@ -102,22 +103,22 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-drag-preview)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu kbd)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu-filter)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
@@ -243,47 +244,47 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu), :where(.ui-rich-ui) :is(.block-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-menu)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-inline-tools)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-math-input)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-preserved-label)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-properties)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-table-tools)",
           "value": "var(--font-family-body)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestions)",
           "value": "var(--font-family-body)"
         },
         {
@@ -342,12 +343,6 @@
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-body)",
           "variable": "--typeset-font-body"
-        },
-        {
-          "source": "apps/ui/ui/web/web-typography.css",
-          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
-          "value": "var(--font-family-body)",
-          "variable": "--typeset-font-body"
         }
       ]
     },
@@ -358,17 +353,17 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/note-content.css",
-          "scope": ".note-mermaid-source pre",
+          "scope": ".note-mermaid-panel .note-mermaid-source pre",
           "value": "var(--font-family-code)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-formula input), :where(.ui-rich-ui) :is(.rich-formula input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-formula input)",
           "value": "var(--font-family-code)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-math-input input), :where(.ui-rich-ui) :is(.rich-math-input input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-math-input input)",
           "value": "var(--font-family-code)"
         },
         {
@@ -413,11 +408,6 @@
         "font-heading"
       ],
       "locations": [
-        {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .note-page-title",
-          "value": "var(--font-family-heading)"
-        },
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-confirm > h2",
@@ -539,16 +529,36 @@
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings-title",
           "value": "var(--font-family-heading)"
-        },
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--note-font-body, var(--font-family-body))",
+      "utilities": [],
+      "locations": [
         {
           "source": "apps/ui/ui/web/web-typography.css",
-          "scope": ":root[data-web-typography] .ui-note-editor textarea.note-page-title",
-          "value": "var(--font-family-heading)"
+          "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
+          "value": "var(--note-font-body, var(--font-family-body))",
+          "variable": "--typeset-font-body"
+        }
+      ]
+    },
+    {
+      "property": "font-family",
+      "value": "var(--note-font-heading, var(--font-family-heading))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/NotePageTitle.css",
+          "scope": ".note-page-title",
+          "value": "var(--note-font-heading, var(--font-family-heading))"
         },
         {
           "source": "apps/ui/ui/web/web-typography.css",
           "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard",
-          "value": "var(--font-family-heading)",
+          "value": "var(--note-font-heading, var(--font-family-heading))",
           "variable": "--typeset-font-heading"
         }
       ]
@@ -719,7 +729,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h4, h5, h6)",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h5, h6)",
           "value": "1em"
         },
         {
@@ -927,6 +937,30 @@
     },
     {
       "property": "font-size",
+      "value": "calc(1em - 0.25rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) → & :where(sup, sub)",
+          "value": "calc(1em - 0.25rem)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "calc(1em - 0.125rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) → & :where(code:not(pre code), kbd)",
+          "value": "calc(1em - 0.125rem)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
       "value": "calc(var(--typeset-size) * 1.125)",
       "utilities": [],
       "locations": [
@@ -969,22 +1003,22 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-drag-preview)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu kbd)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu-filter)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
@@ -1007,7 +1041,9 @@
     {
       "property": "font-size",
       "value": "var(--font-size-2xl)",
-      "utilities": [],
+      "utilities": [
+        "text-2xl"
+      ],
       "locations": [
         {
           "source": "apps/ui/ui/business/trash.css",
@@ -1017,6 +1053,11 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-1",
+          "value": "var(--font-size-2xl)"
+        },
+        {
+          "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+          "scope": "text-2xl",
           "value": "var(--font-size-2xl)"
         },
         {
@@ -1110,11 +1151,6 @@
           "value": "var(--font-size-base)"
         },
         {
-          "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .rich-editor-content, .ui-note-search-preview-content *) table",
-          "value": "var(--font-size-base)"
-        },
-        {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-heading h2",
           "value": "var(--font-size-base)"
@@ -1131,7 +1167,7 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
           "value": "var(--font-size-base)"
         },
         {
@@ -1277,8 +1313,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .note-page-title",
+          "source": "apps/ui/ui/business/NotePageTitle.css",
+          "scope": ".note-page-title",
           "value": "var(--font-size-note-title)"
         }
       ]
@@ -1330,11 +1366,6 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown table",
-          "value": "var(--font-size-sm)"
-        },
-        {
           "source": "apps/ui/ui/business/MobileTagActions.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1346,7 +1377,7 @@
         },
         {
           "source": "apps/ui/ui/business/note-content.css",
-          "scope": ".note-mermaid-source pre",
+          "scope": ".note-mermaid-panel .note-mermaid-source pre",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1417,12 +1448,17 @@
         },
         {
           "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, [data-footnotes])",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, .footnotes, [data-footnotes])",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) table",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1482,52 +1518,52 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu), :where(.ui-rich-ui) :is(.block-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-footnote), :where(.ui-rich-ui) :is(.rich-footnote)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-footnote)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-menu)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-inline-tools)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-math-input)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-properties)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-table-tools)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestion-empty), :where(.ui-rich-ui) :is(.rich-tag-suggestion-empty)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestion-empty)",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestions)",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1767,7 +1803,7 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-callout-icon), :where(.ui-rich-ui) :is(.rich-callout-icon)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-callout-icon)",
           "value": "var(--font-size-xl)"
         },
         {
@@ -1852,6 +1888,11 @@
           "value": "var(--font-size-xs)"
         },
         {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": "[data-small-text] .ui-note-markdown:not([data-compact]) → & :is(pre, table)",
+          "value": "var(--font-size-xs)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-cards .ui-note-tags .ui-note-tag",
           "value": "var(--font-size-xs)"
@@ -1898,47 +1939,47 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu kbd)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu-label), :where(.ui-rich-ui) :is(.block-menu-label)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu-label)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-block-menu-note), :where(.ui-rich-ui) :is(.rich-block-menu-note)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-block-menu-note)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-callout-color-label), :where(.ui-rich-ui) :is(.rich-callout-color-label)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-callout-color-label)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-hint, .rich-format-error), :where(.ui-rich-ui) :is(.rich-format-hint, .rich-format-error)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-hint, .rich-format-error)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-preview), :where(.ui-rich-ui) :is(.rich-format-preview)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-preview)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-link-results small), :where(.ui-rich-ui) :is(.rich-link-results small)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-link-results small)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-preserved-label)",
           "value": "var(--font-size-xs)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestion-hint), :where(.ui-rich-ui) :is(.rich-tag-suggestion-hint)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestion-hint)",
           "value": "var(--font-size-xs)"
         },
         {
@@ -2037,6 +2078,11 @@
           "value": "var(--font-size-xs)"
         },
         {
+          "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings-working",
           "value": "var(--font-size-xs)"
@@ -2050,37 +2096,49 @@
     },
     {
       "property": "font-size",
-      "value": "var(--note-h1-size, 1.875rem)",
+      "value": "var(--note-h1-size, 2rem)",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h1",
-          "value": "var(--note-h1-size, 1.875rem)"
+          "value": "var(--note-h1-size, 2rem)"
         }
       ]
     },
     {
       "property": "font-size",
-      "value": "var(--note-h2-size, 1.5rem)",
+      "value": "var(--note-h2-size, 1.625rem)",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h2",
-          "value": "var(--note-h2-size, 1.5rem)"
+          "value": "var(--note-h2-size, 1.625rem)"
         }
       ]
     },
     {
       "property": "font-size",
-      "value": "var(--note-h3-size, 1.25rem)",
+      "value": "var(--note-h3-size, 1.375rem)",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h3",
-          "value": "var(--note-h3-size, 1.25rem)"
+          "value": "var(--note-h3-size, 1.375rem)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--note-h4-size, 1.125rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h4",
+          "value": "var(--note-h4-size, 1.125rem)"
         }
       ]
     },
@@ -2272,67 +2330,67 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu button), :where(.ui-rich-ui) :is(.block-menu button)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu button)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu-label), :where(.ui-rich-ui) :is(.block-menu-label)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu-label)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-menu)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-inline-tools)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-link-results button), :where(.ui-rich-ui) :is(.rich-link-results button)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-link-results button)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-math-input)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-preserved-label)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-properties)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-table-tools)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions button), :where(.ui-rich-ui) :is(.rich-tag-suggestions button)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestions button)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestions)",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2727,11 +2785,6 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .note-page-title",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "var(--font-weight-semibold)"
@@ -2742,18 +2795,23 @@
           "value": "var(--font-weight-semibold)"
         },
         {
+          "source": "apps/ui/ui/business/NotePageTitle.css",
+          "scope": ".note-page-title",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-callout-swatch), :where(.ui-rich-ui) :is(.rich-callout-swatch)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-callout-swatch)",
           "value": "var(--font-weight-semibold)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-editor-content tr[data-footer]), :where(.ui-rich-ui) :is(.rich-editor-content tr[data-footer])",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-editor-content tr[data-footer])",
           "value": "var(--font-weight-semibold)"
         },
         {
@@ -2875,22 +2933,22 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-drag-preview)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu kbd)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu-filter)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
@@ -2917,7 +2975,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/note-content.css",
-          "scope": ".note-mermaid-source pre",
+          "scope": ".note-mermaid-panel .note-mermaid-source pre",
           "value": "normal"
         }
       ]
@@ -2948,7 +3006,7 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-callout-icon), :where(.ui-rich-ui) :is(.rich-callout-icon)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-callout-icon)",
           "value": "1"
         },
         {
@@ -2963,6 +3021,11 @@
         },
         {
           "source": "apps/ui/ui/components/label.tsx",
+          "scope": "leading-none",
+          "value": "1"
+        },
+        {
+          "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
           "scope": "leading-none",
           "value": "1"
         }
@@ -3263,30 +3326,52 @@
     },
     {
       "property": "line-height",
+      "value": "1.125rem",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": "[data-small-text] .ui-note-markdown:not([data-compact]) → & pre",
+          "value": "1.125rem"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
       "value": "1.25rem",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, [data-footnotes])",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(figcaption, caption, .rich-footnote, .footnotes, [data-footnotes])",
+          "value": "1.25rem"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) → & :where(.rich-preserved-label, .note-image-message), & :where(.typeset-scroll[data-overflow=\"true\"])::after",
           "value": "1.25rem"
         },
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) pre",
           "value": "1.25rem"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) table",
+          "value": "1.25rem"
         }
       ]
     },
     {
       "property": "line-height",
-      "value": "1.375rem",
+      "value": "calc(1lh - 0.25rem)",
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .ui-note-markdown table",
-          "value": "1.375rem"
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) → & :where(code:not(pre code), kbd)",
+          "value": "calc(1lh - 0.25rem)"
         }
       ]
     },
@@ -3363,22 +3448,22 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-drag-preview), :where(.ui-rich-ui) :is(.block-drag-preview)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-drag-preview)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu kbd), :where(.ui-rich-ui) :is(.block-menu kbd)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu kbd)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu-filter), :where(.ui-rich-ui) :is(.block-menu-filter)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu-filter)",
           "value": "inherit"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-insert-search input), :where(.ui-rich-ui) :is(.rich-insert-search input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-insert-search input)",
           "value": "inherit"
         },
         {
@@ -3407,42 +3492,37 @@
     },
     {
       "property": "line-height",
-      "value": "var(--note-h2-line-height, 2rem)",
+      "value": "var(--note-h2-line-height, 2.125rem)",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h2",
-          "value": "var(--note-h2-line-height, 2rem)"
+          "value": "var(--note-h2-line-height, 2.125rem)"
         }
       ]
     },
     {
       "property": "line-height",
-      "value": "var(--note-h3-line-height, 1.625rem)",
+      "value": "var(--note-h3-line-height, 1.75rem)",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h3",
-          "value": "var(--note-h3-line-height, 1.625rem)"
+          "value": "var(--note-h3-line-height, 1.75rem)"
         }
       ]
     },
     {
       "property": "line-height",
-      "value": "var(--note-leading, 1.5)",
+      "value": "var(--note-h4-line-height, 1.5rem)",
       "utilities": [],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *)",
-          "value": "var(--note-leading, 1.5)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h4, h5, h6)",
-          "value": "var(--note-leading, 1.5)"
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) h4",
+          "value": "var(--note-h4-line-height, 1.5rem)"
         }
       ]
     },
@@ -3469,6 +3549,28 @@
           "scope": ":root[data-web-typography] .ui-note-markdown.typeset-memocard:not([data-compact])",
           "value": "var(--note-leading, var(--text-reading-leading))",
           "variable": "--typeset-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--note-line-height, 1.5rem)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/Editor.css",
+          "scope": ".ui-note-editor .ui-rich-ui.rich-editor",
+          "value": "var(--note-line-height, 1.5rem)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *)",
+          "value": "var(--note-line-height, 1.5rem)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h5, h6)",
+          "value": "var(--note-line-height, 1.5rem)"
         }
       ]
     },
@@ -3565,57 +3667,57 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.block-menu), :where(.ui-rich-ui) :is(.block-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.block-menu)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-footnote), :where(.ui-rich-ui) :is(.rich-footnote)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-footnote)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-header h2), :where(.ui-rich-ui) :is(.rich-format-header h2)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-hint, .rich-format-error), :where(.ui-rich-ui) :is(.rich-format-hint, .rich-format-error)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-hint, .rich-format-error)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-format-menu), :where(.ui-rich-ui) :is(.rich-format-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-menu)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-inline-tools), :where(.ui-rich-ui) :is(.rich-inline-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-inline-tools)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-math-input), :where(.ui-rich-ui) :is(.rich-math-input)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-math-input)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-menu.rich-insert-menu, .rich-block-menu), :where(.ui-rich-ui) :is(.rich-menu.rich-insert-menu, .rich-block-menu)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-menu.rich-insert-menu, .rich-block-menu)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-properties), :where(.ui-rich-ui) :is(.rich-properties)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-properties)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-table-tools), :where(.ui-rich-ui) :is(.rich-table-tools)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-table-tools)",
           "value": "var(--text-body-leading)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-tag-suggestions), :where(.ui-rich-ui) :is(.rich-tag-suggestions)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestions)",
           "value": "var(--text-body-leading)"
         },
         {
@@ -3813,8 +3915,8 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/business/Editor.css",
-          "scope": ".ui-note-editor .note-page-title",
+          "source": "apps/ui/ui/business/NotePageTitle.css",
+          "scope": ".note-page-title",
           "value": "var(--text-note-title-leading)"
         }
       ]
@@ -3844,7 +3946,7 @@
         },
         {
           "source": "apps/ui/ui/business/note-content.css",
-          "scope": ".note-mermaid-source pre",
+          "scope": ".note-mermaid-panel .note-mermaid-source pre",
           "value": "var(--text-supporting-leading)"
         },
         {
@@ -3885,7 +3987,7 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui):is(.rich-preserved-label), :where(.ui-rich-ui) :is(.rich-preserved-label)",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-preserved-label)",
           "value": "var(--text-supporting-leading)"
         },
         {
@@ -3903,6 +4005,20 @@
           "scope": ":root[data-web-typography] .ui-note-search-preview-content .ui-note-markdown.typeset-memocard",
           "value": "var(--text-supporting-leading)",
           "variable": "--typeset-leading"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--tw-leading, var(--text-2xl--line-height))",
+      "utilities": [
+        "text-2xl"
+      ],
+      "locations": [
+        {
+          "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+          "scope": "text-2xl",
+          "value": "var(--tw-leading, var(--text-2xl--line-height))"
         }
       ]
     },
@@ -4300,6 +4416,11 @@
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
         {
+          "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--text-xs--line-height))"
+        },
+        {
           "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
@@ -4475,6 +4596,12 @@
       "expression": "`\"Geist Variable\", ${sansFallback}`",
       "source": "apps/ui/ui/preview-fonts.ts",
       "scope": "line 9"
+    },
+    {
+      "property": "font-family",
+      "expression": "getPreviewFont(choice.value).fontFamily",
+      "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+      "scope": "line 14"
     }
   ],
   "native": [
