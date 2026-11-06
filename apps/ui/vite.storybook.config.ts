@@ -14,7 +14,7 @@ export default defineConfig({
     "@tanstack/react-virtual", "react-markdown", "rehype-katex", "rehype-raw", "rehype-sanitize", "remark-gfm", "remark-math",
     ...[
       "BookOpen01", "Bookmark01", "CheckmarkCircle02", "Code", "Comment01", "Database01", "Fire", "Gift",
-      "Headphones", "Home01", "Leaf01", "Location01", "Mail01", "Moon02", "MusicNote01", "Star", "Sun01",
+      "Headphones", "Home01", "Leaf01", "Location01", "Mail01", "Moon02", "MusicNote01", "Star", "Subtitle", "Sun01",
       "Target01", "Task01", "UserGroup",
     ].map(icon => `@hugeicons/core-free-icons/${icon}Icon`),
   ] },
