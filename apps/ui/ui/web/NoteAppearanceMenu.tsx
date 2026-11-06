@@ -10,7 +10,7 @@ import { noteFontChoices, type NoteFont, type useNoteAppearance } from "./note-a
 function FontChoices({ label, value, onChange }: { label: string; value: NoteFont; onChange: (font: NoteFont) => void }) {
   return <DropdownMenuRadioGroup className="grid grid-cols-3 gap-1 p-1" value={value} onValueChange={next => onChange(next as NoteFont)}>
     <DropdownMenuLabel className="col-span-full p-1">{label}</DropdownMenuLabel>
-    {noteFontChoices.map(choice => <DropdownMenuRadioItem key={choice.value} value={choice.value} closeOnClick={false} className="web-note-font-choice flex-col gap-1 px-1 py-2 text-xs">
+    {noteFontChoices.map(choice => <DropdownMenuRadioItem key={choice.value} value={choice.value} closeOnClick={false} className="web-note-font-choice flex-col gap-2 px-1 py-3 text-xs">
       <span className="text-2xl leading-none" aria-hidden="true" style={{ fontFamily: getPreviewFont(choice.value).fontFamily }}>Ag</span>
       {choice.label}
     </DropdownMenuRadioItem>)}

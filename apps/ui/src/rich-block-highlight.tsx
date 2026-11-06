@@ -4,7 +4,7 @@ import { AllSelection, NodeSelection } from '@tiptap/pm/state';
 import { BlockRangeSelection } from './rich-block-selection';
 import { richBlockHighlightPath } from './rich-block-frame';
 
-const selectedBlock = '.rich-selected-block, .ProseMirror-selectednode';
+export const selectedRichBlockSelector = '.rich-selected-block, .ProseMirror-selectednode';
 
 export function RichBlockHighlight({ editor, root }: { editor: Editor; root: RefObject<HTMLDivElement | null> }) {
   const { selection, doc } = useEditorState({ editor, selector: ({ editor }) => ({ selection: editor.state.selection, doc: editor.state.doc }) });
@@ -13,8 +13,8 @@ export function RichBlockHighlight({ editor, root }: { editor: Editor; root: Ref
   useLayoutEffect(() => {
     const host = root.current;
     if (!host || !active) return;
-    const elements = Array.from(editor.view.dom.querySelectorAll<HTMLElement>(selectedBlock))
-      .filter(element => !element.parentElement?.closest(selectedBlock));
+    const elements = Array.from(editor.view.dom.querySelectorAll<HTMLElement>(selectedRichBlockSelector))
+      .filter(element => !element.parentElement?.closest(selectedRichBlockSelector));
     let frame = 0;
     const update = () => {
       frame = 0;

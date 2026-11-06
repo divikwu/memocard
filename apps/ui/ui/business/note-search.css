@@ -24,9 +24,14 @@
 .ui-note-search-preview-content .ui-note-markdown pre { font-weight: var(--font-weight-normal); }
 .ui-note-search-preview-content .ui-note-markdown :is(sup,sub) { font-size: var(--font-size-xs); }
 .ui-note-search-preview-content .ui-note-markdown hr { margin-block-start: calc(var(--spacing-1) * 5); }
-.ui-note-search-preview-content .ui-note-markdown figure[data-image-columns] { gap: calc(var(--spacing-1) * 2); align-items: stretch; }
-.ui-note-search-preview-content .ui-note-markdown figure[data-image-columns] .ui-note-image { height: 100%; }
-.ui-note-search-preview-content .ui-note-markdown figure[data-image-columns] img { height: 100%; object-fit: cover; }
+.ui-note-search-preview-content .ui-note-markdown figure[data-image-columns] {
+  gap: calc(var(--spacing-1) * 2);
+  &:not(:has(.note-image-caption)) {
+    align-items: stretch;
+    & :is(.ui-note-image, img) { height: 100%; }
+    & img { object-fit: cover; }
+  }
+}
 .ui-note-search-preview-content .ui-note-markdown :is(figure[data-image-columns],p:has(> .ui-note-image)) { margin-block-start: calc(var(--spacing-1) * 2); }
 @media (min-width: 640px) { .ui-note-search-field { padding-inline: calc(var(--spacing-1) * 5); } }
 @media (min-width: 1024px) and (min-height: 480px) { .ui-note-search-preview { display: flex; flex-direction: column; width: calc((min(64rem,100vw - 2rem) - 2px) * .38); } }

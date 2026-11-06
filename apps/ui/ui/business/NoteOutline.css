@@ -8,7 +8,7 @@
 .ui-note-outline-popup ol { list-style: none; margin: 0; padding: 0; }
 .ui-note-outline-popup li { padding-inline-start: calc(min(var(--outline-depth), 4) * var(--spacing-1) * 3); }
 .ui-note-outline-popup .ui-note-outline-link { display: block; width: 100%; height: auto; min-height: var(--size-element-sm); padding: var(--spacing-1) calc(var(--spacing-1) * 2); white-space: normal; overflow-wrap: anywhere; text-align: start; text-wrap: pretty; font-size: var(--font-size-sm); font-weight: var(--font-weight-normal); line-height: var(--text-body-leading); border-radius: var(--radius-element); color: var(--color-text-secondary); }
-.ui-note-outline-popup .ui-note-outline-link[aria-current] { color: var(--color-text-blue); background: var(--color-overlay-hover); }
+.ui-note-outline-popup .ui-note-outline-link[aria-current] { color: var(--color-text-accent); background: var(--color-overlay-hover); font-weight: var(--font-weight-semibold); }
 .ui-note-outline-highlight { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
 @media (forced-colors: active) { .ui-note-outline-marks > span { background: GrayText; } .ui-note-outline-marks > span[data-active] { background: Highlight; } .ui-note-outline-popup .ui-note-outline-link[aria-current] { color: Highlight; outline: 1px solid Highlight; } }
 @media (max-width: 767px) { .ui-note-outline, .ui-note-outline-popup, .ui-note-outline-highlight { display: none; } }

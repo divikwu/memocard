@@ -2189,7 +2189,19 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
           expect(toolbarGroup!.getBoundingClientRect().height).toBe(40);
           checkFrame(toolbarGroup!);
           for (const tab of tabs) { expect(tab.getBoundingClientRect().width).toBe(36); expect(tab.getBoundingClientRect().height).toBe(36); }
-        } else { expect(toolbarGroup).toBeNull(); expect(tablist.getBoundingClientRect().height).toBe(36); }
+        } else {
+          expect(toolbarGroup?.dataset.size).toBe("compact");
+          expect(toolbarGroup!.getBoundingClientRect().width).toBe(96);
+          expect(toolbarGroup!.getBoundingClientRect().height).toBe(32);
+          expect(getComputedStyle(tablist).columnGap).toBe("4px");
+          expect(getComputedStyle(toolbarGroup!).padding).toBe("2px");
+          expect(getComputedStyle(toolbarGroup!).borderRadius).toBe("8px");
+          for (const tab of tabs) {
+            expect(tab.getBoundingClientRect().width).toBe(28);
+            expect(tab.getBoundingClientRect().height).toBe(28);
+            expect(getComputedStyle(tab).borderRadius).toBe("4px");
+          }
+        }
         tabs[0].focus();
         await userEvent.keyboard("{ArrowRight}");
         expect(tabs[1].getAttribute("aria-selected")).toBe("true");
@@ -2207,14 +2219,21 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         await userEvent.hover(imageLayout.closest(".rich-image")!);
         const imageTools = imageLayout.closest<HTMLElement>(".rich-image-tools")!;
         await waitFor(() => expect(getComputedStyle(imageTools).opacity).toBe("1"));
-        expect(imageTools.getAttribute("data-slot")).toBe(grouped ? "action-group" : null);
-        expect(imageLayout.getBoundingClientRect().width).toBe(grouped ? 36 : scenario.width < 768 ? 44 : 28);
-        expect(imageLayout.getBoundingClientRect().height).toBe(grouped ? 36 : scenario.width < 768 ? 44 : 28);
+        expect(imageTools.dataset.slot).toBe("action-group");
+        expect(imageLayout.getBoundingClientRect().width).toBe(grouped ? 36 : 28);
+        expect(imageLayout.getBoundingClientRect().height).toBe(grouped ? 36 : 28);
         if (grouped) {
           expect(imageTools.getBoundingClientRect().width).toBe(40);
           expect(imageTools.getBoundingClientRect().height).toBe(40);
           expect(getComputedStyle(imageTools).padding).toBe("2px");
           checkFrame(imageTools);
+        } else {
+          expect(imageTools.dataset.size).toBe("compact");
+          expect(imageTools.getBoundingClientRect().width).toBe(32);
+          expect(imageTools.getBoundingClientRect().height).toBe(32);
+          expect(getComputedStyle(imageTools).padding).toBe("2px");
+          expect(getComputedStyle(imageTools).borderRadius).toBe("8px");
+          expect(getComputedStyle(imageLayout).borderRadius).toBe("4px");
         }
         imageLayout.focus();
         await userEvent.keyboard("{Enter}");

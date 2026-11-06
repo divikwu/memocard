@@ -65,6 +65,11 @@ it('renders a table caption as part of the table in reading views', () => {
   const html = renderToStaticMarkup(<Markdown body={'<table><caption>Summary</caption><tbody><tr><td>Value</td></tr></tbody></table>'} />);
   expect(html).toContain('<table><caption>Summary</caption><tbody>');
 });
+it('keeps a caption with its image in a reading view and renders it as plain text', () => {
+  const html = renderToStaticMarkup(<Markdown body={'<figure data-image-columns="40,60"><img src="../assets/a.png" alt="甲"><img src="../assets/b.png" alt="乙" data-image-caption="&lt;b&gt;说明"></figure>'} />);
+  expect(html).toMatch(/alt="乙"[^>]*>.*?<\/button><span class="note-image-caption">&lt;b&gt;说明<\/span>/);
+  expect(html.match(/class="note-image-caption"/g)).toHaveLength(1);
+});
 it.each([true, false])('unwraps removed HTML block types without hiding their text (interactive: %s)', interactive => {
   const html = renderToStaticMarkup(<Markdown interactive={interactive} body={'<details><summary>旧摘要</summary><p>旧正文</p></details>\n\n<dl><dt>旧术语</dt><dd><p>旧释义</p></dd></dl>'} />);
   for (const tag of ['details', 'summary', 'dl', 'dt', 'dd']) expect(html).not.toContain(`<${tag}`);

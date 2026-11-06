@@ -115,7 +115,7 @@ export function MermaidContent({ source, children }: { source: string; children:
   </TabsList>;
   return <Tabs className="ui-note-mermaid" value={mode} onValueChange={setMode}>
     <div className="note-mermaid-toolbar" contentEditable={false}>
-      {grouped ? <ActionGroup aria-label="Mermaid 操作">{modes}</ActionGroup> : modes}
+      <ActionGroup size={grouped ? "default" : "compact"} aria-label="Mermaid 操作">{modes}</ActionGroup>
     </div>
     <TabsContent className="note-mermaid-panel" value={mode} keepMounted>
       <div className="note-mermaid-source" hidden={mode === "preview"}>{children}</div>

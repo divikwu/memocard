@@ -25,7 +25,7 @@
 .ui-note-editor .block-drop-indicator { height: calc(var(--border-width) * 2); }
 .ui-note-editor .ui-note-markdown table { position: relative; width: 100%; overflow: hidden; border: var(--border-width) solid var(--color-border); border-block-end: 0; border-radius: var(--note-block-radius); }
 .ui-note-editor .ui-note-markdown table::after { content: ""; position: absolute; inset-inline: 0; inset-block-end: 0; border-block-end: var(--border-width) solid var(--color-border); pointer-events: none; }
-.ui-note-editor .rich-callout-icon { top: calc(var(--note-panel-padding-block) + var(--note-line-height, 1.5rem) / 2 - var(--spacing-1) * 3.5); }
+.ui-note-editor .rich-callout-icon { top: calc(var(--note-panel-padding-block) + var(--note-line-height, 1.5rem) / 2 - var(--callout-icon-size) / 2); }
 .ui-note-editor .ui-note-markdown th { background: var(--color-background-muted); }
 .ui-note-editor .mobile-save-status { padding-inline: calc(var(--spacing-1) * 2); color: var(--color-text-secondary); font-size: var(--font-size-xs); line-height: var(--text-supporting-leading); }
 @media (max-width: 767px) {

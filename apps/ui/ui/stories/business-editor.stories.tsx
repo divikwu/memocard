@@ -271,7 +271,7 @@ export const DetailLayoutRegression: Story = {
     const paragraph = field.querySelectorAll<HTMLElement>(':scope > .rich-paragraph-block')[1];
     const paragraphSelection = await verifyBlockSelection(paragraph);
     const code = Array.from(field.querySelectorAll('pre')).find(element => element.textContent?.includes('const message'))!;
-    await expect(getComputedStyle(code).padding).toBe('12px 16px');
+    await expect(getComputedStyle(code).padding).toBe('12px');
     await verifyBlockSelection(code.closest<HTMLElement>('.rich-block-frame')!);
     const table = field.querySelector('table')!, tableWrapper = table.closest<HTMLElement>('.tableWrapper')!, tableBlock = table.closest<HTMLElement>('.rich-table-block')!;
     const tableBlockSelection = await verifyBlockSelection(tableBlock);
@@ -490,7 +490,7 @@ export const BlockSelectionGeometry: Story = {
       const target = body.matches('.rich-table-block') ? body.querySelector<HTMLElement>('table')!
         : body.matches('.rich-image') ? body.querySelector<HTMLElement>('.ui-note-image')! : body;
       if (target !== element && !target.matches('p, ul, ol, hr, .rich-heading-text')) expect(getComputedStyle(target).borderRadius, `${element.tagName}.${element.className}`).toBe('4px');
-      if (target.matches('aside[data-callout][data-callout-icon]')) expect(getComputedStyle(target).padding).toBe('12px 16px 12px 48px');
+      if (target.matches('aside[data-callout][data-callout-icon]')) expect(getComputedStyle(target).padding).toBe('12px 12px 12px 48px');
       const nodes = [element, ...element.querySelectorAll<HTMLElement>('p, li, pre, td, th, img, .rich-callout-content')];
       const layout = () => nodes.map(node => ({ width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height, padding: getComputedStyle(node).padding, background: getComputedStyle(node).backgroundColor }));
       const before = layout();
@@ -562,7 +562,7 @@ export const QuoteRailRegression: Story = {
       const bounds = quote.getBoundingClientRect(), first = quote.querySelector('p')!.getBoundingClientRect();
       expect(style.borderRadius).toBe('4px');
       expect(style.borderInlineStartColor).toBe('rgba(0, 0, 0, 0)');
-      expect(parseFloat(style.paddingInlineStart)).toBe(parseFloat(style.fontSize));
+      expect(style.paddingInlineStart).toBe('12px');
       expect(first.left - bounds.left).toBeCloseTo(parseFloat(style.paddingInlineStart) + parseFloat(style.borderInlineStartWidth), 1);
       expect(rail.position).toBe('absolute');
       expect(rail.width).toBe(style.borderInlineStartWidth);

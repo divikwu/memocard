@@ -250,6 +250,45 @@ it("joins images through the menu, splits a row, and restores each operation wit
   act(() => editor.commands.undo()); expect(change).toHaveBeenLastCalledWith(joined);
 });
 
+it.each([
+  ["![甲](../assets/a.png)", "甲", null],
+  ["![[a.png|甲]]", "甲", null],
+  ['<figure data-image-columns="40,60"><img src="../assets/a.png" alt="甲"><img src="../assets/b.png" alt="乙"><figcaption></figcaption></figure>', "乙", "40,60"],
+])("stores a caption only on the chosen image and restores it on reopen: %s", async (image, alt, columns) => {
+  const original = "开头\n\n" + image + "\n\n结束";
+  const { editor, field, change } = await setup(original);
+  const openCaption = async (action: string) => {
+    fireEvent.click(await screen.findByRole("button", { name: `图片布局 ${alt}` }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: action }));
+    return screen.findByRole<HTMLInputElement>("textbox", { name: `图注：${alt}` });
+  };
+  expect(field.querySelector(".note-image-caption")).toBeNull();
+  const empty = await openCaption("添加图注");
+  expect(document.activeElement).toBe(empty);
+  fireEvent.blur(empty);
+  expect(change).not.toHaveBeenCalled();
+  expect(field.querySelector(".note-image-caption")).toBeNull();
+  const input = await openCaption("添加图注");
+  fireEvent.change(input, { target: { value: '测试图注 <&">' } });
+  fireEvent.blur(input);
+  const saved = change.mock.lastCall![0] as string;
+  act(() => editor.commands.undo());
+  expect(change).toHaveBeenLastCalledWith(original);
+  cleanup();
+
+  const reopened = await setup(saved);
+  const owner = await screen.findByRole("img", { name: alt });
+  expect(owner.closest(".rich-image")?.querySelector(".note-image-caption")?.textContent).toBe('测试图注 <&">');
+  expect(reopened.field.querySelectorAll(".note-image-caption")).toHaveLength(1);
+  expect(owner.closest("figure")?.getAttribute("data-image-columns") ?? null).toBe(columns);
+  if (image.startsWith("![[")) expect(owner.closest(".node-wikiImage")).toBeTruthy();
+  const edit = await openCaption("编辑图注");
+  expect(edit.value).toBe('测试图注 <&">');
+  fireEvent.change(edit, { target: { value: "" } });
+  fireEvent.blur(edit);
+  await waitFor(() => expect(reopened.field.querySelector(".note-image-caption")).toBeNull());
+});
+
 it("keeps image menu operations attached to the mapped image after preceding edits", async () => {
   const { editor, field } = await setup("开头\n\n![甲](../assets/a.png)\n\n![乙](../assets/b.png)\n\n结束");
   fireEvent.click(screen.getByRole("button", { name: "图片布局 甲" }));

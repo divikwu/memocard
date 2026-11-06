@@ -944,7 +944,7 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
-          "value": "color-mix(in srgb, var(--color-blue-500) 14%, transparent)",
+          "value": "color-mix(in srgb, var(--color-blue-500) 8%, transparent)",
           "line": 23
         },
         {
