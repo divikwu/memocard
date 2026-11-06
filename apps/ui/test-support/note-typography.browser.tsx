@@ -528,8 +528,16 @@ test("resizing image columns keeps the note scrolled away from the existing care
     handle.scrollIntoView({ block: "center" });
     const scrollTop = scroller.scrollTop;
     expect(scrollTop).toBeGreaterThan(600);
-    await userEvent.hover(figure.querySelectorAll("img")[1]);
+    const rightImage = figure.querySelectorAll("img")[1];
+    await userEvent.hover(rightImage);
     const grip = field.closest(".rich-editor")!.querySelector(".block-controls button")!;
+    // The shared grip can still be positioned at the previously focused paragraph.
+    await waitFor(() => {
+      const image = rightImage.getBoundingClientRect(), gripBox = grip.getBoundingClientRect();
+      const center = gripBox.top + gripBox.height / 2;
+      expect(center).toBeGreaterThanOrEqual(image.top);
+      expect(center).toBeLessThan(image.bottom);
+    });
     const frame = figure.closest(".rich-image-row")!.getBoundingClientRect();
     const divider = handle.getBoundingClientRect(), gripBox = grip.getBoundingClientRect();
     expect(frame.left - gripBox.right).toBeCloseTo(2, 1);
@@ -539,7 +547,7 @@ test("resizing image columns keeps the note scrolled away from the existing care
     expect(divider.right).toBeCloseTo(right.left, 1);
     expect(divider.bottom).toBeCloseTo(Math.min(left.bottom, right.bottom), 1);
     expect(document.elementFromPoint(divider.x + divider.width / 2, y)).toBe(handle);
-    expect(document.elementFromPoint(right.left + 2, y)).toBe(figure.querySelectorAll("img")[1]);
+    expect(document.elementFromPoint(right.left + 2, y)).toBe(rightImage);
     await userEvent.dragAndDrop(handle, figure, { targetPosition: { x: figure.clientWidth * .6, y: figure.clientHeight / 2 } });
     expect(figure.getAttribute("data-image-columns")).not.toBe("50,50");
     expect(editor.state.selection.eq(selection)).toBe(true);
