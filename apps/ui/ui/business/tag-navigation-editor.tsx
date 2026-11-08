@@ -13,6 +13,7 @@ import TrophyIcon from "@hugeicons/core-free-icons/TrophyIcon";
 import emojiData from "../../src/lib/emoji-zh.json";
 import { errorMessage } from "../../src/bridge";
 import { tagKey } from "../../src/inline-tags";
+import type { TagColor } from "../../src/tag-colors";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
@@ -20,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../com
 import { NameEditor } from "./NameEditor";
 import { IconOptions, useIconPickerScroll } from "./PropertyIconPicker";
 import { TagIcon } from "./property-icon-catalog";
+import { PropertyOptionMenu, TagColorMenu } from "./property-editors";
 import { cn } from "../lib/utils";
 import "./sidebar.css";
 
@@ -116,7 +118,15 @@ export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false, s
   </section>;
 }
 
-export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, finalFocus, initialPickerOpen = false, anchorIsTrigger = false }: { path: string; icon: string; anchor: HTMLElement; mobile: boolean; onClose: () => void; onSave: (name: string, icon?: string) => Promise<void>; finalFocus?: () => HTMLElement | false; initialPickerOpen?: boolean; anchorIsTrigger?: boolean }) {
+export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, finalFocus, initialPickerOpen = false, anchorIsTrigger = false, groupAppearance }: {
+  path: string; icon: string; anchor: HTMLElement; mobile: boolean;
+  onClose: () => void;
+  onSave: (name: string, icon?: string) => Promise<void>;
+  finalFocus?: () => HTMLElement | false;
+  initialPickerOpen?: boolean;
+  anchorIsTrigger?: boolean;
+  groupAppearance?: { icon: React.ReactNode; color?: TagColor; onChangeColor: (color: TagColor) => Promise<void> };
+}) {
   const pickerId = useId();
   const [iconError, setIconError] = useState("");
   const pendingIcon = useRef<Promise<void> | null>(null);
@@ -173,18 +183,27 @@ export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, finalFo
   const emoji = icon.startsWith("icon:") ? "" : icon;
   const searchLabel = pickerTab === "emoji" ? "搜索 Emoji" : "搜索图标";
   return <NameEditor initialName={path} anchor={anchor} anchorIsTrigger={anchorIsTrigger} sheet={mobile}
-    title="编辑标签" inputLabel="标签名称"
+    title={groupAppearance ? "编辑群组图标" : "编辑标签"} inputLabel={groupAppearance ? "群组名称" : "标签名称"} maxLength={groupAppearance ? 80 : undefined}
     side="right" align="start" initialFocus={initialPickerOpen ? () => search.current : undefined} finalFocus={finalFocus ?? returnFocus}
     onClose={onClose} onSave={rename}
-    leading={disabled => <Button ref={pickerTrigger} type="button" variant="secondary" size="icon-sm" className="note-property-icon-trigger border-0" aria-label="更换图标" aria-expanded={pickerOpen} aria-controls={pickerOpen ? pickerId : undefined} disabled={disabled} onClick={togglePicker}><TagIcon value={icon} /></Button>}
+    trailing={disabled => groupAppearance
+      ? <PropertyOptionMenu name={path} kind="群组" color={groupAppearance.color ?? "default"} disabled={disabled} swatch
+          normalizeName={tagKey} onChangeColor={groupAppearance.onChangeColor} />
+      : <TagColorMenu tag={path} disabled={disabled} swatch />}
+    leading={disabled => <Button ref={pickerTrigger} type="button" variant="secondary" size="icon-sm"
+      className={cn("note-property-icon-trigger border-0", groupAppearance?.color && `note-tag-color-${groupAppearance.color}`)}
+      data-tag={groupAppearance ? undefined : encodeURIComponent(tagKey(path))} data-group-icon={groupAppearance && ""}
+      aria-label="更换图标" aria-expanded={pickerOpen} aria-controls={pickerOpen ? pickerId : undefined} disabled={disabled} onClick={togglePicker}>
+      <TagIcon value={icon} fallback={groupAppearance?.icon} />
+    </Button>}
   >
     {disabled => <Collapsible.Root open={pickerOpen} className="tag-icon-disclosure">
         {iconError && <p role="alert" className="mt-2 px-1 text-sm text-error">{iconError}</p>}
-        <Collapsible.Panel id={pickerId} render={<section />} aria-label="标签图标选项" aria-hidden={!pickerOpen || undefined} inert={disabled || !pickerOpen} className="tag-icon-disclosure-panel">
+        <Collapsible.Panel id={pickerId} render={<section />} aria-label={groupAppearance ? "群组图标选项" : "标签图标选项"} aria-hidden={!pickerOpen || undefined} inert={disabled || !pickerOpen} className="tag-icon-disclosure-panel">
           <div className="note-property-icon-picker">
             <Tabs value={pickerTab} onValueChange={value => { setPickerTab(value); setPickerQuery(""); }} className="tag-icon-tabs">
               <div className="flex items-center justify-between gap-1">
-                <TabsList variant="line" aria-label="标签图标类型">
+                <TabsList variant="line" aria-label={groupAppearance ? "群组图标类型" : "标签图标类型"}>
                   <TabsTrigger value="emoji">Emoji</TabsTrigger>
                   <TabsTrigger value="icon">图标</TabsTrigger>
                 </TabsList>

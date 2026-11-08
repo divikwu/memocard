@@ -1,11 +1,12 @@
+import type { TagPreferences } from "@memocard/contracts";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { tagKey } from "@/inline-tags";
-import { renamedTag } from "@/rename-tag";
+import { updatedTagReferences } from "@/tag-settings";
 import { renameTagColors } from "@/tag-colors";
 
-import { sharedTagPreferences, tagPreferenceEvent, tagPreferenceKey, updateSharedTagPreferences } from "@/shared-tag-preferences";
+import { parseTagPreferences, sharedTagPreferences, tagPreferenceEvent, tagPreferenceKey, updateSharedTagPreferences } from "@/shared-tag-preferences";
 
-type Preferences = { pinned: string[]; icons: Record<string, string> };
+type Preferences = TagPreferences;
 const changeEvent = tagPreferenceEvent;
 function subscribe(callback: () => void) {
   window.addEventListener(changeEvent, callback);
@@ -13,18 +14,12 @@ function subscribe(callback: () => void) {
   return () => { window.removeEventListener(changeEvent, callback); window.removeEventListener("storage", callback); };
 }
 function read(key: string) { try { return localStorage.getItem(key); } catch { return null; } }
-function parse(raw: string | null): Preferences {
-  try {
-    const value = JSON.parse(raw || "null");
-    return { pinned: Array.isArray(value?.pinned) ? [...new Set<string>(value.pinned.filter((x: unknown) => typeof x === "string").map(tagKey))] : [], icons: Object.fromEntries(Object.entries(value?.icons || {}).filter(([, x]) => typeof x === "string").map(([tag, icon]) => [tagKey(tag), icon])) as Record<string, string> };
-  } catch { return { pinned: [], icons: {} }; }
-}
 
 export function useTagPreferences(vaultId?: string | null) {
   const key = tagPreferenceKey(vaultId);
   const raw = useSyncExternalStore(subscribe, () => (vaultId && sharedTagPreferences(vaultId)?.raw) || read(key));
   const sharedError = useSyncExternalStore(subscribe, () => (vaultId && sharedTagPreferences(vaultId)?.error) || "");
-  const preferences = useMemo(() => parse(raw), [raw]);
+  const preferences = useMemo(() => parseTagPreferences(raw), [raw]);
   const [error, setError] = useState("");
   function save(next: Preferences) {
     try { localStorage.setItem(key, JSON.stringify(next)); window.dispatchEvent(new Event(changeEvent)); setError(""); return true; }
@@ -32,6 +27,11 @@ export function useTagPreferences(vaultId?: string | null) {
   }
   return {
     preferences, error: sharedError || error,
+    updatePreferences: async (change: (current: Preferences) => Preferences) => {
+      const pending = vaultId && updateSharedTagPreferences(vaultId, change);
+      if (pending) await pending;
+      else if (!save(change(parseTagPreferences(read(key))))) throw new Error("无法保存标签设置，请检查浏览器存储权限。");
+    },
     togglePinned: (path: string) => {
       const pinned = !preferences.pinned.includes(path);
       const change = (current: Preferences) => ({...current,pinned:pinned ? [...new Set([...current.pinned,path])] : current.pinned.filter(x => x !== path)});
@@ -49,13 +49,13 @@ export function useTagPreferences(vaultId?: string | null) {
       }
       const change = (current: Preferences) => {
         if (!renamed) return icon === undefined ? current : {...current, icons:{...current.icons, [name]:icon}};
-        const next = { pinned: [...new Set(current.pinned.map(path => renamedTag(path, from, name)))], icons: Object.fromEntries(Object.entries(current.icons).map(([path, value]) => [renamedTag(path, from, name), value])) };
-        if (icon !== undefined) next.icons[name] = icon;
-        return next;
+        const next = updatedTagReferences(current, from, name);
+        return icon === undefined ? next : {...next, icons:{...next.icons, [name]:icon}};
       };
       const pending = vaultId && updateSharedTagPreferences(vaultId, change, {optimistic:!renamed});
-      if (pending) { await pending; return; }
-      if (!save(change(parse(read(key))))) throw new Error("笔记已保存，但标签外观未能保存，请检查存储权限。");
+      if (pending) await pending;
+      else if (!save(change(parseTagPreferences(read(key))))) throw new Error("笔记已保存，但标签外观未能保存，请检查存储权限。");
+      if (renamed) window.dispatchEvent(new CustomEvent("memocard:event", {detail: {type: "tagsChanged"}}));
     },
   };
 }

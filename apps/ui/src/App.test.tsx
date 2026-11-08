@@ -539,7 +539,7 @@ describe("note workspace", () => {
     await screen.findByText(note.body);
     fireEvent.change(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), { target: { value: "旧库关键词" } });
     fireEvent.click(screen.getByRole("button", { name: "筛选标签 生活" }));
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "旧库关键词", tags: ["生活"], limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "旧库关键词", tags: ["生活"], exactTags: true, limit: 30 }));
     window.location.hash = "#/settings";
     fireEvent(window, new Event("hashchange"));
     fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));

@@ -127,11 +127,6 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-name-form input",
-          "value": "inherit"
-        },
-        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(kbd)",
           "value": "inherit"
@@ -1027,11 +1022,6 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-name-form input",
-          "value": "inherit"
-        },
-        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(pre code)",
           "value": "inherit"
@@ -1592,6 +1582,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-group h2",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/business/TagsPage.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -2009,12 +2004,7 @@
         },
         {
           "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-error td",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-path",
+          "scope": ".ui-tag-directory-chip-count",
           "value": "var(--font-size-xs)"
         },
         {
@@ -2599,6 +2589,11 @@
         },
         {
           "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-group-name .ui-tag-directory-name-button",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
           "scope": ".ui-tag-directory-table th",
           "value": "var(--font-weight-medium)"
         },
@@ -2825,6 +2820,11 @@
           "value": "var(--font-weight-semibold)"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-group h2",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
           "source": "apps/ui/ui/business/trash.css",
           "scope": ".ui-trash h1",
           "value": "var(--font-weight-semibold)"
@@ -2959,11 +2959,6 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-name-form input",
           "value": "inherit"
         },
         {
@@ -3214,11 +3209,6 @@
           "value": "1.5"
         },
         {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-name-form input",
-          "value": "1.5"
-        },
-        {
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset\n    *:not(\n      :where(\n        .not-typeset,\n        [data-not-typeset],\n        .not-typeset *,\n        [data-not-typeset] *,\n        .typeset [data-slot],\n        .typeset [data-slot] *\n      )\n    ) → &:where(h4)",
           "value": "1.5"
@@ -3377,30 +3367,6 @@
     },
     {
       "property": "line-height",
-      "value": "calc(var(--spacing-1) * 3.5)",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-path",
-          "value": "calc(var(--spacing-1) * 3.5)"
-        }
-      ]
-    },
-    {
-      "property": "line-height",
-      "value": "calc(var(--spacing-1) * 4.5)",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-row[data-flat] .ui-tag-directory-name-button",
-          "value": "calc(var(--spacing-1) * 4.5)"
-        }
-      ]
-    },
-    {
-      "property": "line-height",
       "value": "calc(var(--spacing-1) * 5)",
       "utilities": [],
       "locations": [
@@ -3469,11 +3435,6 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ".ui-rich-ui :where(.block-controls button, .rich-heading-fold, .rich-math-input button, .rich-table-tools button)",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-name-form input",
           "value": "inherit"
         }
       ]
@@ -4789,11 +4750,11 @@
         },
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 158
+          "line": 157
         },
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 295
+          "line": 260
         }
       ]
     },
@@ -4813,7 +4774,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 196
+          "line": 195
         }
       ]
     },
@@ -4823,7 +4784,11 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 117
+          "line": 116
+        },
+        {
+          "source": "apps/apple/Sources/NativeSidebar.swift",
+          "line": 169
         },
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
@@ -4831,15 +4796,11 @@
         },
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 171
+          "line": 172
         },
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 173
-        },
-        {
-          "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 277
+          "line": 242
         }
       ]
     },
@@ -4859,7 +4820,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 273
+          "line": 238
         }
       ]
     },
@@ -4869,7 +4830,7 @@
       "locations": [
         {
           "source": "apps/apple/Sources/NativeSidebar.swift",
-          "line": 275
+          "line": 240
         }
       ]
     },

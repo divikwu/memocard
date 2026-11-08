@@ -598,8 +598,7 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/ui/business/sidebar.tsx",
-        "apps/ui/ui/business/tag-navigation.tsx"
+        "apps/ui/ui/business/sidebar.tsx"
       ]
     },
     {
@@ -733,7 +732,8 @@
         "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/components/calendar.tsx",
         "apps/ui/ui/components/input-group.tsx",
-        "apps/ui/ui/components/sidebar.tsx"
+        "apps/ui/ui/components/sidebar.tsx",
+        "apps/ui/ui/components/tabs.tsx"
       ]
     },
     {
@@ -867,8 +867,7 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/ui/business/sidebar.tsx",
-        "apps/ui/ui/business/tag-navigation.tsx"
+        "apps/ui/ui/business/sidebar.tsx"
       ]
     },
     {
@@ -981,6 +980,7 @@
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
+        "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/business/tag-navigation.tsx",
         "apps/ui/ui/components/badge.tsx",

@@ -130,14 +130,14 @@ describe("sidebar workspace actions", () => {
     await user.click(await screen.findByRole("button", { name: /^生活/ }));
     const search = await screen.findByRole("textbox", { name: "搜索当前视图笔记" });
     await user.type(search, "不存在");
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在", tags: ["生活"], limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在", tags: ["生活"], exactTags: true, limit: 30 }));
     expect(await screen.findByText("没有找到相关笔记")).toBeTruthy();
     expect(screen.getByRole("textbox", { name: "搜索当前视图笔记" })).toBe(search);
     expect(document.activeElement).toBe(search);
     expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "清空当前搜索" }));
     await screen.findByText(note.body);
-    expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1]).toEqual({ query: "", tags: ["生活"], limit: 30 });
+    expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1]).toEqual({ query: "", tags: ["生活"], exactTags: true, limit: 30 });
     expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
   });
 
@@ -244,7 +244,7 @@ describe("sidebar workspace actions", () => {
     expect(collapse.closest("main")).toBeNull();
     await user.click(screen.getByRole("button", { name: /^生活/ }));
     fireEvent.change(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), { target: { value: "散步" } });
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: ["生活"], limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: ["生活"], exactTags: true, limit: 30 }));
 
     await user.click(screen.getByRole("button", { name: "收起侧栏" }));
     expect(screen.queryByRole("navigation", { name: "主要导航" })).toBeNull();

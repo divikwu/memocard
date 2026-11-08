@@ -1,17 +1,36 @@
 import type { TagPreferences, TagPreferenceState } from '@memocard/contracts';
 import { BrowserVaultError, readBytes, sha256, type BrowserDirectoryHandle } from './browser-files';
 import { tagKey } from './inline-tags';
+import { isTagColor } from './tag-colors';
 
 function parse(value: unknown): TagPreferences {
   const input = value as TagPreferences | null;
   const control = (text: string) => [...text].some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
+  const validIcon = (icon: unknown) => typeof icon === 'string' && icon.length <= 32 && !control(icon);
+  const validDescription = (value: unknown) => typeof value === 'string' && value.length <= 280;
   const validTag = (tag: unknown): tag is string => typeof tag === 'string' && !!tag && tag === tag.trim() && tag === tagKey(tag) && !control(tag);
   if (!input || !Array.isArray(input.pinned) || !input.pinned.every(validTag) || new Set(input.pinned).size !== input.pinned.length
     || !input.icons || typeof input.icons !== 'object' || Array.isArray(input.icons)
-    || !Object.entries(input.icons).every(([tag, icon]) => validTag(tag) && typeof icon === 'string' && icon.length <= 32 && !control(icon))) {
+    || !Object.entries(input.icons).every(([tag, icon]) => validTag(tag) && validIcon(icon))) {
     throw new BrowserVaultError('INVALID_TAG_PREFERENCES', '标签设置无效。');
   }
-  return {pinned:input.pinned,icons:input.icons};
+  const groups = input.groups;
+  if (groups !== undefined && (!Array.isArray(groups) || !groups.every(group =>
+    group && typeof group.id === 'string' && !!group.id && !control(group.id) &&
+    typeof group.name === 'string' && !!group.name && group.name === group.name.trim() && !control(group.name) &&
+    (group.description === undefined || validDescription(group.description)) &&
+    (group.color === undefined || isTagColor(group.color)) &&
+    (group.icon === undefined || validIcon(group.icon)) && Array.isArray(group.tags) && group.tags.every(validTag) && new Set(group.tags).size === group.tags.length
+  ) || new Set(groups.map(group => group.id)).size !== groups.length
+    || new Set(groups.map(group => tagKey(group.name))).size !== groups.length)) {
+    throw new BrowserVaultError('INVALID_TAG_PREFERENCES', '标签群组设置无效。');
+  }
+  const labels = input.labels;
+  if (labels !== undefined && (!labels || typeof labels !== 'object' || Array.isArray(labels) ||
+    !Object.entries(labels).every(([tag, description]) => validTag(tag) && validDescription(description)))) {
+    throw new BrowserVaultError('INVALID_TAG_PREFERENCES', '标签说明无效。');
+  }
+  return {pinned:input.pinned,icons:input.icons,groups,labels};
 }
 async function read(root: BrowserDirectoryHandle) {
   try { return await readBytes(await (await root.getDirectoryHandle('.memocard')).getFileHandle('tag-preferences.json')); }
@@ -26,8 +45,10 @@ export async function tagPreferenceOperation(operation: string, params: Record<s
   try { current = !initialized ? {pinned:[],icons:{}} : parse(JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(before!))); }
   catch { throw new BrowserVaultError('INVALID_TAG_PREFERENCES','标签设置无法读取，请检查 .memocard/tag-preferences.json。'); }
   await active();
-  if (operation === 'getTagPreferences') return {...current,contentHash,initialized};
+  if (operation === 'getTagPreferences') return {...current,groups:current.groups ?? [],labels:current.labels ?? {},contentHash,initialized};
   const next = parse(params);
+  next.groups ??= current.groups ?? [];
+  next.labels ??= current.labels ?? {};
   if (contentHash !== params.baseHash) throw new BrowserVaultError('HASH_CONFLICT','标签设置已在其他位置修改，请重试。',true);
   if (initialized && JSON.stringify(current) === JSON.stringify(next)) return {...current,contentHash,initialized:true};
   const bytes = new TextEncoder().encode(JSON.stringify(next));

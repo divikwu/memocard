@@ -70,7 +70,11 @@ final class VaultStoreTests: XCTestCase {
         let core = try await store()
         let initial = try await call(core, "getTagPreferences")
         XCTAssertEqual(initial["initialized"] as? Bool, false)
-        let saved = try await call(core, "setTagPreferences", ["pinned":["area/coffee"], "icons":["area/coffee":"☕", "area/ai":"🧑🏽‍💻"], "baseHash":initial["contentHash"]!])
+        let groups: [[String: Any]] = [
+            ["id":"a", "name":"收藏", "tags":["area/coffee"], "icon":"🌱", "description":"收藏的阅读笔记", "color":"purple"],
+            ["id":"b", "name":"饮品", "tags":["area/coffee"]]
+        ]
+        let saved = try await call(core, "setTagPreferences", ["pinned":["area/coffee"], "icons":["area/coffee":"☕", "area/ai":"🧑🏽‍💻"], "groups":groups, "labels":["brewing":"冲煮笔记"], "baseHash":initial["contentHash"]!])
         let other = try VaultStore(localDataURL: temporary.appendingPathComponent("independent-tag-client"))
         try await other.open(url: vault, create: false)
         let loaded = try await call(other, "getTagPreferences")
@@ -81,6 +85,16 @@ final class VaultStoreTests: XCTestCase {
         let empty = try await call(core, "getTagPreferences")
         XCTAssertEqual(empty["initialized"] as? Bool, true)
         XCTAssertEqual(empty["pinned"] as? [String], [])
+        XCTAssertEqual(empty["labels"] as? [String: String], ["brewing":"冲煮笔记"])
+        let indexed = try await call(other, "listTags", ["flat":true])
+        let tags = try XCTUnwrap(indexed["tags"] as? [[String: Any]])
+        XCTAssertEqual(tags.first { $0["name"] as? String == "brewing" }?["count"] as? Int, 0)
+        let savedGroups = try XCTUnwrap(empty["groups"] as? [[String: Any]])
+        XCTAssertEqual(savedGroups.compactMap { $0["name"] as? String }, ["收藏", "饮品"])
+        XCTAssertEqual(savedGroups.compactMap { $0["icon"] as? String }, ["🌱"])
+        XCTAssertEqual(savedGroups.compactMap { $0["description"] as? String }, ["收藏的阅读笔记"])
+        XCTAssertEqual(savedGroups.compactMap { $0["color"] as? String }, ["purple"])
+        XCTAssertEqual(savedGroups.compactMap { $0["tags"] as? [String] }, [["area/coffee"], ["area/coffee"]])
         await expectCode("VAULT_CHANGED") { _ = try await self.call(core, "getTagPreferences", ["vaultId":"wrong-vault"]) }
     }
 
@@ -2274,6 +2288,11 @@ final class VaultStoreTests: XCTestCase {
             XCTAssertEqual(notes.count, 1)
             XCTAssertEqual(notes.first?["id"] as? String, saved["id"] as? String)
         }
+        let exact = try await call(core, "queryNotes", ["tags": ["工作/项目"], "exactTags": true])
+        XCTAssertTrue(try XCTUnwrap(exact["notes"] as? [[String: Any]]).isEmpty)
+        let flat = try await call(core, "listTags", ["flat": true])
+        let names = try XCTUnwrap(flat["tags"] as? [[String: Any]]).compactMap { $0["name"] as? String }
+        XCTAssertEqual(Set(names), ["工作", "工作/项目/设计", "工作/项目/开发", "工作室"])
         let result = try await call(core, "listTags")
         let tags = try XCTUnwrap(result["tags"] as? [[String: Any]])
         for name in ["工作", "工作/项目"] {

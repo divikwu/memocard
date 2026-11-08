@@ -6,10 +6,10 @@ import type { ReactNode } from "react";
 import { expect, it, vi } from "vitest";
 import { TagNavigation } from "../ui/business/tag-navigation";
 
-// Run the real navigation and recursive branches, replacing only presentation and
-// browser storage. This isolates tree work from DOM/layout and is not an FPS test.
+// Run the real tag navigation with presentation and browser storage mocked.
+// This isolates traversal work from DOM and layout.
 vi.mock("../src/hooks/use-tag-preferences", () => ({ useTagPreferences: () => ({ preferences: { pinned: [], icons: {} }, error: "", togglePinned() {}, saveAppearance() {} }) }));
-vi.mock("../ui/business/sidebar-tree-item", () => ({ SidebarTreeItem: ({ children, label, accessories }: { children?: ReactNode; label: string; accessories?: ReactNode }) => <div>{label}{accessories}{children}</div> }));
+vi.mock("../ui/business/sidebar-tree-item", () => ({ SidebarTreeItem: ({ children, label, accessories }: { children?: ReactNode; label: string; accessories?: ReactNode }) => <div>{label}{accessories}{children}</div>, TreeMoreButton: () => null }));
 vi.mock("../ui/components/sidebar", () => {
   const Content = ({ children }: { children?: ReactNode }) => children;
   return { useSidebar: () => ({ isMobile: false }), SidebarGroup: Content, SidebarGroupLabel: Content, SidebarMenu: Content, SidebarMenuBadge: Content, SidebarMenuSub: Content };
@@ -28,8 +28,8 @@ function fixture(size: number, shape: Shape): Tag[] {
 }
 
 function instrument(tags: Tag[]) {
-  const calls = { filter: 0, find: 0, some: 0, iterations: 0, visits: 0 };
-  for (const method of ["filter", "find", "some"] as const) {
+  const calls = { filter: 0, find: 0, map: 0, some: 0, iterations: 0, visits: 0 };
+  for (const method of ["filter", "find", "map", "some"] as const) {
     const original = tags[method].bind(tags) as (callback: (tag: Tag, index: number, array: Tag[]) => boolean) => unknown;
     Object.defineProperty(tags, method, { value: (callback: (tag: Tag, index: number, array: Tag[]) => boolean) => {
       calls[method]++;
@@ -68,7 +68,7 @@ it("records real tag traversal work and warmed render timings without timing ass
       results.push({ shape, size, samples: sampleCount, medianMs: Number(timings[Math.floor(sampleCount / 2)].toFixed(3)), p95Ms: Number(timings[Math.ceil(sampleCount * .95) - 1].toFixed(3)), timingsMs: timings.map(time => Number(time.toFixed(3))), ...calls });
     }
   }
-  const report = { label: process.env.MEMOCARD_TAG_BENCH_LABEL || "working-tree", scope: "production TagNavigation/TagBranch, SSR with presentation primitives mocked, cold mount per sample; excludes DOM/layout", node: process.version, platform: process.platform, arch: process.arch, warmup: 2, results };
+  const report = { label: process.env.MEMOCARD_TAG_BENCH_LABEL || "working-tree", scope: "production TagNavigation, SSR with presentation primitives mocked, cold mount per sample; excludes DOM/layout", node: process.version, platform: process.platform, arch: process.arch, warmup: 2, results };
   console.log(JSON.stringify(report, null, 2));
   if (process.env.MEMOCARD_TAG_BENCH_OUTPUT) {
     await mkdir(dirname(process.env.MEMOCARD_TAG_BENCH_OUTPUT), { recursive: true });

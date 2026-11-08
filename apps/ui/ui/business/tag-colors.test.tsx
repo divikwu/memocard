@@ -55,13 +55,13 @@ it('treats legacy gray as default and preserves other colors and vaults', async 
   expect(readTagColors('b')).toBe(legacy);
   expect(onSave).not.toHaveBeenCalled();
 });
-it('moves a renamed tag and its children without affecting other vaults or prefixes', () => {
+it('moves only the renamed tag without affecting other vaults or prefixes', () => {
   setTagColor('a', '工作', 'green');
   setTagColor('a', '工作/设计', 'purple');
   setTagColor('a', '工作室', 'red');
   setTagColor('b', '工作', 'blue');
   renameTagColors('a', '工作', '职业');
-  expect(parseTagColors(readTagColors('a'))).toEqual({ 职业: 'green', '职业/设计': 'purple', 工作室: 'red' });
+  expect(parseTagColors(readTagColors('a'))).toEqual({ 职业: 'green', '工作/设计': 'purple', 工作室: 'red' });
   expect(parseTagColors(readTagColors('b'))).toEqual({ 工作: 'blue' });
 });
 it('changes appearance without choosing a tag or exposing a delete action, and survives reopening', async () => {

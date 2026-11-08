@@ -13,6 +13,7 @@ import ArrowUp01Icon from "@hugeicons/core-free-icons/ArrowUp01Icon";
 import ArrowDown02Icon from "@hugeicons/core-free-icons/ArrowDown02Icon";
 import SlidersHorizontalIcon from "@hugeicons/core-free-icons/SlidersHorizontalIcon";
 import HashtagIcon from "@hugeicons/core-free-icons/HashtagIcon";
+import { Tag01Icon } from "./tag-01-icon";
 import ImageAdd02Icon from "@hugeicons/core-free-icons/ImageAdd02Icon";
 import Maximize01Icon from "@hugeicons/core-free-icons/Maximize01Icon";
 import { createPropertyOptionMenu } from "../../src/PropertyOptionMenu.core";
@@ -53,7 +54,7 @@ export const propertyIcons = {
   ChevronDown: icon(ArrowDown01Icon), ChevronUp: icon(ArrowUp01Icon), Text: richIcons.Type,
   SquareCheck: icon(CheckmarkSquare02Icon), Pencil: icon(PencilEdit02Icon), CircleChevronDown: icon(ArrowDown02Icon),
   ListChecks: richIcons.ListTodo, SlidersHorizontal: icon(SlidersHorizontalIcon), Image: richIcons.ImageIcon,
-  Hash: icon(HashtagIcon), ImagePlus: icon(ImageAdd02Icon), Maximize: icon(Maximize01Icon),
+  Hash: icon(HashtagIcon), Tag: icon(Tag01Icon), ImagePlus: icon(ImageAdd02Icon), Maximize: icon(Maximize01Icon),
 };
 
 export function TagPill({ name, className, children, ...props }: ComponentProps<typeof Badge> & { name: string }) {

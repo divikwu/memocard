@@ -7,7 +7,7 @@ export function createStateFixture(scenario: string) {
   const base = createPreviewMock(scenario === "filter-empty" ? "loading" : scenario);
   const capabilities = ["getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences"];
   let pins: NotePins = { pins: {}, contentHash: "preview-pins" };
-  let preferences: TagPreferenceState = { pinned: [], icons: {}, initialized: true, contentHash: "preview-tags" };
+  let preferences: TagPreferenceState = { pinned: [], icons: {}, groups: [], labels: {}, initialized: true, contentHash: "preview-tags" };
   async function request<T>(operation: string, params: Record<string, unknown> = {}): Promise<T> {
     let result: unknown;
     switch (operation) {
@@ -32,17 +32,23 @@ export function createStateFixture(scenario: string) {
       }
       case "getTagPreferences": result = preferences; break;
       case "setTagPreferences":
-        preferences = { pinned: params.pinned as string[], icons: params.icons as Record<string, string>, initialized: true, contentHash: `${preferences.contentHash}+` };
+        preferences = { pinned: params.pinned as string[], icons: params.icons as Record<string, string>, groups: (params.groups as TagPreferenceState["groups"]) ?? preferences.groups, labels: (params.labels as TagPreferenceState["labels"]) ?? preferences.labels, initialized: true, contentHash: `${preferences.contentHash}+` };
         result = preferences;
         break;
       case "queryNotes": {
         const page = await base.request<NotePage>(operation, params);
         const filtered = page.notes.filter(note => (!params.pinned || pins.pins[note.id])
-          && (!Array.isArray(params.tags) || params.tags.every(tag => note.tags.some(value => value === tag || value.startsWith(`${tag}/`))))
+          && (!Array.isArray(params.tags) || params.tags.every(tag => note.tags.some(value => value === tag || (params.exactTags !== true && value.startsWith(`${tag}/`)))))
           && (params.quickFilter !== "untagged" || !note.tags.length)
           && (params.quickFilter !== "images" || /!\[|<img/.test(note.body))
           && (params.quickFilter !== "links" || /https?:|\[\[/.test(note.body)));
         result = { ...page, notes: filtered };
+        break;
+      }
+      case "listTags": {
+        const list = await base.request<{tags: {name: string; count: number}[]}>(operation, params);
+        const names = new Set(list.tags.map(tag => tag.name));
+        result = params.flat ? {...list, tags: [...list.tags, ...Object.keys(preferences.labels ?? {}).filter(name => !names.has(name)).map(name => ({name, count: 0}))]} : list;
         break;
       }
       default: return base.request<T>(operation, params);

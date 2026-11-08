@@ -9,7 +9,7 @@ type View = {
   ConfirmationPortal?: ComponentType<ComponentProps<typeof AlertDialog.Portal>>;
   ConfirmationPopup?: ComponentType<ComponentProps<typeof AlertDialog.Popup>>;
   Check: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
-  Hash: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
+  Tag: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   MoreHorizontal: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Trash2: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Button: ComponentType<Omit<ComponentProps<typeof import("@ui/components/button")["Button"]>, "render">>;
@@ -28,19 +28,20 @@ type View = {
 export function createPropertyOptionMenu(view: View) {
   const ConfirmationPopup = view.ConfirmationPopup ?? AlertDialog.Popup;
   const ConfirmationPortal = view.ConfirmationPortal ?? AlertDialog.Portal;
-  const { Check, Hash, MoreHorizontal, Trash2, Button, Input, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuSeparator, TagPill } = view;
+  const { Check, Tag, MoreHorizontal, Trash2, Button, Input, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuSeparator, TagPill } = view;
 type PropertyOptionMenuProps = {
   name:string;
-  kind:'标签' | '选项';
+  kind:'标签' | '群组' | '选项';
   color:TagColor;
   disabled:boolean;
+  swatch?:boolean;
   normalizeName:(name:string)=>string | null;
   onChangeName?:(from:string,to:string | null)=>Promise<void>;
   onChangeColor:(color:TagColor)=>void | Promise<void>;
-  deleteDescription:string;
+  deleteDescription?:string;
 };
 
-function PropertyOptionMenu({name:tag, kind, color, disabled, normalizeName, onChangeName, onChangeColor, deleteDescription}:PropertyOptionMenuProps) {
+function PropertyOptionMenu({name:tag, kind, color, disabled, swatch, normalizeName, onChangeName, onChangeColor, deleteDescription}:PropertyOptionMenuProps) {
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(tag);
@@ -61,11 +62,13 @@ function PropertyOptionMenu({name:tag, kind, color, disabled, normalizeName, onC
       setOpen(value);
       if (value) { setName(tag); setError(''); }
     }}>
-      <DropdownMenuTrigger render={<Button type="button" variant="ghost" size="icon-xs" disabled={disabled || working} aria-label={onChangeName ? `管理${kind} ${tag}` : `设置${kind}颜色 ${tag}`} className="note-tag-color-trigger shrink-0" />}><MoreHorizontal className="size-4" /></DropdownMenuTrigger>
-      <DropdownMenuContent align="start" side="right" className={onChangeName ? 'note-property-option-menu w-56' : 'note-property-option-menu w-44'} aria-label={onChangeName ? `${kind}设置 ${tag}` : `${kind}颜色 ${tag}`}>
+      <DropdownMenuTrigger render={<Button type="button" variant={swatch ? "secondary" : "ghost"} size={swatch ? "icon-sm" : "icon-xs"} disabled={disabled || working} aria-label={onChangeName ? `管理${kind} ${tag}` : `设置${kind}颜色 ${tag}`} className={swatch ? "note-property-icon-trigger border-0" : "note-tag-color-trigger shrink-0"} />}>
+        {swatch ? <span aria-hidden="true" className={`note-tag-color-dot note-tag-color-${color}`} /> : <MoreHorizontal className="size-4" />}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={swatch ? "end" : "start"} side={swatch ? "bottom" : "right"} className={onChangeName ? 'note-property-option-menu w-56' : 'note-property-option-menu w-44'} aria-label={onChangeName ? `${kind}设置 ${tag}` : `${kind}颜色 ${tag}`}>
         {onChangeName ? <form className="px-2 py-1.5" onSubmit={event => { event.preventDefault(); if (normalized && normalized !== tag) void change(normalized); }}>
           <Input autoFocus aria-label={`${kind}名称`} value={name} disabled={disabled || working} className="h-8 min-w-0 text-sm" onChange={event => setName(event.target.value)} onFocus={event => event.target.select()} onKeyDown={event => { if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) event.preventDefault(); if (event.key !== 'Escape') event.stopPropagation(); }} />
-        </form> : <DropdownMenuGroup><DropdownMenuLabel className="truncate" data-ui-tooltip={tag} data-ui-tooltip-overflow><TagPill name={tag} /></DropdownMenuLabel></DropdownMenuGroup>}
+        </form> : !swatch && <DropdownMenuGroup><DropdownMenuLabel className="truncate" data-ui-tooltip={tag} data-ui-tooltip-overflow><TagPill name={tag} /></DropdownMenuLabel></DropdownMenuGroup>}
         {onChangeName && <><DropdownMenuItem className="note-property-delete" disabled={disabled || working} onClick={() => { setError(''); setRemoving(true); }}><Trash2 />删除{kind}</DropdownMenuItem><DropdownMenuSeparator /></>}
         <DropdownMenuGroup><DropdownMenuLabel className="text-xs text-secondary">颜色</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={color} onValueChange={async value => {
@@ -75,7 +78,11 @@ function PropertyOptionMenu({name:tag, kind, color, disabled, normalizeName, onC
           catch (cause) { setError(cause instanceof Error ? errorMessage(cause) : `无法保存${kind}颜色，请重试。`); }
           finally { pending.current = false; setWorking(false); }
         }}>
-          {tagColors.map(([id, label]) => <Menu.RadioItem key={id} value={id} disabled={disabled || working} closeOnClick={false} className={`note-tag-color-option note-tag-color-${id}`}><span aria-hidden="true" className="note-tag-color-swatch"><Hash className="size-3" /></span><span className="flex-1">{label}</span><Menu.RadioItemIndicator className="note-tag-color-check ml-auto flex size-4 shrink-0 items-center justify-center"><Check aria-hidden="true" className="size-4" /></Menu.RadioItemIndicator></Menu.RadioItem>)}
+          {tagColors.map(([id, label]) => <Menu.RadioItem key={id} value={id} disabled={disabled || working} closeOnClick={false} className={`note-tag-color-option note-tag-color-${id}`}>
+            <span aria-hidden="true" className="note-tag-color-swatch">{!swatch && <Tag className="size-3" />}</span>
+            <span className="flex-1">{label}</span>
+            <Menu.RadioItemIndicator className="note-tag-color-check ml-auto flex size-4 shrink-0 items-center justify-center"><Check aria-hidden="true" className="size-4" /></Menu.RadioItemIndicator>
+          </Menu.RadioItem>)}
         </DropdownMenuRadioGroup></DropdownMenuGroup>
         {working && <p role="status" className="px-2 py-1 text-xs text-secondary">正在更新{kind}…</p>}
         {error && <p role="alert" className="px-2 py-1 text-xs text-error">{error}</p>}

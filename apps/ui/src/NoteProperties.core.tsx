@@ -60,6 +60,7 @@ type View = {
   Image: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   GripVertical: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Hash: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
+  Tag: View["Hash"];
   Button: ComponentType<Omit<ComponentProps<typeof import("@ui/components/button")["Button"]>, "render">>;
   PageNotice: ComponentType<ComponentProps<typeof import("@ui/business/PageNotice")["PageNotice"]>>;
   Input: ComponentType<ComponentProps<typeof import("@ui/components/input")["Input"]>>;
@@ -99,7 +100,7 @@ type View = {
 export function createNoteProperties(view: View) {
   const ConfirmationPopup = view.ConfirmationPopup ?? AlertDialog.Popup;
   const ConfirmationPortal = view.ConfirmationPortal ?? AlertDialog.Portal;
-  const { Checkbox, CalendarDays, LoaderCircle, Check, ChevronDown, ChevronUp, Clock, FileText, Plus, Text, SquareCheck, Pencil, Trash2, Copy, CircleChevronDown, ListChecks, SlidersHorizontal, Image, Hash, GripVertical, Button, PageNotice, Input, Skeleton, NameEditor, PropertyIconGlyph, PropertyIconPicker, Textarea, TagPill, Collapsible, CollapsibleContent, CollapsibleTrigger, Popover, PopoverTrigger, PopoverContent, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, ChoicePropertyEditor, ChoicePill, DatePropertyPicker, ImagePropertyEditor, TagPropertyEditor } = view;
+  const { Checkbox, CalendarDays, LoaderCircle, Check, ChevronDown, ChevronUp, Clock, FileText, Plus, Text, SquareCheck, Pencil, Trash2, Copy, CircleChevronDown, ListChecks, SlidersHorizontal, Image, Hash, Tag, GripVertical, Button, PageNotice, Input, Skeleton, NameEditor, PropertyIconGlyph, PropertyIconPicker, Textarea, TagPill, Collapsible, CollapsibleContent, CollapsibleTrigger, Popover, PopoverTrigger, PopoverContent, DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, ChoicePropertyEditor, ChoicePill, DatePropertyPicker, ImagePropertyEditor, TagPropertyEditor } = view;
 function SelectionLoading({ values, label }: { values:ReactNode; label:string }) {
   return <div className="note-tag-editor" aria-busy="true">
     <div className="note-tag-header"><div className="note-tag-selected">{values}</div></div>
@@ -125,7 +126,7 @@ const noteTime = (value?: string) => {
 };
 const display = (value: NoteProperty['value']) => Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? value ? '已勾选' : '未勾选' : value || '空';
 const editableTypes = ['text','number','select','multiSelect','date','checkbox','image'] as const;
-const systemNames = {'system:tags':Hash,'system:updatedAt':Clock,'system:createdAt':CalendarDays,'system:filename':FileText};
+const systemNames = {'system:tags':Tag,'system:updatedAt':Clock,'system:createdAt':CalendarDays,'system:filename':FileText};
 const propertyTypes = {text:{label:'文本',Icon:Text},number:{label:'数字',Icon:Hash},select:{label:'选择',Icon:CircleChevronDown},multiSelect:{label:'多选',Icon:ListChecks},date:{label:'日期',Icon:CalendarDays},checkbox:{label:'复选框',Icon:SquareCheck},image:{label:'图片',Icon:Image},unsupported:{label:'只读',Icon:Text}};
 function PropertyCreator({busy, error, onSave}: {busy:boolean; error?:string; onSave:(change:PropertyChange)=>Promise<void>}) {
   const [name, setName] = useState('');

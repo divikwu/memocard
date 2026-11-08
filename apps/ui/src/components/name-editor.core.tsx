@@ -17,7 +17,7 @@ type SaveName = (name: string) => Promise<void>;
 export function createNameEditor(view: View) {
  const {Popover,PopoverContent,Input,Sheet,SheetClose,SheetContent,SheetHeader,SheetTitle} = view;
 
-function NameEditor({ initialName, anchor, title, inputLabel, maxLength, selectOnFocus, busy = false, sheet = false, anchorIsTrigger = false, initialFocus, finalFocus, leading, children, side, align, sideOffset = 8, className, onClose, onSave }: {
+function NameEditor({ initialName, anchor, title, inputLabel, maxLength, selectOnFocus, busy = false, sheet = false, anchorIsTrigger = false, initialFocus, finalFocus, leading, trailing, children, side, align, sideOffset = 8, className, onClose, onSave }: {
   initialName: string; anchor: HTMLElement; title: string; inputLabel: string;
   maxLength?: number; selectOnFocus?: boolean; busy?: boolean;
   sheet?: boolean;
@@ -26,7 +26,7 @@ function NameEditor({ initialName, anchor, title, inputLabel, maxLength, selectO
   finalFocus?: () => HTMLElement | false;
   side?: "bottom" | "right"; align?: "start" | "end"; sideOffset?: number;
   className?: string;
-  leading?: (disabled: boolean) => ReactNode; children?: (disabled: boolean) => ReactNode;
+  leading?: (disabled: boolean) => ReactNode; trailing?: (disabled: boolean) => ReactNode; children?: (disabled: boolean) => ReactNode;
   onClose: () => void; onSave: SaveName;
 }) {
   const isMobile = useIsMobile();
@@ -91,9 +91,10 @@ function NameEditor({ initialName, anchor, title, inputLabel, maxLength, selectO
         event.preventDefault();
         void saveName();
       }}>
-        <div className={cn("grid items-center gap-x-1", leading && "grid-cols-[auto_minmax(0,1fr)]")}>
+        <div className="flex items-center gap-x-1">
           {leading?.(disabled)}
-          <Input ref={nameInput} className="border-0" aria-label={inputLabel} maxLength={maxLength} value={name} onFocus={event => { if (selectOnFocus) event.currentTarget.select(); }} onChange={event => { setName(event.target.value); setError(""); }} onKeyDown={event => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) event.preventDefault(); }} disabled={disabled} />
+          <Input ref={nameInput} className="min-w-0 flex-1 border-0" aria-label={inputLabel} maxLength={maxLength} value={name} onFocus={event => { if (selectOnFocus) event.currentTarget.select(); }} onChange={event => { setName(event.target.value); setError(""); }} onKeyDown={event => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) event.preventDefault(); }} disabled={disabled} />
+          {trailing?.(disabled)}
         </div>
         {saving && <p role="status" className="sr-only">保存中…</p>}
         {error && <p role="alert" className="px-1 text-sm text-error">{error}</p>}

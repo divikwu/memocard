@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { TagPreferenceState } from '@memocard/contracts';
-import { connectSharedTagPreferences, sharedTagPreferences, tagPreferenceKey, updateSharedTagPreferences } from './shared-tag-preferences';
+import { connectSharedTagPreferences, parseTagPreferences, sharedTagPreferences, tagPreferenceKey, updateSharedTagPreferences } from './shared-tag-preferences';
 const bridge = vi.hoisted(() => ({request:vi.fn()}));
 vi.mock('./bridge', () => ({request:bridge.request}));
 let stop: (() => void) | undefined;
@@ -32,6 +32,31 @@ it('loads the same saved preferences in a second browser without legacy storage'
   await connect();
   expect(JSON.parse(sharedTagPreferences('vault')!.raw!)).toEqual({pinned:remote.pinned,icons:remote.icons});
   expect(bridge.request).toHaveBeenCalledTimes(1);
+});
+it.each([false, true])('preserves cached group metadata with an older vault service (initialized %s)', async initialized => {
+  remote.initialized = initialized;
+  const cache = JSON.stringify({pinned:[],icons:{},groups:[{id:'group',name:'Work',tags:['design']}],labels:{design:'Design notes'}});
+  localStorage.setItem(tagPreferenceKey('vault'), cache);
+  await connect();
+  expect(localStorage.getItem(tagPreferenceKey('vault'))).toBe(cache);
+  expect(sharedTagPreferences('vault')?.error).toContain('请更新应用');
+  expect(bridge.request).toHaveBeenCalledTimes(1);
+});
+it('rejects a write that drops group members from its response', async () => {
+  const group = {id:'group',name:'Work',tags:['design']};
+  remote = {...remote, groups:[group], labels:{}, initialized:true};
+  const original = bridge.request.getMockImplementation()!;
+  bridge.request.mockImplementation((operation, params) => operation === 'setTagPreferences'
+    ? Promise.resolve({...remote, groups:[{...group,tags:[]}]})
+    : original(operation, params));
+  await connect();
+  await expect(updateSharedTagPreferences('vault', current => ({...current,groups:[{...group,tags:['design','engineering']}]})))
+    .rejects.toThrow('未完整保存');
+  expect(JSON.parse(localStorage.getItem(tagPreferenceKey('vault'))!).groups).toEqual([group]);
+});
+it('only returns icons explicitly assigned to a tag', () => {
+  expect(parseTagPreferences(null).icons['constructor']).toBeUndefined();
+  expect(parseTagPreferences('{"icons":{"constructor":"📝"}}').icons['constructor']).toBe('📝');
 });
 it('honors shared empty settings instead of resurrecting stale browser pins or icons', async () => {
   remote.initialized = true;

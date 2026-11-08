@@ -113,7 +113,7 @@ export function createPreviewMock(scenario:string) {
       case 'listTags': {
         const counts = new Map<string, number>();
         for (const item of notes) if (!item.deletedAt) {
-          const names = new Set(item.tags.flatMap(tag => tag.split('/').map((_, index, parts) => parts.slice(0, index + 1).join('/'))));
+          const names = new Set(params.flat === true ? item.tags : item.tags.flatMap(tag => tag.split('/').map((_, index, parts) => parts.slice(0, index + 1).join('/'))));
           for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
         }
         result={tags:[...counts].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([name,count]) => ({name,count}))};break;

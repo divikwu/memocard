@@ -23,7 +23,7 @@ export async function createWorkspaceFixture(scenario = "loading") {
     }
   }
   let pins: NotePins = { pins: {}, contentHash: "fixture-pins-0" };
-  let preferences: TagPreferenceState = { pinned: ["设计"], icons: { "生活": "🌱", "阅读": "📚" }, initialized: true, contentHash: "fixture-tags-0" };
+  let preferences: TagPreferenceState = { pinned: ["设计"], icons: { "生活": "🌱", "阅读": "📚" }, groups: [], labels: {}, initialized: true, contentHash: "fixture-tags-0" };
   const removed = new Map<string, Note>();
   const deletedDrafts = new Set<string>();
   const trash: TrashItem[] = [];
@@ -54,7 +54,7 @@ export async function createWorkspaceFixture(scenario = "loading") {
         if (searchQuery && scenario === "review-search-error") throw Object.assign(new Error("预览搜索读取失败"), { code: "IO_ERROR" });
         const page = await base.request<NotePage>(operation, params);
         const all = page.notes.filter(note => !removed.has(note.id));
-        const matchesTag = (note: Note, tag: string) => note.tags.some(value => value === tag || value.startsWith(`${tag}/`));
+        const matchesTag = (note: Note, tag: string) => note.tags.some(value => value === tag || (params.exactTags !== true && value.startsWith(`${tag}/`)));
         const filtered = all.filter(note => (!params.pinned || pins.pins[note.id]) && (!Array.isArray(params.tags) || params.tags.every(tag => matchesTag(note, String(tag)))) && (params.quickFilter !== "untagged" || !note.tags.length) && (params.quickFilter !== "images" || /!\[|<img/.test(note.body)) && (params.quickFilter !== "links" || /https?:|\[\[/.test(note.body)));
         const paged = scenario === "review-search" && searchQuery;
         result = { ...page, notes: paged ? params.cursor ? filtered.slice(2) : filtered.slice(0, 2) : filtered, nextCursor: paged && !params.cursor && filtered.length > 2 ? "review-search-page-2" : null, filterCounts: { untagged: all.filter(note => !note.tags.length).length, images: 0, links: 0 } }; break;
@@ -62,7 +62,7 @@ export async function createWorkspaceFixture(scenario = "loading") {
       case "getNotePins": result = pins; break;
       case "setNotePinned": { const id = String(params.id); const next = { ...pins.pins }; if (params.pinned) next[id] = reviewTime; else delete next[id]; pins = { pins: next, contentHash: `${pins.contentHash}+` }; result = pins; break; }
       case "getTagPreferences": result = preferences; break;
-      case "setTagPreferences": preferences = { ...preferences, pinned: params.pinned as string[], icons: params.icons as Record<string, string>, contentHash: `${preferences.contentHash}+` }; result = preferences; break;
+      case "setTagPreferences": preferences = { ...preferences, pinned: params.pinned as string[], icons: params.icons as Record<string, string>, groups: (params.groups as TagPreferenceState["groups"]) ?? preferences.groups, labels: (params.labels as TagPreferenceState["labels"]) ?? preferences.labels, contentHash: `${preferences.contentHash}+` }; result = preferences; break;
       case "getDrafts": { const value = await base.request<DraftList>(operation, params); result = { ...value, drafts: value.drafts.filter(draft => !deletedDrafts.has(draft.draftKey ?? draft.id)), unscopedDrafts: (value.unscopedDrafts ?? []).filter(draft => !deletedDrafts.has(draft.draftKey ?? draft.id)) }; break; }
       case "deleteDraft": deletedDrafts.add(String(params.draftKey ?? params.id)); result = {}; break;
       case "deleteNote": { const note = await base.request<Note>("getNote", params); removed.set(note.id, note); trash.push({ ...note, trashKey: `trash-${note.id}`, preview: note.body.slice(0, 120), deletedAt: reviewTime }); result = {}; break; }
@@ -75,6 +75,12 @@ export async function createWorkspaceFixture(scenario = "loading") {
       case "getTrashedNote": { const item = trash.find(item => item.trashKey === params.trashKey)!; result = { ...item, note: removed.get(item.id) }; break; }
       case "restoreNote": { const index = trash.findIndex(item => item.trashKey === params.trashKey); const item = trash[index]; result = removed.get(item.id); removed.delete(item.id); trash.splice(index, 1); break; }
       case "permanentlyDeleteNote": { const index = trash.findIndex(item => item.trashKey === params.trashKey); if (index >= 0) trash.splice(index, 1); result = {}; break; }
+      case "listTags": {
+        const list = await base.request<{tags: {name: string; count: number}[]}>(operation, params);
+        const names = new Set(list.tags.map(tag => tag.name));
+        result = params.flat ? {...list, tags: [...list.tags, ...Object.keys(preferences.labels ?? {}).filter(name => !names.has(name)).map(name => ({name, count: 0}))]} : list;
+        break;
+      }
       default: return base.request<T>(operation, params);
     }
     return structuredClone(result) as T;

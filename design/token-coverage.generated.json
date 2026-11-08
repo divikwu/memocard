@@ -7592,7 +7592,7 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
-          "value": "var(--color-background-body)",
+          "value": "var(--color-background-surface)",
           "line": 74
         },
         {

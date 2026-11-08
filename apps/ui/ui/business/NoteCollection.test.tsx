@@ -33,11 +33,10 @@ it("keeps card opening keyboard-accessible and tag filtering independent", async
   render(<NoteCollection {...options} />);
   expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
   const tag = screen.getByRole("button", { name: "筛选标签 area/coffee" });
-  expect(tag.textContent).toBe("coffee");
+  expect(tag.textContent).toBe("area/coffee");
   expect(tag.title).toBe("");
   await user.hover(tag);
-  expect((await screen.findByRole("tooltip")).textContent).toBe("area/coffee");
-  expect(screen.getByRole("tooltip").id).toBe(tag.getAttribute("aria-describedby"));
+  expect(screen.queryByRole("tooltip")).toBeNull();
   await user.unhover(tag);
   expect(screen.getAllByRole("button", { name: /^筛选标签 / })).toHaveLength(2);
   await user.click(screen.getByRole("button", { name: "筛选标签 area/coffee" }));
@@ -83,7 +82,7 @@ it("omits the active tag before limiting visible tags and removes an empty tag r
   expect(screen.getAllByRole("button", { name: /^筛选标签 / }).map(button => button.textContent)).toEqual(["日常", "配方"]);
   expect(screen.queryByText("+1")).toBeNull();
   view.rerender(<NoteCollection {...options} activeTag="area" />);
-  expect(screen.getByRole("button", { name: "筛选标签 area/coffee" }).textContent).toBe("coffee");
+  expect(screen.getByRole("button", { name: "筛选标签 area/coffee" }).textContent).toBe("area/coffee");
   view.rerender(<NoteCollection {...options} notes={[{ ...note, tags: ["area/coffee"] }]} />);
   expect(view.container.querySelector(".ui-note-tags")).toBeNull();
 });

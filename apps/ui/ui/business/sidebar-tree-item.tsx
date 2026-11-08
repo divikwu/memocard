@@ -28,6 +28,18 @@ export function TreeRow({ render, className, ...props }: useRender.ComponentProp
   });
 }
 
+export function TreeToggleButton({ className, ...props }: ComponentProps<typeof Button>) {
+  return <Button type="button" variant="ghost" size="icon-xs" className={cn("ui-tree-toggle", className)} {...props}>
+    <SidebarIcon name="right" className="transition-transform duration-fast ease-standard" />
+  </Button>;
+}
+
+export function TreeMoreButton({ className, ...props }: ComponentProps<typeof Button>) {
+  return <Button type="button" variant="ghost" size="icon-xs" className={cn("ui-tree-more", className)} {...props}>
+    <SidebarIcon name="more" className="size-3" />
+  </Button>;
+}
+
 export function SidebarTreeItem({ label, className, icon, buttonProps, isActive, nested = false, defaultOpen = true, toggleLabel, accessories, children }: SidebarTreeItemProps) {
   const Item = nested ? SidebarMenuSubItem : SidebarMenuItem;
   const MenuButton = nested ? SidebarMenuSubButton : SidebarMenuButton;
@@ -39,7 +51,7 @@ export function SidebarTreeItem({ label, className, icon, buttonProps, isActive,
           <span aria-hidden="true" className={cn("ui-sidebar-row-icon flex size-4 shrink-0 items-center justify-center", children && "ui-sidebar-branch-icon", typeof icon === "string" && "ui-sidebar-emoji")}>{icon}</span>
           <span className="min-w-0 flex-1 truncate">{label}</span>
         </MenuButton>
-        {children && <Collapsible.Trigger render={<Button type="button" variant="ghost" size="icon-xs" className="ui-sidebar-tree-toggle" aria-label={toggleLabel ?? `展开或收起 ${label}`} disabled={button.disabled} />}><SidebarIcon name="right" className="transition-transform duration-fast ease-standard" /></Collapsible.Trigger>}
+        {children && <Collapsible.Trigger render={<TreeToggleButton className="ui-sidebar-tree-toggle" aria-label={toggleLabel ?? `展开或收起 ${label}`} disabled={button.disabled} />} />}
         <div className="ui-sidebar-row-actions absolute inset-y-0 right-1 flex items-center gap-0.5">
           {accessories}
         </div>

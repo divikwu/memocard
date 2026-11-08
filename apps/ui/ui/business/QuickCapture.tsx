@@ -7,7 +7,7 @@ import Add01Icon from "@hugeicons/core-free-icons/Add01Icon";
 import ArrowUpRight01Icon from "@hugeicons/core-free-icons/ArrowUpRight01Icon";
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon";
 import FolderOpenIcon from "@hugeicons/core-free-icons/FolderOpenIcon";
-import HashIcon from "@hugeicons/core-free-icons/HashIcon";
+import { Tag01Icon } from "./tag-01-icon";
 import ImageAdd01Icon from "@hugeicons/core-free-icons/ImageAdd01Icon";
 import Loading03Icon from "@hugeicons/core-free-icons/Loading03Icon";
 import TelegramIcon from "@hugeicons/core-free-icons/TelegramIcon";
@@ -28,7 +28,7 @@ const VaultImage = recoverableLazy(() => import("./NoteMarkdown").then(module =>
 
 export type { QuickCaptureHandle, QuickCaptureMemory, QuickCaptureProps } from "../../src/hooks/use-quick-capture";
 
-const icons = { add: Add01Icon, send: TelegramIcon, continue: ArrowUpRight01Icon, close: Cancel01Icon, folder: FolderOpenIcon, tag: HashIcon, image: ImageAdd01Icon, loading: Loading03Icon, check: Tick02Icon };
+const icons = { add: Add01Icon, send: TelegramIcon, continue: ArrowUpRight01Icon, close: Cancel01Icon, folder: FolderOpenIcon, tag: Tag01Icon, image: ImageAdd01Icon, loading: Loading03Icon, check: Tick02Icon };
 function Icon({ name, className }: { name: keyof typeof icons; className?: string }) { return <HugeiconsIcon icon={icons[name]} aria-hidden="true" strokeWidth={2} className={className || "size-4 shrink-0"} />; }
 
 export function QuickCapture(props: QuickCaptureProps) {

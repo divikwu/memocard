@@ -169,14 +169,13 @@ describe("AppSidebar", () => {
   });
 });
 
-it("navigates and collapses three-level tags without a directory section", async () => {
+it("navigates legacy tag names in a flat list", async () => {
   const props = createProps({ tags: [{ name: "工作", count: 2 }, { name: "工作/项目", count: 2 }, { name: "工作/项目/设计", count: 1 }], tag: "工作/项目/设计" });
   renderSidebar(props);
   expect(screen.queryByRole("navigation", { name: "目录" })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "工作/项目/设计" }));
   expect(props.onNavigate).toHaveBeenCalledWith("notes", "工作/项目/设计", undefined);
-  await userEvent.click(screen.getByRole("button", { name: "展开或收起标签 工作/项目" }));
-  await waitFor(() => expect(screen.queryByRole("button", { name: "工作/项目/设计" })).toBeNull());
+  expect(screen.queryByRole("button", { name: /^展开或收起标签 工作/ })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "工作" }));
   expect(props.onNavigate).toHaveBeenLastCalledWith("notes", "工作", undefined);
 });

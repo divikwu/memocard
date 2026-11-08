@@ -20,7 +20,7 @@
 .ui-collection-search-clear { position: absolute; inset-inline-end: calc(var(--spacing-1) * 1.5); top: 50%; transform: translateY(-50%); }
 .ui-note-items { list-style: none; margin: 0; padding: 0; }
 .ui-note-items > li { min-width: 0; }
-.ui-note-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--spacing-1) * 80)), 1fr)); gap: calc(var(--spacing-1) * 2); }
+.ui-note-cards { --image-gap: var(--spacing-1); display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--spacing-1) * 80)), 1fr)); gap: calc(var(--spacing-1) * 2); }
 .ui-note-list { display: flex; flex-direction: column; gap: 0; }
 .ui-note-card { position: relative; min-width: 0; height: calc(var(--spacing-1) * 64); padding-block: 0; gap: 0; border: 0; border-radius: var(--radius-item); box-shadow: var(--shadow-flat); }
 .ui-note-card[data-note-openable="true"]:not(.ui-card-hover-shadow, .ui-card-hover-scale) { transition: background-color var(--duration-fast) var(--ease-standard); }

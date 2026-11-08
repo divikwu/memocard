@@ -56,7 +56,7 @@
 .ui-note-markdown aside[data-callout-text-color="pink"] { color: var(--color-text-pink); }
 .ui-note-markdown aside[data-callout-text-color="red"] { color: var(--color-text-red); }
 .ui-note-markdown aside[data-callout-text-color] :is(h1,h2,h3,h4,h5,h6) { color: inherit; }
-.ui-note-markdown figure[data-image-columns] { display: grid; gap: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 4); align-items: start; }
+.ui-note-markdown figure[data-image-columns] { display: grid; gap: calc(var(--spacing-1) * 2) var(--image-gap, calc(var(--spacing-1) * 4)); align-items: start; }
 .ui-note-markdown figure[data-image-columns] > * { min-width: 0; margin: 0; }
 .ui-note-markdown figure[data-image-columns] img { margin: 0; width: 100%; height: auto; }
 .ui-note-markdown figure[data-image-columns] figcaption { grid-column: 1 / -1; }

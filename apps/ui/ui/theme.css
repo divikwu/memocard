@@ -71,7 +71,7 @@
   --color-outline-surface: var(--color-background-body);
   --color-outline-hover: var(--color-background-muted);
   --color-tab-muted: color-mix(in oklab, var(--color-text-primary) 60%, transparent);
-  --color-tab-active: var(--color-background-body);
+  --color-tab-active: var(--color-background-surface);
   --color-tab-active-border: transparent;
   --color-switch-checked: var(--color-background-body);
   --color-switch-unchecked: var(--color-background-body);

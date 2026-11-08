@@ -71,13 +71,13 @@ it('completes an existing tag with Enter and creates new body tags from suggesti
   await user.keyboard('{Enter}');
   expect(input.textContent).toBe('正文 #工作 ');
   expect(screen.queryByLabelText('已选标签')).toBeNull();
-  await user.type(input,'#project/new');
-  await user.click(await screen.findByRole('button',{name:/#project\/new.*新标签/}));
-  expect(input.textContent).toBe('正文 #工作 #project/new ');
+  await user.type(input,'#project-new');
+  await user.click(await screen.findByRole('button',{name:/#project-new.*新标签/}));
+  expect(input.textContent).toBe('正文 #工作 #project-new ');
   expect(screen.queryByLabelText('已选标签')).toBeNull();
   await user.click(screen.getByRole('button',{name:'记录'}));
   await waitFor(()=>expect(props.onRecorded).toHaveBeenCalledOnce());
-  expect(bridge.request).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'正文 #工作 #project/new',tags:['工作','project/new'],inheritedTags:[]}));
+  expect(bridge.request).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'正文 #工作 #project-new',tags:['工作','project-new'],inheritedTags:[]}));
 });
 
 it('skips suggestions in code and keeps composition Enter from selecting or recording',()=>{

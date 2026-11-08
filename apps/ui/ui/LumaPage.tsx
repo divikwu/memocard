@@ -126,11 +126,16 @@ export function SwitchExample() {
 }
 
 export function TabsExample() {
-  return <Tabs defaultValue="overview" className="luma-example-tabs" data-testid="luma-tabs">
-    <TabsList aria-label="组件信息"><TabsTrigger value="overview">概览</TabsTrigger><TabsTrigger value="details">详细信息</TabsTrigger><TabsTrigger value="disabled" disabled>不可用</TabsTrigger></TabsList>
-    <TabsContent value="overview"><p>使用方向键在标签间移动，查看当前主题下的选中反馈。</p></TabsContent>
-    <TabsContent value="details"><p data-testid="luma-tabs-details">主题：Luma；底座：Base UI；默认圆角基准：8px，可在工具栏切换。</p></TabsContent>
-  </Tabs>;
+  return <div className="grid gap-6">
+    {([["default", "胶囊"], ["line", "下划线"], ["pill", "独立胶囊"]] as const).map(([variant, label]) => <div key={variant} className="grid gap-2">
+      <span className="text-sm font-medium">{label}</span>
+      <Tabs defaultValue="overview" className="luma-example-tabs" data-testid={variant === "default" ? "luma-tabs" : undefined}>
+        <TabsList variant={variant} aria-label={`${label}标签示例`}><TabsTrigger value="overview">概览</TabsTrigger><TabsTrigger value="details">详细信息</TabsTrigger><TabsTrigger value="disabled" disabled>不可用</TabsTrigger></TabsList>
+        <TabsContent value="overview"><p>使用方向键在标签间移动，查看当前主题下的选中反馈。</p></TabsContent>
+        <TabsContent value="details"><p data-testid={variant === "default" ? "luma-tabs-details" : undefined}>主题：Luma；底座：Base UI；默认圆角基准：8px，可在工具栏切换。</p></TabsContent>
+      </Tabs>
+    </div>)}
+  </div>;
 }
 
 export function TooltipExample() {
