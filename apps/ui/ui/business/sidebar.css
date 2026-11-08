@@ -41,21 +41,23 @@
 .ui-sidebar-tree-row:is(:hover, :has(:focus-visible), .ui-sidebar-tag-row-open) > .ui-sidebar-row { background: transparent; }
 .ui-sidebar-row-actions { width: calc(var(--spacing-1) * 6); pointer-events: none; }
 .ui-sidebar-tree-row .ui-sidebar-row-actions > [data-sidebar="menu-badge"] { right: 0; top: 50%; min-width: calc(var(--spacing-1) * 6); height: auto; padding: 0; transform: translateY(-50%); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
-.ui-sidebar-tree-toggle, .ui-sidebar-tag-more { position: absolute; top: 50%; width: calc(var(--spacing-1) * 7); height: calc(var(--spacing-1) * 7); transform: translateY(-50%); border-radius: var(--radius-full); opacity: 0; pointer-events: auto; }
+.ui-tree-toggle, .ui-tree-more { width: var(--tree-toggle-size, calc(var(--spacing-1) * 7)); height: var(--tree-toggle-size, calc(var(--spacing-1) * 7)); border-radius: var(--radius-full); }
+.ui-sidebar-tree-toggle, .ui-sidebar-tag-more { position: absolute; top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: auto; }
 .ui-sidebar-tree-toggle { left: var(--spacing-1); }
 .ui-sidebar-tag-section { --ui-sidebar-tag-control-inset: calc(var(--spacing-1) * .5); }
 .ui-sidebar-tag-section .ui-sidebar-tree-toggle { left: var(--ui-sidebar-tag-control-inset); }
-.ui-sidebar-tree-toggle[aria-expanded="true"] { background-color: transparent; }
+.ui-tree-toggle[aria-expanded="true"] { background-color: transparent; }
 /* The action slot already sits 4px inside the row. */
-.ui-sidebar-tag-more { right: calc(var(--spacing-1) * -.5); color: var(--color-icon-secondary); }
-.ui-sidebar-tag-more:hover { color: var(--color-icon-primary); }
-.ui-sidebar-tree-toggle:hover, .ui-sidebar-tag-more:hover { background-color: var(--color-overlay-hover); }
+.ui-sidebar-tag-more { right: calc(var(--spacing-1) * -.5); }
+.ui-tree-more { color: var(--color-icon-secondary); }
+.ui-tree-more:hover { color: var(--color-icon-primary); }
+.ui-tree-toggle:hover, .ui-tree-more:hover { background-color: var(--color-overlay-hover); }
 .ui-sidebar-tree-row:is(:hover, :has(:focus-visible)) > .ui-sidebar-tree-toggle, .ui-sidebar-tree-row:is(:hover, :has(:focus-visible), .ui-sidebar-tag-row-open) .ui-sidebar-tag-more { opacity: 1; }
 .ui-sidebar-tree-row:is(:hover, :has(:focus-visible)) .ui-sidebar-branch-icon { opacity: 0; }
 .ui-sidebar-tag-section [data-sidebar="menu-badge"] { opacity: 0; }
 .ui-sidebar-tag-section:is(:hover, :has(:focus-visible)) [data-sidebar="menu-badge"] { opacity: 1; }
 .ui-sidebar-tag-section .ui-sidebar-tree-row:is(:hover, :has(:focus-visible), .ui-sidebar-tag-row-open) [data-sidebar="menu-badge"] { opacity: 0; }
-.ui-sidebar-tree-toggle[data-panel-open] > svg { transform: rotate(90deg); }
+.ui-tree-toggle[aria-expanded="true"] > svg { transform: rotate(90deg); }
 .ui-sidebar-emoji { font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; font-variant-emoji: emoji; }
 .ui-sidebar-tag-section [data-sidebar="group-label"] { padding-inline: 0; }
 .ui-sidebar-section-toggle { display: flex; height: 100%; min-width: 0; flex: 1; align-items: center; gap: var(--spacing-1); padding-inline: calc(var(--spacing-1) * 3); border-radius: var(--radius-full); outline: none; text-align: left; }

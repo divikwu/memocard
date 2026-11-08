@@ -27,6 +27,7 @@ const tabsListVariants = cva(
       variant: {
         default: "h-element-md bg-control p-0.5",
         line: "gap-3 bg-transparent group-data-horizontal/tabs:h-element-md",
+        pill: "gap-1 p-0 [&>[data-slot=tabs-trigger]:not([data-active])]:bg-control",
       },
     },
     defaultVariants: {

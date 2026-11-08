@@ -22,16 +22,15 @@ async function changeTag(from:string, to:string | null, vaultId:string, transpor
   const action = to === null ? '删除' : '重命名';
   const updateTags = (tags:string[]) => [...new Set(tags.flatMap(tag => to === null ? tagKey(tag) === from ? [] : [tag] : [renamedTag(tag, from, to)]))];
   if (to !== null) {
-    if (!to || to.split('/').some(part => !/^[\p{L}\p{N}_-]+$/u.test(part)) || !/[\p{L}_/-]/u.test(to)) throw new Error('标签名称可包含文字、数字、下划线和连字符，使用 / 分隔层级。');
+    if (!to || !/^[\p{L}\p{N}_-]+$/u.test(to) || !/[\p{L}_-]/u.test(to)) throw new Error('标签名称可包含文字、数字、下划线和连字符，不能包含 / 或使用纯数字。');
     if (from === to) return;
-    if (to.startsWith(from + '/')) throw new Error('不能将标签移入自己的子级。');
-    const listed = await transport<{ tags:{name:string}[] }>('listTags');
-    if (listed.tags.some(tag => (tagKey(tag.name) === to || tagKey(tag.name).startsWith(to + '/')) && renamedTag(tag.name, from, to!) === tagKey(tag.name))) throw new Error('目标标签已存在，请使用其他名称。');
+    const listed = await transport<{ tags:{name:string}[] }>('listTags', {flat: true});
+    if (listed.tags.some(tag => tagKey(tag.name) === to)) throw new Error('目标标签已存在，请使用其他名称。');
   }
   const notes: Note[] = [];
   let cursor: string | null = null;
   do {
-    const page: NotePage = await transport("queryNotes", { tags: [from], limit: 100, ...(cursor ? { cursor } : {}) });
+    const page: NotePage = await transport("queryNotes", { tags: [from], exactTags: true, limit: 100, ...(cursor ? { cursor } : {}) });
     if (!page.coverage.complete) throw new Error(`请等待笔记库完整读取后再${action}。`);
     notes.push(...page.notes); cursor = page.nextCursor;
   } while (cursor);

@@ -15,7 +15,7 @@ function invalidatePropertyTagSuggestions() { cachedTags = undefined; tagRevisio
 if (typeof window !== 'undefined') {
   const invalidate = (event:Event) => {
     const type = (event as CustomEvent<{type?:string}>).detail?.type;
-    if (type === 'notesChanged' || type === 'statusChanged') invalidatePropertyTagSuggestions();
+    if (type === 'notesChanged' || type === 'statusChanged' || type === 'tagsChanged') invalidatePropertyTagSuggestions();
   };
   window.addEventListener('memocard:event',invalidate);
   import.meta.hot?.dispose(() => window.removeEventListener('memocard:event',invalidate));
@@ -75,7 +75,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
     }
     const requestedRevision = tagRevision;
     setLoading(true); setSuggestionError('');
-    void request<{tags:{name:string}[]}>('listTags', vaultBinding ? {vaultBinding} : undefined).then(result => {
+    void request<{tags:{name:string}[]}>('listTags', {flat: true, ...(vaultBinding ? {vaultBinding} : {})}).then(result => {
       if (!active) return;
       const tags = result.tags.map(tag => tagKey(tag.name));
       if (vaultBinding && requestedRevision === tagRevision) cachedTags = {binding:vaultBinding,tags,expires:Date.now()+15_000};
@@ -88,7 +88,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
   const picked = useMemo(() => new Set([...selected, ...bodyTags]), [selected,bodyTags]);
   const known = useMemo(() => new Set([...picked, ...options]), [picked,options]);
   const matches = [...known].filter(tag => !picked.has(tag) && tag.includes(search));
-  const create = !loading && !suggestionError && normalized && !known.has(normalized) ? normalized : null;
+  const create = !loading && !suggestionError && normalized && !normalized.includes("/") && !known.has(normalized) ? normalized : null;
   const candidates = create ? [create, ...matches] : matches;
   const virtualized = candidates.length > 100;
   const bodyOnly = [...new Set(bodyTags)].filter(tag => !selected.includes(tag));

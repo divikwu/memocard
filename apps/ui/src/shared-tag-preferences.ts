@@ -1,9 +1,49 @@
-import type { TagPreferences, TagPreferenceState } from '@memocard/contracts';
+import type { TagGroup, TagPreferences, TagPreferenceState } from '@memocard/contracts';
 import { tagKey } from './inline-tags';
 import { request } from './bridge';
+import { isTagColor } from './tag-colors';
 
 export const tagPreferenceEvent = 'memocard:tag-preferences';
 export const tagPreferenceKey = (vaultId?: string | null) => `memocard:tags:${vaultId || 'disconnected'}`;
+export function parseTagPreferences(raw: string | null): TagPreferences {
+  const icons: Record<string, string> = Object.create(null);
+  try {
+    const value = JSON.parse(raw || "null");
+    for (const [tag, icon] of Object.entries(value?.icons ?? {})) {
+      if (typeof icon === "string") icons[tagKey(tag)] = icon;
+    }
+    return { pinned: Array.isArray(value?.pinned) ? [...new Set<string>(value.pinned.filter((x: unknown) => typeof x === "string").map(tagKey))] : [], icons,
+      groups: Array.isArray(value?.groups) ? value.groups.filter((group: TagGroup) =>
+        typeof group?.id === "string" && typeof group.name === "string" &&
+        (group.description === undefined || typeof group.description === "string") &&
+        isTagColor(group.color ?? "default") &&
+        (group.icon === undefined || typeof group.icon === "string") && Array.isArray(group.tags) && group.tags.every(tag => typeof tag === "string")) : undefined,
+      labels: value?.labels && Object.fromEntries(Object.entries(value.labels).filter(([, description]) => typeof description === "string")) as Record<string, string> | undefined };
+  } catch { return { pinned: [], icons }; }
+}
+
+function values({pinned, icons, groups, labels}: TagPreferences): TagPreferences {
+  return {pinned, icons, groups, labels};
+}
+
+function requireTagMetadataSupport(current: TagPreferenceState, next: TagPreferences) {
+  if ((next.groups !== undefined && current.groups === undefined) || (next.labels !== undefined && current.labels === undefined)) {
+    throw new Error('请更新应用后再保存标签群组和说明。');
+  }
+}
+
+function verifyTagMetadata(saved: TagPreferenceState, next: TagPreferences) {
+  requireTagMetadataSupport(saved, next);
+  if (next.groups && (saved.groups?.length !== next.groups.length || next.groups.some((group, index) => {
+    const item = saved.groups?.[index];
+    return !item || item.id !== group.id || item.name !== group.name || item.icon !== group.icon ||
+      item.description !== group.description || item.color !== group.color ||
+      item.tags.length !== group.tags.length || item.tags.some((tag, index) => tag !== group.tags[index]);
+  })) || next.labels && (Object.keys(saved.labels ?? {}).length !== Object.keys(next.labels).length ||
+    Object.entries(next.labels).some(([tag, description]) => !Object.hasOwn(saved.labels ?? {}, tag) || saved.labels?.[tag] !== description))) {
+    throw new Error('标签群组或说明未完整保存，请重试。');
+  }
+}
 type Change = (current: TagPreferences) => TagPreferences;
 type Shared = { active: boolean; revision: number; raw?: string; error: string; ready: Promise<void>; writing: boolean; pending: Promise<unknown>; confirmed?: TagPreferenceState; cached?: TagPreferences; optimistic: Change[] };
 const shared = new Map<string, Shared>();
@@ -12,8 +52,8 @@ export const sharedTagPreferences = (vaultId: string) => shared.get(vaultId)?.ac
 
 function updateVisible(state: Shared) {
   if (!state.confirmed && !state.optimistic.length) { state.raw = undefined; return; }
-  const { pinned, icons } = state.confirmed ?? state.cached ?? {pinned:[], icons:{}};
-  state.raw = JSON.stringify(state.optimistic.reduce((current, change) => change(current), {pinned, icons}));
+  const initial = values(state.confirmed ?? state.cached ?? {pinned:[], icons:{}});
+  state.raw = JSON.stringify(state.optimistic.reduce<TagPreferences>((current, change) => change(current), initial));
 }
 
 function publish(vaultId: string, state: Shared, value: TagPreferenceState) {
@@ -22,7 +62,7 @@ function publish(vaultId: string, state: Shared, value: TagPreferenceState) {
   updateVisible(state);
   state.error = '';
   // This remains a browser cache; the vault is authoritative, including empty settings.
-  try { localStorage.setItem(tagPreferenceKey(vaultId), JSON.stringify({pinned:value.pinned, icons:value.icons})); } catch { /* The shared setting is already saved. */ }
+  try { localStorage.setItem(tagPreferenceKey(vaultId), JSON.stringify(values(value))); } catch { /* The shared setting is already saved. */ }
   changed();
 }
 function fail(state: Shared, cause: unknown) {
@@ -56,23 +96,22 @@ export function connectSharedTagPreferences(vaultId: string) {
   }
   async function initialize() {
     try {
-      let legacy: TagPreferences | null = null;
-      try {
-        const value = JSON.parse(localStorage.getItem(tagPreferenceKey(vaultId)) || 'null');
-        if (value && Array.isArray(value.pinned) && value.icons && typeof value.icons === 'object') legacy = {
-          pinned:[...new Set<string>(value.pinned.filter((tag:unknown) => typeof tag === 'string').map(tagKey))],
-          icons:Object.fromEntries(Object.entries(value.icons).filter(([,icon]) => typeof icon === 'string').map(([tag,icon]) => [tagKey(tag),icon])) as Record<string,string>,
-        };
-      } catch { /* Unreadable browser caches must not block the shared settings. */ }
-      state.cached = legacy ?? undefined;
+      let legacy = parseTagPreferences(null);
+      try { legacy = parseTagPreferences(localStorage.getItem(tagPreferenceKey(vaultId))); }
+      catch { /* Browser caches must not block the vault settings. */ }
+      if (!legacy.groups?.length) delete legacy.groups;
+      if (!Object.keys(legacy.labels ?? {}).length) delete legacy.labels;
+      state.cached = legacy;
       for (let attempt = 0; attempt < 3; attempt++) {
         const current = await request<TagPreferenceState>('getTagPreferences', {vaultId});
         check(state);
-        if (current.initialized || !legacy || (!legacy.pinned?.length && !Object.keys(legacy.icons || {}).length)) {
+        requireTagMetadataSupport(current, legacy);
+        if (current.initialized || (!legacy.pinned.length && !Object.keys(legacy.icons).length && !legacy.groups && !legacy.labels)) {
           publish(vaultId, state, current); return;
         }
         try {
           const saved = await request<TagPreferenceState>('setTagPreferences', {...legacy,baseHash:current.contentHash,vaultId});
+          verifyTagMetadata(saved, legacy);
           publish(vaultId, state, saved); return;
         } catch (cause) { if ((cause as {code?:string}).code !== 'HASH_CONFLICT' || attempt === 2) throw cause; }
       }
@@ -109,10 +148,12 @@ export function updateSharedTagPreferences(vaultId: string, change: Change, { op
       state.writing = true;
       state.revision++;
       for (let attempt = 0; attempt < 3; attempt++) {
-        const next = change({pinned:current.pinned,icons:current.icons});
+        const next = change(values(current));
         try {
+          requireTagMetadataSupport(current, next);
           const saved = await request<TagPreferenceState>('setTagPreferences', {...next,baseHash:current.contentHash,vaultId});
           check(state);
+          verifyTagMetadata(saved, next);
           removeOptimisticChange();
           publish(vaultId, state, saved);
           return;

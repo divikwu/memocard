@@ -101,7 +101,7 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
   return <Empty className="ui-note-empty border"><EmptyHeader><EmptyMedia variant="icon"><DocumentIcon aria-hidden="true" /></EmptyMedia><EmptyTitle>{title}</EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader><EmptyContent>{pinned ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>浏览笔记</Button> : filter || filtered ? <Button variant="outline" onClick={() => { s.collection.onQueryChange(""); void s.onNavigate("notes"); }}>查看所有笔记</Button> : <Button disabled={!s.canCreate} onClick={() => void s.onNew()}><AddIcon aria-hidden="true" />新建笔记</Button>}</EmptyContent></Empty>;
 }
 
-function WorkspaceContent({ state: s }: { state: AppViewState }) {
+function WorkspaceContent({ state: s, tagHeading }: { state: AppViewState; tagHeading?: ReactNode }) {
   if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
   const editor = s.editor;
   if (s.openingNote || editor) return <NoteDetail
@@ -112,7 +112,7 @@ function WorkspaceContent({ state: s }: { state: AppViewState }) {
   >
     {editor && <><h1 className="sr-only">{s.title}</h1><Editor {...editor} /></>}
   </NoteDetail>;
-  if (s.view === "tags") return <Suspense fallback={<PageLoading />}><TagsPage key={s.sidebar.vaultId || "disconnected"} tags={s.sidebar.tags} vaultId={s.sidebar.vaultId} loading={Boolean(s.sidebar.loadingTags)} connected={Boolean(s.status?.connected)} disabled={s.working || s.switchingVault} canRename={s.canCreate && !s.working && !s.switchingVault} onSelect={path => void s.onNavigate("notes", path)} onRename={s.sidebar.onRenameTag} /></Suspense>;
+  if (s.view === "tags") return <Suspense fallback={<PageLoading />}><TagsPage key={s.sidebar.vaultId || "disconnected"} heading={tagHeading} tags={s.sidebar.tags} vaultId={s.sidebar.vaultId} loading={Boolean(s.sidebar.loadingTags)} connected={Boolean(s.status?.connected)} disabled={s.working || s.switchingVault} canRename={s.canCreate && !s.working && !s.switchingVault} onSelect={path => void s.onNavigate("notes", path)} onRename={s.sidebar.onRenameTag} /></Suspense>;
   if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
   if (s.connectionState) return <WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
@@ -136,12 +136,13 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
   const loadingNoteId = s.openingNoteId === "new" ? undefined : s.openingNoteId;
   const noteAppearance = useNoteAppearance(s.status?.vaultId, savedNoteId ?? loadingNoteId);
   const showNoteAppearance = Boolean(savedNoteId && noteAppearance.available);
-  const tagParts = s.sidebar.tag?.split("/") ?? [];
-  const detailBreadcrumbs = s.view === "home" ? ["主页"] : ["所有笔记", ...tagParts, ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : [])];
+  const detailBreadcrumbs = s.view === "home" ? ["主页"] : ["所有笔记", ...(s.sidebar.tag ? [s.sidebar.tag] : []), ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : [])];
   const showBreadcrumb = s.isMobile || s.detailView;
   const mobileActions = s.isMobile && !s.nativeChrome && !isNative;
   const HeaderActions = mobileActions ? ActionGroup : "div";
   const navigationState = { view: s.view, detail: s.detailView, mobile: s.isMobile, native: isNative || Boolean(s.nativeChrome), sidebarOpen: s.sidebarOpen };
+  const collectionHeading = <><LayoutNavigationControls position="collection" {...navigationState} /><h1>{s.title}</h1></>;
+  const showTagHeading = !s.detailView && s.view === "tags" && !s.isMobile;
   const navigationControls = <>
     <LayoutNavigationControls position="header" {...navigationState} />
     {s.isMobile && s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
@@ -162,7 +163,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           <div className="web-header-leading">
             {mobileActions ? <ActionGroup aria-label="页面导航" className="web-header-navigation">{navigationControls}</ActionGroup> : navigationControls}
             {showBreadcrumb && <Breadcrumb aria-label="当前位置" className="web-crumb" data-detail={s.detailView || undefined}><BreadcrumbList>{s.detailView ? <>
-              {detailBreadcrumbs.map((label, index) => <Fragment key={index}>{index > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}<BreadcrumbItem><BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? tagParts.slice(0, index).join("/") : null)}>{label}</BreadcrumbLink></BreadcrumbItem></Fragment>)}
+              {detailBreadcrumbs.map((label, index) => <Fragment key={index}>{index > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}<BreadcrumbItem><BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", index ? s.sidebar.tag : null)}>{label}</BreadcrumbLink></BreadcrumbItem></Fragment>)}
               <BreadcrumbSeparator>/</BreadcrumbSeparator><BreadcrumbItem><BreadcrumbPage className="px-1" data-ui-tooltip={s.title} data-ui-tooltip-overflow>{s.title}</BreadcrumbPage></BreadcrumbItem>
             </> : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" ? s.sidebar.tag : null} title={s.title} home={s.view === "home"} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>}
           </div>
@@ -195,8 +196,8 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           {s.drafts.issues.length > 0 && <Notice title="部分草稿无法读取">{s.drafts.issues.map((issue, i) => <p className="break-words not-last:mb-2" key={i}>{issue.message}{issue.path && <code className="block break-all">{issue.path}</code>}</p>)}</Notice>}
           {s.drafts.reminderVisible && !s.detailView && s.view !== "settings" && <Notice title="有尚未完成的草稿" action={<><Button variant="outline" size="sm" onClick={() => s.drafts.onOpenChange(true)}>查看草稿</Button><Button variant="ghost" size="sm" onClick={s.drafts.onDismissReminder}>稍后处理</Button></>}>可继续编辑，稍后处理不会删除草稿。</Notice>}
           {s.listTimeout === "refresh" && <Notice title="刷新超时" error action={<Button variant="outline" size="sm" disabled={s.refreshingPages || s.switchingVault} onClick={s.onRefreshBackground}>重试</Button>}>继续显示上次读取的内容。</Notice>}
-          {!s.detailView && s.view !== "settings" && s.view !== "trash" && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}><LayoutNavigationControls position="collection" {...navigationState} /><h1>{s.title}</h1></div>)}
-          <WorkspaceContent state={s} />
+          {!s.detailView && s.view !== "settings" && s.view !== "trash" && !showTagHeading && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}>{collectionHeading}</div>)}
+          <WorkspaceContent state={s} tagHeading={showTagHeading ? collectionHeading : undefined} />
         </div></div>
         {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录">{mobileActions ? <ActionGroup size="lg">{searchControl}</ActionGroup> : searchControl}<div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
   </WorkspaceFrame></MobileActionGroupProvider>;

@@ -10,18 +10,18 @@ type View = {
 
 export function createTagColorMenu(view: View) {
   const { PropertyOptionMenu } = view;
-function TagColorMenu({tag, disabled, onChangeTag}: {tag:string; disabled:boolean; onChangeTag?:(from:string,to:string | null)=>Promise<void>}) {
+function TagColorMenu({tag, disabled, swatch, onChangeTag}: {tag:string; disabled:boolean; swatch?:boolean; onChangeTag?:(from:string,to:string | null)=>Promise<void>}) {
   tag = tagKey(tag);
   const vaultId = useTagColorVault();
   const raw = useSyncExternalStore(subscribeTagColors, () => readTagColors(vaultId));
   const colors = parseTagColors(raw);
   const color = Object.hasOwn(colors, tag) ? colors[tag] : 'default';
-  return <PropertyOptionMenu name={tag} kind="标签" color={color} disabled={disabled} normalizeName={normalizePropertyTag} onChangeName={onChangeTag}
+  return <PropertyOptionMenu name={tag} kind="标签" color={color} disabled={disabled} swatch={swatch} normalizeName={normalizePropertyTag} onChangeName={onChangeTag}
     onChangeColor={color => {
       try { setTagColor(vaultId, tag, color); }
       catch { throw new Error('无法保存标签颜色，请检查浏览器存储权限。'); }
     }}
-    deleteDescription={`将从库内所有笔记属性中移除此标签。正文中的 #${tag}、笔记和子标签保留；有子标签时，父级仍会显示。`} />;
+    deleteDescription={`将从笔记属性和标签群组中移除「${tag}」。正文中会保留标签文字并去掉 #。`} />;
 }
 
   return TagColorMenu;

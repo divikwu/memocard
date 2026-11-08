@@ -301,9 +301,9 @@ public actor VaultStore {
                 return try encode(setPropertyLayout(PropertyLayoutValue(order: request.order, visibility: request.visibility), baseHash: request.baseHash))
             case "getTagPreferences": return try encode(readTagPreferences())
             case "setTagPreferences":
-                struct Request: Decodable { let pinned: [String]; let icons: [String: String]; let baseHash: String }
+                struct Request: Decodable { let pinned: [String]; let icons: [String: String]; let groups: [TagGroup]?; let labels: [String: String]?; let baseHash: String }
                 let request = try decode(Request.self, params)
-                return try encode(setTagPreferences(TagPreferences(pinned: request.pinned, icons: request.icons), baseHash: request.baseHash))
+                return try encode(setTagPreferences(TagPreferences(pinned: request.pinned, icons: request.icons, groups: request.groups, labels: request.labels), baseHash: request.baseHash))
             case "getNotePins": return try encode(readNotePins())
             case "setNotePinned":
                 struct Request: Decodable { let id: String; let pinned: Bool; let baseHash: String; let vaultId: String? }
@@ -325,7 +325,9 @@ public actor VaultStore {
                 let snapshot = try snapshot(for: "listFolders")
                 struct Folders: Encodable { let folders: [String]; let coverage: Coverage }
                 return try encode(Folders(folders: snapshot.folders.sorted(), coverage: snapshot.coverage))
-            case "listTags": return try listTags()
+            case "listTags":
+                struct Request: Decodable { let flat: Bool? }
+                return try listTags(flat: decode(Request.self, params).flat == true)
             case "getTrash": return try getTrash()
             case "getTrashedNote":
                 struct Request: Decodable { let trashKey: String }
@@ -898,7 +900,7 @@ public actor VaultStore {
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
             if let filter = query.quickFilter, !filters[note.id]!.contains(filter) { return false }
             if let text = query.query, !text.isEmpty, ((note.title ?? "") + "\n" + note.body).range(of: text, options: [.caseInsensitive, .literal]) == nil { return false }
-            if let tags = query.tags, !tags.allSatisfy({ value in let tag = tagKey(value); return note.tags.contains { $0 == tag || $0.hasPrefix(tag + "/") } }) { return false }
+            if let tags = query.tags, !tags.allSatisfy({ value in let tag = tagKey(value); return note.tags.contains { $0 == tag || (query.exactTags != true && $0.hasPrefix(tag + "/")) } }) { return false }
             if let from, parsed.createdDate < from { return false }
             if let to, parsed.createdDate >= to { return false }
             if let cursor, let cursorDate, !(date < cursorDate || (date == cursorDate && note.id > cursor.id)) { return false }
@@ -1037,23 +1039,38 @@ public actor VaultStore {
         return saved
     }
 
-    private struct TagPreferences: Codable, Equatable { var pinned: [String]; var icons: [String: String] }
+    private struct TagGroup: Codable, Equatable {
+        enum Color: String, Codable { case `default`, brown, orange, yellow, green, blue, purple, pink, red }
+        let id: String; let name: String; let tags: [String]; let icon: String?; let description: String?; let color: Color?
+    }
+    private struct TagPreferences: Codable, Equatable { var pinned: [String]; var icons: [String: String]; var groups: [TagGroup]?; var labels: [String: String]? }
     private struct TagPreferenceState: Encodable {
-        let pinned: [String]; let icons: [String: String]; let contentHash: String; let initialized: Bool
+        let pinned: [String]; let icons: [String: String]; let groups: [TagGroup]; let labels: [String: String]; let contentHash: String; let initialized: Bool
     }
     private func validTagPreferences(_ value: TagPreferences) -> Bool {
-        let tags = value.pinned + Array(value.icons.keys)
+        func validIcon(_ icon: String) -> Bool {
+            icon.utf16.count <= 32 && !icon.unicodeScalars.contains { $0.value < 32 || $0.value == 127 }
+        }
+        let groups = value.groups ?? []
+        guard Set(groups.map(\.id)).count == groups.count, Set(groups.map { tagKey($0.name) }).count == groups.count,
+              groups.allSatisfy({ group in
+                  !group.id.isEmpty && !group.name.isEmpty && group.name == group.name.trimmingCharacters(in: .whitespacesAndNewlines)
+                      && ![group.id, group.name].contains(where: { $0.unicodeScalars.contains { $0.value < 32 || $0.value == 127 } })
+                      && validIcon(group.icon ?? "") && Set(group.tags).count == group.tags.count
+                      && (group.description ?? "").utf16.count <= 280
+              }) else { return false }
+        let tags = value.pinned + Array(value.icons.keys) + groups.flatMap(\.tags) + Array((value.labels ?? [:]).keys)
         return Set(value.pinned).count == value.pinned.count && tags.allSatisfy {
             !$0.isEmpty && $0 == tagKey($0) && $0 == $0.trimmingCharacters(in: .whitespacesAndNewlines)
                 && !$0.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 })
-        } && value.icons.values.allSatisfy { $0.utf16.count <= 32 && !$0.unicodeScalars.contains(where: { $0.value < 32 || $0.value == 127 }) }
+        } && (value.labels ?? [:]).values.allSatisfy { $0.utf16.count <= 280 } && value.icons.values.allSatisfy(validIcon)
     }
     private func decodedTagPreferences(_ data: Data?) throws -> TagPreferenceState {
         do {
             let initialized = data?.isEmpty == false
             let value = initialized ? try JSONDecoder().decode(TagPreferences.self, from: data!) : TagPreferences(pinned: [], icons: [:])
             guard validTagPreferences(value) else { throw VaultError(code: "INVALID_TAG_PREFERENCES", message: "标签设置无效。") }
-            return TagPreferenceState(pinned: value.pinned, icons: value.icons, contentHash: sha256(data ?? Data()), initialized: initialized)
+            return TagPreferenceState(pinned: value.pinned, icons: value.icons, groups: value.groups ?? [], labels: value.labels ?? [:], contentHash: sha256(data ?? Data()), initialized: initialized)
         } catch { throw VaultError(code: "INVALID_TAG_PREFERENCES", message: "标签设置无法读取，请检查 .memocard/tag-preferences.json。") }
     }
     private func tagPreferenceData(_ url: URL) throws -> Data? {
@@ -1074,8 +1091,11 @@ public actor VaultStore {
             try self.requireNoConflict(url)
             let current = try self.decodedTagPreferences(self.tagPreferenceData(url))
             guard current.contentHash == baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "标签设置已在其他位置修改，请重试。", retryable: true) }
-            if current.initialized && current.pinned == value.pinned && current.icons == value.icons { return current }
-            let data = try encode(value)
+            var next = value
+            next.groups = value.groups ?? current.groups
+            next.labels = value.labels ?? current.labels
+            if current.initialized && current.pinned == next.pinned && current.icons == next.icons && current.groups == next.groups && current.labels == next.labels { return current }
+            let data = try encode(next)
             try data.write(to: url, options: .atomic)
             return try self.decodedTagPreferences(data)
         }
@@ -1581,15 +1601,18 @@ public actor VaultStore {
         if removed { try removeRecoveredDraft(request, id: id) }
     }
 
-    private func listTags() throws -> Data {
+    private func listTags(flat: Bool) throws -> Data {
         let snapshot = try snapshot(for: "listTags")
         var counts: [String: Int] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
-            let names = Set(parsed.note.tags.flatMap { tag -> [String] in
+            let names = Set(flat ? parsed.note.tags : parsed.note.tags.flatMap { tag -> [String] in
                 let parts = tag.components(separatedBy: "/")
                 return parts.indices.map { parts[...$0].joined(separator: "/") }
             })
             for tag in names { counts[tag, default: 0] += 1 }
+        }
+        if flat, let preferences = try? readTagPreferences() {
+            for tag in preferences.labels.keys where counts[tag] == nil { counts[tag] = 0 }
         }
         struct TagCount: Encodable { let name: String; let count: Int }
         struct Result: Encodable { let tags: [TagCount]; let coverage: Coverage }

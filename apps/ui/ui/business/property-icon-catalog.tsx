@@ -100,9 +100,9 @@ export function PropertyIconGlyph({ value, fallback }: { value?: string; fallbac
   return icon ? <HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /> : fallback;
 }
 
-export function TagIcon({ value }: { value?: string }) {
-  if (!value) return <SidebarIcon name="hash" />;
+export function TagIcon({ value, fallback = <SidebarIcon name="hash" /> }: { value?: string; fallback?: React.ReactNode }) {
+  if (!value) return fallback;
   if (!value.startsWith("icon:")) return <span className="ui-sidebar-emoji" aria-hidden="true">{value}</span>;
   const icon = icons.get(value);
-  return icon ? <HugeiconsIcon icon={icon} className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" /> : <SidebarIcon name="hash" />;
+  return icon ? <HugeiconsIcon icon={icon} className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" /> : fallback;
 }

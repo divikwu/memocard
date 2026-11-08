@@ -6,6 +6,7 @@ export const tagColors = [
   ['green', '绿色'], ['blue', '蓝色'], ['purple', '紫色'], ['pink', '粉色'], ['red', '红色'],
 ] as const;
 export type TagColor = typeof tagColors[number][0];
+export const isTagColor = (value: unknown): value is TagColor => tagColors.some(([color]) => color === value);
 export const tagColorEvent = 'memocard:tag-colors';
 export const tagColorKey = (vaultId: string | null | undefined) => `memocard:tag-colors:${vaultId || 'disconnected'}`;
 export function readTagColors(vaultId: string | null | undefined) {
@@ -16,7 +17,7 @@ export function parseTagColors(raw: string | null): Record<string, TagColor> {
     const value = JSON.parse(raw || 'null');
     if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
     // Legacy gray falls back to the default, represented by no override.
-    const entries = Object.entries(value).filter(([, color]) => tagColors.some(([id]) => id === color));
+    const entries = Object.entries(value).filter(([, color]) => isTagColor(color));
     // Prefer an existing lowercase key when legacy spellings have different colors.
     return Object.fromEntries([...entries.filter(([tag]) => tag !== tagKey(tag)), ...entries.filter(([tag]) => tag === tagKey(tag))].map(([tag, color]) => [tagKey(tag), color])) as Record<string, TagColor>;
   } catch { return {}; }

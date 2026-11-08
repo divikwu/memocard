@@ -588,6 +588,7 @@ export class BrowserVault {
     if (typeof sort !== 'string' || !['createdAt', 'updatedAt', 'pinnedAt'].includes(sort) || (params.pinned !== undefined && typeof params.pinned !== 'boolean')) throw new BrowserVaultError('INVALID_PARAMS', '笔记排序或固定筛选无效。');
     const query = params.query === undefined ? "" : checkString(params.query, "query");
     const tags = params.tags === undefined ? [] : validatedTags(params.tags);
+    const exactTags = params.exactTags === true;
     const quickFilter = params.quickFilter as NoteQuickFilter | undefined;
     if (quickFilter !== undefined && !["untagged", "images", "links"].includes(quickFilter)) throw new BrowserVaultError("INVALID_PARAMS", "快捷筛选条件无效。");
     const from = params.from === undefined ? undefined : parseDate(params.from);
@@ -600,7 +601,7 @@ export class BrowserVault {
     await this.active(selected);
     const sortAt = (note: Note) => sort === 'updatedAt' ? note.updatedAt : sort === 'pinnedAt' ? pins.pins[note.id] ?? note.createdAt : note.createdAt;
     const sortDates = new Map(snapshot.parsed.map(({ note }) => [note.id, parseDate(sortAt(note))]));
-    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned })));
+    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, ...(exactTags ? {exactTags} : {}), quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned })));
     const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(sort === 'updatedAt' ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
     let after: { id: string; createdAt: string } | undefined;
     if (params.cursor !== undefined) {
@@ -631,7 +632,7 @@ export class BrowserVault {
         && (params.pinned === undefined || Boolean(pins.pins[note.id]) === params.pinned)
         && (sort !== 'pinnedAt' || Boolean(pins.pins[note.id]))
         && (!quickFilter || filters.get(note.id)!.includes(quickFilter))
-        && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || value.startsWith(tag + "/")))
+        && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || (!exactTags && value.startsWith(tag + "/"))))
         && (from === undefined || createdDate >= from) && (to === undefined || createdDate < to)
         && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
     });
@@ -809,8 +810,14 @@ export class BrowserVault {
     if (operation === "listTags") {
       const snapshot = await this.snapshotFor("listTags", selected), counts = new Map<string, number>();
       for (const { note } of snapshot.parsed) if (!note.deletedAt) {
-        const names = new Set(note.tags.flatMap(tag => tag.split("/").map((_, index, parts) => parts.slice(0, index + 1).join("/"))));
+        const names = new Set(params.flat === true ? note.tags : note.tags.flatMap(tag => tag.split("/").map((_, index, parts) => parts.slice(0, index + 1).join("/"))));
         for (const tag of names) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      }
+      if (params.flat === true) {
+        const { tagPreferenceOperation } = await import("./browser-tag-preferences");
+        const settings = await tagPreferenceOperation("getTagPreferences", {}, selected.handle, () => this.active(selected)).catch(() => null);
+        for (const tag of Object.keys(settings?.labels ?? {})) if (!counts.has(tag)) counts.set(tag, 0);
+        await this.active(selected);
       }
       return { tags: [...counts].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([name, count]) => ({ name, count })), coverage: snapshot.coverage };
     }

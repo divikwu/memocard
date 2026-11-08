@@ -23,11 +23,11 @@ it('rejects capture operations from a different vault before reading or writing 
   expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts).toHaveLength(0);
 });
 
-it('shares tag pins and emoji across independent clients, guards conflicts and preserves corrupt metadata', async () => {
+it('shares tag groups, pins and emoji across independent clients, guards conflicts and preserves corrupt metadata', async () => {
   const root = await fixture(), h = harness(root); await call(h.core,'selectVault');
   const initial = await call<TagPreferenceState>(h.core,'getTagPreferences');
   expect(initial.initialized).toBe(false);
-  const value = {pinned:['area/coffee'],icons:{'area/coffee':'☕','area/ai':'🧑🏽‍💻'}};
+  const value = {pinned:['area/coffee'],icons:{'area/coffee':'☕','area/ai':'🧑🏽‍💻'},groups:[{id:'a',name:'收藏',tags:['area/coffee'],icon:'🌱',description:'收藏的阅读笔记',color:'purple'},{id:'b',name:'饮品',tags:['area/coffee']}],labels:{brewing:'冲煮笔记'}};
   const saved = await call<TagPreferenceState>(h.core,'setTagPreferences',{...value,baseHash:initial.contentHash});
   const other = harness(root); await call(other.core,'selectVault');
   expect(await call(other.core,'getTagPreferences')).toEqual(saved);
@@ -36,7 +36,8 @@ it('shares tag pins and emoji across independent clients, guards conflicts and p
   await expect(call(other.core,'setTagPreferences',{pinned:['bad\ntag'],icons:{},baseHash:saved.contentHash})).rejects.toMatchObject({code:'INVALID_TAG_PREFERENCES'});
   const empty = await call<TagPreferenceState>(other.core,'setTagPreferences',{pinned:[],icons:{},baseHash:saved.contentHash});
   expect(empty.initialized).toBe(true);
-  expect((await call<TagPreferenceState>(h.core,'getTagPreferences')).pinned).toEqual([]);
+  expect(await call<TagPreferenceState>(h.core,'getTagPreferences')).toMatchObject({pinned:[],groups:value.groups,labels:value.labels});
+  expect((await call<{tags:unknown[]}>(other.core,'listTags',{flat:true})).tags).toContainEqual({name:'brewing',count:0});
   const file = await (await root.getDirectoryHandle('.memocard')).getFileHandle('tag-preferences.json');
   file.bytes = bytes('{broken');
   await expect(call(h.core,'setTagPreferences',{...value,baseHash:empty.contentHash})).rejects.toMatchObject({code:'INVALID_TAG_PREFERENCES'});
@@ -313,6 +314,11 @@ it('saves property tags independently, merges filters and counts once, and check
   expect(saved.body).toBe(body);
   expect(saved.tags).toEqual(['共享','属性/分类','正文/分类']);
   expect((await call<NotePage>(h.core,'queryNotes',{tags:['属性']})).notes.map(note=>note.id)).toEqual([noteId]);
+  expect((await call<NotePage>(h.core,'queryNotes',{tags:['属性'],exactTags:true})).notes).toEqual([]);
+  expect((await call<NotePage>(h.core,'queryNotes',{tags:['属性/分类'],exactTags:true})).notes.map(note=>note.id)).toEqual([noteId]);
+  const flat = await call<{tags:{name:string;count:number}[]}>(h.core,'listTags',{flat:true});
+  expect(flat.tags).not.toContainEqual({name:'属性',count:1});
+  expect(flat.tags).toContainEqual({name:'属性/分类',count:1});
   const list = await call<{tags:{name:string;count:number}[]}>(h.core,'listTags');
   expect(list.tags.find(tag=>tag.name==='共享')?.count).toBe(1);
   await expect(call(h.core,'updateNoteProperty',{id:noteId,baseHash:before.contentHash,name:'tags',type:'list',value:[]})).rejects.toMatchObject({code:'HASH_CONFLICT'});

@@ -47,7 +47,7 @@ export const TagBreadcrumb: Story = { tags: ["!dev", "!autodocs"], args: { initi
   await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
   await canvas.findByRole("textbox", { name: "笔记内容" });
   const breadcrumb = within(canvas.getByRole("navigation", { name: "当前位置" }));
-  await expect(breadcrumb.getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活", "咖啡"]);
+  await expect(breadcrumb.getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活/咖啡"]);
 } };
 export const NoVault: Story = { args: { scenario: "folder-cancel" } };
 export const SaveFailure: Story = { args: { scenario: "save-error" } };
@@ -66,8 +66,8 @@ export const SearchFailure: Story = { args: { scenario: "review-search-error", i
 export const SettingsReview: Story = { args: { scenario: "loading", initialRoute: "#/settings" } };
 export const TagDirectory: Story = { args: { scenario: "loading", initialRoute: "#/tags" }, play: async ({ canvasElement }) => {
   const directory = within(await within(canvasElement).findByRole("region", { name: "标签目录" }));
-  await expect(await directory.findByRole("button", { name: "编辑标签名称 生活/咖啡" })).toBeVisible();
-  await expect(directory.getByRole("table", { name: "标签层级" })).toBeVisible();
+  await expect(await directory.findByRole("button", { name: "查看标签 生活/咖啡 的笔记" })).toBeVisible();
+  await expect(directory.getByRole("list", { name: "其他" })).toBeVisible();
 } };
 export const TrashReview: Story = { args: { scenario: "review-trash", initialRoute: "#/trash" } };
 export const TrashLoading: Story = { args: { scenario: "review-trash-loading", initialRoute: "#/trash" } };

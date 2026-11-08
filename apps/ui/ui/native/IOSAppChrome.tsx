@@ -97,13 +97,13 @@ export function IOSAppChrome(p:IOSAppChromeProps) {
     if(action === "pin-tag" && p.tag && !await togglePinned(p.tag))setNavigationOpen(true);
     if(action === "edit-tag" && p.tag)setEditingTag(p.tag);
   });
-  const navigationTags=p.tags.map(item=>({id:`tag:${item.name}`,path:item.name,title:item.name.slice(item.name.lastIndexOf("/")+1),icon:"number",emoji:preferences.icons[item.name]?.startsWith("icon:") ? undefined : preferences.icons[item.name],selected:p.view === "notes" && p.tag === item.name}));
+  const navigationTags=p.tags.map(item=>({id:`tag:${item.name}`,path:item.name,title:item.name,icon:"number",emoji:preferences.icons[item.name]?.startsWith("icon:") ? undefined : preferences.icons[item.name],selected:p.view === "notes" && p.tag === item.name}));
   useIOSSurface("navigation", {
     kind:"list",title:"MemoCard",presented:navigationOpen,error:tagError,resetKey:vaultId || "disconnected",
     rowRadius:themeRadius ?? Number.parseFloat(getPreviewRadius(radius).radius) * 16,
     loading:p.loading && p.tags.length === 0,
     sections:[
-      {id:"pages",actions:[{id:"home",title:"主页",icon:"house",selected:p.view === "home"},{id:"notes",title:"所有笔记",icon:"note.text",selected:p.view === "notes" && !p.tag && !p.quickFilter},{id:"calendar",title:"日历",icon:"calendar",disabled:true},{id:"tags",title:"标签",icon:"number",disabled:true}]},
+      {id:"pages",actions:[{id:"home",title:"主页",icon:"house",selected:p.view === "home"},{id:"notes",title:"所有笔记",icon:"note.text",selected:p.view === "notes" && !p.tag && !p.quickFilter},{id:"calendar",title:"日历",icon:"calendar",disabled:true},{id:"tags",title:"标签",icon:"number",selected:p.view === "tags",disabled:!connected}]},
       {id:"filters",actions:(Object.keys(noteFilterLabels) as NoteQuickFilter[]).map(filter=>({id:`filter:${filter}`,title:noteFilterLabels[filter],icon:filter === "images" ? "photo" : filter === "links" ? "link" : "number",badge:p.filterCounts?.[filter],selected:p.view === "notes" && p.quickFilter === filter,disabled:!connected}))},
       {id:"pinned-tags",title:"置顶标签",actions:preferences.pinned.flatMap(path=>navigationTags.filter(item=>item.path === path))},
       {id:"tags",title:"标签",actions:navigationTags},
@@ -115,7 +115,7 @@ export function IOSAppChrome(p:IOSAppChromeProps) {
     if(action === "vault"){vaultFromNavigation.current=true;setVaultOpen(true);}
     else if(action.startsWith("tag:"))await p.onNavigate("notes",action.slice(4));
     else if(action.startsWith("filter:"))await p.onNavigate("notes",null,action.slice(7) as NoteQuickFilter);
-    else if(["home","notes"].includes(action))await p.onNavigate(action as View);
+    else if(["home","notes","tags"].includes(action))await p.onNavigate(action as View);
   });
   useIOSSurface("vault", {
     kind:"list",title:"笔记库",presented:vaultOpen,busy:p.busy,error:p.error,
@@ -172,7 +172,7 @@ function IOSTagEditor({path,icon:initialIcon,onClose,onSave}:{path:string;icon:s
   const fields=useRef({name,icon});
   fields.current={name,icon};
   useIOSSurface("tag-editor", {
-    kind:"form",title:"编辑标签",presented:true,busy,error,message:"使用 / 分隔多级标签；改名会更新笔记中的标签。",
+    kind:"form",title:"编辑标签",presented:true,busy,error,message:"改名会更新笔记中的标签。",
     primary:{id:"save",title:"保存",disabled:busy || !name.trim()},
     sections:[{id:"name",fields:[{id:"name",title:"标签名称",value:name,disabled:busy},{id:"icon",title:"图标 Emoji（可留空）",value:icon.startsWith("icon:") ? "" : icon,disabled:busy}]}],
   }, async(action,value)=>{

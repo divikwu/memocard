@@ -96,6 +96,11 @@ export const ColoredTagsRegression: Story = {
     await expect(getComputedStyle(defaultTag).backgroundColor).toBe(getComputedStyle(probe).backgroundColor);
     probe.remove();
     await expect(tag).not.toHaveAttribute("title");
+    await expect(tag).toHaveTextContent("area/coffee");
+    const label = tag.querySelector<HTMLElement>("[data-ui-tooltip-overflow]")!;
+    label.style.maxInlineSize = "20px";
+    await expect(label.scrollWidth).toBeGreaterThan(label.clientWidth);
+    await userEvent.hover(within(canvasElement).getByRole("heading", {name: "所有笔记", level: 1}));
     await userEvent.hover(tag);
     const tooltip = await within(canvasElement.ownerDocument.body).findByRole("tooltip");
     await expect(tooltip).toHaveTextContent("area/coffee");

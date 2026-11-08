@@ -45,7 +45,7 @@ it("retains tag paths, pinned order and emoji while publishing the H5 mobile nav
   expect(nav.sections?.find(s=>s.id === "pages")?.actions?.map(a=>a.id)).toEqual(["home","notes","calendar","tags"]);
   expect(nav.sections?.find(s=>s.id === "pinned-tags")?.actions?.map(a=>a.path)).toEqual(["开发","设计/界面"]);
   expect(nav.sections?.find(s=>s.id === "tags")?.actions).toEqual(expect.arrayContaining([
-    expect.objectContaining({id:"tag:设计/界面",path:"设计/界面",title:"界面"}),expect.objectContaining({path:"开发",emoji:"💻"}),
+    expect.objectContaining({id:"tag:设计/界面",path:"设计/界面",title:"设计/界面"}),expect.objectContaining({path:"开发",emoji:"💻"}),
   ]));
   expect(nav.sections?.find(s=>s.id === "tags")?.actions?.every(a=>!a.subtitle)).toBe(true);
   expect(nav.sections?.find(s=>s.id === "filters")?.actions?.map(a=>a.badge)).toEqual([2,1,0]);
@@ -58,7 +58,7 @@ it("dispatches nested tag and quick filter selection and closes the sidebar",asy
   send("chrome","navigation");send("navigation","filter:images");
   expect(p.onNavigate).toHaveBeenCalledWith("notes",null,"images");expect(surface("navigation").presented).toBe(false);
   send("chrome","navigation");send("navigation","tags");
-  expect(p.onNavigate).not.toHaveBeenCalledWith("tags");
+  expect(p.onNavigate).toHaveBeenCalledWith("tags");
 });
 it("keeps bottom search and capture, and retains new notes and drafts through the page menu",()=>{
   const p=props();render(<IOSAppChrome {...p}/>);

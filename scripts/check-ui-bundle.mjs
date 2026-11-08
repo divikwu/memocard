@@ -105,7 +105,8 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "detail editor", entries: ["ui/business/Editor.tsx"], raw: 2250, gzip: 675 },
     { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
     { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/web/layouts/topbar.tsx", "ui/web/appearance/themes/minimal.css"], raw: 2700, gzip: 820 },
-    { name: "detail with all property editors", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx"], raw: 2700, gzip: 820 },
+    // Shared tag metadata and editing add a small raw-size cost to this route.
+    { name: "detail with all property editors", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx"], raw: 2704, gzip: 820 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";

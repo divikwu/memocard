@@ -258,7 +258,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
             const refreshed: Note[] = [];
             for (let index = 0; index < pageCount; index++) {
               if (current !== generation.current) return null;
-              page = await request<NotePage>("queryNotes", { query: resetFilters || view === "home" ? "" : debouncedQuery, tags: !resetFilters && view !== "home" && tag ? [tag] : [], ...(quickFilter && !resetFilters && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), limit: 30, ...(nextCursor ? {cursor: nextCursor} : {}) });
+              page = await request<NotePage>("queryNotes", { query: resetFilters || view === "home" ? "" : debouncedQuery, ...(!resetFilters && view !== "home" && tag ? {tags: [tag], exactTags: true} : {tags: []}), ...(quickFilter && !resetFilters && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), limit: 30, ...(nextCursor ? {cursor: nextCursor} : {}) });
               refreshed.push(...page.notes);
               nextCursor = page.nextCursor;
               if (!nextCursor) break;
@@ -276,7 +276,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       }).catch(cause => { if (current === generation.current && epoch === pinEpoch.current) { setNotePins(null); setPinReadError(cause); } }) : Promise.resolve();
       const [page, tagResult, folderResult] = await Promise.all([
         readPages(),
-        allowed.has("listTags") ? request<{ tags: TagCount[] }>("listTags") : Promise.resolve({ tags: [] }),
+        allowed.has("listTags") ? request<{ tags: TagCount[] }>("listTags", {flat: true}) : Promise.resolve({ tags: [] }),
         allowed.has("listFolders") ? request<{ folders: string[] }>("listFolders") : Promise.resolve({ folders: [] }),
         registry, pinsResult,
       ]);
@@ -316,7 +316,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     const onHash = () => routeHandler.current();
     const onNativeEvent = (event: Event) => {
       const detail: unknown = (event as CustomEvent).detail;
-      if (detail && typeof detail === "object" && "type" in detail && ["notesChanged", "statusChanged"].includes(String(detail.type))) {
+      if (detail && typeof detail === "object" && "type" in detail && ["notesChanged", "statusChanged", "tagsChanged"].includes(String(detail.type))) {
         if (refreshCount.current > 0 || loadingMore.current || selectingVault.current) pendingRefresh.current = true;
         else void refresh(true);
       }
@@ -496,7 +496,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     setPaging(true);
     const current = generation.current;
     try {
-      const page = await request<NotePage>("queryNotes", { query: view === "home" ? "" : debouncedQuery, tags: view !== "home" && tag ? [tag] : [], ...(quickFilter && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), limit: 30, cursor });
+      const page = await request<NotePage>("queryNotes", { query: view === "home" ? "" : debouncedQuery, ...(view !== "home" && tag ? {tags: [tag], exactTags: true} : {tags: []}), ...(quickFilter && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), limit: 30, cursor });
       if (generation.current !== current) return;
       setNotes((previous) => [...previous, ...page.notes.filter((note) => !previous.some((item) => item.id === note.id))]); setCursor(page.nextCursor);
       loadedPages.current++;

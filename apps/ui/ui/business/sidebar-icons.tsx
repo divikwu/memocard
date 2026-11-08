@@ -8,7 +8,7 @@ import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon";
 import Delete02Icon from "@hugeicons/core-free-icons/Delete02Icon";
 import FolderAddIcon from "@hugeicons/core-free-icons/FolderAddIcon";
 import FolderOpenIcon from "@hugeicons/core-free-icons/FolderOpenIcon";
-import HashIcon from "@hugeicons/core-free-icons/HashIcon";
+import { Tag01Icon } from "./tag-01-icon";
 import HelpCircleIcon from "@hugeicons/core-free-icons/HelpCircleIcon";
 import Image01Icon from "@hugeicons/core-free-icons/Image01Icon";
 import Layers01Icon from "@hugeicons/core-free-icons/Layers01Icon";
@@ -21,7 +21,7 @@ import Shield01Icon from "@hugeicons/core-free-icons/Shield01Icon";
 import Tick02Icon from "@hugeicons/core-free-icons/Tick02Icon";
 import { cn } from "../lib/utils";
 
-const icons = { add: Add01Icon, down: ArrowDown01Icon, right: ArrowRight01Icon, notebook: Note04Icon, calendar: Calendar03Icon, close: Cancel01Icon, trash: Delete02Icon, folderAdd: FolderAddIcon, folder: FolderOpenIcon, hash: HashIcon, help: HelpCircleIcon, home: AiSketchIcon, image: Image01Icon, layers: Layers01Icon, link: Link01Icon, more: MoreHorizontalCircle01Icon, search: Search01Icon, settings: Settings01Icon, shield: Shield01Icon, check: Tick02Icon };
+const icons = { add: Add01Icon, down: ArrowDown01Icon, right: ArrowRight01Icon, notebook: Note04Icon, calendar: Calendar03Icon, close: Cancel01Icon, trash: Delete02Icon, folderAdd: FolderAddIcon, folder: FolderOpenIcon, hash: Tag01Icon, help: HelpCircleIcon, home: AiSketchIcon, image: Image01Icon, layers: Layers01Icon, link: Link01Icon, more: MoreHorizontalCircle01Icon, search: Search01Icon, settings: Settings01Icon, shield: Shield01Icon, check: Tick02Icon };
 
 export function SidebarIcon({ name, className }: { name: keyof typeof icons; className?: string }) {
   return <HugeiconsIcon icon={icons[name]} strokeWidth={2} aria-hidden="true" className={cn("size-4 shrink-0", className)} />;

@@ -175,7 +175,7 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
     if(current.tags.includes(tag))changeCapture({...current,text:removeCaptureTags(current.text,tag)});
     else chooseTag(tag);
   }
-  const normalized=normalizePropertyTag(tagQuery);
+  const normalized=tagQuery.includes("/") ? null : normalizePropertyTag(tagQuery);
   const known=[...new Set([...options,...capture.tags])];
   const matches=known.filter(tag=>tag.includes(tagQuery.trim().replace(/^#/,'').toLowerCase()));
   useEffect(()=>{

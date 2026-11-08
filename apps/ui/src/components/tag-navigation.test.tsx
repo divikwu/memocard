@@ -30,36 +30,23 @@ it('reuses uppercase legacy pins and icons for lowercase tag paths', () => {
   expect(pinned.getAllByRole('button',{name:'work'})).toHaveLength(1);
   expect(pinned.getByRole('button',{name:'work'}).textContent).toContain('🎨');
 });
-it("persists pins per vault and allows expanding and selecting descendants of a pinned nested tag", async () => {
+it("persists pins per vault and lists legacy names independently", async () => {
   const user = userEvent.setup();
-  const hierarchy = { ...props, tags: [...props.tags, { name: "工作/设计/界面", count: 1 }], selected: "工作/设计/界面" };
-  const view = render(<TagNavigation {...hierarchy} />);
+  const extended = { ...props, tags: [...props.tags, { name: "工作/设计/界面", count: 1 }], selected: "工作/设计/界面" };
+  const view = render(<TagNavigation {...extended} />);
   await user.click(screen.getByRole("button", { name: "标签操作 工作/设计" }));
   await user.click(await screen.findByRole("menuitem", { name: "置顶标签" }));
   const pinned = within(screen.getByRole("navigation", { name: "置顶标签" }));
   expect(pinned.getByRole("button", { name: "工作/设计" }).textContent).toContain("工作/设计");
-  const child = pinned.getByRole("button", { name: "工作/设计/界面" });
-  expect(child.getAttribute("aria-current")).toBe("page");
-  await user.click(child);
+  expect(pinned.queryByRole("button", { name: "工作/设计/界面" })).toBeNull();
+  const all = within(screen.getByRole("navigation", { name: "标签" }));
+  const selected = all.getByRole("button", { name: "工作/设计/界面" });
+  expect(selected.getAttribute("aria-current")).toBe("page");
+  await user.click(selected);
   expect(props.onSelect).toHaveBeenLastCalledWith("工作/设计/界面");
-  const toggle = pinned.getByRole("button", { name: "展开或收起标签 工作/设计" });
-  await user.click(toggle);
-  await waitFor(() => expect(pinned.queryByRole("button", { name: "工作/设计/界面" })).toBeNull());
-  expect(within(screen.getByRole("navigation", { name: "标签" })).getByRole("button", { name: "工作/设计/界面" })).toBeTruthy();
-  await user.click(toggle);
-  expect(pinned.getByRole("button", { name: "工作/设计/界面" })).toBeTruthy();
-  const pinnedToggle = screen.getByRole("button", { name: "置顶标签" });
-  expect(pinnedToggle.getAttribute("aria-expanded")).toBe("true");
-  await user.click(pinnedToggle);
-  await waitFor(() => expect(screen.queryByRole("navigation", { name: "置顶标签" })).toBeNull());
-  expect(within(screen.getByRole("navigation", { name: "标签" })).getByRole("button", { name: "工作/设计/界面" }).getAttribute("aria-current")).toBe("page");
-  pinnedToggle.focus();
-  await user.keyboard("{Enter}");
-  expect(within(screen.getByRole("navigation", { name: "置顶标签" })).getByRole("button", { name: "工作/设计/界面" }).getAttribute("aria-current")).toBe("page");
   view.unmount();
-  const remount = render(<TagNavigation {...hierarchy} />);
+  const remount = render(<TagNavigation {...extended} />);
   expect(screen.getAllByRole("button", { name: "工作/设计" })).toHaveLength(2);
-  expect(within(screen.getByRole("navigation", { name: "置顶标签" })).getByRole("button", { name: "工作/设计/界面" })).toBeTruthy();
   remount.unmount();
   render(<TagNavigation {...props} vaultId="vault-b" />);
   expect(screen.queryByRole("navigation", { name: "置顶标签" })).toBeNull();
@@ -105,20 +92,7 @@ it("renames with Enter before saving display preferences", async () => {
   expect(onRename).toHaveBeenCalledWith("工作", "职业");
 });
 
-it("keeps expanding a nested branch separate from selecting its tag", async () => {
-  const user = userEvent.setup(), onSelect = vi.fn();
-  render(<TagNavigation {...props} onSelect={onSelect} tags={[...props.tags, { name: "工作/设计/界面", count: 1 }]} />);
-  const toggle = screen.getByRole("button", { name: "展开或收起标签 工作/设计" });
-  expect(toggle.getAttribute("aria-expanded")).toBe("true");
-  await user.click(toggle);
-  await waitFor(() => expect(screen.queryByRole("button", { name: "工作/设计/界面" })).toBeNull());
-  expect(onSelect).not.toHaveBeenCalled();
-  await user.click(screen.getByRole("button", { name: "工作/设计" }));
-  expect(onSelect).toHaveBeenCalledWith("工作/设计");
-  expect(toggle.getAttribute("aria-expanded")).toBe("false");
-});
-
-it("keeps source order and leaves missing-parent descendants selectable through pins", async () => {
+it("keeps source order and includes all legacy names in both lists", async () => {
   const tags = [
     { name: "zebra", count: 4 },
     { name: "zebra/second", count: 2 },
@@ -131,30 +105,15 @@ it("keeps source order and leaves missing-parent descendants selectable through 
   render(<TagNavigation {...props} tags={tags} selected="zebra/first" />);
   const navigation = within(screen.getByRole("navigation", { name: "标签" }));
   const paths = new Set(tags.map(tag => tag.name));
-  expect(navigation.getAllByRole("button").map(button => button.getAttribute("aria-label")).filter(label => paths.has(label || ""))).toEqual(["zebra", "zebra/second", "zebra/first", "alpha"]);
-  expect(navigation.queryByRole("button", { name: "missing/child" })).toBeNull();
+  expect(navigation.getAllByRole("button").map(button => button.getAttribute("aria-label")).filter(label => paths.has(label || ""))).toEqual(tags.map(tag => tag.name));
+  expect(navigation.getByRole("button", { name: "missing/child" })).toBeTruthy();
   const pinned = within(screen.getByRole("navigation", { name: "置顶标签" }));
-  expect(pinned.getAllByRole("button").map(button => button.getAttribute("aria-label")).filter(label => paths.has(label || ""))).toEqual(["missing/child", "missing/child/deeper", "zebra/first"]);
+  expect(pinned.getAllByRole("button").map(button => button.getAttribute("aria-label")).filter(label => paths.has(label || ""))).toEqual(["missing/child", "zebra/first"]);
   expect(pinned.getByRole("button", { name: "missing/child" }).textContent).toContain("missing/child");
   expect(pinned.getByRole("button", { name: "zebra/first" }).getAttribute("aria-current")).toBe("page");
   const user = userEvent.setup();
-  await user.click(pinned.getByRole("button", { name: "missing/child/deeper" }));
+  await user.click(navigation.getByRole("button", { name: "missing/child/deeper" }));
   expect(props.onSelect).toHaveBeenLastCalledWith("missing/child/deeper");
-});
-
-it("preserves an independently collapsed branch when tags and the selected path update", async () => {
-  const user = userEvent.setup();
-  const view = render(<TagNavigation {...props} />);
-  const toggle = screen.getByRole("button", { name: "展开或收起标签 工作" });
-  await user.click(toggle);
-  await waitFor(() => expect(screen.queryByRole("button", { name: "工作/设计" })).toBeNull());
-  const tags = [...props.tags, { name: "工作/新增", count: 3 }];
-  view.rerender(<SidebarProvider><TagNavigation {...props} tags={tags} selected="工作/新增" /></SidebarProvider>);
-  expect(toggle.getAttribute("aria-expanded")).toBe("false");
-  expect(screen.queryByRole("button", { name: "工作/新增" })).toBeNull();
-  await user.click(toggle);
-  expect(screen.getByRole("button", { name: "工作/新增" }).getAttribute("aria-current")).toBe("page");
-  expect(screen.getByRole("button", { name: "工作/新增" }).parentElement?.textContent).toContain("3");
 });
 
 it("reads the tag collection linearly and reuses the index when only selection changes", () => {

@@ -33,11 +33,11 @@ export function useRichTagSuggestions(editor: Editor, providedNames?: string[], 
   useEffect(() => {
     if (!open || providedNames) return;
     let cancelled = false;
-    void request<{ tags: { name: string }[] }>('listTags').then(result => { if (!cancelled) setNames([...new Set((result?.tags ?? []).map(tag => tagKey(tag.name)))]); }).catch(() => { if (!cancelled) setNames([]); });
+    void request<{ tags: { name: string }[] }>('listTags', {flat: true}).then(result => { if (!cancelled) setNames([...new Set((result?.tags ?? []).map(tag => tagKey(tag.name)))]); }).catch(() => { if (!cancelled) setNames([]); });
     return () => { cancelled = true; };
   }, [open,providedNames]);
   const options = active ? names.filter(name => inlineTags(`#${name}`)[0] === name && name.includes(active.query)).slice(0, 7) : [];
-  if (active?.query && inlineTags(`#${active.query}`)[0] === active.query && !options.includes(active.query)) options.push(active.query);
+  if (active?.query && !active.query.includes("/") && inlineTags(`#${active.query}`)[0] === active.query && !options.includes(active.query)) options.push(active.query);
   const choose = (name: string) => {
     if (!active) return;
     const next=editor.state.doc.textBetween(active.to,Math.min(active.to+1,editor.state.doc.content.size));

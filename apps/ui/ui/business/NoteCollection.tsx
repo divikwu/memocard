@@ -95,7 +95,7 @@ export function NoteCollection({ home, notes, activeTag, loading = false, search
                 </h2>}
                 {cards && <div className="ui-note-preview"><Suspense fallback={<Skeleton className="h-full w-full rounded-lg" />}><NotePreview compact showTitle={false} hiddenTags={note.tags} title={note.title} body={note.body} notePath={note.relativePath} onError={onError} /></Suspense></div>}
                 {tags.length > 0 && <div className="ui-note-tags">
-                  {tags.slice(0, 2).map(name => <Badge key={name} variant="secondary" className="ui-note-tag" render={<button type="button" />} aria-label={`筛选标签 ${name}`} data-ui-tooltip={name} data-tag={encodeURIComponent(name)} onClick={() => onSelectTag(name)}><span data-ui-tooltip-overflow={!cards || !name.includes("/") || undefined}>{cards ? name.split("/").at(-1) : name}</span></Badge>)}
+                  {tags.slice(0, 2).map(name => <Badge key={name} variant="secondary" className="ui-note-tag" render={<button type="button" />} aria-label={`筛选标签 ${name}`} data-ui-tooltip={name} data-tag={encodeURIComponent(name)} onClick={() => onSelectTag(name)}><span data-ui-tooltip-overflow>{name}</span></Badge>)}
                   {tags.length > 2 && <span className="ui-note-tag-count" aria-label={`另有 ${tags.length - 2} 个标签`}>+{tags.length - 2}</span>}
                 </div>}
               </CardContent>

@@ -117,7 +117,7 @@ it.each([1200, 390])("opens the tag directory and navigates its results at %spx"
   const user = userEvent.setup();
   const { request } = await mount();
   const directory = await screen.findByRole("region", { name: "标签目录" });
-  await within(directory).findByRole("button", { name: "编辑标签名称 生活/咖啡" });
+  await within(directory).findByRole("button", { name: "查看标签 生活/咖啡 的笔记" });
   expect(request.mock.calls.some(([operation]) => operation === "queryNotes")).toBe(false);
   await user.type(within(directory).getByRole("textbox", { name: "搜索标签" }), "咖啡");
   await user.click(within(directory).getByRole("button", { name: "查看标签 生活/咖啡 的笔记" }));
@@ -132,26 +132,44 @@ it.each([1200, 390])("opens the tag directory and navigates its results at %spx"
   expect(location.hash).toBe("#/tags");
 });
 
-it("renames a tag and its descendants in the library from the directory", async () => {
+it("renames a legacy tag without touching other tags", async () => {
   history.replaceState(null, "", "#/tags");
   const user = userEvent.setup();
   const { fixture } = await mount();
   const coffeeId = fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")!.id;
   const directory = await screen.findByRole("region", { name: "标签目录" });
-  await user.click(await within(directory).findByRole("button", { name: "编辑标签图标 生活" }));
+  await user.click(await within(directory).findByRole("button", { name: "编辑标签图标 生活/咖啡" }));
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
   const name = within(dialog).getByRole("textbox", { name: "标签名称" });
   await user.clear(name);
   await user.type(name, "日常{Enter}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  await within(directory).findByRole("button", { name: "编辑标签名称 日常/咖啡" });
+  await within(directory).findByRole("button", { name: "查看标签 日常 的笔记" });
   const coffee = fixture.snapshot().notes.find(note => note.id === coffeeId)!;
-  expect(coffee.tags).toContain("日常/咖啡");
-  expect(coffee.body).toContain("#日常/咖啡");
+  expect(coffee.tags).toContain("日常");
+  expect(coffee.body).toContain("#日常");
   expect(coffee.tags).not.toContain("生活/咖啡");
 });
 
-it("uses the selected tag hierarchy and blocks ancestor navigation when saving fails", async () => {
+it("refreshes the sidebar after renaming a tag with no notes", async () => {
+  history.replaceState(null, "", "#/tags");
+  const user = userEvent.setup();
+  await mount();
+  const directory = within(await screen.findByRole("region", {name: "标签目录"}));
+  const sidebar = within(await screen.findByRole("navigation", {name: "标签"}));
+  await user.click(directory.getByRole("button", {name: "新建标签"}));
+  await user.type(directory.getByRole("textbox", {name: "标签名称"}), "空标签{Enter}");
+  await sidebar.findByRole("button", {name: "空标签"});
+  await user.click(directory.getByRole("button", {name: "编辑标签图标 空标签"}));
+  const dialog = within(await screen.findByRole("dialog", {name: "编辑标签"}));
+  const name = dialog.getByRole("textbox", {name: "标签名称"});
+  await user.clear(name);
+  await user.type(name, "新空标签{Enter}");
+  await sidebar.findByRole("button", {name: "新空标签"});
+  expect(sidebar.queryByRole("button", {name: "空标签"})).toBeNull();
+});
+
+it("uses the full selected tag and blocks breadcrumb navigation when saving fails", async () => {
   const user = userEvent.setup();
   const { request } = await mount();
   await user.click((await screen.findAllByRole("button", { name: "筛选标签 生活/咖啡" }))[0]);
@@ -160,7 +178,7 @@ it("uses the selected tag hierarchy and blocks ancestor navigation when saving f
   await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
   const field = await screen.findByRole("textbox", { name: "笔记内容" });
   const breadcrumb = screen.getByRole("navigation", { name: "当前位置" });
-  expect(within(breadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活", "咖啡"]);
+  expect(within(breadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活/咖啡"]);
   const detailHash = location.hash;
   const implementation = request.getMockImplementation()!;
   request.mockImplementation(async (operation, params) => {
@@ -168,18 +186,18 @@ it("uses the selected tag hierarchy and blocks ancestor navigation when saving f
     return implementation(operation, params);
   });
   replaceEditorText("通过面包屑返回前需要保存的正文 #生活/咖啡", field);
-  await user.click(within(breadcrumb).getByRole("button", { name: "生活" }));
+  await user.click(within(breadcrumb).getByRole("button", { name: "生活/咖啡" }));
   await screen.findByText("面包屑保存测试失败");
   expect(location.hash).toBe(detailHash);
   expect(screen.getByRole("textbox", { name: "笔记内容" }).textContent).toContain("通过面包屑返回前需要保存的正文");
   request.mockImplementation(implementation);
-  await user.click(within(breadcrumb).getByRole("button", { name: "生活" }));
-  await screen.findByRole("button", { name: "打开 在阳台上留一点绿色" });
-  expect(request.mock.calls.some(([operation, params]) => operation === "queryNotes" && JSON.stringify(params?.tags) === '["生活"]')).toBe(true);
+  await user.click(within(breadcrumb).getByRole("button", { name: "生活/咖啡" }));
+  await screen.findByRole("button", { name: "打开 今天的手冲记录" });
+  expect(request.mock.calls.some(([operation, params]) => operation === "queryNotes" && JSON.stringify(params?.tags) === '["生活/咖啡"]')).toBe(true);
   await user.click(screen.getByRole("button", { name: "打开 今天的手冲记录" }));
   await screen.findByRole("textbox", { name: "笔记内容" });
   const reopenedBreadcrumb = screen.getByRole("navigation", { name: "当前位置" });
-  expect(within(reopenedBreadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活"]);
+  expect(within(reopenedBreadcrumb).getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活/咖啡"]);
   await user.click(within(reopenedBreadcrumb).getByRole("button", { name: "所有笔记" }));
   await screen.findByRole("button", { name: "打开 Weekend reading list" });
 });
