@@ -51,3 +51,5 @@
 
 .ui-capture-tag-picker [data-slot="input"] { height: var(--size-element-sm); }
 :is(.ui-capture-tag-picker, .ui-capture-suggestions) svg { color: var(--color-text-secondary); }
+.ui-capture-create-tag { font-weight: var(--font-weight-medium); }
+.ui-capture-create-tag > svg { color: inherit; }

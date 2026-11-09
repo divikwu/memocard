@@ -9,11 +9,11 @@ import { SidebarIcon } from "./sidebar-icons";
 import { TagIcon } from "./property-icon-catalog";
 const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
 
-type NavigationProps = { onRename?: (from: string, to: string) => Promise<void>; vaultId?: string | null; tags: { name: string; count: number }[]; selected: string | null; onSelect: (path: string) => void };
+type NavigationProps = { pinnedOnly?: boolean; onRename?: (from: string, to: string) => Promise<void>; vaultId?: string | null; tags: { name: string; count: number }[]; selected: string | null; onSelect: (path: string) => void };
 type Preferences = { pinned: string[]; icons: Record<string, string> };
 type TagRowProps = { tag: NavigationProps["tags"][number]; preferences: Preferences; selected: string | null; onSelect: (path: string) => void; onPin: (path: string) => void; onEdit: (path: string, anchor: HTMLElement) => void };
 
-export function TagNavigation({ vaultId, tags, selected, onSelect, onRename }: NavigationProps) {
+export function TagNavigation({ vaultId, tags, selected, onSelect, onRename, pinnedOnly = false }: NavigationProps) {
   const { isMobile } = useSidebar();
   const { preferences, error, togglePinned, saveAppearance } = useTagPreferences(vaultId);
   const actions = useRef({onSelect, togglePinned});
@@ -27,10 +27,11 @@ export function TagNavigation({ vaultId, tags, selected, onSelect, onRename }: N
   const common = { preferences, selected, onSelect: select, onPin: pin, onEdit: edit };
   return <>
     {pinned.length > 0 && <SidebarGroup className="ui-sidebar-tag-section"><Collapsible.Root defaultOpen><SidebarGroupLabel><Collapsible.Trigger className="ui-sidebar-section-toggle"><span>置顶标签</span><SidebarIcon name="right" className="text-secondary" /></Collapsible.Trigger></SidebarGroupLabel><Collapsible.Panel><nav aria-label="置顶标签" className="pt-1"><SidebarMenu>{pinned.map(tag => <TagNavigationRow key={tag.name} tag={tag} {...common} />)}</SidebarMenu></nav></Collapsible.Panel></Collapsible.Root></SidebarGroup>}
-    <SidebarGroup className="ui-sidebar-tag-section"><Collapsible.Root defaultOpen>
+    {!pinnedOnly && <SidebarGroup className="ui-sidebar-tag-section"><Collapsible.Root defaultOpen>
       <SidebarGroupLabel><Collapsible.Trigger className="ui-sidebar-section-toggle"><span>标签</span><SidebarIcon name="right" className="text-secondary" /></Collapsible.Trigger></SidebarGroupLabel>
       <Collapsible.Panel><nav aria-label="标签" className="pt-1"><SidebarMenu>{Array.from(byName.values(), tag => <TagNavigationRow key={tag.name} tag={tag} {...common} />)}{tags.length === 0 && <li className="px-2 py-2 text-xs text-secondary">添加标签后，会显示在这里。</li>}</SidebarMenu></nav></Collapsible.Panel>
-    </Collapsible.Root>{error && <p role="alert" className="px-2 text-sm text-error">{error}</p>}</SidebarGroup>
+    </Collapsible.Root></SidebarGroup>}
+    {error && <p role="alert" className="px-2 text-sm text-error">{error}</p>}
     {editing && <Suspense fallback={null}><TagEditor path={editing.path} anchor={editing.anchor} icon={preferences.icons[editing.path] || ""} mobile={isMobile} onClose={() => setEditing(null)} onSave={(name, icon) => saveAppearance(editing.path, name, icon, onRename)} /></Suspense>}
   </>;
 }

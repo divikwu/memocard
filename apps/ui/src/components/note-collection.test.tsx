@@ -7,7 +7,7 @@ import { NoteCollection } from "@ui/business/NoteCollection";
 
 vi.mock("@ui/business/NotePreview", () => ({ NotePreview: ({ body }: { body: string }) => <p>{body}</p> }));
 const note: Note = { id: "note-1", title: "散步的想法", body: "周末散步时想到的记录", tags: ["生活"], createdAt: "2026-10-10T08:00:00Z", updatedAt: "2026-10-10T08:00:00Z", contentHash: "hash", relativePath: "notes/note-1.md", sourceUrl: "memocard://note/note-1" };
-const props = { notes: [note], query: "", onQueryChange: vi.fn(), searchPlaceholder: "搜索当前标签内容", searchDisabled: false, hasMore: true, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "10月10日 16:00" };
+const props = { notes: [note], hasMore: true, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "10月10日 16:00" };
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); localStorage.removeItem("memocard:note-layout"); localStorage.removeItem("memocard:home-layout"); });
 
@@ -138,7 +138,7 @@ it("defaults to cards for invalid preferences and keeps switching available with
 it("keeps the toolbar and saved layout mounted while the first page loads", async () => {
   localStorage.setItem("memocard:note-layout", "list");
   const view = render(<NoteCollection {...props} notes={[]} loading hasMore={false} />);
-  expect(screen.getByRole("textbox", {name:"搜索当前视图笔记"})).toBeTruthy();
+  expect(screen.queryByRole("textbox", {name:"搜索当前视图笔记"})).toBeNull();
   expect(screen.getByRole("button", {name:"新建"})).toBeTruthy();
   expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
   expect(screen.getByRole("status", {name:"正在读取笔记库"})).toBeTruthy();
@@ -149,13 +149,13 @@ it("keeps the toolbar and saved layout mounted while the first page loads", asyn
   expect(screen.queryByRole("status")).toBeNull();
 });
 
-it("marks retained search results busy until the replacement arrives", () => {
-  const view = render(<NoteCollection {...props} query="新关键词" loading searching />);
+it("marks retained results busy until the replacement arrives", () => {
+  const view = render(<NoteCollection {...props} loading />);
   const list = screen.getByRole("list", {name:"笔记列表"});
   expect(list.parentElement?.getAttribute("aria-busy")).toBe("true");
   expect(screen.getByRole("button", {name:`打开 ${note.title}`})).toBeTruthy();
-  expect(screen.getByRole("status", {name:"正在搜索笔记"})).toBeTruthy();
-  view.rerender(<NoteCollection {...props} query="新关键词" notes={[]} hasMore={false}><p>没有相关笔记</p></NoteCollection>);
+  expect(screen.getByRole("status", {name:"正在读取笔记库"})).toBeTruthy();
+  view.rerender(<NoteCollection {...props} notes={[]} hasMore={false}><p>没有相关笔记</p></NoteCollection>);
   expect(screen.getByText("没有相关笔记")).toBeTruthy();
   expect(screen.queryByRole("status")).toBeNull();
   expect(screen.queryByRole("button", {name:`打开 ${note.title}`})).toBeNull();

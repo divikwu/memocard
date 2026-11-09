@@ -24,7 +24,7 @@ export function ScenarioView({ state, scenario }: { state: AppViewState; scenari
       state.onRefreshBackground();
     } else if (scenario.id === "search-empty") {
       prepared.current = true;
-      state.collection.onQueryChange("不存在的关键词");
+      state.onSearch();
     } else if (scenario.id === "filter-empty") {
       prepared.current = true;
       void state.onNavigate("notes", null, "images");

@@ -9,7 +9,7 @@ import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { NoteCollection, type NoteCollectionProps } from "./NoteCollection";
 
 const note: Note = { id: "compact", title: "集合的界面标题", body: "# 正文中的标题\n\n保留**正文强调**和[参考链接](https://example.com)。\n\n- 第一行\n- 第二行\n\n#设计", tags: ["设计"], relativePath: "notes/compact.md", contentHash: "seed", sourceUrl: "", createdAt: "2026-10-22T08:00:00Z", updatedAt: "2026-10-22T08:00:00Z" };
-const props = (): NoteCollectionProps => ({ notes: [note], query: "", onQueryChange: vi.fn(), searchPlaceholder: "搜索", searchDisabled: false, hasMore: false, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "2026-10-22" });
+const props = (): NoteCollectionProps => ({ notes: [note], hasMore: false, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "2026-10-22" });
 const style = document.createElement("style");
 // Keep cold Markdown compilation outside the rendering assertion deadline.
 beforeAll(async () => { await import("./NotePreview"); }, 15000);

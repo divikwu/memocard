@@ -17,6 +17,7 @@ let detach: (() => void) | undefined;
 beforeAll(async () => { await preloadWebEditor(); await Promise.all([import("../business/QuickCapture"), import("../business/NoteSearchDialog")]); }, 30_000);
 beforeEach(() => {
   localStorage.clear(); resetStorybookBridge();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/notes");
   document.elementFromPoint = () => null;
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
@@ -48,8 +49,21 @@ async function mount(scenario = "loading", readOnly = false, mapView?: (state: A
 it("navigates a tag, edits and saves a note, then finds its committed body through global search", async () => {
   const user = userEvent.setup();
   const { fixture, request } = await mount();
-  const tagNavigation = await screen.findByRole("navigation", { name: "标签" });
-  await user.click(within(tagNavigation).getByRole("button", { name: "设计" }));
+  const recentTags = await screen.findByRole("group", { name: "最近使用的笔记标签" });
+  const all = within(recentTags).getByRole("button", { name: "all", pressed: true });
+  expect(screen.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
+  const design = within(recentTags).getByRole("button", { name: "筛选最近标签 设计" });
+  await user.click(design);
+  await screen.findByRole("heading", { name: "# 设计" });
+  expect(design.getAttribute("aria-pressed")).toBe("true");
+  expect(screen.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
+  expect(all.getAttribute("aria-pressed")).toBe("false");
+  await user.click(all);
+  await screen.findByRole("heading", { name: "所有笔记" });
+  await screen.findByRole("button", { name: "打开 今天的手冲记录" });
+  expect(all.getAttribute("aria-pressed")).toBe("true");
+  await user.click(design);
+  await screen.findByRole("heading", { name: "# 设计" });
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   await user.click(await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" }));
   const field = await screen.findByRole("textbox", { name: "笔记内容" });
@@ -151,14 +165,16 @@ it("renames a legacy tag without touching other tags", async () => {
   expect(coffee.tags).not.toContain("生活/咖啡");
 });
 
-it("refreshes the sidebar after renaming a tag with no notes", async () => {
+it("refreshes the pinned sidebar tag after renaming a tag with no notes", async () => {
   history.replaceState(null, "", "#/tags");
   const user = userEvent.setup();
   await mount();
   const directory = within(await screen.findByRole("region", {name: "标签目录"}));
-  const sidebar = within(await screen.findByRole("navigation", {name: "标签"}));
   await user.click(directory.getByRole("button", {name: "新建标签"}));
   await user.type(directory.getByRole("textbox", {name: "标签名称"}), "空标签{Enter}");
+  await user.click(await directory.findByRole("button", {name: "标签操作 空标签"}));
+  await user.click(await screen.findByRole("menuitem", {name: "置顶标签"}));
+  const sidebar = within(await screen.findByRole("navigation", {name: "置顶标签"}));
   await sidebar.findByRole("button", {name: "空标签"});
   await user.click(directory.getByRole("button", {name: "编辑标签图标 空标签"}));
   const dialog = within(await screen.findByRole("dialog", {name: "编辑标签"}));
@@ -167,6 +183,27 @@ it("refreshes the sidebar after renaming a tag with no notes", async () => {
   await user.type(name, "新空标签{Enter}");
   await sidebar.findByRole("button", {name: "新空标签"});
   expect(sidebar.queryByRole("button", {name: "空标签"})).toBeNull();
+});
+
+it("shares tag icons between the collection heading and tag directory", async () => {
+  const user = userEvent.setup();
+  const { request } = await mount();
+  await user.click(await screen.findByRole("button", { name: "筛选最近标签 生活/咖啡" }));
+  const heading = await screen.findByRole("heading", { name: "# 生活/咖啡", level: 1 });
+  const icon = within(heading.parentElement!).getByRole("button", { name: "编辑标签图标 生活/咖啡" });
+  await user.click(icon);
+  const dialog = within(await screen.findByRole("dialog", { name: "编辑标签" }));
+  const search = dialog.getByRole("textbox", { name: "搜索 Emoji" });
+  await user.type(search, "咖啡");
+  await user.click(await dialog.findByRole("button", { name: /^茶、热饮、咖啡/ }));
+  await waitFor(() => expect(icon.textContent).toContain("☕"));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(icon));
+  await user.click(within(screen.getByRole("navigation", { name: "主要导航" })).getByRole("button", { name: "标签" }));
+  const directory = within(await screen.findByRole("region", { name: "标签目录" }));
+  expect(directory.getByRole("button", { name: "编辑标签图标 生活/咖啡" }).textContent).toContain("☕");
+  expect(request.mock.calls.some(([operation]) => operation === "setTagPreferences")).toBe(true);
 });
 
 it("uses the full selected tag and blocks breadcrumb navigation when saving fails", async () => {
@@ -589,8 +626,8 @@ it("switches interface themes without rebuilding an open editor, changing its ro
   expect(editor.getText()).toBe(original);
 });
 
-it("uses the shared tag tree, search, and quick filters from the minimal navigation", async () => {
-  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
+it("uses the shared tag tree, search, and quick filters from the default minimal navigation", async () => {
+  localStorage.removeItem("memocard-web-appearance-v1");
   const user = userEvent.setup();
   await mount();
   await screen.findByRole("button", { name: "打开 今天的手冲记录" });
@@ -604,6 +641,14 @@ it("uses the shared tag tree, search, and quick filters from the minimal navigat
   await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" });
   expect(screen.queryByRole("dialog", { name: "浏览标签" })).toBeNull();
   expect(within(nav).getByRole("button", { name: "标签" }).getAttribute("aria-current")).toBe("page");
+  await user.click(screen.getByRole("button", { name: "打开 让设计语言走进真实页面" }));
+  await screen.findByRole("textbox", { name: "笔记内容" });
+  expect(within(nav).queryByRole("button", { current: "page" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "MemoCard，返回主页" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "返回笔记列表" }));
+  await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" });
+  expect(within(nav).getByRole("button", { name: "标签", current: "page" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "MemoCard，返回主页" })).toBeTruthy();
   await user.click(within(nav).getByRole("button", { name: "更多" }));
   const menu = await screen.findByRole("menu");
   expect(within(menu).queryByRole("menuitem", { name: "新建笔记" })).toBeNull();

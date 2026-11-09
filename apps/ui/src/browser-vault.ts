@@ -8,6 +8,7 @@ import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker, BrowserW
 import { IndexedDBVaultStorage } from "./browser-storage";
 import type { BrowserDraft, BrowserVaultStorage, StoredSelection } from "./browser-storage";
 import { readNotePins, resolvedNotePins, setNotePinned } from "./browser-note-pins";
+import { recentNoteTags } from "./recent-note-tags";
 
 export { BrowserVaultError } from "./browser-file-io";
 export type { BrowserDirectoryHandle, BrowserFileHandle, BrowserPicker } from "./browser-files";
@@ -646,7 +647,10 @@ export class BrowserVault {
     }
     const last = notes.at(-1);
     const nextCursor = matching.length > notes.length && last ? btoa(JSON.stringify({ id: last.id, createdAt: last.createdAt, sortAt: sortAt(last), queryHash, snapshotHash })) : null;
-    return { notes, nextCursor, coverage: snapshot.coverage, filterCounts };
+    const recentQuickFilterTags = quickFilter && quickFilter !== "untagged"
+      ? recentNoteTags(snapshot.parsed.map(({ note }) => note).filter(note => filters.get(note.id)!.includes(quickFilter)))
+      : undefined;
+    return { notes, nextCursor, coverage: snapshot.coverage, filterCounts, recentQuickFilterTags };
   }
 
   private async attachment(selected: Binding, params: Record<string, unknown>): Promise<unknown> {
@@ -819,7 +823,11 @@ export class BrowserVault {
         for (const tag of Object.keys(settings?.labels ?? {})) if (!counts.has(tag)) counts.set(tag, 0);
         await this.active(selected);
       }
-      return { tags: [...counts].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([name, count]) => ({ name, count })), coverage: snapshot.coverage };
+      return {
+        tags: [...counts].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([name, count]) => ({ name, count })),
+        ...(params.includeRecent === true && { recentTags: recentNoteTags(snapshot.parsed.map(({ note }) => note)) }),
+        coverage: snapshot.coverage,
+      };
     }
     throw new BrowserVaultError("UNSUPPORTED_OPERATION", "浏览器笔记库暂不支持此操作。");
   }

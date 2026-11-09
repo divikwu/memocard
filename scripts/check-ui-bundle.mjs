@@ -91,9 +91,10 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     console.log(`${mode} first list: ${listCompressed} gzip bytes.`);
   }
   const metrics = [];
+  const minimalLayout = ["ui/web/layouts/topbar.tsx", "ui/web/appearance/themes/minimal.css"];
   for (const route of [
     { name: "list", entries: [], raw: 1120, gzip: 330 },
-    { name: "minimal interface first list", entries: ["ui/web/layouts/topbar.tsx", "ui/web/appearance/themes/minimal.css"], raw: 1200, gzip: 350 },
+    { name: "minimal interface first list", entries: minimalLayout, raw: 1200, gzip: 350 },
     { name: "list with card previews", entries: ["ui/business/NotePreview.tsx"], raw: 1780, gzip: 525 },
     { name: "home with quick capture", entries: ["ui/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
     { name: "home with capture and card previews", entries: ["ui/business/QuickCapture.tsx", "ui/business/NotePreview.tsx"], raw: 2140, gzip: 645 },
@@ -104,9 +105,9 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "settings", entries: ["ui/web/WebSettings.tsx"], raw: 1850, gzip: 545 },
     { name: "detail editor", entries: ["ui/business/Editor.tsx"], raw: 2250, gzip: 675 },
     { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
-    { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/web/layouts/topbar.tsx", "ui/web/appearance/themes/minimal.css"], raw: 2700, gzip: 820 },
-    // Shared tag metadata and editing add a small raw-size cost to this route.
-    { name: "detail with all property editors", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx"], raw: 2704, gzip: 820 },
+    { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", ...minimalLayout], raw: 2700, gzip: 820 },
+    // Measure the property editors with the default desktop layout and its styles.
+    { name: "minimal detail with all property editors", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx", ...minimalLayout], raw: 2720, gzip: 820 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";

@@ -145,14 +145,17 @@ it("keeps a reminder failure inside the open recovery dialog and retains the dra
   expect(within(dialog).getByRole("button", { name: "继续编辑：保留草稿 1" })).toBeDefined();
 });
 
-it("shows an actual search miss and restores the collection when cleared", async () => {
+it("shows a global search miss and clears the search", async () => {
   const user = userEvent.setup();
   const { request } = await show("search-empty");
-  await screen.findByText("没有找到相关笔记");
-  expect(screen.getByRole("textbox", { name: "搜索当前视图笔记" })).toHaveProperty("value", "不存在的关键词");
-  expect(request.mock.calls.some(([operation, params]) => operation === "queryNotes" && params?.query === "不存在的关键词")).toBe(true);
-  await user.click(screen.getByRole("button", { name: "清空当前搜索" }));
-  await screen.findByRole("list", { name: "笔记列表" });
+  const dialog = within(await screen.findByRole("dialog", { name: "搜索笔记" }));
+  const input = await dialog.findByRole("combobox", { name: "搜索笔记" });
+  await user.type(input, "不存在的关键词");
+  await waitFor(() => expect(request.mock.calls.some(([operation, params]) =>
+    operation === "queryNotes" && params?.query === "不存在的关键词")).toBe(true));
+  expect(await dialog.findAllByText("没有找到相关笔记")).not.toHaveLength(0);
+  await user.click(dialog.getByRole("button", { name: "清空搜索" }));
+  expect(input).toHaveProperty("value", "");
 });
 
 it("starts in the images filter and returns to the unfiltered notes", async () => {

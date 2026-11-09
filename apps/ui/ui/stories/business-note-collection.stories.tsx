@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { recentNoteTags } from "../../src/recent-note-tags";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { Note } from "@memocard/contracts";
 import { NoteCollection } from "../business/NoteCollection";
@@ -10,7 +11,6 @@ import { LumaStoryFrame } from "../LumaPage";
 import { TagColorProvider } from "../../src/TagColorProvider";
 import TagColorStyles from "../business/TagColorStyles";
 import { expect, userEvent, waitFor, within } from "storybook/test";
-import "../business/note-search.css";
 
 const fixtures: Note[] = [
   ["coffee", "今天的手冲记录", "## 浅烘豆的另一种冲法\n\n水温 92°C，粉水比 **1:15**。记录一点日常的小发现。\n\n- 清晰的柑橘香气\n- 下次尝试更粗的研磨", ["area/coffee", "日常", "配方"]],
@@ -23,7 +23,6 @@ const fixtures: Note[] = [
 
 function CollectionFixture({ home = false, empty = false, loading: initialLoading = false, error: initialError = false }: { home?: boolean; empty?: boolean; loading?: boolean; error?: boolean }) {
   const [notes, setNotes] = useState(empty ? [] : fixtures);
-  const [query, setQuery] = useState("");
   const [tag, setTag] = useState<string | null>(null);
   const [tab, setTab] = useState<"recent" | "pinned">("recent");
   const [limit, setLimit] = useState(2);
@@ -31,7 +30,7 @@ function CollectionFixture({ home = false, empty = false, loading: initialLoadin
   const [error, setError] = useState<string | null>(initialError ? "示例笔记暂时无法读取，请重试。" : null);
   const [opened, setOpened] = useState<string | null>(null);
   const pinned = new Set(["coffee", "design"]);
-  const filtered = notes.filter(note => (!home || tab !== "pinned" || pinned.has(note.id)) && (!tag || note.tags.includes(tag)) && (!query || `${note.title} ${note.body} ${note.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase())));
+  const filtered = notes.filter(note => (!home || tab !== "pinned" || pinned.has(note.id)) && (!tag || note.tags.includes(tag)));
   const selected = notes.find(note => note.id === opened);
   const create = () => {
     const id = `new-${notes.length + 1}`;
@@ -40,10 +39,10 @@ function CollectionFixture({ home = false, empty = false, loading: initialLoadin
     setOpened(id);
   };
   return <LumaStoryFrame><div className="mx-auto grid w-full max-w-5xl gap-6">
-    <header><h1 className="type-heading-1">{home ? "主页" : "所有笔记"}</h1><p className="mt-2 text-sm text-secondary">真实的本地交互示例：搜索、标签筛选、布局、分页、打开与新建。示例不连接笔记库。</p></header>
+    <header><h1 className="type-heading-1">{home ? "主页" : "所有笔记"}</h1><p className="mt-2 text-sm text-secondary">真实的本地交互示例：标签筛选、布局、分页、打开与新建。示例不连接笔记库。</p></header>
     {loading && <div><Button variant="outline" onClick={() => setLoading(false)}>完成读取</Button></div>}
     {tag && <div className="flex items-center gap-3 text-sm"><span>当前标签：{tag}</span><Button variant="ghost" size="sm" onClick={() => { setTag(null); setLimit(2); }}>清除标签筛选</Button></div>}
-    <NoteCollection home={home ? { tab, pinnedCount: notes.filter(note => pinned.has(note.id)).length, onTabChange: next => { setTab(next); setLimit(2); } } : undefined} activeTag={tag} notes={loading || error ? [] : filtered.slice(0, limit)} loading={loading} query={query} onQueryChange={value => { setQuery(value); setLimit(2); }} searchPlaceholder={tag ? "搜索当前标签内容" : "搜索笔记内容"} searchDisabled={loading || Boolean(error)} hasMore={!loading && !error && filtered.length > limit} paging={false} loadMoreDisabled={false} canOpen={!loading && !error} canCreate={!loading && !error} onNewNote={create} onOpen={setOpened} onSelectTag={name => { setTag(name); setLimit(2); }} onLoadMore={() => setLimit(current => current + 2)} onError={setError} formatDate={value => new Date(value).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}>
+    <NoteCollection home={home ? { tab, pinnedCount: notes.filter(note => pinned.has(note.id)).length, onTabChange: next => { setTab(next); setLimit(2); } } : undefined} activeTag={tag} notes={loading || error ? [] : filtered.slice(0, limit)} loading={loading} recentTags={recentNoteTags(notes)} tagFiltersDisabled={loading || Boolean(error)} onSelectAll={() => { setTag(null); setLimit(2); }} hasMore={!loading && !error && filtered.length > limit} paging={false} loadMoreDisabled={false} canOpen={!loading && !error} canCreate={!loading && !error} onNewNote={create} onOpen={setOpened} onSelectTag={name => { setTag(name); setLimit(2); }} onLoadMore={() => setLimit(current => current + 2)} onError={setError} formatDate={value => new Date(value).toLocaleDateString("zh-CN", { month: "short", day: "numeric" })}>
       {error ? <Empty className="border"><EmptyHeader><EmptyTitle>读取遇到问题</EmptyTitle><EmptyDescription><span role="alert">{error}</span></EmptyDescription></EmptyHeader><EmptyContent><Button variant="outline" onClick={() => setError(null)}>重试</Button></EmptyContent></Empty> : undefined}
     </NoteCollection>
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setOpened(null); }}><DialogContent className="max-h-[85svh] overflow-y-auto"><DialogHeader><DialogTitle>{selected?.title?.trim() || "新内容"}</DialogTitle><DialogDescription>本地示例笔记</DialogDescription></DialogHeader>{selected && <NotePreview body={selected.body} title={selected.title} showTitle={false} notePath={selected.relativePath} onError={setError} />}</DialogContent></Dialog>
@@ -54,19 +53,6 @@ const meta = { title: "business/note collection", id: "ui-business-note-collecti
 export default meta;
 type Story = StoryObj<typeof meta>;
 export const Desktop: Story = {};
-export const DesktopRegression: Story = {
-  ...Desktop,
-  tags: ["!dev", "!autodocs"],
-  play: async ({ canvasElement }) => {
-    const input = within(canvasElement).getByRole("textbox", { name: "搜索当前视图笔记" });
-    await userEvent.tab();
-    await expect(input).toHaveFocus();
-    // Dialog search styles share the document without changing this field's spacing or focus ring.
-    const style = getComputedStyle(input);
-    await expect(style.paddingInlineStart).toBe("36px");
-    await expect(style.outlineStyle).toBe("solid");
-  },
-};
 export const H5: Story = { tags: ["mobile"], globals: { viewport: { value: "mobile", isRotated: false } }, decorators: [Story => <div style={{ maxWidth: 390, marginInline: "auto" }}><Story /></div>] };
 export const Home: Story = { args: { home: true } };
 export const Loading: Story = { args: { loading: true } };

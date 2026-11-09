@@ -333,6 +333,24 @@ it('saves property tags independently, merges filters and counts once, and check
   expect((await call<Note>(reopened.core,'getNote',{id:noteId})).tags).toEqual(cleared.tags);
 });
 
+it("ranks up to 16 distinct tags by their latest active note update", async () => {
+  const h = await open();
+  const tags = Array.from({ length: 16 }, (_, index) => `tag-${String(index).padStart(2, "0")}`);
+  const addNote = async (id: string, updatedAt: string, names: string[], deleted = false) => {
+    const file = await h.notes.getFileHandle(`${id}.md`, { create: true });
+    file.bytes = bytes(source(id, "内容", deleted ? 'deletedAt: "2026-11-04T00:00:00Z"\n' : "")
+      .replace(/^updatedAt:.*$/m, `updatedAt: "${updatedAt}"`)
+      .replace(/^tags:.*$/m, `tags: ${JSON.stringify(names)}`));
+  };
+  await addNote(noteId, "2026-11-01T00:00:00Z", tags);
+  await addNote(secondId, "2026-11-02T00:00:00Z", ["latest/child", tags[0], "ﬃ", "𐐨"]);
+  await addNote("11111111-1111-4111-8111-111111111113", "2026-11-03T00:00:00Z", ["deleted"], true);
+
+  const listing = await call<{ recentTags: string[] }>(h.core, "listTags", { flat: true, includeRecent: true });
+  expect(listing.recentTags).toEqual(["latest/child", tags[0], "𐐨", "ﬃ", ...tags.slice(1, 13)]);
+  expect(await call(h.core, "listTags", { flat: true })).not.toHaveProperty("recentTags");
+});
+
 class TestFile implements BrowserFileHandle {
   readonly kind = "file" as const;
   private contents: Uint8Array;
@@ -851,6 +869,10 @@ describe("independent browser vault", () => {
     h.notes.children.set("code.md", new TestFile("code.md", source(codeId, "```md\n![代码](photo.png) https://example.com\n```").replace(/tags: .*\n/, "tags: []\n")));
     const first = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", limit: 1 });
     expect(first.notes).toHaveLength(1);
+    expect(first.recentQuickFilterTags).toEqual(["工作"]);
+    const untaggedImages = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", tags: ["missing"] });
+    expect(untaggedImages.notes).toEqual([]);
+    expect(untaggedImages.recentQuickFilterTags).toEqual(["工作"]);
     expect(first.filterCounts).toEqual({ untagged: 2, images: 2, links: 1 });
     expect(first.nextCursor).toBeTruthy();
     const next = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", limit: 1, cursor: first.nextCursor });

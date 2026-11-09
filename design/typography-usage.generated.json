@@ -1059,6 +1059,11 @@
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings-title",
           "value": "var(--font-size-2xl)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebAppView.tsx",
+          "scope": "text-2xl",
+          "value": "var(--font-size-2xl)"
         }
       ]
     },
@@ -1075,6 +1080,11 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-3",
+          "value": "var(--font-size-3xl)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": ".web-app[data-interface-theme=minimal] .web-page-content[data-view=notes] .web-collection-heading h1",
           "value": "var(--font-size-3xl)"
         }
       ]
@@ -1709,11 +1719,6 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-supporting",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/web/layouts/topbar.css",
-          "scope": ".web-top-links > button",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2495,11 +2500,6 @@
         },
         {
           "source": "apps/ui/ui/web/layouts/topbar.css",
-          "scope": ".web-top-links > button",
-          "value": "var(--font-weight-normal)"
-        },
-        {
-          "source": "apps/ui/ui/web/layouts/topbar.css",
           "scope": ".web-top-tag-tree .ui-sidebar-row",
           "value": "var(--font-weight-normal)"
         },
@@ -2580,6 +2580,11 @@
         {
           "source": "apps/ui/ui/business/PageNotice.css",
           "scope": ".ui-page-notice-title",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/business/QuickCapture.css",
+          "scope": ".ui-capture-create-tag",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -3978,6 +3983,11 @@
       "locations": [
         {
           "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+          "scope": "text-2xl",
+          "value": "var(--tw-leading, var(--text-2xl--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "text-2xl",
           "value": "var(--tw-leading, var(--text-2xl--line-height))"
         }

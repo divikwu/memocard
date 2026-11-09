@@ -5,8 +5,7 @@ import { Button } from "../components/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Separator } from "../components/separator";
 import { Sheet, SheetClose, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
-import { Sidebar, SidebarContent, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuSub, SidebarRail, SidebarTrigger, useSidebar } from "../components/sidebar";
-import { Skeleton } from "../components/skeleton";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuSub, SidebarRail, SidebarTrigger, useSidebar } from "../components/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
 import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import { SidebarIcon } from "./sidebar-icons";
@@ -81,7 +80,7 @@ export function AppSidebar(props: AppSidebarProps) {
     </SidebarHeader>
     <SidebarContent ref={setTagScroller} className="ui-sidebar-tag-scroll" onFocusCapture={event => {
       if (document.documentElement.dataset.uiInputModality === "keyboard") event.target.scrollIntoView({ block: "nearest" });
-    }}><div className="ui-sidebar-tag-scroll-body">{loadingTags ? <SidebarGroup role="status" aria-label="正在读取标签"><div className="grid gap-3 p-2">{[0, 1, 2].map(index => <Skeleton key={index} className="h-element-sm rounded-full" />)}</div></SidebarGroup> : <TagNavigation key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={path => navigate("notes", path)} />}</div></SidebarContent>
+    }}><div className="ui-sidebar-tag-scroll-body">{!loadingTags && <TagNavigation pinnedOnly key={vaultId || "disconnected"} vaultId={vaultId} onRename={onRenameTag} tags={tags} selected={view === "notes" ? tag : null} onSelect={path => navigate("notes", path)} />}</div></SidebarContent>
     <SidebarRail />
   </Sidebar>;
 }

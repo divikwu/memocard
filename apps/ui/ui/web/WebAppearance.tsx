@@ -14,7 +14,7 @@ export type WebAppearanceControls = { value: WebAppearance; onChange: (value: We
 export const WebAppearanceContext = createContext<WebAppearanceControls | null>(null);
 const storageKey = "memocard-web-appearance-v1";
 const legacyStorageKey = "memocard-appearance-v1";
-export const DEFAULT_WEB_APPEARANCE: WebAppearance = { ...DEFAULT_PREVIEW_APPEARANCE, theme: "light", interfaceTheme: "classic", palette: "mono", neutralPalette: "neutral" };
+export const DEFAULT_WEB_APPEARANCE: WebAppearance = { ...DEFAULT_PREVIEW_APPEARANCE, theme: "light", interfaceTheme: "minimal", palette: "mono", neutralPalette: "neutral" };
 const legacyRadii: Record<string, PreviewAppearance["radius"]> = { none: "none", xs: "legacy-xs", sm: "legacy-sm", md: "default", lg: "medium", xl: "legacy-xl", "2xl": "legacy-2xl" };
 
 function parse(raw: string | null, legacy = false): WebAppearance {
@@ -22,7 +22,7 @@ function parse(raw: string | null, legacy = false): WebAppearance {
     const data = raw ? JSON.parse(raw) : {};
     if (!data || typeof data !== "object" || Array.isArray(data)) return DEFAULT_WEB_APPEARANCE;
     return { ...parsePreviewAppearance(legacy ? { ...data, radius: legacyRadii[data.radius] } : data), theme: ["light", "dark", "system"].includes(data.theme) ? data.theme : "light",
-      interfaceTheme: typeof data.interfaceTheme === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(data.interfaceTheme) ? data.interfaceTheme : "classic",
+      interfaceTheme: typeof data.interfaceTheme === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(data.interfaceTheme) ? data.interfaceTheme : DEFAULT_WEB_APPEARANCE.interfaceTheme,
       palette: WEB_PALETTES.find(option => option.value === data.palette)?.value ?? "mono", neutralPalette: WEB_NEUTRALS.find(option => option.value === data.neutralPalette)?.value ?? "neutral" };
   } catch { return DEFAULT_WEB_APPEARANCE; }
 }

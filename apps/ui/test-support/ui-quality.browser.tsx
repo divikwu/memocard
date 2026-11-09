@@ -605,27 +605,6 @@ test("property hints avoid pointer noise and prefer the left side on desktop", a
   } finally { view.unmount(); fixture.release(); }
 });
 
-test("collection search spinner stays centered throughout its rotation", async () => {
-  const view = render(<PreviewModeProvider mode="light"><NoteCollection loading notes={[]} query="" onQueryChange={() => {}} searchPlaceholder="搜索笔记内容" searchDisabled hasMore={false} paging={false} loadMoreDisabled canOpen={false} canCreate={false} onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
-  const input = within(view.container).getByRole("textbox", { name: "搜索当前视图笔记" });
-  const spinner = view.container.querySelector<SVGElement>('.ui-collection-search-icon[data-slot="spinner"]')!;
-  const animation = spinner.getAnimations()[0];
-  expect(animation).toBeDefined();
-  animation.pause();
-  await animation.ready;
-  const duration = Number(animation.effect!.getTiming().duration);
-  for (const width of [390, 1440]) {
-    await page.viewport(width, 900);
-    const inputBox = input.getBoundingClientRect();
-    for (const progress of [0, 0.25, 0.5, 0.75, 0.99]) {
-      animation.currentTime = duration * progress;
-      const box = spinner.getBoundingClientRect();
-      expect(box.top + box.height / 2, `${width}px at ${progress} rotation`).toBeCloseTo(inputBox.top + inputBox.height / 2, 1);
-      expect(box.left + box.width / 2).toBeCloseTo(inputBox.left + 20, 1);
-    }
-  }
-});
-
 for (const close of ["pointer leave", "Escape", "click", "scroll"]) test(`delegated tooltip preserves its content, position and theme during ${close} exit`, async () => {
   const view = render(<PreviewModeProvider mode="light"><TooltipHints>
     <div className="ui-theme" data-appearance-scope="" data-ui-theme="dark" style={{ padding: 160 }}>
@@ -683,12 +662,14 @@ test("tooltip review reveals clipped labels and icon actions without repeating v
   await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
 });
 
-for (const width of [390, 1024]) for (const mode of ["light", "dark"] as const) test(`tag sidebar fades only beyond scroll edges at ${width}px in ${mode}`, async () => {
+for (const width of [390, 1024]) for (const mode of ["light", "dark"] as const) test(`pinned tag sidebar fades only beyond scroll edges at ${width}px in ${mode}`, async () => {
   await page.viewport(width, 720);
   await commands.setReducedMotion("reduce");
   const tags = Array.from({ length: 40 }, (_, index) => ({ name: `标签${String(index).padStart(2, "0")}`, count: 1 }));
+  const vaultId = `scroll-edges-${width}-${mode}`;
+  localStorage.setItem(`memocard:tags:${vaultId}`, JSON.stringify({ pinned: tags.map(tag => tag.name) }));
   render(<PreviewModeProvider mode={mode}><SidebarProvider persistState={false} keyboardShortcut={false} openMobile={width < 768} onOpenMobileChange={() => {}}>
-    <AppSidebar {...sidebarStoryMeta.args} vaultId={`scroll-edges-${width}-${mode}`} tag={null} tags={tags} />
+    <AppSidebar {...sidebarStoryMeta.args} vaultId={vaultId} tag={null} tags={tags} />
   </SidebarProvider></PreviewModeProvider>);
   const body = within(document.body);
   await body.findByRole("button", { name: "标签00" });
@@ -712,7 +693,7 @@ for (const width of [390, 1024]) for (const mode of ["light", "dark"] as const) 
     expect(target.top).toBeGreaterThanOrEqual(bounds.top + 24);
     expect(target.bottom).toBeLessThanOrEqual(bounds.bottom - 24);
   });
-  await userEvent.click(body.getByRole("button", { name: "标签", expanded: true }));
+  await userEvent.click(body.getByRole("button", { name: "置顶标签", expanded: true }));
   await waitFor(() => edges(false, false));
 });
 
@@ -757,7 +738,7 @@ for (const [kind, block] of [
   await page.viewport(1024, 900);
   const body = `${Array.from({ length: 6 }, (_, index) => `预览段落 ${index + 1}。`).join("\n\n")}\n\n${block}`;
   const view = render(<PreviewModeProvider mode="light"><main className="ui-theme p-4" style={{ width: 384 }}>
-    <NoteCollection notes={[{ ...editorNote, body, tags: ["检查"] }]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+    <NoteCollection notes={[{ ...editorNote, body, tags: ["检查"] }]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
   </main></PreviewModeProvider>);
   const canvas = within(view.container);
   await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
@@ -1103,7 +1084,7 @@ for (const mode of ["light", "dark"] as const) {
     await page.viewport(1024, 900);
     await commands.setReducedMotion("reduce");
     const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
-      <NoteCollection notes={[{ ...editorNote, tags: ["检查"] }]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+      <NoteCollection notes={[{ ...editorNote, tags: ["检查"] }]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
       <Button>键盘焦点起点</Button>
       <QuickCapture vaultId="shadow-focus-test" rootNotes tags={[]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
     </main></PreviewModeProvider>);
@@ -1162,7 +1143,7 @@ for (const mode of ["light", "dark"] as const) {
     await commands.setReducedMotion("reduce");
     const view = render(<PreviewModeProvider mode={mode}><main className="web-app ui-theme bg-body p-8" data-ui-theme={mode}>
       <span className="hidden bg-surface" data-testid="expected-surface" />
-      <NoteCollection home={{ tab: "recent", pinnedCount: 1, onTabChange: () => {} }} notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+      <NoteCollection home={{ tab: "recent", pinnedCount: 1, onTabChange: () => {} }} notes={[editorNote]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
     </main></PreviewModeProvider>);
     const canvas = within(view.container);
     await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
@@ -1207,7 +1188,7 @@ for (const mode of ["light", "dark"] as const) {
     await commands.setForcedColors("active");
     expect(matchMedia("(forced-colors: active)").matches).toBe(true);
     const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme bg-body p-8" data-ui-theme={mode}>
-      <NoteCollection notes={[editorNote]} query="" onQueryChange={() => {}} searchPlaceholder="搜索" searchDisabled={false} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+      <NoteCollection notes={[editorNote]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
       <Card data-testid="forced-raised-card">高对比浮起卡片</Card>
       <QuickCapture vaultId="shadow-forced-colors-test" rootNotes tags={[]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
       <Popover><PopoverTrigger render={<Button />}>打开高对比浮层</PopoverTrigger>
@@ -2316,6 +2297,7 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
       canOpen = true;
       view.rerender(app());
       const canvas = within(view.container);
+      await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", scenario.width < 768 ? "drawer" : "topbar"));
       await waitFor(() => expect(view.container.querySelectorAll('.web-app-header [data-slot="action-group"]')).toHaveLength(scenario.width < 768 ? 2 : 0));
       const list = await canvas.findByRole("list", {name: "笔记列表"});
       expect(list.getAttribute("data-layout")).toBe("list");
@@ -2415,6 +2397,7 @@ if (!inject("uiQualityTouch")) {
 test("Web collection headings align with the sidebar brand and retain compact spacing", async () => {
   const previousHash = location.hash;
   localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/notes");
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
@@ -2440,23 +2423,24 @@ test("Web collection headings align with the sidebar brand and retain compact sp
         const content = title.closest(".web-page-content")!;
         await waitFor(() => expect(content.querySelector(".ui-note-toolbar, .ui-tag-directory-toolbar")).not.toBeNull());
         const toolbar = content.querySelector(".ui-note-toolbar, .ui-tag-directory-toolbar")!.getBoundingClientRect();
-        const search = content.querySelector(".ui-collection-search")!.getBoundingClientRect();
         const results = content.querySelector(".ui-note-results, .ui-tag-directory-panel")!.getBoundingClientRect();
         expect(results.top - toolbar.bottom).toBeCloseTo(16, 1);
         if (name === "标签") {
+          const search = content.querySelector(".ui-collection-search")!.getBoundingClientRect();
           const titleBounds = title.getBoundingClientRect();
           expect(search.left).toBeGreaterThan(titleBounds.right);
           expect(search.right).toBeCloseTo(results.right, 1);
           expect(search.top + search.height / 2).toBeCloseTo(titleBounds.top + titleBounds.height / 2, 1);
+          expect(search.width).toBeLessThanOrEqual(320);
           const tabs = content.querySelector(".ui-tag-directory-tab-header > [role='tablist']")!.getBoundingClientRect();
           const panel = content.querySelector(".ui-tag-directory-panel > [role='tabpanel']")!.getBoundingClientRect();
           expect(tabs.top).toBeGreaterThan(results.top);
           expect(panel.top).toBeGreaterThanOrEqual(tabs.bottom);
         } else {
-          expect(search.left).toBeCloseTo(title.parentElement!.getBoundingClientRect().left, 1);
+          const recentTags = content.querySelector(".ui-note-recent-tags")!.getBoundingClientRect();
+          expect(recentTags.left).toBeCloseTo(title.parentElement!.getBoundingClientRect().left, 1);
           expect(toolbar.top - title.parentElement!.getBoundingClientRect().bottom).toBeCloseTo(8, 1);
         }
-        expect(search.width).toBeLessThanOrEqual(320);
         expect(toolbar.right).toBeLessThanOrEqual(content.getBoundingClientRect().right);
       }
     }
@@ -2870,6 +2854,7 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
   localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/tags");
   const fixture = await createWorkspaceFixture();
   const plant = fixture.snapshot().notes.find(note => note.tags.includes("生活/植物"))!;
@@ -2912,7 +2897,7 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
     };
     await selectTagAction("生活/咖啡", "置顶标签");
     const pinned = within(await canvas.findByRole("navigation", {name: "置顶标签"}));
-    expect(pinned.getByRole("button", {name: "生活/咖啡"})).toBeTruthy();
+    await pinned.findByRole("button", {name: "生活/咖啡"});
     await selectTagAction("生活/咖啡", "取消置顶");
     await waitFor(() => expect(pinned.queryByRole("button", {name: "生活/咖啡"})).toBeNull());
     const iconTrigger = directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"});
@@ -2936,10 +2921,11 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
     expect(body.getByRole("dialog", {name: "编辑标签"})).toBe(desktopEditor);
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
+    await selectTagAction("生活/咖啡", "置顶标签");
     const directoryGlyph = directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"}).querySelector("svg")!;
-    const sidebarGlyph = within(canvas.getByRole("navigation", {name: "标签"})).getByRole("button", {name: "生活/咖啡"}).querySelector("svg")!;
+    const sidebarGlyph = (await pinned.findByRole("button", {name: "生活/咖啡"})).querySelector("svg")!;
     expect(directoryGlyph.innerHTML).toBe(sidebarGlyph.innerHTML);
-    expect(sidebarGlyph.innerHTML).not.toBe(within(canvas.getByRole("navigation", {name: "标签"})).getByRole("button", {name: "生活/植物"}).querySelector("svg")!.innerHTML);
+    expect(sidebarGlyph.innerHTML).not.toBe(pinned.getByRole("button", {name: "设计"}).querySelector("svg")!.innerHTML);
     expect((await fixture.request<TagPreferenceState>("getTagPreferences")).icons["生活/咖啡"]).toBe("icon:coffee");
     await selectTagAction("生活/咖啡", "编辑名称/图标");
     const renameEditor = within(await body.findByRole("dialog", {name: "编辑标签"}));
@@ -3066,7 +3052,7 @@ test("Web home and all-notes collections share responsive widths", async () => {
 for (const mode of ["light", "dark"] as const) test(`settings groups share card bounds, controls and disclosure spacing in ${mode}`, async () => {
   const previousHash = location.hash;
   localStorage.clear();
-  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode}));
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode, interfaceTheme: "classic"}));
   history.replaceState(null, "", "#/settings");
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
@@ -3128,20 +3114,22 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
   localStorage.clear();
-  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode}));
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode, interfaceTheme: "classic"}));
   history.replaceState(null, "", "#/notes");
   const fixture = await createWorkspaceFixture();
+  const preferences = await fixture.request<TagPreferenceState>("getTagPreferences");
+  await fixture.request("setTagPreferences", { ...preferences, pinned: ["生活"] });
   const release = setStorybookRequestHandler(fixture.request);
   const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
     await canvas.findByRole("button", {name: "打开 今天的手冲记录"});
-    const tag = canvas.getByRole("button", {name: /^生活$/});
+    const tag = await canvas.findByRole("button", {name: "生活"});
     const tagRow = tag.closest(".ui-sidebar-tree-row")!;
     const tagMore = tagRow.querySelector<HTMLElement>(".ui-sidebar-tag-more")!;
     expect(tagRow.querySelector(".ui-sidebar-tree-toggle")).toBeNull();
     await userEvent.click(tag);
-    await userEvent.hover(canvas.getByRole("textbox", {name: "搜索当前视图笔记"}));
+    await userEvent.hover(canvas.getByRole("heading", {name: "# 生活"}));
     await waitFor(() => expect(getComputedStyle(tagMore).opacity).toBe("0"));
     tag.focus();
     await userEvent.tab();
@@ -3231,7 +3219,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
   localStorage.clear();
-  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode}));
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode, interfaceTheme: "classic"}));
   const fixture = await createWorkspaceFixture();
   const note = { ...fixture.snapshot().notes[0], title: "用于检查当前笔记标题截断的长标题".repeat(12) };
   await fixture.request("saveNote", { id: note.id, title: note.title, body: note.body, tags: note.tags, baseHash: note.contentHash });
@@ -3860,6 +3848,7 @@ for (const width of [390, 1100]) test(`cold Web detail shows the body during slo
   await page.viewport(width, 900);
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
+  localStorage.removeItem("memocard-web-appearance-v1");
   const fixture = await createWorkspaceFixture();
   const note = fixture.snapshot().notes[0];
   const properties: Properties = {
@@ -3899,6 +3888,7 @@ for (const width of [390, 1100]) test(`cold Web detail shows the body during slo
     const canvas = within(view.container);
     const body = await canvas.findByRole("textbox", {name:"笔记内容"});
     const title = await canvas.findByRole("textbox", {name:"页面标题"});
+    await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-interface-theme", "minimal"));
     await waitFor(() => expect(pendingProperties && pendingLayout).toBe(true));
     await document.fonts.ready;
     expect(body.textContent?.trim()).toBeTruthy();
@@ -4354,7 +4344,6 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
   localStorage.clear();
-  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
   history.replaceState(null, "", "#/notes");
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
@@ -4374,7 +4363,11 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
       expect(content.getBoundingClientRect().left).toBeCloseTo(bounds.left, 1);
       expect(content.getBoundingClientRect().width).toBeCloseTo(bounds.width, 1);
       const logo = navigation.querySelector("img")!.getBoundingClientRect();
-      expect(logo.width).toBe(28); expect(logo.height).toBe(28);
+      expect(logo.width).toBe(32); expect(logo.height).toBe(32);
+      const recentTags = await canvas.findByRole("group", { name: "最近使用的笔记标签" });
+      const tagRows = within(recentTags).getAllByRole("button").map(button => button.getBoundingClientRect().top);
+      expect(new Set(tagRows).size).toBe(1);
+      expect(canvas.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
       await userEvent.click(canvas.getByRole("button", { name: "打开 今天的手冲记录" }));
       await canvas.findByRole("textbox", { name: "笔记内容" });
       const detail = view.container.querySelector<HTMLElement>(".web-app-main")!.getBoundingClientRect();
@@ -4389,6 +4382,10 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
     await waitFor(() => expect(current!.isMobile).toBe(true));
     expect(canvas.queryByRole("navigation", { name: "顶部导航" })).toBeNull();
     expect(canvas.getByRole("button", { name: "打开导航" })).toBeVisible();
+    const recentTags = await canvas.findByRole("group", { name: "最近使用的笔记标签" });
+    expect(recentTags).toBeVisible();
+    const tagRows = within(recentTags).getAllByRole("button").map(button => button.getBoundingClientRect().top);
+    expect(new Set(tagRows).size).toBe(1);
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 }, 30_000);
 

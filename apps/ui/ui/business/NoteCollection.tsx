@@ -1,5 +1,5 @@
 import { recoverableLazy } from "../components/recoverable-lazy";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useLayoutEffect, useRef, type ReactNode } from "react";
 import type { Note } from "@memocard/contracts";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon";
@@ -9,29 +9,27 @@ import LeftToRightListBulletIcon from "@hugeicons/core-free-icons/LeftToRightLis
 import PinIcon from "@hugeicons/core-free-icons/PinIcon";
 import { useCollectionLayout } from "../../src/hooks/use-collection-layout";
 import { Button } from "../components/button";
+import { CreateButton } from "./CreateButton";
 import { Badge } from "../components/badge";
 import { Card, CardContent } from "../components/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/empty";
-import { Input } from "../components/input";
 import { Skeleton } from "../components/skeleton";
 import { Spinner } from "../components/spinner";
-import { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants, tabsTriggerStyles } from "../components/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants, tabsPillTriggerStyles, tabsTriggerStyles } from "../components/tabs";
 import { TooltipHints } from "../components/tooltip";
-import { AddIcon, CloseIcon, DocumentIcon, SearchIcon } from "../icons";
+import { DocumentIcon } from "../icons";
 import { cn } from "../lib/utils";
 import "./NoteCollection.css";
 const NotePreview = recoverableLazy(() => import("./NotePreview").then(module => ({ default: module.NotePreview })), "笔记预览");
 
 export type NoteCollectionProps = {
   home?: { tab: "recent" | "pinned"; pinnedCount: number; onTabChange: (tab: "recent" | "pinned") => void };
+  heading?: ReactNode;
   notes: Note[];
   activeTag?: string | null;
+  recentTags?: string[];
   loading?: boolean;
-  searching?: boolean;
-  query: string;
-  onQueryChange: (query: string) => void;
-  searchPlaceholder: string;
-  searchDisabled: boolean;
+  tagFiltersDisabled?: boolean;
   children?: ReactNode;
   hasMore: boolean;
   paging: boolean;
@@ -41,6 +39,8 @@ export type NoteCollectionProps = {
   onNewNote: () => void;
   onOpen: (id: string) => void;
   onSelectTag: (tag: string) => void;
+  onSelectRecentTag?: (tag: string) => void;
+  onSelectAll?: () => void;
   onLoadMore: () => void;
   onError: (message: string) => void;
   formatDate: (value: string) => string;
@@ -66,15 +66,36 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
   </div>;
 }
 
-export function NoteCollection({ home, notes, activeTag, loading = false, searching = false, query, onQueryChange, searchPlaceholder, searchDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onLoadMore, onError, formatDate }: NoteCollectionProps) {
+export function NoteCollection({ home, heading, notes, activeTag, recentTags, loading = false, tagFiltersDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onSelectRecentTag = onSelectTag, onSelectAll, onLoadMore, onError, formatDate }: NoteCollectionProps) {
   const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
+  const recentTagScroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const scroller = recentTagScroller.current;
+    if (!scroller) return;
+    const updateOverflow = () => {
+      const offset = Math.abs(scroller.scrollLeft);
+      const remaining = scroller.scrollWidth - scroller.clientWidth - offset;
+      scroller.toggleAttribute("data-overflow-start", offset > 1);
+      scroller.toggleAttribute("data-overflow-end", remaining > 1);
+    };
+    updateOverflow();
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(scroller);
+    for (const tag of scroller.children) observer.observe(tag);
+    scroller.addEventListener("scroll", updateOverflow, { passive: true });
+    return () => {
+      observer.disconnect();
+      scroller.removeEventListener("scroll", updateOverflow);
+    };
+  }, [recentTags]);
   const cards = layout === "cards";
+  const recentTagButtonStyles = cn(tabsPillTriggerStyles, "ui-note-recent-tag");
   const layoutButtons = <div role="group" aria-label={home ? "主页布局" : "笔记布局"} data-variant="default" className={cn(tabsListVariants(), "ui-note-layout")}>
     <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="卡片布局" data-ui-tooltip="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
     <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="列表布局" data-ui-tooltip="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
   </div>;
   const content = <TooltipHints>
-    {loading && <span role="status" aria-label={searching ? "正在搜索笔记" : "正在读取笔记库"} className="sr-only">{searching ? "正在搜索笔记…" : "正在读取笔记库…"}</span>}
+    {loading && <span role="status" aria-label="正在读取笔记库" className="sr-only">正在读取笔记库…</span>}
     <div className="ui-note-results" aria-busy={loading}>
       {notes.length ? <ul aria-label="笔记列表" data-layout={layout} className={cn("ui-note-items", cards ? "ui-note-cards" : "ui-note-list")}>
         {notes.map(note => {
@@ -103,8 +124,8 @@ export function NoteCollection({ home, notes, activeTag, loading = false, search
           </li>;
         })}
       </ul> : loading ? <CollectionSkeleton cards={cards} /> : children !== undefined ? children : <Empty className="ui-note-empty border">
-        <EmptyHeader><EmptyMedia variant="icon"><DocumentIcon aria-hidden="true" /></EmptyMedia><EmptyTitle>{query ? "没有找到相关笔记" : home?.tab === "pinned" ? "把常用笔记固定在这里" : "记下第一条笔记"}</EmptyTitle><EmptyDescription>{query ? "换一个关键词，或清空当前搜索。" : home?.tab === "pinned" ? "在笔记详情中固定后，可以从主页快速打开。" : "一句想法、一段发现，不必想好标题。"}</EmptyDescription></EmptyHeader>
-        {query ? <EmptyContent><Button variant="outline" disabled={searchDisabled} onClick={() => onQueryChange("")}>清空搜索</Button></EmptyContent> : home?.tab !== "pinned" && <EmptyContent><Button disabled={!canCreate} onClick={onNewNote}><AddIcon aria-hidden="true" />新建笔记</Button></EmptyContent>}
+        <EmptyHeader><EmptyMedia variant="icon"><DocumentIcon aria-hidden="true" /></EmptyMedia><EmptyTitle>{home?.tab === "pinned" ? "把常用笔记固定在这里" : "记下第一条笔记"}</EmptyTitle><EmptyDescription>{home?.tab === "pinned" ? "在笔记详情中固定后，可以从主页快速打开。" : "一句想法、一段发现，不必想好标题。"}</EmptyDescription></EmptyHeader>
+        {home?.tab !== "pinned" && <EmptyContent><CreateButton disabled={!canCreate} onClick={onNewNote}>新建笔记</CreateButton></EmptyContent>}
       </Empty>}
       {hasMore && <div className="ui-note-pagination"><Button variant="outline" size="sm" aria-label="加载更多" aria-busy={paging} onClick={onLoadMore} disabled={loadMoreDisabled || paging}>{paging ? <Spinner aria-hidden="true" /> : <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" strokeWidth={2} />}{paging ? "正在加载…" : "加载更多"}</Button>{paging && <span role="status" className="sr-only">正在加载更多笔记…</span>}</div>}
     </div>
@@ -117,8 +138,15 @@ export function NoteCollection({ home, notes, activeTag, loading = false, search
 
   return <section className="ui-note-collection" data-slot="note-collection" aria-label="笔记集合">
     <div className="ui-note-toolbar">
-      <div className="ui-collection-search">{loading ? <Spinner aria-hidden="true" className="ui-collection-search-icon" /> : <SearchIcon aria-hidden="true" className="ui-collection-search-icon" />}<Input value={query} onChange={event => onQueryChange(event.target.value)} placeholder={searchPlaceholder} aria-label="搜索当前视图笔记" disabled={searchDisabled} className="ui-collection-search-input" />{query && <Button type="button" variant="ghost" size="icon-xs" className="ui-collection-search-clear" onClick={() => onQueryChange("")} disabled={searchDisabled} aria-label="清空当前搜索"><CloseIcon aria-hidden="true" /></Button>}</div>
-      <div className="ui-note-actions">{layoutButtons}<Button type="button" variant="outline" size="default" className="bg-surface text-primary dark:bg-surface" disabled={!canCreate} onClick={onNewNote}><AddIcon aria-hidden="true" />新建</Button></div>
+      {recentTags !== undefined && <div ref={recentTagScroller} className={cn(tabsListVariants({ variant: "pill" }), "ui-note-recent-tags w-full justify-start")} data-variant="pill" data-transparent-inactive role="group" aria-label="最近使用的笔记标签">
+          <Button type="button" variant="ghost" data-slot="tabs-trigger" className={recentTagButtonStyles}
+            data-active={!activeTag || undefined} aria-pressed={!activeTag} disabled={tagFiltersDisabled} onClick={onSelectAll}>all</Button>
+          {recentTags.map(name => <Button key={name} type="button" variant="ghost" data-slot="tabs-trigger" className={recentTagButtonStyles}
+            data-active={activeTag === name || undefined} aria-pressed={activeTag === name} data-tag={encodeURIComponent(name)} data-ui-tooltip={name}
+            aria-label={`筛选最近标签 ${name}`} disabled={tagFiltersDisabled} onClick={() => onSelectRecentTag(name)}><span data-ui-tooltip-overflow>{name}</span></Button>)}
+        </div>}
+      {heading}
+      <div className="ui-note-actions">{layoutButtons}<CreateButton disabled={!canCreate} onClick={onNewNote}>新建</CreateButton></div>
     </div>
     {content}
   </section>;

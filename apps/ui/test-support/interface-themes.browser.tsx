@@ -75,6 +75,8 @@ test("interface theme fixture extends CSS and layout independently without repla
   try {
     const canvas = within(view.container);
     const navigation = await canvas.findByRole("navigation", { name: "顶部导航" }, { timeout: 5000 });
+    const logo = canvas.getByRole("button", { name: "MemoCard，返回主页" }).querySelector("img")!;
+    expect(logo.getBoundingClientRect()).toMatchObject({ width: 32, height: 32 });
     await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
     const editor = await canvas.findByRole("textbox", { name: "笔记内容" });
     const change = async (interfaceTheme: string) => {
@@ -84,6 +86,8 @@ test("interface theme fixture extends CSS and layout independently without repla
     await change("paper");
     expect(canvas.getByRole("textbox", { name: "笔记内容" })).toBe(editor);
     expect(canvas.getByRole("navigation", { name: "顶部导航" })).toBe(navigation);
+    const paperLogo = canvas.getByRole("button", { name: "MemoCard，返回主页" }).querySelector("img")!;
+    expect(paperLogo.getBoundingClientRect()).toMatchObject({ width: 28, height: 28 });
     const navigationBounds = view.container.querySelector(".web-topbar-inner")!.getBoundingClientRect();
     const detailBounds = view.container.querySelector(".web-app-shell")!.getBoundingClientRect();
     expect(navigationBounds.width).toBe(1024);

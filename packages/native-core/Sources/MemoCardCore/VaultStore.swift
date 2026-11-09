@@ -326,8 +326,9 @@ public actor VaultStore {
                 struct Folders: Encodable { let folders: [String]; let coverage: Coverage }
                 return try encode(Folders(folders: snapshot.folders.sorted(), coverage: snapshot.coverage))
             case "listTags":
-                struct Request: Decodable { let flat: Bool? }
-                return try listTags(flat: decode(Request.self, params).flat == true)
+                struct Request: Decodable { let flat: Bool?; let includeRecent: Bool? }
+                let request = try decode(Request.self, params)
+                return try listTags(flat: request.flat == true, includeRecent: request.includeRecent == true)
             case "getTrash": return try getTrash()
             case "getTrashedNote":
                 struct Request: Decodable { let trashKey: String }
@@ -889,8 +890,13 @@ public actor VaultStore {
             return (note.id, filters)
         })
         var filterCounts = ["untagged": 0, "images": 0, "links": 0]
+        var quickFilterTagDates: [String: Date] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
-            for filter in filters[parsed.note.id]! { filterCounts[filter.rawValue, default: 0] += 1 }
+            let noteFilters = filters[parsed.note.id]!
+            for filter in noteFilters { filterCounts[filter.rawValue, default: 0] += 1 }
+            if let quickFilter = query.quickFilter, quickFilter != .untagged, noteFilters.contains(quickFilter) {
+                try recordRecentTags(parsed.note, in: &quickFilterTagDates)
+            }
         }
         let matches = ordered.filter { parsed in
             let note = parsed.note, date = sortDates[parsed.note.id]!
@@ -928,6 +934,10 @@ public actor VaultStore {
         result.append(try encode(snapshot.coverage))
         result.append(contentsOf: ",\"filterCounts\":".utf8)
         result.append(try encode(filterCounts))
+        if let quickFilter = query.quickFilter, quickFilter != .untagged {
+            result.append(contentsOf: ",\"recentQuickFilterTags\":".utf8)
+            result.append(try encode(rankedRecentTags(quickFilterTagDates)))
+        }
         result.append(contentsOf: ",\"nextCursor\":".utf8)
         result.append(try encode(next))
         result.append(contentsOf: ",\"notes\":".utf8)
@@ -1601,22 +1611,40 @@ public actor VaultStore {
         if removed { try removeRecoveredDraft(request, id: id) }
     }
 
-    private func listTags(flat: Bool) throws -> Data {
+    private func recordRecentTags(_ note: Note, in latest: inout [String: Date]) throws {
+        guard !note.tags.isEmpty else { return }
+        let updatedAt = try parseDate(note.updatedAt)
+        for tag in note.tags where updatedAt > (latest[tag] ?? .distantPast) {
+            latest[tag] = updatedAt
+        }
+    }
+
+    private func rankedRecentTags(_ latest: [String: Date]) -> [String] {
+        latest.sorted { a, b in
+            // Match the browser's UTF-16 ordering when timestamps are equal.
+            a.value == b.value ? a.key.utf16.lexicographicallyPrecedes(b.key.utf16) : a.value > b.value
+        }.prefix(16).map(\.key)
+    }
+
+    private func listTags(flat: Bool, includeRecent: Bool) throws -> Data {
         let snapshot = try snapshot(for: "listTags")
         var counts: [String: Int] = [:]
+        var latest: [String: Date] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
             let names = Set(flat ? parsed.note.tags : parsed.note.tags.flatMap { tag -> [String] in
                 let parts = tag.components(separatedBy: "/")
                 return parts.indices.map { parts[...$0].joined(separator: "/") }
             })
             for tag in names { counts[tag, default: 0] += 1 }
+            if includeRecent { try recordRecentTags(parsed.note, in: &latest) }
         }
         if flat, let preferences = try? readTagPreferences() {
             for tag in preferences.labels.keys where counts[tag] == nil { counts[tag] = 0 }
         }
         struct TagCount: Encodable { let name: String; let count: Int }
-        struct Result: Encodable { let tags: [TagCount]; let coverage: Coverage }
-        return try encode(Result(tags: counts.keys.sorted().map { TagCount(name: $0, count: counts[$0]!) }, coverage: snapshot.coverage))
+        let recentTags = includeRecent ? rankedRecentTags(latest) : nil
+        struct Result: Encodable { let tags: [TagCount]; let coverage: Coverage; let recentTags: [String]? }
+        return try encode(Result(tags: counts.keys.sorted().map { TagCount(name: $0, count: counts[$0]!) }, coverage: snapshot.coverage, recentTags: recentTags))
     }
 
     private struct DraftNamespace: Codable { let vaultId: String; let root: String }

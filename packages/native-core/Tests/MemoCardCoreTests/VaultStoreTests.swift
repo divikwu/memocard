@@ -2173,6 +2173,10 @@ final class VaultStoreTests: XCTestCase {
         let code = try await save(core, body: "`https://example.com`\n```md\n![代码](photo.png) https://example.com\n```\n    [[代码]]")
         let first = try await call(core, "queryNotes", ["quickFilter": "images", "limit": 1])
         XCTAssertEqual(first["filterCounts"] as? [String: Int], ["untagged": 2, "images": 2, "links": 1])
+        XCTAssertEqual(first["recentQuickFilterTags"] as? [String], ["工作"])
+        let noMatches = try await call(core, "queryNotes", ["quickFilter": "images", "tags": ["missing"]])
+        XCTAssertEqual((noMatches["notes"] as? [[String: Any]])?.count, 0)
+        XCTAssertEqual(noMatches["recentQuickFilterTags"] as? [String], ["工作"])
         let firstNotes = try XCTUnwrap(first["notes"] as? [[String: Any]])
         XCTAssertEqual(firstNotes.count, 1)
         let cursor = try XCTUnwrap(first["nextCursor"] as? String)
@@ -2298,6 +2302,33 @@ final class VaultStoreTests: XCTestCase {
         for name in ["工作", "工作/项目"] {
             XCTAssertEqual(tags.first { $0["name"] as? String == name }?["count"] as? Int, 1)
         }
+    }
+
+    func testListTagsRanksRecentExactTagsByNoteUpdate() async throws {
+        let core = try await store()
+        for (date, tags, deleted) in [
+            ("2026-11-01", "[older, shared]", false),
+            ("2026-11-02", "[latest/child, shared, ﬃ, 𐐨]", false),
+            ("2026-11-03", "[deleted]", true),
+        ] {
+            let id = UUID().uuidString.lowercased()
+            let path = vault.appendingPathComponent("notes/\(id).md")
+            let deletion = deleted ? "deletedAt: \"2026-11-04T00:00:00Z\"\n" : ""
+            let source = """
+            ---
+            id: "\(id)"
+            createdAt: "2026-10-01T00:00:00Z"
+            updatedAt: "\(date)T00:00:00Z"
+            tags: \(tags)
+            \(deletion)---
+            内容
+            """
+            try Data(source.utf8).write(to: path)
+        }
+        let recent = try await call(core, "listTags", ["flat": true, "includeRecent": true])
+        XCTAssertEqual(recent["recentTags"] as? [String], ["latest/child", "shared", "𐐨", "ﬃ", "older"])
+        let ordinary = try await call(core, "listTags", ["flat": true])
+        XCTAssertNil(ordinary["recentTags"])
     }
 
     func testPropertyTagsSurviveIndependentBodyEditingAndRecovery() async throws {
