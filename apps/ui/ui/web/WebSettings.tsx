@@ -3,6 +3,7 @@ import { isNative } from "../../src/bridge";
 import type { AppViewState } from "../../src/App";
 import { isBrowserVault, isLocalWeb } from "../../src/client-mode";
 import { Button } from "../components/button";
+import { CreateButton } from "../business/CreateButton";
 import { Card, CardContent } from "../components/card";
 import { Switch } from "../components/switch";
 import { Label } from "../components/label";
@@ -39,7 +40,7 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
     <section aria-labelledby={field("vault-heading")}><h2 id={field("vault-heading")}>笔记库</h2>
       <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content">
         <div className="web-setting-row"><div className="web-setting-description"><p className="font-medium">当前笔记库</p><p className="truncate" data-ui-tooltip={s.status?.vaultName || undefined} data-ui-tooltip-overflow>{s.status?.vaultName || "尚未连接笔记库"}</p></div>{!s.unsupportedBrowser && <Button variant="outline" aria-label={s.status?.connected ? "切换笔记库" : "打开已有笔记库"} disabled={!s.sidebar.canChooseVault || s.working || !!s.editor} onClick={() => s.sidebar.onSelectVault(false)}>{s.status?.connected ? "切换" : "打开"}</Button>}</div>
-        {!s.unsupportedBrowser && s.sidebar.canCreateVault && <div className="web-setting-row"><div className="web-setting-description"><p className="font-medium">新建笔记库</p><p>使用空文件夹，现有笔记不受影响。</p></div><Button variant="outline" aria-label="创建新笔记库" disabled={s.working || !!s.editor} onClick={() => s.sidebar.onSelectVault(true)}>创建</Button></div>}
+        {!s.unsupportedBrowser && s.sidebar.canCreateVault && <div className="web-setting-row"><div className="web-setting-description"><p className="font-medium">新建笔记库</p><p>使用空文件夹，现有笔记不受影响。</p></div><CreateButton aria-label="创建新笔记库" disabled={s.working || !!s.editor} onClick={() => s.sidebar.onSelectVault(true)}>创建</CreateButton></div>}
         {s.status?.connected && <details className="web-file-status"><summary>本机文件状态<ChevronDownIcon aria-hidden="true" /></summary><div className="web-file-status-content"><p>{isLocalWeb ? "笔记与图片保存在 MemoCard 已授权的文件夹中。" : isBrowserVault ? "笔记与图片保存在所选文件夹中。" : "笔记保存在所选文件夹中；iCloud Drive 文件夹由系统同步。"}</p><p>仅反映本机读取状态，不代表跨设备同步进度。</p><dl><div><dt>已索引笔记</dt><dd>{s.status.coverage.indexed}</dd></div><div><dt>待读取文件</dt><dd>{s.status.coverage.pending}</dd></div><div><dt>需要处理的文件</dt><dd>{s.status.coverage.issues}</dd></div><div><dt>最近索引时间</dt><dd>{s.status.coverage.indexedAt ? <time dateTime={s.status.coverage.indexedAt}>{formatIndexDate(s.status.coverage.indexedAt)}</time> : "—"}</dd></div></dl></div></details>}
       </CardContent></Card>
     </section>

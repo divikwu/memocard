@@ -27,7 +27,7 @@ const tabsListVariants = cva(
       variant: {
         default: "h-element-md bg-control p-0.5",
         line: "gap-3 bg-transparent group-data-horizontal/tabs:h-element-md",
-        pill: "gap-1 p-0 [&>[data-slot=tabs-trigger]:not([data-active])]:bg-control",
+        pill: "gap-0.5 p-0 [&>[data-slot=tabs-trigger]]:h-element-md [&:not([data-transparent-inactive])>[data-slot=tabs-trigger]:not([data-active],[aria-current=page])]:bg-control",
       },
     },
     defaultVariants: {
@@ -58,6 +58,8 @@ const tabsTriggerStyles = cn(
   "after:absolute after:bg-primary after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
 )
 
+const tabsPillTriggerStyles = cn(tabsTriggerStyles, "min-w-12 flex-none [--focus-outline-offset:calc(var(--focus-outline-width)*-1)] aria-[current=page]:bg-tab-active aria-[current=page]:text-primary aria-[current=page]:border-tab-active-border");
+
 function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   return (
     <TabsPrimitive.Tab
@@ -78,4 +80,4 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   )
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants, tabsTriggerStyles }
+export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants, tabsPillTriggerStyles, tabsTriggerStyles }

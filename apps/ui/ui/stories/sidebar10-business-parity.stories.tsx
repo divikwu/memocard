@@ -44,7 +44,7 @@ function BusinessParityFixture() {
     <div className="mb-4 flex flex-wrap gap-2">{[1280, 768, 767, 390, 320].map(value => <Button key={value} variant="outline" size="sm" onClick={() => setWidth(value)} aria-pressed={width === value}>宽度 {value}</Button>)}</div>
     {notes ? <>
       <div style={{ width, maxWidth: "none" }} data-testid="collection-width-fixture">
-        <NoteCollection notes={notes} query="" onQueryChange={() => {}} searchPlaceholder="布局验收" searchDisabled hasMore={false} paging={false} loadMoreDisabled canOpen={false} canCreate={false} onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "2026-10-22"} />
+        <NoteCollection notes={notes} hasMore={false} paging={false} loadMoreDisabled canOpen={false} canCreate={false} onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "2026-10-22"} />
       </div>
       <div className="mt-8 max-w-3xl"><TrashPage vaultId="preview-only-vault" refreshVersion={0} onRestored={() => {}} canPermanentlyDelete /></div>
     </> : <p role="status">正在准备布局验收…</p>}

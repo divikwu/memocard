@@ -13,7 +13,7 @@ const meta = {
   title: "business/sidebar",
   id: "ui-business-sidebar",
   component: AppSidebar,
-  parameters: { layout: "fullscreen", docs: { description: { component: "当前 token 和组件构建的导航业务层。展示单层标签列表，并提供共享置顶/图标偏好、标签名称编辑和笔记库入口；仅使用隔离示例数据。手机宽度下使用侧滑导航和底部笔记库菜单。" } } },
+  parameters: { layout: "fullscreen", docs: { description: { component: "当前 token 和组件构建的导航业务层。展示置顶标签，并提供共享置顶/图标偏好、标签名称编辑和笔记库入口；仅使用隔离示例数据。手机宽度下使用侧滑导航和底部笔记库菜单。" } } },
   args: {
     view: "notes", tag: "项目/MemoCard", tags, vaultName: "我的笔记", vaultId: "ui-sidebar-story", connected: true, canTrash: true,
     registeredVaults: [{ vaultId: "ui-sidebar-story", name: "我的笔记", active: true }, { vaultId: "ui-sidebar-work", name: "工作笔记", active: false }],
@@ -34,7 +34,7 @@ function SidebarStory(args: AppSidebarProps) {
   const [openMobile, setOpenMobile] = useState(false);
   return <SidebarProvider className="ui-theme sb-unstyled" data-ui-theme={mode} persistState={false} keyboardShortcut={false} openMobile={openMobile} onOpenMobileChange={setOpenMobile}>
     <AppSidebar {...args} {...location} tags={items} onNavigate={(view, tag = null, quickFilter = null) => { args.onNavigate(view, tag, quickFilter); setLocation({ view, tag, quickFilter }); setNotice(""); }} onNewNote={() => { args.onNewNote(); setNotice("新建笔记入口已触发"); }} onSearch={() => { args.onSearch(); setNotice("搜索入口已触发"); }} onSelectVault={create => { args.onSelectVault(create); setNotice(create ? "创建笔记库入口已触发" : "打开笔记库入口已触发"); }} onActivateVault={id => { args.onActivateVault(id); setNotice(`切换笔记库入口已触发：${id}`); }} onReauthorize={() => { args.onReauthorize(); setNotice("重新授权入口已触发"); }} onRenameTag={async (from, to) => { await args.onRenameTag?.(from, to); setItems(current => current.map(tag => tag.name === from ? {...tag, name: to} : tag)); setLocation(current => ({...current, tag: current.tag === from ? to : current.tag})); }} />
-    <main className="min-w-0 flex-1 bg-body p-6"><div className="flex items-center gap-3"><SidebarTrigger /><h1 className="font-heading text-2xl">{location.view === "home" ? "主页" : location.view === "settings" ? "笔记库设置" : location.view === "trash" ? "回收站" : location.tag || location.quickFilter || "所有笔记"}</h1></div><p className="mt-4 max-w-xl text-sm text-secondary">浏览标签列表，或打开标签菜单编辑名称和图标。缩窄画布后，点击左上角导航按钮检查 H5 交互。</p>{notice && <p role="status" className="mt-4 text-sm">{notice}</p>}<Button type="button" variant="outline" className="mt-4 md:hidden" onClick={() => setOpenMobile(true)}>打开笔记导航</Button></main>
+    <main className="min-w-0 flex-1 bg-body p-6"><div className="flex items-center gap-3"><SidebarTrigger /><h1 className="font-heading text-2xl">{location.view === "home" ? "主页" : location.view === "settings" ? "笔记库设置" : location.view === "trash" ? "回收站" : location.tag || location.quickFilter || "所有笔记"}</h1></div><p className="mt-4 max-w-xl text-sm text-secondary">通过「标签」入口浏览完整目录，或打开置顶标签菜单编辑名称和图标。缩窄画布后，点击左上角导航按钮检查 H5 交互。</p>{notice && <p role="status" className="mt-4 text-sm">{notice}</p>}<Button type="button" variant="outline" className="mt-4 md:hidden" onClick={() => setOpenMobile(true)}>打开笔记导航</Button></main>
   </SidebarProvider>;
 }
 
@@ -48,6 +48,12 @@ export const Working: Story = { args: { working: true } };
 export const LongNames: Story = { args: { vaultName: "用于验证中文和英文字体以及长名称截断的笔记库 MemoCard Workspace", tags: [...tags, { name: "这是一个用于验证长标签名称截断和完整可访问名称的标签", count: 123456 }] } };
 export const NestedAlignment: Story = {
   args: { vaultId: "ui-sidebar-alignment-story", tag: "生活/咖啡", tags: [{ name: "生活", count: 8 }, { name: "生活/咖啡", count: 3 }, { name: "生活/植物", count: 5 }] },
+  beforeEach: () => {
+    const key = "memocard:tags:ui-sidebar-alignment-story";
+    const previous = localStorage.getItem(key);
+    localStorage.setItem(key, JSON.stringify({ pinned: ["生活/咖啡", "生活/植物"] }));
+    return () => { if (previous === null) localStorage.removeItem(key); else localStorage.setItem(key, previous); };
+  },
 };
 
 export const NestedAlignmentRegression: Story = {

@@ -210,7 +210,8 @@
       "value": "0.5",
       "consumers": [
         "apps/ui/ui/business/sidebar-tree-item.tsx",
-        "apps/ui/ui/components/sidebar.tsx"
+        "apps/ui/ui/components/sidebar.tsx",
+        "apps/ui/ui/components/tabs.tsx"
       ]
     },
     {
@@ -285,7 +286,6 @@
       "value": "3",
       "consumers": [
         "apps/ui/ui/business/NoteSearchDialog.tsx",
-        "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/components/tabs.tsx"
       ]
     },
@@ -777,7 +777,6 @@
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsPage.tsx",
-        "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/components/sidebar.tsx"
       ]
     },
@@ -907,6 +906,7 @@
       "step": "1",
       "value": "1",
       "consumers": [
+        "apps/ui/ui/business/QuickCapture.tsx",
         "apps/ui/ui/business/tag-navigation.tsx"
       ]
     },
@@ -1074,6 +1074,7 @@
       "value": "1.5",
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
+        "apps/ui/ui/business/QuickCapture.tsx",
         "apps/ui/ui/components/tooltip.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx"
       ]

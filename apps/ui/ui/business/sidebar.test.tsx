@@ -9,14 +9,14 @@ import { Sidebar, SidebarMenu, SidebarProvider } from "../components/sidebar";
 
 const vaultId = "ui-sidebar-test";
 const preferencesKey = `memocard:tags:${vaultId}`;
-const tags = [{ name: "项目", count: 8 }, { name: "项目/MemoCard", count: 5 }, { name: "生活", count: 3 }];
+const tags = [{ name: "项目", count: 8 }, { name: "项目/memocard", count: 5 }, { name: "生活", count: 3 }];
 const props = (): AppSidebarProps => ({ view: "notes", tag: null, tags, vaultName: "我的笔记", vaultId, registeredVaults: [{ vaultId, name: "我的笔记", active: true }, { vaultId: "other", name: "工作笔记", active: false }], connected: true, canTrash: true, vaultStatusText: "已连接", hasVaultIssue: false, canCreate: true, canChooseVault: true, canCreateVault: true, needsPermission: true, working: false, filterCounts: { untagged: 2, images: 4, links: 6 }, onNavigate: vi.fn(), onNewNote: vi.fn(), onSearch: vi.fn(), onSelectVault: vi.fn(), onActivateVault: vi.fn(), onReauthorize: vi.fn(), onRenameTag: vi.fn(async () => {}) });
 
 beforeEach(() => {
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
   Object.defineProperty(window, "matchMedia", { configurable: true, value: vi.fn((query: string) => ({ matches: query.includes("max-width") && window.innerWidth < 768, media: query, onchange: null, addEventListener: vi.fn(), removeEventListener: vi.fn(), addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn() })) });
-  localStorage.removeItem(preferencesKey);
+  localStorage.setItem(preferencesKey, JSON.stringify({ pinned: ["生活", "项目/memocard"] }));
 });
 afterEach(() => { cleanup(); localStorage.removeItem(preferencesKey); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
@@ -43,14 +43,14 @@ it("preserves note filters, counts, tag navigation and creation/search entry cal
   const user = userEvent.setup();
   const args = mount();
   expect(document.querySelectorAll("button[title]")).toHaveLength(0);
-  expect(screen.getByRole("button", { name: "项目/MemoCard" }).hasAttribute("data-ui-tooltip")).toBe(false);
+  expect(screen.getByRole("button", { name: "项目/memocard" }).hasAttribute("data-ui-tooltip")).toBe(false);
   await user.click(screen.getByRole("button", { name: "展开或收起快捷筛选" }));
   const images = screen.getByRole("button", { name: "有图片" });
   expect(images.getAttribute("aria-description")).toBe("4 条笔记");
   await user.click(images);
   expect(args.onNavigate).toHaveBeenLastCalledWith("notes", null, "images");
-  await user.click(screen.getByRole("button", { name: "项目/MemoCard" }));
-  expect(args.onNavigate).toHaveBeenLastCalledWith("notes", "项目/MemoCard", undefined);
+  await user.click(screen.getByRole("button", { name: "项目/memocard" }));
+  expect(args.onNavigate).toHaveBeenLastCalledWith("notes", "项目/memocard", undefined);
   await user.click(screen.getByRole("button", { name: "搜索" }));
   await user.click(screen.getByRole("button", { name: "新建笔记" }));
   expect(args.onSearch).toHaveBeenCalledTimes(1);
@@ -65,39 +65,34 @@ it("keeps the icon-only vault menu beside the brand above primary navigation", (
   expect(brand.closest('[data-sidebar="header"]')).not.toBeNull();
   const nav = screen.getByRole("navigation", { name: "主要导航" });
   expect(within(nav).getAllByRole("button").map(button => button.textContent)).toEqual(["搜索", "新建笔记", "主页", "所有笔记", "", "日历", "标签"]);
-  expect(screen.getByRole("navigation", { name: "标签" }).closest('[data-sidebar="content"]')).not.toBeNull();
+  expect(screen.getByRole("navigation", { name: "置顶标签" }).closest('[data-sidebar="content"]')).not.toBeNull();
   const vault = screen.getByRole("button", { name: "笔记库：我的笔记" });
   expect(vault.parentElement).toBe(brand.parentElement);
   expect(brand.nextElementSibling).toBe(vault);
   expect(vault.textContent).toBe("");
 });
 
-it("keeps the tag tree without search and uses existing tag preference storage for pinning", async () => {
+it("shows only pinned tags in the sidebar and keeps the tags page reachable", async () => {
   const user = userEvent.setup();
-  mount();
-  await user.click(screen.getByRole("button", { name: "标签操作 项目" }));
-  await user.click(await screen.findByRole("menuitem", { name: "置顶标签" }));
-  const pinned = await screen.findByRole("navigation", { name: "置顶标签" });
-  expect(within(pinned).getByRole("button", { name: "项目" })).not.toBeNull();
-  expect(JSON.parse(localStorage.getItem(preferencesKey) || "{}").pinned).toEqual(["项目"]);
-  expect(screen.queryByRole("button", { name: "搜索标签" })).toBeNull();
-  expect(screen.queryByRole("textbox", { name: "搜索标签" })).toBeNull();
-  const tagList = screen.getByRole("navigation", { name: "标签" });
-  expect(within(tagList).getByRole("button", { name: "项目/MemoCard" })).not.toBeNull();
-  expect(within(tagList).getByRole("button", { name: "生活" })).not.toBeNull();
-  const tagToggle = screen.getByRole("button", { name: "标签", expanded: true });
-  await user.click(tagToggle);
-  await waitFor(() => expect(screen.queryByRole("navigation", { name: "标签" })).toBeNull());
-  await user.click(tagToggle);
-  expect(within(screen.getByRole("navigation", { name: "标签" })).getByRole("button", { name: "项目/MemoCard" })).not.toBeNull();
+  const args = mount();
+  const pinned = within(screen.getByRole("navigation", { name: "置顶标签" }));
+  expect(pinned.getByRole("button", { name: "项目/memocard" })).not.toBeNull();
+  expect(screen.queryByRole("button", { name: "项目" })).toBeNull();
+  expect(screen.queryByRole("navigation", { name: "标签" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "标签" }));
+  expect(args.onNavigate).toHaveBeenLastCalledWith("tags", undefined, undefined);
+  await user.click(pinned.getByRole("button", { name: "标签操作 生活" }));
+  await user.click(await screen.findByRole("menuitem", { name: "取消置顶" }));
+  expect(screen.queryByRole("button", { name: "生活" })).toBeNull();
+  expect(JSON.parse(localStorage.getItem(preferencesKey) || "{}").pinned).toEqual(["项目/memocard"]);
 });
 
 it("edits tag name and icon through the existing rename callback and preference mapping", async () => {
   const user = userEvent.setup();
-  localStorage.setItem(preferencesKey, JSON.stringify({ pinned: ["项目/MemoCard"], icons: { "项目/MemoCard": "🎨" } }));
+  localStorage.setItem(preferencesKey, JSON.stringify({ pinned: ["项目/memocard"], icons: { "项目/memocard": "🎨" } }));
   const args = mount();
-  const tagList = screen.getByRole("navigation", { name: "标签" });
-  await user.click(within(tagList).getByRole("button", { name: "标签操作 项目/MemoCard" }));
+  const tagList = screen.getByRole("navigation", { name: "置顶标签" });
+  await user.click(within(tagList).getByRole("button", { name: "标签操作 项目/memocard" }));
   await user.click(await screen.findByRole("menuitem", { name: "编辑名称/图标" }));
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
   const name = within(dialog).getByRole("textbox", { name: "标签名称" });
@@ -115,7 +110,7 @@ it("edits tag name and icon through the existing rename callback and preference 
   expect(JSON.parse(localStorage.getItem(preferencesKey)!).icons["项目/memocard"]).toBe("icon:star");
   await user.type(name, "{Enter}");
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBeNull());
-  expect(args.onRenameTag).toHaveBeenCalledWith("项目/MemoCard", "项目/设计");
+  expect(args.onRenameTag).toHaveBeenCalledWith("项目/memocard", "项目/设计");
   const saved = JSON.parse(localStorage.getItem(preferencesKey) || "{}");
   expect(saved.pinned).toEqual(["项目/设计"]);
   expect(saved.icons["项目/设计"]).toBe("icon:star");
@@ -133,7 +128,7 @@ it("keeps failed rename drafts open and does not write appearance preferences", 
   await user.type(name, "工作{Enter}");
   expect((await screen.findByRole("alert")).textContent).toBe("标签名称已存在");
   expect((name as HTMLInputElement).value).toBe("工作");
-  expect(localStorage.getItem(preferencesKey)).toBeNull();
+  expect(JSON.parse(localStorage.getItem(preferencesKey) || "{}")).toEqual({ pinned: ["生活", "项目/memocard"] });
 });
 
 it("keeps ordinary Emoji search Enter inside the picker without saving the tag", async () => {
@@ -147,7 +142,7 @@ it("keeps ordinary Emoji search Enter inside the picker without saving the tag",
   const search = within(dialog).getByRole("textbox", { name: "搜索 Emoji" });
   await user.type(search, "警告{Enter}");
   expect(screen.queryByRole("dialog", { name: "编辑标签" })).toBe(dialog);
-  expect(localStorage.getItem(preferencesKey)).toBeNull();
+  expect(JSON.parse(localStorage.getItem(preferencesKey) || "{}")).toEqual({ pinned: ["生活", "项目/memocard"] });
   expect(within(dialog).getByRole("button", { name: "警告、小心" })).not.toBeNull();
 });
 

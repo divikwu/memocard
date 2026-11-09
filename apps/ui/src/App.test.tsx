@@ -537,22 +537,24 @@ describe("note workspace", () => {
     });
     render(<App />);
     await screen.findByText(note.body);
-    fireEvent.change(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), { target: { value: "旧库关键词" } });
     fireEvent.click(screen.getByRole("button", { name: "筛选标签 生活" }));
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "旧库关键词", tags: ["生活"], exactTags: true, limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, limit: 30 }));
     window.location.hash = "#/settings";
     fireEvent(window, new Event("hashchange"));
     fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));
     await waitFor(() => expect((screen.getByRole("button", { name: "切换笔记库" }) as HTMLButtonElement).disabled).toBe(false));
 
-    if (cancelled) expect(screen.queryByText("文件夹授权未完成")).toBeNull();
+    if (cancelled) {
+      expect(screen.queryByText("文件夹授权未完成")).toBeNull();
+      expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)).toEqual(["queryNotes", { query: "", tags: ["生活"], exactTags: true, limit: 30 }]);
+    }
     if (!cancelled) {
       expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)).toEqual(["queryNotes", { query: "", tags: [], limit: 30 }]);
       expect(screen.queryByRole("button", { name: /生活 1/ })).toBeNull();
     }
     fireEvent.click(screen.getByRole("button", { name: "所有笔记" }));
-    await waitFor(() => expect((screen.getByRole("textbox", { name: "搜索当前视图笔记" }) as HTMLInputElement).value).toBe(cancelled ? "旧库关键词" : ""));
     expect(await screen.findByText(cancelled ? note.body : otherNote.body)).toBeTruthy();
+    expect(screen.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
   });
 
   it("asks for browser permission again while preserving an open editor", async () => {
@@ -1160,7 +1162,7 @@ it('keeps the detail source while updating the current-title breadcrumb', async 
 });
 it('leaves an untouched page created under a tag without writing a note or recovery', async () => {
   render(<App />); await screen.findByText(note.body);
-  fireEvent.click(screen.getByRole('button', { name: '生活' }));
+  fireEvent.click(screen.getByRole('button', { name: '筛选标签 生活' }));
   await screen.findByRole('heading', { name: '# 生活', level: 1 });
   await createNote();
   const title = await screen.findByRole('textbox', { name: '页面标题' });

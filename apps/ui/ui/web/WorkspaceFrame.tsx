@@ -49,7 +49,7 @@ function FrameSurface({ state: s, leading, overlays, children }: { state: AppVie
   const scope = useThemeScopeProps();
   const runtime = useWorkspaceAppearance()!;
   const { TopNavigation, SideNavigation } = runtime.applied.adapter;
-  const navigation = workspaceNavigation(s);
+  const navigation = workspaceNavigation(s, runtime.applied.themeId);
   return <div {...scope} className={`${scope.className} web-app sb-unstyled`} data-web-client={!s.nativeChrome && !isNative || undefined} data-native-chrome={s.nativeChrome ? "true" : undefined} data-detail={s.detailView || undefined}>
     {leading}
     {!s.nativeChrome && TopNavigation && <TopNavigation {...navigation} />}

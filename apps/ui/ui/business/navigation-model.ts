@@ -4,6 +4,8 @@ import type { RegisteredVault } from "../../src/bridge";
 export type WorkspaceView = "home" | "notes" | "tags" | "settings" | "trash";
 export interface WorkspaceNavigationProps {
   view: WorkspaceView;
+  detailView?: boolean;
+  detailBack?: { label: string; run: () => void };
   tag: string | null;
   quickFilter?: NoteQuickFilter | null;
   filterCounts?: NoteFilterCounts;

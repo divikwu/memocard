@@ -9,6 +9,7 @@ import type { TagGroup } from "@memocard/contracts";
 import { createId } from "../../src/uuid";
 import { normalizePropertyTag, tagKey } from "../../src/inline-tags";
 import { Button } from "../components/button";
+import { CreateButton } from "./CreateButton";
 import { Input } from "../components/input";
 import { Textarea } from "../components/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/table";
@@ -255,8 +256,8 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
       <div className="ui-tag-directory-tab-header">
         <TabsList aria-label="标签视图"><TabsTrigger value="all">全部</TabsTrigger><TabsTrigger value="groups">标签群组</TabsTrigger></TabsList>
         <div className="ui-tag-directory-tools">
-          {view === "groups" && <Button variant="outline" disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "group", anchor: event.currentTarget})}>新建群组</Button>}
-          <Button disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "label", anchor: event.currentTarget})}>新建标签</Button>
+          {view === "groups" && <CreateButton disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "group", anchor: event.currentTarget})}>新建群组</CreateButton>}
+          <CreateButton disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "label", anchor: event.currentTarget})}>新建标签</CreateButton>
         </div>
       </div>
       <TabsContent value="all" aria-busy={loading}>

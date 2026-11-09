@@ -24,7 +24,7 @@ beforeEach(() => {
     addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
   }));
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); localStorage.removeItem("memocard:tags:sidebar-test"); vi.unstubAllGlobals(); });
 
 describe("AppSidebar", () => {
   it("keeps trash and help inside the vault menu and preserves trash navigation", async () => {
@@ -79,7 +79,8 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
   });
   it("connects note, search, draft and exact tag navigation to the existing handlers", async () => {
-    const props = createProps({ view: "notes", tag: "工作" });
+    localStorage.setItem("memocard:tags:sidebar-test", JSON.stringify({ pinned: ["工作", "生活"] }));
+    const props = createProps({ view: "notes", vaultId: "sidebar-test", tag: "工作" });
     renderSidebar(props);
     await screen.findByRole("button", { name: "工作" });
     expect(screen.getByRole("button", { name: "工作" }).getAttribute("aria-current")).toBe("page");
@@ -155,10 +156,11 @@ describe("AppSidebar", () => {
     expect(props.onSelectVault).not.toHaveBeenCalled();
   });
 
-  it("collapses and restores tags without changing the selected filter", async () => {
-    const props = createProps({ tag: "生活" });
+  it("collapses and restores pinned tags without changing the selected filter", async () => {
+    localStorage.setItem("memocard:tags:sidebar-test", JSON.stringify({ pinned: ["生活"] }));
+    const props = createProps({ vaultId: "sidebar-test", tag: "生活" });
     renderSidebar(props);
-    const trigger = screen.getByRole("button", { name: "标签", expanded: true });
+    const trigger = screen.getByRole("button", { name: "置顶标签", expanded: true });
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     await userEvent.click(trigger);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
@@ -169,8 +171,9 @@ describe("AppSidebar", () => {
   });
 });
 
-it("navigates legacy tag names in a flat list", async () => {
-  const props = createProps({ tags: [{ name: "工作", count: 2 }, { name: "工作/项目", count: 2 }, { name: "工作/项目/设计", count: 1 }], tag: "工作/项目/设计" });
+it("navigates pinned legacy tag names in a flat list", async () => {
+  localStorage.setItem("memocard:tags:sidebar-test", JSON.stringify({ pinned: ["工作", "工作/项目/设计"] }));
+  const props = createProps({ vaultId: "sidebar-test", tags: [{ name: "工作", count: 2 }, { name: "工作/项目", count: 2 }, { name: "工作/项目/设计", count: 1 }], tag: "工作/项目/设计" });
   renderSidebar(props);
   expect(screen.queryByRole("navigation", { name: "目录" })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "工作/项目/设计" }));

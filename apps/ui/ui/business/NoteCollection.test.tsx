@@ -11,7 +11,7 @@ vi.mock("./NotePreview", () => ({ NotePreview: vi.fn(({ body }: { body: string }
 
 const note: Note = { id: "coffee", title: "咖啡记录", body: "今天尝试了新的手冲配方。", tags: ["area/coffee", "日常", "配方"], createdAt: "2026-10-20T08:00:00Z", updatedAt: "2026-10-22T08:00:00Z", contentHash: "fixture", relativePath: "notes/coffee.md", sourceUrl: "" };
 const props = (overrides: Partial<NoteCollectionProps> = {}): NoteCollectionProps => ({
-  notes: [note], query: "", onQueryChange: vi.fn(), searchPlaceholder: "搜索笔记内容", searchDisabled: false,
+  notes: [note],
   hasMore: false, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true,
   onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: value => value,
   ...overrides,
@@ -128,24 +128,13 @@ it("keeps list opening permission-aware and tag actions independent", async () =
   expect(options.onSelectTag).toHaveBeenCalledTimes(3);
 });
 
-it("preserves controlled search, clear and create actions and permission flags", async () => {
+it("preserves create and open permission flags", async () => {
   const user = userEvent.setup();
   const options = props();
-  function SearchFixture() {
-    const [query, setQuery] = useState("");
-    return <NoteCollection {...options} query={query} onQueryChange={value => { options.onQueryChange(value); setQuery(value); }} />;
-  }
-  const view = render(<SearchFixture />);
-  const input = screen.getByRole("textbox", { name: "搜索当前视图笔记" });
-  await user.type(input, "coffee");
-  expect(options.onQueryChange).toHaveBeenLastCalledWith("coffee");
-  await user.click(screen.getByRole("button", { name: "清空当前搜索" }));
-  expect((input as HTMLInputElement).value).toBe("");
+  const view = render(<NoteCollection {...options} />);
   await user.click(screen.getByRole("button", { name: /^新建$/ }));
   expect(options.onNewNote).toHaveBeenCalledTimes(1);
-  view.rerender(<NoteCollection {...options} query="coffee" searchDisabled canCreate={false} canOpen={false} />);
-  expect((screen.getByRole("textbox") as HTMLInputElement).disabled).toBe(true);
-  expect((screen.getByRole("button", { name: "清空当前搜索" }) as HTMLButtonElement).disabled).toBe(true);
+  view.rerender(<NoteCollection {...options} canCreate={false} canOpen={false} />);
   expect((screen.getByRole("button", { name: /^新建$/ }) as HTMLButtonElement).disabled).toBe(true);
   await user.click(screen.getByRole("button", { name: "打开 咖啡记录" }));
   expect(options.onOpen).not.toHaveBeenCalled();
@@ -179,8 +168,8 @@ it("switches recent and pinned home tabs with an independent persisted layout", 
 
 it("keeps existing results while loading and preserves caller empty and error feedback", () => {
   const options = props();
-  const view = render(<NoteCollection {...options} loading searching />);
-  expect(screen.getByRole("status", { name: "正在搜索笔记" })).toBeTruthy();
+  const view = render(<NoteCollection {...options} loading />);
+  expect(screen.getByRole("status", { name: "正在读取笔记库" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "打开 咖啡记录" })).toBeTruthy();
   view.rerender(<NoteCollection {...options} loading notes={[]}><p>还没有内容</p></NoteCollection>);
   expect(screen.queryByText("还没有内容")).toBeNull();

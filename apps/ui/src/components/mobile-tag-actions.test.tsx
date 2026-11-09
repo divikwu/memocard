@@ -17,14 +17,14 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 it("shares pin and unpin state with the sidebar and restores title focus", async () => {
   const user = userEvent.setup();
-  render(<><SidebarProvider><TagNavigation vaultId={props.vaultId} tags={[{name:"工作",count:1},{name:props.tag,count:1}]} selected={props.tag} onSelect={vi.fn()} /></SidebarProvider><MobileTagActions {...props} /></>);
-  const nav = within(screen.getByRole("navigation", {name:"标签"}));
-  expect(nav.queryByRole("button", {name:/标签操作/})).toBeNull();
+  render(<><SidebarProvider><TagNavigation pinnedOnly vaultId={props.vaultId} tags={[{name:"工作",count:1},{name:props.tag,count:1}]} selected={props.tag} onSelect={vi.fn()} /></SidebarProvider><MobileTagActions {...props} /></>);
   const trigger = screen.getByRole("button", {name:`标签操作 ${props.tag}`});
   await user.click(trigger);
   await user.click(await screen.findByRole("menuitem", {name:"置顶标签"}));
   await waitFor(() => expect(document.activeElement).toBe(trigger));
-  expect(within(screen.getByRole("navigation", {name:"置顶标签"})).getByRole("button", {name:props.tag})).toBeTruthy();
+  const nav = within(screen.getByRole("navigation", {name:"置顶标签"}));
+  expect(nav.getByRole("button", {name:props.tag})).toBeTruthy();
+  expect(nav.queryByRole("button", {name:/标签操作/})).toBeNull();
   await user.click(trigger);
   await user.click(await screen.findByRole("menuitem", {name:"取消置顶"}));
   await waitFor(() => expect(screen.queryByRole("navigation", {name:"置顶标签"})).toBeNull());

@@ -21,7 +21,6 @@ it("keeps the header layout menu in sync with the existing home and note prefere
   const user = userEvent.setup();
   const view = render(<><MobileTagActions key="home" title="主页" home onRename={vi.fn()} />
     <NoteCollection home={{ tab: "recent", pinnedCount: 0, onTabChange: vi.fn() }} notes={[]}
-      query="" onQueryChange={vi.fn()} searchPlaceholder="搜索笔记内容" searchDisabled={false}
       hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate
       onNewNote={vi.fn()} onOpen={vi.fn()} onSelectTag={vi.fn()} onLoadMore={vi.fn()} onError={vi.fn()} formatDate={value => value} />
   </>);

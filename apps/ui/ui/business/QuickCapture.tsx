@@ -18,6 +18,7 @@ import { useRichTagSuggestions } from "../../src/hooks/use-rich-tag-suggestions"
 import { hasCapture } from "../../src/quick-capture-draft";
 import { assetUrl } from "../../src/urls";
 import { Button } from "../components/button";
+import { CreateButton } from "./CreateButton";
 import { ActionGroup, useMobileActionGroup } from "../components/action-group";
 import { Input } from "../components/input";
 import { InputGroup, InputGroupAddon, InputGroupButton } from "../components/input-group";
@@ -48,7 +49,7 @@ export function QuickCapture(props: QuickCaptureProps) {
           <PopoverContent align="start" className="ui-capture-tag-picker" aria-label="选择标签" finalFocus={textarea}>
             <Input aria-label="搜索或新建标签" placeholder="搜索或新建标签" value={tagQuery} disabled={blocked} onChange={event => setTagQuery(event.target.value)} />
             <div className="ui-capture-tag-options">{matches.map(tag => <Button type="button" key={tag} variant="ghost" size="sm" disabled={blocked} aria-pressed={capture.tags.includes(tag)} onClick={() => toggleTag(tag)}><Icon name="tag" /><span>{tag}</span>{capture.tags.includes(tag) && <Icon name="check" />}</Button>)}
-              {normalized && !known.includes(normalized) && <Button type="button" variant="ghost" size="sm" disabled={blocked} onClick={() => { toggleTag(normalized); setTagQuery(""); }}>新建标签 {normalized}</Button>}
+              {normalized && !known.includes(normalized) && <div className="pt-1"><CreateButton className="ui-capture-create-tag h-auto min-h-element-md max-w-full whitespace-normal py-1.5 text-start" disabled={blocked} onClick={() => { toggleTag(normalized); setTagQuery(""); }}><span className="min-w-0 wrap-anywhere">新建标签 {normalized}</span></CreateButton></div>}
               {!known.length && !tagQuery && <p>输入名称，创建第一个标签。</p>}
             </div>
           </PopoverContent>

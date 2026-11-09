@@ -8,6 +8,12 @@ const require = createRequire(`${uiRoot}package.json`);
 const { chromium, webkit } = require('playwright');
 let server;
 let baseURL;
+const openNotes = page => page.getByRole('navigation', {name: '顶部导航'}).getByRole('button', {name: '所有笔记', exact: true}).click();
+const newNote = async page => {
+  await openNotes(page);
+  await page.getByRole('button', {name: '新建', exact: true}).click();
+};
+const returnToNotes = page => page.getByRole('navigation', {name: '当前位置'}).getByRole('button', {name: '所有笔记', exact: true}).click();
 before(async () => {
   const { preview } = await import(require.resolve('vite'));
   server = await preview({ configFile: false, root: uiRoot, base: './', logLevel: 'error', build: { outDir: `${uiRoot}dist` }, preview: { host: '127.0.0.1', port: 0, strictPort: true } });
@@ -28,17 +34,19 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
       // write, IndexedDB registration and recovery uses the browser's real OPFS.
       if (engine === chromium) await page.addInitScript(() => { window.showDirectoryPicker = () => navigator.storage.getDirectory(); });
       await page.goto(baseURL, { waitUntil: 'networkidle' });
-      await page.locator('.web-app').waitFor();
+      await page.locator('.web-app[data-interface-theme="minimal"]').waitFor();
       assert.equal(await page.locator('.lucide').count(), 0);
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
       if (engine === chromium) {
         await page.getByRole('button', { name: '创建笔记库', exact: true }).click();
         await page.getByRole('button', { name: '创建笔记库', exact: true }).waitFor({state: 'hidden'});
-        await page.getByRole('button', { name: '新建笔记', exact: true }).first().click();
+        await newNote(page);
         await page.getByRole('button', { name: '更多属性', exact: true }).click();
         await page.getByRole('button', { name: '编辑标签', exact: true }).click();
         await page.getByRole('combobox', { name: '搜索或新建属性标签', exact: true }).press('Escape');
-        await page.getByRole('navigation', { name: '当前位置', exact: true }).getByRole('button', { name: '主页', exact: true }).click();
+        assert.equal(await page.getByRole('navigation', { name: '顶部导航' }).locator('[aria-current="page"]').count(), 0);
+        await page.getByRole('button', { name: '返回笔记列表', exact: true }).click();
+        await page.getByRole('heading', { name: '所有笔记', exact: true }).waitFor();
         assert.equal(await page.getByRole('button', { name: /^打开 新内容/ }).count(), 0);
         assert.equal(await page.evaluate(async () => {
           const root = await navigator.storage.getDirectory();
@@ -46,7 +54,7 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
           for await (const [name, entry] of root.entries()) if (entry.kind === 'file' && name.endsWith('.md')) files.push(name);
           return files.length;
         }), 0);
-        await page.getByRole('button', { name: '新建笔记', exact: true }).first().click();
+        await newNote(page);
         await page.getByRole('button', { name: '更多属性', exact: true }).click();
         await page.getByRole('button', { name: '编辑标签', exact: true }).click();
         await page.getByRole('combobox', { name: '搜索或新建属性标签', exact: true }).fill('tagfirstproof');
@@ -61,7 +69,7 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         await page.getByRole('button', { name: '文本', exact: true }).click();
         await page.getByRole('textbox', { name: '页面标题', exact: true }).fill('Migration filesystem proof');
         await page.getByRole('textbox', { name: '笔记内容', exact: true }).fill('Persisted through the default UI. migrationproof');
-        await page.getByRole('navigation', { name: '当前位置', exact: true }).getByRole('button', { name: '主页', exact: true }).click();
+        await returnToNotes(page);
         await page.getByRole('button', { name: '打开 Migration filesystem proof', exact: true }).waitFor();
         const persisted = await page.evaluate(async () => {
           const root = await navigator.storage.getDirectory();
@@ -86,7 +94,7 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         await page.getByRole('menuitem', { name: '移入回收站', exact: true }).click();
         const dialog = page.getByRole('dialog', { name: '将「Migration filesystem proof」移入回收站？', exact: true });
         await dialog.getByRole('button', { name: '移入回收站', exact: true }).click();
-        await page.getByRole('button', { name: /^笔记库：/ }).click();
+        await page.getByRole('button', { name: '更多', exact: true }).click();
         await page.getByRole('menuitem', { name: '回收站', exact: true }).click();
         await page.getByRole('button', { name: '查看已删除笔记：Migration filesystem proof', exact: true }).click();
         await page.getByRole('button', { name: '恢复笔记', exact: true }).click();
@@ -112,7 +120,7 @@ test('property-first new note retains empty fields, zero, false and choice edits
     await page.goto(baseURL, {waitUntil: 'networkidle'});
     await page.getByRole('button', {name: '创建笔记库', exact: true}).click();
     await page.getByRole('button', {name: '创建笔记库', exact: true}).waitFor({state: 'hidden'});
-    await page.getByRole('button', {name: '新建笔记', exact: true}).first().click();
+    await newNote(page);
     await page.getByRole('button', {name: '更多属性', exact: true}).click();
     const add = async (name, type) => {
       await page.getByRole('button', {name: '添加属性', exact: true}).click();
@@ -150,7 +158,7 @@ test('property-first new note retains empty fields, zero, false and choice edits
     await page.getByRole('button', {name: '移除选项 a', exact: true}).click();
     await page.getByRole('button', {name: '移除选项 a', exact: true}).waitFor({state: 'hidden'});
     await search.press('Escape');
-    await page.getByRole('navigation', {name: '当前位置', exact: true}).getByRole('button', {name: '主页', exact: true}).click();
+    await returnToNotes(page);
     const properties = parse((await read()).split('---')[1]);
     assert.equal(properties.empty, '');
     assert.equal(properties.zero, 0);
@@ -164,13 +172,13 @@ test('property-first new note retains empty fields, zero, false and choice edits
     await page.getByRole('button', {name: '编辑属性 stage', exact: true}).filter({hasText: 'a'}).waitFor();
     await page.getByRole('button', {name: '编辑属性 areas', exact: true}).filter({hasText: 'b'}).waitFor();
     assert.equal(await page.getByRole('checkbox', {name: '切换属性 done', exact: true}).isChecked(), false);
-    await page.getByRole('button', {name: '新建笔记', exact: true}).first().click();
+    await newNote(page);
     await page.getByRole('button', {name: '更多属性', exact: true}).click();
     await page.getByRole('button', {name: '编辑属性 zero', exact: true}).waitFor({timeout: 2000});
     await page.getByRole('button', {name: '编辑属性 zero', exact: true}).click();
     await page.getByRole('textbox', {name: '属性值', exact: true}).fill('0');
     await page.getByRole('textbox', {name: '属性值', exact: true}).press('Enter');
-    await page.getByRole('navigation', {name: '当前位置', exact: true}).getByRole('button', {name: '主页', exact: true}).click();
+    await returnToNotes(page);
     await page.getByRole('button', {name: '打开 新内容 (2)', exact: true}).waitFor();
     const inherited = await page.evaluate(async () => {
       const root = await navigator.storage.getDirectory();

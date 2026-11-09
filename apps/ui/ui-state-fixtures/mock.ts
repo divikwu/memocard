@@ -3,6 +3,7 @@ import type { Draft, DraftList } from '../src/bridge';
 import { noteId } from './catalog';
 import { inlineTags, propertyTags } from '../src/inline-tags';
 import { blockSpacingBody } from './block-spacing';
+import { recentNoteTags } from '../src/recent-note-tags';
 
 export class PreviewFailure extends Error {
   constructor(public code:string, message:string, public retryable=false) { super(message); }
@@ -116,7 +117,7 @@ export function createPreviewMock(scenario:string) {
           const names = new Set(params.flat === true ? item.tags : item.tags.flatMap(tag => tag.split('/').map((_, index, parts) => parts.slice(0, index + 1).join('/'))));
           for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
         }
-        result={tags:[...counts].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([name,count]) => ({name,count}))};break;
+        result={tags:[...counts].sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0).map(([name,count]) => ({name,count})),...(params.includeRecent === true && {recentTags:recentNoteTags(notes)})};break;
       }
       case 'listFolders':result={folders:['notes']};break;
       case 'getTrash':result={notes:trash,issues:[]};break;

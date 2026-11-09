@@ -165,7 +165,7 @@ it('shows an initial timeout below the heading and retries through a loading sta
   });
   mock.retry();fireEvent.click(within(alert).getByRole('button',{name:'重试'}));
   expect(await screen.findByRole('status',{name:'正在读取笔记库'})).toBeTruthy();
-  expect(screen.getByRole('textbox',{name:'搜索当前视图笔记'})).toBeTruthy();
+  expect(screen.getByRole('button',{name:'新建'})).toBeTruthy();
   await waitFor(()=>expect(finish).toBeTypeOf('function'));
   finish();
   expect(await screen.findByRole('list',{name:'笔记列表'})).toBeTruthy();
@@ -184,7 +184,7 @@ it('keeps a loaded list mounted during refresh timeout and retry, then shows the
   expect(within(alert).getByText('继续显示上次读取的内容。')).toBeTruthy();
   expect(alert.compareDocumentPosition(screen.getByRole('heading',{name:'所有笔记'})) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.getByRole('list',{name:'笔记列表'})).toBe(list);
-  expect(screen.getByRole('textbox',{name:'搜索当前视图笔记'}).hasAttribute('disabled')).toBe(false);
+  expect(screen.getByRole('button',{name:'筛选最近标签 验收'})).toHaveProperty('disabled',false);
   expect(window.location.hash).toBe('#/notes');
   let finish!:()=>void;
   fixture.request.mockImplementation(async(op,params)=>{
@@ -230,13 +230,14 @@ it('treats a successfully loaded empty vault as a refresh snapshot',async()=>{
   await screen.findByText('刷新超时');
   expect(screen.getByText('记下第一条笔记')).toBeTruthy();
   expect(screen.queryByRole('heading',{name:'笔记加载超时'})).toBeNull();
-  expect(screen.getByRole('textbox',{name:'搜索当前视图笔记'})).toBeTruthy();
+  const recentTags=screen.getByRole('group',{name:'最近使用的笔记标签'});
+  expect(within(recentTags).getAllByRole('button')).toEqual([within(recentTags).getByRole('button',{name:'all',pressed:true})]);
 });
 
-it('does not reuse the previous filter snapshot after a search times out',async()=>{
+it('does not reuse the previous list snapshot after a tag filter times out',async()=>{
   const mock=await show('refresh-timeout');
   await screen.findByRole('list',{name:'笔记列表'});
-  fireEvent.change(screen.getByRole('textbox',{name:'搜索当前视图笔记'}),{target:{value:'另一条笔记'}});
+  fireEvent.click(screen.getByRole('button',{name:'筛选最近标签 验收'}));
   expect(await screen.findByRole('heading',{name:'笔记加载超时'})).toBeTruthy();
   expect(screen.queryByRole('list',{name:'笔记列表'})).toBeNull();
   expect(mock.snapshot().notes).toHaveLength(1);
@@ -332,7 +333,7 @@ it.each(['disconnected','unauthorized','permission'])('%s keeps the already load
   expect(screen.getByRole(id === 'permission'?'button':'link',{name:id === 'permission'?'重新授权':'重新打开'}).className).toContain('border-border');
   expect(screen.getByText('模拟笔记 · 产品验收')).toBe(note);
   expect(screen.queryByRole('heading',{name:/本机服务未连接|访问授权已失效|需要文件夹访问权限/})).toBeNull();
-  expect((screen.getByRole('textbox',{name:'搜索当前视图笔记'}) as HTMLInputElement).disabled).toBe(true);
+  expect(screen.getByRole('button',{name:'筛选最近标签 验收'})).toHaveProperty('disabled',true);
   expect(mock.calls.some(op=>['saveNote','saveDraft'].includes(op))).toBe(false);
 });
 

@@ -61,6 +61,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  localStorage.removeItem("memocard:tags:test-vault");
   vi.unstubAllGlobals();
 });
 
@@ -88,7 +89,7 @@ describe("sidebar workspace actions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
-    await user.click(await screen.findByRole("button", { name: /^生活/ }));
+    await user.click(await screen.findByRole("button", { name: "筛选标签 生活" }));
     await user.click(screen.getByRole("button", { name: "搜索" }));
     const input = await screen.findByRole("combobox", { name: "搜索笔记" });
     await user.type(input, "散步");
@@ -96,7 +97,7 @@ describe("sidebar workspace actions", () => {
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "搜索笔记" })).toBeNull());
     expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
-    expect((screen.getByRole("textbox", { name: "搜索当前视图笔记" }) as HTMLInputElement).value).toBe("");
+    expect(screen.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "搜索" })));
   });
 
@@ -118,29 +119,6 @@ describe("sidebar workspace actions", () => {
     await waitFor(() => expect(document.activeElement).toBe(title));
   });
 
-  it("searches within the selected tag and keeps the field focused through empty results", async () => {
-    const original = bridge.request.getMockImplementation()!;
-    bridge.request.mockImplementation((operation, params) => {
-      if (operation === "queryNotes" && params?.query) return Promise.resolve({ notes: [], nextCursor: null, coverage: status.coverage });
-      return original(operation, params);
-    });
-    const user = userEvent.setup();
-    render(<App />);
-    await screen.findByText(note.body);
-    await user.click(await screen.findByRole("button", { name: /^生活/ }));
-    const search = await screen.findByRole("textbox", { name: "搜索当前视图笔记" });
-    await user.type(search, "不存在");
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在", tags: ["生活"], exactTags: true, limit: 30 }));
-    expect(await screen.findByText("没有找到相关笔记")).toBeTruthy();
-    expect(screen.getByRole("textbox", { name: "搜索当前视图笔记" })).toBe(search);
-    expect(document.activeElement).toBe(search);
-    expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "清空当前搜索" }));
-    await screen.findByText(note.body);
-    expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1]).toEqual({ query: "", tags: ["生活"], exactTags: true, limit: 30 });
-    expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
-  });
-
   it("shows loading instead of an empty result while a quick filter is pending, even with recovery content", async () => {
     const original = bridge.request.getMockImplementation()!;
     let finishQuery!: (value: unknown) => void;
@@ -160,13 +138,14 @@ describe("sidebar workspace actions", () => {
     expect(await screen.findByText("还没有包含图片的笔记")).toBeTruthy();
   });
 
-  it("retains quick filters in search and paging, clears them for tags and all notes, and explains empty results", async () => {
+  it("retains quick filters for paging and tag tabs, clears them for card tags, and explains empty results", async () => {
     const original = bridge.request.getMockImplementation()!;
     bridge.request.mockImplementation((operation: string, params?: Record<string, unknown>) => {
       if (operation === "queryNotes") return Promise.resolve({
         notes: params?.quickFilter === "links" ? [] : [note],
         nextCursor: params?.quickFilter === "images" && !params.cursor ? "image-page-2" : null,
         coverage: status.coverage, filterCounts: { untagged: 0, images: 31, links: 0 },
+        recentQuickFilterTags: params?.quickFilter === "images" ? ["生活"] : undefined,
       });
       return original(operation, params);
     });
@@ -186,16 +165,25 @@ describe("sidebar workspace actions", () => {
     expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
     expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes")).toHaveLength(queryCount);
     await user.click(screen.getByRole("button", { name: "卡片布局" }));
-    await user.type(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), "散步");
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({ quickFilter: "images", query: "散步" })));
+    expect(screen.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
     expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-current")).toBe("page");
-    await user.click(screen.getByRole("button", { name: "清空当前搜索" }));
     await user.click(screen.getByRole("button", { name: "有链接" }));
     expect(await screen.findByText("在笔记中添加网页或笔记链接后，会自动出现在这里。")).toBeTruthy();
+    expect(screen.queryByRole("group", { name: "最近使用的笔记标签" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "查看所有笔记" }));
     await screen.findByText(note.body);
     expect(screen.getByRole("button", { name: "所有笔记" }).getAttribute("aria-current")).toBe("page");
     await user.click(screen.getByRole("button", { name: "有图片" }));
+    const imageTags = await screen.findByRole("group", { name: "最近使用的笔记标签" });
+    const life = within(imageTags).getByRole("button", { name: "筛选最近标签 生活" });
+    await user.click(life);
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({ tags: ["生活"], quickFilter: "images" })));
+    expect(life.getAttribute("aria-pressed")).toBe("true");
+    await user.click(within(imageTags).getByRole("button", { name: "all" }));
+    await waitFor(() => {
+      const params = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1];
+      expect(params).toMatchObject({ tags: [], quickFilter: "images" });
+    });
     await user.click(await screen.findByRole("button", { name: "筛选标签 生活" }));
     await waitFor(() => {
       const params = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1];
@@ -235,7 +223,8 @@ describe("sidebar workspace actions", () => {
     expect(window.location.hash).toBe("#/settings");
   });
 
-  it("preserves the current search and tag when collapsing and expanding the desktop sidebar", async () => {
+  it("preserves the current tag when collapsing and expanding the desktop sidebar", async () => {
+    localStorage.setItem("memocard:tags:test-vault", JSON.stringify({ pinned: ["生活"] }));
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
@@ -243,8 +232,7 @@ describe("sidebar workspace actions", () => {
     expect(collapse.parentElement).toBe(screen.getByRole("button", { name: "MemoCard，返回主页" }).parentElement);
     expect(collapse.closest("main")).toBeNull();
     await user.click(screen.getByRole("button", { name: /^生活/ }));
-    fireEvent.change(screen.getByRole("textbox", { name: "搜索当前视图笔记" }), { target: { value: "散步" } });
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: ["生活"], exactTags: true, limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, limit: 30 }));
 
     await user.click(screen.getByRole("button", { name: "收起侧栏" }));
     expect(screen.queryByRole("navigation", { name: "主要导航" })).toBeNull();
@@ -254,7 +242,6 @@ describe("sidebar workspace actions", () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "收起侧栏" })));
 
     expect(screen.getByRole("navigation", { name: "主要导航" })).toBeTruthy();
-    expect((screen.getByRole("textbox", { name: "搜索当前视图笔记" }) as HTMLInputElement).value).toBe("散步");
     expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
     expect(screen.queryByText("标签筛选")).toBeNull();
     expect(screen.queryByRole("button", { name: "清除标签筛选" })).toBeNull();
@@ -384,6 +371,7 @@ describe('mobile page navigation',()=>{
   });
 
   it('offers tag actions only from the selected mobile tag title',async()=>{
+    localStorage.setItem("memocard:tags:test-vault", JSON.stringify({ pinned: ["生活"] }));
     const user=userEvent.setup();render(<App />);
     await screen.findByText(note.body);
     expect(screen.queryByRole('button',{name:'标签操作 生活'})).toBeNull();
@@ -407,6 +395,7 @@ describe('mobile page navigation',()=>{
   });
 
   it('shares the all-notes title layout choice with the tag view',async()=>{
+    localStorage.setItem("memocard:tags:test-vault", JSON.stringify({ pinned: ["生活"] }));
     const user=userEvent.setup();render(<App />);
     await screen.findByText(note.body);
     await user.click(await screen.findByRole('button',{name:'视图选项 所有笔记'}));
@@ -423,6 +412,7 @@ describe('mobile page navigation',()=>{
   });
 
   it('shares a changed tag layout with the quick-filter title menu',async()=>{
+    localStorage.setItem("memocard:tags:test-vault", JSON.stringify({ pinned: ["生活"] }));
     localStorage.setItem('memocard:note-layout','list');
     const user=userEvent.setup();render(<App />);
     await screen.findByRole('button',{name:'打开 新内容'});
@@ -673,7 +663,8 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   });
   const user = userEvent.setup();
   render(<App />);
-  await user.click(await screen.findByRole("button", { name: "工作/项目" }));
+  await user.click(screen.getByRole("button", { name: "标签" }));
+  await user.click(await screen.findByRole("button", { name: "查看标签 工作/项目 的笔记" }));
   await user.click(await screen.findByRole("button", { name: "新建" }));
   expect(readEditorText()).toBe("");
   await user.click(screen.getByRole("button", { name: "更多属性" }));
