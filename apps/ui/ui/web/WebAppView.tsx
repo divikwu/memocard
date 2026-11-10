@@ -141,7 +141,7 @@ function TagCollectionHeading({ tag, state: s }: { tag: string; state: AppViewSt
   const { preferences, saveAppearance } = useTagPreferences(s.sidebar.vaultId);
   const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
   const icon = preferences.icons[tag] ?? "";
-  const iconClass = "web-collection-tag-icon inline-flex size-element-md shrink-0 items-center justify-center rounded-[var(--radius-element)] text-2xl [&_svg]:size-6";
+  const iconClass = "web-collection-tag-icon inline-flex size-element-md shrink-0 items-center justify-center rounded-[var(--radius-element)] bg-clip-border text-2xl [&_svg]:size-6";
   const tagId = encodeURIComponent(tagKey(tag));
   const leading = <TagIcon value={icon} />;
   return <>

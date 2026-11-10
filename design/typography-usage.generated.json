@@ -1083,8 +1083,8 @@
           "value": "var(--font-size-3xl)"
         },
         {
-          "source": "apps/ui/ui/web/web-app.css",
-          "scope": ".web-app[data-interface-theme=minimal] .web-page-content[data-view=notes] .web-collection-heading h1",
+          "source": "apps/ui/ui/web/appearance/themes/minimal.css",
+          "scope": ".web-app[data-interface-theme=minimal] .web-page-content :is(.web-collection-heading h1, .web-settings-title, .ui-trash > header > h1, .note-page-title)",
           "value": "var(--font-size-3xl)"
         }
       ]
@@ -3784,6 +3784,11 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
+          "value": "var(--text-heading-2-leading)"
+        },
+        {
+          "source": "apps/ui/ui/web/appearance/themes/minimal.css",
+          "scope": ".web-app[data-interface-theme=minimal] .web-page-content :is(.web-collection-heading h1, .web-settings-title, .ui-trash > header > h1, .note-page-title)",
           "value": "var(--text-heading-2-leading)"
         },
         {

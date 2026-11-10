@@ -17,6 +17,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Skeleton } from "../components/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
+import { useThemeScopeProps } from "../components/theme-scope";
 import { SidebarIcon } from "./sidebar-icons";
 import { TreeMoreButton, TreeRow, TreeToggleButton } from "./sidebar-tree-item";
 import { TagIcon } from "./property-icon-catalog";
@@ -44,6 +45,7 @@ type TagsPageProps = {
 };
 
 export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connected, disabled, canRename, onSelect, onRename }: TagsPageProps) {
+  const showSearch = useThemeScopeProps()["data-interface-theme"] !== "minimal";
   const { preferences, error, togglePinned, saveAppearance, updatePreferences } = useTagPreferences(vaultId);
   const tags = useMemo(() => {
     const known = new Set(indexedTags.map(tag => tag.name));
@@ -61,9 +63,11 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   const [savingMembership, setSavingMembership] = useState(false);
   const [focusPath, setFocusPath] = useState<{name: string; groupId?: string} | null>(null);
   const search = useRef<HTMLInputElement>(null);
+  const tabs = useRef<HTMLDivElement>(null);
   const directory = useRef<HTMLElement>(null);
   const returnPath = useRef("");
-  const needle = query.trim().toLocaleLowerCase();
+  const fallbackFocus = () => search.current ?? tabs.current?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]');
+  const needle = showSearch ? query.trim().toLocaleLowerCase() : "";
   const matches = useMemo(() => tags.filter(tag => tag.name.toLocaleLowerCase().includes(needle)), [tags, needle]);
   const groups = useMemo(() => {
     const grouped = new Map<string, Tag[]>();
@@ -131,7 +135,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   useEffect(() => {
     if (focusPath === null) return;
     const target = [...directory.current?.querySelectorAll<HTMLButtonElement>("[data-tag-path]") ?? []].find(button => button.dataset.tagPath === focusPath.name && button.closest("tbody")?.dataset.tagGroup === focusPath.groupId);
-    (target ?? search.current)?.focus();
+    (target ?? fallbackFocus())?.focus();
     setFocusPath(null);
   }, [focusPath, tags]);
   const pin = async (path: string) => {
@@ -247,14 +251,14 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
     </Fragment>;
   };
   return <section ref={directory} className="ui-tag-directory" aria-label="标签目录">
-    <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
+    {(heading || showSearch) && <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
       {heading}
-      <div className="ui-collection-search"><SidebarIcon name="search" className="ui-collection-search-icon" /><Input ref={search} value={query} aria-label="搜索标签" placeholder="搜索标签" className="ui-collection-search-input" onChange={event => setQuery(event.target.value)} />{query && <Button variant="ghost" size="icon-xs" className="ui-collection-search-clear" aria-label="清空标签搜索" onClick={() => { setQuery(""); search.current?.focus(); }}><SidebarIcon name="close" /></Button>}</div>
-    </div>
+      {showSearch && <div className="ui-collection-search"><SidebarIcon name="search" className="ui-collection-search-icon" /><Input ref={search} value={query} aria-label="搜索标签" placeholder="搜索标签" className="ui-collection-search-input" onChange={event => setQuery(event.target.value)} />{query && <Button variant="ghost" size="icon-xs" className="ui-collection-search-clear" aria-label="清空标签搜索" onClick={() => { setQuery(""); search.current?.focus(); }}><SidebarIcon name="close" /></Button>}</div>}
+    </div>}
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
     <Tabs value={view} onValueChange={value => { setDraft(null); setView(value); }} className="ui-tag-directory-panel ui-tag-directory-tabs">
       <div className="ui-tag-directory-tab-header">
-        <TabsList aria-label="标签视图"><TabsTrigger value="all">全部</TabsTrigger><TabsTrigger value="groups">标签群组</TabsTrigger></TabsList>
+        <TabsList ref={tabs} aria-label="标签视图"><TabsTrigger value="all">全部</TabsTrigger><TabsTrigger value="groups">标签群组</TabsTrigger></TabsList>
         <div className="ui-tag-directory-tools">
           {view === "groups" && <CreateButton disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "group", anchor: event.currentTarget})}>新建群组</CreateButton>}
           <CreateButton disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "label", anchor: event.currentTarget})}>新建标签</CreateButton>
@@ -287,7 +291,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
         color: editedGroup.color,
         onChangeColor: color => updateGroupDetails(editedGroup.id, {color: color === "default" ? undefined : color}),
       }}
-      onClose={() => setEditing(null)} finalFocus={() => editing.anchor.isConnected ? editing.anchor : [...directory.current?.querySelectorAll<HTMLButtonElement>("[data-tag-path]") ?? []].find(button => button.dataset.tagPath === returnPath.current) ?? search.current ?? false}
+      onClose={() => setEditing(null)} finalFocus={() => editing.anchor.isConnected ? editing.anchor : [...directory.current?.querySelectorAll<HTMLButtonElement>("[data-tag-path]") ?? []].find(button => button.dataset.tagPath === returnPath.current) ?? fallbackFocus() ?? false}
       onSave={async (name, icon) => {
         if (editedGroup) {
           if (icon === undefined) {
@@ -357,7 +361,7 @@ function TagTableRow({ tag, icon, iconDisabled, iconEditorOpen, disabled, name, 
       {iconDisabled ? <span className="ui-tag-directory-icon ui-tag-directory-icon-static">{leading}</span> : <Button variant="ghost" size="icon-sm" className="ui-tag-directory-icon" aria-label={`编辑标签图标 ${tag.name}`} aria-haspopup="dialog" aria-expanded={iconEditorOpen} disabled={disabled || iconDisabled} onClick={event => onEdit(event.currentTarget)}>{leading}</Button>}
       <div className="ui-tag-directory-name">{name}</div>
       <svg className="ui-tag-directory-branch" width="10" height="9" viewBox="0 0 10 9" aria-hidden="true" focusable="false">
-        <path d="M.5 0v3a5 5 0 0 0 5 5h4" fill="none" stroke="currentColor" strokeLinecap="round" />
+        <path d="M.5 0v2a6 6 0 0 0 6 6h3" fill="none" stroke="currentColor" strokeLinecap="round" />
       </svg>
     </div></TableCell>
     <TableCell className="ui-tag-directory-description">{description}</TableCell>

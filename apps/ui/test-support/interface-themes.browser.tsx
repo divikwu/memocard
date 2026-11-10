@@ -62,6 +62,43 @@ test("interface theme scopes isolate light/dark palettes across independent stab
   expect(popup("浅色局部")).toBe(source("浅色局部"));
 });
 
+test("minimal theme aligns visible page titles with the all-notes heading", async () => {
+  await page.viewport(1440, 1000);
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: "minimal" }));
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  let current!: AppViewState;
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={state => { current = state; return renderWebApp(state); }} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("navigation", { name: "顶部导航" });
+    const typography = (title: HTMLElement) => {
+      const { fontFamily, fontSize, fontWeight, lineHeight } = getComputedStyle(title);
+      return { fontFamily, fontSize, fontWeight, lineHeight };
+    };
+    const baseline = typography(await canvas.findByRole("heading", { name: "所有笔记", level: 1 }));
+    expect(baseline).toMatchObject({ fontSize: "30px", fontWeight: "600", lineHeight: "42px" });
+    for (const [route, name] of [["tags", "标签"], ["settings", "设置"], ["trash", "回收站"]] as const) {
+      await act(async () => { await current.onNavigate(route); });
+      expect(typography(await canvas.findByRole("heading", { name, level: 1 }))).toEqual(baseline);
+    }
+    await act(async () => { await current.onNavigate("notes"); });
+    await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
+    const noteTitle = await canvas.findByRole("textbox", { name: "页面标题" });
+    expect(typography(noteTitle)).toEqual(baseline);
+    act(() => window.dispatchEvent(new StorageEvent("storage", { key: appearanceKey, newValue: JSON.stringify({ interfaceTheme: "classic" }), storageArea: localStorage })));
+    await waitFor(() => expect(typography(noteTitle).fontSize).toBe("32px"));
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
+});
+
 test("interface theme fixture extends CSS and layout independently without replacing the editor", async () => {
   const previousHash = location.hash;
   const appearanceKey = "memocard-web-appearance-v1";
@@ -96,7 +133,10 @@ test("interface theme fixture extends CSS and layout independently without repla
     await userEvent.click(within(navigation).getByRole("button", { name: "标签" }));
     const tags = await within(document.body).findByRole("dialog", { name: "浏览标签" });
     expect(getComputedStyle(tags).paddingLeft).toBe("10px");
-    await userEvent.keyboard("{Escape}");
+    await change("minimal");
+    await change("paper");
+    expect(within(navigation).getByRole("button", { name: "标签" })).toHaveAttribute("aria-expanded", "false");
+    expect(within(document.body).queryByRole("dialog", { name: "浏览标签" })).toBeNull();
     await act(async () => { await current.onNavigate("notes"); });
     await canvas.findByRole("heading", { name: "所有笔记", level: 1 });
     const collectionBounds = view.container.querySelector(".web-page-content")!.getBoundingClientRect();

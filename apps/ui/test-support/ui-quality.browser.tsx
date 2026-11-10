@@ -39,7 +39,7 @@ import { RichMarkdownEditor } from "../ui/business/RichMarkdownEditor";
 import { PreviewModeProvider } from "../ui/preview-mode";
 import { loadPreviewFonts } from "../ui/preview-fonts";
 import { useNoteImage } from "../src/use-note-image";
-import { setStorybookBrowserAssets, setStorybookRequestHandler } from "./bridge";
+import { setStorybookBrowserAssets, setStorybookClientMode, setStorybookRequestHandler } from "./bridge";
 import { editorNote } from "./editor-note";
 import { createSearchFixture } from "./note-search.fixtures";
 import "../.storybook/preview.css";
@@ -2705,7 +2705,7 @@ test("Web tag groups save shared membership without changing any notes", async (
       await waitFor(() => expect(description.getBoundingClientRect().width)
         .toBeCloseTo(dialog.getByRole("textbox", {name: "群组名称"}).getBoundingClientRect().width, 1));
       await userEvent.fill(description, "群组测试说明");
-      if (width === 390) await userEvent.click(canvas.getByRole("textbox", {name: "搜索标签"}));
+      if (width === 390) await userEvent.click(canvas.getByRole("tab", {name: "标签群组", selected: true}));
       else await userEvent.keyboard("{Enter}");
       await canvas.findByRole("rowgroup", {name});
       expect((await fixture.request<TagPreferenceState>("getTagPreferences")).groups?.find(group => group.name === name)?.tags).toEqual([]);
@@ -3522,9 +3522,13 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
         const start = titleBox.left + parseFloat(titleStyle.paddingLeft);
         const end = titleBox.right - parseFloat(titleStyle.paddingRight);
         if (width < 768) {
-          const panel = view.container.querySelector<HTMLElement>(".web-app-main")!.getBoundingClientRect();
-          expect(start - panel.left).toBeCloseTo(16, 1);
-          expect(panel.right - end).toBeCloseTo(16, 1);
+          const panel = view.container.querySelector<HTMLElement>(".web-app-main")!;
+          const bounds = panel.getBoundingClientRect();
+          expect(bounds.left).toBe(0);
+          expect(bounds.right).toBe(width);
+          expect(getComputedStyle(panel).borderRadius).toBe("0px");
+          expect(start - bounds.left).toBeCloseTo(16, 1);
+          expect(bounds.right - end).toBeCloseTo(16, 1);
         }
         const text = richBlockBody(body.firstElementChild as HTMLElement);
         const textBox = text.getBoundingClientRect(), textStyle = getComputedStyle(text);
@@ -4386,8 +4390,103 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
     expect(recentTags).toBeVisible();
     const tagRows = within(recentTags).getAllByRole("button").map(button => button.getBoundingClientRect().top);
     expect(new Set(tagRows).size).toBe(1);
+    const notes = await canvas.findByRole("list", { name: "笔记列表" });
+    for (const width of [390, 700]) {
+      await page.viewport(width, 844);
+      await waitFor(() => {
+        const bounds = notes.getBoundingClientRect();
+        expect(bounds.left).toBe(12);
+        expect(width - bounds.right).toBe(12);
+      });
+    }
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 }, 30_000);
+
+if (!inject("uiQualityTouch")) test("desktop navigation menus switch on mouse hover and stay open over their items", async () => {
+  await page.viewport(1440, 900);
+  const previousHash = location.hash;
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    const nav = within(await canvas.findByRole("navigation", { name: "顶部导航" }));
+    const home = nav.getByRole("button", { name: "主页" });
+    const tags = nav.getByRole("button", { name: "标签" });
+    const trigger = nav.getByRole("button", { name: "所有笔记" });
+    const body = within(document.body);
+    await userEvent.hover(await canvas.findByRole("heading", { name: "所有笔记", level: 1 }));
+    await userEvent.hover(trigger);
+    await body.findByRole("menu", { name: "所有笔记" });
+    const more = nav.getByRole("button", { name: "更多" });
+    await userEvent.hover(more);
+    await body.findByRole("menu", { name: "更多" });
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
+    await userEvent.hover(tags);
+    await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
+    expect(tags).not.toHaveAttribute("aria-haspopup");
+    expect(canvas.getByRole("heading", { name: "所有笔记", level: 1 })).toBeInTheDocument();
+    await userEvent.click(tags);
+    await canvas.findByRole("heading", { name: "标签", level: 1 });
+    await userEvent.hover(home);
+    await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
+    expect(home).not.toHaveAttribute("aria-haspopup");
+    expect(canvas.getByRole("heading", { name: "标签", level: 1 })).toBeInTheDocument();
+    await userEvent.click(home);
+    await canvas.findByRole("tab", { name: "最近更新", selected: true });
+    await userEvent.hover(trigger);
+    const menu = await body.findByRole("menu", { name: "所有笔记" });
+    const images = within(menu).getByRole("menuitem", { name: "有图片" });
+    await userEvent.hover(images);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await userEvent.click(images);
+    await canvas.findByRole("heading", { name: "有图片", level: 1 });
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
+    trigger.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    await body.findByRole("menu", { name: "所有笔记" });
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+  }
+});
+
+test("tag collection heading keeps a 36px icon background while notes load", async () => {
+  await page.viewport(1440, 900);
+  const previousHash = location.hash;
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const tag = "生活/咖啡";
+  let finishQuery!: () => void;
+  const pendingQuery = new Promise<void>(resolve => { finishQuery = resolve; });
+  const releaseMode = setStorybookClientMode("browser");
+  const release = setStorybookRequestHandler(async (operation, params) => {
+    if (operation === "queryNotes" && Array.isArray(params.tags) && params.tags.includes(tag)) await pendingQuery;
+    return fixture.request(operation, params);
+  });
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await userEvent.click(await canvas.findByRole("button", { name: `筛选最近标签 ${tag}` }));
+    const heading = await canvas.findByRole("heading", { name: `# ${tag}`, level: 1 });
+    const loadingIcon = heading.parentElement!.querySelector("span.web-collection-tag-icon")!;
+    const background = (icon: Element) => {
+      const { width, height } = icon.getBoundingClientRect();
+      const { backgroundClip, backgroundColor, borderRadius } = getComputedStyle(icon);
+      return { width, height, backgroundClip, backgroundColor, borderRadius };
+    };
+    const loadingBackground = background(loadingIcon);
+    finishQuery();
+    const button = await canvas.findByRole("button", { name: `编辑标签图标 ${tag}` });
+    expect(background(button)).toEqual(loadingBackground);
+    expect(loadingBackground).toMatchObject({ width: 36, height: 36, backgroundClip: "border-box" });
+  } finally {
+    view.unmount(); finishQuery(); release(); releaseMode();
+    history.replaceState(null, "", previousHash || "#/");
+  }
+});
 
 for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) {
   test(`capture suggestions and link properties share compact popup styles at ${width}px in ${mode}`, async () => {

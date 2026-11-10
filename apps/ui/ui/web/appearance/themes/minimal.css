@@ -9,6 +9,11 @@
   height: var(--size-element-sm);
 }
 
+.web-app[data-interface-theme=minimal] .web-page-content :is(.web-collection-heading h1, .web-settings-title, .ui-trash > header > h1, .note-page-title) {
+  font-size: var(--font-size-3xl);
+  line-height: var(--text-heading-2-leading);
+}
+
 @media (min-width: 768px) {
   .ui-appearance-scope[data-interface-theme=minimal] .web-app-scroll > .web-page-content[data-view=notes]:not([data-detail]) {
     padding-block-start: calc(var(--spacing-1) * 8);
