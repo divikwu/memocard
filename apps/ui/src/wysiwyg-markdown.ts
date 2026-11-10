@@ -1,5 +1,5 @@
 import { Extension, Node, type Editor, type JSONContent } from '@tiptap/react';
-import { DOMSerializer } from '@tiptap/pm/model';
+import { DOMSerializer, type Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { semanticTags } from './rich-semantic';
 import { parser, GFM } from '@lezer/markdown';
 
@@ -38,12 +38,14 @@ function hasHtmlMarks(node: JSONContent): boolean {
 
 export class MarkdownSource {
   private original = '';
-  private initial = '';
+  private initial: string[] = [];
+  private serialized = new WeakMap<ProseMirrorNode, { fingerprint: string; raw: string }>();
   private prefix = '';
   private suffix = '';
   private eol = '\n';
   parse(editor: Editor, source: string): JSONContent {
     this.original = source;
+    this.serialized = new WeakMap();
     this.eol = source.includes('\r\n') ? '\r\n' : '\n';
     const tree = markdownParser.parse(source);
     const ranges: { from: number; to: number }[] = [];
@@ -99,21 +101,37 @@ export class MarkdownSource {
       }
     }
     const doc = { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] };
-    this.initial = fingerprint(editor.schema.nodeFromJSON(doc).toJSON());
+    this.initial = [];
+    editor.schema.nodeFromJSON(doc).forEach(node => this.initial.push(node.attrs.fingerprint ?? fingerprint(node.toJSON())));
     return doc;
   }
   serialize(editor: Editor): string {
-    const doc = editor.getJSON();
-    if (fingerprint(doc) === this.initial) return this.original;
-    const nodes = doc.content ?? [];
-    if (nodes.length === 1 && nodes[0].type === 'paragraph' && !nodes[0].content?.length) return '';
-    return this.prefix + nodes.map((node, i) => {
-      const unchanged = node.attrs?.original != null && node.attrs.fingerprint === fingerprint(node);
-      // Mixed HTML marks and Markdown delimiters can reopen as literal punctuation; serialize these edited blocks as HTML.
-      const htmlContent = hasHtmlMarks(node) || node.type === 'paragraph' && /^\s*<p(?:\s|>)/i.test(String(node.attrs?.original ?? ''));
-      const raw = node.type === 'preservedMarkdown' ? String(node.attrs?.source ?? '') : unchanged ? String(node.attrs!.original) : htmlContent ? (DOMSerializer.fromSchema(editor.schema).serializeNode(editor.schema.nodeFromJSON(node)) as HTMLElement).outerHTML : editor.markdown!.serialize({ type: 'doc', content: [node] }).replace(/^\n+|\n+$/g, '').replace(/\r?\n/g, this.eol);
-      const separator = node.attrs?.separator as string | undefined;
-      return raw + (i < nodes.length - 1 ? separator || this.eol.repeat(2) : this.suffix);
-    }).join('');
+    const { doc } = editor.state;
+    const count = doc.childCount, defaultSeparator = this.eol.repeat(2);
+    let original = count === this.initial.length;
+    const parts: string[] = [];
+    doc.forEach((node, _offset, i) => {
+      // ProseMirror shares immutable blocks across edits. Cache their text, not
+      // their position-dependent separators, so moving a block stays safe.
+      let block = this.serialized.get(node);
+      if (!block) {
+        const json = node.toJSON();
+        const key = fingerprint(json);
+        let raw: string;
+        if (node.type.name === 'preservedMarkdown') raw = String(node.attrs.source ?? '');
+        else if (node.attrs.original != null && node.attrs.fingerprint === key) raw = String(node.attrs.original);
+        // Mixed HTML marks and Markdown delimiters can reopen as literal punctuation.
+        else if (hasHtmlMarks(json) || node.type.name === 'paragraph' && /^\s*<p(?:\s|>)/i.test(String(node.attrs.original ?? ''))) {
+          raw = (DOMSerializer.fromSchema(editor.schema).serializeNode(node) as HTMLElement).outerHTML;
+        } else raw = editor.markdown!.serialize({ type: 'doc', content: [json] }).replace(/^\n+|\n+$/g, '').replace(/\r?\n/g, this.eol);
+        block = { fingerprint: key, raw };
+        this.serialized.set(node, block);
+      }
+      original &&= block.fingerprint === this.initial[i];
+      parts.push(block.raw, i < count - 1 ? node.attrs.separator || defaultSeparator : this.suffix);
+    });
+    if (original) return this.original;
+    if (count === 1 && doc.firstChild?.type.name === 'paragraph' && !doc.firstChild.childCount) return '';
+    return this.prefix + parts.join('');
   }
 }

@@ -602,7 +602,7 @@ export class BrowserVault {
     await this.active(selected);
     const sortAt = (note: Note) => sort === 'updatedAt' ? note.updatedAt : sort === 'pinnedAt' ? pins.pins[note.id] ?? note.createdAt : note.createdAt;
     const sortDates = new Map(snapshot.parsed.map(({ note }) => [note.id, parseDate(sortAt(note))]));
-    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, ...(exactTags ? {exactTags} : {}), quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned })));
+    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, ...(exactTags ? {exactTags} : {}), quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned, ...(params.includeCardPreview === true && {includeCardPreview:true}) })));
     const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(sort === 'updatedAt' ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
     let after: { id: string; createdAt: string } | undefined;
     if (params.cursor !== undefined) {
@@ -638,9 +638,16 @@ export class BrowserVault {
         && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
     });
     if (sort !== 'createdAt') matching.sort((a, b) => sortDates.get(b.id)! - sortDates.get(a.id)! || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    const page = matching.slice(0, limit);
+    const previews = params.includeCardPreview === true && page.length
+      ? await import("./browser-properties").then(module => module.cardPreviewProperties(selected.handle, this.compatible, snapshot.parsed, page, () => this.active(selected))).catch(() => undefined)
+      : undefined;
+    await this.active(selected);
     const notes: Note[] = [];
     let byteCount = 0;
-    for (const note of matching.slice(0, limit)) {
+    for (const entry of page) {
+      const cardPreview = previews?.get(entry.id);
+      const note = cardPreview ? {...entry, cardPreview} : entry;
       const size = textBytes(JSON.stringify(note)).byteLength;
       if (notes.length && byteCount + size > 2 * 1024 * 1024) break;
       notes.push({ ...note, vaultBinding: selected.binding } as Note); byteCount += size;

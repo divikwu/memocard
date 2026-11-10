@@ -38,9 +38,11 @@ it("keeps long titles and deep paths on one line while exposing their full value
   detach = setStorybookRequestHandler(request);
   render(<TooltipHints><TrashPage vaultId="fixture" vaultBinding="binding" refreshVersion={0} onRestored={vi.fn()} /></TooltipHints>);
   const open = await screen.findByRole("button", { name: `查看已删除笔记：${note.title}` });
-  const heading = within(open).getByRole("heading", { name: note.title });
+  const heading = screen.getByRole("heading", { name: note.title, level: 2 });
+  expect(heading.contains(open)).toBe(true);
+  const title = within(open).getByText(note.title!);
   const path = within(open).getByText(note.relativePath);
-  for (const [element, fullText] of [[heading, note.title], [path, note.relativePath]] as const) {
+  for (const [element, fullText] of [[title, note.title], [path, note.relativePath]] as const) {
     Object.defineProperties(element, { clientWidth: { value: 160 }, scrollWidth: { value: 1600 } });
     expect(element.hasAttribute("title")).toBe(false);
     await user.hover(element);

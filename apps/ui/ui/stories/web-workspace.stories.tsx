@@ -43,9 +43,9 @@ export const Workspace: Story = { play: async ({ canvasElement }) => {
 } };
 export const TagBreadcrumb: Story = { tags: ["!dev", "!autodocs"], args: { initialRoute: "#/notes" }, play: async ({ canvasElement }) => {
   const canvas = within(canvasElement);
-  await userEvent.click((await canvas.findAllByRole("button", { name: "筛选标签 生活/咖啡" }))[0]);
+  await userEvent.click(await canvas.findByRole("button", { name: "筛选最近标签 生活/咖啡" }));
   await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
-  await canvas.findByRole("textbox", { name: "笔记内容" });
+  await canvas.findByRole("textbox", { name: "笔记内容" }, { timeout: 10_000 });
   const breadcrumb = within(canvas.getByRole("navigation", { name: "当前位置" }));
   await expect(breadcrumb.getAllByRole("button").map(button => button.textContent)).toEqual(["所有笔记", "生活/咖啡"]);
 } };

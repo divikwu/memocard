@@ -34,6 +34,7 @@ beforeAll(async () => {
 }, 30_000);
 
 beforeEach(() => {
+  localStorage.removeItem("memocard:note-layout");
   document.elementFromPoint = () => null;
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
   Range.prototype.getBoundingClientRect = () => new DOMRect();
@@ -89,6 +90,7 @@ describe("sidebar workspace actions", () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);
+    await user.click(screen.getByRole("button", { name: "列表布局" }));
     await user.click(await screen.findByRole("button", { name: "筛选标签 生活" }));
     await user.click(screen.getByRole("button", { name: "搜索" }));
     const input = await screen.findByRole("combobox", { name: "搜索笔记" });
@@ -184,6 +186,7 @@ describe("sidebar workspace actions", () => {
       const params = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1];
       expect(params).toMatchObject({ tags: [], quickFilter: "images" });
     });
+    await user.click(screen.getByRole("button", { name: "列表布局" }));
     await user.click(await screen.findByRole("button", { name: "筛选标签 生活" }));
     await waitFor(() => {
       const params = bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)?.[1];
@@ -232,7 +235,7 @@ describe("sidebar workspace actions", () => {
     expect(collapse.parentElement).toBe(screen.getByRole("button", { name: "MemoCard，返回主页" }).parentElement);
     expect(collapse.closest("main")).toBeNull();
     await user.click(screen.getByRole("button", { name: /^生活/ }));
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, includeCardPreview: true, limit: 30 }));
 
     await user.click(screen.getByRole("button", { name: "收起侧栏" }));
     expect(screen.queryByRole("navigation", { name: "主要导航" })).toBeNull();
@@ -673,6 +676,7 @@ it("creates in the default folder with the selected nested tag and keeps tag fil
   expect(screen.queryByLabelText("笔记标签")).toBeNull();
   expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
   await user.click(noteSourceButton());
+  await user.click(await screen.findByRole("button", { name: "列表布局" }));
   const cardTag = await screen.findByRole("button", { name: "筛选标签 生活" });
   expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
   expect(bridge.request).not.toHaveBeenCalledWith("saveDraft", expect.anything());

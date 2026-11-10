@@ -22,26 +22,18 @@ afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 it("does not repeat a complete root tag in a tooltip", async () => {
   const user = userEvent.setup();
+  localStorage.setItem("memocard:note-layout", "list");
   render(<NoteCollection {...props({ notes: [{ ...note, tags: ["idea"] }] })} />);
   await user.hover(screen.getByRole("button", { name: "筛选标签 idea" }));
   expect(screen.queryByRole("tooltip")).toBeNull();
 });
 
-it("keeps card opening keyboard-accessible and tag filtering independent", async () => {
+it("keeps card opening keyboard-accessible without a tag row", async () => {
   const user = userEvent.setup();
   const options = props();
   render(<NoteCollection {...options} />);
   expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
-  const tag = screen.getByRole("button", { name: "筛选标签 area/coffee" });
-  expect(tag.textContent).toBe("area/coffee");
-  expect(tag.title).toBe("");
-  await user.hover(tag);
-  expect(screen.queryByRole("tooltip")).toBeNull();
-  await user.unhover(tag);
-  expect(screen.getAllByRole("button", { name: /^筛选标签 / })).toHaveLength(2);
-  await user.click(screen.getByRole("button", { name: "筛选标签 area/coffee" }));
-  expect(options.onSelectTag).toHaveBeenCalledWith("area/coffee");
-  expect(options.onOpen).not.toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: /^筛选标签 / })).toBeNull();
   const open = screen.getByRole("button", { name: "打开 咖啡记录" });
   expect(open.querySelector("button, a, table, p")).toBeNull();
   open.focus();
@@ -49,11 +41,7 @@ it("keeps card opening keyboard-accessible and tag filtering independent", async
   expect(options.onOpen).toHaveBeenCalledWith("coffee");
   await user.keyboard(" ");
   expect(options.onOpen).toHaveBeenCalledTimes(2);
-  screen.getByRole("button", { name: "筛选标签 area/coffee" }).focus();
-  await user.keyboard("{Enter}");
-  expect(options.onSelectTag).toHaveBeenCalledTimes(2);
-  expect(options.onOpen).toHaveBeenCalledTimes(2);
-  expect(screen.getByText("+1").getAttribute("aria-label")).toBe("另有 1 个标签");
+  await screen.findByText(note.body);
   const previewProps = vi.mocked(NotePreview).mock.calls.at(-1)![0];
   expect(previewProps).toEqual(expect.objectContaining({ compact: true, showTitle: false, hiddenTags: note.tags, notePath: note.relativePath, onError: options.onError }));
   previewProps.onError("图片暂时无法读取");
@@ -76,6 +64,7 @@ it("persists layout changes without removing tags or dates from list mode", asyn
 });
 
 it("omits the active tag before limiting visible tags and removes an empty tag row", () => {
+  localStorage.setItem("memocard:note-layout", "list");
   const options = props({ activeTag: "area/coffee" });
   const view = render(<NoteCollection {...options} />);
   expect(screen.queryByRole("button", { name: "筛选标签 area/coffee" })).toBeNull();

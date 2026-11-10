@@ -1693,6 +1693,31 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
     }
 
+    func testHomeCardPropertiesFollowVisibleLayoutAndAreOptIn() async throws {
+        let core = try await store()
+        _ = try writeNote(id: UUID().uuidString.lowercased(), body: "Body", extra: """
+        a: First by name
+        z: First by layout
+        hidden: Hidden text
+        front: "../assets/front.png" # memocard:type=image
+        second: "../assets/second.png" # memocard:type=image
+        hiddenImage: "../assets/hidden.png" # memocard:type=image
+
+        """)
+        let layout = try await call(core, "getPropertyLayout")
+        _ = try await call(core, "setPropertyLayout", [
+            "order": ["property:hidden", "property:z", "property:second", "property:front"],
+            "visibility": ["property:hidden": "hidden", "property:hiddenImage": "hidden"],
+            "baseHash": layout["contentHash"]!,
+        ])
+        let regular = try await call(core, "queryNotes")
+        XCTAssertNil((regular["notes"] as? [[String: Any]])?.first?["cardPreview"])
+        let home = try await call(core, "queryNotes", ["includeCardPreview": true])
+        let preview = (home["notes"] as? [[String: Any]])?.first?["cardPreview"] as? [String: Any]
+        XCTAssertEqual(preview?["text"] as? String, "First by layout")
+        XCTAssertEqual(preview?["images"] as? [String], ["../assets/second.png", "../assets/front.png"])
+    }
+
     func testPropertyLayoutPersistsAcrossClientsWithoutRewritingNotesAndRejectsStaleVersions() async throws {
         let core = try await store()
         let path = try writeNote(id: UUID().uuidString.lowercased(), body: "Body #keep", extra: "summary: One\n")

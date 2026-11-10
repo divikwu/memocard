@@ -254,7 +254,6 @@
       "consumers": [
         "apps/ui/src/ImagePropertyEditor.core.tsx",
         "apps/ui/src/NoteProperties.core.tsx",
-        "apps/ui/ui/business/NoteCollection.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/sidebar.tsx",

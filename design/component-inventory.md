@@ -43,6 +43,7 @@
 | `apps/ui/ui/business/Editor.tsx` | 当前编辑器适配 | 共享 editor-core；标题/正文、保存/冲突/草稿、撤销 | editor / typeset / state | `apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | IME、真机键盘和真实附件选择另验 |
 | `apps/ui/ui/business/HomeMascot.tsx` | 当前生产吉祥物 | 固定素材、指针方向、交互及减少动态效果 | mascot / motion | `apps/ui/mascot-fixtures/catalog.ts`；`apps/ui/ui/stories/illustrations.stories.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内容页面组合维护；真实设备指针与性能另验 |
 | `apps/ui/ui/business/MobileTagActions.tsx` | 当前H5标题操作 | 布局切换、标签置顶/重命名/Emoji与回焦 | sidebar / menu / responsive | `apps/ui/ui/business/MobileTagActions.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 软键盘和真实触摸关闭另验 |
+| `apps/ui/ui/business/NoteCardPreview.tsx` | 当前卡片预览 | 按属性图片、正文图片、文本属性、正文的顺序选择单项，图片失败时继续回退 | collection / preview / media | `scripts/test-default-ui.mjs`；`apps/ui/ui/business/NoteCollection.recipe.test.tsx` | 真机附件加载另验 |
 | `apps/ui/ui/business/NoteCollection.tsx` | 当前集合视图 | 卡片/列表、布局偏好、标签、空态与分页 | collection / type / space | `apps/ui/ui/business/NoteCollection.test.tsx`；`apps/ui/ui/stories/business-note-collection.stories.tsx` | 真实大库性能和设备滚动另验 |
 | `apps/ui/ui/business/NoteDeleteDialog.tsx` | 当前删除确认与原生投影 | 版本保护、取消、busy与成功/失败 | destructive / overlay | `apps/ui/ui/business/TrashPage.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 真实写入与系统确认组合另验 |
 | `apps/ui/ui/business/ChoicePropertyEditor.tsx` | 按需选项编辑器适配 | 首次打开加载，保留共享状态与保存控制器 | property / overlay / state | `apps/ui/ui/business/ChoicePropertyEditor.test.tsx` | 随属性弹层维护；真实设备另验 |

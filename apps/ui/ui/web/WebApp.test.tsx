@@ -14,7 +14,9 @@ import { appearanceFixture } from "../../ui-state-fixtures/appearance-fixture";
 import { preloadWebEditor, renderWebApp } from "./WebAppView";
 
 let detach: (() => void) | undefined;
-beforeAll(async () => { await preloadWebEditor(); await Promise.all([import("../business/QuickCapture"), import("../business/NoteSearchDialog")]); }, 30_000);
+beforeAll(async () => {
+  await Promise.all([preloadWebEditor(), import("../business/NoteCardPreview"), import("../business/QuickCapture"), import("../business/NoteSearchDialog")]);
+}, 30_000);
 beforeEach(() => {
   localStorage.clear(); resetStorybookBridge();
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
@@ -209,6 +211,7 @@ it("shares tag icons between the collection heading and tag directory", async ()
 it("uses the full selected tag and blocks breadcrumb navigation when saving fails", async () => {
   const user = userEvent.setup();
   const { request } = await mount();
+  await user.click(await screen.findByRole("button", { name: "列表布局" }));
   await user.click((await screen.findAllByRole("button", { name: "筛选标签 生活/咖啡" }))[0]);
   await screen.findByRole("heading", { name: "# 生活/咖啡", level: 1 });
   expect(screen.queryByRole("button", { name: "筛选标签 生活/咖啡" })).toBeNull();

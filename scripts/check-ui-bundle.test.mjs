@@ -40,10 +40,11 @@ test("a bound browser first list includes format parsing and filters even when l
     "src/browser-files.ts": { file: "formats.js", imports: ["yaml"] },
     yaml: { file: "yaml.js" },
     "src/note-filters.ts": { file: "filters.js", imports: ["shared"] },
+    "src/browser-properties.ts": { file: "properties.js", imports: ["yaml"] },
     cards: { file: "cards.js", imports: ["yaml"] },
   };
-  assert.deepEqual([...firstListFiles(manifest, "browser")].sort(), ["entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js"].sort());
-  assert.deepEqual([...firstListFiles(manifest, "browser", ["cards"])].sort(), ["cards.js", "entry.js", "filters.js", "formats.js", "shared.js", "storage.js", "yaml.js"].sort());
+  assert.deepEqual([...firstListFiles(manifest, "browser")].sort(), ["entry.js", "filters.js", "formats.js", "properties.js", "shared.js", "storage.js", "yaml.js"].sort());
+  assert.deepEqual([...firstListFiles(manifest, "browser", ["cards"])].sort(), ["cards.js", "entry.js", "filters.js", "formats.js", "properties.js", "shared.js", "storage.js", "yaml.js"].sort());
   for (const mode of ["native", "local-web"]) assert.deepEqual([...firstListFiles(manifest, mode)].sort(), ["entry.js", "shared.js"].sort());
   delete manifest["node_modules/@fontsource-variable/geist-mono/wght.css"];
   assert.doesNotThrow(() => firstListFiles(manifest, "browser"));

@@ -1,7 +1,7 @@
 .ui-tag-directory { --tag-directory-row-height: var(--size-element-sm); --tag-control-size: calc(var(--spacing-1) * 7); --tag-control-gap: calc(var(--spacing-1) / 2); display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 3); min-width: 0; }
 .ui-tag-directory-toolbar { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); }
 .ui-tag-directory-tools { display: flex; gap: var(--spacing-1); }
-.ui-tag-directory-panel { flex: 1; min-width: 0; padding: calc(var(--spacing-1) * 2); border-radius: var(--radius-card); background: var(--color-background-surface); }
+.ui-tag-directory-panel { flex: 1; min-width: 0; padding: calc(var(--spacing-1) * 2); border-radius: var(--radius-item); background: var(--color-background-surface); }
 .ui-tag-directory-tabs { padding-block-start: calc(var(--spacing-1) * 4); }
 .ui-tag-directory-tab-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--spacing-1); margin-inline: calc(var(--spacing-1) * 2); }
 .ui-tag-directory-groups { display: grid; gap: calc(var(--spacing-1) * 6); padding: calc(var(--spacing-1) * 2); }

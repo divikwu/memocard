@@ -1,6 +1,6 @@
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
-import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
+import rehypeSanitize from "rehype-sanitize";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { wikiMarkdown } from "./wiki-markdown";
@@ -9,7 +9,8 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { request } from "./bridge";
 import { externalUrl, internalTarget } from "./urls";
-import { calloutColors, imageColumns } from './import-layout';
+import { imageColumns } from './import-layout';
+import { markdownSchema, markdownTarget } from './markdown-schema';
 import { observeTableOverflow } from './table-overflow';
 
 function ScrollableTable({ children }: { children?: ReactNode }) {
@@ -24,18 +25,19 @@ function ScrollableTable({ children }: { children?: ReactNode }) {
 const markdownCallout: Components["aside"] = ({ children, node }) => <aside data-callout={node?.properties.dataCallout as string | undefined} data-callout-text-color={node?.properties.dataCalloutTextColor as string | undefined} data-callout-icon={String(node?.properties.dataCalloutIcon ?? '').slice(0, 32) || undefined} role="note">{children}</aside>;
 const markdownFigure: Components["figure"] = ({ children, node }) => { const columns = imageColumns(node?.properties.dataImageColumns); return <figure data-image-columns={columns?.join(',')} style={columns ? { gridTemplateColumns: columns.map(column => `${column}fr`).join(' ') } : undefined} role={columns ? 'group' : undefined} aria-label={columns ? '图片组' : undefined}>{children}</figure>; };
 
-export type MarkdownContentProps = { body: string; notePath?: string; onError?: (message: string) => void; interactive?: boolean; components?: Components };
+export type MarkdownContentProps = { body: string; notePath?: string; onError?: (message: string) => void; interactive?: boolean; omitImages?: boolean; components?: Components };
 
-export function MarkdownContent({ body, notePath, onError, interactive = true, components }: MarkdownContentProps) {
+export function MarkdownContent({ body, notePath, onError, interactive = true, omitImages, components }: MarkdownContentProps) {
   const anchorPrefix = `note-${useId()}-`;
   return <ReactMarkdown
     remarkPlugins={[remarkGfm, wikiMarkdown, remarkMath]}
-    rehypePlugins={[rehypeRaw, [rehypeSanitize, { ...defaultSchema, clobberPrefix: anchorPrefix, protocols: { ...defaultSchema.protocols, href: [...(defaultSchema.protocols?.href ?? []), 'memocard-wiki'], src: [...(defaultSchema.protocols?.src ?? []), 'memocard-wiki'] }, tagNames: [...(defaultSchema.tagNames ?? []).filter(tag => !['details', 'summary', 'dl', 'dt', 'dd'].includes(tag)), 'mark', 'abbr', 'kbd', 'sub', 'sup', 'u', 'caption', 'figure', 'figcaption', 'aside'], attributes: { ...defaultSchema.attributes, code: [...(defaultSchema.attributes?.code ?? []), ['className', /^language-./, 'math-inline', 'math-display']], abbr: ['title'], img: [...(defaultSchema.attributes?.img ?? []), ['dataWikiImage', ''], 'dataImageCaption'], figure: [['dataImageColumns', /^\d+(?:\.\d+)?(?:,\d+(?:\.\d+)?){1,2}$/]], aside: [['dataCallout', ...calloutColors], ['dataCalloutTextColor', ...calloutColors], 'dataCalloutIcon'] } }], [rehypeKatex, { output: 'mathml', throwOnError: false, trust: false }]]}
+    rehypePlugins={[rehypeRaw, [rehypeSanitize, { ...markdownSchema, clobberPrefix: anchorPrefix }], [rehypeKatex, { output: 'mathml', throwOnError: false, trust: false }]]}
+    disallowedElements={omitImages ? ["img"] : undefined}
     urlTransform={(url, key, node) => {
       if (key === "href" && url.startsWith("#")) return `#${anchorPrefix}${url.slice(1)}`;
-      const wiki = url.startsWith("memocard-wiki:");
-      let target = url;
-      try { if (wiki) target = decodeURIComponent(url.slice("memocard-wiki:".length)); } catch { return ""; }
+      let link: ReturnType<typeof markdownTarget>;
+      try { link = markdownTarget(url); } catch { return ""; }
+      const { target, wiki } = link;
       if (key === "src") return imageSource(target, notePath ?? "notes/note.md", wiki || node.properties.dataWikiImage != null) ?? "";
       return externalUrl(url) ?? (internalTarget(target) ? `memocard-internal:${encodeURIComponent(JSON.stringify({ target, wiki }))}` : "");
     }}

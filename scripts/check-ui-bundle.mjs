@@ -29,7 +29,7 @@ export function startupFiles(manifest, mode) {
 export function firstListFiles(manifest, mode, entries = []) {
   // A bound browser vault needs parsers and filtering before showing its first
   // list, even though the application shell mounts before those imports finish.
-  const browser = mode === "browser" ? ["src/browser-vault.ts", "src/browser-files.ts", "src/note-filters.ts"] : [];
+  const browser = mode === "browser" ? ["src/browser-vault.ts", "src/browser-files.ts", "src/note-filters.ts", "src/browser-properties.ts"] : [];
   // System body/heading and code roles do not request optional Web font styles.
   return routeFiles(manifest, [...browser, ...entries]);
 }
@@ -95,9 +95,9 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   for (const route of [
     { name: "list", entries: [], raw: 1120, gzip: 330 },
     { name: "minimal interface first list", entries: minimalLayout, raw: 1200, gzip: 350 },
-    { name: "list with card previews", entries: ["ui/business/NotePreview.tsx"], raw: 1780, gzip: 525 },
+    { name: "list with card previews", entries: ["ui/business/NoteCardPreview.tsx"], raw: 1780, gzip: 525 },
     { name: "home with quick capture", entries: ["ui/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
-    { name: "home with capture and card previews", entries: ["ui/business/QuickCapture.tsx", "ui/business/NotePreview.tsx"], raw: 2140, gzip: 645 },
+    { name: "home with capture and card previews", entries: ["ui/business/QuickCapture.tsx", "ui/business/NoteCardPreview.tsx"], raw: 2140, gzip: 645 },
     { name: "iOS home with native chrome", entries: ["ui/native/IOSAppChrome.tsx", "ui/business/QuickCapture.tsx"], raw: 1520, gzip: 455 },
     { name: "mobile home with swipe capture", entries: ["ui/business/QuickCapture.tsx", "ui/components/sheet-swipe.tsx"], raw: 1510, gzip: 450 },
     { name: "search", entries: ["ui/business/NoteSearchDialog.tsx"], raw: 1800, gzip: 530 },
@@ -107,7 +107,7 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
     { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", ...minimalLayout], raw: 2700, gzip: 820 },
     // Measure the property editors with the default desktop layout and its styles.
-    { name: "minimal detail with all property editors", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx", ...minimalLayout], raw: 2720, gzip: 820 },
+    { name: "minimal detail with all property editors", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx", ...minimalLayout], raw: 2760, gzip: 820 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";

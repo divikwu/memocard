@@ -51,6 +51,7 @@ beforeAll(async () => {
 }, 30_000);
 
 beforeEach(() => {
+  localStorage.removeItem("memocard:note-layout");
   document.elementFromPoint = () => null;
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
   Range.prototype.getBoundingClientRect = () => new DOMRect();
@@ -290,7 +291,7 @@ describe("note workspace", () => {
     const card = list.querySelector('[data-slot="card"]');
     expect(card?.className).toContain("ui-note-card");
     expect(within(card as HTMLElement).getByRole("button", { name: "打开 新内容" })).toBeTruthy();
-    expect(within(card as HTMLElement).getByRole("button", { name: "筛选标签 生活" })).toBeTruthy();
+    expect(within(card as HTMLElement).queryByRole("button", { name: "筛选标签 生活" })).toBeNull();
     expect(card?.querySelector("time")?.getAttribute("dateTime")).toBe(note.updatedAt);
     expect(screen.queryByText("编辑")).toBeNull();
   });
@@ -537,8 +538,8 @@ describe("note workspace", () => {
     });
     render(<App />);
     await screen.findByText(note.body);
-    fireEvent.click(screen.getByRole("button", { name: "筛选标签 生活" }));
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, limit: 30 }));
+    fireEvent.click(screen.getByRole("button", { name: "筛选最近标签 生活" }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, includeCardPreview: true, limit: 30 }));
     window.location.hash = "#/settings";
     fireEvent(window, new Event("hashchange"));
     fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));
@@ -1162,6 +1163,7 @@ it('keeps the detail source while updating the current-title breadcrumb', async 
 });
 it('leaves an untouched page created under a tag without writing a note or recovery', async () => {
   render(<App />); await screen.findByText(note.body);
+  fireEvent.click(screen.getByRole('button', { name: '列表布局' }));
   fireEvent.click(screen.getByRole('button', { name: '筛选标签 生活' }));
   await screen.findByRole('heading', { name: '# 生活', level: 1 });
   await createNote();

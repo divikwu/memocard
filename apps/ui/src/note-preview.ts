@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export type NotePreviewProps = { title?: string; body: string; notePath?: string; onError: (message: string) => void; compact?: boolean; showTitle?: boolean; hiddenTags?: string[] };
+export type NotePreviewProps = { title?: string; body: string; notePath?: string; onError: (message: string) => void; compact?: boolean; showTitle?: boolean; hiddenTags?: string[]; plainText?: boolean; omitImages?: boolean };
 
 /** Keep reading available when a timeline preview exceeds its allotted height. */
 export function compactPreviewBody(body: string, hiddenTags: string[]) {
@@ -46,6 +46,7 @@ export function useNotePreview(body: string, compact: boolean, hiddenTags: strin
 export function sameNotePreview(before: NotePreviewProps, after: NotePreviewProps) {
   return before.body === after.body && before.title === after.title && before.notePath === after.notePath
     && before.onError === after.onError && before.compact === after.compact && before.showTitle === after.showTitle
+    && before.plainText === after.plainText && before.omitImages === after.omitImages
     && (before.hiddenTags ?? []).length === (after.hiddenTags ?? []).length
     && (before.hiddenTags ?? []).every((tag, index) => tag === after.hiddenTags?.[index]);
 }

@@ -23,7 +23,7 @@ const compactTableRenderer: Components["table"] = ({ children }) => <div classNa
 const compactPreRenderer: Components["pre"] = ({ children }) => <pre tabIndex={-1}>{children}</pre>;
 const compactTaskRenderer: Components["input"] = ({ checked }) => <span className="note-task-indicator" aria-hidden="true" data-checked={checked === true} />;
 
-export function NoteMarkdown({ compact = false, interactive = true, ...props }: Pick<MarkdownContentProps, "body" | "notePath" | "onError"> & { compact?: boolean; interactive?: boolean }) {
+export function NoteMarkdown({ compact = false, interactive = true, ...props }: Pick<MarkdownContentProps, "body" | "notePath" | "onError" | "omitImages"> & { compact?: boolean; interactive?: boolean }) {
   return <div className="markdown typeset typeset-memocard ui-note-markdown" data-compact={compact || undefined}>
     <MarkdownContent {...props} interactive={interactive} components={interactive ? { img: imageRenderer, pre: preRenderer } : { img: compactImageRenderer, pre: compactPreRenderer, table: compactTableRenderer, input: compactTaskRenderer }} />
   </div>;

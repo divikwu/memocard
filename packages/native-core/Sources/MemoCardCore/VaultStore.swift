@@ -911,12 +911,16 @@ public actor VaultStore {
             if let to, parsed.createdDate >= to { return false }
             if let cursor, let cursorDate, !(date < cursorDate || (date == cursorDate && note.id > cursor.id)) { return false }
             return true
-        }.map(\.note)
+        }
         // Limit actual JSON bytes as well as count. A single large legal note must still advance the cursor.
+        let entries = matches.prefix(limit)
+        let previews = query.includeCardPreview == true ? (try? cardPreviewProperties(entries, snapshot: snapshot)) : nil
         let byteBudget = 2 * 1024 * 1024
         var notesData = Data("[".utf8)
         var page: [Note] = []
-        for note in matches.prefix(limit) {
+        for entry in entries {
+            var note = entry.note
+            note.cardPreview = previews?[note.id]
             let encoded = try encode(note)
             let separatorSize = page.isEmpty ? 0 : 1
             if !page.isEmpty, notesData.count + separatorSize + encoded.count + 1 > byteBudget { break }
@@ -1332,15 +1336,53 @@ public actor VaultStore {
         }
         return (data, values, sha256(data ?? Data()))
     }
+    private func cachedNoteProperties(_ item: ParsedNote) throws -> [NoteProperty] {
+        if let cached = parsedCache[item.note.relativePath], cached.hash == item.note.contentHash, let properties = cached.properties { return properties }
+        // The snapshot already verified the source hash. Only YAML is needed for library options.
+        let properties = try readNoteProperties(Data((item.originalHeader ?? "").utf8)).properties
+        propertyParseMissCount += 1
+        if parsedCache[item.note.relativePath]?.hash == item.note.contentHash { parsedCache[item.note.relativePath]?.properties = properties }
+        return properties
+    }
     private func libraryProperties(_ snapshot: Snapshot) throws -> [NoteProperty] {
-        try snapshot.notes.filter { $0.note.deletedAt == nil }.sorted { $0.note.relativePath < $1.note.relativePath }.flatMap { item in
-            if let cached = parsedCache[item.note.relativePath], cached.hash == item.note.contentHash, let properties = cached.properties { return properties }
-            // The snapshot already verified the source hash. Only YAML is needed for library options.
-            let properties = try readNoteProperties(Data((item.originalHeader ?? "").utf8)).properties
-            propertyParseMissCount += 1
-            if parsedCache[item.note.relativePath]?.hash == item.note.contentHash { parsedCache[item.note.relativePath]?.properties = properties }
-            return properties
+        try snapshot.notes.filter { $0.note.deletedAt == nil }.sorted { $0.note.relativePath < $1.note.relativePath }.flatMap(cachedNoteProperties)
+    }
+    private func cardPreviewProperties(_ entries: ArraySlice<ParsedNote>, snapshot: Snapshot) throws -> [String: CardPreviewProperties] {
+        let page = entries.map { ($0.note.id, (try? cachedNoteProperties($0)) ?? []) }.filter { !$0.1.isEmpty }
+        guard !page.isEmpty else { return [:] }
+        let names = Set(page.flatMap { $0.1.map(\.name) })
+        let (root, _) = try active()
+        let config = try readPropertyDefinitions(root)
+        let layout = try readPropertyLayout()
+        let inferred = names.filter { config.values[$0] == nil }
+        let all = inferred.isEmpty ? [] : snapshot.notes.filter { $0.note.deletedAt == nil }.flatMap { item in
+            ((try? cachedNoteProperties(item)) ?? []).filter { inferred.contains($0.name) }
         }
+        let stored = config.values.filter { names.contains($0.key) && ["text", "image"].contains($0.value.type) }
+        let definitions = try inheritedProperties(all, stored: stored)
+        let byName = Dictionary(uniqueKeysWithValues: definitions.map { ($0.name, $0) })
+        let positions = Dictionary(uniqueKeysWithValues: layout.order.enumerated().map { ($0.element, $0.offset) })
+        var result: [String: CardPreviewProperties] = [:]
+        for (id, properties) in page {
+            let ordered = properties.sorted { a, b in
+                let left = positions["property:" + a.name] ?? Int.max
+                let right = positions["property:" + b.name] ?? Int.max
+                return left == right ? a.name.utf16.lexicographicallyPrecedes(b.name.utf16) : left < right
+            }
+            var preview = CardPreviewProperties()
+            for raw in ordered {
+                guard layout.visibility["property:" + raw.name] != "hidden", raw.type != "unsupported",
+                    let definition = byName[raw.name], ["text", "image"].contains(definition.type) else { continue }
+                let property = raw.type == definition.type ? raw : convertedProperty(raw, definition: PropertyDefinition(type: definition.type, options: definition.options))
+                guard case .text(let value) = property.value else { continue }
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { continue }
+                if property.type == "image" { preview.images.append(value) }
+                else if preview.text == nil { preview.text = trimmed }
+            }
+            if !preview.images.isEmpty || preview.text != nil { result[id] = preview }
+        }
+        return result
     }
     private func effectiveNoteProperties(_ data: Data, snapshot: Snapshot, config: (before: Data?, values: [String: PropertyDefinition], hash: String)) throws -> NoteProperties {
         let raw = try readNoteProperties(data)

@@ -191,3 +191,86 @@ test('property-first new note retains empty fields, zero, false and choice edits
     assert.equal(inherited.split('---')[2].trim(), '');
   } finally { await browser.close(); }
 });
+
+test('home and all-notes cards show one preview and fall through unreadable images in order', { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.addInitScript(() => {
+      window.showDirectoryPicker = () => navigator.storage.getDirectory();
+      localStorage.setItem('memocard:home-layout', 'cards');
+      localStorage.setItem('memocard:note-layout', 'cards');
+    });
+    await page.goto(baseURL);
+    await page.getByRole('button', { name: '创建笔记库', exact: true }).click();
+    await page.getByRole('button', { name: '创建笔记库', exact: true }).waitFor({ state: 'hidden' });
+    await page.evaluate(async () => {
+      const root = await navigator.storage.getDirectory();
+      async function write(directory, name, data) {
+        const stream = await (await directory.getFileHandle(name, { create: true })).createWritable();
+        await stream.write(data);
+        await stream.close();
+      }
+      const assets = await root.getDirectoryHandle('assets', { create: true });
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const ctx = canvas.getContext('2d');
+      for (const [name, color] of [['property.png', '#00ff00'], ['later.png', '#ff0000'], ['body.png', '#0000ff']]) {
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        await write(assets, name, await new Promise(resolve => canvas.toBlob(resolve)));
+      }
+      // A recognized PNG signature with no decodable image data.
+      await write(assets, 'corrupt.png', new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]));
+      const meta = await root.getDirectoryHandle('.memocard');
+      await write(meta, 'property-layout.json', JSON.stringify({
+        order: ['property:missing', 'property:corrupt', 'property:chosen', 'property:later', 'property:hidden', 'property:empty', 'property:z'],
+        visibility: { 'property:hidden': 'hidden' },
+      }));
+      const image = (field, file) => field + ': "./assets/' + file + '" # memocard:type=image\n';
+      const missing = image('missing', 'missing.png') + image('corrupt', 'corrupt.png');
+      const fields = 'a: Alphabetical fallback\nz: "Chosen **literal** text"\nhidden: Hidden text\nempty: "   "\n';
+      const bodyImage = 'BODY CONTENT\n\n![Missing body](./assets/missing-body.png)\n\n![Body cover](./assets/body.png)\n\n![Later image](./assets/later.png)';
+      const rows = [
+        ['Property cover', missing + image('later', 'later.png') + image('chosen', 'property.png') + fields, bodyImage],
+        ['Body cover', missing + fields, bodyImage],
+        ['Text fallback', missing + fields, 'BODY CONTENT\n\n![Broken body](./assets/corrupt.png)'],
+        ['Body fallback', missing, 'BODY CONTENT\n\n![Broken body](./assets/corrupt.png)'],
+      ];
+      for (const [title, header, body] of rows) await write(root, title + '.md', '---\n' + header + '---\n' + body);
+    });
+    const preview = title => page.locator('.ui-note-card').filter({
+      has: page.getByRole('button', { name: '打开 ' + title, exact: true }),
+    }).locator('.ui-note-preview');
+    const color = async card => {
+      const img = card.locator('[data-image-state="loaded"] img');
+      await card.scrollIntoViewIfNeeded();
+      await img.waitFor();
+      assert.equal(await card.locator('img').count(), 1);
+      assert.equal(await card.innerText(), '');
+      return img.evaluate(image => {
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0);
+        return [...ctx.getImageData(0, 0, 1, 1).data];
+      });
+    };
+    for (const route of ['home', 'notes']) {
+      await page.goto(baseURL + '/#/' + route);
+      await page.reload();
+      assert.deepEqual(await color(preview('Property cover')), [0, 255, 0, 255]);
+      assert.deepEqual(await color(preview('Body cover')), [0, 0, 255, 255]);
+      for (const [title, expected] of [['Text fallback', 'Chosen **literal** text'], ['Body fallback', 'BODY CONTENT']]) {
+        const card = preview(title);
+        await card.scrollIntoViewIfNeeded();
+        await card.getByText(expected, { exact: true }).waitFor();
+        assert.equal((await card.innerText()).trim(), expected);
+        assert.equal(await card.locator('img').count(), 0);
+      }
+    }
+    assert.deepEqual(errors, []);
+  } finally { await browser.close(); }
+});

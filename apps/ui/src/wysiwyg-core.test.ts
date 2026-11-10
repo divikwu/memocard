@@ -103,6 +103,19 @@ it('round-trips moved sections while preserving untouched Markdown and raw block
  const reopened=setup(text());expect(reopened.text()).toBe(moved);expect(reopened.editor.state.doc.child(0).textContent).toBe('B');
  editor.commands.undo();expect(text()).toBe(body);editor.commands.redo();expect(text()).toBe(moved);
 });
+it('keeps CRLF separators and the document suffix through repeated edits and block moves', () => {
+ const body = '\r\nfirst\r\n\r\n\r\n<!-- original -->\r\n\r\nlast\r\n\r\n';
+ const {editor,text} = setup(body);
+ editor.commands.insertContentAt(1, 'Edited ');
+ expect(text()).toBe(body.replace('first', 'Edited first'));
+ const last = editor.state.doc.content.size - editor.state.doc.lastChild!.nodeSize;
+ expect(moveRichBlocks(editor, richBlockMoveSources(editor, 0), richBlockAt(editor, last)!, true)).toBe(true);
+ expect(text()).toBe('\r\n<!-- original -->\r\n\r\nlast\r\n\r\nEdited first\r\n\r\n');
+ editor.commands.insertContentAt(editor.state.doc.content.size - 1, '!');
+ expect(text()).toBe('\r\n<!-- original -->\r\n\r\nlast\r\n\r\nEdited first!\r\n\r\n');
+ editor.commands.undo(); editor.commands.undo(); editor.commands.undo();
+ expect(text()).toBe(body);
+});
 it.each(['3. First\n4. Second', '- [x] Done\n  - [ ] Child\n- [ ] Todo'])('moves an entire list preserving numbering or checkbox state: %s',list=>{
  const body=`intro\n\n${list}\n\nafter`,{editor,text}=setup(body);
  let item=0;editor.state.doc.descendants((node,pos)=>{if(['listItem','taskItem'].includes(node.type.name))item=pos;});
