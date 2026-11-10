@@ -8,7 +8,10 @@ const require = createRequire(`${uiRoot}package.json`);
 const { chromium, webkit } = require('playwright');
 let server;
 let baseURL;
-const openNotes = page => page.getByRole('navigation', {name: '顶部导航'}).getByRole('button', {name: '所有笔记', exact: true}).click();
+const openNotes = async page => {
+  await page.getByRole('navigation', {name: '顶部导航'}).getByRole('button', {name: '所有笔记', exact: true}).click();
+  await page.getByRole('menu', {name: '所有笔记', exact: true}).getByRole('menuitem', {name: '所有笔记', exact: true}).click();
+};
 const newNote = async page => {
   await openNotes(page);
   await page.getByRole('button', {name: '新建', exact: true}).click();
@@ -98,7 +101,7 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         await page.getByRole('menuitem', { name: '回收站', exact: true }).click();
         await page.getByRole('button', { name: '查看已删除笔记：Migration filesystem proof', exact: true }).click();
         await page.getByRole('button', { name: '恢复笔记', exact: true }).click();
-        await page.getByRole('button', { name: '所有笔记', exact: true }).click();
+        await openNotes(page);
         await page.getByRole('button', { name: '打开 Migration filesystem proof', exact: true }).waitFor();
         await page.getByText('Persisted through the default UI. migrationproof', { exact: true }).waitFor();
       } else {

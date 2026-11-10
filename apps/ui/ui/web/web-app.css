@@ -4,7 +4,6 @@
 .web-app-shell { height: 100dvh; min-height: 0; overflow: hidden; }
 .web-app-main { --color-background-glass: var(--color-background-body); min-width: 0; min-height: 0; overflow: hidden; background: var(--color-background-body); }
 .web-app-main:has(> .web-app-scroll[data-detail]) { background: var(--color-background-surface); --color-background-glass: var(--color-background-surface); }
-:where(.web-app[data-web-client]) .web-app-main:has(> .web-app-scroll[data-detail]) { margin: var(--spacing-1); border-radius: calc(var(--radius-element) * 1.5); }
 /* Sidebar-10 slots, retaining the existing MemoCard responsive layout. */
 .web-app-main { container-type: inline-size; }
 .web-app-header { --spacing-glass-fade: calc(var(--spacing-1) * 2); position: absolute; inset-inline: 0; top: 0; z-index: 20; display: flex; flex: 0 0 auto; align-items: center; height: calc(var(--spacing-1) * 14); gap: calc(var(--spacing-1) * 2); }
@@ -47,7 +46,6 @@
 .web-page-content > .web-home-mascot { display: flex; justify-content: center; margin-block: calc(var(--spacing-1) * 6) calc(var(--spacing-1) * 2); }
 .web-collection-heading { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-width: 0; padding: 0 calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 2); }
 .web-collection-heading h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-family-heading); font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); line-height: var(--text-heading-2-leading); }
-.web-app[data-interface-theme=minimal] .web-page-content[data-view=notes] .web-collection-heading h1 { font-size: var(--font-size-3xl); }
 .web-collection-tag-icon { background-color: var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); }
 button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) { background-image: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)); }
 .ui-note-toolbar:has(> .web-collection-heading) { flex-wrap: nowrap; }
@@ -72,6 +70,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
   :where(.web-app[data-web-client]) .ui-business-sidebar[data-slot=sidebar-container] { padding: var(--spacing-1); border: 0; }
   :where(.web-app[data-web-client]) .ui-business-sidebar [data-slot=sidebar-inner] { border-radius: calc(var(--radius-element) * 1.5); background: var(--color-background-surface); }
   :where(.web-app[data-web-client]) .ui-business-sidebar [data-slot=sidebar-rail]::after { transform: translateX(-50%); }
+  :where(.web-app[data-web-client]) .web-app-main:has(> .web-app-scroll[data-detail]) { margin: var(--spacing-1); border-radius: calc(var(--radius-element) * 1.5); }
   :where(.web-app[data-web-client]) [data-slot=sidebar][data-state=expanded] ~ .web-app-main:has(> .web-app-scroll[data-detail]) { margin-inline-start: 0; }
   :where(.web-app[data-web-client]) .web-app-shell:has(> .web-app-main > .web-app-scroll[data-detail]) > [data-slot=sidebar][data-state=expanded] [data-slot=sidebar-rail]::after { transform: translateX(calc(-50% - var(--spacing-1) / 2)); }
   .web-app-main::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; z-index: 20; height: var(--spacing-glass-fade); pointer-events: none; mask-image: linear-gradient(to top, var(--color-black), transparent); }
@@ -109,7 +108,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
 }
 .web-note-loading-property { display: grid; grid-template-columns: min(35%, 10rem) minmax(0, 1fr); gap: calc(var(--spacing-1) * 2); align-items: center; min-block-size: var(--size-element-sm); }
 .web-note-loading-body { display: grid; gap: calc(var(--spacing-1) * 2); margin-block-start: calc(var(--spacing-1) * 6); padding-inline: calc(var(--spacing-1) * 2); }
-.web-mobile-record { position: absolute; inset-inline: 0; bottom: 0; z-index: 10; display: flex; flex: 0 0 auto; align-items: center; gap: calc(var(--spacing-1) * 2); padding: calc(var(--spacing-1) * 2) max(calc(var(--spacing-1) * 4), env(safe-area-inset-right)) calc(var(--spacing-1) * 3 + env(safe-area-inset-bottom)) max(calc(var(--spacing-1) * 4), env(safe-area-inset-left)); background: transparent; }
+.web-mobile-record { position: absolute; inset-inline: 0; bottom: 0; z-index: 10; display: flex; flex: 0 0 auto; align-items: center; gap: calc(var(--spacing-1) * 2); padding-block: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 3 + env(safe-area-inset-bottom)); background: transparent; }
 .web-mobile-record::before { content: ""; position: absolute; inset-inline: 0; bottom: 0; pointer-events: none; }
 .web-mobile-record[hidden] { display: none; }
 .web-mobile-record > div:not([data-slot=action-group]) { flex: 1; min-width: 0; }
@@ -127,7 +126,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
 @media (max-width: 767px) {
   .web-notice { flex-direction: column; align-items: stretch; }
   .web-workspace-actions { width: 100%; grid-auto-flow: row; }
-  .web-app-header { display: grid; grid-template-columns: calc(var(--spacing-1) * 22) minmax(0, 1fr) calc(var(--spacing-1) * 22); gap: var(--spacing-1); padding-inline: calc(var(--spacing-1) * 3); }
+  .web-app-header { display: grid; grid-template-columns: calc(var(--spacing-1) * 22) minmax(0, 1fr) calc(var(--spacing-1) * 22); gap: var(--spacing-1); }
   :where(.web-app[data-web-client]) .web-app-header { grid-template-columns: calc(var(--size-element-md) * 2 + var(--spacing-1)) minmax(0, 1fr) calc(var(--size-element-md) * 2 + var(--spacing-1)); }
   .web-app-main:has(> .web-mobile-record:not([hidden])) > .web-app-scroll { padding-block-end: calc(var(--spacing-1) * 17 + env(safe-area-inset-bottom)); scroll-padding-block-end: calc(var(--spacing-1) * 17 + var(--spacing-glass-fade) + env(safe-area-inset-bottom)); }
   .web-header-leading { display: contents; }
@@ -167,7 +166,9 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
 .web-drafts-dialog > :is([data-slot=dialog-header], [data-slot=dialog-footer], .web-notice, .ui-page-notice) { flex-shrink: 0; }
 .web-drafts-list { flex: 1; }
 @media (max-width: 767px) {
-  .web-app-header { padding-left: max(calc(var(--spacing-1) * 3), env(safe-area-inset-left)); padding-right: max(calc(var(--spacing-1) * 3), env(safe-area-inset-right)); }
+  .web-app-main { --mobile-page-gutter: calc(var(--spacing-1) * 3); }
+  .web-app-header, .web-mobile-record { padding-left: max(var(--mobile-page-gutter), env(safe-area-inset-left)); padding-right: max(var(--mobile-page-gutter), env(safe-area-inset-right)); }
+  .web-app-scroll:not([data-detail]) { --page-gutter: var(--mobile-page-gutter); }
   .web-app-scroll[data-detail] { --page-gutter: calc(var(--spacing-1) * 2); }
   .web-page-content[data-detail] { --note-measure: 100%; }
   /* Keep keyboard focus inside the scroll clip, overriding list/image inline positioning. */
