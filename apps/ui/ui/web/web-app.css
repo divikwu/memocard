@@ -40,12 +40,16 @@
 .web-page-content > :is(.web-notice, .ui-page-notice):has(+ :is(.web-notice, .ui-page-notice)) { margin-block-end: calc(var(--spacing-1) * 2); }
 .web-page-content > :is(.web-notice, .ui-page-notice):has(+ .web-collection-heading, + .ui-note-collection > .ui-note-toolbar > .web-collection-heading) { margin-block-end: calc(var(--spacing-1) * 8); }
 .web-page-content[data-view=home] > .ui-quick-capture { max-width: 48rem; margin-inline: auto; margin-block-end: calc(var(--spacing-1) * 14); }
-.web-page-content:is([data-view=home], [data-view=notes], [data-view=tags]):not([data-detail]) { max-width: var(--workspace-max-width, 80rem); }
+.web-page-content:is([data-view=home], [data-view=notes], [data-view=tags], [data-view=trash]):not([data-detail]) { max-width: var(--workspace-max-width, 80rem); }
 .web-page-content[data-view=home]:not([data-detail]) { padding-block-start: calc(var(--spacing-1) * 4); }
 .web-page-content[data-detail] { max-width: var(--note-measure, 45rem); }
 .web-page-content > .web-home-mascot { display: flex; justify-content: center; margin-block: calc(var(--spacing-1) * 6) calc(var(--spacing-1) * 2); }
 .web-collection-heading { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-width: 0; padding: 0 calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 2); }
 .web-collection-heading h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-family-heading); font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); line-height: var(--text-heading-2-leading); }
+@media (max-width: 767px) {
+  .web-app[data-web-client] .ui-trash > header { justify-content: flex-end; }
+  .web-app[data-web-client] .ui-trash > header > h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 .web-collection-tag-icon { background-color: var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); }
 button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) { background-image: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)); }
 .ui-note-toolbar:has(> .web-collection-heading) { flex-wrap: nowrap; }
@@ -80,7 +84,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
   .web-app-scroll[data-settings] { padding-inline: calc(var(--spacing-1) * 16); }
   :where(.web-app[data-web-client]) .web-page-content:has(.ui-note-list, .ui-tag-directory) { display: flex; flex-direction: column; min-height: 100%; padding-block-end: 0; }
   :where(.web-app[data-web-client]) .web-page-content:has(.ui-note-list, .ui-tag-directory) > * { flex-shrink: 0; }
-  :where(.web-app[data-web-client]) .web-page-content > .ui-tag-directory { flex: 1; }
+  :where(.web-app[data-web-client]) .web-page-content > .ui-tag-directory { flex: 1; padding-block-end: calc(var(--spacing-1) * 4); }
   :where(.web-app[data-web-client]) .web-page-content > .ui-note-collection:has(.ui-note-list) { flex: 1; }
   :where(.web-app[data-web-client]) .ui-note-collection:has(.ui-note-list) :is([data-slot=tabs-content]:not([hidden]), .ui-note-results) { display: flex; flex-direction: column; flex: 1; }
   :where(.web-app[data-web-client]) .ui-note-list { flex: 1; }

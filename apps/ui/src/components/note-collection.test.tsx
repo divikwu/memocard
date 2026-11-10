@@ -64,10 +64,9 @@ it("shows titles, clickable tags and trailing time in the list and restores cont
   expect(props.onLoadMore).toHaveBeenCalledOnce();
   await user.click(screen.getByRole("button", { name: "卡片布局" }));
   expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
-  expect(screen.getByText(note.body)).toBeTruthy();
+  expect(await screen.findByText(note.body)).toBeTruthy();
   expect(screen.getByText("10月10日 16:00")).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "筛选标签 生活" }));
-  expect(props.onSelectTag).toHaveBeenCalledWith("生活");
+  expect(screen.queryByRole("button", { name: "筛选标签 生活" })).toBeNull();
 });
 
 it("opens the existing new-note flow only when creation is available", async () => {
@@ -100,8 +99,8 @@ it("switches the grouped layout controls with keyboard activation", async () => 
   expect(screen.getByText(note.body)).toBeTruthy();
 });
 
-it.each(["cards", "list"])("shows at most two tags and the remaining count in %s layout", layout => {
-  localStorage.setItem("memocard:note-layout", layout);
+it("shows at most two tags and the remaining count in list layout", () => {
+  localStorage.setItem("memocard:note-layout", "list");
   render(<NoteCollection {...props} notes={[{ ...note, tags: ["生活", "思考", "写作", "灵感"] }]} />);
   expect(screen.getByRole("button", { name: "筛选标签 生活" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "筛选标签 思考" })).toBeTruthy();

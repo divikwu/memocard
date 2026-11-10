@@ -40,7 +40,7 @@ it("uses the UI body font for card titles and the compact reading recipe for rea
   independent.remove();
 });
 
-it("keeps Badge tag filtering independent of card opening with Enter and Space in both persisted layouts", async () => {
+it("opens notes from either layout and filters with a list Badge using Enter and Space", async () => {
   const user = userEvent.setup();
   const model = props();
   render(<NoteCollection {...model} />);
@@ -48,16 +48,18 @@ it("keeps Badge tag filtering independent of card opening with Enter and Space i
     if (layout === "list") await user.click(screen.getByRole("button", { name: "列表布局" }));
     const list = screen.getByRole("list", { name: "笔记列表" });
     expect(list.getAttribute("data-layout")).toBe(layout);
-    const tag = within(list).getByRole("button", { name: "筛选标签 设计" });
-    expect(tag.getAttribute("data-slot")).toBe("badge");
-    tag.focus();
-    await user.keyboard("{Enter} ");
-    expect(model.onOpen).toHaveBeenCalledTimes(layout === "cards" ? 0 : 2);
+    if (layout === "list") {
+      const tag = within(list).getByRole("button", { name: "筛选标签 设计" });
+      expect(tag.getAttribute("data-slot")).toBe("badge");
+      tag.focus();
+      await user.keyboard("{Enter} ");
+      expect(model.onSelectTag).toHaveBeenCalledTimes(2);
+      expect(model.onOpen).toHaveBeenCalledTimes(2);
+    }
     const open = within(list).getByRole("button", { name: "打开 集合的界面标题" });
     open.focus();
     await user.keyboard("{Enter} ");
   }
-  expect(model.onSelectTag).toHaveBeenCalledTimes(4);
   expect(model.onOpen).toHaveBeenCalledTimes(4);
   expect(localStorage.getItem("memocard:note-layout")).toBe("list");
 });

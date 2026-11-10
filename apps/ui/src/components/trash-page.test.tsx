@@ -40,7 +40,7 @@ it('retains entries after failure and retries with the listed hash',async()=>{
   bridge.request.mockImplementation((op,params)=>op==='restoreNote' && fail ? Promise.reject(new Error('磁盘只读')) : implementation(op,params));
   const user=userEvent.setup();render(<TrashPage {...props}/>);
   await user.click(await screen.findByRole('button',{name:'恢复笔记：旧笔记'}));
-  await screen.findByText('磁盘只读');expect(screen.getByText('正文预览')).toBeTruthy();expect(props.onRestored).not.toHaveBeenCalled();
+  await screen.findByText('磁盘只读');expect(screen.getByRole('button',{name:'查看已删除笔记：旧笔记'})).toBeTruthy();expect(props.onRestored).not.toHaveBeenCalled();
   fail=false;await user.click(screen.getByRole('button',{name:'恢复笔记：旧笔记'}));
   await waitFor(()=>expect(props.onRestored).toHaveBeenCalledOnce());
   expect(bridge.request).toHaveBeenCalledWith('restoreNote',{trashKey:item.trashKey,baseHash:'listed',vaultId:'vault',vaultBinding:'binding'});
@@ -63,7 +63,7 @@ it('requires explicit confirmation and cancel leaves the archive untouched',asyn
   expect(bridge.request.mock.calls.some(([op])=>op==='getTrashedNote')).toBe(false);
   await user.click(within(dialog).getByRole('button',{name:'取消'}));
   await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());
-  expect(screen.getByText('正文预览')).toBeTruthy();expect(bridge.request.mock.calls.some(([op])=>op==='permanentlyDeleteNote')).toBe(false);
+  expect(screen.getByRole('button',{name:'查看已删除笔记：旧笔记'})).toBeTruthy();expect(bridge.request.mock.calls.some(([op])=>op==='permanentlyDeleteNote')).toBe(false);
 });
 it('keeps the confirmation and record on deletion failure, then removes them after confirmed retry',async()=>{
   const implementation=bridge.request.getMockImplementation()!;let fail=true;
@@ -91,7 +91,7 @@ it('prevents duplicate permanent deletion and cancellation while pending',async(
   removed=true;resolve({deleted:true});await screen.findByText('回收站是空的');
 });
 it('hides permanent deletion for services without the capability',async()=>{
-  render(<TrashPage {...props}/>);await screen.findByText('正文预览');expect(screen.queryByRole('button',{name:/永久删除笔记/})).toBeNull();
+  render(<TrashPage {...props}/>);await screen.findByRole('button',{name:'查看已删除笔记：旧笔记'});expect(screen.queryByRole('button',{name:/永久删除笔记/})).toBeNull();
 });
 
 

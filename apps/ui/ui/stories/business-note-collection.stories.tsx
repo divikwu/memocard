@@ -63,8 +63,14 @@ export const ColoredTags: Story = {
   beforeEach: () => {
     const key = "memocard:tag-colors:ui-collection-color-story";
     const previous = localStorage.getItem(key);
+    const layoutKey = "memocard:note-layout";
+    const previousLayout = localStorage.getItem(layoutKey);
     localStorage.setItem(key, JSON.stringify({ "area/coffee": "blue" }));
-    return () => { if (previous === null) localStorage.removeItem(key); else localStorage.setItem(key, previous); };
+    localStorage.setItem(layoutKey, "list");
+    return () => {
+      if (previous === null) localStorage.removeItem(key); else localStorage.setItem(key, previous);
+      if (previousLayout === null) localStorage.removeItem(layoutKey); else localStorage.setItem(layoutKey, previousLayout);
+    };
   },
 };
 export const ColoredTagsRegression: Story = {

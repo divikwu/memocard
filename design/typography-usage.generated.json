@@ -362,11 +362,6 @@
           "value": "var(--font-family-code)"
         },
         {
-          "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash-open .ui-trash-path",
-          "value": "var(--font-family-code)"
-        },
-        {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-code",
           "value": "var(--font-family-code)"
@@ -421,11 +416,6 @@
         {
           "source": "apps/ui/ui/business/trash.css",
           "scope": ".ui-trash h1",
-          "value": "var(--font-family-heading)"
-        },
-        {
-          "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash-open h2",
           "value": "var(--font-family-heading)"
         },
         {
@@ -1037,7 +1027,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/trash.css",
-          "scope": "@media (max-width: 767px) → .ui-trash h1",
+          "scope": ".ui-trash h1",
           "value": "var(--font-size-2xl)"
         },
         {
@@ -1072,11 +1062,6 @@
       "value": "var(--font-size-3xl)",
       "utilities": [],
       "locations": [
-        {
-          "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash h1",
-          "value": "var(--font-size-3xl)"
-        },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-3",
@@ -1286,11 +1271,6 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash-open h2",
-          "value": "var(--font-size-lg)"
-        },
-        {
           "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-lg",
           "value": "var(--font-size-lg)"
@@ -1477,6 +1457,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview-text",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteDeleteDialog.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1603,7 +1588,7 @@
         },
         {
           "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash-open p",
+          "scope": ".ui-trash-title",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1894,11 +1879,6 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-cards .ui-note-tags .ui-note-tag",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-heading time, .ui-note-list-date",
           "value": "var(--font-size-xs)"
         },
@@ -2024,7 +2004,7 @@
         },
         {
           "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash-open .ui-trash-path",
+          "scope": ".ui-trash-path, .ui-trash-date",
           "value": "var(--font-size-xs)"
         },
         {
@@ -2604,7 +2584,7 @@
         },
         {
           "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash-open h2",
+          "scope": ".ui-trash-title",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -3612,6 +3592,11 @@
           "variable": "--typeset-leading"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview-text",
+          "value": "var(--text-body-leading)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteOutline.css",
           "scope": ".ui-note-outline-popup .ui-note-outline-link",
           "value": "var(--text-body-leading)"
@@ -3694,6 +3679,11 @@
         {
           "source": "apps/ui/ui/business/tag.css",
           "scope": ".rich-inline-tag, .note-tag-pill",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-title",
           "value": "var(--text-body-leading)"
         },
         {
@@ -3781,6 +3771,11 @@
       "value": "var(--text-heading-2-leading)",
       "utilities": [],
       "locations": [
+        {
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash h1",
+          "value": "var(--text-heading-2-leading)"
+        },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
@@ -3964,6 +3959,11 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ".ui-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
+          "value": "var(--text-supporting-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash-path, .ui-trash-date",
           "value": "var(--text-supporting-leading)"
         },
         {

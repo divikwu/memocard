@@ -21,7 +21,6 @@ try {
   for (const fixture of [
     { name: 'ordinary', tags: 100, properties: 10, bodyChars: 2_000 },
     { name: 'many-tags', tags: 2_000, properties: 10, bodyChars: 2_000 },
-    { name: 'many-tags-collapsed', tags: 2_000, properties: 10, bodyChars: 2_000, collapseSidebarTags: true },
     { name: 'many-properties', tags: 100, properties: 100, bodyChars: 2_000 },
     { name: 'long-note', tags: 100, properties: 10, bodyChars: 100_000 },
   ]) {
@@ -37,7 +36,11 @@ try {
       return await page.evaluate(() => performance.now()) - start;
     };
     try {
-      await page.addInitScript(() => { window.showDirectoryPicker = () => navigator.storage.getDirectory(); });
+      await page.addInitScript(() => {
+        window.showDirectoryPicker = () => navigator.storage.getDirectory();
+        // Use the classic layout's direct sidebar actions for repeatable navigation.
+        localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: 'classic' }));
+      });
       await page.goto(baseURL, { waitUntil: 'networkidle' });
       await page.getByRole('button', { name: '创建笔记库', exact: true }).click();
       await page.getByRole('button', { name: '创建笔记库', exact: true }).waitFor({state: 'hidden'});
@@ -55,7 +58,6 @@ try {
       await page.reload({ waitUntil: 'networkidle' });
       await page.getByRole('button', { name: '所有笔记', exact: true }).click();
       await page.getByRole('button', { name: '打开 Audit', exact: true }).waitFor();
-      if (fixture.collapseSidebarTags) await page.getByRole('button', {name: '标签', exact: true, expanded: true}).click();
       const openNoteMs = await elapsed(async () => {
         await page.getByRole('button', { name: '打开 Audit', exact: true }).click();
         await page.waitForFunction(() => document.querySelector('[aria-label="笔记内容"]')?.textContent?.includes('AUDIT_END'));
@@ -92,7 +94,7 @@ try {
       if (fixture.tags > 100) assert.ok(mountedTagOptions < 40, 'Large tag lists must mount only a bounded viewport');
       const search = page.getByRole('combobox', { name: '搜索或新建属性标签', exact: true });
       const filterMs = [];
-      for (const query of ['a', 'ar', 'are', 'area/t', 'area/ta']) filterMs.push(await elapsed(async () => {
+      for (const query of ['a', 'ar', 'are', 'tag', 'tag0']) filterMs.push(await elapsed(async () => {
         await search.fill(query);
         await page.getByRole('option', { name: `新建标签 ${query}`, exact: true }).waitFor();
       }));

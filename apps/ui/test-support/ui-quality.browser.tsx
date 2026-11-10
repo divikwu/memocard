@@ -739,6 +739,7 @@ for (const [kind, block] of [
   const body = `${Array.from({ length: 6 }, (_, index) => `预览段落 ${index + 1}。`).join("\n\n")}\n\n${block}`;
   const view = render(<PreviewModeProvider mode="light"><main className="ui-theme p-4" style={{ width: 384 }}>
     <NoteCollection notes={[{ ...editorNote, body, tags: ["检查"] }]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+    <Button>预览之后</Button>
   </main></PreviewModeProvider>);
   const canvas = within(view.container);
   await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
@@ -750,20 +751,15 @@ for (const [kind, block] of [
   const containers = [preview, ...preview.querySelectorAll<HTMLElement>(".note-preview, .note-preview > div, .ui-note-markdown, .typeset-scroll, pre")];
   const scrollPositions = () => containers.map(element => [element.scrollLeft, element.scrollTop]);
   const before = scrollPositions();
-  const tag = canvas.getByRole("button", { name: "筛选标签 检查" });
+  const next = canvas.getByRole("button", { name: "预览之后" });
   open.focus();
   for (const [keys, target] of [
-    [server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}", tag],
+    [server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}", next],
     [server.browser === "webkit" ? "{Alt>}{Shift>}{Tab}{/Shift}{/Alt}" : "{Shift>}{Tab}{/Shift}", open],
   ] as const) {
     await userEvent.keyboard(keys);
     expect(scrollPositions()).toEqual(before);
     expect(document.activeElement).toBe(target);
-    if (target === tag) {
-      await Promise.all(tag.getAnimations().map(animation => animation.finished));
-      expectKeyboardOutline(tag, "light");
-      expectUnclippedOutline(tag);
-    }
   }
 });
 
@@ -1108,9 +1104,7 @@ for (const mode of ["light", "dark"] as const) {
     await waitFor(() => expect(getComputedStyle(card).boxShadow).toBe(restingShadow));
     if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
     else await userEvent.tab();
-    const tag = canvas.getByRole("button", { name: "筛选标签 检查" });
-    expect(document.activeElement).toBe(tag);
-    expectKeyboardOutline(tag, mode);
+    expect(document.activeElement).toBe(canvas.getByRole("button", { name: "键盘焦点起点" }));
     expect(getComputedStyle(card).outlineStyle).toBe("none");
     const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
     const group = field.closest('[data-slot="input-group"]')!;
@@ -2993,10 +2987,12 @@ test("Web home and all-notes collections share responsive widths", async () => {
           expect(list.getAttribute("data-layout")).toBe(layout);
           const bounds = list.getBoundingClientRect();
           const item = list.querySelector<HTMLElement>(".ui-note-card")!;
+          const tags = item.querySelector(".ui-note-tags");
+          expect(tags !== null).toBe(layout === "list");
           const sample = {
             left: bounds.left, width: bounds.width, itemWidth: item.getBoundingClientRect().width,
             columns: getComputedStyle(list).gridTemplateColumns,
-            tags: getComputedStyle(item.querySelector(".ui-note-tags")!).display,
+            tags: tags ? getComputedStyle(tags).display : "none",
             date: getComputedStyle(item.querySelector("time")!).display,
           };
           if (route === "home") measurements.set(`${layout}-${width}`, sample);
@@ -3352,7 +3348,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
       const rect = collectionTitle.getBoundingClientRect();
       expect(rect.left + rect.width / 2).toBeCloseTo(673 / 2, 1);
     });
-    await userEvent.click(canvas.getByRole("button", {name: `筛选标签 ${longTag}`}));
+    await userEvent.click(canvas.getByRole("button", {name: `筛选最近标签 ${longTag}`}));
     const tagTitle = await within(header).findByRole("button", {name: `标签操作 ${longTag}`});
     for (const width of [320, 390, 673, 767]) {
       await page.viewport(width, 900);

@@ -16,6 +16,11 @@ public struct VaultError: Error, LocalizedError, Codable, Sendable {
     public var errorDescription: String? { message }
 }
 
+struct CardPreviewProperties: Encodable {
+    var images: [String] = []
+    var text: String?
+}
+
 struct Note: Encodable {
     let title: String?
     let id: String
@@ -27,6 +32,7 @@ struct Note: Encodable {
     let contentHash: String
     let relativePath: String
     let sourceUrl: String
+    var cardPreview: CardPreviewProperties? = nil
 }
 
 struct IndexingProgress: Encodable {
@@ -134,6 +140,7 @@ struct Query: Codable {
     var deleted: Bool?
     var sort: String?
     var pinned: Bool?
+    var includeCardPreview: Bool?
 }
 
 struct PageCursor: Codable {

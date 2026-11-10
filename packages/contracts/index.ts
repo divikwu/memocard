@@ -1,4 +1,5 @@
-export type Note = {id:string; title?:string; body:string; tags:string[]; createdAt:string; updatedAt:string; deletedAt?:string; contentHash:string; relativePath:string; sourceUrl:string};
+export type CardPreviewProperties = {images:string[]; text?:string};
+export type Note = {id:string; title?:string; body:string; tags:string[]; createdAt:string; updatedAt:string; deletedAt?:string; contentHash:string; relativePath:string; sourceUrl:string; cardPreview?:CardPreviewProperties};
 export type TrashItem = {trashKey:string; id:string; title?:string; relativePath:string; deletedAt:string; contentHash:string; preview:string};
 export type TrashNote = {trashKey:string; deletedAt:string; note:Note};
 export type TrashList = {notes:TrashItem[]; issues:{path:string; message:string}[]};
@@ -7,7 +8,7 @@ export type IndexingProgress = {phase:"reading" | "indexing"; processed:number; 
 export type VaultStatus = {connected:boolean; vaultId:string|null; vaultName:string|null; coverage:Coverage; indexing?:IndexingProgress; phase:string; syncState:string; capabilities:string[]};
 export type NoteQuickFilter = "untagged" | "images" | "links";
 export type NoteFilterCounts = Record<NoteQuickFilter, number>;
-export type NoteQuery = {query?:string; tags?:string[]; exactTags?:boolean; quickFilter?:NoteQuickFilter; from?:string; to?:string; limit?:number; cursor?:string; deleted?:boolean; sort?:'createdAt' | 'updatedAt' | 'pinnedAt'; pinned?:boolean};
+export type NoteQuery = {query?:string; tags?:string[]; exactTags?:boolean; quickFilter?:NoteQuickFilter; from?:string; to?:string; limit?:number; cursor?:string; deleted?:boolean; sort?:'createdAt' | 'updatedAt' | 'pinnedAt'; pinned?:boolean; includeCardPreview?:boolean};
 export type TagGroup = { id: string; name: string; tags: string[]; icon?: string; description?: string; color?: "default" | "brown" | "orange" | "yellow" | "green" | "blue" | "purple" | "pink" | "red" };
 export type TagPreferences = {pinned:string[]; icons:Record<string,string>; groups?:TagGroup[]; labels?:Record<string,string>};
 export type TagPreferenceState = TagPreferences & {contentHash:string; initialized:boolean};

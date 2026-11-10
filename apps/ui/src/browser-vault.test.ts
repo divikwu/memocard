@@ -196,6 +196,21 @@ it.each([false,true])('returns the committed property snapshot for value and def
  }
 });
 
+it('keeps the browser collection usable when optional card property layout is unreadable', async () => {
+ const root = await fixture(), notes = await root.getDirectoryHandle('notes');
+ const file = await notes.getFileHandle(`${noteId}.md`);
+ file.bytes = bytes(source(noteId,'Body','summary: From properties\n'));
+ const {core} = harness(root); await call(core,'selectVault');
+ const preview = () => call<NotePage>(core,'queryNotes',{includeCardPreview:true});
+ expect((await preview()).notes[0]?.cardPreview?.text).toBe('From properties');
+ const metadata = await root.getDirectoryHandle('.memocard');
+ const layout = await metadata.getFileHandle('property-layout.json',{create:true});
+ layout.bytes = bytes('{');
+ const [note] = (await preview()).notes;
+ expect(note?.body).toBe('Body');
+ expect(note?.cardPreview).toBeUndefined();
+});
+
 it.each([false,true])('saves inherited tags as properties and recovers them without adding body text (shared=%s)', async shared => {
   const root = shared ? new TestDirectory('shared') : await fixture();
   const h = harness(root); await call(h.core,'selectVault');

@@ -1,4 +1,4 @@
-import type { Coverage, Note, NoteProperty, PropertyChange, PropertyDefinition } from '@memocard/contracts';
+import type { CardPreviewProperties, Coverage, Note, NoteProperty, PropertyChange, PropertyDefinition } from '@memocard/contracts';
 import type { BrowserDirectoryHandle, ParsedBrowserNote } from './browser-files';
 import type { BrowserVaultStorage } from './browser-storage';
 import { BrowserVaultError, canonicalId, fileAt, readBytes, sha256, parseObsidianNote, parseBrowserNote } from './browser-files';
@@ -6,6 +6,8 @@ import { readProperties, patchProperty } from './note-properties';
 import { inheritedProperties, groupProperties, convertedProperty, losslessPropertyConversion, mergedPropertyOptions, newPropertyDefinition, parsePropertyDefinitions, propertyDefinitionPath, validPropertyDefinition, resolvedPropertyDefinition } from './property-definitions';
 import { listAsMultiSelect } from './property-type-change';
 import { commitRename, commitSource, renameSource } from './browser-rename';
+import { isPropertyVisible, orderProperties } from './property-layout';
+import { propertyLayoutOperation } from './browser-property-layout';
 
 const bytes = (value:string) => new TextEncoder().encode(value);
 const invalid = (message:string):never => { throw new BrowserVaultError('INVALID_PROPERTY',message); };
@@ -17,6 +19,42 @@ function cachedProperties(item:ParsedBrowserNote) {
   const data = readProperties(item.header ?? item.source ?? `---\n${item.frontmatter.toString()}---\n`,item.note.contentHash);
   parsedProperties.set(item,data);
   return data;
+}
+
+export async function cardPreviewProperties(root:BrowserDirectoryHandle, compatible:boolean, all:ParsedBrowserNote[], page:Note[], active:()=>Promise<unknown>) {
+  const candidates = new Set(page.map(note => note.id));
+  const properties = (item:ParsedBrowserNote) => {
+    try { return cachedProperties(item).properties; } catch { return []; }
+  };
+  const result = new Map<string, CardPreviewProperties>();
+  const selected = all.filter(item => candidates.has(item.note.id) && properties(item).length);
+  if (!selected.length) return result;
+
+  const metadata = await Promise.all([
+    renameSource(root,propertyDefinitionPath,compatible).then(value => parsePropertyDefinitions(value ?? '')),
+    propertyLayoutOperation('getPropertyLayout',{},root,active),
+  ]);
+  const [config, layout] = metadata;
+  const names = new Set(selected.flatMap(item => properties(item).map(property => property.name)));
+  const inferred = new Set([...names].filter(name => !config[name]));
+  const groups = groupProperties(inferred.size ? all.filter(item => !item.note.deletedAt).flatMap(item => properties(item).filter(property => inferred.has(property.name))) : []);
+  const stored = Object.fromEntries(Object.entries(config).filter(([name, definition]) => names.has(name) && (definition.type === 'text' || definition.type === 'image')));
+  const definitions = new Map(inheritedProperties([],stored,groups).map(definition => [definition.name,definition]));
+  const key = (property:NoteProperty) => `property:${property.name}`;
+  for (const item of selected) {
+    const rows = properties(item).slice().sort((a,b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+    const preview:CardPreviewProperties = {images:[]};
+    for (const raw of orderProperties(rows,layout.order,key)) {
+      const definition = definitions.get(raw.name);
+      if (raw.type === 'unsupported' || !definition || (definition.type !== 'text' && definition.type !== 'image')) continue;
+      const {type,value} = raw.type === definition.type ? raw : convertedProperty(raw,{type:definition.type});
+      if (typeof value !== 'string' || !value.trim() || !isPropertyVisible(layout,key(raw),value)) continue;
+      if (type === 'image') preview.images.push(value);
+      else preview.text ??= value.trim();
+    }
+    if (preview.images.length || preview.text) result.set(item.note.id,preview);
+  }
+  return result;
 }
 export async function propertyOperation(operation:string, params:Record<string,unknown>, binding:{handle:BrowserDirectoryHandle; vaultId:string; binding:string; directoryId:string}, compatible:boolean, storage:BrowserVaultStorage, active:()=>Promise<unknown>, scan:()=>Promise<{parsed:ParsedBrowserNote[]; duplicateIds:Set<string>; coverage:Coverage}>) {
   const {handle:root, vaultId, binding:vaultBinding} = binding;
