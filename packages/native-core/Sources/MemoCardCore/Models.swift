@@ -269,18 +269,19 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
         _ = try parseDate(date)
         deleted = date
     }
-    let body = String(text[end.upperBound...])
+    let header = String(text[..<end.upperBound])
+    let (title, body) = noteContent(String(text[end.upperBound...]), path: relativePath, header: header)
     let tags = try validatedTags(propertyTags(root["tags"]) + inlineTags(body))
     return ParsedNote(note: Note(
-        title: fileTitle(relativePath), id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
+        title: title, id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
         deletedAt: deleted, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(id)?vault=\(vaultID)"
-    ), frontmatter: root, createdDate: createdDate, originalHeader: String(text[..<end.upperBound]))
+    ), frontmatter: root, createdDate: createdDate, originalHeader: header)
 }
 
-func encodedNote(frontmatter: Node, body: String, originalHeader: String? = nil) throws -> Data {
+func encodedNote(frontmatter: Node, body: String, originalHeader: String?, displayTitle: String?) throws -> Data {
     let yaml = try preservingPropertyTypes(Yams.serialize(node: frontmatter, allowUnicode: true), originalHeader: originalHeader)
-    return Data(("---\n" + yaml + "---\n" + body).utf8)
+    return Data(("---\n" + yaml + "---\n" + bodyWithNoteTitle(body, title: displayTitle, newline: "\n")).utf8)
 }
 
 func encode<T: Encodable>(_ value: T) throws -> Data {

@@ -5,7 +5,7 @@ export function safeNoteTitle(title: string): string {
   // Control characters are forbidden in portable filenames.
   // eslint-disable-next-line no-control-regex
   let value = title.normalize('NFC').replace(/[\\/:*?"<>|#^[\]\x00-\x1f\x7f]/g, ' ').trim().replace(/^[. ]+|[. ]+$/g, '');
-  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(value)) value = `_${value}`;
+  if (/^(con|prn|aux|nul|(?:com|lpt)[1-9¹²³])(?:\.|$)/i.test(value)) value = `_${value}`;
   while (new TextEncoder().encode(value).length > 200) value = [...value].slice(0, -1).join('');
   return value || '新内容';
 }
@@ -17,8 +17,11 @@ export function namedNotePath(path: string, title: string, paths: string[]): str
   return next;
 }
 
-export function noteSavePath(save: { id: string; title?: string; body: string; relativePath?: string }, existing: string | undefined, paths: string[], compatible: boolean): string {
-  if (existing) return save.title === undefined || safeNoteTitle(save.title) === fileTitle(existing) ? existing : namedNotePath(existing, save.title, paths);
+export function noteSavePath(save: { id: string; title?: string; relativePath?: string }, existing: { relativePath: string; title?: string } | undefined, paths: string[], compatible: boolean): string {
+  if (existing) {
+    const path = existing.relativePath;
+    return save.title === undefined || save.title === existing.title || safeNoteTitle(save.title) === fileTitle(path) ? path : namedNotePath(path, save.title, paths);
+  }
   const path = save.relativePath ?? `${compatible ? '' : 'notes/'}${save.id}.md`;
   if (save.relativePath && !path.endsWith(`${save.id}.md`)) return path;
   return namedNotePath(path, save.title ?? '', paths);
@@ -34,7 +37,7 @@ export function rewriteNoteLinks(source: string, sourcePath: string, paths: stri
     const matches = linkCandidates(raw, sourcePath, paths, wiki);
     if (matches.length !== 1 || !renames[matches[0]]) return target;
     let next = renames[matches[0]];
-    if (!raw.endsWith('.md')) next = next.slice(0, -3);
+    if (!/\.md$/i.test(raw) && !/\.md$/i.test(fileTitle(next))) next = next.slice(0, -3);
     if (!wiki) {
       const directory = sourcePath.split('/').slice(0, -1), parts = next.split('/');
       while (directory.length && parts.length && directory[0] === parts[0]) { directory.shift(); parts.shift(); }

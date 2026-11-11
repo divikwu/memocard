@@ -40,7 +40,9 @@ func inlineTags(_ body: String) -> [String] {
 }
 
 func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, identity: FileIdentity, modified: Date) throws -> ParsedNote {
-    guard let source = String(data: data, encoding: .utf8) else { throw VaultError(code: "INVALID_NOTE", message: "笔记必须为 UTF-8 Markdown 文件。") }
+    guard let decoded = String(data: data, encoding: .utf8) else { throw VaultError(code: "INVALID_NOTE", message: "笔记必须为 UTF-8 Markdown 文件。") }
+    // Foundation validates UTF-8 but strips a leading BOM. Keep it in the original header.
+    let source = data.starts(with: [0xEF, 0xBB, 0xBF]) ? String(decoding: data, as: UTF8.self) : decoded
     let regex = try! NSRegularExpression(pattern: #"^(?:\uFEFF)?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)"#)
     let match = regex.firstMatch(in: source, range: NSRange(source.startIndex..., in: source))
     var header = source.hasPrefix("\u{FEFF}") ? "\u{FEFF}" : ""
@@ -58,13 +60,17 @@ func parseObsidianNote(_ data: Data, relativePath: String, vaultID: String, iden
             }
         } catch { throw VaultError(code: "INVALID_FRONTMATTER", message: "无法安全读取 YAML 属性。") }
     }
-    let body = String(source.dropFirst(header.count))
+    let (title, body) = noteContent(String(source.dropFirst(header.count)), path: relativePath, header: header)
     let tags = try validatedTags(propertyTags(root["tags"]) + inlineTags(body))
-    return ParsedNote(note: Note(title: fileTitle(relativePath), id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
+    return ParsedNote(note: Note(title: title, id: identity.id, body: body, tags: tags, createdAt: identity.createdAt,
         updatedAt: timestamp(modified), deletedAt: nil, contentHash: sha256(data), relativePath: relativePath,
         sourceUrl: "memocard://note/\(identity.id)?vault=\(vaultID)"), frontmatter: root, createdDate: try parseDate(identity.createdAt), originalHeader: header)
 }
 
-func encodedObsidianNote(_ parsed: ParsedNote?, body: String, title: String? = nil) throws -> Data {
-    return Data(((parsed?.originalHeader ?? "") + body).utf8)
+func encodedObsidianNote(_ parsed: ParsedNote?, body: String, displayTitle: String?) -> Data {
+    var header = withoutLegacyNoteTitle(parsed?.originalHeader ?? "")
+    let newline = header.contains("\r\n") ? "\r\n" : "\n"
+    let content = bodyWithNoteTitle(body, title: displayTitle, newline: newline)
+    if !content.isEmpty, header.hasSuffix("---") { header += newline }
+    return Data((header + content).utf8)
 }

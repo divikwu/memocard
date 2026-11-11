@@ -1147,6 +1147,32 @@ it.each([true, false])('keeps body-only notes unnamed until a title is entered (
   expect(page).toMatchObject({ title: '手动标题', relativePath: `${legacy ? 'notes/' : ''}手动标题.md` });
 });
 
+it.each([true, false])('preserves literal titles across saves and reopen (legacy: %s)', async legacy => {
+  const root = legacy ? await fixture() : new TestDirectory('titles'), h = harness(root);
+  await call(h.core, 'selectVault');
+  const dir = legacy ? 'notes/' : '';
+  const body = '正文';
+  const symbols = '[]*\\/:?"<>|#^';
+  const note = await call<Note>(h.core, 'saveNote', { id: secondId, title: symbols, body, tags: [], baseHash: null });
+  expect(note).toMatchObject({ title: symbols, relativePath: dir + '新内容.md', body });
+  const another = await call<Note>(h.core, 'saveNote', { id: createId(), title: '*', body: '', tags: [], baseHash: null });
+  expect(another).toMatchObject({ title: '*', relativePath: dir + '新内容 (2).md' });
+  const renamed = await call<Note>(h.core, 'saveNote', { ...save(note, body), title: '计划: 100% (v2) + & @ {草稿} 🚀' });
+  expect(renamed.relativePath).toBe(dir + '计划  100% (v2) + & @ {草稿} 🚀.md');
+  const title = renamed.title!.replace(':', '/');
+  const edited = await call<Note>(h.core, 'saveNote', { ...save(renamed, body), title });
+  expect(edited).toMatchObject({ title, relativePath: renamed.relativePath });
+  expect(edited.contentHash).not.toBe(renamed.contentHash);
+  const withProperty = await call<Note>(h.core, 'updateNoteProperty', { id: note.id, baseHash: edited.contentHash, name: 'title', type: 'text', value: 'YAML title', create: true });
+  const reopened = harness(root, h.storage);
+  const saved = await call<Note>(reopened.core, 'saveNote', { ...save(withProperty, '修改正文'), title });
+  expect(saved).toMatchObject({ title, relativePath: renamed.relativePath, body: '修改正文' });
+  expect(await call<Note>(reopened.core, 'getNote', { id: another.id })).toMatchObject({ title: '*', relativePath: another.relativePath });
+  expect((await call<NotePage>(reopened.core, 'queryNotes', { query: '计划/' })).notes.map(item => item.id)).toEqual([note.id]);
+  const deviceName = await call<Note>(reopened.core, 'saveNote', { id: createId(), title: 'COM¹', body: '', tags: [], baseHash: null });
+  expect(deviceName).toMatchObject({ title: 'COM¹', relativePath: dir + '_COM¹.md' });
+});
+
 it('renames with collision suffix, updates references, preserves properties and stable identity after reopen', async () => {
   const root = new TestDirectory('rename'), h = harness(root);
   const original = '---\r\ntitle: independent\r\ncustom: keep\r\n---\r\n# Heading\n[[Old]]';
@@ -1156,13 +1182,53 @@ it('renames with collision suffix, updates references, preserves properties and 
   await call(h.core, 'selectVault');
   const note = (await call<NotePage>(h.core, 'queryNotes')).notes.find(note => note.title === 'Old')!;
   const saved = await call<Note>(h.core, 'saveNote', { ...save(note, note.body), title: 'New' });
-  expect(saved.relativePath).toBe('New (2).md'); expect(saved.title).toBe('New (2)'); expect(saved.id).toBe(note.id);
-  expect((await root.getFileHandle(saved.relativePath)).text).toBe(original.replace('[[Old]]', '[[New (2)]]'));
+  expect(saved.relativePath).toBe('New (2).md'); expect(saved.title).toBe('New'); expect(saved.id).toBe(note.id);
+  expect((await root.getFileHandle(saved.relativePath)).text).toBe(original.replace('# Heading', '<!-- memocard:title=New -->\r\n# Heading').replace('[[Old]]', '[[New (2)]]'));
   expect((await root.getFileHandle('Ref.md')).text).toBe('[[New (2)#Heading|alias]] [text](New%20%282%29.md) `[[Old]]`');
   expect(root.children.has('Old.md')).toBe(false);
   const reopened = harness(root, h.storage);
   expect((await call<Note>(reopened.core, 'getNote', { id: note.id })).relativePath).toBe(saved.relativePath);
   await expect(call(h.core, 'saveNote', { ...save(note), title: 'Stale' })).rejects.toMatchObject({ code: 'HASH_CONFLICT' });
+});
+
+it('keeps older filenames and properties, and retains titles when another editor rewrites YAML', async () => {
+  const root = new TestDirectory('legacy titles'), h = harness(root);
+  const old = new TestFile('Old [draft].md', '\uFEFF---\r\n# keep\r\ntitle: Existing property\r\n---\r\n# Body');
+  const previous = new TestFile('Previous.md', '---\n# memocard:title=Previous%2A\ntitle: Custom property\n---\n# Body');
+  root.children.set(old.name, old); root.children.set(previous.name, previous);
+  await call(h.core, 'selectVault');
+  const { notes } = await call<NotePage>(h.core, 'queryNotes');
+  const oldNote = notes.find(note => note.relativePath === old.name)!;
+  expect(oldNote).toMatchObject({ title: 'Old [draft]', body: '# Body' });
+  const oldSaved = await call<Note>(h.core, 'saveNote', { ...save(oldNote, '# Edited'), title: oldNote.title });
+  expect(oldSaved.relativePath).toBe(old.name);
+  expect(old.bytes).toEqual(bytes('\uFEFF---\r\n# keep\r\ntitle: Existing property\r\n---\r\n# Edited'));
+
+  const previousNote = notes.find(note => note.relativePath === previous.name)!;
+  expect(previousNote).toMatchObject({ title: 'Previous*', body: '# Body' });
+  await call(h.core, 'saveNote', save(previousNote, '# Edited'));
+  expect(previous.text).toBe('---\ntitle: Custom property\n---\n<!-- memocard:title=Previous%2A -->\n# Edited');
+  previous.bytes = bytes(previous.text.replace('title: Custom property', 'title: Revised\ntags: [work]'));
+  const reopened = harness(root, h.storage);
+  expect(await call<Note>(reopened.core, 'getNote', { id: previousNote.id })).toMatchObject({ title: 'Previous*', body: '# Edited', tags: ['work'] });
+});
+
+it('resolves rewritten Wiki and Markdown links when a filename stem ends in .md', async () => {
+  const root = new TestDirectory('rename extensions'), h = harness(root);
+  const folder = await root.getDirectoryHandle('Folder', { create: true });
+  folder.children.set('Old.md', new TestFile('Old.md', '# Heading\n[[Folder/Old|self]]'));
+  folder.children.set('Spec 100%.md', new TestFile('Spec 100%.md', 'Other note'));
+  folder.children.set('Spec 100%.md.md.md', new TestFile('Spec 100%.md.md.md', 'Also different'));
+  const ref = new TestFile('Ref.md', '[[Folder/Old#Heading|alias]] [label](Folder/Old#Heading) `[[Folder/Old]]`');
+  root.children.set(ref.name, ref);
+  await call(h.core, 'selectVault');
+  const note = (await call<NotePage>(h.core, 'queryNotes')).notes.find(item => item.relativePath === 'Folder/Old.md')!;
+  const saved = await call<Note>(h.core, 'saveNote', { ...save(note, note.body), title: 'Spec 100%.md*' });
+  expect(saved).toMatchObject({ title: 'Spec 100%.md*', relativePath: 'Folder/Spec 100%.md.md', body: '# Heading\n[[Folder/Spec 100%.md.md|self]]' });
+  expect(ref.text).toBe('[[Folder/Spec 100%.md.md#Heading|alias]] [label](Folder/Spec%20100%25.md.md#Heading) `[[Folder/Old]]`');
+  for (const [target, wiki] of [['Folder/Spec 100%.md.md#Heading', true], ['Folder/Spec%20100%25.md.md#Heading', false]] as const) {
+    expect(await call(h.core, 'resolveLink', { target, sourcePath: 'Ref.md', wiki })).toMatchObject({ id: note.id, path: saved.relativePath });
+  }
 });
 
 it('recovers an interrupted rename before scanning and preserves external edits', async () => {

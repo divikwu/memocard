@@ -998,7 +998,7 @@ public actor VaultStore {
         if existing == nil && request.baseHash == nil && (requestedPath == nil || requestedPath!.hasSuffix(id + ".md")) {
             requestedPath = namedNotePath(requestedPath ?? "\(compatible ? "" : "notes/")\(id).md", title: request.title ?? "", paths: snapshot.notes.map { $0.note.relativePath })
         }
-        if let existing, let title = request.title, safeNoteTitle(title) != fileTitle(existing.note.relativePath) {
+        if let existing, let title = request.title, title != existing.note.title, safeNoteTitle(title) != fileTitle(existing.note.relativePath) {
             let path = namedNotePath(existing.note.relativePath, title: title, paths: snapshot.notes.map { $0.note.relativePath })
             if path != existing.note.relativePath { return try renameNote(request, existing: existing, snapshot: snapshot, to: path, root: root, metadata: metadata) }
         }
@@ -1031,7 +1031,8 @@ public actor VaultStore {
                 frontmatter["createdAt"] = Node(timestamp(), Tag(.str), .doubleQuoted)
             }
             frontmatter["updatedAt"] = Node(timestamp(), Tag(.str), .doubleQuoted)
-            var data = try self.compatible ? encodedObsidianNote(original, body: request.body, title: request.title) : encodedNote(frontmatter: frontmatter, body: request.body, originalHeader: original?.originalHeader)
+            let displayTitle = noteTitleOverride(request.title, original: original, path: self.relative(coordinated, root: root))
+            var data = try self.compatible ? encodedObsidianNote(original, body: request.body, displayTitle: displayTitle) : encodedNote(frontmatter: frontmatter, body: request.body, originalHeader: original?.originalHeader, displayTitle: displayTitle)
             for property in inherited {
                 data = try patchNoteProperty(data, change: PropertyChange(id: id, baseHash: "", name: property.name, type: property.type, value: property.value, remove: nil, create: true, options: property.options))
             }
@@ -1584,7 +1585,8 @@ public actor VaultStore {
         let parsed = try compatible ? parseObsidianNote(original, relativePath: old, vaultID: metadata.vaultId, identity: FileIdentity(id: existing.note.id, path: old, hash: sha256(original), createdAt: existing.note.createdAt), modified: Date()) : parseNote(original, relativePath: old, vaultID: metadata.vaultId)
         var frontmatter = parsed.frontmatter
         if !compatible { frontmatter["updatedAt"] = Node(timestamp(), Tag(.str), .doubleQuoted) }
-        let encoded = try compatible ? encodedObsidianNote(parsed, body: request.body) : encodedNote(frontmatter: frontmatter, body: request.body, originalHeader: parsed.originalHeader)
+        let displayTitle = noteTitleOverride(request.title, original: parsed, path: path)
+        let encoded = try compatible ? encodedObsidianNote(parsed, body: request.body, displayTitle: displayTitle) : encodedNote(frontmatter: frontmatter, body: request.body, originalHeader: parsed.originalHeader, displayTitle: displayTitle)
         let data = Data(rewriteNoteLinks(String(decoding: encoded, as: UTF8.self), sourcePath: old, paths: paths, renames: renames).utf8)
         guard data.count <= 8 * 1024 * 1024 else { throw VaultError(code: "NOTE_TOO_LARGE", message: "单条 Markdown 最大支持 8 MiB。") }
         var changes = [RenameChange(path: path, before: nil, after: data)]
@@ -2056,27 +2058,7 @@ public actor VaultStore {
                 }
             }
         }
-        func normalized(_ value: String) -> String? {
-            var parts: [String] = []
-            for part in value.split(separator: "/", omittingEmptySubsequences: false) {
-                if part == "." || part.isEmpty { continue }
-                if part == ".." { guard !parts.isEmpty else { return nil }; parts.removeLast() }
-                else { guard !part.hasPrefix(".") else { return nil }; parts.append(String(part)) }
-            }
-            return parts.joined(separator: "/")
-        }
-        let directory = sourcePath.split(separator: "/").dropLast().joined(separator: "/")
-        let relativeTarget = directory.isEmpty ? decoded : directory + "/" + decoded
-        var matches: [String] = []
-        for candidate in wiki ? [decoded, relativeTarget] : [relativeTarget, decoded] {
-            if let path = normalized(candidate) {
-                matches = paths.filter { $0 == path || $0 == path + ".md" }
-                if !matches.isEmpty { break }
-            }
-        }
-        if matches.isEmpty && wiki && !decoded.hasPrefix("/") && !decoded.split(separator: "/").contains(where: { $0.hasPrefix(".") }) {
-            matches = paths.filter { $0.hasSuffix("/" + decoded) || $0.hasSuffix("/" + decoded + ".md") }
-        }
+        let matches = noteLinkCandidates(raw, sourcePath: sourcePath, paths: paths, wiki: wiki)
         guard matches.count == 1 else { throw VaultError(code: matches.isEmpty ? "LINK_NOT_FOUND" : "AMBIGUOUS_LINK", message: matches.isEmpty ? "找不到链接目标。" : "链接匹配多份文件，请使用完整路径。") }
         struct Link: Encodable { let kind: String; let id: String?; let path: String }
         let note = snapshot.notes.first { $0.note.relativePath == matches[0] }?.note

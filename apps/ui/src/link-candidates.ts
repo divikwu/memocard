@@ -18,9 +18,12 @@ export function linkCandidates(target: string, sourcePath: string, paths: string
   for (const root of roots) {
     const path = normalize(root);
     if (!path) continue;
-    const exact = paths.filter(item => item === path || item === `${path}.md`);
+    const exact = paths.filter(item => item === path);
     if (exact.length) return exact;
+    const markdown = paths.filter(item => item === `${path}.md`);
+    if (markdown.length) return markdown;
   }
   if (!wiki || decoded.startsWith("/") || decoded.split("/").some(part => part === ".." || part.startsWith("."))) return [];
-  return paths.filter(path => path.endsWith(`/${decoded}`) || path.endsWith(`/${decoded}.md`));
+  const exact = paths.filter(path => path.endsWith(`/${decoded}`));
+  return exact.length ? exact : paths.filter(path => path.endsWith(`/${decoded}.md`));
 }
