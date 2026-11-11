@@ -15,13 +15,16 @@ import Tick02Icon from "@hugeicons/core-free-icons/Tick02Icon";
 import { useQuickCapture, type QuickCaptureProps } from "../../src/hooks/use-quick-capture";
 import { useCaptureEditor, type CaptureEditorProps } from "../../src/capture-editor";
 import { useRichTagSuggestions } from "../../src/hooks/use-rich-tag-suggestions";
+import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
 import { hasCapture } from "../../src/quick-capture-draft";
 import { assetUrl } from "../../src/urls";
 import { Button } from "../components/button";
 import { CreateButton } from "./CreateButton";
+import { TagOptionLabel, TagOptionSettings } from "./TagOption";
 import { ActionGroup, useMobileActionGroup } from "../components/action-group";
 import { Input } from "../components/input";
 import { InputGroup, InputGroupAddon, InputGroupButton } from "../components/input-group";
+import { useScrollOverflow } from "../hooks/use-scroll-overflow";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/popover";
 import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
 import "./QuickCapture.css";
@@ -34,8 +37,11 @@ function Icon({ name, className }: { name: keyof typeof icons; className?: strin
 
 export function QuickCapture(props: QuickCaptureProps) {
   const mobileActions = useMobileActionGroup();
+  const { preferences } = useTagPreferences(props.vaultId);
   const { tags: options, canImage, onContinue, draftCount = 0, onOpenDrafts, docked = false, active = true } = props;
   const { expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
+  const [, setTagOptions] = useScrollOverflow(`${matches.length}:${tagQuery}`);
+  const savedTags = new Set(options);
   if (isIOSNative) return null;
   const form = <form className="ui-quick-capture" aria-label="快速输入" aria-busy={busy} onSubmit={event => { event.preventDefault(); void record(); }}>
     <InputGroup className="ui-capture-group border-transparent bg-surface shadow-flat">
@@ -48,7 +54,13 @@ export function QuickCapture(props: QuickCaptureProps) {
         <Popover open={tagPickerOpen} onOpenChange={setTagPickerOpen}><PopoverTrigger render={<InputGroupButton size="sm" className="ui-capture-tool" disabled={blocked} aria-label="选择标签" />}><Icon name="tag" /><span>标签</span></PopoverTrigger>
           <PopoverContent align="start" className="ui-capture-tag-picker" aria-label="选择标签" finalFocus={textarea}>
             <Input aria-label="搜索或新建标签" placeholder="搜索或新建标签" value={tagQuery} disabled={blocked} onChange={event => setTagQuery(event.target.value)} />
-            <div className="ui-capture-tag-options">{matches.map(tag => <Button type="button" key={tag} variant="ghost" size="sm" disabled={blocked} aria-pressed={capture.tags.includes(tag)} onClick={() => toggleTag(tag)}><Icon name="tag" /><span>{tag}</span>{capture.tags.includes(tag) && <Icon name="check" />}</Button>)}
+            <div ref={setTagOptions} className="ui-capture-tag-options">
+              {matches.map(tag => <div key={tag} className="ui-capture-tag-row">
+                <Button type="button" variant="ghost" size="sm" className="ui-capture-tag-option" disabled={blocked} aria-pressed={capture.tags.includes(tag)} onClick={() => toggleTag(tag)}>
+                  <TagOptionLabel tag={tag} icon={preferences.icons[tag]} />{capture.tags.includes(tag) && <Icon name="check" />}
+                </Button>
+                {savedTags.has(tag) && <TagOptionSettings tag={tag} vaultId={props.vaultId} disabled={blocked} className="ui-capture-tag-more" />}
+              </div>)}
               {normalized && !known.includes(normalized) && <div className="pt-1"><CreateButton className="ui-capture-create-tag h-auto min-h-element-md max-w-full whitespace-normal py-1.5 text-start" disabled={blocked} onClick={() => { toggleTag(normalized); setTagQuery(""); }}><span className="min-w-0 wrap-anywhere">新建标签 {normalized}</span></CreateButton></div>}
               {!known.length && !tagQuery && <p>输入名称，创建第一个标签。</p>}
             </div>

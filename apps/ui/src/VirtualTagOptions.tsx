@@ -13,6 +13,7 @@ export default function VirtualTagOptions({items, virtualizerRef, children}: {it
     getScrollElement: () => list.current,
     getItemKey: index => items[index],
     estimateSize: () => 44,
+    gap: 2,
     overscan: 4,
     rangeExtractor: range => {
       const visible = defaultRangeExtractor(range);

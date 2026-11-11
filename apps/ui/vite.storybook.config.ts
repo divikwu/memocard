@@ -13,9 +13,12 @@ export default defineConfig({
   optimizeDeps: { include: [
     "@tanstack/react-virtual", "react-markdown", "rehype-katex", "rehype-raw", "rehype-sanitize", "remark-gfm", "remark-math",
     ...[
-      "ArrowDown02", "ArrowUp02", "BookOpen01", "Bookmark01", "CheckmarkCircle02", "Code", "Comment01", "Database01", "Fire", "Gift",
-      "Headphones", "Home01", "Leaf01", "Location01", "Mail01", "Moon02", "MusicNote01", "Star", "Subtitle", "Sun01",
-      "Target01", "Task01", "UserGroup",
+      "Archive02", "ArrowDown02", "ArrowUp02", "ArtificialIntelligence01", "BookOpen01", "Bookmark01", "Briefcase01",
+      "CheckmarkCircle02", "Code", "Comment01", "Database01", "Dumbbell01", "Files01", "Fire", "GameController01",
+      "Gift", "Grid2x2", "Headphones", "HeartAdd", "Home01", "LaptopMinimal", "Leaf01", "ListChecks", "Location01",
+      "Mail01", "Moon02", "MusicNote01", "NotebookTabs", "PaintBrush01", "Presentation01", "Restaurant01", "Rocket01",
+      "Settings01", "ShoppingBag01", "SmartPhone01", "Star", "StickyNote01", "Subtitle", "Sun01", "Target01", "Task01",
+      "UserGroup", "Video01", "Wallet01", "Wrench01",
     ].map(icon => `@hugeicons/core-free-icons/${icon}Icon`),
   ] },
   plugins: [{

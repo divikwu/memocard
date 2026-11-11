@@ -111,11 +111,16 @@ function TooltipHintController() {
       if (popup(event.target)) { clearTimeout(closeTimer); return }
       const anchor = find(event.target)
       hovered = anchor?.hasAttribute("data-ui-tooltip-focus-only") ? null : anchor
-      if (hovered && hovered !== current) { dismissed = false; show(hovered) }
+      if (!hovered) return
+      if (hovered === current) clearTimeout(closeTimer)
+      else { dismissed = false; show(hovered) }
     }
     const out = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse" || !current) return
+      if (!popup(event.target) && !(event.target instanceof Node && current.contains(event.target))) return
       if (find(event.relatedTarget) === current || popup(event.relatedTarget)) return
       hovered = null
+      clearTimeout(closeTimer)
       closeTimer = setTimeout(() => show(null), 80)
     }
     const focus = (event: FocusEvent) => {

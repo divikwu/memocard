@@ -33,6 +33,7 @@ import { WebTypographyProvider } from "./WebTypographyProvider";
 import { useNoteAppearance } from "./note-appearance";
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { WorkspaceFrame, LayoutNavigationControls } from "./WorkspaceFrame";
+import { useWorkspaceAppearance } from "./appearance/AppearanceRuntime";
 import "../business/NotePageTitle.css";
 import "./web-app.css";
 
@@ -107,6 +108,7 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
 }
 
 function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppViewState; tagHeading?: ReactNode; noteHeading?: ReactNode }) {
+  const layoutId = useWorkspaceAppearance()?.applied.layoutId;
   if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
   const editor = s.editor;
   if (s.openingNote || editor) return <NoteDetail
@@ -131,7 +133,8 @@ function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppVie
   return <>
     {!s.isMobile && s.view === "home" && s.capture && <Suspense fallback={<PageLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
     {!headingInToolbar && noteHeading}
-    <NoteCollection key={s.view === "home" ? "home" : "notes"} {...s.collection} heading={headingInToolbar ? noteHeading : undefined}>{s.error ? null : <CollectionEmpty state={s} />}</NoteCollection>
+    <NoteCollection key={s.view === "home" ? "home" : "notes"} {...s.collection} heading={headingInToolbar ? noteHeading : undefined}
+      showCreateInToolbar={layoutId !== "topbar"}>{s.error ? null : <CollectionEmpty state={s} />}</NoteCollection>
   </>;
 }
 

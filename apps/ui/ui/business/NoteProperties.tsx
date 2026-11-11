@@ -7,7 +7,7 @@ import { Textarea } from "../components/textarea";
 import { Skeleton } from "../components/skeleton";
 import { PropertyPopover as Popover, PropertyPopoverContent as PopoverContent, PropertyPopoverTrigger as PopoverTrigger } from "./property-popover";
 import { PropertyIconGlyph } from "./property-icon-catalog";
-import { PropertyIconPicker } from "./PropertyIconPicker";
+import { LazyPropertyIconPicker as PropertyIconPicker } from "./LazyPropertyIconPicker";
 import * as menus from "../components/dropdown-menu";
 import * as tooltips from "../components/tooltip";
 import { PageNotice } from "./PageNotice";

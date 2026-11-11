@@ -37,11 +37,12 @@ type PropertyOptionMenuProps = {
   swatch?:boolean;
   normalizeName:(name:string)=>string | null;
   onChangeName?:(from:string,to:string | null)=>Promise<void>;
+  onDelete?:()=>Promise<void>;
   onChangeColor:(color:TagColor)=>void | Promise<void>;
   deleteDescription?:string;
 };
 
-function PropertyOptionMenu({name:tag, kind, color, disabled, swatch, normalizeName, onChangeName, onChangeColor, deleteDescription}:PropertyOptionMenuProps) {
+function PropertyOptionMenu({name:tag, kind, color, disabled, swatch, normalizeName, onChangeName, onDelete, onChangeColor, deleteDescription}:PropertyOptionMenuProps) {
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(tag);
@@ -49,10 +50,13 @@ function PropertyOptionMenu({name:tag, kind, color, disabled, swatch, normalizeN
   const [working, setWorking] = useState(false);
   const pending = useRef(false);
   const normalized = normalizeName(name);
+  const managingTag = kind === '标签' && Boolean(onChangeName);
+  const canDelete = Boolean(onDelete || onChangeName);
   async function change(to:string | null) {
-    if (pending.current || disabled || !onChangeName) return;
+    const save = to === null && onDelete ? onDelete : onChangeName && (() => onChangeName(tag, to));
+    if (pending.current || disabled || !save) return;
     pending.current = true; setWorking(true); setError('');
-    try { await onChangeName(tag, to); setOpen(false); setRemoving(false); }
+    try { await save(); setOpen(false); setRemoving(false); }
     catch (cause) { setError(cause instanceof Error ? errorMessage(cause) : `无法更新${kind}，请重试。`); }
     finally { pending.current = false; setWorking(false); }
   }
@@ -65,13 +69,15 @@ function PropertyOptionMenu({name:tag, kind, color, disabled, swatch, normalizeN
       <DropdownMenuTrigger render={<Button type="button" variant={swatch ? "secondary" : "ghost"} size={swatch ? "icon-sm" : "icon-xs"} disabled={disabled || working} aria-label={onChangeName ? `管理${kind} ${tag}` : `设置${kind}颜色 ${tag}`} className={swatch ? "note-property-icon-trigger border-0" : "note-tag-color-trigger shrink-0"} />}>
         {swatch ? <span aria-hidden="true" className={`note-tag-color-dot note-tag-color-${color}`} /> : <MoreHorizontal className="size-4" />}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={swatch ? "end" : "start"} side={swatch ? "bottom" : "right"} className={onChangeName ? 'note-property-option-menu w-56' : 'note-property-option-menu w-44'} aria-label={onChangeName ? `${kind}设置 ${tag}` : `${kind}颜色 ${tag}`}>
+      <DropdownMenuContent align={swatch ? "end" : "start"} side={swatch ? "bottom" : "right"} sideOffset={managingTag ? 12 : undefined}
+        className={onChangeName ? 'note-property-option-menu w-56' : 'note-property-option-menu w-44'} data-tag-management={managingTag ? '' : undefined}
+        aria-label={onChangeName ? `${kind}设置 ${tag}` : `${kind}颜色 ${tag}`}>
         {onChangeName ? <form className="px-2 py-1.5" onSubmit={event => { event.preventDefault(); if (normalized && normalized !== tag) void change(normalized); }}>
           <Input autoFocus aria-label={`${kind}名称`} value={name} disabled={disabled || working} className="h-8 min-w-0 text-sm" onChange={event => setName(event.target.value)} onFocus={event => event.target.select()} onKeyDown={event => { if (event.key === 'Enter' && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) event.preventDefault(); if (event.key !== 'Escape') event.stopPropagation(); }} />
         </form> : !swatch && <DropdownMenuGroup><DropdownMenuLabel className="truncate" data-ui-tooltip={tag} data-ui-tooltip-overflow><TagPill name={tag} /></DropdownMenuLabel></DropdownMenuGroup>}
-        {onChangeName && <><DropdownMenuItem className="note-property-delete" disabled={disabled || working} onClick={() => { setError(''); setRemoving(true); }}><Trash2 />删除{kind}</DropdownMenuItem><DropdownMenuSeparator /></>}
+        {canDelete && !swatch && <><DropdownMenuItem className="note-property-delete" disabled={disabled || working} onClick={() => { setError(''); setRemoving(true); }}><Trash2 />删除{kind}</DropdownMenuItem><DropdownMenuSeparator /></>}
         <DropdownMenuGroup><DropdownMenuLabel className="text-xs text-secondary">颜色</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={color} onValueChange={async value => {
+        <DropdownMenuRadioGroup className={kind === '标签' ? 'note-tag-color-list' : undefined} value={color} onValueChange={async value => {
           if (pending.current || disabled) return;
           pending.current = true; setWorking(true); setError('');
           try { await onChangeColor(value as TagColor); setOpen(false); }
@@ -89,6 +95,7 @@ function PropertyOptionMenu({name:tag, kind, color, disabled, swatch, normalizeN
       </DropdownMenuContent>
     </DropdownMenu>
     <AlertDialog.Root open={removing} onOpenChange={value => { if (!working) setRemoving(value); }}>
+      {swatch && canDelete && <AlertDialog.Trigger render={<Button type="button" variant="ghost" size="icon-sm" disabled={disabled || working} className="note-property-icon-trigger note-property-delete" aria-label={`删除${kind}`} />} onClick={() => setError('')}><Trash2 /></AlertDialog.Trigger>}
       <ConfirmationPortal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><ConfirmationPopup className="note-property-confirm surface-floating shadow-high"><AlertDialog.Title className="break-words font-semibold">删除{kind}「{tag}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 text-sm text-secondary">{deleteDescription}</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={disabled || working} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-error" disabled={disabled || working} onClick={() => void change(null)}>{working ? '正在删除…' : '确认删除'}</Button></div></ConfirmationPopup></ConfirmationPortal>
     </AlertDialog.Root>
   </>;

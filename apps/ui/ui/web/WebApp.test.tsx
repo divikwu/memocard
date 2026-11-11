@@ -579,10 +579,16 @@ it("retains page headings and the home mascot while showing the disconnected vau
   expect(screen.getByText("只访问你授权的文件夹")).toBeDefined();
 });
 
-it("explains why a new unsaved note cannot be pinned yet", async () => {
+it("creates a note from the top bar and explains why it cannot be pinned until saved", async () => {
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
   const user = userEvent.setup();
   await mount();
-  await user.click(await screen.findByRole("button", { name: "新建笔记" }));
+  await screen.findByRole("navigation", { name: "顶部导航" });
+  const search = screen.getByRole("button", { name: "搜索" });
+  const create = within(search.parentElement!).getByRole("button", { name: "新建笔记" });
+  expect(create.nextElementSibling).toBe(search);
+  expect(screen.queryByRole("button", { name: "新建" })).toBeNull();
+  await user.click(create);
   await screen.findByRole("textbox", { name: "笔记内容" });
   const pin = screen.getByRole("button", { name: "固定到主页" });
   expect(pin).toHaveProperty("disabled", true);
@@ -640,6 +646,9 @@ it("opens the tag directory, search, and quick filters from the default minimal 
   const nav = screen.getByRole("navigation", { name: "顶部导航" });
   await user.click(within(nav).getByRole("button", { name: "标签" }));
   const tags = await screen.findByRole("region", { name: "标签目录" });
+  const search = screen.getByRole("button", { name: "搜索" });
+  const create = within(search.parentElement!).getByRole("button", { name: "新建笔记" });
+  expect(create.nextElementSibling).toBe(search);
   expect(screen.queryByRole("dialog", { name: "浏览标签" })).toBeNull();
   expect(within(tags).queryByRole("textbox", { name: "搜索标签" })).toBeNull();
   await user.click(within(tags).getByRole("button", { name: "查看标签 设计 的笔记" }));
@@ -647,6 +656,7 @@ it("opens the tag directory, search, and quick filters from the default minimal 
   expect(within(nav).getByRole("button", { name: "标签" }).getAttribute("aria-current")).toBe("page");
   await user.click(screen.getByRole("button", { name: "打开 让设计语言走进真实页面" }));
   await screen.findByRole("textbox", { name: "笔记内容" });
+  expect(screen.getByRole("button", { name: "新建笔记" })).toBe(create);
   expect(within(nav).queryByRole("button", { current: "page" })).toBeNull();
   expect(screen.queryByRole("button", { name: "MemoCard，返回主页" })).toBeNull();
   await user.click(screen.getByRole("button", { name: "返回笔记列表" }));

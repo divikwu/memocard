@@ -54,7 +54,9 @@
 | `apps/ui/ui/business/NotePreview.tsx` | 当前笔记摘要 | 安全正文预览、标签独立选择、溢出省略 | editor / preview / type | `apps/ui/ui/business/NoteCollection.recipe.test.tsx`；`apps/ui/ui/stories/business-note-preview.stories.tsx` | 长文、辅助技术与全部嵌套内容未全覆盖 |
 | `apps/ui/ui/business/NoteProperties.tsx` | 当前属性适配 | 字段、排序、可见性、类型转换、命名、只读、日期/图片/标签与错误 | property / state / destructive | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 全部类型转换、时区和系统picker矩阵另验 |
 | `apps/ui/ui/business/NameEditor.tsx` | 通用名称编辑面板 | 属性与标签共用桌面弹窗、移动端底部面板和输入区 | editor / tag / property | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 随属性与标签维护 |
-| `apps/ui/ui/business/PropertyIconPicker.tsx` | 重命名弹层内的属性图标选择器 | 搜索并选择分组图标 | property / overlay / state | `apps/ui/test-support/ui-quality.browser.tsx` | 随属性弹层维护 |
+| `apps/ui/ui/business/LazyPropertyIconPicker.tsx` | 按需加载属性图标选择器 | 在属性弹层中加载共享选择器 | property / overlay / state | `apps/ui/test-support/ui-quality.browser.tsx` | 随属性弹层维护 |
+| `apps/ui/ui/business/PropertyIconPicker.tsx` | 属性与标签图标选择器 | 搜索并选择分组图标 | property / overlay / state | `apps/ui/test-support/ui-quality.browser.tsx`；`apps/ui/ui/business/QuickCapture.test.tsx` | 随属性和标签编辑维护 |
+| `apps/ui/ui/business/TagOption.tsx` | 标签候选项 | 快速记录和属性共用图标、名称和标签外观编辑入口 | property / tag / overlay | `apps/ui/ui/business/QuickCapture.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 随标签选择列表维护 |
 | `apps/ui/ui/business/NoteSearchDialog.tsx` | 当前搜索视图与原生投影 | 共享查询会话；分页、预览、键盘选择与返回位置 | search / type / overlay | `apps/ui/ui/business/note-search.test.tsx`；`apps/ui/ui/stories/business-note-search.stories.tsx` | 真实服务断线、辅助技术与大库性能另验 |
 | `apps/ui/ui/business/PageNotice.tsx` | 当前业务通知组合 | 错误/状态说明、重试与可访问语义 | state / color / type | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/business/TrashPage.test.tsx` | 随页面组合维护，无独立Story |
 | `apps/ui/ui/business/QuickCapture.tsx` | 当前快速记录视图 | 共享草稿/保存；文字、标签、附件、继续页面和H5抽屉 | capture / input / overlay | `apps/ui/ui/business/QuickCapture.test.tsx`；`apps/ui/ui/stories/business-quick-capture.stories.tsx` | 系统图片选择、软键盘与真机手势另验 |
@@ -68,7 +70,8 @@
 | `apps/ui/ui/business/TrashPage.tsx` | 当前回收站视图与原生投影 | 读取、只读预览、恢复、永久删除与确认/失败 | trash / state / destructive | `apps/ui/ui/business/TrashPage.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 真实回收文件和跨进程状态另验 |
 | `apps/ui/ui/business/property-confirmation.tsx` | 当前属性内部控件 | 共享属性控制器的控件/确认/Popover→Sheet适配 | property / overlay / state | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 内部组合无需独立Story；嵌套弹层/软键盘另验 |
 | `apps/ui/ui/business/property-editors.tsx` | 当前属性内部控件 | 共享属性控制器的控件/确认/Popover→Sheet适配 | property / overlay / state | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 内部组合无需独立Story；嵌套弹层/软键盘另验 |
-| `apps/ui/ui/business/property-icon-catalog.tsx` | 属性图标目录 | 分类、可搜索名称、属性图标和文件名 Emoji 渲染 | property / icon | `apps/ui/test-support/ui-quality.browser.tsx` | 随属性弹层维护 |
+| `apps/ui/ui/business/property-icon-catalog.tsx` | 属性与标签图标 | 默认图标、Emoji 与按需加载的已选图标 | property / tag / icon | `apps/ui/test-support/ui-quality.browser.tsx` | 随属性与标签维护 |
+| `apps/ui/ui/business/property-icon-options.tsx` | 按需图标目录 | 分组与搜索名称，供选择器和已选图标共用 | property / tag / icon | `apps/ui/test-support/ui-quality.browser.tsx` | 随图标选择器维护 |
 | `apps/ui/ui/business/property-popover.tsx` | 当前属性内部控件 | 共享属性控制器的控件/确认/Popover→Sheet适配 | property / overlay / state | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 内部组合无需独立Story；嵌套弹层/软键盘另验 |
 | `apps/ui/ui/business/rich-icons.tsx` | 当前编辑器内部适配 | 格式、图片、Callout、代码或图标；保留选区/撤销契约 | editor / selection / content | `apps/ui/ui/business/RichAdapters.test.tsx`；`apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | 内部组合无需独立Story；触摸/IME与复杂选区另验 |
 | `apps/ui/ui/business/sidebar-icons.tsx` | 当前标签导航内部组件 | 标签名称编辑、图标与 Emoji 选择 | sidebar / tag / state | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 内部组件随侧栏组合维护；大树/真实触摸另验 |

@@ -8,8 +8,8 @@
 .web-top-actions { justify-content: flex-end; }
 /* Keep adjacent triggers reachable while a hover menu protects its pointer path. */
 .web-top-links { pointer-events: auto; }
-.web-top-search, .web-top-back { width: calc(var(--spacing-1) * 9); height: calc(var(--spacing-1) * 9); border-radius: var(--radius-full); background: var(--color-background-surface); color: var(--color-black); }
-[data-ui-theme=dark] :is(.web-top-search, .web-top-back) { color: var(--color-text-primary); }
+.web-top-icon { width: calc(var(--spacing-1) * 9); height: calc(var(--spacing-1) * 9); border-radius: var(--radius-full); background: var(--color-background-surface); color: var(--color-black); }
+[data-ui-theme=dark] .web-top-icon { color: var(--color-text-primary); }
 .web-top-menu { width: var(--workspace-menu-width, calc(var(--spacing-1) * 64)); padding: var(--workspace-menu-padding, calc(var(--spacing-1) * 1.5)); }
 .web-top-tags { max-height: min(600px, 75dvh, var(--available-height, 75dvh)); gap: 0; overflow-x: hidden; overflow-y: auto; }
 .web-top-tag-tree { flex-direction: column; min-height: 0; width: 100%; gap: 0; background: transparent; }

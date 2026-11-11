@@ -19,7 +19,8 @@ import { Input } from "../components/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
 import { NameEditor } from "./NameEditor";
-import { IconOptions, useIconPickerScroll } from "./PropertyIconPicker";
+import { useScrollOverflow } from "../hooks/use-scroll-overflow";
+import { IconOptions } from "./PropertyIconPicker";
 import { TagIcon } from "./property-icon-catalog";
 import { PropertyOptionMenu, TagColorMenu } from "./property-editors";
 import { cn } from "../lib/utils";
@@ -62,11 +63,11 @@ export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false, s
   const [geometry, setGeometry] = useState({ columns: 8, tile: 36, gap: 4, padding: 4 });
   const [focusedRow, setFocusedRow] = useState<number | null>(null);
   const { columns, tile, gap, padding } = geometry;
-  const grid = useIconPickerScroll(`${items.length}:${columns}:${tile}`);
+  const [grid, setGrid] = useScrollOverflow(`${items.length}:${columns}:${tile}`);
   const rowCount = Math.ceil(items.length / columns);
   const rows = useVirtualizer<HTMLDivElement, HTMLDivElement>({
     count: rowCount,
-    getScrollElement: () => grid.current,
+    getScrollElement: () => grid,
     estimateSize: () => tile,
     gap,
     paddingStart: padding,
@@ -97,13 +98,13 @@ export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false, s
   });
   useLayoutEffect(() => { rows.measure(); }, [rows, tile]);
   useLayoutEffect(() => {
-    if (grid.current) grid.current.scrollTop = 0;
+    if (grid) grid.scrollTop = 0;
   }, [grid, category, needle]);
   return <section aria-label="选择图标" className="ui-sidebar-emoji-picker">
     {!embedded && <div className="flex items-center justify-between"><span className="text-xs font-normal text-secondary">选择图标</span><Button type="button" size="xs" variant="ghost" aria-label="清除图标" disabled={disabled || !selected} onClick={() => onSelect("")}>清除</Button></div>}
     {!embedded && <Input autoFocus={autoFocus} aria-label="搜索 Emoji" placeholder="搜索 Emoji" value={query} disabled={disabled} onChange={event => setQuery(event.target.value)} onKeyDown={event => submitEmojiSearch(event, query, onSelect)} />}
     {customEmoji && !items.length && <Button type="button" variant="outline" disabled={disabled} onClick={() => onSelect(custom)}>使用 <span className="ui-sidebar-emoji">{custom}</span></Button>}
-    <div ref={grid} role="group" aria-label="Emoji" className={cn("ui-sidebar-emoji-grid icon-picker-scroll-fade", embedded && "note-property-icon-grid")}
+    <div ref={setGrid} role="group" aria-label="Emoji" className={cn("ui-sidebar-emoji-grid icon-picker-scroll-fade", embedded && "note-property-icon-grid")}
       style={{ gridTemplateRows: rowCount ? `repeat(${rowCount}, ${tile}px)` : undefined }}
       onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocusedRow(null); }}>
       {rows.getVirtualItems().flatMap(({ index }) => items.slice(index * columns, (index + 1) * columns).map((item, column) => {
@@ -118,10 +119,14 @@ export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false, s
   </section>;
 }
 
-export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, finalFocus, initialPickerOpen = false, anchorIsTrigger = false, groupAppearance }: {
+export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, onDelete, title, appearanceOnly, busy, finalFocus, initialPickerOpen = false, anchorIsTrigger = false, groupAppearance }: {
   path: string; icon: string; anchor: HTMLElement; mobile: boolean;
   onClose: () => void;
   onSave: (name: string, icon?: string) => Promise<void>;
+  onDelete?: () => Promise<void>;
+  title?: string;
+  appearanceOnly?: boolean;
+  busy?: boolean;
   finalFocus?: () => HTMLElement | false;
   initialPickerOpen?: boolean;
   anchorIsTrigger?: boolean;
@@ -182,14 +187,14 @@ export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, finalFo
   };
   const emoji = icon.startsWith("icon:") ? "" : icon;
   const searchLabel = pickerTab === "emoji" ? "搜索 Emoji" : "搜索图标";
-  return <NameEditor initialName={path} anchor={anchor} anchorIsTrigger={anchorIsTrigger} sheet={mobile}
-    title={groupAppearance ? "编辑群组图标" : "编辑标签"} inputLabel={groupAppearance ? "群组名称" : "标签名称"} maxLength={groupAppearance ? 80 : undefined}
+  return <NameEditor initialName={path} anchor={anchor} anchorIsTrigger={anchorIsTrigger} sheet={mobile} busy={busy}
+    title={title ?? (groupAppearance ? "编辑群组图标" : "编辑标签")} inputLabel={groupAppearance ? "群组名称" : "标签名称"} maxLength={groupAppearance ? 80 : undefined} readOnlyName={appearanceOnly}
     side="right" align="start" initialFocus={initialPickerOpen ? () => search.current : undefined} finalFocus={finalFocus ?? returnFocus}
     onClose={onClose} onSave={rename}
     trailing={disabled => groupAppearance
       ? <PropertyOptionMenu name={path} kind="群组" color={groupAppearance.color ?? "default"} disabled={disabled} swatch
           normalizeName={tagKey} onChangeColor={groupAppearance.onChangeColor} />
-      : <TagColorMenu tag={path} disabled={disabled} swatch />}
+      : <TagColorMenu tag={path} disabled={disabled} swatch onDelete={onDelete} />}
     leading={disabled => <Button ref={pickerTrigger} type="button" variant="secondary" size="icon-sm"
       className={cn("note-property-icon-trigger border-0", groupAppearance?.color && `note-tag-color-${groupAppearance.color}`)}
       data-tag={groupAppearance ? undefined : encodeURIComponent(tagKey(path))} data-group-icon={groupAppearance && ""}

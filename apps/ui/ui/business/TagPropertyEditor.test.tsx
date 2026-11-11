@@ -4,10 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TagPropertyEditor } from './property-editors';
 import { request } from '../../src/bridge';
+import { TagColorProvider } from '../../src/TagColorProvider';
+import { tagPreferenceKey } from '../../src/shared-tag-preferences';
 vi.mock('../../src/bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
 beforeEach(() => {
   vi.mocked(request).mockResolvedValue({tags:[{name:'项目/设计'},{name:'项目/开发'},{name:'work'}]});
   vi.stubGlobal('ResizeObserver',class { observe() {} unobserve() {} disconnect() {} });
+  vi.stubGlobal('matchMedia',vi.fn(() => ({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 async function setup(tags:string[] = [], onSave = vi.fn().mockResolvedValue(undefined)) {
@@ -16,22 +19,54 @@ async function setup(tags:string[] = [], onSave = vi.fn().mockResolvedValue(unde
   await screen.findByRole('option',{name:'属性标签 项目/开发'});
   return {user,onSave,input:screen.getByRole('combobox',{name:'搜索或新建属性标签'})};
 }
-it('merges mixed-case sources and keeps color settings in candidate rows only',async () => {
-  const user = userEvent.setup(), onSave = vi.fn(), onLocateTag = vi.fn();
+it('merges mixed-case sources and shows saved icons and appearance settings in candidate rows',async () => {
+  const user = userEvent.setup(), onSave = vi.fn(), onLocateTag = vi.fn(), onChangeTag = vi.fn(async () => {});
   vi.mocked(request).mockResolvedValue({tags:[{name:'Work'},{name:'WORK'},{name:'AI'},{name:'ai'}]});
-  render(<TagPropertyEditor tags={['Work','work']} bodyTags={['WORK','Body']} busy={false} error="" onSave={onSave} onLocateTag={onLocateTag} />);
-  await screen.findByRole('option',{name:'属性标签 ai'});
+  localStorage.setItem(tagPreferenceKey('property-tags'), JSON.stringify({icons: {ai: '✨'}}));
+  render(<TagColorProvider vaultId="property-tags"><TagPropertyEditor tags={['Work','work']} bodyTags={['WORK','Body']} busy={false} error="" onSave={onSave} onLocateTag={onLocateTag} onChangeTag={onChangeTag} /></TagColorProvider>);
+  const option = await screen.findByRole('option',{name:'属性标签 ai'});
+  expect(option.querySelector('[aria-hidden="true"]')?.textContent).toBe('✨');
   expect(screen.getAllByRole('option')).toHaveLength(1);
   const selected = within(screen.getByRole('toolbar',{name:'已选标签'}));
   expect(selected.getAllByText('work')).toHaveLength(1);
-  expect(selected.queryByRole('button',{name:/设置标签颜色/})).toBeNull();
-  await user.click(screen.getByRole('button',{name:'设置标签颜色 ai'}));
+  expect(selected.queryByRole('button',{name:/管理标签/})).toBeNull();
+  await user.click(screen.getByRole('button',{name:'管理标签 ai'}));
+  const editor = within(await screen.findByRole('dialog',{name:'标签设置 ai'}));
+  await user.click(editor.getByRole('button',{name:'设置标签颜色 ai'}));
   await user.click(await screen.findByRole('menuitemradio',{name:'绿色'}));
+  await user.click(editor.getByRole('button',{name:'删除标签'}));
+  const confirmation = within(await screen.findByRole('alertdialog',{name:'删除标签「ai」？'}));
+  expect(onChangeTag).not.toHaveBeenCalled();
+  await user.click(confirmation.getByRole('button',{name:'取消'}));
+  await user.keyboard('{Escape}');
   expect(onLocateTag).not.toHaveBeenCalled();
   expect(onSave).not.toHaveBeenCalled();
   await user.click(selected.getByRole('button',{name:'定位正文标签 body'}));
   expect(onLocateTag).toHaveBeenCalledWith('body');
+  localStorage.removeItem(tagPreferenceKey('property-tags'));
 });
+
+it('keeps a failed tag deletion visible while refreshing the candidate list and allows retry', async () => {
+  const user = userEvent.setup();
+  const onChangeTag = vi.fn()
+    .mockRejectedValueOnce(new Error('笔记在其他位置修改，请重试。'))
+    .mockImplementationOnce(async () => {
+      vi.mocked(request).mockResolvedValue({tags:[{name:'项目/设计'}]});
+    });
+  render(<TagPropertyEditor tags={[]} busy={false} error="" onSave={vi.fn()} onChangeTag={onChangeTag} />);
+  await user.click(await screen.findByRole('button',{name:'管理标签 work'}));
+  const editor = within(await screen.findByRole('dialog',{name:'标签设置 work'}));
+  await user.click(editor.getByRole('button',{name:'删除标签'}));
+  const confirmation = within(await screen.findByRole('alertdialog',{name:'删除标签「work」？'}));
+  const confirm = confirmation.getByRole('button',{name:'确认删除'});
+  await user.click(confirm);
+  expect((await confirmation.findByRole('alert')).textContent).toBe('笔记在其他位置修改，请重试。');
+  await user.click(confirm);
+  await waitFor(() => expect(screen.queryByRole('option',{name:'属性标签 work'})).toBeNull());
+  expect(screen.getByRole('option',{name:'属性标签 项目/设计'})).toBeDefined();
+  expect(onChangeTag.mock.calls).toEqual([['work',null], ['work',null]]);
+});
+
 it('filters existing tags with an optional hash and ignores case for duplicate creation',async () => {
   const {user,input,onSave} = await setup();
   await user.type(input,'#work');
