@@ -32,7 +32,9 @@ jobs:
   design:
     runs-on: ubuntu-latest
     # The Playwright image supplies browser libraries without using the runner's APT mirrors.
-    container: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      options: --user 1001
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -51,7 +53,9 @@ jobs:
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      options: --user 1001
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
