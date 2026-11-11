@@ -2,10 +2,53 @@ import Foundation
 
 func fileTitle(_ path: String) -> String { (path as NSString).lastPathComponent.replacingOccurrences(of: #"\.md$"#, with: "", options: [.regularExpression, .caseInsensitive]) }
 
+private let legacyTitlePrefix = "# memocard:title="
+private let bodyTitleLine = try! NSRegularExpression(pattern: #"^((?:[ \t]*\r?\n)*)<!-- memocard:title=([^ \r\n]+) -->(?:\r?\n|$)"#)
+
+private func legacyNoteTitle(_ header: String) -> String? {
+    guard let opening = header.firstIndex(where: \.isNewline) else { return nil }
+    let rest = header[header.index(after: opening)...]
+    guard rest.hasPrefix(legacyTitlePrefix), let end = rest.firstIndex(where: \.isNewline) else { return nil }
+    let encoded = String(rest[..<end].dropFirst(legacyTitlePrefix.count))
+    return encoded.isEmpty ? nil : encoded.removingPercentEncoding
+}
+
+func noteContent(_ body: String, path: String, header: String) -> (title: String, body: String) {
+    if let match = bodyTitleLine.firstMatch(in: body, range: NSRange(body.startIndex..., in: body)),
+       let line = Range(match.range, in: body), let blanks = Range(match.range(at: 1), in: body),
+       let encoded = Range(match.range(at: 2), in: body), let title = body[encoded].removingPercentEncoding {
+        return (title, String(body[blanks]) + body[line.upperBound...])
+    }
+    return (legacyNoteTitle(header) ?? fileTitle(path), body)
+}
+
+func noteTitleOverride(_ title: String?, original: ParsedNote?, path: String) -> String? {
+    guard let title = title ?? original?.note.title else { return nil }
+    return title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || title.utf8.elementsEqual(fileTitle(path).utf8) ? nil : title
+}
+
+func withoutLegacyNoteTitle(_ header: String) -> String {
+    guard let opening = header.firstIndex(where: \.isNewline) else { return header }
+    let rest = header[header.index(after: opening)...]
+    guard rest.hasPrefix(legacyTitlePrefix), let end = rest.firstIndex(where: \.isNewline) else { return header }
+    let content = rest[rest.index(after: end)...]
+    if content == "---" || content == "---\n" || content == "---\r\n" {
+        return header.hasPrefix("\u{FEFF}") ? "\u{FEFF}" : ""
+    }
+    return String(header[...opening]) + content
+}
+
+func bodyWithNoteTitle(_ body: String, title: String?, newline: String) -> String {
+    guard let title else { return body }
+    // Keep title metadata outside YAML so an external property edit can rewrite the header.
+    let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
+    return "<!-- memocard:title=" + title.addingPercentEncoding(withAllowedCharacters: allowed)! + " -->" + newline + body
+}
+
 func safeNoteTitle(_ title: String) -> String {
     var value = title.precomposedStringWithCanonicalMapping.replacingOccurrences(of: #"[\\/:*?"<>|#^\[\]\x00-\x1f\x7f]"#, with: " ", options: .regularExpression)
         .trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: ". "))
-    if value.range(of: #"^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)"#, options: [.regularExpression, .caseInsensitive]) != nil { value = "_" + value }
+    if value.range(of: #"^(con|prn|aux|nul|(?:com|lpt)[1-9¹²³])(?:\.|$)"#, options: [.regularExpression, .caseInsensitive]) != nil { value = "_" + value }
     while value.utf8.count > 200 { value.removeLast() }
     return value.isEmpty ? "新内容" : value
 }
@@ -34,11 +77,16 @@ func noteLinkCandidates(_ target: String, sourcePath: String, paths: [String], w
     let relative = directory.isEmpty ? decoded : directory + "/" + decoded
     for candidate in wiki ? [decoded, relative] : [relative, decoded] {
         if let path = normalized(candidate) {
-            let matches = paths.filter { $0 == path || $0 == path + ".md" }
-            if !matches.isEmpty { return matches }
+            let exact = paths.filter { $0 == path }
+            if !exact.isEmpty { return exact }
+            let markdown = paths.filter { $0 == path + ".md" }
+            if !markdown.isEmpty { return markdown }
         }
     }
-    if wiki && !decoded.hasPrefix("/") && !decoded.split(separator: "/").contains(where: { $0.hasPrefix(".") }) { return paths.filter { $0.hasSuffix("/" + decoded) || $0.hasSuffix("/" + decoded + ".md") } }
+    if wiki && !decoded.hasPrefix("/") && !decoded.split(separator: "/").contains(where: { $0.hasPrefix(".") }) {
+        let exact = paths.filter { $0.hasSuffix("/" + decoded) }
+        return exact.isEmpty ? paths.filter { $0.hasSuffix("/" + decoded + ".md") } : exact
+    }
     return []
 }
 
@@ -53,7 +101,7 @@ func rewriteNoteLinks(_ source: String, sourcePath: String, paths: [String], ren
         let raw = String(components[0]), fragment = components.count > 1 ? "#" + components[1] : ""
         let matches = noteLinkCandidates(raw, sourcePath: sourcePath, paths: paths, wiki: wiki)
         guard matches.count == 1, var next = renames[matches[0]] else { return target }
-        if !raw.hasSuffix(".md") { next = String(next.dropLast(3)) }
+        if !raw.lowercased().hasSuffix(".md") && !fileTitle(next).lowercased().hasSuffix(".md") { next = String(next.dropLast(3)) }
         if !wiki {
             var directory = sourcePath.split(separator: "/").dropLast().map(String.init), parts = next.split(separator: "/").map(String.init)
             while !directory.isEmpty && !parts.isEmpty && directory[0] == parts[0] { directory.removeFirst(); parts.removeFirst() }

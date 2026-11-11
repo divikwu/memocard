@@ -1,5 +1,5 @@
 import type { Note } from '@memocard/contracts';
-import { encodeObsidianNote, encodeBrowserNote, parseObsidianNote, parseBrowserNote, type ParsedBrowserNote } from './browser-files';
+import { encodeObsidianNote, encodeBrowserNote, noteTitleOverride, parseObsidianNote, parseBrowserNote, type ParsedBrowserNote } from './browser-files';
 import { rewriteNoteLinks } from './note-files';
 import { propertyDefinitionPath } from './property-definitions';
 import { BrowserVaultError, fileAt, readBytes, sha256, type BrowserDirectoryHandle } from './browser-files';
@@ -87,7 +87,7 @@ export async function commitSource(root: BrowserDirectoryHandle, compatible: boo
   } catch (error) { await recoverRename(root,compatible,storage,scope,active); throw error; }
 }
 
-export async function renameNote(root: BrowserDirectoryHandle, compatible: boolean, storage: BrowserVaultStorage, scope: string, vaultId: string, save: { id: string; body: string; baseHash: string | null }, existing: ParsedBrowserNote, notes: ParsedBrowserNote[], path: string, active: () => Promise<unknown>): Promise<Note> {
+export async function renameNote(root: BrowserDirectoryHandle, compatible: boolean, storage: BrowserVaultStorage, scope: string, vaultId: string, save: { id: string; title?: string; body: string; baseHash: string | null }, existing: ParsedBrowserNote, notes: ParsedBrowserNote[], path: string, active: () => Promise<unknown>): Promise<Note> {
   const textBytes = (value: string) => new TextEncoder().encode(value), now = () => new Date().toISOString();
   const old = existing.note.relativePath, paths = notes.map(item => item.note.relativePath);
   const before = await renameSource(root, old, compatible);
@@ -96,7 +96,8 @@ export async function renameNote(root: BrowserDirectoryHandle, compatible: boole
   const sourceFile = await fileAt(root, old, compatible ? 'vault' : 'notes');
   const original = compatible ? await parseObsidianNote(textBytes(before), old, vaultId, { id: save.id, path: old, hash: save.baseHash!, createdAt: existing.note.createdAt }, (await sourceFile.getFile()).lastModified) : await parseBrowserNote(textBytes(before), old, vaultId);
   if (!compatible) original.frontmatter.set('updatedAt', now());
-  const encoded = compatible ? encodeObsidianNote(original, save.body) : encodeBrowserNote(original.frontmatter, save.body);
+  const title = noteTitleOverride(save.title, original, path);
+  const encoded = compatible ? encodeObsidianNote(original, save.body, title) : encodeBrowserNote(original.frontmatter, save.body, title);
   const after = rewriteNoteLinks(decode(encoded), old, paths, { [old]: path });
   if (textBytes(after).length > 8 * 1024 * 1024) throw new BrowserVaultError('NOTE_TOO_LARGE', '单条 Markdown 最大支持 8 MiB。');
   const changes: import('./browser-storage').RenameJournal['changes'] = [{ path, before: null, after }];

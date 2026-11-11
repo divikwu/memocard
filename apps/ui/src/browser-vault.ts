@@ -467,14 +467,14 @@ export class BrowserVault {
     return this.lock(`memocard:browser:vault:${selected.vaultId}`, async () => {
       this.requireBinding(selected);
       const snapshot = await this.scan(selected);
-      const [{ Document }, { encodeBrowserNote, encodeObsidianNote, parseBrowserNote, parseObsidianNote }] = await Promise.all([import("yaml"), import("./browser-files")]);
+      const [{ Document }, { encodeBrowserNote, encodeObsidianNote, noteTitleOverride, parseBrowserNote, parseObsidianNote }] = await Promise.all([import("yaml"), import("./browser-files")]);
       if (snapshot.duplicateIds.has(save.id)) throw new BrowserVaultError("DUPLICATE_ID", "多份文件使用同一个 ID，无法覆盖保存。");
       if (!snapshot.coverage.complete) throw new BrowserVaultError("SCAN_INCOMPLETE", "笔记库包含不可读或格式异常文件；草稿已保留，处理后再提交。", true);
       const existing = snapshot.parsed.find(({ note }) => note.id === save.id);
       if (!existing && save.baseHash) throw new BrowserVaultError("NOTE_NOT_FOUND", "原文件已移除，不能从旧草稿自动恢复。");
       if (existing?.note.deletedAt) throw new BrowserVaultError("NOTE_DELETED", "此笔记已删除，暂时无法编辑。");
       const { noteSavePath } = await import('./note-files');
-      const requestedPath = noteSavePath(save, existing?.note.relativePath, snapshot.parsed.map(item => item.note.relativePath), this.compatible);
+      const requestedPath = noteSavePath(save, existing?.note, snapshot.parsed.map(item => item.note.relativePath), this.compatible);
       if (existing && requestedPath !== existing.note.relativePath) {
         const path = requestedPath;
         return this.lock(`memocard:browser:index:${this.scope(selected)}`, async () => {
@@ -506,7 +506,8 @@ export class BrowserVault {
           frontmatter = new Document({ id: save.id, createdAt: now() }, { schema: "yaml-1.1" });
         }
         if (!this.compatible) frontmatter.set("updatedAt", now());
-        let bytes = this.compatible ? encodeObsidianNote(original, save.body) : encodeBrowserNote(frontmatter, save.body);
+        const title = noteTitleOverride(save.title, original, path);
+        let bytes = this.compatible ? encodeObsidianNote(original, save.body, title) : encodeBrowserNote(frontmatter, save.body, title);
         let definitionSource:string | null = null;
         if (!existing) {
           const { inheritedProperties, parsePropertyDefinitions, propertyDefinitionPath } = await import('./property-definitions');

@@ -31,6 +31,10 @@ jobs:
         run: node scripts/ci-scope.mjs
   design:
     runs-on: ubuntu-latest
+    # The Playwright image supplies browser libraries without using the runner's APT mirrors.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      options: --user 1001
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -42,20 +46,16 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Prefer Ubuntu archive for browser dependencies
-        run: |
-          sudo sed -i \
-            -e '/azure\.archive\.ubuntu\.com/s/priority:1/priority:2/' \
-            -e '/^https:\/\/archive\.ubuntu\.com/s/priority:2/priority:1/' \
-            /etc/apt/apt-mirrors.txt
-          cat /etc/apt/apt-mirrors.txt
-      - run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm --filter @memocard/ui exec playwright install chromium firefox webkit
       - run: pnpm verify:design
       - run: pnpm verify:ui
   release-web:
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      options: --user 1001
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -68,15 +68,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
-      - name: Prefer Ubuntu archive for browser dependencies
-        run: |
-          sudo sed -i \
-            -e '/azure\.archive\.ubuntu\.com/s/priority:1/priority:2/' \
-            -e '/^https:\/\/archive\.ubuntu\.com/s/priority:2/priority:1/' \
-            /etc/apt/apt-mirrors.txt
-          cat /etc/apt/apt-mirrors.txt
       - name: Install default UI browser verification
-        run: pnpm --filter @memocard/ui exec playwright install --with-deps chromium webkit
+        run: pnpm --filter @memocard/ui exec playwright install chromium webkit
       - run: pnpm verify:web
       - name: Bind Web resources to this revision
         run: node scripts/verified-web.mjs create apps/ui/dist build/verified-web

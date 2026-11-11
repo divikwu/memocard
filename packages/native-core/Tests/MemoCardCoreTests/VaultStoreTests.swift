@@ -3026,12 +3026,54 @@ extension VaultStoreTests {
         let identity = FileIdentity(id: UUID().uuidString.lowercased(), path: "A.md", hash: "", createdAt: timestamp())
         let parsed = try parseObsidianNote(Data(source.utf8), relativePath: "A.md", vaultID: UUID().uuidString, identity: identity, modified: Date())
         XCTAssertEqual(parsed.note.tags, ["old"])
-        let bytes = try encodedObsidianNote(parsed, body: "Body")
+        let bytes = encodedObsidianNote(parsed, body: "Body", displayTitle: nil)
         XCTAssertEqual(String(data: bytes, encoding: .utf8), source)
     }
 }
 
 extension VaultStoreTests {
+    func testLiteralTitlesInPlainVault() async throws {
+        try await assertLiteralTitles(in: store(create: false), directory: "")
+    }
+
+    func testLiteralTitlesInLegacyVault() async throws {
+        try await assertLiteralTitles(in: store(), directory: "notes/")
+    }
+
+    private func assertLiteralTitles(in core: VaultStore, directory: String) async throws {
+        let symbols = "[]*\\/:?\"<>|#^"
+        let initial = try await call(core, "createNote", ["title": symbols, "body": "正文"])
+        XCTAssertEqual(initial["title"] as? String, symbols)
+        XCTAssertEqual(initial["relativePath"] as? String, directory + "新内容.md")
+        let another = try await call(core, "createNote", ["title": "*", "body": ""])
+        XCTAssertEqual(another["title"] as? String, "*")
+        XCTAssertEqual(another["relativePath"] as? String, directory + "新内容 (2).md")
+
+        let id = try XCTUnwrap(initial["id"] as? String)
+        let renamed = try await call(core, "updateNote", ["id": id, "title": "计划: 100% (v2) + & @ {草稿} 🚀", "body": "正文", "baseHash": initial["contentHash"]!])
+        let path = directory + "计划  100% (v2) + & @ {草稿} 🚀.md"
+        XCTAssertEqual(renamed["relativePath"] as? String, path)
+        let title = "计划/ 100% (v2) + & @ {草稿} 🚀"
+        let edited = try await call(core, "updateNote", ["id": id, "title": title, "body": "正文", "baseHash": renamed["contentHash"]!])
+        XCTAssertEqual(edited["title"] as? String, title)
+        XCTAssertEqual(edited["relativePath"] as? String, path)
+        XCTAssertNotEqual(edited["contentHash"] as? String, renamed["contentHash"] as? String)
+
+        let property = try await call(core, "updateNoteProperty", ["id": id, "name": "title", "type": "text", "value": "YAML title", "create": true, "baseHash": edited["contentHash"]!])
+        let reopened = try await store(create: false)
+        let saved = try await save(reopened, id: id, body: "修改正文", hash: property["contentHash"] as? String)
+        XCTAssertEqual(saved["title"] as? String, title)
+        XCTAssertEqual(saved["relativePath"] as? String, path)
+        XCTAssertEqual(saved["body"] as? String, "修改正文")
+        let reread = try await call(reopened, "getNote", ["id": another["id"]!])
+        XCTAssertEqual(reread["title"] as? String, "*")
+        let matches = try await call(reopened, "queryNotes", ["query": "计划/"])
+        XCTAssertEqual((matches["notes"] as? [[String: Any]])?.compactMap { $0["id"] as? String }, [id])
+        let deviceName = try await call(reopened, "createNote", ["title": "COM¹", "body": ""])
+        XCTAssertEqual(deviceName["title"] as? String, "COM¹")
+        XCTAssertEqual(deviceName["relativePath"] as? String, directory + "_COM¹.md")
+    }
+
     func testRenameUpdatesReferencesPreservesPropertiesAndStableIdentity() async throws {
         let core = try await store(create: false)
         let original = "---\r\ntitle: independent\r\ncustom: keep\r\n---\r\n# Heading\n[[Old]]"
@@ -3042,14 +3084,70 @@ extension VaultStoreTests {
         let note = try XCTUnwrap((page["notes"] as? [[String: Any]])?.first { $0["title"] as? String == "Old" })
         let saved = try await call(core, "saveNote", ["id": note["id"]!, "title": "New", "body": note["body"]!, "tags": [], "baseHash": note["contentHash"]!])
         XCTAssertEqual(saved["relativePath"] as? String, "New (2).md")
-        XCTAssertEqual(saved["title"] as? String, "New (2)")
-        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("New (2).md"), encoding: .utf8), original.replacingOccurrences(of: "[[Old]]", with: "[[New (2)]]"))
+        XCTAssertEqual(saved["title"] as? String, "New")
+        let expected = original.replacingOccurrences(of: "# Heading", with: "<!-- memocard:title=New -->\r\n# Heading")
+        XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("New (2).md"), encoding: .utf8), expected.replacingOccurrences(of: "[[Old]]", with: "[[New (2)]]"))
         XCTAssertEqual(try String(contentsOf: vault.appendingPathComponent("Ref.md"), encoding: .utf8), "[[New (2)#Heading|alias]] [text](New%20%282%29.md) `[[Old]]`")
         XCTAssertFalse(FileManager.default.fileExists(atPath: vault.appendingPathComponent("Old.md").path))
         let reopened = try await store(create: false)
         let reread = try await call(reopened, "getNote", ["id": note["id"]!])
         XCTAssertEqual(reread["relativePath"] as? String, "New (2).md")
         await expectCode("HASH_CONFLICT") { _ = try await self.call(core, "saveNote", ["id": note["id"]!, "title": "Stale", "body": "stale", "tags": [], "baseHash": note["contentHash"]!]) }
+    }
+
+    func testOldFileTitleAndYAMLTitleMigrationPreserveSource() async throws {
+        let oldPath = "Old [draft].md"
+        let old = vault.appendingPathComponent(oldPath)
+        let previous = vault.appendingPathComponent("Previous.md")
+        let oldHeader = "\u{FEFF}---\r\n# keep\r\ntitle: Existing property\r\n---\r\n"
+        try Data((oldHeader + "# Body").utf8).write(to: old)
+        try Data("---\n# memocard:title=Previous%2A\ntitle: Custom property\n---\n# Body".utf8).write(to: previous)
+        let core = try await store(create: false)
+        let page = try await call(core, "queryNotes")
+        let notes = try XCTUnwrap(page["notes"] as? [[String: Any]])
+        let oldNote = try XCTUnwrap(notes.first { $0["relativePath"] as? String == oldPath })
+        XCTAssertEqual(oldNote["title"] as? String, "Old [draft]")
+        XCTAssertEqual(oldNote["body"] as? String, "# Body")
+        let saved = try await call(core, "updateNote", ["id": oldNote["id"]!, "title": oldNote["title"]!, "body": "# Edited", "baseHash": oldNote["contentHash"]!])
+        XCTAssertEqual(saved["relativePath"] as? String, oldPath)
+        XCTAssertEqual(try Data(contentsOf: old), Data((oldHeader + "# Edited").utf8))
+
+        let previousNote = try XCTUnwrap(notes.first { $0["relativePath"] as? String == "Previous.md" })
+        XCTAssertEqual(previousNote["title"] as? String, "Previous*")
+        XCTAssertEqual(previousNote["body"] as? String, "# Body")
+        _ = try await save(core, id: previousNote["id"] as! String, body: "# Edited", hash: previousNote["contentHash"] as? String)
+        let migrated = try String(contentsOf: previous, encoding: .utf8)
+        XCTAssertEqual(migrated, "---\ntitle: Custom property\n---\n<!-- memocard:title=Previous%2A -->\n# Edited")
+        try Data(migrated.replacingOccurrences(of: "title: Custom property", with: "title: Revised\ntags: [work]").utf8).write(to: previous, options: .atomic)
+        let reopened = try await store(create: false)
+        let reread = try await call(reopened, "getNote", ["id": previousNote["id"]!])
+        XCTAssertEqual(reread["title"] as? String, "Previous*")
+        XCTAssertEqual(reread["body"] as? String, "# Edited")
+        XCTAssertEqual(reread["tags"] as? [String], ["work"])
+    }
+
+    func testRenameLinksResolveWhenFilenameStemEndsInMarkdownExtension() async throws {
+        let folder = vault.appendingPathComponent("Folder")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("# Heading\n[[Folder/Old|self]]".utf8).write(to: folder.appendingPathComponent("Old.md"))
+        try Data("Other note".utf8).write(to: folder.appendingPathComponent("Spec 100%.md"))
+        try Data("Also different".utf8).write(to: folder.appendingPathComponent("Spec 100%.md.md.md"))
+        let ref = vault.appendingPathComponent("Ref.md")
+        try Data("[[Folder/Old#Heading|alias]] [label](Folder/Old#Heading) `[[Folder/Old]]`".utf8).write(to: ref)
+        let core = try await store(create: false)
+        let page = try await call(core, "queryNotes")
+        let notes = try XCTUnwrap(page["notes"] as? [[String: Any]])
+        let note = try XCTUnwrap(notes.first { $0["relativePath"] as? String == "Folder/Old.md" })
+        let saved = try await call(core, "updateNote", ["id": note["id"]!, "title": "Spec 100%.md*", "body": note["body"]!, "baseHash": note["contentHash"]!])
+        XCTAssertEqual(saved["title"] as? String, "Spec 100%.md*")
+        XCTAssertEqual(saved["relativePath"] as? String, "Folder/Spec 100%.md.md")
+        XCTAssertEqual(saved["body"] as? String, "# Heading\n[[Folder/Spec 100%.md.md|self]]")
+        XCTAssertEqual(try String(contentsOf: ref, encoding: .utf8), "[[Folder/Spec 100%.md.md#Heading|alias]] [label](Folder/Spec%20100%25.md.md#Heading) `[[Folder/Old]]`")
+        for (target, wiki) in [("Folder/Spec 100%.md.md#Heading", true), ("Folder/Spec%20100%25.md.md#Heading", false)] {
+            let result = try await call(core, "resolveLink", ["target": target, "sourcePath": "Ref.md", "wiki": wiki])
+            XCTAssertEqual(result["id"] as? String, note["id"] as? String)
+            XCTAssertEqual(result["path"] as? String, saved["relativePath"] as? String)
+        }
     }
 
     func testInterruptedRenameRecoveryAndExternalEditProtection() async throws {
