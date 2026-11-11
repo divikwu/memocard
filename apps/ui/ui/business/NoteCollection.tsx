@@ -40,6 +40,7 @@ export type NoteCollectionProps = {
   loadMoreDisabled: boolean;
   canOpen: boolean;
   canCreate: boolean;
+  showCreateInToolbar?: boolean;
   onNewNote: () => void;
   onOpen: (id: string) => void;
   onSelectTag: (tag: string) => void;
@@ -69,7 +70,7 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
   </div>;
 }
 
-export function NoteCollection({ home, heading, notes, activeTag, recentTags, loading = false, tagFiltersDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, onNewNote, onOpen, onSelectTag, onSelectRecentTag = onSelectTag, onSelectAll, onLoadMore, onError, formatDate }: NoteCollectionProps) {
+export function NoteCollection({ home, heading, notes, activeTag, recentTags, loading = false, tagFiltersDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, showCreateInToolbar = true, onNewNote, onOpen, onSelectTag, onSelectRecentTag = onSelectTag, onSelectAll, onLoadMore, onError, formatDate }: NoteCollectionProps) {
   const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
   const recentTagScroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -156,7 +157,7 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
             aria-label={`筛选最近标签 ${name}`} disabled={tagFiltersDisabled} onClick={() => onSelectRecentTag(name)}><span data-ui-tooltip-overflow>{name}</span></Button>)}
         </div>}
       {heading}
-      <div className="ui-note-actions">{layoutButtons}<CreateButton disabled={!canCreate} onClick={onNewNote}>新建</CreateButton></div>
+      <div className="ui-note-actions">{layoutButtons}{showCreateInToolbar && <CreateButton disabled={!canCreate} onClick={onNewNote}>新建</CreateButton>}</div>
     </div>
     {content}
   </section>;

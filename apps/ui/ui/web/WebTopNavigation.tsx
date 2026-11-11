@@ -25,7 +25,7 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
   return <header className="web-topbar"><div className="web-topbar-inner">
     <div className="web-top-brand">
       {p.detailBack
-        ? <Button variant="ghost" size="icon" className="web-top-back" aria-label={p.detailBack.label} onClick={p.detailBack.run}>
+        ? <Button variant="ghost" size="icon" className="web-top-icon" aria-label={p.detailBack.label} onClick={p.detailBack.run}>
           <HugeiconsIcon icon={ArrowLeft02Icon} viewBox="2 2 20 20" aria-hidden="true" />
         </Button>
         : <Button variant="ghost" size="icon" className="web-top-logo" aria-label="MemoCard，返回主页" onClick={actions.home.run}><img src="./favicon.png" draggable={false} alt="" /></Button>}
@@ -60,7 +60,9 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
       </DropdownMenuContent></DropdownMenu>
     </nav>
     <div className="web-top-actions">
-      <Button variant="ghost" size="icon" className="web-top-search" aria-label="搜索" aria-haspopup="dialog" aria-expanded={p.searchOpen} disabled={actions.search.disabled} onClick={actions.search.run}><SidebarIcon name="search" /></Button>
+      <Button variant="ghost" size="icon" className="web-top-icon" aria-label={actions.newNote.label}
+        data-ui-tooltip={actions.newNote.label} disabled={actions.newNote.disabled} onClick={actions.newNote.run}><SidebarIcon name="add" /></Button>
+      <Button variant="ghost" size="icon" className="web-top-icon" aria-label="搜索" aria-haspopup="dialog" aria-expanded={p.searchOpen} disabled={actions.search.disabled} onClick={actions.search.run}><SidebarIcon name="search" /></Button>
     </div>
   </div></header>;
 }

@@ -13,8 +13,14 @@ beforeEach(() => {
   localStorage.clear();
   vi.mocked(request).mockResolvedValue({ tags: [{ name: '工作' }, { name: '工作/设计' }] });
   vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} });
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+
+async function openWorkColors(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(await screen.findByRole('button', { name: '管理标签 工作' }));
+  await user.click(await screen.findByRole('button', { name: '设置标签颜色 工作' }));
+}
 
 it('persists colors per vault and resets only the chosen tag', () => {
   setTagColor('a', '工作', 'green');
@@ -45,7 +51,7 @@ it('treats legacy gray as default and preserves other colors and vaults', async 
   localStorage.setItem(tagColorKey('b'), legacy);
   expect(parseTagColors(readTagColors('a'))).toEqual({ 生活: 'green' });
   render(<TagColorProvider vaultId="a"><TagColorStyles /><TagPropertyEditor tags={[]} busy={false} error="" onSave={onSave} /></TagColorProvider>);
-  await user.click(await screen.findByRole('button', { name: '设置标签颜色 工作' }));
+  await openWorkColors(user);
   expect((await screen.findByRole('menuitemradio', { name: '默认' })).getAttribute('aria-checked')).toBe('true');
   expect(screen.queryByRole('menuitemradio', { name: '灰色' })).toBeNull();
   expect(document.querySelector('style[data-tag-colors]')?.textContent).toContain('--tag-green-bg');
@@ -68,8 +74,8 @@ it('changes appearance without choosing a tag or exposing a delete action, and s
   const user = userEvent.setup(), onSave = vi.fn();
   const ui = (bodyTags:string[] = []) => <TagColorProvider vaultId="a"><TagColorStyles /><TagPropertyEditor tags={[]} bodyTags={bodyTags} busy={false} error="" onSave={onSave} onLocateTag={vi.fn()} /></TagColorProvider>;
   const view = render(ui());
-  await user.click(await screen.findByRole('button', { name: '设置标签颜色 工作' }));
-  expect(screen.queryByRole('menuitem', { name: /删除/ })).toBeNull();
+  await openWorkColors(user);
+  expect(screen.queryByRole('button', { name: '删除标签' })).toBeNull();
   await user.click(await screen.findByRole('menuitemradio', { name: '绿色' }));
   await waitFor(() => expect(parseTagColors(readTagColors('a'))).toEqual({ 工作: 'green' }));
   expect(document.querySelector('style[data-tag-colors]')?.textContent).toContain('--tag-bg:var(--tag-green-bg)');
@@ -78,7 +84,7 @@ it('changes appearance without choosing a tag or exposing a delete action, and s
   expect(onSave).not.toHaveBeenCalled();
   view.unmount();
   render(ui());
-  await user.click(await screen.findByRole('button', { name: '设置标签颜色 工作' }));
+  await openWorkColors(user);
   expect((await screen.findByRole('menuitemradio', { name: '绿色' })).getAttribute('aria-checked')).toBe('true');
   await user.click(screen.getByRole('menuitemradio', { name: '默认' }));
   expect(parseTagColors(readTagColors('a'))).toEqual({});
@@ -87,7 +93,7 @@ it('changes appearance without choosing a tag or exposing a delete action, and s
 it('keeps the color menu available after a storage failure without pretending to save', async () => {
   const user = userEvent.setup();
   render(<TagColorProvider vaultId="a"><TagColorStyles /><TagPropertyEditor tags={[]} busy={false} error="" onSave={vi.fn()} /></TagColorProvider>);
-  await user.click(await screen.findByRole('button', { name: '设置标签颜色 工作' }));
+  await openWorkColors(user);
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('denied'); });
   await user.click(await screen.findByRole('menuitemradio', { name: '红色' }));
   expect(await screen.findByRole('alert')).toHaveProperty('textContent', '无法保存标签颜色，请检查浏览器存储权限。');
@@ -96,8 +102,10 @@ it('keeps the color menu available after a storage failure without pretending to
 it('allows keyboard color selection without creating a property association', async () => {
   const user = userEvent.setup(), onSave = vi.fn();
   render(<TagColorProvider vaultId="a"><TagColorStyles /><TagPropertyEditor tags={[]} busy={false} error="" onSave={onSave} /></TagColorProvider>);
-  const trigger = await screen.findByRole('button', { name: '设置标签颜色 工作' });
+  const trigger = await screen.findByRole('button', { name: '管理标签 工作' });
   trigger.focus();
+  await user.keyboard('{Enter}');
+  (await screen.findByRole('button', { name: '设置标签颜色 工作' })).focus();
   await user.keyboard('{Enter}');
   expect(await screen.findByRole('menuitemradio', { name: '棕色' })).toBeTruthy();
   await user.keyboard('{ArrowDown}{Enter}');

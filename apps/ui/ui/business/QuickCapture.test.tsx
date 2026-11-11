@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import Coffee01Icon from '@hugeicons/core-free-icons/Coffee01Icon';
 import { swipeSheet } from '../components/sheet-swipe.test-utils';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { noteEditor, replaceCaptureText } from '../../src/editor-test-utils';
 import type { Note } from '@memocard/contracts';
 import { QuickCapture } from './QuickCapture';
 import { readQuickCaptureDraft } from '../../src/quick-capture-draft';
+import { tagPreferenceEvent, tagPreferenceKey } from '../../src/shared-tag-preferences';
+import { tagColorKey } from '../../src/tag-colors';
 
 const bridge=vi.hoisted(()=>({request:vi.fn()}));
 vi.mock('../../src/bridge',()=>({isLocalWeb:false,request:bridge.request,errorMessage:(cause:unknown)=>cause instanceof Error ? cause.message : '操作未完成'}));
@@ -61,6 +64,56 @@ it('inserts picker tags into the body, deduplicates them and removes exact occur
   expect(screen.getByRole('button',{name:'工作/子项'}).getAttribute('aria-pressed')).toBe('true');
   expect(screen.getByRole('button',{name:'工作'}).getAttribute('aria-pressed')).toBe('false');
   expect(bridge.request).not.toHaveBeenCalled();
+});
+
+it('updates picker icons when the active vault tag preferences change', async () => {
+  const user = userEvent.setup();
+  localStorage.setItem(tagPreferenceKey('other-vault'), JSON.stringify({ icons: { 生活: '🌙' } }));
+  render(<QuickCapture {...props} />);
+  await user.click(screen.getByRole('button', { name: '选择标签' }));
+  const picker = within(screen.getByRole('dialog', { name: '选择标签' }));
+  const life = picker.getByRole('button', { name: '生活' });
+  const fallback = life.querySelector('svg path')?.getAttribute('d');
+  expect(fallback).toBeTruthy();
+
+  act(() => {
+    localStorage.setItem(tagPreferenceKey(props.vaultId), JSON.stringify({ icons: { 生活: 'icon:coffee', 工作: '📁' } }));
+    window.dispatchEvent(new Event(tagPreferenceEvent));
+  });
+  await waitFor(() => expect(life.querySelector('svg path')?.getAttribute('d')).toBe(Coffee01Icon[0][1].d));
+  expect(picker.getByRole('button', { name: '工作' }).querySelector('[aria-hidden="true"]')?.textContent).toBe('📁');
+
+  await user.type(picker.getByRole('textbox', { name: '搜索或新建标签' }), '生活');
+  expect(picker.queryByRole('button', { name: '工作' })).toBeNull();
+  await user.click(life);
+  await user.click(screen.getByRole('button', { name: '选择标签' }));
+  const selected = screen.getByRole('button', { name: '生活', pressed: true });
+  expect(selected.querySelector('svg path')?.getAttribute('d')).toBe(Coffee01Icon[0][1].d);
+});
+
+it('changes an existing tag icon and color without selecting the tag or closing the tag list', async () => {
+  const user = userEvent.setup();
+  render(<QuickCapture {...props} />);
+  await user.click(screen.getByRole('button', { name: '选择标签' }));
+  const list = within(screen.getByRole('dialog', { name: '选择标签' }));
+  await user.click(list.getByRole('button', { name: '管理标签 生活' }));
+  const editor = within(await screen.findByRole('dialog', { name: '标签设置 生活' }));
+  expect(editor.getByRole('textbox', { name: '标签名称' })).toHaveProperty('readOnly', true);
+  await user.click(editor.getByRole('tab', { name: '图标' }));
+  await user.type(await editor.findByRole('textbox', { name: '搜索图标' }), '咖啡');
+  await user.click(editor.getByRole('button', { name: '咖啡' }));
+
+  await user.click(editor.getByRole('button', { name: '设置标签颜色 生活' }));
+  const colors = within(await screen.findByRole('menu', { name: '标签颜色 生活' }));
+  await user.click(colors.getByRole('menuitemradio', { name: '蓝色' }));
+  await waitFor(() => expect(screen.queryByRole('menu', { name: '标签颜色 生活' })).toBeNull());
+  expect(JSON.parse(localStorage.getItem(tagColorKey(props.vaultId)) ?? '{}')).toEqual({ 生活: 'blue' });
+  await user.keyboard('{Escape}');
+  await waitFor(() => expect(screen.queryByRole('dialog', { name: '标签设置 生活' })).toBeNull());
+  const tag = list.getByRole('button', { name: '生活', pressed: false });
+  await waitFor(() => expect(tag.querySelector('svg path')?.getAttribute('d')).toBe(Coffee01Icon[0][1].d));
+  expect(screen.getByRole('textbox', { name: '快速输入内容' }).textContent).toBe('');
+  expect(JSON.parse(localStorage.getItem(tagPreferenceKey(props.vaultId)) ?? '{}').icons).toEqual({ 生活: 'icon:coffee' });
 });
 
 it('completes an existing tag with Enter and creates new body tags from suggestions',async()=>{

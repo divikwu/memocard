@@ -10,6 +10,23 @@
 [data-ui-theme="dark"] { --tag-bg-opacity: 16%; }
 
 .rich-inline-tag, .note-tag-pill { max-width: 100%; min-height: calc(var(--spacing-1) * 5); border: 0; border-radius: var(--radius-full); padding: 0 calc(var(--spacing-1) * 1.5); background: var(--tag-bg, var(--tag-default-bg)); color: var(--tag-fg, var(--tag-default-fg)); font-size: var(--font-size-sm); line-height: var(--text-body-leading); font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
+.ui-tag-option-label {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  column-gap: calc(var(--spacing-1) * 1.5);
+  text-align: start;
+}
+.ui-tag-option-name { min-width: 0; overflow-wrap: anywhere; }
+.ui-tag-option-label > :is(svg, .ui-sidebar-emoji) {
+  flex-shrink: 0;
+  width: calc(var(--spacing-1) * 4);
+  text-align: center;
+}
+:is(.ui-capture-tag-picker, .note-tag-option) .ui-tag-option-label > svg {
+  color: var(--tag-fg, var(--color-text-secondary));
+}
 .note-tag-color-default { --tag-bg: var(--tag-default-bg); --tag-fg: var(--tag-default-fg); }
 .note-tag-color-brown { --tag-bg: var(--tag-brown-bg); --tag-fg: var(--tag-brown-fg); }
 .note-tag-color-orange { --tag-bg: var(--tag-orange-bg); --tag-fg: var(--tag-orange-fg); }

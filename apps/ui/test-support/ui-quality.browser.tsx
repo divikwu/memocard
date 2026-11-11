@@ -219,7 +219,8 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
     const candidate = await body.findByRole("option", { name: "属性标签 候选" });
     expect(getComputedStyle(popup).borderRadius).toBe("12px");
     expect(getComputedStyle(candidate).height).toBe("32px");
-    expect(getComputedStyle(candidate.querySelector('.note-tag-pill')!).fontWeight).toBe("400");
+    expect(getComputedStyle(candidate).fontWeight).toBe("400");
+    expect(candidate.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
     await waitFor(() => aligned(popup, anchor));
     expectPropertyControlRadius(popup);
     const tagSearch = within(popup).getByRole("combobox", { name: "搜索或新建属性标签" });
@@ -1445,26 +1446,31 @@ for (const width of [320, 1024]) {
       await userEvent.clear(search);
       list = within(popup).getByRole("listbox", {name: "可选属性标签"});
       await within(list).findByRole("option", {name: "属性标签 area/tag0000"});
-      const colorTrigger = within(popup).getByRole("button", {name: "设置标签颜色 area/tag0000"});
-      await userEvent.click(colorTrigger);
+      const settingsTrigger = within(popup).getByRole("button", {name: "管理标签 area/tag0000"});
+      const settings = () => within(document.body).findByRole("dialog", {name: "标签设置 area/tag0000"});
+      await userEvent.click(settingsTrigger);
+      const editor = await settings();
+      await userEvent.click(within(editor).getByRole("button", {name: "设置标签颜色 area/tag0000"}));
       await within(document.body).findByRole("menu", {name: "标签颜色 area/tag0000"});
-      if (width >= 768) {
-        await userEvent.hover(search);
-        expect(getComputedStyle(colorTrigger).opacity).toBe("1");
-        await userEvent.click(colorTrigger);
-        await waitFor(() => expect(within(document.body).queryByRole("menu", {name: "标签颜色 area/tag0000"})).toBeNull());
-        await userEvent.hover(search);
-        await waitFor(() => expect(getComputedStyle(colorTrigger).opacity).toBe("0"));
-        await userEvent.hover(within(list).getByRole("option", {name: "属性标签 area/tag0000"}));
-        await userEvent.click(colorTrigger);
-      }
-      const menu = await within(document.body).findByRole("menu", {name: "标签颜色 area/tag0000"});
-      list.scrollTop = list.scrollHeight;
-      list.dispatchEvent(new Event("scroll"));
-      await within(list).findByRole("option", {name: "属性标签 area/tag1999"});
-      expect(menu.isConnected).toBe(true);
-      expect(within(list).getAllByRole("option").length).toBeLessThan(40);
       await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(within(document.body).queryByRole("menu", {name: "标签颜色 area/tag0000"})).toBeNull());
+      if (width >= 768) {
+        expect(getComputedStyle(settingsTrigger).opacity).toBe("1");
+        await userEvent.click(settingsTrigger);
+        await waitFor(() => expect(within(document.body).queryByRole("dialog", {name: "标签设置 area/tag0000"})).toBeNull());
+        await userEvent.hover(search);
+        await waitFor(() => expect(getComputedStyle(settingsTrigger).opacity).toBe("0"));
+        await userEvent.hover(within(list).getByRole("option", {name: "属性标签 area/tag0000"}));
+        await userEvent.click(settingsTrigger);
+        const panel = await settings();
+        list.scrollTop = list.scrollHeight;
+        list.dispatchEvent(new Event("scroll"));
+        await within(list).findByRole("option", {name: "属性标签 area/tag1999"});
+        expect(panel.isConnected).toBe(true);
+        expect(within(list).getAllByRole("option").length).toBeLessThan(40);
+      }
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(within(document.body).queryByRole("dialog", {name: "标签设置 area/tag0000"})).toBeNull());
       await userEvent.type(search, "a");
       const create = await within(list).findByRole("option", {name: "新建标签 a"});
       await waitFor(() => expect(create.getBoundingClientRect().top).toBeGreaterThanOrEqual(list.getBoundingClientRect().top));
@@ -1655,24 +1661,43 @@ for (const width of [320, 1024]) for (const theme of ["light", "dark"] as const)
       await userEvent.click(types);
       await userEvent.click(await body.findByRole("menuitemradio", { name: "多选" }));
       await checkConfirmation();
-      for (const kind of ["选项", "标签"]) {
-        await userEvent.click(canvas.getByRole("button", { name: kind === "选项" ? "编辑属性 领域" : "编辑标签" }));
-        await userEvent.click(await body.findByRole("button", { name: `管理${kind} ${kind === "选项" ? "设计" : "开发"}` }));
-        await body.findByRole("textbox", { name: `${kind}名称` });
-        expectPropertyControlRadius(body.getByRole("menu", { name: `${kind}设置 ${kind === "选项" ? "设计" : "开发"}` }));
-        for (const option of body.getByRole("menu", { name: `${kind}设置 ${kind === "选项" ? "设计" : "开发"}` }).querySelectorAll('.note-tag-color-option')) {
+      const checkColorOptions = (menu: HTMLElement) => {
+        expectPropertyControlRadius(menu);
+        for (const option of menu.querySelectorAll('.note-tag-color-option')) {
           expect(getComputedStyle(option).height).toBe("32px");
           expect(getComputedStyle(option).fontWeight).toBe("400");
         }
-        const deleteOption = await body.findByRole("menuitem", { name: `删除${kind}` });
-        deleteOption.focus();
-        expect(getComputedStyle(deleteOption).color).toBe(dangerStyle.color);
-        expect(getComputedStyle(deleteOption.querySelector("svg")!).color).toBe(dangerStyle.color);
-        await userEvent.click(deleteOption);
+      };
+      const confirmDeletion = async (trigger: HTMLElement) => {
+        trigger.focus();
+        expect(getComputedStyle(trigger).color).toBe(dangerStyle.color);
+        expect(getComputedStyle(trigger.querySelector("svg")!).color).toBe(dangerStyle.color);
+        await userEvent.click(trigger);
         await checkConfirmation();
-        await userEvent.keyboard("{Escape}");
-        await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
-      }
+      };
+      await userEvent.click(canvas.getByRole("button", { name: "编辑属性 领域" }));
+      await userEvent.click(await body.findByRole("button", { name: "管理选项 设计" }));
+      await body.findByRole("textbox", { name: "选项名称" });
+      checkColorOptions(body.getByRole("menu", { name: "选项设置 设计" }));
+      await confirmDeletion(await body.findByRole("menuitem", { name: "删除选项" }));
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+
+      await userEvent.click(canvas.getByRole("button", { name: "编辑标签" }));
+      await userEvent.click(await body.findByRole("button", { name: "管理标签 开发" }));
+      const tagSettings = within(await body.findByRole("dialog", { name: "标签设置 开发" }));
+      expect(getComputedStyle(tagSettings.getByRole("textbox", { name: "标签名称" })).borderRadius).toBe("8px");
+      expect(getComputedStyle(tagSettings.getByRole("textbox", { name: "搜索 Emoji" })).borderRadius).toBe("9999px");
+      await userEvent.click(tagSettings.getByRole("button", { name: "设置标签颜色 开发" }));
+      checkColorOptions(await body.findByRole("menu", { name: "标签颜色 开发" }));
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("menu", { name: "标签颜色 开发" })).toBeNull());
+      await confirmDeletion(tagSettings.getByRole("button", { name: "删除标签" }));
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("dialog", { name: "标签设置 开发" })).toBeNull());
+      await userEvent.keyboard("{Escape}");
+      await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
+
       await userEvent.click(canvas.getByRole("button", { name: "属性菜单 摘要" }));
       await userEvent.click(await body.findByRole("menuitem", { name: "重命名" }));
       const rename = await body.findByRole("textbox", { name: "新属性名" });

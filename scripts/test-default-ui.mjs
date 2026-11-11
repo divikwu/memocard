@@ -14,7 +14,8 @@ const openNotes = async page => {
 };
 const newNote = async page => {
   await openNotes(page);
-  await page.getByRole('button', {name: '新建', exact: true}).click();
+  const topbar = page.getByRole('banner').filter({ has: page.getByRole('navigation', {name: '顶部导航'}) });
+  await topbar.getByRole('button', {name: '新建笔记', exact: true}).click();
 };
 const returnToNotes = page => page.getByRole('navigation', {name: '当前位置'}).getByRole('button', {name: '所有笔记', exact: true}).click();
 before(async () => {

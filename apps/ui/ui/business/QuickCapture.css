@@ -14,10 +14,31 @@
 .ui-capture-image img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-element); }
 .ui-capture-image > button:not(.ui-note-image) { position: absolute; inset-block-start: var(--spacing-1); inset-inline-end: var(--spacing-1); }
 .ui-capture-tag-picker { width: min(18rem, calc(100vw - var(--spacing-1) * 8)); padding: calc(var(--spacing-1) * 2); row-gap: 0; }
-.ui-capture-tag-picker [data-slot="input"], .ui-capture-tag-options > button { border-radius: var(--radius-element); }
-.ui-capture-tag-options { max-height: 15rem; overflow-y: auto; padding-top: calc(var(--spacing-1) * 2); }
-.ui-capture-tag-options > button { width: 100%; height: auto; min-height: var(--size-element-sm); justify-content: flex-start; padding-block: var(--spacing-1); padding-inline: calc(var(--spacing-1) * 2); font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
-.ui-capture-tag-options > button > span { min-width: 0; flex: 1; overflow-wrap: anywhere; text-align: start; }
+.ui-capture-tag-row { border-radius: var(--radius-element); }
+.ui-capture-tag-options {
+  --capture-tag-row-gap: calc(var(--spacing-1) / 2);
+  --capture-tag-list-fade: calc(var(--spacing-1) * 3);
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--capture-tag-row-gap);
+  /* Allow for the opacity lost to the fade on the half-visible row. */
+  max-height: calc(var(--size-element-sm) * 7.5 + var(--capture-tag-row-gap) * 7 + var(--spacing-1) * 2 + var(--capture-tag-list-fade) / 2);
+  overflow-y: auto;
+  padding-top: calc(var(--spacing-1) * 2);
+}
+.ui-capture-tag-options[data-overflow-bottom] {
+  scroll-padding-bottom: var(--capture-tag-list-fade);
+  mask-image: linear-gradient(to bottom, var(--color-black) calc(100% - var(--capture-tag-list-fade)), transparent);
+}
+.ui-capture-tag-row { display: flex; flex: none; align-items: center; }
+.ui-capture-tag-row:is(:hover, :has(:focus-visible), :has(> .ui-capture-tag-more[aria-expanded="true"])) { background: var(--color-overlay-hover); }
+.ui-capture-tag-option { flex: 1; min-width: 0; height: auto; min-height: var(--size-element-sm); justify-content: flex-start; column-gap: calc(var(--spacing-1) * 1.5); padding-block: var(--spacing-1); padding-inline: calc(var(--spacing-1) * 2); border-radius: inherit; font-weight: var(--font-weight-normal); white-space: normal; overflow-wrap: anywhere; }
+.ui-capture-tag-option:hover { background: transparent; }
+.ui-capture-tag-more { margin-inline-end: var(--spacing-1); }
+@media (hover: hover) and (pointer: fine) {
+  .ui-capture-tag-more { opacity: 0; }
+  .ui-capture-tag-row:is(:hover, :has(:focus-visible)) > .ui-capture-tag-more, .ui-capture-tag-more[aria-expanded="true"] { opacity: 1; }
+}
 .ui-capture-tag-options > p { padding: calc(var(--spacing-1) * 2); font-size: var(--font-size-xs); color: var(--color-text-secondary); }
 .ui-capture-suggestions { position: absolute; z-index: 60; display: grid; gap: var(--spacing-1); width: min(15rem, 100%); padding: var(--spacing-1); border: var(--border-width) solid var(--color-border-floating); border-radius: var(--radius-item); background: var(--color-background-popover); box-shadow: var(--shadow-high), var(--surface-edge-floating); }
 .ui-capture-suggestions > button { width: 100%; min-width: 0; justify-content: space-between; padding-inline: calc(var(--spacing-1) * 2); border-radius: var(--radius-element); min-height: var(--size-element-sm); height: auto; padding-block: var(--spacing-1); font-weight: var(--font-weight-normal); text-align: start; }
@@ -47,9 +68,10 @@
 
 @media (forced-colors: active) {
   .ui-capture-group { border-color: CanvasText; }
+  .ui-capture-tag-options[data-overflow-bottom] { mask-image: none; }
 }
 
-.ui-capture-tag-picker [data-slot="input"] { height: var(--size-element-sm); }
+.ui-capture-tag-picker [data-slot="input"] { height: var(--size-element-sm); border-radius: var(--radius-full); }
 :is(.ui-capture-tag-picker, .ui-capture-suggestions) svg { color: var(--color-text-secondary); }
 .ui-capture-create-tag { font-weight: var(--font-weight-medium); }
 .ui-capture-create-tag > svg { color: inherit; }

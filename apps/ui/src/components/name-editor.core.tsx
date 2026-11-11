@@ -1,5 +1,5 @@
 import type { ComponentType, ComponentProps } from "react";
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@ui/lib/utils";
 
@@ -17,9 +17,9 @@ type SaveName = (name: string) => Promise<void>;
 export function createNameEditor(view: View) {
  const {Popover,PopoverContent,Input,Sheet,SheetClose,SheetContent,SheetHeader,SheetTitle} = view;
 
-function NameEditor({ initialName, anchor, title, inputLabel, maxLength, selectOnFocus, busy = false, sheet = false, anchorIsTrigger = false, initialFocus, finalFocus, leading, trailing, children, side, align, sideOffset = 8, className, onClose, onSave }: {
+function NameEditor({ initialName, anchor, title, inputLabel, maxLength, readOnlyName, selectOnFocus, busy = false, sheet = false, anchorIsTrigger = false, initialFocus, finalFocus, leading, trailing, children, side, align, sideOffset = 8, className, onClose, onSave }: {
   initialName: string; anchor: HTMLElement; title: string; inputLabel: string;
-  maxLength?: number; selectOnFocus?: boolean; busy?: boolean;
+  maxLength?: number; readOnlyName?: boolean; selectOnFocus?: boolean; busy?: boolean;
   sheet?: boolean;
   anchorIsTrigger?: boolean;
   initialFocus?: () => HTMLElement | null;
@@ -38,17 +38,19 @@ function NameEditor({ initialName, anchor, title, inputLabel, maxLength, selectO
   const disabled = busy || saving;
   const changed = name.trim() !== initialName;
 
+  const toggleFromAnchor = useEffectEvent((event: MouseEvent) => {
+    event.stopPropagation();
+    if (disabled || submitting.current) return;
+    if (changed && name.trim()) saveName();
+    else onClose();
+  });
+
   useLayoutEffect(() => {
     if (!anchorIsTrigger || sheet) return;
-    const toggle = (event: MouseEvent) => {
-      event.stopPropagation();
-      if (disabled || submitting.current) return;
-      if (changed && name.trim()) void saveName();
-      else onClose();
-    };
+    const toggle = (event: MouseEvent) => toggleFromAnchor(event);
     anchor.addEventListener("click", toggle);
     return () => anchor.removeEventListener("click", toggle);
-  }, [anchor, anchorIsTrigger, changed, disabled, name, onClose, onSave, sheet]);
+  }, [anchor, anchorIsTrigger, sheet]);
 
   async function runSave(save: () => Promise<void>, onSuccess?: () => void) {
     if (disabled || submitting.current) return;
@@ -89,11 +91,12 @@ function NameEditor({ initialName, anchor, title, inputLabel, maxLength, selectO
   const content = <>
       <form className="space-y-2" onSubmit={event => {
         event.preventDefault();
+        event.stopPropagation();
         void saveName();
       }}>
         <div className="flex items-center gap-x-1">
           {leading?.(disabled)}
-          <Input ref={nameInput} className="min-w-0 flex-1 border-0" aria-label={inputLabel} maxLength={maxLength} value={name} onFocus={event => { if (selectOnFocus) event.currentTarget.select(); }} onChange={event => { setName(event.target.value); setError(""); }} onKeyDown={event => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) event.preventDefault(); }} disabled={disabled} />
+          <Input ref={nameInput} className="min-w-0 flex-1 border-0" aria-label={inputLabel} maxLength={maxLength} value={name} readOnly={readOnlyName} onFocus={event => { if (selectOnFocus) event.currentTarget.select(); }} onChange={event => { setName(event.target.value); setError(""); }} onKeyDown={event => { if (event.key === "Enter" && (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229)) event.preventDefault(); }} disabled={disabled} />
           {trailing?.(disabled)}
         </div>
         {saving && <p role="status" className="sr-only">保存中…</p>}

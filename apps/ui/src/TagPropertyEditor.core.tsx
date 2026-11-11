@@ -8,6 +8,8 @@ import { Combobox } from '@base-ui/react/combobox';
 import { cn } from '@ui/lib/utils';
 import { request, errorMessage } from './bridge';
 import { normalizePropertyTag, tagKey } from './inline-tags';
+import { useTagColorVault } from './TagColorProvider';
+import { useTagPreferences } from './hooks/use-tag-preferences';
 
 let cachedTags: {binding:string; tags:string[]; expires:number} | undefined;
 let tagRevision = 0;
@@ -22,11 +24,11 @@ if (typeof window !== 'undefined') {
 }
 
 type View = {
-  TagColorMenu: ComponentType<ComponentProps<typeof import("@ui/business/property-editors")["TagColorMenu"]>>;
+  TagOptionLabel: ComponentType<ComponentProps<typeof import("@ui/business/TagOption")["TagOptionLabel"]>>;
+  TagOptionSettings: ComponentType<ComponentProps<typeof import("@ui/business/TagOption")["TagOptionSettings"]>>;
   X: ComponentType<Omit<SVGProps<SVGSVGElement>, "strokeWidth"> & { size?: number; strokeWidth?: number }>;
   Button: ComponentType<Omit<ComponentProps<typeof import("@ui/components/button")["Button"]>, "render">>;
   Skeleton: ComponentType<{className?:string}>;
-  TagPill: ComponentType<Omit<ComponentProps<typeof import("@ui/business/property-editors")["TagPill"]>, "variant" | "render">>;
   Tooltip: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["Tooltip"]>>;
   TooltipContent: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["TooltipContent"]>>;
   TooltipProvider: ComponentType<ComponentProps<typeof import("@ui/components/tooltip")["TooltipProvider"]>>;
@@ -34,18 +36,19 @@ type View = {
 };
 
 export function createTagPropertyEditor(view: View) {
-  const { TagColorMenu, X, Button, Skeleton, TagPill, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } = view;
-  const OptionColorMenu = memo(TagColorMenu);
-  const TagOption = memo(function TagOption({tag,index,count,creating,disabled,onChangeTag}: {tag:string;index:number;count:number;creating:boolean;disabled:boolean;onChangeTag?: (from:string,to:string | null)=>Promise<void>}) {
+  const { TagOptionLabel, TagOptionSettings, X, Button, Skeleton, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } = view;
+  const TagOption = memo(function TagOption({tag,icon,vaultId,index,count,creating,disabled,onChangeTag}: {tag:string;icon?:string;vaultId:string | null;index:number;count:number;creating:boolean;disabled:boolean;onChangeTag?: (from:string,to:string | null)=>Promise<void>}) {
     return <div className="note-tag-option-row">
       <Combobox.Item index={index} value={tag} disabled={disabled} data-tag={encodeURIComponent(tag)} className="note-tag-option" aria-setsize={count} aria-posinset={index+1} aria-label={creating ? `新建标签 ${tag}` : `属性标签 ${tag}`}>
         {creating && <span>新建</span>}
-        <TagPill name={tag} className="min-w-0 shrink" />
+        <TagOptionLabel tag={tag} icon={icon} />
       </Combobox.Item>
-      {!creating && <OptionColorMenu tag={tag} disabled={disabled} onChangeTag={onChangeTag} />}
+      {!creating && <TagOptionSettings tag={tag} vaultId={vaultId} disabled={disabled} className="note-tag-color-trigger shrink-0" onChangeTag={onChangeTag} />}
     </div>;
   });
 function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], vaultBinding, busy, error, onSave, onLocateTag, onChangeTag }: { tags:string[]; bodyTags?:string[]; vaultBinding?:string; busy:boolean; error:string; onSave:(tags:string[])=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
+  const vaultId = useTagColorVault();
+  const { preferences } = useTagPreferences(vaultId);
   const tags = [...new Set(propertyValues.map(tagKey))];
   const bodyTags = useMemo(() => [...new Set(bodyValues.map(tagKey))], [bodyValues]);
   const tooltipId = useId();
@@ -55,7 +58,8 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
   if (propertyRevision.current.key !== propertyKey) propertyRevision.current = { key: propertyKey, revision: propertyRevision.current.revision + 1 };
   useEffect(() => { setSelected(JSON.parse(propertyKey)); }, [propertyKey]);
   const [query, setQuery] = useState('');
-  const [options, setOptions] = useState<string[]>([]);
+  const [loadedOptions, setLoadedOptions] = useState<{binding:string | undefined; tags:string[]}>();
+  const options = loadedOptions?.binding === vaultBinding ? loadedOptions?.tags : undefined;
   const [revision, setRevision] = useState(0);
   const changeTag = useCallback(async (from:string,to:string | null) => {
     try { await onChangeTag?.(from, to); }
@@ -70,7 +74,7 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
   useEffect(() => {
     let active = true;
     if (vaultBinding && cachedTags?.binding === vaultBinding && cachedTags.expires > Date.now()) {
-      setOptions(cachedTags.tags); setLoading(false); setSuggestionError('');
+      setLoadedOptions({binding:vaultBinding, tags:cachedTags.tags}); setLoading(false); setSuggestionError('');
       return;
     }
     const requestedRevision = tagRevision;
@@ -79,16 +83,16 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
       if (!active) return;
       const tags = result.tags.map(tag => tagKey(tag.name));
       if (vaultBinding && requestedRevision === tagRevision) cachedTags = {binding:vaultBinding,tags,expires:Date.now()+15_000};
-      setOptions(tags);
+      setLoadedOptions({binding:vaultBinding, tags});
     }).catch(cause => { if (active) setSuggestionError(errorMessage(cause)); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [revision,vaultBinding]);
   const normalized = normalizePropertyTag(query);
   const search = tagKey(query.trim().replace(/^#/, ''));
   const picked = useMemo(() => new Set([...selected, ...bodyTags]), [selected,bodyTags]);
-  const known = useMemo(() => new Set([...picked, ...options]), [picked,options]);
+  const known = useMemo(() => new Set([...picked, ...(options ?? [])]), [picked,options]);
   const matches = [...known].filter(tag => !picked.has(tag) && tag.includes(search));
-  const create = !loading && !suggestionError && normalized && !normalized.includes("/") && !known.has(normalized) ? normalized : null;
+  const create = options && normalized && !normalized.includes("/") && !known.has(normalized) ? normalized : null;
   const candidates = create ? [create, ...matches] : matches;
   const virtualized = candidates.length > 100;
   const bodyOnly = [...new Set(bodyTags)].filter(tag => !selected.includes(tag));
@@ -101,7 +105,9 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
       await onSave(next);
       invalidatePropertyTagSuggestions();
       if (revision === propertyRevision.current.revision) { setSelected(next); input.current?.focus(); }
-      setOptions(previous => [...new Set([...previous, ...next])]);
+      setLoadedOptions(previous => previous && previous.binding === vaultBinding
+        ? {...previous, tags:[...new Set([...previous.tags, ...next])]}
+        : previous);
       if (next.length > selected.length) setQuery('');
     }
     catch { /* The parent keeps the error and input visible. */ }
@@ -111,7 +117,11 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
     const descriptionId = `${tooltipId}-${encodeURIComponent(tag)}`;
     return <Tooltip><TooltipTrigger aria-describedby={descriptionId} render={<Button type="button" variant="ghost" size="sm" className={cn('h-5 shrink text-sm font-normal whitespace-normal', shared ? 'min-w-0 px-0' : 'note-tag-chip note-tag-pill')} disabled={disabled} data-tag={encodeURIComponent(tag)} aria-label={`定位正文标签 ${tag}`} onClick={() => onLocateTag?.(tag)} onKeyDown={event => { if (shared && (event.key === 'Enter' || event.key === ' ')) event.stopPropagation(); }} />}>{tag}</TooltipTrigger><TooltipContent id={descriptionId} role="tooltip" sideOffset={6} className="animate-none">{shared ? '属性和正文均有，点击定位' : '正文标签，点击定位'}</TooltipContent></Tooltip>;
   }
-  const renderOption = (tag:string,index:number) => <TagOption key={tag} tag={tag} index={index} count={candidates.length} creating={tag === create} disabled={disabled} onChangeTag={onChangeTag ? changeTag : undefined} />;
+  const renderOption = (tag:string,index:number) => <TagOption key={tag} tag={tag} icon={preferences.icons[tag]} vaultId={vaultId} index={index} count={candidates.length} creating={tag === create} disabled={disabled} onChangeTag={onChangeTag ? changeTag : undefined} />;
+  // Keep the active settings panel mounted while its tag list refreshes.
+  const optionList = virtualized
+    ? <VirtualTagOptions items={candidates} virtualizerRef={virtualizer}>{renderOption}</VirtualTagOptions>
+    : <PropertyOptionList label="可选属性标签" count={candidates.length}>{renderOption}</PropertyOptionList>;
   return <TooltipProvider delay={300}><div className="note-tag-editor" aria-busy={pending || loading}>
     <Combobox.Root multiple inline open autoHighlight virtualized={virtualized} items={candidates} filter={null} value={selected} inputValue={query} readOnly={disabled}
       onItemHighlighted={(_, {index,reason}) => { if (virtualized && index >= 0 && reason !== 'pointer') queueMicrotask(() => virtualizer.current?.scrollToIndex(index,{align:'auto'})); }}
@@ -132,10 +142,9 @@ function TagPropertyEditor({ tags: propertyValues, bodyTags: bodyValues = [], va
       </Combobox.Chips>
       <div className="note-tag-body">
       <p id={`${tooltipId}-search-hint`} className={suggestionError ? 'sr-only' : 'note-tag-hint text-xs text-secondary'}>选择或创建</p>
-      {suggestionError ? <PropertyOptionsFailure retry={<Button variant="ghost" className="note-property-retry" disabled={disabled} onClick={() => { input.current?.focus(); setRevision(value => value + 1); }} aria-label="重试加载标签">重试</Button>} /> : <>
-      {loading ? <PropertyOptionsLoading label="正在加载标签…" Skeleton={Skeleton} /> : virtualized ? <VirtualTagOptions items={candidates} virtualizerRef={virtualizer}>{renderOption}</VirtualTagOptions> : <PropertyOptionList label="可选属性标签" count={candidates.length}>{renderOption}</PropertyOptionList>}
-      {!loading && !candidates.length && <p className="text-xs text-secondary">{query.trim() ? normalized ? '没有匹配的标签' : '标签不能包含空格或纯数字，可用 / 分层。' : known.size ? '没有其他标签，输入名称可新建。' : '输入名称，创建第一个标签。'}</p>}
-      </>}
+      {suggestionError && <PropertyOptionsFailure retry={<Button variant="ghost" className="note-property-retry" disabled={disabled} onClick={() => { input.current?.focus(); setRevision(value => value + 1); }} aria-label="重试加载标签">重试</Button>} />}
+      {options ? optionList : loading && <PropertyOptionsLoading label="正在加载标签…" Skeleton={Skeleton} />}
+      {!loading && !suggestionError && !candidates.length && <p className="text-xs text-secondary">{query.trim() ? normalized ? '没有匹配的标签' : '标签不能包含空格或纯数字，可用 / 分层。' : known.size ? '没有其他标签，输入名称可新建。' : '输入名称，创建第一个标签。'}</p>}
     {pending && <p role="status" className="sr-only">正在保存标签…</p>}
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
       </div>

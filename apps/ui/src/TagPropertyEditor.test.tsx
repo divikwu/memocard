@@ -8,6 +8,7 @@ vi.mock('./bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error
 beforeEach(() => {
   vi.mocked(request).mockResolvedValue({tags:[{name:'项目/设计'},{name:'项目/开发'},{name:'work'}]});
   vi.stubGlobal('ResizeObserver',class { observe() {} unobserve() {} disconnect() {} });
+  vi.stubGlobal('matchMedia',vi.fn(() => ({matches:false,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 async function setup(tags:string[] = [], onSave = vi.fn().mockResolvedValue(undefined)) {
@@ -24,9 +25,11 @@ it('merges mixed-case sources and keeps color settings in candidate rows only',a
   expect(screen.getAllByRole('option')).toHaveLength(1);
   const selected = within(screen.getByRole('toolbar',{name:'已选标签'}));
   expect(selected.getAllByText('work')).toHaveLength(1);
-  expect(selected.queryByRole('button',{name:/设置标签颜色/})).toBeNull();
-  await user.click(screen.getByRole('button',{name:'设置标签颜色 ai'}));
+  expect(selected.queryByRole('button',{name:/管理标签/})).toBeNull();
+  await user.click(screen.getByRole('button',{name:'管理标签 ai'}));
+  await user.click(await screen.findByRole('button',{name:'设置标签颜色 ai'}));
   await user.click(await screen.findByRole('menuitemradio',{name:'绿色'}));
+  await user.keyboard('{Escape}');
   expect(onLocateTag).not.toHaveBeenCalled();
   expect(onSave).not.toHaveBeenCalled();
   await user.click(selected.getByRole('button',{name:'定位正文标签 body'}));
