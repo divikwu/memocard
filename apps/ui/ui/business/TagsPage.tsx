@@ -21,6 +21,7 @@ import { useThemeScopeProps } from "../components/theme-scope";
 import { SidebarIcon } from "./sidebar-icons";
 import { TreeMoreButton, TreeRow, TreeToggleButton } from "./sidebar-tree-item";
 import { TagIcon } from "./property-icon-catalog";
+import { TagDirectoryList, TagDirectoryChip } from "./TagDirectoryList";
 import { FoldersIcon } from "./folders-icon";
 import "./note-properties.css";
 import "./TagsPage.css";
@@ -69,17 +70,6 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   const fallbackFocus = () => search.current ?? tabs.current?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]');
   const needle = showSearch ? query.trim().toLocaleLowerCase() : "";
   const matches = useMemo(() => tags.filter(tag => tag.name.toLocaleLowerCase().includes(needle)), [tags, needle]);
-  const groups = useMemo(() => {
-    const grouped = new Map<string, Tag[]>();
-    for (const tag of [...matches].sort((a, b) => a.name.localeCompare(b.name))) {
-      const initial = tag.name.normalize("NFD").charAt(0).toUpperCase();
-      const group = /^[0-9A-Z]$/.test(initial) ? initial : "其他";
-      const entries = grouped.get(group);
-      if (entries) entries.push(tag);
-      else grouped.set(group, [tag]);
-    }
-    return [...grouped].sort(([a], [b]) => a === "其他" ? 1 : b === "其他" ? -1 : a.localeCompare(b));
-  }, [matches]);
   const descriptions = new Map(Object.entries(preferences.labels ?? {}));
   const tagGroups = preferences.groups ?? [];
   const editedGroup = tagGroups.find(group => group.id === editing?.groupId);
@@ -145,13 +135,9 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   };
   const status = loading && !tags.length ? <div role="status" aria-label="正在读取标签" className="grid gap-2 p-2">{[0, 1, 2, 3].map(item => <Skeleton key={item} className="h-8 rounded-xl" />)}</div>
     : !matches.length ? <Empty><EmptyHeader><EmptyTitle>{!connected ? "连接笔记库后查看标签" : needle ? "没有找到相关标签" : "还没有标签"}</EmptyTitle><EmptyDescription>{!connected ? "从左上角选择笔记库。" : needle ? "换个关键词，或清空搜索。" : "在笔记中添加标签后，会显示在这里。"}</EmptyDescription></EmptyHeader>{needle && <EmptyContent><Button variant="outline" onClick={() => { setQuery(""); search.current?.focus(); }}>清空搜索</Button></EmptyContent>}</Empty> : null;
-  const chips = (entries: Tag[], label: string) => <ul role="list" aria-label={label}>
-        {entries.map(tag => <li key={tag.name} data-tag={encodeURIComponent(tag.name)}>
-          <Button variant="secondary" size="sm" className="ui-tag-directory-chip" aria-label={`查看标签 ${tag.name} 的笔记`} aria-description={`${tag.count} 条笔记`} disabled={disabled || !connected} onClick={() => onSelect(tag.name)}>
-            {canRename ? <span className="ui-tag-directory-chip-icon-space" aria-hidden="true" /> : <TagIcon value={preferences.icons[tag.name]} />}
-            <span className="ui-tag-directory-chip-name" title={tag.name}>{tag.name}</span>
-            <span className="ui-tag-directory-chip-count" aria-hidden="true">{tag.count}</span>
-          </Button>
+  const chip = (tag: Tag, label: string) => <>
+          <TagDirectoryChip tag={tag} disabled={disabled || !connected} onSelect={() => onSelect(tag.name)}
+            icon={canRename ? <span className="ui-tag-directory-chip-icon-space" aria-hidden="true" /> : <TagIcon value={preferences.icons[tag.name]} />} />
           {canRename && <Button variant="ghost" size="icon-sm" className="ui-tag-directory-chip-icon" data-tag-path={tag.name} aria-label={`编辑标签图标 ${tag.name}`} aria-haspopup="dialog" aria-expanded={editing?.path === tag.name && editing.list === label} disabled={disabled || !connected} onClick={event => edit(tag.name, event.currentTarget, label)}>
             <TagIcon value={preferences.icons[tag.name]} />
           </Button>}
@@ -166,8 +152,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
               </DropdownMenuItem>
             </>}
           </TagActionsMenu>}
-        </li>)}
-  </ul>;
+  </>;
   const draftRows = (value: TagDraft) => <TagDraftRows key={value.group?.id ?? value.kind} draft={value} disabled={!canEditGroups}
     onClose={() => {
       setDraft(current => current === value ? null : current);
@@ -269,9 +254,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
           <colgroup><col /><col className="ui-tag-directory-description-column" /><col span={2} className="w-0" /></colgroup>
           {draftRows(draft)}
         </Table>}
-        {status ?? <div className="ui-tag-directory-groups">
-          {groups.map(([initial, entries]) => <div key={initial} className="ui-tag-directory-group"><h2>{initial}</h2>{chips(entries, initial)}</div>)}
-        </div>}
+        {status ?? <TagDirectoryList tags={matches} renderTag={chip} />}
       </TabsContent>
       <TabsContent value="groups" aria-busy={loading}>
         {visibleGroups.length || draft ? <TagDirectoryTable label="群组标签列表" sort={sort} onSort={column => setSort(current => ({

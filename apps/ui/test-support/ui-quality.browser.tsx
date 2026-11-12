@@ -25,6 +25,8 @@ import { createWorkspaceFixture } from "../ui/web/workspace-fixture";
 import propertyStoryMeta, { LayoutStress } from "../ui/stories/business-note-properties.stories";
 import { Card } from "../ui/components/card";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "../ui/components/popover";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "../ui/components/drawer";
+import { ThemeScope } from "../ui/components/theme-scope";
 import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../ui/components/sheet";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/components/dialog";
 import { NoteProperties } from "../ui/business/NoteProperties";
@@ -1090,7 +1092,7 @@ for (const mode of ["light", "dark"] as const) {
     const open = canvas.getByRole("button", { name: `打开 ${editorNote.title}` });
     const card = open.closest(".ui-note-card")!;
     const restingShadow = getComputedStyle(card).boxShadow;
-    canvas.getByRole("button", { name: "新建" }).focus();
+    canvas.getByRole("button", { name: "列表布局" }).focus();
     if (server.browser === "webkit") await userEvent.keyboard("{Alt>}{Tab}{/Alt}");
     else await userEvent.tab();
     expect(open.matches(":focus-visible"), document.activeElement?.outerHTML).toBe(true);
@@ -2316,7 +2318,7 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
       canOpen = true;
       view.rerender(app());
       const canvas = within(view.container);
-      await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", scenario.width < 768 ? "drawer" : "topbar"));
+      await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", scenario.width < 768 ? "drawer" : "topbar"), { timeout: 10_000 });
       await waitFor(() => expect(view.container.querySelectorAll('.web-app-header [data-slot="action-group"]')).toHaveLength(scenario.width < 768 ? 2 : 0));
       const list = await canvas.findByRole("list", {name: "笔记列表"});
       expect(list.getAttribute("data-layout")).toBe("list");
@@ -3373,7 +3375,11 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
       const rect = collectionTitle.getBoundingClientRect();
       expect(rect.left + rect.width / 2).toBeCloseTo(673 / 2, 1);
     });
-    await userEvent.click(canvas.getByRole("button", {name: `筛选最近标签 ${longTag}`}));
+    await userEvent.click(canvas.getByRole("button", {name: "筛选笔记"}));
+    const filterDialog = await body.findByRole("dialog", {name: "筛选笔记"});
+    await userEvent.click(within(filterDialog).getByRole("button", {name: `筛选标签 ${longTag}`}));
+    await userEvent.click(within(filterDialog).getByRole("button", {name: "完成"}));
+    await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
     const tagTitle = await within(header).findByRole("button", {name: `标签操作 ${longTag}`});
     for (const width of [320, 390, 673, 767]) {
       await page.viewport(width, 900);
@@ -4242,7 +4248,7 @@ for (const parentTheme of ["light", "dark"] as const) {
       await userEvent.click(within(view.container).getByRole("button", { name: "打开局部主题" }));
       const overlay = document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!;
       expect(overlay.dataset.uiTheme).toBe(theme);
-      expect(getComputedStyle(overlay).backgroundColor).toContain(theme === "dark" ? "0.8" : "0.5");
+      expect(getComputedStyle(overlay).backgroundColor).toContain(theme === "dark" ? "0.8" : "0.75");
       await userEvent.keyboard("{Escape}");
       await waitFor(() => expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull());
       view.unmount();
@@ -4389,8 +4395,8 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
       expect(content.getBoundingClientRect().width).toBeCloseTo(bounds.width, 1);
       const logo = navigation.querySelector("img")!.getBoundingClientRect();
       expect(logo.width).toBe(32); expect(logo.height).toBe(32);
-      const recentTags = await canvas.findByRole("group", { name: "最近使用的笔记标签" });
-      const tagRows = within(recentTags).getAllByRole("button").map(button => button.getBoundingClientRect().top);
+      const recentTags = await canvas.findByRole("tablist", { name: "类型" });
+      const tagRows = within(recentTags).getAllByRole("tab").map(button => button.getBoundingClientRect().top);
       expect(new Set(tagRows).size).toBe(1);
       expect(canvas.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
       await userEvent.click(canvas.getByRole("button", { name: "打开 今天的手冲记录" }));
@@ -4407,9 +4413,9 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
     await waitFor(() => expect(current!.isMobile).toBe(true));
     expect(canvas.queryByRole("navigation", { name: "顶部导航" })).toBeNull();
     expect(canvas.getByRole("button", { name: "打开导航" })).toBeVisible();
-    const recentTags = await canvas.findByRole("group", { name: "最近使用的笔记标签" });
+    const recentTags = await canvas.findByRole("tablist", { name: "类型" });
     expect(recentTags).toBeVisible();
-    const tagRows = within(recentTags).getAllByRole("button").map(button => button.getBoundingClientRect().top);
+    const tagRows = within(recentTags).getAllByRole("tab").map(button => button.getBoundingClientRect().top);
     expect(new Set(tagRows).size).toBe(1);
     const notes = await canvas.findByRole("list", { name: "笔记列表" });
     for (const width of [390, 700]) {
@@ -4423,7 +4429,7 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 }, 30_000);
 
-if (!inject("uiQualityTouch")) test("desktop navigation menus switch on mouse hover and stay open over their items", async () => {
+if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collection filters support keyboard dismissal", async () => {
   await page.viewport(1440, 900);
   const previousHash = location.hash;
   history.replaceState(null, "", "#/notes");
@@ -4433,45 +4439,112 @@ if (!inject("uiQualityTouch")) test("desktop navigation menus switch on mouse ho
   try {
     const canvas = within(view.container);
     const nav = within(await canvas.findByRole("navigation", { name: "顶部导航" }));
-    const home = nav.getByRole("button", { name: "主页" });
-    const tags = nav.getByRole("button", { name: "标签" });
     const trigger = nav.getByRole("button", { name: "所有笔记" });
     const body = within(document.body);
-    await userEvent.hover(await canvas.findByRole("heading", { name: "所有笔记", level: 1 }));
     await userEvent.hover(trigger);
-    await body.findByRole("menu", { name: "所有笔记" });
+    expect(trigger).not.toHaveAttribute("aria-haspopup");
     const more = nav.getByRole("button", { name: "更多" });
     await userEvent.hover(more);
-    await body.findByRole("menu", { name: "更多" });
-    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
-    await userEvent.hover(tags);
-    await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
-    expect(tags).not.toHaveAttribute("aria-haspopup");
-    expect(canvas.getByRole("heading", { name: "所有笔记", level: 1 })).toBeInTheDocument();
-    await userEvent.click(tags);
-    await canvas.findByRole("heading", { name: "标签", level: 1 });
-    await userEvent.hover(home);
-    await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
-    expect(home).not.toHaveAttribute("aria-haspopup");
-    expect(canvas.getByRole("heading", { name: "标签", level: 1 })).toBeInTheDocument();
-    await userEvent.click(home);
-    await canvas.findByRole("tab", { name: "最近更新", selected: true });
+    const menu = await body.findByRole("menu", { name: "更多" });
+    await userEvent.hover(within(menu).getByRole("menuitem", { name: "设置" }));
+    expect(more).toHaveAttribute("aria-expanded", "true");
     await userEvent.hover(trigger);
-    const menu = await body.findByRole("menu", { name: "所有笔记" });
-    const images = within(menu).getByRole("menuitem", { name: "有图片" });
-    await userEvent.hover(images);
-    expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await userEvent.click(images);
-    await canvas.findByRole("heading", { name: "有图片", level: 1 });
-    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
-    trigger.focus();
-    await userEvent.keyboard("{ArrowDown}");
-    await body.findByRole("menu", { name: "所有笔记" });
+    await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
+    await userEvent.click(nav.getByRole("button", { name: "主页" }));
+    await canvas.findByRole("tab", { name: "最近更新", selected: true });
+    await userEvent.click(trigger);
+    await canvas.findByRole("heading", { name: "所有笔记", level: 1 });
+    const filter = canvas.getByRole("button", { name: "筛选笔记" });
+    filter.focus();
+    await userEvent.keyboard("{Enter}");
+    const dialog = await body.findByRole("dialog", { name: "筛选笔记" });
+    await userEvent.click(within(dialog).getByRole("button", { name: "有图片" }));
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
+    await canvas.findByRole("heading", { name: "所有笔记", level: 1 });
+    expect(canvas.getByRole("tab", { name: "有图片", selected: true })).toBeVisible();
+    await waitFor(() => expect(body.queryByRole("dialog", { name: "筛选笔记" })).toBeNull());
+    expect(filter).toHaveFocus();
+    await userEvent.click(trigger);
+    await canvas.findByRole("heading", { name: "所有笔记", level: 1 });
+    await page.viewport(390, 844);
+    await waitFor(() => expect(canvas.queryByRole("navigation", { name: "顶部导航" })).toBeNull());
+    expect(filter).toBeVisible();
+    await userEvent.click(filter);
+    const mobileDialog = await body.findByRole("dialog", { name: "筛选笔记" });
+    await userEvent.click(within(mobileDialog).getByRole("button", { name: "无标签" }));
+    await userEvent.keyboard("{Escape}");
+    await canvas.findByRole("button", { name: "视图选项 所有笔记" });
+    expect(canvas.getByRole("tab", { name: "无标签", selected: true })).toBeVisible();
+    await waitFor(() => expect(body.queryByRole("dialog", { name: "筛选笔记" })).toBeNull());
+    expect(filter).toBeVisible();
+    expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(391);
   } finally {
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
   }
+});
+
+test("drawer inherits semantic tokens in both themes and supports all four directions", async () => {
+  await commands.setReducedMotion("reduce");
+  await page.viewport(1024, 900);
+  for (const mode of ["light", "dark"] as const) {
+    for (const direction of ["down", "up", "left", "right"] as const) {
+      const view = render(<ThemeScope value={{ mode, style: { "--ui-preview-radius": "8px" } as React.CSSProperties }}>
+        <Drawer swipeDirection={direction} showSwipeHandle>
+          <DrawerTrigger render={<Button />}>打开抽屉</DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader><DrawerTitle>主题抽屉</DrawerTitle><DrawerDescription>验证当前主题与方向。</DrawerDescription></DrawerHeader>
+            <span data-drawer-token-probe aria-hidden="true" style={{ position: "absolute", visibility: "hidden", backgroundColor: "var(--color-background-popover)", color: "var(--color-text-primary)", borderRadius: "var(--radius-page)" }} />
+            <DrawerFooter><DrawerClose render={<Button />}>完成</DrawerClose></DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      </ThemeScope>);
+      const trigger = within(view.container).getByRole("button", { name: "打开抽屉" });
+      await userEvent.click(trigger);
+      const dialog = await within(document.body).findByRole("dialog", { name: "主题抽屉" });
+      await settlePropertyPopup(dialog);
+      const style = getComputedStyle(dialog);
+      const probe = getComputedStyle(dialog.querySelector("[data-drawer-token-probe]")!);
+      expect(style.backgroundColor).toBe(probe.backgroundColor);
+      expect(style.color).toBe(probe.color);
+      expect(style.borderRadius).toBe(probe.borderRadius);
+      expect(style.transitionDuration).toBe("0s");
+      expect(dialog.closest("[data-ui-theme]")?.getAttribute("data-ui-theme")).toBe(mode);
+      expect(dialog.getAttribute("data-swipe-direction")).toBe(direction);
+      const bounds = dialog.getBoundingClientRect();
+      expect(bounds.left).toBeGreaterThanOrEqual(0);
+      expect(bounds.top).toBeGreaterThanOrEqual(0);
+      expect(bounds.right).toBeLessThanOrEqual(1024);
+      expect(bounds.bottom).toBeLessThanOrEqual(900);
+      await userEvent.click(within(dialog).getByRole("button", { name: "完成" }));
+      await waitFor(() => expect(dialog.isConnected).toBe(false));
+      expect(trigger).toHaveFocus();
+      view.unmount();
+    }
+  }
+});
+
+if (!inject("uiQualityTouch")) test("drawer dismisses with a downward swipe and restores focus", async () => {
+  await page.viewport(390, 844);
+  const view = render(<Drawer showSwipeHandle>
+    <DrawerTrigger render={<Button />}>打开滑动抽屉</DrawerTrigger>
+    <DrawerContent><DrawerHeader><DrawerTitle>滑动抽屉</DrawerTitle><DrawerDescription>向下滑动关闭。</DrawerDescription></DrawerHeader>
+      <div className="h-48 p-4">抽屉内容</div>
+      <DrawerFooter><DrawerClose render={<Button />}>关闭</DrawerClose></DrawerFooter>
+    </DrawerContent>
+  </Drawer>);
+  const trigger = within(view.container).getByRole("button", { name: "打开滑动抽屉" });
+  await userEvent.click(trigger);
+  const dialog = await within(document.body).findByRole("dialog", { name: "滑动抽屉" });
+  await settlePropertyPopup(dialog);
+  const handle = dialog.querySelector<HTMLElement>('[data-slot="drawer-swipe-handle"]')!;
+  const start = handle.getBoundingClientRect();
+  await userEvent.hover(handle);
+  await commands.pressLeftMouseButton();
+  try {
+    for (const distance of [30, 80, 160, 240]) await userEvent.hover(document.documentElement, { force: true, position: { x: start.left + start.width / 2, y: start.top + start.height / 2 + distance } });
+  } finally { await commands.releaseLeftMouseButton(); }
+  await waitFor(() => expect(dialog.isConnected).toBe(false));
+  expect(trigger).toHaveFocus();
 });
 
 test("tag collection heading keeps a 36px icon background while notes load", async () => {
@@ -4490,7 +4563,11 @@ test("tag collection heading keeps a 36px icon background while notes load", asy
   const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
-    await userEvent.click(await canvas.findByRole("button", { name: `筛选最近标签 ${tag}` }));
+    await userEvent.click(await canvas.findByRole("button", { name: /^筛选笔记/ }));
+    const dialog = within(await within(document.body).findByRole("dialog", { name: "筛选笔记" }));
+    await userEvent.click(await dialog.findByRole("button", { name: `筛选标签 ${tag}` }));
+    await userEvent.click(dialog.getByRole("button", { name: "完成" }));
+    await waitFor(() => expect(within(document.body).queryByRole("dialog")).toBeNull());
     const heading = await canvas.findByRole("heading", { name: `# ${tag}`, level: 1 });
     const loadingIcon = heading.parentElement!.querySelector("span.web-collection-tag-icon")!;
     const background = (icon: Element) => {

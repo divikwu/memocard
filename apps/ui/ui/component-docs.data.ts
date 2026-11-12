@@ -1,6 +1,6 @@
 import { additionalComponentDocs, type AdditionalComponentKey } from "./additional-component-docs.data";
 
-export type CoreComponentKey = "button" | "input" | "textarea" | "card" | "dialog" | "dropdown-menu" | "popover" | "select" | "sheet" | "switch" | "tabs" | "tooltip";
+export type CoreComponentKey = "button" | "input" | "textarea" | "card" | "dialog" | "drawer" | "dropdown-menu" | "popover" | "select" | "sheet" | "switch" | "tabs" | "tooltip";
 
 export type ComponentKey = CoreComponentKey | AdditionalComponentKey;
 
@@ -187,6 +187,30 @@ import { Popover, PopoverTrigger, PopoverContent,
     <Input id="display-name" />
   </PopoverContent>
 </Popover>`,
+  },
+  drawer: {
+    key: "drawer", name: "Drawer", description: "基于 Base UI Drawer 的滑动抽屉。适合筛选等辅助任务，支持四个方向、停靠点与模态焦点管理。",
+    anatomy: ["Drawer：管理开关、滑动方向和停靠点。", "DrawerTrigger / DrawerClose：打开与关闭入口。", "DrawerContent：Portal、遮罩、滑动面板与内容容器。", "DrawerHeader / DrawerTitle / DrawerDescription / DrawerFooter：标题、描述与操作区；DrawerTitle 默认使用 text-xl（font-size-xl，20px）。"],
+    practices: ["使用当前语义颜色、圆角、间距、阴影与动效 token，Portal 继承 ThemeScope。", "为内容提供标题和明确的关闭入口，不把滑动作为唯一关闭方式。", "长内容放入可滚动区域，底部操作保留安全区。"],
+    props: [
+      { name: "Drawer.swipeDirection", type: '"down" | "up" | "left" | "right"', defaultValue: "down", description: "关闭手势方向，同时决定面板出现的边缘。" },
+      { name: "Drawer.showSwipeHandle", type: "boolean", defaultValue: "false", description: "显示装饰性拖动条。" },
+      { name: "Drawer.open / defaultOpen", type: "boolean", description: "受控开关或初始开关。" },
+      { name: "Drawer.onOpenChange / onOpenChangeComplete", type: "function", description: "开关变化及动画完成通知。" },
+      { name: "Drawer.snapPoints", type: "Array<number | string>", description: "可选停靠点；数值可表示视口比例，字符串可使用 px 或 rem。" },
+      { name: "Drawer.modal", type: 'boolean | "trap-focus"', defaultValue: "true", description: "控制焦点限制和背景交互。" },
+    ],
+    accessibility: [{ title: "标题", description: "DrawerTitle 与弹窗可访问名称关联，DrawerDescription 提供补充说明。" }, { title: "关闭与焦点", description: "Escape 或关闭按钮关闭后，焦点返回触发器；模态状态下焦点保留在抽屉内。" }, { title: "动态效果", description: "滑动由 Base UI 管理，减少动态效果偏好会关闭过渡。" }],
+    code: `import { Drawer, DrawerTrigger, DrawerContent, DrawerHeader,
+  DrawerTitle, DrawerDescription, DrawerFooter, DrawerClose } from "@ui/components/drawer";
+
+<Drawer showSwipeHandle>
+  <DrawerTrigger render={<Button variant="outline" />}>打开抽屉</DrawerTrigger>
+  <DrawerContent>
+    <DrawerHeader><DrawerTitle>筛选</DrawerTitle><DrawerDescription>选择筛选条件。</DrawerDescription></DrawerHeader>
+    <DrawerFooter><DrawerClose render={<Button />}>完成</DrawerClose></DrawerFooter>
+  </DrawerContent>
+</Drawer>`,
   },
   select: {
     key: "select", name: "Select", description: "从预定义选项中选择表单值。Root 管理值与开关，Trigger 展示当前值，Content 中组合选项与分组。",

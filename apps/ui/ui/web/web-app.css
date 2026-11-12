@@ -144,8 +144,10 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
   .web-header-actions { grid-column: 3; gap: 0; padding-inline: 0; }
   :where(.web-app[data-web-client]) .web-header-actions { padding-inline: calc(var(--spacing-1) / 2); }
   .web-crumb [data-slot=breadcrumb-page] { font-weight: var(--font-weight-medium); }
-  .web-page-content > section.ui-note-collection > .ui-note-toolbar:not(:has(.ui-note-recent-tags)),
-  .web-page-content > section.ui-note-collection > .ui-note-toolbar > .ui-note-recent-tags + .ui-note-actions { display: none; }
+  .web-page-content > section.ui-note-collection > .ui-note-toolbar:not(:has(.ui-note-recent-tags, .ui-note-filter-trigger)),
+  .web-page-content > section.ui-note-collection > .ui-note-toolbar > .ui-note-actions > :not(.ui-note-filter-control) { display: none; }
+  .web-page-content > section.ui-note-collection > .ui-note-toolbar:has(.ui-note-filter-trigger) { flex-wrap: nowrap; }
+  .web-app .ui-note-filter-trigger { min-height: var(--size-element-lg); }
   .web-app .ui-note-home-tabs, .web-app .ui-note-home-tabs [data-slot=tabs-list] { width: 100%; }
   .web-app .ui-note-home-tabs [data-slot=tabs-list] { height: calc(var(--size-element-lg) + var(--spacing-1) * 2); gap: 0; border-radius: var(--radius-full); background: var(--color-background-control); }
   .web-app .ui-note-home-tabs [data-slot=tabs-trigger] { flex: 1; min-width: 0; height: var(--size-element-lg); min-height: var(--size-element-lg); border-radius: var(--radius-full); }

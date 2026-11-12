@@ -108,7 +108,7 @@ export const InteractionRegression: StoryObj<typeof meta> = {
       await expect(shadow(document)).toContain(shadow(samples[3]));
       const overlay = canvasElement.ownerDocument.querySelector('[data-slot="dialog-overlay"]')!;
       await expect(overlay).toHaveAttribute("data-ui-theme", mode);
-      await expect(getComputedStyle(overlay).backgroundColor).toContain(mode === "dark" ? "/ 0.8)" : "/ 0.5)");
+      await expect(getComputedStyle(overlay).backgroundColor).toContain(mode === "dark" ? "/ 0.8)" : "/ 0.75)");
       await userEvent.keyboard("{Escape}");
       await waitFor(() => expect(document).not.toBeInTheDocument());
     }

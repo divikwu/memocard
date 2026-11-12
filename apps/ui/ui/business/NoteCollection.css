@@ -12,6 +12,7 @@
   gap: calc(var(--spacing-1) * 3);
 }
 .ui-note-toolbar { justify-content: space-between; flex-wrap: wrap; }
+.ui-note-toolbar:has(.ui-note-filter-trigger) { flex-wrap: nowrap; }
 .ui-note-actions { flex-shrink: 0; margin-inline-start: auto; }
 .ui-note-actions:only-child { grid-column: -2; }
 .ui-note-recent-tags {

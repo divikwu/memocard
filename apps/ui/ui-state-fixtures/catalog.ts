@@ -47,7 +47,7 @@ export const scenarios:Scenario[] = [
   {id:'font-error',group:'设置',label:'字体加载失败',instructions:'检查外观设置中的字体回退提示。'},
   {id:'empty',group:'空状态',label:'空笔记库',instructions:'检查空状态和新建按钮；新建只写入模拟内存。'},
   {id:'search-empty',group:'空状态',label:'搜索无结果',auto:'search',instructions:'在全局搜索中输入不存在的关键词，检查无结果文案和清空搜索。'},
-  {id:'filter-empty',group:'空状态',label:'筛选无结果',instructions:'展开“所有笔记”旁的快捷筛选，再选“有图片”，检查空状态。'},
+  {id:'filter-empty',group:'空状态',label:'筛选无结果',instructions:'打开笔记工具栏最右侧的“筛选”，再选“有图片”，检查空状态。'},
   {id:'combined',group:'组合',label:'多个提示同时出现',drafts:3,instructions:'检查文件未就绪、异常草稿、恢复提示同时出现时的层级与页面滚动。'},
   {id:'refresh-timeout',group:'读取',label:'刷新超时',auto:'refresh',instructions:'已模拟后台刷新超时；保留已加载列表和操作，点击“重试”可模拟恢复。'},
   {id:'partial-reading',group:'读取',label:'后台读取 · 已有列表',instructions:'检查后台读取进度和继续使用指引；已加载笔记可以打开编辑，无需手动重新读取。'},

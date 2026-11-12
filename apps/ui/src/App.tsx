@@ -1,6 +1,5 @@
 import { connectSharedTagPreferences } from './shared-tag-preferences';
 import { TagColorProvider } from './TagColorProvider';
-import { noteFilterLabels } from "./note-filter-labels";
 import { renamedTag } from "./rename-tag";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Note, NoteFilterCounts, NotePage, NotePins, NoteQuickFilter, VaultStatus } from "@memocard/contracts";
@@ -132,12 +131,15 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const recoveryRecords = drafts.filter(draft => (draft.unscoped || !draft.baseHash || drafts.some(other => other !== draft && other.id === draft.id)) && (draft.baseHash || draft.title?.trim() || draft.body.trim() || draft.pendingProperties?.length));
   const recoveryChoices = recoveryRecords.filter(draft => !draft.reminderDismissed);
   const [tags, setTags] = useState<TagCount[]>([]);
-  const [indexedRecentTags, setIndexedRecentTags] = useState<{ quickFilter: NoteQuickFilter | null; tags: string[] }>();
-  const recentTagFallback = useRef<{ vaultId: string; quickFilter: NoteQuickFilter | null; tags: string[] } | null>(null);
+  const [indexedRecentTags, setIndexedRecentTags] = useState<{ quickFilter: string | null; tags: string[] }>();
+  const recentTagFallback = useRef<{ vaultId: string; quickFilter: string | null; tags: string[] } | null>(null);
   const [folders, setFolders] = useState<string[]>([]);
   const [registeredVaults, setRegisteredVaults] = useState<RegisteredVault[]>([]);
-  const [tag, setTag] = useState<string | null>(null);
-  const [quickFilter, setQuickFilter] = useState<NoteQuickFilter | null>(null);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [quickFilters, setQuickFilters] = useState<NoteQuickFilter[]>([]);
+  const tag = activeTags.length === 1 ? activeTags[0] : null;
+  const quickFilter = quickFilters.length === 1 ? quickFilters[0] : null;
+  const filterScope = quickFilters.join(",") || null;
   const [filterCounts, setFilterCounts] = useState<NoteFilterCounts>();
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(isConnectedClient);
@@ -213,7 +215,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       if (current !== generation.current) return;
       setStatus(nextStatus); setEnvironment(nextEnvironment); setWebConnected(true);
       serviceResponded = true;
-      listKey = JSON.stringify([nextStatus.vaultId, resetFilters ? null : tag, resetFilters ? null : quickFilter, view, homeTab]);
+      listKey = JSON.stringify([nextStatus.vaultId, resetFilters ? [] : activeTags, resetFilters ? [] : quickFilters, view, homeTab]);
       if (connectionLost.current) { connectionLost.current = false; setError(""); }
       const allowed = new Set([...nextStatus.capabilities, ...nextEnvironment.capabilities]);
       const id = getNoteRouteId(window.location.hash);
@@ -254,7 +256,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
             const refreshed: Note[] = [];
             for (let index = 0; index < pageCount; index++) {
               if (current !== generation.current) return null;
-              page = await request<NotePage>("queryNotes", { query: "", ...(!resetFilters && view !== "home" && tag ? {tags: [tag], exactTags: true} : {tags: []}), ...(quickFilter && !resetFilters && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), ...((view === "home" || view === "notes") && { includeCardPreview: true }), limit: 30, ...(nextCursor ? {cursor: nextCursor} : {}) });
+              page = await request<NotePage>("queryNotes", { query: "", ...(!resetFilters && view !== "home" && activeTags.length ? {tags: activeTags, exactTags: true, ...(activeTags.length > 1 && {tagMatch: "any"})} : {tags: []}), ...(quickFilters.length && !resetFilters && view !== "home" ? (quickFilter ? { quickFilter } : { quickFilters }) : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), ...((view === "home" || view === "notes") && { includeCardPreview: true }), limit: 30, ...(nextCursor ? {cursor: nextCursor} : {}) });
               refreshed.push(...page.notes);
               nextCursor = page.nextCursor;
               if (!nextCursor) break;
@@ -270,7 +272,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       const pinsResult = allowed.has("getNotePins") ? request<NotePins>("getNotePins").then(pins => {
         if (current === generation.current && epoch === pinEpoch.current && nextStatus.vaultId) { setNotePins({ ...pins, vaultId: nextStatus.vaultId }); setPinReadError(null); }
       }).catch(cause => { if (current === generation.current && epoch === pinEpoch.current) { setNotePins(null); setPinReadError(cause); } }) : Promise.resolve();
-      const includeRecent = view === "notes" && (resetFilters || !quickFilter);
+      const includeRecent = view === "notes" && (resetFilters || !filterScope);
       const [page, tagResult, folderResult] = await Promise.all([
         readPages(),
         allowed.has("listTags") ? request<{ tags: TagCount[]; recentTags?: string[] }>("listTags", { flat: true, ...(includeRecent && { includeRecent: true }) }) : null,
@@ -289,7 +291,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       setNotes(page?.notes ?? []); setCursor(page?.nextCursor ?? null);
       setError((previous: unknown) => bridgeErrorCode(previous) === "STALE_CURSOR" ? "" : previous);
       setFilterCounts(page?.filterCounts);
-      const recentScope = resetFilters ? null : quickFilter;
+      const recentScope = resetFilters ? null : filterScope;
       const indexedTags = recentScope ? page?.recentQuickFilterTags : tagResult?.recentTags;
       setIndexedRecentTags(indexedTags && { quickFilter: recentScope, tags: indexedTags });
       setTags(tagResult?.tags ?? []); setFolders(folderResult.folders);
@@ -307,7 +309,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
         if (pendingRefresh.current && !loadingMore.current && !selectingVault.current) void refresh(true);
       }
     }
-  }, [tag, quickFilter, view, homeTab]);
+  }, [activeTags, quickFilters, quickFilter, filterScope, view, homeTab]);
 
   const invalidateRequests = useCallback(() => { generation.current++; }, []);
   useEffect(() => { void refresh(); return invalidateRequests; }, [refresh, invalidateRequests]);
@@ -356,7 +358,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
         reconnectVault(result.reconnectUrl);
         return;
       }
-      setTag(null); setQuickFilter(null); setFilterCounts(undefined); setNotePins(null); setPinReadError(null);
+      setActiveTags([]); setQuickFilters([]); setFilterCounts(undefined); setNotePins(null); setPinReadError(null);
       setRecoveryDismissed(false); setRecoveryOpen(false);
       loadedListKey.current = null;
       setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setIndexedRecentTags(undefined); setFolders([]); setCursor(null);
@@ -377,7 +379,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     try {
       const result = await request<SelectVaultResult>("activateVault", { vaultId });
       if ("reconnectUrl" in result) { reconnectVault(result.reconnectUrl); return; }
-      setTag(null); setQuickFilter(null); setFilterCounts(undefined); setNotePins(null); setPinReadError(null);
+      setActiveTags([]); setQuickFilters([]); setFilterCounts(undefined); setNotePins(null); setPinReadError(null);
       loadedListKey.current = null;
       loadedPages.current = 1;
       await refresh(false, true);
@@ -480,7 +482,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     window.history.replaceState(null, '', `#/${returnView.current}`);
     setView(returnView.current);
     restoreListPosition();
-    if (quickFilter) loadedPages.current = 1;
+    if (quickFilters.length) loadedPages.current = 1;
     void refresh(true);
     if (deleted) setPendingOpenNote(null);
     if (pendingOpenNote && !deleted) {
@@ -496,7 +498,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     setPaging(true);
     const current = generation.current;
     try {
-      const page = await request<NotePage>("queryNotes", { query: "", ...(view !== "home" && tag ? {tags: [tag], exactTags: true} : {tags: []}), ...(quickFilter && view !== "home" ? { quickFilter } : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), ...((view === "home" || view === "notes") && { includeCardPreview: true }), limit: 30, cursor });
+      const page = await request<NotePage>("queryNotes", { query: "", ...(view !== "home" && activeTags.length ? {tags: activeTags, exactTags: true, ...(activeTags.length > 1 && {tagMatch: "any"})} : {tags: []}), ...(quickFilters.length && view !== "home" ? (quickFilter ? { quickFilter } : { quickFilters }) : {}), ...(view === "home" ? { sort: homeTab === "pinned" ? "pinnedAt" : "updatedAt", ...(homeTab === "pinned" ? { pinned: true } : {}) } : {}), ...((view === "home" || view === "notes") && { includeCardPreview: true }), limit: 30, cursor });
       if (generation.current !== current) return;
       setNotes((previous) => [...previous, ...page.notes.filter((note) => !previous.some((item) => item.id === note.id))]); setCursor(page.nextCursor);
       loadedPages.current++;
@@ -583,7 +585,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const openingTitle = openingNoteId ? notes.find(note => note.id === openingNoteId)?.title?.trim() : undefined;
   const connectionState = !detailView && view !== "settings" && view !== "tags" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
   const listTimeoutVisible = !detailView && view !== "settings" && view !== "tags" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
-  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "tags" ? "标签" : view === "home" ? "主页" : quickFilter ? noteFilterLabels[quickFilter] : tag ? `# ${tag}` : "所有笔记";
+  const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "tags" ? "标签" : view === "home" ? "主页" : activeTags.length > 1 ? "筛选笔记" : tag ? `# ${tag}` : "所有笔记";
   const newNote = async () => {
     if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setError('');
@@ -641,7 +643,11 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     finally { deletingDraft.current = false; setReminderWorking(false); setDraftToDelete(null); }
   };
 
-  const navigate = async (nextView: View, nextTag: string | null = null, nextFilter: NoteQuickFilter | null = null) => {
+  const navigate = async (nextView: View, nextTag: string | string[] | null = null, nextFilter: NoteQuickFilter | NoteQuickFilter[] | null = null) => {
+    const nextTags = [...new Set(Array.isArray(nextTag) ? nextTag : nextTag ? [nextTag] : [])].sort();
+    const nextFilters = [...new Set(Array.isArray(nextFilter) ? nextFilter : nextFilter ? [nextFilter] : [])].sort();
+    const tagsChanged = JSON.stringify(nextTags) !== JSON.stringify(activeTags);
+    const filtersChanged = JSON.stringify(nextFilters) !== JSON.stringify(quickFilters);
     const returningFromDetail = Boolean(editorHash.current);
     if (!(await leaveEditor())) return;
     if (nextView !== returnView.current) searchNoteReturn.current = null;
@@ -650,15 +656,16 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     setView(nextView);
     if (nextView === 'home') setCaptureOpened(true);
     if (nextView !== "settings") {
-      if (nextView !== view || nextTag !== tag || nextFilter !== quickFilter) {
-        if (view === "notes" && !tag && indexedRecentTags?.quickFilter !== quickFilter && loadedListKey.current && status?.vaultId === loadedVaultId.current && status?.vaultId) {
-          recentTagFallback.current = { vaultId: status.vaultId, quickFilter, tags: recentNoteTags(notes) };
+      if (nextView !== view || tagsChanged || filtersChanged) {
+        if (view === "notes" && !activeTags.length && indexedRecentTags?.quickFilter !== filterScope && loadedListKey.current && status?.vaultId === loadedVaultId.current && status?.vaultId) {
+          recentTagFallback.current = { vaultId: status.vaultId, quickFilter: filterScope, tags: recentNoteTags(notes) };
         }
         generation.current++; loadedPages.current = 1;
         loadedListKey.current = null; setListTimeout(null);
         setNotes([]); setCursor(null); setLoading(true);
       }
-      setTag(nextTag); setQuickFilter(nextFilter);
+      if (tagsChanged) setActiveTags(nextTags);
+      if (filtersChanged) setQuickFilters(nextFilters);
     }
     window.location.hash = `#/${nextView}`;
     setMenuOpen(false);
@@ -713,7 +720,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
           else await openNote(noteId);
         } else {
           setView(getView()); setMenuOpen(false);
-          if (getView() === 'home') { setCaptureOpened(true); setTag(null); setQuickFilter(null); }
+          if (getView() === 'home') { setCaptureOpened(true); setActiveTags([]); setQuickFilters([]); }
           if (requested === '#/notes' || requested === '#/home' || requested === '#/trash') restoreListPosition();
         }
       })().finally(() => { routeLoading.current = ''; });
@@ -740,7 +747,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
     try {
       await (await import("./rename-tag-operation")).renameTag(from, to, status.vaultId, request);
-      if (tag) setTag(renamedTag(tag, from, to));
+      setActiveTags(current => [...new Set(current.map(tag => renamedTag(tag, from, to)))].sort());
     } finally { await refresh(); }
   }
   const sidebarProps: AppViewState["sidebar"] = {
@@ -773,15 +780,16 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const hasCurrentVaultList = loadedVaultId.current === vaultId;
   const recentTags = useMemo(() => {
     if (view !== "notes" || quickFilter === "untagged") return undefined;
-    if (!hasCurrentVaultList) return quickFilter ? undefined : [];
-    const indexed = indexedRecentTags?.quickFilter === quickFilter ? indexedRecentTags.tags : undefined;
-    const cached = tag && cachedRecentTags?.vaultId === vaultId && cachedRecentTags?.quickFilter === quickFilter ? cachedRecentTags.tags : undefined;
+    if (!hasCurrentVaultList) return filterScope ? undefined : [];
+    const indexed = indexedRecentTags?.quickFilter === filterScope ? indexedRecentTags.tags : undefined;
+    const cached = activeTags.length > 0 && cachedRecentTags?.vaultId === vaultId && cachedRecentTags?.quickFilter === filterScope ? cachedRecentTags.tags : undefined;
     const tags = indexed ?? cached ?? recentNoteTags(notes);
-    return quickFilter && !tags.length ? undefined : tags;
-  }, [view, quickFilter, hasCurrentVaultList, vaultId, indexedRecentTags, tag, cachedRecentTags, notes]);
+    return filterScope && !tags.length ? undefined : tags;
+  }, [view, quickFilter, filterScope, hasCurrentVaultList, vaultId, indexedRecentTags, activeTags, cachedRecentTags, notes]);
   const collectionProps: NoteCollectionProps = {
     activeTag: view === "notes" ? tag : null,
     recentTags,
+    filters: view === "notes" ? { tags, vaultId: status?.vaultId, activeTags, quickFilters, filterCounts, onChange: (nextTag, nextFilter) => void navigate("notes", nextTag, nextFilter) } : undefined,
     home: view === "home" ? { tab: homeTab, pinnedCount: notePins && notePins.vaultId === status?.vaultId ? Object.keys(notePins.pins).length : 0, onTabChange: changeHomeTab } : undefined,
     notes, loading,
     tagFiltersDisabled: switchingVault || !status?.connected || (isLocalWeb && !webConnected) || !capabilities.has("queryNotes"),
@@ -789,8 +797,8 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     loadMoreDisabled: paging || switchingVault || refreshingPages || localWebReconnectRequired || needsPermission,
     canOpen: !working && Boolean(status?.connected) && (!isLocalWeb || webConnected) && capabilities.has("getNote"),
     onOpen: id => void openNote(id), onSelectTag: name => navigate("notes", name), onLoadMore: () => void loadMore(), onError: setError, formatDate,
-    onSelectRecentTag: name => void navigate("notes", name, quickFilter),
-    onSelectAll: () => void navigate("notes", null, quickFilter),
+    onSelectRecentTag: name => void navigate("notes", name, quickFilters),
+    onSelectAll: () => void navigate("notes", null, quickFilters),
   };
   const searchProps: NoteSearchProps = {
     open: searchOpen, preserveSession: isMobile, sessionRef: searchSession, onOpenChange: changeSearchOpen, vaultName: status?.vaultName || "笔记库",
@@ -825,7 +833,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     sidebar: sidebarProps, collection: collectionProps, editor: editorProps, capture: captureProps, search: searchProps,
     pinned: isNotePinned, pinDisabled: !editing?.baseHash || !notePins || notePins.vaultId !== status?.vaultId || pinWorking || switchingVault || !status?.connected || (isLocalWeb && !webConnected),
     canDeleteNote: canCreate && !pinWorking && !working, searchMounted: Boolean(searchOpen || (isMobile && searchNoteReturn.current && searchNoteReturn.current === status?.vaultId)), onTogglePin: () => void togglePinned(),
-    onNavigate: navigate, onBack: () => openingNote ? void navigate(returnView.current, tag, quickFilter) : void editorHandle.current?.finish(),
+    onNavigate: navigate, onBack: () => openingNote ? void navigate(returnView.current, activeTags, quickFilters) : void editorHandle.current?.finish(),
     onNew: newNote, onSearch: searchNotes, onRefresh: refreshCurrentView, onRefreshBackground: () => void refresh(true),
     onToggleMCP: toggleMCP, onOpenLocalWeb: openLocalWeb,
     onRetryDetail: () => { routeNoteRequest.current = null; if (pendingNoteId) void openNote(pendingNoteId); },

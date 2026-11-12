@@ -59,7 +59,6 @@ export function workspaceActions(p: WorkspaceNavigationProps) {
     reauthorize: action("重新授权文件夹", !p.needsPermission || p.working, p.onReauthorize),
     refresh: action("刷新笔记库", !p.canRefresh, () => p.onRefresh?.()),
     drafts: action(`保留草稿（${p.draftCount ?? 0}）`, !p.onOpenDrafts, () => p.onOpenDrafts?.()),
-    filters: workspaceFilters.map(filter => ({ ...filter, ...action(filter.label, !p.connected, () => p.onNavigate("notes", null, filter.id)) })),
   };
 }
 

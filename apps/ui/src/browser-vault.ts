@@ -593,6 +593,10 @@ export class BrowserVault {
     const exactTags = params.exactTags === true;
     const quickFilter = params.quickFilter as NoteQuickFilter | undefined;
     if (quickFilter !== undefined && !["untagged", "images", "links"].includes(quickFilter)) throw new BrowserVaultError("INVALID_PARAMS", "快捷筛选条件无效。");
+    const tagMatch = params.tagMatch ?? "all";
+    if (tagMatch !== "all" && tagMatch !== "any") throw new BrowserVaultError("INVALID_PARAMS", "标签匹配方式无效。");
+    if (params.quickFilters !== undefined && (!Array.isArray(params.quickFilters) || params.quickFilters.some(value => !["untagged", "images", "links"].includes(value)))) throw new BrowserVaultError("INVALID_PARAMS", "快捷筛选条件无效。");
+    const quickFilters = [...new Set([...(params.quickFilters as NoteQuickFilter[] | undefined ?? []), ...(quickFilter ? [quickFilter] : [])])];
     const from = params.from === undefined ? undefined : parseDate(params.from);
     const to = params.to === undefined ? undefined : parseDate(params.to);
     if (from !== undefined && to !== undefined && from > to) throw new BrowserVaultError("INVALID_PARAMS", "开始时间不能晚于结束时间。");
@@ -603,7 +607,7 @@ export class BrowserVault {
     await this.active(selected);
     const sortAt = (note: Note) => sort === 'updatedAt' ? note.updatedAt : sort === 'pinnedAt' ? pins.pins[note.id] ?? note.createdAt : note.createdAt;
     const sortDates = new Map(snapshot.parsed.map(({ note }) => [note.id, parseDate(sortAt(note))]));
-    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, ...(exactTags ? {exactTags} : {}), quickFilter, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned, ...(params.includeCardPreview === true && {includeCardPreview:true}) })));
+    const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, ...(exactTags ? {exactTags} : {}), quickFilter, quickFilters, tagMatch, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned, ...(params.includeCardPreview === true && {includeCardPreview:true}) })));
     const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(sort === 'updatedAt' ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
     let after: { id: string; createdAt: string } | undefined;
     if (params.cursor !== undefined) {
@@ -633,8 +637,8 @@ export class BrowserVault {
       return (!folder || note.relativePath.startsWith(`${folder}/`)) && !!note.deletedAt === (params.deleted ?? false)
         && (params.pinned === undefined || Boolean(pins.pins[note.id]) === params.pinned)
         && (sort !== 'pinnedAt' || Boolean(pins.pins[note.id]))
-        && (!quickFilter || filters.get(note.id)!.includes(quickFilter))
-        && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && tags.every((tag) => note.tags.some(value => value === tag || (!exactTags && value.startsWith(tag + "/"))))
+        && (!quickFilters.length || quickFilters.some(filter => filters.get(note.id)!.includes(filter)))
+        && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && (!tags.length || tags[tagMatch === "any" ? "some" : "every"]((tag) => note.tags.some(value => value === tag || (!exactTags && value.startsWith(tag + "/")))))
         && (from === undefined || createdDate >= from) && (to === undefined || createdDate < to)
         && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
     });
@@ -655,8 +659,8 @@ export class BrowserVault {
     }
     const last = notes.at(-1);
     const nextCursor = matching.length > notes.length && last ? btoa(JSON.stringify({ id: last.id, createdAt: last.createdAt, sortAt: sortAt(last), queryHash, snapshotHash })) : null;
-    const recentQuickFilterTags = quickFilter && quickFilter !== "untagged"
-      ? recentNoteTags(snapshot.parsed.map(({ note }) => note).filter(note => filters.get(note.id)!.includes(quickFilter)))
+    const recentQuickFilterTags = quickFilters.some(filter => filter !== "untagged")
+      ? recentNoteTags(snapshot.parsed.map(({ note }) => note).filter(note => quickFilters.some(filter => filters.get(note.id)!.includes(filter))))
       : undefined;
     return { notes, nextCursor, coverage: snapshot.coverage, filterCounts, recentQuickFilterTags };
   }

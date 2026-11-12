@@ -903,6 +903,26 @@ describe("independent browser vault", () => {
     expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "links" })).filterCounts).toEqual({ untagged: 2, images: 1, links: 0 });
   });
 
+  it("ORs multi-select groups, ANDs tags with types before paging, and preserves legacy AND tags", async () => {
+    const h = await open();
+    const bodies = ["#alpha ![photo](photo.png)", "#beta https://example.com", "#alpha #beta plain", "![photo](photo.png)"];
+    const ids = [noteId, secondId, createId(), createId()];
+    for (let index = 0; index < bodies.length; index++) h.notes.children.set(`${ids[index]}.md`, new TestFile(`${ids[index]}.md`, source(ids[index], bodies[index]).replace(/tags: .*\n/, "tags: []\n")));
+    const query = { tags: ["alpha", "beta"], tagMatch: "any", exactTags: true, quickFilters: ["images", "links"], limit: 1 };
+    const first = await call<NotePage>(h.core, "queryNotes", query);
+    const second = await call<NotePage>(h.core, "queryNotes", { ...query, cursor: first.nextCursor });
+    expect([first.notes[0].id, second.notes[0].id].sort()).toEqual(ids.slice(0, 2).sort());
+    expect(second.nextCursor).toBeNull();
+    expect(first.recentQuickFilterTags?.sort()).toEqual(["alpha", "beta"]);
+    expect((await call<NotePage>(h.core, "queryNotes", { tags: ["alpha", "beta"] })).notes.map(note => note.id)).toEqual([ids[2]]);
+    expect((await call<NotePage>(h.core, "queryNotes", { tags: [], tagMatch: "any", quickFilters: [] })).notes).toHaveLength(4);
+    expect((await call<NotePage>(h.core, "queryNotes", { tags: ["alpha"], quickFilters: ["untagged", "images"] })).notes.map(note => note.id)).toEqual([noteId]);
+    await expect(call(h.core, "queryNotes", { ...query, tags: ["alpha"], cursor: first.nextCursor })).rejects.toMatchObject({ code: "CURSOR_QUERY_MISMATCH" });
+    await expect(call(h.core, "queryNotes", { ...query, quickFilters: ["images"], cursor: first.nextCursor })).rejects.toMatchObject({ code: "CURSOR_QUERY_MISMATCH" });
+    await expect(call(h.core, "queryNotes", { quickFilters: ["voice"] })).rejects.toMatchObject({ code: "INVALID_PARAMS" });
+    await expect(call(h.core, "queryNotes", { tagMatch: "invalid" })).rejects.toMatchObject({ code: "INVALID_PARAMS" });
+  });
+
   it("invalidates pagination when switching to an identical restored folder with the same vaultId", async () => {
     const h = await open();
     h.notes.children.set("second.md", new TestFile("second.md", source(secondId)));

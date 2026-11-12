@@ -538,7 +538,10 @@ describe("note workspace", () => {
     });
     render(<App />);
     await screen.findByText(note.body);
-    fireEvent.click(screen.getByRole("button", { name: "筛选最近标签 生活" }));
+    fireEvent.click(screen.getByRole("button", { name: "筛选笔记" }));
+    fireEvent.click(await screen.findByRole("button", { name: "筛选标签 生活" }));
+    fireEvent.click(screen.getByRole("button", { name: "完成" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, includeCardPreview: true, limit: 30 }));
     window.location.hash = "#/settings";
     fireEvent(window, new Event("hashchange"));

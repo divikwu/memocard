@@ -127,11 +127,15 @@ struct Draft: Codable {
     }
 }
 
+enum TagMatch: String, Codable { case all, any }
+
 struct Query: Codable {
     var folder: String?
     var query: String?
     var tags: [String]?
     var exactTags: Bool?
+    var tagMatch: TagMatch?
+    var quickFilters: [NoteQuickFilter]?
     var quickFilter: NoteQuickFilter?
     var from: String?
     var to: String?

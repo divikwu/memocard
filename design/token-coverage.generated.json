@@ -6038,7 +6038,7 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
-          "value": "color-mix(in srgb, var(--color-black) 50%, transparent)",
+          "value": "var(--color-background-glass)",
           "line": 37
         },
         {
@@ -13773,6 +13773,7 @@
         "apps/ui/ui/business/NoteOutline.css",
         "apps/ui/ui/business/NotePageTitle.css",
         "apps/ui/ui/business/TagsPage.css",
+        "apps/ui/ui/business/TagDirectoryList.css",
         "apps/ui/ui/business/PageNotice.css",
         "apps/ui/ui/business/QuickCapture.css",
         "apps/ui/ui/business/note-content.css",
@@ -13793,7 +13794,8 @@
         "apps/ui/ui/web/web-typography.css",
         "apps/ui/ui/components/theme-scope.css",
         "apps/ui/ui/web/layouts/topbar.css",
-        "apps/ui/ui/web/appearance/themes/minimal.css"
+        "apps/ui/ui/web/appearance/themes/minimal.css",
+        "apps/ui/ui/components/drawer.tsx"
       ],
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx"
@@ -13811,7 +13813,8 @@
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/components/dialog.tsx",
         "apps/ui/ui/components/sheet.tsx",
-        "apps/ui/ui/components/popover.tsx"
+        "apps/ui/ui/components/popover.tsx",
+        "apps/ui/ui/components/drawer.tsx"
       ],
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx"
@@ -13895,14 +13898,16 @@
       "type": "position",
       "status": "upstream-owned",
       "axes": [],
-      "description": "Base UI floating positioner outputs consumed by current menus and popovers.",
+      "description": "Base UI floating positioner, drawer gesture and accordion panel geometry outputs.",
       "sources": [
         "apps/ui/package.json"
       ],
       "consumers": [
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/popover.tsx",
-        "apps/ui/ui/components/dropdown-menu.tsx"
+        "apps/ui/ui/components/dropdown-menu.tsx",
+        "apps/ui/ui/components/drawer.tsx",
+        "apps/ui/ui/components/accordion.tsx"
       ]
     },
     {
@@ -13964,6 +13969,12 @@
   "optionalStylesheets": [],
   "external": [
     {
+      "name": "--accordion-panel-height",
+      "type": "dimension",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/accordion/panel/AccordionPanelCssVars.d.ts"
+    },
+    {
       "name": "--available-height",
       "type": "dimension",
       "contract": "platform.positioning",
@@ -13992,6 +14003,54 @@
       "type": "dimension",
       "contract": "platform.positioning",
       "source": "apps/ui/node_modules/@base-ui/react/collapsible/panel/CollapsiblePanelCssVars.d.ts"
+    },
+    {
+      "name": "--nested-drawers",
+      "type": "number",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/popup/DrawerPopupCssVars.d.ts"
+    },
+    {
+      "name": "--drawer-height",
+      "type": "dimension",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/popup/DrawerPopupCssVars.d.ts"
+    },
+    {
+      "name": "--drawer-frontmost-height",
+      "type": "dimension",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/popup/DrawerPopupCssVars.d.ts"
+    },
+    {
+      "name": "--drawer-swipe-movement-x",
+      "type": "dimension",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/popup/DrawerPopupCssVars.d.ts"
+    },
+    {
+      "name": "--drawer-swipe-movement-y",
+      "type": "dimension",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/popup/DrawerPopupCssVars.d.ts"
+    },
+    {
+      "name": "--drawer-snap-point-offset",
+      "type": "dimension",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/popup/DrawerPopupCssVars.d.ts"
+    },
+    {
+      "name": "--drawer-swipe-strength",
+      "type": "number",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/popup/DrawerPopupCssVars.d.ts"
+    },
+    {
+      "name": "--drawer-swipe-progress",
+      "type": "number",
+      "contract": "platform.positioning",
+      "source": "apps/ui/node_modules/@base-ui/react/drawer/backdrop/DrawerBackdropCssVars.d.ts"
     }
   ]
 }

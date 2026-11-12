@@ -64,3 +64,11 @@ it("keeps the notes collection available while only the search request remains l
   expect(collection.nextCursor).toBeNull();
   expect(settled).not.toHaveBeenCalled();
 });
+
+it("previews tag union filtering with the same defaults as the real vault", async () => {
+  const fixture = await createWorkspaceFixture();
+  const query = { tags: ["设计", "阅读"], exactTags: true };
+  expect((await fixture.request<NotePage>("queryNotes", query)).notes).toHaveLength(0);
+  expect((await fixture.request<NotePage>("queryNotes", { ...query, tagMatch: "any" })).notes).toHaveLength(2);
+  expect((await fixture.request<NotePage>("queryNotes", { tags: [], tagMatch: "any" })).notes).toHaveLength(6);
+});
