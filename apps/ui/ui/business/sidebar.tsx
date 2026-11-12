@@ -5,7 +5,7 @@ import { Button } from "../components/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Separator } from "../components/separator";
 import { Sheet, SheetClose, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
-import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuSub, SidebarRail, SidebarTrigger, useSidebar } from "../components/sidebar";
+import { Sidebar, SidebarContent, SidebarHeader, SidebarMenu, SidebarRail, SidebarTrigger, useSidebar } from "../components/sidebar";
 import { HugeiconsIcon } from "@hugeicons/react";
 import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import { SidebarIcon } from "./sidebar-icons";
@@ -15,7 +15,7 @@ import "./sidebar.css";
 
 
 export function AppSidebar(props: AppSidebarProps) {
-  const { view, tag, quickFilter = null, filterCounts, tags, loadingTags = false, vaultName, vaultId, registeredVaults = [], onRenameTag, vaultStatusText, hasVaultIssue, canChooseVault, canCreateVault, needsPermission, working, onNavigate, onRefresh, draftCount = 0, onOpenDrafts } = props;
+  const { view, tag, tags, loadingTags = false, vaultName, vaultId, registeredVaults = [], onRenameTag, vaultStatusText, hasVaultIssue, canChooseVault, canCreateVault, needsPermission, working, onNavigate, onRefresh, draftCount = 0, onOpenDrafts } = props;
   const actions = workspaceActions(props);
   const { isMobile, setOpenMobile } = useSidebar();
   const [tagScroller, setTagScroller] = useState<HTMLDivElement | null>(null);
@@ -71,9 +71,7 @@ export function AppSidebar(props: AppSidebarProps) {
           <SidebarTreeItem label={actions.newNote.label} icon={<SidebarIcon name="add" />} isActive={false} buttonProps={{ disabled: actions.newNote.disabled, onClick: action(actions.newNote.run) }} />
         </>}
         <SidebarTreeItem label={actions.home.label} icon={<SidebarIcon name="home" />} isActive={view === "home"} buttonProps={{ onClick: action(actions.home.run) }} />
-        <SidebarTreeItem label={actions.notes.label} icon={<SidebarIcon name="notebook" />} buttonProps={{ onClick: action(actions.notes.run) }} isActive={view === "notes" && !tag && !quickFilter} defaultOpen={false} toggleLabel="展开或收起快捷筛选">
-          <SidebarMenuSub className="mr-0 translate-x-0 pr-0">{actions.filters.map(filter => <SidebarTreeItem key={filter.id} nested label={filter.label} icon={<SidebarIcon name={filter.icon} />} isActive={view === "notes" && quickFilter === filter.id} buttonProps={{ disabled: filter.disabled, onClick: action(filter.run), "aria-label": filter.label, "aria-description": filterCounts ? `${filterCounts[filter.id]} 条笔记` : undefined }} accessories={filterCounts && <SidebarMenuBadge aria-hidden="true">{filterCounts[filter.id]}</SidebarMenuBadge>} />)}</SidebarMenuSub>
-        </SidebarTreeItem>
+        <SidebarTreeItem label={actions.notes.label} icon={<SidebarIcon name="notebook" />} buttonProps={{ onClick: action(actions.notes.run) }} isActive={view === "notes" && !tag} />
         <SidebarTreeItem label="日历" icon={<SidebarIcon name="calendar" />} isActive={false} buttonProps={{ "aria-disabled": "true", className: "aria-disabled:opacity-100", "data-ui-tooltip": "日历功能暂未开放" }} />
         <SidebarTreeItem label={actions.tags.label} icon={<SidebarIcon name="hash" />} isActive={view === "tags"} buttonProps={{ onClick: action(actions.tags.run) }} />
       </SidebarMenu></nav>

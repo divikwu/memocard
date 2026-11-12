@@ -32,13 +32,7 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
     </div>
     <nav aria-label="顶部导航" data-variant="pill" data-transparent-inactive className={cn(tabsListVariants({ variant: "pill" }), "web-top-links rounded-none")}>
       <Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={activeView === "home" ? "page" : undefined} onClick={actions.home.run}>{actions.home.label}</Button>
-      <DropdownMenu><DropdownMenuTrigger openOnHover render={<Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={notesActive ? "page" : undefined} />}>{actions.notes.label}</DropdownMenuTrigger><DropdownMenuContent align="start" className="web-top-menu">
-        <DropdownMenuItem onClick={actions.notes.run}><SidebarIcon name="notebook" />{actions.notes.label}</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup><DropdownMenuLabel>快捷筛选</DropdownMenuLabel>
-          {actions.filters.map(filter => <DropdownMenuItem key={filter.id} disabled={filter.disabled} onClick={filter.run}><SidebarIcon name={filter.icon} />{filter.label}</DropdownMenuItem>)}
-        </DropdownMenuGroup>
-      </DropdownMenuContent></DropdownMenu>
+      <Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={notesActive ? "page" : undefined} onClick={actions.notes.run}>{actions.notes.label}</Button>
       {themeId === "minimal"
         ? <Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={tagsCurrent} onClick={actions.tags.run}>{actions.tags.label}</Button>
         : <TagBrowsePopover navigation={p} action={actions.tags} current={tagsCurrent} />}

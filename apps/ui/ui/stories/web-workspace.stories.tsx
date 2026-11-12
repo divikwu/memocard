@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { App } from "../../src/App";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { StorybookAppearanceBridge } from "../web/StorybookAppearanceBridge";
 import { createWorkspaceFixture } from "../web/workspace-fixture";
@@ -43,7 +43,11 @@ export const Workspace: Story = { play: async ({ canvasElement }) => {
 } };
 export const TagBreadcrumb: Story = { tags: ["!dev", "!autodocs"], args: { initialRoute: "#/notes" }, play: async ({ canvasElement }) => {
   const canvas = within(canvasElement);
-  await userEvent.click(await canvas.findByRole("button", { name: "筛选最近标签 生活/咖啡" }));
+  await userEvent.click(await canvas.findByRole("button", { name: "筛选笔记" }));
+  const drawer = await within(canvasElement.ownerDocument.body).findByRole("dialog", { name: "筛选笔记" });
+  await userEvent.click(within(drawer).getByRole("button", { name: "筛选标签 生活/咖啡" }));
+  await userEvent.click(within(drawer).getByRole("button", { name: "完成" }));
+  await waitFor(() => expect(drawer.isConnected).toBe(false));
   await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
   await canvas.findByRole("textbox", { name: "笔记内容" }, { timeout: 10_000 });
   const breadcrumb = within(canvas.getByRole("navigation", { name: "当前位置" }));
@@ -65,7 +69,7 @@ export const SearchLoading: Story = { args: { scenario: "review-search-loading",
 export const SearchFailure: Story = { args: { scenario: "review-search-error", initialRoute: "#/notes" } };
 export const SettingsReview: Story = { args: { scenario: "loading", initialRoute: "#/settings" } };
 export const TagDirectory: Story = { args: { scenario: "loading", initialRoute: "#/tags" }, play: async ({ canvasElement }) => {
-  const directory = within(await within(canvasElement).findByRole("region", { name: "标签目录" }));
+  const directory = within(await within(canvasElement).findByRole("region", { name: "标签目录" }, { timeout: 10_000 }));
   await expect(await directory.findByRole("button", { name: "查看标签 生活/咖啡 的笔记" })).toBeVisible();
   await expect(directory.getByRole("list", { name: "其他" })).toBeVisible();
 } };

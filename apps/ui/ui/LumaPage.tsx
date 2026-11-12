@@ -9,6 +9,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./components/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "./components/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/select";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "./components/drawer";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "./components/sheet";
 import { Switch } from "./components/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
@@ -103,6 +104,17 @@ export function SelectExample() {
       <SelectContent data-testid="luma-select-content">{densityItems.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
     </Select>
   </div>;
+}
+
+export function DrawerExample() {
+  return <Drawer showSwipeHandle>
+    <DrawerTrigger render={<Button variant="outline" />}>打开抽屉</DrawerTrigger>
+    <DrawerContent>
+      <DrawerHeader><DrawerTitle>抽屉示例</DrawerTitle><DrawerDescription>可向下滑动关闭，也可使用关闭按钮或 Escape。</DrawerDescription></DrawerHeader>
+      <p className="p-4 text-sm text-secondary">抽屉继承当前主题的颜色、圆角、字体和动效。</p>
+      <DrawerFooter><DrawerClose render={<Button />}>关闭抽屉</DrawerClose></DrawerFooter>
+    </DrawerContent>
+  </Drawer>;
 }
 
 export function SheetExample() {

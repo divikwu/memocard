@@ -890,11 +890,12 @@ public actor VaultStore {
             return (note.id, filters)
         })
         var filterCounts = ["untagged": 0, "images": 0, "links": 0]
+        let quickFilters = Set((query.quickFilters ?? []) + (query.quickFilter.map { [$0] } ?? []))
         var quickFilterTagDates: [String: Date] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
             let noteFilters = filters[parsed.note.id]!
             for filter in noteFilters { filterCounts[filter.rawValue, default: 0] += 1 }
-            if let quickFilter = query.quickFilter, quickFilter != .untagged, noteFilters.contains(quickFilter) {
+            if !quickFilters.isDisjoint(with: noteFilters) {
                 try recordRecentTags(parsed.note, in: &quickFilterTagDates)
             }
         }
@@ -904,9 +905,12 @@ public actor VaultStore {
             if sort == "pinnedAt", pins.pins[note.id] == nil { return false }
             if let folder = query.folder, !folder.isEmpty, !note.relativePath.hasPrefix(folder + "/") { return false }
             if (note.deletedAt != nil) != (query.deleted ?? false) { return false }
-            if let filter = query.quickFilter, !filters[note.id]!.contains(filter) { return false }
+            if !quickFilters.isEmpty, quickFilters.isDisjoint(with: filters[note.id]!) { return false }
             if let text = query.query, !text.isEmpty, ((note.title ?? "") + "\n" + note.body).range(of: text, options: [.caseInsensitive, .literal]) == nil { return false }
-            if let tags = query.tags, !tags.allSatisfy({ value in let tag = tagKey(value); return note.tags.contains { $0 == tag || (query.exactTags != true && $0.hasPrefix(tag + "/")) } }) { return false }
+            if let tags = query.tags, !tags.isEmpty {
+                let matchesTag: (String) -> Bool = { value in let tag = tagKey(value); return note.tags.contains { $0 == tag || (query.exactTags != true && $0.hasPrefix(tag + "/")) } }
+                if query.tagMatch == .any ? !tags.contains(where: matchesTag) : !tags.allSatisfy(matchesTag) { return false }
+            }
             if let from, parsed.createdDate < from { return false }
             if let to, parsed.createdDate >= to { return false }
             if let cursor, let cursorDate, !(date < cursorDate || (date == cursorDate && note.id > cursor.id)) { return false }
@@ -938,7 +942,7 @@ public actor VaultStore {
         result.append(try encode(snapshot.coverage))
         result.append(contentsOf: ",\"filterCounts\":".utf8)
         result.append(try encode(filterCounts))
-        if let quickFilter = query.quickFilter, quickFilter != .untagged {
+        if quickFilters.contains(where: { $0 != .untagged }) {
             result.append(contentsOf: ",\"recentQuickFilterTags\":".utf8)
             result.append(try encode(rankedRecentTags(quickFilterTagDates)))
         }

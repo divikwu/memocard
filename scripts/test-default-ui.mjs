@@ -10,7 +10,6 @@ let server;
 let baseURL;
 const openNotes = async page => {
   await page.getByRole('navigation', {name: '顶部导航'}).getByRole('button', {name: '所有笔记', exact: true}).click();
-  await page.getByRole('menu', {name: '所有笔记', exact: true}).getByRole('menuitem', {name: '所有笔记', exact: true}).click();
 };
 const newNote = async page => {
   await openNotes(page);

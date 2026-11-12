@@ -81,12 +81,8 @@ export const NestedAlignmentRegression: Story = {
     // Native pointer and keyboard checks are recorded separately in browser acceptance.
     const sidebar = canvasElement.ownerDocument.querySelector<HTMLElement>(".ui-business-sidebar[data-sidebar=sidebar], .ui-business-sidebar [data-sidebar=sidebar]")!;
     await expect(getComputedStyle(sidebar).backgroundColor).toBe(tokenColor(sidebar, "--color-background-sidebar"));
-    const toggle = await page.findByRole("button", { name: "展开或收起快捷筛选" });
-    await userEvent.click(toggle);
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await waitFor(async () => expect(getComputedStyle(toggle).backgroundColor).toBe(transparent));
-    if (mobile) await expect(getComputedStyle(toggle.parentElement!.querySelector<HTMLElement>(".ui-sidebar-branch-icon")!).opacity).toBe("1");
-    for (const name of ["无标签", "有图片", "有链接", "生活/咖啡", "生活/植物"]) {
+    await expect(page.queryByRole("button", { name: "展开或收起快捷筛选" })).toBeNull();
+    for (const name of ["生活/咖啡", "生活/植物"]) {
       const row = await page.findByRole("button", { name });
       await waitFor(async () => {
         const icon = row.querySelector<HTMLElement>(".ui-sidebar-row-icon")!;

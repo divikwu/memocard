@@ -39,16 +39,14 @@ it("keeps selection and expansion independent and supports keyboard row selectio
   expect(select).toHaveBeenCalledTimes(1);
 });
 
-it("preserves note filters, counts, tag navigation and creation/search entry callbacks", async () => {
+it("preserves note and tag navigation and creation/search entry callbacks", async () => {
   const user = userEvent.setup();
   const args = mount();
   expect(document.querySelectorAll("button[title]")).toHaveLength(0);
   expect(screen.getByRole("button", { name: "项目/memocard" }).hasAttribute("data-ui-tooltip")).toBe(false);
-  await user.click(screen.getByRole("button", { name: "展开或收起快捷筛选" }));
-  const images = screen.getByRole("button", { name: "有图片" });
-  expect(images.getAttribute("aria-description")).toBe("4 条笔记");
-  await user.click(images);
-  expect(args.onNavigate).toHaveBeenLastCalledWith("notes", null, "images");
+  expect(screen.queryByRole("button", { name: "展开或收起快捷筛选" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "所有笔记" }));
+  expect(args.onNavigate).toHaveBeenLastCalledWith("notes", null, undefined);
   await user.click(screen.getByRole("button", { name: "项目/memocard" }));
   expect(args.onNavigate).toHaveBeenLastCalledWith("notes", "项目/memocard", undefined);
   await user.click(screen.getByRole("button", { name: "搜索" }));
@@ -64,7 +62,7 @@ it("keeps the icon-only vault menu beside the brand above primary navigation", (
   expect(brand.querySelector("img")?.getAttribute("alt")).toBe("");
   expect(brand.closest('[data-sidebar="header"]')).not.toBeNull();
   const nav = screen.getByRole("navigation", { name: "主要导航" });
-  expect(within(nav).getAllByRole("button").map(button => button.textContent)).toEqual(["搜索", "新建笔记", "主页", "所有笔记", "", "日历", "标签"]);
+  expect(within(nav).getAllByRole("button").map(button => button.textContent)).toEqual(["搜索", "新建笔记", "主页", "所有笔记", "日历", "标签"]);
   expect(screen.getByRole("navigation", { name: "置顶标签" }).closest('[data-sidebar="content"]')).not.toBeNull();
   const vault = screen.getByRole("button", { name: "笔记库：我的笔记" });
   expect(vault.parentElement).toBe(brand.parentElement);
@@ -183,14 +181,6 @@ it("protects an anchored rename from Escape and outside dismissal while saving",
   expect(rename).toHaveBeenCalledWith("生活", "工作");
 });
 
-it("does not announce zero note counts before optional quick filter counts have loaded", async () => {
-  const user = userEvent.setup();
-  mount({ filterCounts: undefined });
-  await user.click(screen.getByRole("button", { name: "展开或收起快捷筛选" }));
-  expect(screen.getByRole("button", { name: "有图片" }).getAttribute("aria-description")).toBeNull();
-  expect(screen.getByRole("button", { name: "有图片" }).parentElement?.querySelector('[data-sidebar="menu-badge"]')).toBeNull();
-});
-
 it("returns keyboard focus to the renamed tag when its original trigger is replaced", async () => {
   const user = userEvent.setup();
   function RenamingSidebar() {
@@ -258,4 +248,9 @@ it("supports a controlled H5 drawer, closes on navigation and exposes the vault 
   await user.click(within(drawer).getByRole("button", { name: "所有笔记" }));
   expect(change).toHaveBeenCalledWith(false);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+it.each(["untagged", "images", "links"] as const)("keeps notes navigation active for the %s type filter", quickFilter => {
+  mount({ quickFilter });
+  expect(screen.getByRole("button", { name: "所有笔记" }).getAttribute("aria-current")).toBe("page");
 });

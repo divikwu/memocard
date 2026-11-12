@@ -98,6 +98,14 @@
       "files": [
         "registry/base-luma/ui/tooltip.tsx"
       ]
+    },
+    {
+      "name": "drawer",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/drawer.json",
+      "sha256": "6dce0c3cae6f041a993c5434e270519bea6af28e37eb73e7e416134a09210253",
+      "files": [
+        "registry/base-luma/ui/drawer.tsx"
+      ]
     }
   ]
 }

@@ -34,7 +34,7 @@
   --color-icon-disabled: var(--color-neutral-400);
   --color-icon-accent: var(--color-neutral-950);
   --color-neutral: color-mix(in srgb, var(--color-black) 6%, transparent);
-  --color-overlay: color-mix(in srgb, var(--color-black) 50%, transparent);
+  --color-overlay: var(--color-background-glass);
   --color-overlay-hover: color-mix(in srgb, var(--color-black) 4%, transparent);
   --color-overlay-pressed: color-mix(in srgb, var(--color-black) 10%, transparent);
   --color-border: color-mix(in srgb, var(--color-black) 8%, transparent);

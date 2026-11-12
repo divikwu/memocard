@@ -429,6 +429,11 @@
           "value": "var(--font-family-heading)"
         },
         {
+          "source": "apps/ui/ui/components/drawer.tsx",
+          "scope": "font-heading",
+          "value": "var(--font-family-heading)"
+        },
+        {
           "source": "apps/ui/ui/components/empty.tsx",
           "scope": "font-heading",
           "value": "var(--font-family-heading)"
@@ -507,7 +512,7 @@
         },
         {
           "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
+          "scope": ".web-settings > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-family-heading)"
         },
         {
@@ -1253,7 +1258,7 @@
         },
         {
           "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
+          "scope": ".web-settings > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-size-base)"
         },
         {
@@ -1462,6 +1467,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteDeleteDialog.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1577,7 +1587,7 @@
           "value": "var(--font-size-sm)"
         },
         {
-          "source": "apps/ui/ui/business/TagsPage.css",
+          "source": "apps/ui/ui/business/TagDirectoryList.css",
           "scope": ".ui-tag-directory-group h2",
           "value": "var(--font-size-sm)"
         },
@@ -1593,6 +1603,11 @@
         },
         {
           "source": "apps/ui/ui/business/TrashPage.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/components/accordion.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -1618,6 +1633,11 @@
         },
         {
           "source": "apps/ui/ui/components/dialog.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/components/drawer.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
@@ -1797,6 +1817,11 @@
           "value": "var(--font-size-xl)"
         },
         {
+          "source": "apps/ui/ui/components/drawer.tsx",
+          "scope": "text-xl",
+          "value": "var(--font-size-xl)"
+        },
+        {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
           "value": "var(--font-size-xl)"
@@ -1889,6 +1914,11 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollectionFilters.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -1988,7 +2018,7 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui/business/TagsPage.css",
+          "source": "apps/ui/ui/business/TagDirectoryList.css",
           "scope": ".ui-tag-directory-chip-count",
           "value": "var(--font-size-xs)"
         },
@@ -2279,6 +2309,11 @@
           "value": "var(--font-weight-normal)"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
+          "scope": "font-normal",
+          "value": "var(--font-weight-normal)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteOutline.css",
           "scope": ".ui-note-outline-popup .ui-note-outline-link",
           "value": "var(--font-weight-normal)"
@@ -2509,7 +2544,8 @@
       "utilities": [
         "font-medium",
         "file:font-medium",
-        "data-active:font-medium"
+        "data-active:font-medium",
+        "group-aria-pressed/filter-chip:font-medium"
       ],
       "locations": [
         {
@@ -2553,6 +2589,16 @@
           "value": "var(--font-weight-medium)"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
+          "scope": "data-active:font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
+          "scope": "group-aria-pressed/filter-chip:font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
@@ -2588,6 +2634,11 @@
           "value": "var(--font-weight-medium)"
         },
         {
+          "source": "apps/ui/ui/components/accordion.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
           "source": "apps/ui/ui/components/badge.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
@@ -2609,6 +2660,11 @@
         },
         {
           "source": "apps/ui/ui/components/dialog.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/components/drawer.tsx",
           "scope": "font-medium",
           "value": "var(--font-weight-medium)"
         },
@@ -2714,7 +2770,7 @@
         },
         {
           "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings > section > h2, .web-setting-section-heading > h2",
+          "scope": ".web-settings > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2805,7 +2861,7 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui/business/TagsPage.css",
+          "source": "apps/ui/ui/business/TagDirectoryList.css",
           "scope": ".ui-tag-directory-group h2",
           "value": "var(--font-weight-semibold)"
         },
@@ -4112,6 +4168,11 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
           "source": "apps/ui/ui/business/NoteDeleteDialog.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
@@ -4147,6 +4208,11 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
+          "source": "apps/ui/ui/components/accordion.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
           "source": "apps/ui/ui/components/breadcrumb.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
@@ -4168,6 +4234,11 @@
         },
         {
           "source": "apps/ui/ui/components/dialog.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/components/drawer.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
@@ -4269,6 +4340,11 @@
           "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-xl",
           "value": "var(--tw-leading, var(--text-xl--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/components/drawer.tsx",
+          "scope": "text-xl",
+          "value": "var(--tw-leading, var(--text-xl--line-height))"
         }
       ]
     },
@@ -4318,6 +4394,11 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--text-xs--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollectionFilters.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },

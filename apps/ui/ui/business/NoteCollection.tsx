@@ -10,6 +10,8 @@ import PinIcon from "@hugeicons/core-free-icons/PinIcon";
 import { useCollectionLayout } from "../../src/hooks/use-collection-layout";
 import { Button } from "../components/button";
 import { CreateButton } from "./CreateButton";
+import { NoteTypeTabs } from "./NoteCollectionFilterChips";
+import { NoteCollectionFilters, type NoteCollectionFiltersProps } from "./NoteCollectionFilters";
 import { Badge } from "../components/badge";
 import { Card, CardContent } from "../components/card";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/empty";
@@ -34,6 +36,7 @@ export type NoteCollectionProps = {
   recentTags?: string[];
   loading?: boolean;
   tagFiltersDisabled?: boolean;
+  filters?: Omit<NoteCollectionFiltersProps, "disabled">;
   children?: ReactNode;
   hasMore: boolean;
   paging: boolean;
@@ -70,7 +73,7 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
   </div>;
 }
 
-export function NoteCollection({ home, heading, notes, activeTag, recentTags, loading = false, tagFiltersDisabled, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, showCreateInToolbar = true, onNewNote, onOpen, onSelectTag, onSelectRecentTag = onSelectTag, onSelectAll, onLoadMore, onError, formatDate }: NoteCollectionProps) {
+export function NoteCollection({ home, heading, notes, activeTag, recentTags, loading = false, tagFiltersDisabled, filters, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, showCreateInToolbar = true, onNewNote, onOpen, onSelectTag, onSelectRecentTag = onSelectTag, onSelectAll, onLoadMore, onError, formatDate }: NoteCollectionProps) {
   const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
   const recentTagScroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -147,18 +150,22 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
     <TabsContent value={home.tab}>{content}</TabsContent>
   </Tabs>;
 
-  return <section className="ui-note-collection" data-slot="note-collection" aria-label="笔记集合">
+  const typeTab = filters?.quickFilters.length === 1 ? filters.quickFilters[0] : filters?.quickFilters.length ? "custom" : "all";
+  return <Tabs render={<section aria-label="笔记集合" />} className="ui-note-collection" data-slot="note-collection" value={typeTab}
+    onValueChange={value => {
+      if (filters && (value === "all" || value === "untagged" || value === "images" || value === "links")) filters.onChange(filters.activeTags, value === "all" ? [] : [value]);
+    }}>
     <div className="ui-note-toolbar">
-      {recentTags !== undefined && <div ref={recentTagScroller} className={cn(tabsListVariants({ variant: "pill" }), "ui-note-recent-tags w-full justify-start")} data-variant="pill" data-transparent-inactive role="group" aria-label="最近使用的笔记标签">
+      {filters ? <NoteTypeTabs disabled={tagFiltersDisabled} scrollerRef={recentTagScroller} /> : recentTags !== undefined && <div ref={recentTagScroller} className={cn(tabsListVariants({ variant: "pill" }), "ui-note-recent-tags w-full justify-start")} data-variant="pill" data-transparent-inactive role="group" aria-label="最近使用的笔记标签">
           <Button type="button" variant="ghost" data-slot="tabs-trigger" className={recentTagButtonStyles}
             data-active={!activeTag || undefined} aria-pressed={!activeTag} disabled={tagFiltersDisabled} onClick={onSelectAll}>all</Button>
           {recentTags.map(name => <Button key={name} type="button" variant="ghost" data-slot="tabs-trigger" className={recentTagButtonStyles}
-            data-active={activeTag === name || undefined} aria-pressed={activeTag === name} data-tag={encodeURIComponent(name)} data-ui-tooltip={name}
+            data-active={(activeTag === name) || undefined} aria-pressed={activeTag === name} data-tag={encodeURIComponent(name)} data-ui-tooltip={name}
             aria-label={`筛选最近标签 ${name}`} disabled={tagFiltersDisabled} onClick={() => onSelectRecentTag(name)}><span data-ui-tooltip-overflow>{name}</span></Button>)}
         </div>}
       {heading}
-      <div className="ui-note-actions">{layoutButtons}{showCreateInToolbar && <CreateButton disabled={!canCreate} onClick={onNewNote}>新建</CreateButton>}</div>
+      <div className="ui-note-actions">{showCreateInToolbar && <CreateButton disabled={!canCreate} onClick={onNewNote}>新建</CreateButton>}{filters && <NoteCollectionFilters {...filters} disabled={tagFiltersDisabled} />}{layoutButtons}</div>
     </div>
-    {content}
-  </section>;
+    {filters ? <TabsContent value={typeTab}>{content}</TabsContent> : content}
+  </Tabs>;
 }

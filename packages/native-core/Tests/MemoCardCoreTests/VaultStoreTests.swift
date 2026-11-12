@@ -2220,6 +2220,32 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual(updated["filterCounts"] as? [String: Int], ["untagged": 2, "images": 1, "links": 0])
     }
 
+    func testMultipleFilterGroupsBeforePagination() async throws {
+        let core = try await store()
+        let image = try await save(core, body: "#alpha ![photo](photo.png)")
+        let link = try await save(core, body: "#beta https://example.com")
+        let plain = try await save(core, body: "#alpha #beta plain")
+        _ = try await save(core, body: "![photo](photo.png)")
+        let query: [String: Any] = ["tags": ["alpha", "beta"], "tagMatch": "any", "exactTags": true, "quickFilters": ["images", "links"], "limit": 1]
+        let first = try await call(core, "queryNotes", query)
+        let cursor = try XCTUnwrap(first["nextCursor"] as? String)
+        let second = try await call(core, "queryNotes", query.merging(["cursor": cursor]) { _, new in new })
+        let rows = (first["notes"] as! [[String: Any]]) + (second["notes"] as! [[String: Any]])
+        XCTAssertEqual(Set(rows.compactMap { $0["id"] as? String }), Set([image["id"] as! String, link["id"] as! String]))
+        XCTAssertTrue(second["nextCursor"] is NSNull)
+        XCTAssertEqual((first["recentQuickFilterTags"] as? [String])?.sorted(), ["alpha", "beta"])
+        let legacy = try await call(core, "queryNotes", ["tags": ["alpha", "beta"]])
+        XCTAssertEqual((legacy["notes"] as? [[String: Any]])?.compactMap { $0["id"] as? String }, [plain["id"] as! String])
+        let empty = try await call(core, "queryNotes", ["tags": [], "tagMatch": "any", "quickFilters": []])
+        XCTAssertEqual((empty["notes"] as? [[String: Any]])?.count, 4)
+        let mixed = try await call(core, "queryNotes", ["tags": ["alpha"], "quickFilters": ["untagged", "images"]])
+        XCTAssertEqual((mixed["notes"] as? [[String: Any]])?.compactMap { $0["id"] as? String }, [image["id"] as! String])
+        await expectCode("CURSOR_QUERY_MISMATCH") { _ = try await self.call(core, "queryNotes", query.merging(["cursor": cursor, "tags": ["alpha"]]) { _, new in new }) }
+        await expectCode("CURSOR_QUERY_MISMATCH") { _ = try await self.call(core, "queryNotes", query.merging(["cursor": cursor, "quickFilters": ["images"]]) { _, new in new }) }
+        await expectCode("INVALID_PARAMS") { _ = try await self.call(core, "queryNotes", ["quickFilters": ["voice"]]) }
+        await expectCode("INVALID_PARAMS") { _ = try await self.call(core, "queryNotes", ["tagMatch": "invalid"]) }
+    }
+
     func testInlineTagGrammarExcludesMarkdownSyntax() {
         XCTAssertEqual(inlineTags("#Work #work #WORK/Design #work/design"), ["work", "work/design"])
         XCTAssertEqual(inlineTags("# 标题\n正文 #工作/项目 #设计 #123 #/bad #bad/ #a//b C#"), ["工作/项目", "设计"])

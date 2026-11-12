@@ -45,6 +45,10 @@
 | `apps/ui/ui/business/MobileTagActions.tsx` | 当前H5标题操作 | 布局切换、标签置顶/重命名/Emoji与回焦 | sidebar / menu / responsive | `apps/ui/ui/business/MobileTagActions.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 软键盘和真实触摸关闭另验 |
 | `apps/ui/ui/business/NoteCardPreview.tsx` | 当前卡片预览 | 按属性图片、正文图片、文本属性、正文的顺序选择单项，图片失败时继续回退 | collection / preview / media | `scripts/test-default-ui.mjs`；`apps/ui/ui/business/NoteCollection.recipe.test.tsx` | 真机附件加载另验 |
 | `apps/ui/ui/business/NoteCollection.tsx` | 当前集合视图 | 卡片/列表、布局偏好、标签、空态与分页 | collection / type / space | `apps/ui/ui/business/NoteCollection.test.tsx`；`apps/ui/ui/stories/business-note-collection.stories.tsx` | 真实大库性能和设备滚动另验 |
+| `apps/ui/ui/business/NoteCollectionFilters.tsx` | 笔记集合筛选 | 标签多选、类型单选与清除筛选 | collection / drawer / focus / state | `apps/ui/ui/business/NoteCollectionFilters.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 真机软键盘与大字另验 |
+| `apps/ui/ui/business/NoteCollectionFilterDrawer.tsx` | 按需加载筛选抽屉 | 标签、类型组合与关闭后焦点返回 | collection / drawer / state | `apps/ui/ui/business/NoteCollectionFilters.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 真机软键盘另验 |
+| `apps/ui/ui/business/NoteCollectionFilterChips.tsx` | 共享筛选胶囊 | 顶部 Tab 与抽屉类型单选、计数及选中状态同步 | collection / state / responsive | `apps/ui/ui/business/NoteCollectionFilters.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 真机触控另验 |
+| `apps/ui/ui/business/TagDirectoryList.tsx` | 共享标签目录列表 | 字母分组、标签胶囊、图标、笔记数量与筛选选中状态 | tag / state / responsive | `apps/ui/ui/business/TagsPage.test.tsx`；`apps/ui/ui/business/NoteCollectionFilters.test.tsx` | 长标签与移动端另验 |
 | `apps/ui/ui/business/NoteDeleteDialog.tsx` | 当前删除确认与原生投影 | 版本保护、取消、busy与成功/失败 | destructive / overlay | `apps/ui/ui/business/TrashPage.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 真实写入与系统确认组合另验 |
 | `apps/ui/ui/business/ChoicePropertyEditor.tsx` | 按需选项编辑器适配 | 首次打开加载，保留共享状态与保存控制器 | property / overlay / state | `apps/ui/ui/business/ChoicePropertyEditor.test.tsx` | 随属性弹层维护；真实设备另验 |
 | `apps/ui/ui/business/DatePropertyPicker.tsx` | 按需日期编辑器适配 | 日历与控件一次加载，保留日期校验及本地输入 | property / overlay / state | `apps/ui/ui/business/NoteProperties.test.tsx` | 随属性弹层维护；真机软键盘另验 |
@@ -76,9 +80,10 @@
 | `apps/ui/ui/business/rich-icons.tsx` | 当前编辑器内部适配 | 格式、图片、Callout、代码或图标；保留选区/撤销契约 | editor / selection / content | `apps/ui/ui/business/RichAdapters.test.tsx`；`apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | 内部组合无需独立Story；触摸/IME与复杂选区另验 |
 | `apps/ui/ui/business/sidebar-icons.tsx` | 当前标签导航内部组件 | 标签名称编辑、图标与 Emoji 选择 | sidebar / tag / state | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 内部组件随侧栏组合维护；大树/真实触摸另验 |
 | `apps/ui/ui/business/sidebar-tree-item.tsx` | 当前标签导航内部组件 | 标签名称编辑、图标与 Emoji 选择 | sidebar / tag / state | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 内部组件随侧栏组合维护；大树/真实触摸另验 |
-| `apps/ui/ui/business/sidebar.tsx` | 当前业务侧栏 | 库管理、导航、筛选、标签搜索/展开/置顶与H5抽屉 | sidebar / state / responsive | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 真机手势、系统picker与大字另验 |
+| `apps/ui/ui/business/sidebar.tsx` | 当前业务侧栏 | 库管理、导航、标签搜索/展开/置顶与H5抽屉 | sidebar / state / responsive | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 真机手势、系统picker与大字另验 |
 | `apps/ui/ui/business/tag-navigation-editor.tsx` | 当前标签导航内部组件 | 标签名称编辑、图标与 Emoji 选择 | sidebar / tag / state | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 内部组件随侧栏组合维护；大树/真实触摸另验 |
 | `apps/ui/ui/business/tag-navigation.tsx` | 当前标签导航内部组件 | 标签名称编辑、图标与 Emoji 选择 | sidebar / tag / state | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 内部组件随侧栏组合维护；大树/真实触摸另验 |
+| `apps/ui/ui/components/accordion.tsx` | 折叠分组控件 | Base UI Accordion；独立展开、键盘控制与高度动画 | state / motion / focus | `apps/ui/ui/business/NoteCollectionFilters.test.tsx` | 组合测试由消费端维护 |
 | `apps/ui/ui/components/badge.tsx` | 当前Base UI/HTML控件适配 | badge；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-badge.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/breadcrumb.tsx` | 当前Base UI/HTML控件适配 | breadcrumb；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-breadcrumb.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/action-group.tsx` | Web 移动端单个与组合操作容器 | 40px/48px 外框、2px 内边距、共享阴影与交互上下文 | theme / size / focus / state | `apps/ui/ui/stories/action-group.stories.tsx`；`apps/ui/ui/web/WebActionGroups.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | PC 与 APP 沿用原控件；实体触屏与辅助技术另验 |
@@ -87,6 +92,7 @@
 | `apps/ui/ui/components/card.tsx` | 当前Base UI/HTML控件适配 | card；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-card.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/checkbox.tsx` | 当前Base UI/HTML控件适配 | checkbox；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-checkbox.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/dialog.tsx` | 当前Base UI/HTML控件适配 | dialog；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-dialog.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
+| `apps/ui/ui/components/drawer.tsx` | 滑动抽屉 | Base UI Drawer、四向滑动、snap points、焦点管理与主题继承 | overlay / motion / tokens / focus | `apps/ui/ui/stories/luma-drawer.stories.tsx`；`apps/ui/ui/business/NoteCollectionFilters.test.tsx` | 真机软键盘另验 |
 | `apps/ui/ui/components/dropdown-menu.tsx` | 当前Base UI/HTML控件适配 | dropdown-menu；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-dropdown-menu.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/empty.tsx` | 当前Base UI/HTML控件适配 | empty；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-empty.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/input-group.tsx` | 当前Base UI/HTML控件适配 | input-group；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-input-group.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
@@ -97,7 +103,7 @@
 | `apps/ui/ui/components/separator.tsx` | 当前Base UI/HTML控件适配 | separator；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-separator.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/sheet-swipe.tsx` | 当前Base UI/HTML控件适配 | sheet-swipe；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-sheet.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/sheet.tsx` | 当前Base UI/HTML控件适配 | sheet；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-sheet.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
-| `apps/ui/ui/components/sidebar.tsx` | 当前业务侧栏 | 库管理、导航、筛选、标签搜索/展开/置顶与H5抽屉 | sidebar / state / responsive | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 真机手势、系统picker与大字另验 |
+| `apps/ui/ui/components/sidebar.tsx` | 当前业务侧栏 | 库管理、导航、标签搜索/展开/置顶与H5抽屉 | sidebar / state / responsive | `apps/ui/ui/business/sidebar.test.tsx`；`apps/ui/ui/stories/business-sidebar.stories.tsx` | 真机手势、系统picker与大字另验 |
 | `apps/ui/ui/components/skeleton.tsx` | 当前Base UI/HTML控件适配 | skeleton；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-skeleton.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/spinner.tsx` | 当前Base UI/HTML控件适配 | spinner；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-spinner.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/switch.tsx` | 当前Base UI/HTML控件适配 | switch；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-switch.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |

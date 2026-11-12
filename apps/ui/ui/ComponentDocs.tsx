@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { ButtonExample, CardExample, DialogExample, DropdownMenuExample, InputExample, PopoverExample, SelectExample, SheetExample, SwitchExample, TabsExample, TextareaExample, TooltipExample } from "./LumaPage";
+import { ButtonExample, CardExample, DialogExample, DrawerExample, DropdownMenuExample, InputExample, PopoverExample, SelectExample, SheetExample, SwitchExample, TabsExample, TextareaExample, TooltipExample } from "./LumaPage";
 import { additionalExamplesMap } from "./AdditionalExamples";
 import { componentDocs, type ComponentKey } from "./component-docs.data";
 import { ComponentDocsBestPractices, ComponentDocsExample, ComponentDocsTemplate } from "./ComponentDocsTemplate";
@@ -11,6 +11,7 @@ const examples: Record<ComponentKey, ComponentType> = {
   textarea: TextareaExample,
   card: CardExample,
   dialog: DialogExample,
+  drawer: DrawerExample,
   "dropdown-menu": DropdownMenuExample,
   popover: PopoverExample,
   select: SelectExample,
