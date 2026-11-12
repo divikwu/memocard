@@ -48,9 +48,9 @@ async function mount(scenario = "loading", readOnly = false, mapView?: (state: A
   return { fixture, request };
 }
 
-it("navigates a tag, edits and saves a note, then finds its committed body through global search", async () => {
+it("toggles a drawer tag off and returns to all notes", async () => {
   const user = userEvent.setup();
-  const { fixture, request } = await mount();
+  await mount();
   const types = await screen.findByRole("tablist", { name: "类型" });
   expect(within(types).getByRole("tab", { name: "全部类型", selected: true })).toBeTruthy();
   expect(screen.queryByRole("group", { name: "最近使用的笔记标签" })).toBeNull();
@@ -66,7 +66,15 @@ it("navigates a tag, edits and saves a note, then finds its committed body throu
   await selectDesign();
   await screen.findByRole("heading", { name: "所有笔记" });
   await screen.findByRole("button", { name: "打开 今天的手冲记录" });
-  await selectDesign();
+});
+
+it("navigates a tag, edits and saves a note, then finds its committed body through global search", async () => {
+  const user = userEvent.setup();
+  const { fixture, request } = await mount();
+  await user.click(await screen.findByRole("button", { name: /^筛选笔记/ }));
+  await user.click(await screen.findByRole("button", { name: "筛选标签 设计" }));
+  await user.click(screen.getByRole("button", { name: "完成" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await screen.findByRole("heading", { name: "# 设计" });
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   await user.click(await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" }));
