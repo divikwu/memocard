@@ -1,11 +1,10 @@
-import { Drawer, Loupe, Plug, Query, Rail, Sieve } from "@lucasmarkes/hairline/react";
+import { Drawer, Loupe, Plug, Query, Rail } from "@lucasmarkes/hairline/react";
 import { usePreviewMode } from "../preview-mode";
 import "./EmptyIllustration.css";
 
 const illustrations = {
   drawer: { Artwork: Drawer, label: "空的分类抽屉" },
   loupe: { Artwork: Loupe, label: "在空白纸上寻找的放大镜" },
-  sieve: { Artwork: Sieve, label: "没有留下内容的筛网" },
   plug: { Artwork: Plug, label: "尚未连接的插头与插座" },
   query: { Artwork: Query, label: "表示笔记不存在的问号" },
   rail: { Artwork: Rail, label: "等待挂上内容的空衣架" },

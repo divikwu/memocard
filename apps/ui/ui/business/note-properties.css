@@ -16,10 +16,8 @@
   background: transparent;
 }
 :is(.note-property-popup, .note-property-create-popup, .note-property-option-menu, .note-property-name-popup, .note-property-image-popup, .note-property-image-menu, .note-property-menu, .note-property-confirm, .ui-property-sheet, .mobile-tag-menu)
-  :is(button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]) { border-radius: var(--radius-element); }
-:is(.ui-property-sheet, .ui-property-confirm-sheet, .mobile-tag-menu).ui-sheet-swipe[data-side="bottom"] .ui-sheet-close-button:not([data-action-group]) { border-radius: var(--radius-element); }
+  :is(button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]):where(:not(.ui-sheet-close-button)) { border-radius: var(--radius-element); }
 .ui-property-sheet { max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); overflow: hidden; }
-.ui-property-sheet[data-side="bottom"] { border-radius: var(--radius-item) var(--radius-item) 0 0; }
 .ui-property-sheet > .ui-property-sheet-body { width: 100%; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; padding: 0; }
 /* A vertical stack keeps wrapped row heights current when WebKit resizes nested grids. */
 .note-property-group { display: flex; flex-direction: column; gap: var(--spacing-1); }
@@ -346,7 +344,7 @@ button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hov
   .note-properties { --property-label-width: 120px; }
   .ui-property-confirm-sheet.note-property-confirm { top: auto; inset-inline: 0; bottom: 0; width: 100%; max-width: none; max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); transform: none; border-inline: 0; border-bottom: 0; }
   .ui-property-confirm-sheet > .ui-property-confirm-body { min-height: 0; overflow-y: auto; }
-  .ui-property-confirm-sheet [data-slot="sheet-header"] > h2 { min-width: 0; overflow-wrap: anywhere; font-family: var(--font-family-heading); font-size: var(--font-size-base); font-weight: var(--font-weight-normal); line-height: var(--text-body-leading); }
+  .ui-property-confirm-sheet [data-slot="sheet-header"] > h2 { min-width: 0; overflow-wrap: anywhere; font-family: var(--font-family-heading); font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); line-height: var(--text-body-leading); }
   .ui-property-confirm-body > :first-child { margin-block-start: 0; }
   :is(.note-property-popup, .note-property-option-menu, .mobile-tag-menu, .name-editor-popup) :is(input, textarea, select),
   .note-tag-search { font-size: var(--font-size-base); }
@@ -365,9 +363,9 @@ button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hov
 
 @media (min-width: 768px) { .name-editor-popup :is(input, [data-slot="button"]) { height: var(--size-element-sm); min-height: var(--size-element-sm); } }
 
-.note-property-name-popup, .mobile-tag-menu.ui-sheet-swipe[data-side="bottom"] { row-gap: calc(var(--spacing-1) * 2); }
+.note-property-name-popup { row-gap: calc(var(--spacing-1) * 2); }
 :is(.note-property-name-popup, .mobile-tag-menu.ui-sheet-swipe[data-side="bottom"]):has(> .tag-icon-disclosure) { row-gap: 0; }
-.mobile-tag-menu:has(> .tag-icon-disclosure) > [data-slot="sheet-header"] { margin-block-end: calc(var(--spacing-1) * 2); }
+.mobile-tag-menu:has(> .tag-icon-disclosure) > [data-slot="sheet-header"] { margin-block-end: calc(var(--spacing-1) * 4); }
 :is(.note-property-name-popup, .mobile-tag-menu):has(> .tag-icon-disclosure) > form [data-slot="input"] { padding-inline: calc(var(--spacing-1) * 2); }
 :is(.note-property-name-popup, .mobile-tag-menu):has(> .tag-icon-disclosure) > form :is([data-slot="input"], .note-property-icon-trigger),
 .tag-icon-tab-body > [data-slot="input"] { background-color: var(--color-overlay-hover); }
@@ -384,8 +382,7 @@ button.note-tag-pill:is(:hover, :focus-visible), .note-tag-chip > button:is(:hov
 }
 .tag-icon-disclosure-panel > .note-property-icon-picker { margin-block-start: calc(var(--spacing-1) * 2); padding-top: var(--spacing-1); }
 .tag-icon-disclosure-panel:is([data-starting-style], [data-ending-style]) { height: 0; opacity: 0; }
-.mobile-tag-menu[data-side="bottom"] { border-radius: var(--radius-item) var(--radius-item) 0 0; }
-.mobile-tag-menu :is(button, [data-slot="sheet-title"]) { font-weight: var(--font-weight-normal); }
+.mobile-tag-menu button { font-weight: var(--font-weight-normal); }
 .mobile-tag-menu svg { color: var(--color-text-secondary); }
 .note-property-icon-trigger[data-tag] > svg { color: inherit; }
 .tag-icon-tabs [data-slot="tabs-trigger"] { font-weight: var(--font-weight-medium); }

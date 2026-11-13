@@ -37,7 +37,7 @@ it.each([false, true])("gates the slider's mobile border recipe behind Web opt-i
   expect(thumb.classList.contains("[@media(max-width:767px)]:border-(--color-border-floating)")).toBe(enabled);
 });
 
-it("keeps a narrow Mac native search Sheet outside Web mobile ActionGroup presentation", async () => {
+it("keeps narrow Mac native overlays outside Web mobile ActionGroup presentation", async () => {
   const fixture = await createWorkspaceFixture();
   bridge.request.mockImplementation(async (operation: string, params: Record<string, unknown> = {}) => {
     const result = await fixture.request(operation, params);
@@ -63,6 +63,12 @@ it("keeps a narrow Mac native search Sheet outside Web mobile ActionGroup presen
   expect(close.getAttribute("data-action-group")).toBeNull();
   await user.click(close);
   await waitFor(() => expect(screen.queryByRole("dialog", { name: "搜索笔记" })).toBeNull());
+  await user.click(screen.getByRole("button", { name: "筛选笔记" }));
+  const filters = await screen.findByRole("dialog", { name: "筛选笔记" });
+  const closeFilters = within(filters).getByRole("button", { name: "关闭筛选" });
+  expect(closeFilters.closest('[data-slot="action-group"]')).toBeNull();
+  await user.click(closeFilters);
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "筛选笔记" })).toBeNull());
   expect(bridge.request.mock.calls.some(([operation]) => ["saveNote", "saveDraft", "deleteNote"].includes(operation))).toBe(false);
 });
 

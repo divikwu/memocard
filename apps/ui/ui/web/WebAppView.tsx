@@ -21,7 +21,6 @@ import TagColorStyles from "../business/TagColorStyles";
 import { MobileTagActions } from "../business/MobileTagActions";
 import { NoteCollection } from "../business/NoteCollection";
 import { PageNotice } from "../business/PageNotice";
-import { SidebarIcon } from "../business/sidebar-icons";
 import { TagIcon } from "../business/property-icon-catalog";
 import { AddIcon, CheckIcon, DeleteIcon, DocumentIcon, FolderIcon, SearchIcon, SettingsIcon } from "../icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -105,9 +104,8 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
   const filtered = Boolean(s.sidebar.tag || s.collection.filters?.activeTags.length || (s.collection.filters?.quickFilters.length ?? 0) > 1);
   const filter = s.sidebar.quickFilter;
   const title = s.status?.indexing ? "笔记正在陆续载入" : pinned ? "把常用笔记固定在这里" : filtered ? "没有找到相关笔记" : filter ? noteFilterEmptyTitles[filter] : "记下第一条笔记";
-  const description = s.status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : pinned ? "在笔记详情右上角点击大头钉，即可固定到主页。" : filtered ? "可以调整筛选条件，或查看所有笔记。" : filter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : filter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : filter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。";
-  const typeIcon = filter === "images" ? "image" : filter === "links" ? "link" : "check";
-  return <Empty className="ui-note-empty border"><EmptyHeader>{s.status?.indexing || (!pinned && !filtered && filter) ? <EmptyMedia variant="icon">{s.status?.indexing ? <DocumentIcon aria-hidden="true" /> : <SidebarIcon name={typeIcon} className="size-5" />}</EmptyMedia> : <EmptyIllustration kind={pinned ? "rail" : filtered ? "sieve" : "drawer"} />}<EmptyTitle>{title}</EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader><EmptyContent>{pinned ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>浏览笔记</Button> : filter || filtered ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>查看所有笔记</Button> : <CreateButton disabled={!s.canCreate} onClick={() => void s.onNew()}>新建笔记</CreateButton>}</EmptyContent></Empty>;
+  const description = s.status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : pinned ? "在笔记详情右上角点击大头钉，即可固定到主页。" : filtered ? "可以调整筛选条件，或查看所有笔记。" : filter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : filter === "links" ? "在笔记中添加网址后，会自动出现在这里。" : filter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。";
+  return <Empty className="ui-note-empty border"><EmptyHeader>{s.status?.indexing ? <EmptyMedia variant="icon"><DocumentIcon aria-hidden="true" /></EmptyMedia> : <EmptyIllustration kind={pinned ? "rail" : "drawer"} />}<EmptyTitle>{title}</EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader><EmptyContent>{pinned ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>浏览笔记</Button> : filter || filtered ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>查看所有笔记</Button> : <CreateButton disabled={!s.canCreate} onClick={() => void s.onNew()}>新建笔记</CreateButton>}</EmptyContent></Empty>;
 }
 
 function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppViewState; tagHeading?: ReactNode; noteHeading?: ReactNode }) {

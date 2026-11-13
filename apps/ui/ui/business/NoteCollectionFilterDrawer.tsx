@@ -3,6 +3,7 @@ import { Drawer as HairlineDrawer } from "@lucasmarkes/hairline/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon";
 import { Button } from "../components/button";
+import { ActionGroup, useMobileActionGroup } from "../components/action-group";
 import { Input } from "../components/input";
 import { Spinner } from "../components/spinner";
 import { Separator } from "../components/separator";
@@ -19,6 +20,7 @@ import "./EmptyIllustration.css";
 
 export default function NoteCollectionFilterDrawer({ tags, tagsLoading, vaultId, activeTags, quickFilters, filterCounts, disabled, onChange, open, onOpenChange, finalFocus }: NoteCollectionFiltersProps & { open: boolean; onOpenChange: (open: boolean) => void; finalFocus: RefObject<HTMLButtonElement | null> }) {
   const isMobile = useIsMobile();
+  const grouped = useMobileActionGroup();
   const theme = usePreviewMode();
   const { preferences } = useTagPreferences(vaultId);
   const [query, setQuery] = useState("");
@@ -26,15 +28,16 @@ export default function NoteCollectionFilterDrawer({ tags, tagsLoading, vaultId,
   const known = new Set(tags.map(tag => tag.name));
   const unused = [...new Set([...activeTags, ...(quickFilters.length ? [] : Object.keys(preferences.labels ?? {}))])].filter(name => !known.has(name)).map(name => ({ name, count: 0 }));
   const matchingTags = [...tags, ...unused].filter(tag => tag.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
-  const sectionTriggerClass = "h-12 items-center border-0 px-2 py-0 text-secondary hover:no-underline";
+  const sectionTriggerClass = "h-12 items-center border-0 pl-0 pr-2 py-0 text-secondary hover:no-underline md:pl-2";
+  const closeButton = <DrawerClose render={<Button variant="ghost" size="icon" aria-label="关闭筛选" />}><HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" strokeWidth={2} /></DrawerClose>;
   return <Drawer open={open} onOpenChange={onOpenChange} swipeDirection={isMobile ? "down" : "right"} showSwipeHandle={isMobile} onOpenChangeComplete={open => { if (!open) setQuery(""); }}>
     <DrawerContent finalFocus={finalFocus}>
-      <DrawerHeader className="flex-row items-center justify-between gap-2 pl-6 pr-3.5 text-start group-data-[swipe-axis=y]/drawer-popup:pb-2">
-        <DrawerTitle>筛选笔记</DrawerTitle>
+      <DrawerHeader className="flex-row items-center justify-between gap-2 px-4 py-1 text-start md:pl-6 md:pr-3.5 md:pt-4 md:pb-0">
+        <DrawerTitle className="min-w-0 text-base font-semibold md:text-xl md:font-medium">筛选笔记</DrawerTitle>
         <DrawerDescription className="sr-only">类型单选，标签可多选；标签满足任一项，类型与标签同时满足，选择后立即生效。</DrawerDescription>
-        <DrawerClose render={<Button variant="ghost" size="icon" aria-label="关闭筛选" />}><HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" strokeWidth={2} /></DrawerClose>
+        {grouped ? <ActionGroup>{closeButton}</ActionGroup> : closeButton}
       </DrawerHeader>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-2 pb-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-0 pb-4 md:pt-2">
       <Accordion multiple defaultValue={["type", "tags"]} className="gap-2 rounded-none border-0">
       <AccordionItem value="type" className="flex flex-col gap-2 gap-y-1 border-0 not-last:border-0 data-open:bg-transparent">
         <AccordionTrigger className={sectionTriggerClass}>类型</AccordionTrigger>
@@ -47,7 +50,7 @@ export default function NoteCollectionFilterDrawer({ tags, tagsLoading, vaultId,
         <AccordionTrigger className={sectionTriggerClass}>标签</AccordionTrigger>
         <AccordionContent className={() => "px-0 motion-reduce:transition-none"}>
         <div role="group" aria-label="标签" className="flex flex-col gap-2">
-        <Input aria-label="搜索筛选标签" placeholder="搜索标签…" value={query} onChange={event => setQuery(event.target.value)} />
+        <Input className="text-sm" aria-label="搜索筛选标签" placeholder="搜索标签…" value={query} onChange={event => setQuery(event.target.value)} />
           {tagsLoading ? <div role="status" className="flex items-center justify-center gap-2 py-8 text-sm text-secondary"><Spinner aria-hidden="true" />正在读取标签…</div> : matchingTags.length > 0 ? <TagDirectoryList className="ui-tag-directory-groups-flush" tags={matchingTags} renderTag={tag => <FilterChip label={tag.name} count={tag.count} icon={<TagIcon value={preferences.icons[tag.name]} />}
             ariaLabel={`筛选标签 ${tag.name}`} description={`${tag.count} 条笔记`} selected={activeTags.includes(tag.name)} disabled={disabled}
             onSelect={() => onChange(activeTags.includes(tag.name) ? activeTags.filter(value => value !== tag.name) : [...activeTags, tag.name], quickFilters)} />} />

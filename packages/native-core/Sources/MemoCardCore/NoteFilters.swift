@@ -5,6 +5,9 @@ enum NoteQuickFilter: String, Codable { case untagged, images, links }
 // Match ASCII protocol casing without Foundation/ICU Unicode folding (for example, ſ → s).
 private let quickFilterURLPattern = #"[hH][tT][tT][pP][sS]?://|[wW][wW][wW]\."#
 private let quickFilterURLMarker = try! NSRegularExpression(pattern: quickFilterURLPattern)
+// Consume internal links as whole tokens so URL-shaped labels do not count as webpage targets.
+private let quickFilterLinkTokens = try! NSRegularExpression(pattern: #"(?i)!?\[\[[^\]\n]+\]\]|\[[^\]\n]+\]\(\s*<?([^)\n]+)\)|<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>(?:[\s\S]*?</a\s*>)?|(?-i:\#(quickFilterURLPattern))[^\s<>"']+"#)
+private let quickFilterWebTarget = try! NSRegularExpression(pattern: #"^(?:\#(quickFilterURLPattern))[^\s<>"')]+"#)
 
 // Keep the same grammar in apps/ui/src/note-filters.ts.
 func noteQuickFilters(_ note: Note) -> Set<NoteQuickFilter> {
@@ -40,6 +43,11 @@ func noteQuickFilters(_ note: Note) -> Set<NoteQuickFilter> {
     var filters = Set<NoteQuickFilter>()
     if note.tags.isEmpty { filters.insert(.untagged) }
     if text.range(of: images, options: .regularExpression) != nil { filters.insert(.images) }
-    if links.range(of: #"(?i)\[[^\]\n]+\]\([^)\n]+\)|\[\[[^\]\n]+\]\]|(?-i:\#(quickFilterURLPattern))[^\s<>]+|<a\b[^>]*\bhref\s*="#, options: .regularExpression) != nil { filters.insert(.links) }
+    let hasWebLink = quickFilterLinkTokens.matches(in: links, range: NSRange(links.startIndex..., in: links)).contains { match in
+        let targetRange = (1..<match.numberOfRanges).map { match.range(at: $0) }.first { $0.location != NSNotFound } ?? match.range
+        let target = (links as NSString).substring(with: targetRange).trimmingCharacters(in: .whitespacesAndNewlines)
+        return quickFilterWebTarget.firstMatch(in: target, range: NSRange(target.startIndex..., in: target)) != nil
+    }
+    if hasWebLink { filters.insert(.links) }
     return filters
 }

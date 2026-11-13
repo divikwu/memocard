@@ -64,10 +64,6 @@
       "value": "calc(var(--spacing) * 9)"
     },
     {
-      "step": "10",
-      "value": "calc(var(--spacing) * 10)"
-    },
-    {
       "step": "12",
       "value": "calc(var(--spacing) * 12)"
     },
@@ -142,9 +138,9 @@
       ]
     },
     {
-      "utility": "[&>[data-slot=dialog-header]]:pr-10",
-      "step": "10",
-      "value": "10",
+      "utility": "[&>[data-slot=dialog-header]]:pr-12",
+      "step": "12",
+      "value": "12",
       "consumers": [
         "apps/ui/ui/components/dialog.tsx"
       ]
@@ -321,6 +317,7 @@
       "consumers": [
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/calendar.tsx",
+        "apps/ui/ui/components/dialog.tsx",
         "apps/ui/ui/components/empty.tsx",
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/web/WebSettings.tsx"
@@ -373,14 +370,6 @@
       "value": "2",
       "consumers": [
         "apps/ui/ui/components/sidebar.tsx"
-      ]
-    },
-    {
-      "utility": "group-data-[swipe-axis=y]/drawer-popup:pb-2",
-      "step": "2",
-      "value": "2",
-      "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
       ]
     },
     {
@@ -618,6 +607,14 @@
       ]
     },
     {
+      "utility": "md:pb-0",
+      "step": "0",
+      "value": "0",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+      ]
+    },
+    {
       "utility": "md:peer-data-[variant=inset]:m-2",
       "step": "2",
       "value": "2",
@@ -639,6 +636,54 @@
       "value": "2",
       "consumers": [
         "apps/ui/ui/components/sidebar.tsx"
+      ]
+    },
+    {
+      "utility": "md:pl-2",
+      "step": "2",
+      "value": "2",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+      ]
+    },
+    {
+      "utility": "md:pl-6",
+      "step": "6",
+      "value": "6",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+      ]
+    },
+    {
+      "utility": "md:pr-3.5",
+      "step": "3.5",
+      "value": "3.5",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+      ]
+    },
+    {
+      "utility": "md:pr-9",
+      "step": "9",
+      "value": "9",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilters.tsx"
+      ]
+    },
+    {
+      "utility": "md:pt-2",
+      "step": "2",
+      "value": "2",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+      ]
+    },
+    {
+      "utility": "md:pt-4",
+      "step": "4",
+      "value": "4",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
       ]
     },
     {
@@ -858,6 +903,7 @@
       "consumers": [
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/accordion.tsx",
+        "apps/ui/ui/components/dialog.tsx",
         "apps/ui/ui/components/drawer.tsx",
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/components/recoverable-lazy.tsx"
@@ -933,6 +979,14 @@
       ]
     },
     {
+      "utility": "pl-0",
+      "step": "0",
+      "value": "0",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+      ]
+    },
+    {
       "utility": "pl-2",
       "step": "2",
       "value": "2",
@@ -950,14 +1004,6 @@
       ]
     },
     {
-      "utility": "pl-6",
-      "step": "6",
-      "value": "6",
-      "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
-      ]
-    },
-    {
       "utility": "pr-1",
       "step": "1",
       "value": "1",
@@ -970,6 +1016,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx"
       ]
     },
@@ -982,14 +1029,6 @@
       ]
     },
     {
-      "utility": "pr-3.5",
-      "step": "3.5",
-      "value": "3.5",
-      "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
-      ]
-    },
-    {
       "utility": "pr-8",
       "step": "8",
       "value": "8",
@@ -998,18 +1037,11 @@
       ]
     },
     {
-      "utility": "pr-9",
-      "step": "9",
-      "value": "9",
-      "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilters.tsx"
-      ]
-    },
-    {
       "utility": "pt-0",
       "step": "0",
       "value": "0",
       "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/components/accordion.tsx",
         "apps/ui/ui/components/drawer.tsx"
       ]
@@ -1028,8 +1060,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/ImagePropertyEditor.core.tsx",
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+        "apps/ui/src/ImagePropertyEditor.core.tsx"
       ]
     },
     {
@@ -1189,6 +1220,7 @@
       "value": "1",
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/input.tsx",
         "apps/ui/ui/components/select.tsx",

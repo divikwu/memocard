@@ -2124,11 +2124,13 @@ final class VaultStoreTests: XCTestCase {
         }
     }
 
-    func testQuickFiltersShareUnicodeClassificationWithBrowser() throws {
+    func testQuickFiltersShareClassificationWithBrowser() throws {
         struct Fixture: Decodable { let body: String; let expected: Set<NoteQuickFilter> }
         let package = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        let fixture = package.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("tests/fixtures/note-filters-unicode.json")
-        let cases = try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: fixture))
+        let fixtures = package.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("tests/fixtures")
+        let cases = try ["note-filters-unicode", "note-filters-links"].flatMap { name in
+            try JSONDecoder().decode([Fixture].self, from: Data(contentsOf: fixtures.appendingPathComponent("\(name).json")))
+        }
         for item in cases {
             for prefix in ["", "[plain]\n", String(repeating: "普通正文 café 👩🏽‍💻 #工作/设计\n", count: 80)] {
                 for tags in [[], ["工作/设计"]] {
@@ -2147,11 +2149,11 @@ final class VaultStoreTests: XCTestCase {
             ("HTTP://example.com", [.links]),
             ("WWW.example.com", [.links]),
             ("httpſ://example.com", []),
-            ("[资料](local.md)", [.links]),
-            ("[[资料]]", [.links]),
+            ("[资料](local.md)", []),
+            ("[[资料]]", []),
             ("![照片](照片.png)", [.images]),
             ("<IMG SRC=\"照片.png\">", [.images]),
-            ("<A HREF=\"local.md\">资料</A>", [.links]),
+            ("<A HREF=\"local.md\">资料</A>", []),
             ("<!-- HTTPS://hidden.example -->", []),
             ("`WWW.hidden.example`", []),
             ("```\nHTTPS://hidden.example\n```", []),
@@ -2196,6 +2198,7 @@ final class VaultStoreTests: XCTestCase {
         let linked = try await save(core, body: "#工作 ![照片](photo.png) https://example.com")
         let image = try await save(core, body: "![[photo.PNG|照片]]")
         let code = try await save(core, body: "`https://example.com`\n```md\n![代码](photo.png) https://example.com\n```\n    [[代码]]")
+        _ = try await save(core, body: "#internal [[项目]] [计划](项目计划.md)")
         let first = try await call(core, "queryNotes", ["quickFilter": "images", "limit": 1])
         XCTAssertEqual(first["filterCounts"] as? [String: Int], ["untagged": 2, "images": 2, "links": 1])
         XCTAssertEqual(first["recentQuickFilterTags"] as? [String], ["工作"])
@@ -2215,6 +2218,10 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual(second["quickFilterTagCounts"] as? [String: Int], ["工作": 1])
         let links = try await call(core, "queryNotes", ["quickFilter": "links", "query": "example", "tags": ["工作"]])
         XCTAssertEqual((links["notes"] as? [[String: Any]])?.map { $0["id"] as? String }, [linked["id"] as? String])
+        let webLinks = try await call(core, "queryNotes", ["quickFilter": "links"])
+        XCTAssertEqual((webLinks["notes"] as? [[String: Any]])?.map { $0["id"] as? String }, [linked["id"] as? String])
+        XCTAssertEqual(webLinks["quickFilterTagCounts"] as? [String: Int], ["工作": 1])
+        XCTAssertEqual(webLinks["recentQuickFilterTags"] as? [String], ["工作"])
         let untagged = try await call(core, "queryNotes", ["quickFilter": "untagged"])
         XCTAssertEqual(untagged["quickFilterTagCounts"] as? [String: Int], [:])
         XCTAssertEqual(Set((untagged["notes"] as? [[String: Any]])!.compactMap { $0["id"] as? String }), Set([image["id"] as! String, code["id"] as! String]))
