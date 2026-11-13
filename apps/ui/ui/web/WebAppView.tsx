@@ -4,6 +4,7 @@ import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-l
 import { errorMessage } from "../../src/error-messages";
 import { tagKey } from "../../src/inline-tags";
 import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
+import { EmptyIllustration } from "../business/EmptyIllustration";
 import { HomeMascot } from "../business/HomeMascot";
 import { Button } from "../components/button";
 import { CreateButton } from "../business/CreateButton";
@@ -20,6 +21,7 @@ import TagColorStyles from "../business/TagColorStyles";
 import { MobileTagActions } from "../business/MobileTagActions";
 import { NoteCollection } from "../business/NoteCollection";
 import { PageNotice } from "../business/PageNotice";
+import { SidebarIcon } from "../business/sidebar-icons";
 import { TagIcon } from "../business/property-icon-catalog";
 import { AddIcon, CheckIcon, DeleteIcon, DocumentIcon, FolderIcon, SearchIcon, SettingsIcon } from "../icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -86,8 +88,8 @@ function NoteDetail({ title, titleKnown, showProperties, children }: { title: st
   return children ? <Suspense fallback={loading}>{children}</Suspense> : loading;
 }
 
-function WorkspaceEmpty({ title, description, children, guide = false, role, connection = false }: { title: string; description: string; children?: ReactNode; guide?: boolean; role?: "alert" | "status"; connection?: boolean }) {
-  return <Empty className="web-workspace-empty" data-guide={guide || undefined} role={role}><EmptyHeader><EmptyMedia variant="icon">{connection ? <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" /> : <FolderIcon aria-hidden="true" />}</EmptyMedia><EmptyTitle><h2>{title}</h2></EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader>{children && <EmptyContent>{children}</EmptyContent>}{guide && children && <p className="text-xs text-secondary">只访问你授权的文件夹</p>}</Empty>;
+function WorkspaceEmpty({ title, description, children, guide = false, role, connection = false, illustration }: { title: string; description: string; children?: ReactNode; guide?: boolean; role?: "alert" | "status"; connection?: boolean; illustration?: "plug" | "query" }) {
+  return <Empty className="web-workspace-empty" data-guide={guide || undefined} role={role}><EmptyHeader>{illustration ? <EmptyIllustration kind={illustration} /> : <EmptyMedia variant="icon">{connection ? <HugeiconsIcon icon={AlertCircleIcon} aria-hidden="true" /> : <FolderIcon aria-hidden="true" />}</EmptyMedia>}<EmptyTitle><h2>{title}</h2></EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader>{children && <EmptyContent>{children}</EmptyContent>}{guide && children && <p className="text-xs text-secondary">只访问你授权的文件夹</p>}</Empty>;
 }
 
 function CoverageNotice({ state: s }: { state: AppViewState }) {
@@ -104,12 +106,13 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
   const filter = s.sidebar.quickFilter;
   const title = s.status?.indexing ? "笔记正在陆续载入" : pinned ? "把常用笔记固定在这里" : filtered ? "没有找到相关笔记" : filter ? noteFilterEmptyTitles[filter] : "记下第一条笔记";
   const description = s.status?.indexing ? "已读取的笔记可以打开，也可以新建笔记继续记录。" : pinned ? "在笔记详情右上角点击大头钉，即可固定到主页。" : filtered ? "可以调整筛选条件，或查看所有笔记。" : filter === "images" ? "在笔记中插入图片后，会自动出现在这里。" : filter === "links" ? "在笔记中添加网页或笔记链接后，会自动出现在这里。" : filter === "untagged" ? "当前笔记都已有标签，新的无标签笔记会出现在这里。" : "一句想法、一段发现，不必想好标题。";
-  return <Empty className="ui-note-empty border"><EmptyHeader><EmptyMedia variant="icon"><DocumentIcon aria-hidden="true" /></EmptyMedia><EmptyTitle>{title}</EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader><EmptyContent>{pinned ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>浏览笔记</Button> : filter || filtered ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>查看所有笔记</Button> : <CreateButton disabled={!s.canCreate} onClick={() => void s.onNew()}>新建笔记</CreateButton>}</EmptyContent></Empty>;
+  const typeIcon = filter === "images" ? "image" : filter === "links" ? "link" : "check";
+  return <Empty className="ui-note-empty border"><EmptyHeader>{s.status?.indexing || (!pinned && !filtered && filter) ? <EmptyMedia variant="icon">{s.status?.indexing ? <DocumentIcon aria-hidden="true" /> : <SidebarIcon name={typeIcon} className="size-5" />}</EmptyMedia> : <EmptyIllustration kind={pinned ? "rail" : filtered ? "sieve" : "drawer"} />}<EmptyTitle>{title}</EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader><EmptyContent>{pinned ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>浏览笔记</Button> : filter || filtered ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>查看所有笔记</Button> : <CreateButton disabled={!s.canCreate} onClick={() => void s.onNew()}>新建笔记</CreateButton>}</EmptyContent></Empty>;
 }
 
 function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppViewState; tagHeading?: ReactNode; noteHeading?: ReactNode }) {
   const layoutId = useWorkspaceAppearance()?.applied.layoutId;
-  if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
+  if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection illustration={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "query" : undefined} title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
   const editor = s.editor;
   if (s.openingNote || editor) return <NoteDetail
     key={editor?.initial.id ?? s.openingNoteId}
@@ -122,7 +125,7 @@ function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppVie
   if (s.view === "tags") return <Suspense fallback={<PageLoading />}><TagsPage key={s.sidebar.vaultId || "disconnected"} heading={tagHeading} tags={s.sidebar.tags} vaultId={s.sidebar.vaultId} loading={Boolean(s.sidebar.loadingTags)} connected={Boolean(s.status?.connected)} disabled={s.working || s.switchingVault} canRename={s.canCreate && !s.working && !s.switchingVault} onSelect={path => void s.onNavigate("notes", path)} onRename={s.sidebar.onRenameTag} /></Suspense>;
   if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
-  if (s.connectionState) return <>{noteHeading}<WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
+  if (s.connectionState) return <>{noteHeading}<WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} illustration={s.localWebReconnectRequired ? "plug" : undefined} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
     {s.localWebReconnectRequired ? <Button role="link" nativeButton={false} render={<a href="memocard-service://open-web" />}>重新打开</Button> : <Button onClick={s.needsPermission ? s.sidebar.onReauthorize : () => s.sidebar.onSelectVault(false)} disabled={s.working}>{s.needsPermission ? "重新授权" : "重新选择文件夹"}</Button>}
   </WorkspaceEmpty></>;
   if (s.listTimeout === "initial") return <>{noteHeading}<WorkspaceEmpty role="alert" connection title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button onClick={s.onRefresh} disabled={s.refreshingPages || s.switchingVault}>重试</Button></WorkspaceEmpty></>;

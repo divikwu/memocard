@@ -1,3 +1,13 @@
+.mascot-preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--spacing-1) * 6);
+}
+
+@media (min-width: 640px) {
+  .mascot-preview-content { gap: calc(var(--spacing-1) * 8); }
+}
+
 /* Preserve the two existing faded artwork variants, including their edge softening. */
 [data-mascot-fade] {
   mask-image: linear-gradient(to bottom, black 76%, transparent 93%);

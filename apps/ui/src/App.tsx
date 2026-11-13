@@ -141,6 +141,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const quickFilter = quickFilters.length === 1 ? quickFilters[0] : null;
   const filterScope = quickFilters.join(",") || null;
   const [filterCounts, setFilterCounts] = useState<NoteFilterCounts>();
+  const [typeTags, setTypeTags] = useState<{ scope: string | null; vaultId: string | null; tags: TagCount[] }>();
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(isConnectedClient);
   const [webConnected, setWebConnected] = useState(false);
@@ -292,6 +293,9 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       setError((previous: unknown) => bridgeErrorCode(previous) === "STALE_CURSOR" ? "" : previous);
       setFilterCounts(page?.filterCounts);
       const recentScope = resetFilters ? null : filterScope;
+      // Older services omit type-scoped counts; retain their global tag list instead of reporting an empty result.
+      const scopedTags = page?.quickFilterTagCounts === undefined ? (quickFilter === "untagged" ? [] : tagResult?.tags ?? []) : Object.entries(page.quickFilterTagCounts).map(([name, count]) => ({ name, count }));
+      setTypeTags({ scope: recentScope, vaultId: nextStatus.vaultId, tags: scopedTags });
       const indexedTags = recentScope ? page?.recentQuickFilterTags : tagResult?.recentTags;
       setIndexedRecentTags(indexedTags && { quickFilter: recentScope, tags: indexedTags });
       setTags(tagResult?.tags ?? []); setFolders(folderResult.folders);
@@ -789,7 +793,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const collectionProps: NoteCollectionProps = {
     activeTag: view === "notes" ? tag : null,
     recentTags,
-    filters: view === "notes" ? { tags, vaultId: status?.vaultId, activeTags, quickFilters, filterCounts, onChange: (nextTag, nextFilter) => void navigate("notes", nextTag, nextFilter) } : undefined,
+    filters: view === "notes" ? { tags: filterScope ? (typeTags?.scope === filterScope && typeTags.vaultId === status?.vaultId ? typeTags.tags : []) : tags, tagsLoading: loading && Boolean(filterScope) && (typeTags?.scope !== filterScope || typeTags.vaultId !== status?.vaultId), vaultId: status?.vaultId, activeTags, quickFilters, filterCounts, onChange: (nextTag, nextFilter) => void navigate("notes", nextTag, nextFilter) } : undefined,
     home: view === "home" ? { tab: homeTab, pinnedCount: notePins && notePins.vaultId === status?.vaultId ? Object.keys(notePins.pins).length : 0, onTabChange: changeHomeTab } : undefined,
     notes, loading,
     tagFiltersDisabled: switchingVault || !status?.connected || (isLocalWeb && !webConnected) || !capabilities.has("queryNotes"),

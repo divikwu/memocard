@@ -40,6 +40,17 @@ it("lets a new note appear after creating it in the empty vault", async () => {
   expect((await fixture.request<NotePage>("queryNotes")).notes).toMatchObject([{ id: "preview-new", body: "第一条笔记" }]);
 });
 
+it("keeps preview type counts independent of the selected tag and distinguishes images from links", async () => {
+  const fixture = createStateFixture("empty");
+  await fixture.request("saveNote", { id: "image", body: "![图](https://example.com/image.png) #图片" });
+  await fixture.request("saveNote", { id: "link", body: "https://example.com #链接" });
+  const page = await fixture.request<NotePage>("queryNotes", { quickFilter: "images", tags: ["不存在"] });
+  expect(page.notes).toEqual([]);
+  expect(page.filterCounts).toEqual({ untagged: 0, images: 1, links: 1 });
+  expect(page.quickFilterTagCounts).toEqual({ 图片: 1 });
+  expect((await fixture.request<NotePage>("queryNotes", { quickFilter: "links" })).notes.map(note => note.id)).toEqual(["link"]);
+});
+
 it("can retry property writes without modifying the failed value first", async () => {
   const fixture = createStateFixture("property-save-error");
   const before = fixture.snapshot();

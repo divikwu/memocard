@@ -9,6 +9,7 @@ import type { TagGroup } from "@memocard/contracts";
 import { createId } from "../../src/uuid";
 import { normalizePropertyTag, tagKey } from "../../src/inline-tags";
 import { Button } from "../components/button";
+import { EmptyIllustration } from "./EmptyIllustration";
 import { CreateButton } from "./CreateButton";
 import { Input } from "../components/input";
 import { Textarea } from "../components/textarea";
@@ -134,7 +135,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
     finally { setPinning(false); }
   };
   const status = loading && !tags.length ? <div role="status" aria-label="正在读取标签" className="grid gap-2 p-2">{[0, 1, 2, 3].map(item => <Skeleton key={item} className="h-8 rounded-xl" />)}</div>
-    : !matches.length ? <Empty><EmptyHeader><EmptyTitle>{!connected ? "连接笔记库后查看标签" : needle ? "没有找到相关标签" : "还没有标签"}</EmptyTitle><EmptyDescription>{!connected ? "从左上角选择笔记库。" : needle ? "换个关键词，或清空搜索。" : "在笔记中添加标签后，会显示在这里。"}</EmptyDescription></EmptyHeader>{needle && <EmptyContent><Button variant="outline" onClick={() => { setQuery(""); search.current?.focus(); }}>清空搜索</Button></EmptyContent>}</Empty> : null;
+    : !matches.length ? <Empty><EmptyHeader>{connected && <EmptyIllustration kind={needle ? "loupe" : "drawer"} />}<EmptyTitle>{!connected ? "连接笔记库后查看标签" : needle ? "没有找到相关标签" : "还没有标签"}</EmptyTitle><EmptyDescription>{!connected ? "从左上角选择笔记库。" : needle ? "换个关键词，或清空搜索。" : "在笔记中添加标签后，会显示在这里。"}</EmptyDescription></EmptyHeader>{needle && <EmptyContent><Button variant="outline" onClick={() => { setQuery(""); search.current?.focus(); }}>清空搜索</Button></EmptyContent>}</Empty> : null;
   const chip = (tag: Tag, label: string) => <>
           <TagDirectoryChip tag={tag} disabled={disabled || !connected} onSelect={() => onSelect(tag.name)}
             icon={canRename ? <span className="ui-tag-directory-chip-icon-space" aria-hidden="true" /> : <TagIcon value={preferences.icons[tag.name]} />} />
@@ -263,7 +264,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
           {draft && !tagGroups.some(group => group.id === draft.group?.id) && draftRows(draft)}
           {visibleGroups.map(({group, entries}) => groupSection(group, entries))}
         </TagDirectoryTable> : (loading || !connected) && status ? status : <Empty>
-          <EmptyHeader><EmptyTitle>{tagGroups.length ? "没有找到相关群组" : "还没有标签群组"}</EmptyTitle></EmptyHeader>
+          <EmptyHeader><EmptyIllustration kind={tagGroups.length ? "loupe" : "drawer"} /><EmptyTitle>{tagGroups.length ? "没有找到相关群组" : "还没有标签群组"}</EmptyTitle></EmptyHeader>
         </Empty>}
       </TabsContent>
     </Tabs>

@@ -52,6 +52,7 @@ it("retries a failed deletion refresh from fresh cursors while retaining the mob
   expect(bridge.request.mock.calls.at(-1)?.[1]).toEqual({ query: "保留搜索词", tags: [], sort: "updatedAt", limit: 30, cursor: "fresh-page" });
 });
 beforeEach(() => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   bridge.request.mockReset();
   bridge.request.mockResolvedValue({ notes: [note, second], nextCursor: null, coverage });
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });

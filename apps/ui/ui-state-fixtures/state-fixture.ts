@@ -1,10 +1,11 @@
 import type { NotePage, NotePins, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import type { Environment } from "../src/bridge";
+import { noteQuickFilters } from "../src/note-filters";
 import { createPreviewMock } from "./mock";
 
 // Both mock state and preference writes belong to a single frame lifetime.
 export function createStateFixture(scenario: string) {
-  const base = createPreviewMock(scenario === "filter-empty" ? "loading" : scenario);
+  const base = createPreviewMock(scenario === "tags-empty" ? "empty" : ["filter-empty", "links-empty", "tags-complete", "combined-filter-empty", "pinned-empty", "tags-search-empty"].includes(scenario) ? "loading" : scenario);
   const capabilities = ["getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences"];
   let pins: NotePins = { pins: {}, contentHash: "preview-pins" };
   let preferences: TagPreferenceState = { pinned: [], icons: {}, groups: [], labels: {}, initialized: true, contentHash: "preview-tags" };
@@ -37,12 +38,19 @@ export function createStateFixture(scenario: string) {
         break;
       case "queryNotes": {
         const page = await base.request<NotePage>(operation, params);
+        const types = [...(Array.isArray(params.quickFilters) ? params.quickFilters : []), ...(params.quickFilter ? [params.quickFilter] : [])];
+        const filterCounts = { untagged: 0, images: 0, links: 0 };
+        const quickFilterTagCounts: Record<string, number> = Object.create(null);
+        for (const note of base.snapshot().notes) {
+          if (note.deletedAt) continue;
+          const filters = noteQuickFilters(note);
+          for (const filter of filters) filterCounts[filter]++;
+          if (filters.some(filter => types.includes(filter))) for (const tag of note.tags) quickFilterTagCounts[tag] = (quickFilterTagCounts[tag] ?? 0) + 1;
+        }
         const filtered = page.notes.filter(note => (!params.pinned || pins.pins[note.id])
           && (!Array.isArray(params.tags) || params.tags.every(tag => note.tags.some(value => value === tag || (params.exactTags !== true && value.startsWith(`${tag}/`)))))
-          && (params.quickFilter !== "untagged" || !note.tags.length)
-          && (params.quickFilter !== "images" || /!\[|<img/.test(note.body))
-          && (params.quickFilter !== "links" || /https?:|\[\[/.test(note.body)));
-        result = { ...page, notes: filtered };
+          && (!types.length || noteQuickFilters(note).some(filter => types.includes(filter))));
+        result = { ...page, notes: filtered, filterCounts, quickFilterTagCounts };
         break;
       }
       case "listTags": {

@@ -11,6 +11,7 @@ const NoteCollectionFilterDrawer = recoverableLazy(() => import("./NoteCollectio
 
 export type NoteCollectionFiltersProps = {
   tags: DirectoryTag[];
+  tagsLoading?: boolean;
   vaultId?: string | null;
   activeTags: string[];
   quickFilters: NoteQuickFilter[];

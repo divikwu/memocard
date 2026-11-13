@@ -309,6 +309,7 @@
       "step": "3",
       "value": "3",
       "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/tabs.tsx"
       ]
@@ -595,6 +596,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
+        "apps/ui/ui/business/EmptyIllustration.tsx",
         "apps/ui/ui/components/empty.tsx"
       ]
     },
@@ -909,6 +911,7 @@
       "step": "3",
       "value": "3",
       "consumers": [
+        "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/input-group.tsx"
       ]
     },
@@ -1036,6 +1039,14 @@
       "consumers": [
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/input-group.tsx"
+      ]
+    },
+    {
+      "utility": "pt-8",
+      "step": "8",
+      "value": "8",
+      "consumers": [
+        "apps/ui/ui/business/NoteSearchDialog.tsx"
       ]
     },
     {
@@ -1227,7 +1238,6 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/textarea.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx"
@@ -1239,6 +1249,14 @@
       "value": "4",
       "consumers": [
         "apps/ui/ui/business/NoteSearchDialog.tsx"
+      ]
+    },
+    {
+      "utility": "py-8",
+      "step": "8",
+      "value": "8",
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
       ]
     },
     {

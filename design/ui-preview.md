@@ -6,19 +6,23 @@
 pnpm --filter @memocard/ui dev:states
 ```
 
-首页包含异常、空状态与吉祥物目录；实际数量和场景 ID 以 [catalog.ts](../apps/ui/ui-state-fixtures/catalog.ts) 与[角色目录](../apps/ui/mascot-fixtures/catalog.ts)为准。
+首页包含异常、空状态、吉祥物与空状态插画目录；实际数量和场景 ID 以 [catalog.ts](../apps/ui/ui-state-fixtures/catalog.ts) 与[角色目录](../apps/ui/mascot-fixtures/catalog.ts)为准。
+
+工具外层共用 [PreviewHeader](../apps/ui/ui/preview/PreviewHeader.tsx) 的返回与主题切换控件，以及 [preview.css](../apps/ui/ui/preview/preview.css) 的页面、工具栏和响应式布局。该样式入口导入产品样式并在同一次 Tailwind 编译中扫描 Preview 源码，避免预览专属 utility 缺失；不向产品构建添加 Preview 样式。浅色外层统一白色，场景 iframe 保留真实产品主题。插画页内容区只展示插画。
 
 ## 真实视图与隔离
 
 [ScenarioView](../apps/ui/ui/preview/ScenarioView.tsx) 驱动共享 App 控制器，使用当前页面、编辑器、属性、搜索和确认组件。场景与操作说明位于 [scenarios.ts](../apps/ui/ui/preview/scenarios.ts)，基础故障位于 [mock.ts](../apps/ui/ui-state-fixtures/mock.ts)，页面状态补充位于 [state-fixture.ts](../apps/ui/ui-state-fixtures/state-fixture.ts)。
 
-场景可按组选择、前后切换和重置，支持浅/深色、桌面/375px 内容视口和读取延迟。URL 保留选择并支持浏览器前后导航；容器更窄时 iframe 收缩。吉祥物页使用实际 sprite、指针跟随、点击和键盘反应。
+场景可按组选择、前后切换和重置，支持浅/深色、桌面/375px 内容视口和读取延迟。URL 保留选择并支持浏览器前后导航；容器更窄时 iframe 收缩。吉祥物页使用实际 sprite、指针跟随、点击和键盘反应。插画页与吉祥物页共用单列／双列／四列响应式作品网格，插画卡片为 1:1，只展示 Hairline 官方 `Drawer`、`Loupe`、`Sieve`、`Rail`、`Plug` 和 `Query`，保留原版交互与默认 intensity 0.5；作品在 `Illustrations.tsx` 的列表中维护，许可见 [Hairline MIT License](licenses/hairline.txt)。首页目录卡片悬停时保留描边及原有阴影、缩放效果。
 
 [Vite Preview 配置](../apps/ui/vite.preview.config.ts) 在加载前替换共享 bridge、client-mode 和 browser-runtime；未知操作明确失败，`/api/` 返回 403，不能回落用户文件、原生调用或本机服务。存储、草稿和设置都在该场景内隔离，重置即丢弃；生产不需要旧样式隔离插件。
 
 字体/外观故障通过显式 fixture 注入；预期的“模拟字体加载失败”错误须与意外 console error 区分。Preview 不进入生产依赖图，也不改变生产外观偏好。
 
 界面主题预览使用 [NavigationPrototype](../apps/ui/ui/preview/NavigationPrototype.tsx)，沿用隔离存储与模拟笔记，直接渲染正式 Web 组件。入口为 <http://127.0.0.1:5182/navigation-prototype.html?variant=top#/notes>，可在设置中切换「经典 / 简约」；`variant=sidebar` 以经典启动。
+
+插画页、筛选抽屉与产品空状态共用 `EmptyIllustration.css` 的浅／深色线条层级，填充色匹配所在容器。保留官方 0.9px 线宽与悬停动效，仅增强轮廓、结构线和辅助线的对比度。
 
 ## 检查命令
 
@@ -29,7 +33,7 @@ pnpm --filter @memocard/ui build:states
 pnpm verify:ui
 ```
 
-静态输出为 `apps/ui/preview-static`，包含首页、场景 iframe、吉祥物与界面主题四个入口，与产品 `apps/ui/dist`、Storybook 输出和 Apple Web 资源分离。共享场景控制器回归现位于 [app-controller-states.test.tsx](../apps/ui/ui-state-fixtures/app-controller-states.test.tsx)。
+静态输出为 `apps/ui/preview-static`，包含首页、场景 iframe、吉祥物、插画与界面主题五个入口，与产品 `apps/ui/dist`、Storybook 输出和 Apple Web 资源分离。共享场景控制器回归现位于 [app-controller-states.test.tsx](../apps/ui/ui-state-fixtures/app-controller-states.test.tsx)。
 
 ## 验收边界
 

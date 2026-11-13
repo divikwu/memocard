@@ -35,6 +35,6 @@ export default defineConfig({
   build: {
     assetsInlineLimit: 0,
     outDir: path.join(uiRoot, "preview-static"), emptyOutDir: true,
-    rolldownOptions: { input: { index: path.join(previewRoot, "index.html"), client: path.join(previewRoot, "client.html"), mascots: path.join(previewRoot, "mascots.html"), navigationPrototype: path.join(previewRoot, "navigation-prototype.html") } },
+    rolldownOptions: { input: { index: path.join(previewRoot, "index.html"), client: path.join(previewRoot, "client.html"), mascots: path.join(previewRoot, "mascots.html"), illustrations: path.join(previewRoot, "illustrations.html"), navigationPrototype: path.join(previewRoot, "navigation-prototype.html") } },
   },
 });

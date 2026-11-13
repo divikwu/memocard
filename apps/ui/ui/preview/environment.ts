@@ -3,7 +3,7 @@ import { DEFAULT_WEB_APPEARANCE } from "../web/WebAppearance";
 // Preferences are scoped to this frame and discarded on a scenario reset.
 const params = new URLSearchParams(location.search);
 const scenario = params.get("scenario");
-const storage = new Map<string, string>([["memocard-web-appearance-v1", JSON.stringify({ ...DEFAULT_WEB_APPEARANCE, theme: params.get("theme") === "dark" ? "dark" : "light" })]]);
+const storage = new Map<string, string>([["memocard-web-appearance-v1", JSON.stringify({ ...DEFAULT_WEB_APPEARANCE, ...(scenario === "tags-search-empty" ? { interfaceTheme: "paper" } : {}), theme: params.get("theme") === "dark" ? "dark" : "light" })]]);
 const memoryStorage: Storage = {
   getItem: key => storage.get(key) ?? null,
   setItem: (key, value) => {

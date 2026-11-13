@@ -17,8 +17,12 @@ const props = (overrides: Partial<NoteCollectionProps> = {}): NoteCollectionProp
   ...overrides,
 });
 
-beforeEach(() => localStorage.clear());
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+beforeEach(() => {
+  localStorage.clear();
+  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} })));
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
+});
+afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
 
 it("does not repeat a complete root tag in a tooltip", async () => {
   const user = userEvent.setup();

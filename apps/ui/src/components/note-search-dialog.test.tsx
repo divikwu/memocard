@@ -19,6 +19,8 @@ function setup() {
   return { ...view, props, onOpenNote, onOpenChange };
 }
 beforeEach(() => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
+  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   bridge.request.mockReset();
   bridge.request.mockResolvedValue({ notes: [note, second], nextCursor: null, coverage });
   window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });

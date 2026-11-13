@@ -1,0 +1,18 @@
+/* Keep Hairline's thin strokes and four line levels; plates match their host surface. */
+.ui-hairline {
+  --hairline-hi: #232327;
+  --hairline-edge: #7c7c88;
+  --hairline-mid: #92929e;
+  --hairline-lo: #b8b8c2;
+}
+.ui-hairline[data-hairline-theme="dark"] {
+  --hairline-hi: #d0d6e0;
+  --hairline-edge: #888894;
+  --hairline-mid: #6c6c78;
+  --hairline-lo: #4b4b56;
+}
+.ui-hairline-gallery { --hairline-plate: var(--color-background-card); }
+.ui-hairline-filter { --hairline-plate: var(--color-background-popover); }
+.ui-empty-illustration { --hairline-plate: var(--color-background-body); }
+.web-app :is(.ui-note-empty, .web-workspace-empty) .ui-empty-illustration { --hairline-plate: var(--color-background-sidebar); }
+:is(.ui-tag-directory-panel, .ui-note-search-dialog, .ui-note-search-sheet) .ui-empty-illustration { --hairline-plate: var(--color-background-surface); }

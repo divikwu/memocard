@@ -629,8 +629,13 @@ export class BrowserVault {
       return [note.id, cached.quickFilters ??= noteQuickFilters(note)];
     }));
     const filterCounts = { untagged: 0, images: 0, links: 0 };
+    const quickFilterTagCounts: Record<string, number> = Object.create(null);
     for (const { note } of snapshot.parsed) {
-      if (!note.deletedAt) for (const filter of filters.get(note.id)!) filterCounts[filter]++;
+      if (note.deletedAt) continue;
+      for (const filter of filters.get(note.id)!) filterCounts[filter]++;
+      if (quickFilters.some(filter => filters.get(note.id)!.includes(filter))) {
+        for (const tag of note.tags) quickFilterTagCounts[tag] = (quickFilterTagCounts[tag] ?? 0) + 1;
+      }
     }
     const matching = snapshot.parsed.map(({ note }) => note).filter((note) => {
       const date = sortDates.get(note.id)!, createdDate = parseDate(note.createdAt);
@@ -662,7 +667,7 @@ export class BrowserVault {
     const recentQuickFilterTags = quickFilters.some(filter => filter !== "untagged")
       ? recentNoteTags(snapshot.parsed.map(({ note }) => note).filter(note => quickFilters.some(filter => filters.get(note.id)!.includes(filter))))
       : undefined;
-    return { notes, nextCursor, coverage: snapshot.coverage, filterCounts, recentQuickFilterTags };
+    return { notes, nextCursor, coverage: snapshot.coverage, filterCounts, recentQuickFilterTags, quickFilterTagCounts };
   }
 
   private async attachment(selected: Binding, params: Record<string, unknown>): Promise<unknown> {
