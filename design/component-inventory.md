@@ -99,6 +99,7 @@
 | `apps/ui/ui/components/empty.tsx` | 当前Base UI/HTML控件适配 | empty；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-empty.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/input-group.tsx` | 当前Base UI/HTML控件适配 | input-group；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-input-group.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/input.tsx` | 当前Base UI/HTML控件适配 | input；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-input.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
+| `apps/ui/ui/components/kbd.tsx` | 键盘提示控件 | 原生 kbd 与组合容器；统一快捷键视觉和语义 | theme / type / size | `apps/ui/ui/stories/business-note-search.stories.tsx`；`apps/ui/ui/business/note-search.test.tsx` | 随搜索组合验证；辅助技术另验 |
 | `apps/ui/ui/components/label.tsx` | 当前Base UI/HTML控件适配 | label；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-label.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/popover.tsx` | 当前Base UI/HTML控件适配 | popover；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-popover.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/select.tsx` | 当前Base UI/HTML控件适配 | select；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-select.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
@@ -123,7 +124,8 @@
 | `apps/ui/ui/web/layouts/sidebar.tsx` | 侧栏及抽屉布局出口 | 复用 AppSidebar 和现有页头入口 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 原生仍走已有外框 |
 | `apps/ui/ui/web/layouts/topbar.tsx` | 顶部布局出口 | 受控顶部导航；与视觉主题分开 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 同一布局供多个视觉主题使用 |
 | `apps/ui/ui/components/theme-scope.tsx` | 页面及 Portal 样式作用域 | 保留 Base UI Portal 根与焦点管理，复制已解析属性/变量 | theme / focus / overlay | `apps/ui/ui/components/theme-scope.test.tsx`；`apps/ui/test-support/interface-themes.browser.tsx` | 不移动 Portal 容器，局部模式继续优先 |
-| `apps/ui/ui/web/WebTopNavigation.tsx` | Web 简约界面导航 | 主页/所有笔记、共享标签树、更多与笔记库操作；桌面 Web 专用 | theme / layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉，原生端不消费简约导航 |
+| `apps/ui/ui/web/WebMoreDrawer.tsx` | 按需加载的更多抽屉 | 笔记库、草稿、设置与回收站动作；关闭和回焦 | overlay / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 不计入页面首屏依赖；窄屏和原生沿用自身导航 |
+| `apps/ui/ui/web/WebTopNavigation.tsx` | Web 简约界面导航 | 主页/笔记/标签、按需更多抽屉；桌面 Web 专用 | theme / layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉，原生端不消费简约导航 |
 | `apps/ui/ui/web/WebAppearance.tsx` | 当前外观偏好 | 界面主题、明暗/系统、强调色、中性色、字体与圆角；兼容旧设备值 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/web/WebFontRecovery.test.tsx` | 全字体与所有组合不等于已逐项真机验收 |
 | `apps/ui/ui/web/WebSettingSelect.tsx` | 当前设置选择控件 | label关联、受控值、键盘和回焦 | input / focus / type | `apps/ui/ui/web/WebAppearance.test.tsx` | 内部组合无需独立Story；辅助技术另验 |
 | `apps/ui/ui/web/WebSettings.tsx` | 当前设置页面 | 库操作、文件状态、外观、正文风格、MCP和本机Web | theme / property / state | `apps/ui/ui/web/WebSettings.test.tsx`；`apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 系统授权、跨窗口与全部字体矩阵另验 |

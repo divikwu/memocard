@@ -30,9 +30,9 @@ iOS 保留边缘展开、主页面推移、侧滑/点击关闭和系统安全区
 
 Web 设置的「界面主题」提供默认「经典」侧栏与「简约」顶部栏；「颜色模式」独立控制浅色、深色或跟随系统。选择保存在当前浏览器，旧偏好默认经典。简约仅作用于宽度至少 768px 的 Web；窄屏仍使用抽屉，原生端不提供该选项。切换主题不重建编辑器或重置路由、筛选和撤销记录。
 
-[WebTopNavigation](../../apps/ui/ui/web/WebTopNavigation.tsx) 的标签弹层复用 TagNavigation 与 SidebarTreeItem，保留层级、置顶、图标和标签操作；外层间距与更多菜单对齐。更多集中设置、回收站、草稿、快捷筛选及笔记库操作，保留忙碌和权限限制。新建笔记使用主页捕获、列表工具栏或移动端入口。
+[WebTopNavigation](../../apps/ui/ui/web/WebTopNavigation.tsx) 的简约导航为「主页 / 笔记 / 标签」，标签直接进入目录；经典顶部布局的标签弹层继续复用 TagNavigation 与 SidebarTreeItem。搜索右侧的等号图标打开「更多」侧边抽屉，与筛选抽屉共用 Drawer。抽屉集中设置、回收站、草稿及笔记库操作，保留忙碌和权限限制，支持 Escape、关闭按钮与焦点返回。新建笔记位于搜索左侧。
 
-简约导航、集合与详情白色外层最大宽度同为 80rem；768–1023px 两侧各留 24px，1024px 起各留 32px。详情正文继续遵循内容行宽。Web 首页列表随内容收尾，所有笔记列表继续撑满可用高度。
+简约导航、集合与详情白色外层最大宽度同为 80rem；768–1023px 两侧各留 24px，1024px 起各留 32px。详情正文继续遵循内容行宽。桌面 Web 首页与笔记列表撑满剩余视口，内容较长时自然滚动；首页、笔记页和标签页底部统一保留 16px。移动端列表仍随内容收尾。
 
 当前主题按“视觉主题＋可复用布局”组合；[共享导航模型](../../apps/ui/ui/business/navigation-model.ts)统一动作与可用性，[WorkspaceFrame](../../apps/ui/ui/web/WorkspaceFrame.tsx)保持内容树稳定，[组合目录](../../apps/ui/ui/web/appearance/catalog.ts)按需加载布局与视觉资源。主页面和浮层共享 ThemeScope，富文本内核经工厂注入 Portal。新增视觉主题只需 CSS/参数与布局引用；详见[Web 界面主题架构](../../docs/WEB_INTERFACE_THEMES_ARCHITECTURE.md)。仍使用 v1 偏好，未知主题 ID 保留并回退到可用界面。
 

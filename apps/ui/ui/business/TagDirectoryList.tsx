@@ -29,7 +29,7 @@ export function TagDirectoryList({ tags, renderTag, className = "" }: { classNam
 export function TagDirectoryChip({ tag, icon, disabled, onSelect }: {
   tag: DirectoryTag; icon: ReactNode; disabled?: boolean; onSelect: () => void;
 }) {
-  return <Button variant="secondary" className="ui-tag-directory-chip" aria-label={`查看标签 ${tag.name} 的笔记`}
+  return <Button variant="secondary" className="ui-tag-directory-chip" data-tag-path={tag.name} aria-label={`查看标签 ${tag.name} 的笔记`}
     aria-description={`${tag.count} 条笔记`} disabled={disabled} onClick={onSelect}>
     {icon}
     <span className="ui-tag-directory-chip-name" title={tag.name}>{tag.name}</span>

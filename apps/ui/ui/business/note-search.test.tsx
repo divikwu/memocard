@@ -151,7 +151,7 @@ it("provides a dismissal action and preserves input during focus navigation", as
   expect(onOpenChange).toHaveBeenCalledWith(false);
 });
 
-it("closes on Escape and returns focus to the connected search trigger", async () => {
+it.each(["Escape", "close button"])("closes via %s and returns focus to the connected search trigger", async method => {
   const trigger = document.createElement("button");
   trigger.textContent = "打开搜索";
   document.body.append(trigger);
@@ -161,8 +161,13 @@ it("closes on Escape and returns focus to the connected search trigger", async (
   try {
     const input = screen.getByRole("combobox", { name: "搜索笔记" });
     await waitFor(() => expect(document.activeElement).toBe(input));
-    await userEvent.setup().keyboard("{Escape}");
-    expect(onOpenChange).toHaveBeenCalledWith(false, expect.objectContaining({ reason: "escape-key" }));
+    if (method === "Escape") {
+      await userEvent.setup().keyboard("{Escape}");
+      expect(onOpenChange).toHaveBeenCalledWith(false, expect.objectContaining({ reason: "escape-key" }));
+    } else {
+      await userEvent.setup().click(screen.getByRole("button", {name: "退出搜索"}));
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    }
     view.rerender(<NoteSearchDialog {...props} open={false} />);
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   } finally {

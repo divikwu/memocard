@@ -2347,7 +2347,8 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
           expect(rowHover).not.toBe("none");
           expect(getComputedStyle(open).paddingInlineStart).toBe("12px");
           expect(getComputedStyle(open).paddingInlineEnd).toBe("12px");
-          expect(Number.parseFloat(getComputedStyle(card).borderTopLeftRadius)).toBeGreaterThanOrEqual(card.getBoundingClientRect().height / 2);
+          expect(getComputedStyle(card).borderRadius).toBe("8px");
+          expect(getComputedStyle(open).borderRadius).toBe(getComputedStyle(card).borderRadius);
           await userEvent.hover(tag);
           await waitFor(() => expect(getComputedStyle(tag).backgroundImage).not.toBe(rowHover));
           expect(getComputedStyle(tag).color).toBe(color);
@@ -2445,7 +2446,7 @@ test("Web collection headings align with the sidebar brand and retain compact sp
         expect(getComputedStyle(header, "::after").height).toBe("16px");
         const content = title.closest(".web-page-content")!;
         await waitFor(() => expect(content.querySelector(".ui-note-toolbar, .ui-tag-directory-toolbar")).not.toBeNull());
-        const toolbar = content.querySelector(".ui-note-toolbar, .ui-tag-directory-toolbar")!.getBoundingClientRect();
+        const toolbar = content.querySelector(".ui-note-toolbar, .ui-tag-directory-tab-header")!.getBoundingClientRect();
         const results = content.querySelector(".ui-note-results, .ui-tag-directory-panel")!.getBoundingClientRect();
         expect(results.top - toolbar.bottom).toBeCloseTo(16, 1);
         if (name === "标签") {
@@ -2456,9 +2457,9 @@ test("Web collection headings align with the sidebar brand and retain compact sp
           expect(search.top + search.height / 2).toBeCloseTo(titleBounds.top + titleBounds.height / 2, 1);
           expect(search.width).toBeLessThanOrEqual(320);
           const tabs = content.querySelector(".ui-tag-directory-tab-header > [role='tablist']")!.getBoundingClientRect();
-          const panel = content.querySelector(".ui-tag-directory-panel > [role='tabpanel']")!.getBoundingClientRect();
-          expect(tabs.top).toBeGreaterThan(results.top);
-          expect(panel.top).toBeGreaterThanOrEqual(tabs.bottom);
+          expect(tabs.left).toBeCloseTo(results.left, 1);
+          expect(tabs.top).toBeCloseTo(toolbar.top, 1);
+          expect(results.top).toBeGreaterThan(tabs.bottom);
         } else {
           const recentTags = content.querySelector(".ui-note-recent-tags")!.getBoundingClientRect();
           expect(recentTags.left).toBeCloseTo(title.parentElement!.getBoundingClientRect().left, 1);
@@ -2648,8 +2649,9 @@ test("Web tag color picker applies the shared palette without submitting the tag
     let defaultIconColors: string[] | undefined;
     for (const [width, selected, next] of [[1440, "默认", "蓝色"], [390, "蓝色", "默认"]] as const) {
       await page.viewport(width, 1000);
-      const iconButton = canvas.getByRole("button", {name: `编辑标签图标 ${name}`});
-      await userEvent.click(iconButton);
+      await userEvent.hover(chip);
+      await userEvent.click(canvas.getByRole("button", {name: `标签操作 ${name}`}));
+      await userEvent.click(await body.findByRole("menuitem", {name: "编辑名称/图标"}));
       const editor = await body.findByRole("dialog", {name: "编辑标签"});
       expect(editor.getAttribute("data-slot")).toBe(width < 768 ? "sheet-content" : "popover-content");
       const input = within(editor).getByRole("textbox", {name: "标签名称"});
@@ -2671,7 +2673,6 @@ test("Web tag color picker applies the shared palette without submitting the tag
       await waitFor(() => expect(trigger.getAttribute("aria-expanded")).toBe("false"));
       expect(body.getByRole("dialog", {name: "编辑标签"})).toBe(editor);
       expect(input).toHaveValue("未保存的名称");
-      expect(getComputedStyle(iconButton).backgroundColor).toBe("rgba(0, 0, 0, 0)");
       if (next === "默认") {
         expect(getComputedStyle(chip).backgroundColor).toBe(defaultBackground);
         expect(iconColors()).toEqual(defaultIconColors);
@@ -2901,6 +2902,10 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
         const chip = coffee.getBoundingClientRect();
         const actions = coffeeActions.getBoundingClientRect();
         expect(chip.height).toBe(36);
+        const tab = directory.getByRole("tab", {name: "全部"});
+        expect(getComputedStyle(coffee).paddingInlineStart).toBe(getComputedStyle(tab).paddingInlineStart);
+        expect(getComputedStyle(coffee).columnGap).toBe(getComputedStyle(tab).columnGap);
+        expect(getComputedStyle(coffee.closest("ul")!).gap).toBe(getComputedStyle(tab.parentElement!).gap);
         expect(actions.right).toBeLessThan(chip.right);
         expect(actions.top + actions.height / 2).toBeCloseTo(chip.top + chip.height / 2, 1);
         expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
@@ -2923,16 +2928,8 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
     await pinned.findByRole("button", {name: "生活/咖啡"});
     await selectTagAction("生活/咖啡", "取消置顶");
     await waitFor(() => expect(pinned.queryByRole("button", {name: "生活/咖啡"})).toBeNull());
-    const iconTrigger = directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"});
-    await userEvent.hover(iconTrigger);
-    expect(Number.parseFloat(getComputedStyle(iconTrigger).borderRadius)).toBeGreaterThanOrEqual(iconTrigger.getBoundingClientRect().height / 2);
-    await userEvent.click(iconTrigger);
-    await body.findByRole("dialog", {name: "编辑标签"});
-    expect(iconTrigger.getAttribute("aria-expanded")).toBe("true");
-    await userEvent.click(iconTrigger);
-    await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
-    expect(iconTrigger.getAttribute("aria-expanded")).toBe("false");
-    await userEvent.click(iconTrigger);
+    expect(directory.queryByRole("button", {name: "编辑标签图标 生活/咖啡"})).toBeNull();
+    await selectTagAction("生活/咖啡", "编辑名称/图标");
     const desktopEditor = await body.findByRole("dialog", {name: "编辑标签"});
     await waitFor(() => expect(desktopEditor.getAttribute("data-slot")).toBe("popover-content"));
     expect(desktopEditor.getBoundingClientRect().left).toBeGreaterThanOrEqual(0);
@@ -2945,7 +2942,7 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
     await selectTagAction("生活/咖啡", "置顶标签");
-    const directoryGlyph = directory.getByRole("button", {name: "编辑标签图标 生活/咖啡"}).querySelector("svg")!;
+    const directoryGlyph = coffee.querySelector("svg")!;
     const sidebarGlyph = (await pinned.findByRole("button", {name: "生活/咖啡"})).querySelector("svg")!;
     expect(directoryGlyph.innerHTML).toBe(sidebarGlyph.innerHTML);
     expect(sidebarGlyph.innerHTML).not.toBe(pinned.getByRole("button", {name: "设计"}).querySelector("svg")!.innerHTML);
@@ -2961,7 +2958,7 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
     expect(directory.getByRole("button", {name: "查看标签 手冲记录 的笔记"})).toBeTruthy();
     await userEvent.click(directory.getByRole("button", {name: "清空标签搜索"}));
     await selectTagAction("生活", "置顶标签");
-    await userEvent.click(directory.getByRole("button", {name: "编辑标签图标 生活"}));
+    await selectTagAction("生活", "编辑名称/图标");
     const mobileEditor = await body.findByRole("dialog", {name: "编辑标签"});
     expect(mobileEditor.getAttribute("data-slot")).toBe("sheet-content");
     const dialog = within(mobileEditor);
@@ -2977,9 +2974,9 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
     await userEvent.keyboard("{Enter}");
     await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
     expect(fixture.snapshot().notes.some(note => note.tags.includes("生活/植物/绿萝"))).toBe(true);
-    const renamed = await directory.findByRole("button", {name: "编辑标签图标 日常"});
+    const renamed = await directory.findByRole("button", {name: "查看标签 日常 的笔记"});
     await waitFor(() => expect(document.activeElement).toBe(renamed));
-    expect(directory.getByRole("button", {name: "编辑标签图标 日常"}).textContent).toContain("📚");
+    expect(renamed.textContent).toContain("📚");
     expect((await fixture.request<TagPreferenceState>("getTagPreferences")).pinned).toContain("日常");
     await directoryControls.getByRole("button", {name: "查看标签 手冲记录 的笔记", exact: true}).click();
     expect(location.hash).toBe("#/notes");
@@ -3048,8 +3045,7 @@ test("Web home and all-notes collections share responsive widths", async () => {
           for (const height of [1200, 1600]) {
             await page.viewport(1440, height);
             await waitFor(() => {
-              if (route === "home") expect(list.getBoundingClientRect().height).toBeCloseTo(naturalHeight(), 1);
-              else expect(list.getBoundingClientRect().bottom).toBeCloseTo(scroll.getBoundingClientRect().bottom, 1);
+              expect(list.getBoundingClientRect().bottom).toBeCloseTo(scroll.getBoundingClientRect().bottom - 16, 1);
               expect(scroll.scrollHeight).toBeLessThanOrEqual(scroll.clientHeight + 1);
             });
             expect(getComputedStyle(list).overflowY).toBe("visible");
@@ -4441,17 +4437,36 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
   try {
     const canvas = within(view.container);
     const nav = within(await canvas.findByRole("navigation", { name: "顶部导航" }));
-    const trigger = nav.getByRole("button", { name: "所有笔记" });
+    const trigger = nav.getByRole("button", { name: "笔记" });
     const body = within(document.body);
     await userEvent.hover(trigger);
     expect(trigger).not.toHaveAttribute("aria-haspopup");
-    const more = nav.getByRole("button", { name: "更多" });
+    const more = canvas.getByRole("button", { name: "更多" });
+    const search = canvas.getByRole("button", { name: "搜索" });
+    expect(more.getBoundingClientRect().left).toBeGreaterThan(search.getBoundingClientRect().right);
+    expect(getComputedStyle(more).backgroundColor).toBe(getComputedStyle(search).backgroundColor);
+    expect(more.getBoundingClientRect().width).toBe(search.getBoundingClientRect().width);
+    expect(more.getBoundingClientRect().height).toBe(search.getBoundingClientRect().height);
     await userEvent.hover(more);
-    const menu = await body.findByRole("menu", { name: "更多" });
-    await userEvent.hover(within(menu).getByRole("menuitem", { name: "设置" }));
+    expect(body.queryByRole("dialog", {name: "更多"})).toBeNull();
+    more.focus();
+    await userEvent.keyboard("{Enter}");
+    const morePanel = await body.findByRole("dialog", { name: "更多" });
+    expect(morePanel).toHaveAttribute("data-swipe-direction", "right");
+    await waitFor(() => expect(morePanel.getBoundingClientRect().right).toBeCloseTo(1432, 0));
+    expect(morePanel.getBoundingClientRect().width).toBe(384);
+    expect(morePanel.getBoundingClientRect().top).toBe(8);
+    const moreRadius = getComputedStyle(morePanel).borderRadius;
     expect(more).toHaveAttribute("aria-expanded", "true");
-    await userEvent.hover(trigger);
-    await waitFor(() => expect(body.queryByRole("menu")).toBeNull());
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(body.queryByRole("dialog", {name: "更多"})).toBeNull());
+    expect(more).toHaveFocus();
+    await userEvent.click(more);
+    const reopened = await body.findByRole("dialog", {name: "更多"});
+    await settlePropertyPopup(reopened);
+    await userEvent.click(within(reopened).getByRole("button", {name: "设置"}));
+    await canvas.findByRole("heading", {name: "设置", level: 1});
+    await waitFor(() => expect(body.queryByRole("dialog", {name: "更多"})).toBeNull());
     await userEvent.click(nav.getByRole("button", { name: "主页" }));
     await canvas.findByRole("tab", { name: "最近更新", selected: true });
     await userEvent.click(trigger);
@@ -4460,6 +4475,8 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
     filter.focus();
     await userEvent.keyboard("{Enter}");
     const dialog = await body.findByRole("dialog", { name: "筛选笔记" });
+    expect(getComputedStyle(dialog).borderRadius).toBe(moreRadius);
+    expect(dialog.getBoundingClientRect().width).toBe(384);
     await userEvent.click(within(dialog).getByRole("button", { name: "有图片" }));
     await userEvent.keyboard("{Escape}");
     await canvas.findByRole("heading", { name: "所有笔记", level: 1 });

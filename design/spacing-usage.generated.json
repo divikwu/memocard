@@ -237,12 +237,12 @@
       "value": "1",
       "consumers": [
         "apps/ui/ui/business/MobileTagActions.tsx",
-        "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/tag-navigation-editor.tsx",
         "apps/ui/ui/components/badge.tsx",
         "apps/ui/ui/components/button.tsx",
         "apps/ui/ui/components/calendar.tsx",
         "apps/ui/ui/components/input-group.tsx",
+        "apps/ui/ui/components/kbd.tsx",
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/components/tabs.tsx",
@@ -255,6 +255,7 @@
       "value": "1.5",
       "consumers": [
         "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
+        "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/components/breadcrumb.tsx",
         "apps/ui/ui/components/button.tsx",
         "apps/ui/ui/components/calendar.tsx",
@@ -274,6 +275,7 @@
         "apps/ui/src/NoteProperties.core.tsx",
         "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+        "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/sidebar.tsx",
@@ -288,7 +290,8 @@
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/components/tabs.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx",
-        "apps/ui/ui/web/WebAppView.tsx"
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -611,7 +614,8 @@
       "step": "0",
       "value": "0",
       "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -651,7 +655,8 @@
       "step": "6",
       "value": "6",
       "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -659,7 +664,8 @@
       "step": "3.5",
       "value": "3.5",
       "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -683,7 +689,8 @@
       "step": "4",
       "value": "4",
       "consumers": [
-        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx"
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -774,7 +781,8 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/ui/components/sidebar.tsx"
+        "apps/ui/ui/components/sidebar.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -967,7 +975,8 @@
       "value": "4",
       "consumers": [
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
-        "apps/ui/ui/components/accordion.tsx"
+        "apps/ui/ui/components/accordion.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -1060,7 +1069,8 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/src/ImagePropertyEditor.core.tsx"
+        "apps/ui/src/ImagePropertyEditor.core.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -1114,6 +1124,7 @@
         "apps/ui/src/components/name-editor.core.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/tag-navigation-editor.tsx",
+        "apps/ui/ui/components/kbd.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx",
         "apps/ui/ui/web/WebAppView.tsx"
@@ -1143,7 +1154,8 @@
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx",
-        "apps/ui/ui/web/WebAppView.tsx"
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -1183,7 +1195,8 @@
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/accordion.tsx",
-        "apps/ui/ui/components/button.tsx"
+        "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -1224,7 +1237,8 @@
         "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/input.tsx",
         "apps/ui/ui/components/select.tsx",
-        "apps/ui/ui/components/tabs.tsx"
+        "apps/ui/ui/components/tabs.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -1250,7 +1264,8 @@
         "apps/ui/ui/business/tag-navigation.tsx",
         "apps/ui/ui/components/input-group.tsx",
         "apps/ui/ui/components/select.tsx",
-        "apps/ui/ui/components/sidebar.tsx"
+        "apps/ui/ui/components/sidebar.tsx",
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
     {
@@ -1308,6 +1323,14 @@
       ]
     },
     {
+      "utility": "space-y-1",
+      "step": "1",
+      "value": "1",
+      "consumers": [
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
+      ]
+    },
+    {
       "utility": "space-y-2",
       "step": "2",
       "value": "2",
@@ -1324,6 +1347,14 @@
       "value": "3",
       "consumers": [
         "apps/ui/ui/components/recoverable-lazy.tsx"
+      ]
+    },
+    {
+      "utility": "space-y-4",
+      "step": "4",
+      "value": "4",
+      "consumers": [
+        "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     }
   ]

@@ -84,7 +84,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
   .web-app-scroll[data-settings] { padding-inline: calc(var(--spacing-1) * 16); }
   :where(.web-app[data-web-client]) .web-page-content:has(.ui-note-list, .ui-tag-directory) { display: flex; flex-direction: column; min-height: 100%; padding-block-end: 0; }
   :where(.web-app[data-web-client]) .web-page-content:has(.ui-note-list, .ui-tag-directory) > * { flex-shrink: 0; }
-  :where(.web-app[data-web-client]) .web-page-content > .ui-tag-directory { flex: 1; padding-block-end: calc(var(--spacing-1) * 4); }
+  :where(.web-app[data-web-client]) .web-page-content > .ui-tag-directory { flex: 1; }
   :where(.web-app[data-web-client]) .web-page-content > .ui-note-collection:has(.ui-note-list) { flex: 1; }
   :where(.web-app[data-web-client]) .ui-note-collection:has(.ui-note-list) :is([data-slot=tabs-content]:not([hidden]), .ui-note-results) { display: flex; flex-direction: column; flex: 1; }
   :where(.web-app[data-web-client]) .ui-note-list { flex: 1; }
@@ -191,6 +191,5 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
 .web-app[data-native-chrome="true"] { padding: 0; }
 
 @media (min-width: 768px) {
-  :where(.web-app[data-web-client]) .web-page-content[data-view=home]:not([data-detail]) > .ui-note-collection:has(.ui-note-list) { flex: 0 0 auto; }
-  :where(.web-app[data-web-client]) .web-page-content[data-view=home]:not([data-detail]) .ui-note-list { padding-block-end: calc(var(--spacing-1) * 4); }
+  :where(.web-app[data-web-client]) .web-page-content:is([data-view=home], [data-view=notes], [data-view=tags]):not([data-detail]) { padding-block-end: calc(var(--spacing-1) * 4); }
 }
