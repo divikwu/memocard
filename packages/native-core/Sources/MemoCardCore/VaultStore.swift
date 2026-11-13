@@ -892,11 +892,13 @@ public actor VaultStore {
         var filterCounts = ["untagged": 0, "images": 0, "links": 0]
         let quickFilters = Set((query.quickFilters ?? []) + (query.quickFilter.map { [$0] } ?? []))
         var quickFilterTagDates: [String: Date] = [:]
+        var quickFilterTagCounts: [String: Int] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
             let noteFilters = filters[parsed.note.id]!
             for filter in noteFilters { filterCounts[filter.rawValue, default: 0] += 1 }
             if !quickFilters.isDisjoint(with: noteFilters) {
                 try recordRecentTags(parsed.note, in: &quickFilterTagDates)
+                for tag in parsed.note.tags { quickFilterTagCounts[tag, default: 0] += 1 }
             }
         }
         let matches = ordered.filter { parsed in
@@ -942,6 +944,8 @@ public actor VaultStore {
         result.append(try encode(snapshot.coverage))
         result.append(contentsOf: ",\"filterCounts\":".utf8)
         result.append(try encode(filterCounts))
+        result.append(contentsOf: ",\"quickFilterTagCounts\":".utf8)
+        result.append(try encode(quickFilterTagCounts))
         if quickFilters.contains(where: { $0 != .untagged }) {
             result.append(contentsOf: ",\"recentQuickFilterTags\":".utf8)
             result.append(try encode(rankedRecentTags(quickFilterTagDates)))

@@ -13,7 +13,7 @@ export type TagGroup = { id: string; name: string; tags: string[]; icon?: string
 export type TagPreferences = {pinned:string[]; icons:Record<string,string>; groups?:TagGroup[]; labels?:Record<string,string>};
 export type TagPreferenceState = TagPreferences & {contentHash:string; initialized:boolean};
 export type NotePins = {pins:Record<string,string>; contentHash:string};
-export type NotePage = {notes:Note[]; nextCursor:string|null; coverage:Coverage; filterCounts?:NoteFilterCounts; recentQuickFilterTags?:string[]};
+export type NotePage = {notes:Note[]; nextCursor:string|null; coverage:Coverage; filterCounts?:NoteFilterCounts; recentQuickFilterTags?:string[]; quickFilterTagCounts?:Record<string, number>};
 export type BridgeRequest = {version:1; requestId:string; operation:string; params:Record<string,unknown>};
 export type BridgeError = {code:string;message:string;retryable:boolean};
 export type BridgeResponse<T = unknown> = {ok:true;data:T}|{ok:false;error:BridgeError};

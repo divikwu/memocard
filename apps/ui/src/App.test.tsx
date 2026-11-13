@@ -78,6 +78,7 @@ beforeEach(() => {
       default: throw new Error(`Unexpected test operation: ${operation}`);
     }
   });
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false, media: query, onchange: null,

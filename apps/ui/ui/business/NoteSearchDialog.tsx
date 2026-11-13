@@ -13,6 +13,7 @@ import { Input } from "../components/input";
 import { Spinner } from "../components/spinner";
 import { CloseIcon, DocumentIcon, SearchIcon } from "../icons";
 import { cn } from "../lib/utils";
+import { EmptyIllustration } from "./EmptyIllustration";
 import { NoteMarkdown } from "./NoteMarkdown";
 import "./note-search.css";
 
@@ -61,7 +62,8 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
           <div ref={attachList} onScroll={event=>{resultScroll.current=event.currentTarget.scrollTop;}} className="ui-note-search-results min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
-            <p role="status" className={loading || !notes.length ? "ui-note-search-status text-center text-sm text-secondary" : "sr-only"}>
+            {!loading && available && !notes.length && !error && <div className="flex justify-center pt-8"><EmptyIllustration compact kind={searchQuery ? "loupe" : "drawer"} /></div>}
+            <p role="status" className={loading || !notes.length ? cn("text-center text-sm text-secondary", !loading && available && !error && !notes.length ? "px-3 pb-3" : "ui-note-search-status") : "sr-only"}>
               {!available ? "请先连接笔记库，再搜索内容。" : loading ? <><Spinner aria-hidden="true" className="mx-auto mb-3 size-5 animate-spin motion-reduce:animate-none" />正在搜索笔记…</> : error && !notes.length ? "搜索未完成" : notes.length ? `已显示 ${notes.length} 条${page?.nextCursor ? "，还有更多结果" : "结果"}` : searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记"}
             </p>
             {!loading && available && !notes.length && !error && searchQuery && <p className="pb-8 text-center text-xs text-secondary">试试其他关键词，搜索标题或正文。</p>}

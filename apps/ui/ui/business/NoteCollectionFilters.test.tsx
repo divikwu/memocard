@@ -8,6 +8,7 @@ import { NoteCollectionFilters } from "./NoteCollectionFilters";
 import { NoteCollection } from "./NoteCollection";
 
 beforeEach(() => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
 });

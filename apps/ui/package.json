@@ -57,6 +57,7 @@
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/react": "^1.1.10",
     "@lezer/markdown": "^1.7.2",
+    "@lucasmarkes/hairline": "0.5.1",
     "@memocard/contracts": "workspace:*",
     "@tanstack/react-virtual": "^3.14.23",
     "@tiptap/extension-image": "^3.31.3",

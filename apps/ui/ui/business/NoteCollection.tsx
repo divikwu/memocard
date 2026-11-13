@@ -14,12 +14,12 @@ import { NoteTypeTabs } from "./NoteCollectionFilterChips";
 import { NoteCollectionFilters, type NoteCollectionFiltersProps } from "./NoteCollectionFilters";
 import { Badge } from "../components/badge";
 import { Card, CardContent } from "../components/card";
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../components/empty";
 import { Skeleton } from "../components/skeleton";
 import { Spinner } from "../components/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger, tabsListVariants, tabsPillTriggerStyles, tabsTriggerStyles } from "../components/tabs";
 import { TooltipHints } from "../components/tooltip";
-import { DocumentIcon } from "../icons";
+import { EmptyIllustration } from "./EmptyIllustration";
 import { cn } from "../lib/utils";
 import "./NoteCollection.css";
 const NoteCardPreview = recoverableLazy(() => import("./NoteCardPreview").then(module => ({ default: module.NoteCardPreview })), "笔记卡片预览");
@@ -138,7 +138,7 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
           </li>;
         })}
       </ul> : loading ? <CollectionSkeleton cards={cards} /> : children !== undefined ? children : <Empty className="ui-note-empty border">
-        <EmptyHeader><EmptyMedia variant="icon"><DocumentIcon aria-hidden="true" /></EmptyMedia><EmptyTitle>{home?.tab === "pinned" ? "把常用笔记固定在这里" : "记下第一条笔记"}</EmptyTitle><EmptyDescription>{home?.tab === "pinned" ? "在笔记详情中固定后，可以从主页快速打开。" : "一句想法、一段发现，不必想好标题。"}</EmptyDescription></EmptyHeader>
+        <EmptyHeader><EmptyIllustration kind={home?.tab === "pinned" ? "rail" : "drawer"} /><EmptyTitle>{home?.tab === "pinned" ? "把常用笔记固定在这里" : "记下第一条笔记"}</EmptyTitle><EmptyDescription>{home?.tab === "pinned" ? "在笔记详情中固定后，可以从主页快速打开。" : "一句想法、一段发现，不必想好标题。"}</EmptyDescription></EmptyHeader>
         {home?.tab !== "pinned" && <EmptyContent><CreateButton disabled={!canCreate} onClick={onNewNote}>新建笔记</CreateButton></EmptyContent>}
       </Empty>}
       {hasMore && <div className="ui-note-pagination"><Button variant="outline" size="sm" aria-label="加载更多" aria-busy={paging} onClick={onLoadMore} disabled={loadMoreDisabled || paging}>{paging ? <Spinner aria-hidden="true" /> : <HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" strokeWidth={2} />}{paging ? "正在加载…" : "加载更多"}</Button>{paging && <span role="status" className="sr-only">正在加载更多笔记…</span>}</div>}

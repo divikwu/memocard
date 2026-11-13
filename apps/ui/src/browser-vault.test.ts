@@ -885,15 +885,19 @@ describe("independent browser vault", () => {
     const first = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", limit: 1 });
     expect(first.notes).toHaveLength(1);
     expect(first.recentQuickFilterTags).toEqual(["工作"]);
+    expect(first.quickFilterTagCounts).toEqual({ 工作: 1 });
     const untaggedImages = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", tags: ["missing"] });
     expect(untaggedImages.notes).toEqual([]);
     expect(untaggedImages.recentQuickFilterTags).toEqual(["工作"]);
+    expect(untaggedImages.quickFilterTagCounts).toEqual({ 工作: 1 });
     expect(first.filterCounts).toEqual({ untagged: 2, images: 2, links: 1 });
     expect(first.nextCursor).toBeTruthy();
     const next = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", limit: 1, cursor: first.nextCursor });
     expect(next.notes).toHaveLength(1);
     expect(next.notes[0].id).not.toBe(first.notes[0].id);
     expect(next.nextCursor).toBeNull();
+    expect(next.quickFilterTagCounts).toEqual({ 工作: 1 });
+    expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "untagged" })).quickFilterTagCounts).toEqual({});
     expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "links", query: "example", tags: ["工作"] })).notes.map(note => note.id)).toEqual([noteId]);
     expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "untagged" })).notes.map(note => note.id).sort()).toEqual([secondId, codeId].sort());
     await expect(call(h.core, "queryNotes", { quickFilter: "links", limit: 1, cursor: first.nextCursor })).rejects.toMatchObject({ code: "CURSOR_QUERY_MISMATCH" });
@@ -914,6 +918,7 @@ describe("independent browser vault", () => {
     expect([first.notes[0].id, second.notes[0].id].sort()).toEqual(ids.slice(0, 2).sort());
     expect(second.nextCursor).toBeNull();
     expect(first.recentQuickFilterTags?.sort()).toEqual(["alpha", "beta"]);
+    expect(first.quickFilterTagCounts).toEqual({ alpha: 1, beta: 1 });
     expect((await call<NotePage>(h.core, "queryNotes", { tags: ["alpha", "beta"] })).notes.map(note => note.id)).toEqual([ids[2]]);
     expect((await call<NotePage>(h.core, "queryNotes", { tags: [], tagMatch: "any", quickFilters: [] })).notes).toHaveLength(4);
     expect((await call<NotePage>(h.core, "queryNotes", { tags: ["alpha"], quickFilters: ["untagged", "images"] })).notes.map(note => note.id)).toEqual([noteId]);

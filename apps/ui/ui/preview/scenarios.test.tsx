@@ -7,7 +7,7 @@ import { errorMessage } from "../../src/error-messages";
 import { resetStorybookBridge, setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { createStateFixture } from "../../ui-state-fixtures/state-fixture";
 import { scenarios as sharedScenarios } from "../../ui-state-fixtures/catalog";
-import { WebAppearanceProvider } from "../web/WebAppearance";
+import { DEFAULT_WEB_APPEARANCE, WebAppearanceProvider } from "../web/WebAppearance";
 import { preloadWebEditor } from "../web/WebAppView";
 import { ScenarioView } from "./ScenarioView";
 import { getScenario, noteId, scenarios } from "./scenarios";
@@ -27,6 +27,7 @@ beforeEach(() => {
   vi.stubGlobal("innerWidth", 1200);
   vi.stubGlobal("FontFace", class {});
   vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("max-width") && window.innerWidth < 768, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("scrollBy", vi.fn());
   vi.spyOn(window, "confirm").mockReturnValue(true);
@@ -40,6 +41,7 @@ afterEach(async () => {
 });
 
 async function show(id: string) {
+  if (id === "tags-search-empty") localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ ...DEFAULT_WEB_APPEARANCE, interfaceTheme: "paper" }));
   const scenario = getScenario(id);
   const fixture = createStateFixture(id);
   setStorybookClientMode(fixture.browser ? "browser" : "local-web");
@@ -55,8 +57,8 @@ async function show(id: string) {
 
 it("retains every shared scenario identity while providing instructions for the new view", () => {
   expect(scenarios.map(scenario => scenario.id)).toEqual(sharedScenarios.map(scenario => scenario.id));
-  expect(new Set(scenarios.map(scenario => scenario.id)).size).toBe(50);
-  expect(scenarios.filter(scenario => scenario.group === "空状态")).toHaveLength(3);
+  expect(new Set(scenarios.map(scenario => scenario.id)).size).toBe(56);
+  expect(scenarios.filter(scenario => scenario.group === "空状态")).toHaveLength(9);
   expect(getScenario("date-invalid").instructions).toContain("MM/DD/YYYY");
 });
 
@@ -154,6 +156,7 @@ it("shows a global search miss and clears the search", async () => {
   await waitFor(() => expect(request.mock.calls.some(([operation, params]) =>
     operation === "queryNotes" && params?.query === "不存在的关键词")).toBe(true));
   expect(await dialog.findAllByText("没有找到相关笔记")).not.toHaveLength(0);
+  expect(await dialog.findByRole("img", { name: "在空白纸上寻找的放大镜" })).toBeDefined();
   await user.click(dialog.getByRole("button", { name: "清空搜索" }));
   expect(input).toHaveProperty("value", "");
 });
@@ -262,4 +265,54 @@ it("requires a real delete confirmation and changes only the current in-memory f
   expect(screen.queryByRole("button", { name: "编辑属性 摘要" })).toBeNull();
   expect(fixture.snapshot().notes).toEqual(original.notes);
   expect(untouched.snapshot()).toEqual(secondOriginal);
+});
+
+
+it.each([
+  ["disconnected", "尚未连接的插头与插座"],
+  ["unauthorized", "尚未连接的插头与插座"],
+  ["detail-missing", "表示笔记不存在的问号"],
+  ["empty", "空的分类抽屉"],
+  ["pinned-empty", "等待挂上内容的空衣架"],
+  ["combined-filter-empty", "没有留下内容的筛网"],
+  ["tags-empty", "空的分类抽屉"],
+])("%s shows the matching official illustration", async (id, label) => {
+  await show(id);
+  const art = await screen.findByRole("img", { name: label });
+  await waitFor(() => expect(art.querySelector("svg")).not.toBeNull());
+  if (id === "combined-filter-empty") {
+    await userEvent.click(screen.getByRole("button", { name: "查看所有笔记" }));
+    await screen.findByRole("list", { name: "笔记列表" });
+    expect(screen.queryByRole("img", { name: label })).toBeNull();
+  }
+});
+
+
+it("shows Loupe for a tag search miss and restores tags after clearing", async () => {
+  const user = userEvent.setup();
+  await show("tags-search-empty");
+  await user.type(await screen.findByRole("textbox", { name: "搜索标签" }), "不存在");
+  expect(await screen.findByRole("img", { name: "在空白纸上寻找的放大镜" })).toBeDefined();
+  await user.click(screen.getByRole("button", { name: "清空搜索" }));
+  await screen.findByRole("button", { name: "查看标签 验收 的笔记" });
+  expect(screen.queryByRole("img", { name: "在空白纸上寻找的放大镜" })).toBeNull();
+});
+
+
+it.each([
+  ["links-empty", "还没有包含链接的笔记", "links"],
+  ["tags-complete", "所有笔记都已添加标签", "untagged"],
+])("%s keeps its type-specific feedback and can return to all notes", async (id, title, filter) => {
+  const { request } = await show(id);
+  await screen.findByText(title);
+  expect(request.mock.calls.some(([operation, params]) => operation === "queryNotes" && params?.quickFilter === filter)).toBe(true);
+  expect(document.querySelector(".ui-note-empty .ui-empty-illustration")).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "查看所有笔记" }));
+  await screen.findByRole("list", { name: "笔记列表" });
+});
+
+it.each(["permission", "detail-error", "timeout"])("%s does not mislabel a permission or read failure as a disconnect or missing note", async id => {
+  await show(id);
+  expect(screen.queryByRole("img", { name: "尚未连接的插头与插座" })).toBeNull();
+  expect(screen.queryByRole("img", { name: "表示笔记不存在的问号" })).toBeNull();
 });

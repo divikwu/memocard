@@ -1,21 +1,16 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { HugeiconsIcon } from "@hugeicons/react";
-import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon";
 import { Mascot } from "page-mascot";
 import { mascots } from "../../mascot-fixtures/catalog";
 import mascotLicense from "../../mascot-fixtures/LICENSE.txt?url";
-import { Button } from "../components/button";
 import { Badge } from "../components/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/select";
 import { TooltipHints } from "../components/tooltip";
 import { PreviewModeProvider } from "../preview-mode";
-import "../styles.css";
+import { PreviewHeader } from "./PreviewHeader";
+import "./preview.css";
 import "../preview-appearance.css";
 import "./mascot-preview.css";
-
-const themes = [{ value: "light", label: "浅色" }, { value: "dark", label: "深色" }];
 
 function Mascots() {
   const [theme, setTheme] = useState<"light" | "dark">(() => new URLSearchParams(location.search).get("theme") === "dark" ? "dark" : "light");
@@ -28,29 +23,18 @@ function Mascots() {
   };
 
   return <PreviewModeProvider mode={theme}><TooltipHints>
-    <div className="ui-theme min-h-dvh" data-ui-theme={theme}>
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
-          <div className="flex min-w-0 items-center gap-2">
-            <Button role="link" nativeButton={false} variant="ghost" size="icon-sm" render={<a href={`/?theme=${theme}`} />} aria-label="返回 UI 验收主页" data-ui-tooltip="返回 UI 验收主页"><HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} aria-hidden="true" /></Button>
-            <Badge variant="secondary">MemoCard UI</Badge>
-          </div>
-          <Select items={themes} value={theme} onValueChange={changeTheme}>
-            <SelectTrigger aria-label="吉祥物预览主题" size="sm" className="w-28"><SelectValue /></SelectTrigger>
-            <SelectContent align="end">{themes.map(item => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-8 sm:py-12">
+    <div className="ui-theme ui-preview" data-ui-theme={theme}>
+      <PreviewHeader theme={theme} onToggleTheme={() => changeTheme(theme === "light" ? "dark" : "light")} back />
+      <main className="ui-preview-content mascot-preview-content">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3"><h1 className="text-balance font-heading text-2xl font-medium">吉祥物</h1><Badge variant="secondary" className="tabular-nums">{mascots.length} 个角色</Badge></div>
           <p className="text-pretty text-sm text-secondary">移动鼠标，让角色跟着你转头；点击角色，看看它们的反应。</p>
           <p className="text-pretty text-xs text-secondary">点击会眨眼，出现爱心、闪光或开心表情，快速连点会转圈眼。也可以用 Tab 聚焦角色，按 Enter 或空格互动。</p>
         </div>
-        <ul aria-label="吉祥物角色" className="grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-4">
+        <ul aria-label="吉祥物角色" className="ui-preview-art-grid">
           {mascots.map(mascot => <li key={mascot.name} className="min-w-0">
-            <Card size="sm" className="h-full text-center shadow-none">
-              <CardContent className="flex justify-center">
+            <Card size="sm" className="ui-preview-art-card gap-2 text-center shadow-none">
+              <CardContent>
                 <div className="relative isolate" data-mascot-fade={mascot.fade || undefined}>
                   <Mascot directions={mascot.directions} reactions={mascot.reactions} size={140} label={mascot.name} className="rounded-element outline-none focus-visible:focus-ring" />
                   {mascot.fade && <span aria-hidden="true" className="mascot-preview-fade pointer-events-none absolute inset-0" />}

@@ -54,6 +54,7 @@ beforeEach(() => {
     }
   });
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
     matches: false, media: query, onchange: null,
     addListener: vi.fn(), removeListener: vi.fn(), addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
@@ -133,6 +134,8 @@ describe("sidebar workspace actions", () => {
     await screen.findByText(note.body);
     await userEvent.setup().click(await screen.findByRole("button", { name: /^筛选笔记/ }));
     await userEvent.setup().click(await screen.findByRole("button", { name: "有图片" }));
+    expect(await screen.findByText("正在读取标签…")).toBeTruthy();
+    expect(screen.queryByText("暂无标签")).toBeNull();
     await userEvent.setup().keyboard("{Escape}");
     await waitFor(() => expect(finishQuery).toBeTypeOf("function"));
     expect(screen.getByRole("status", { name: "正在读取笔记库" })).toBeTruthy();
@@ -149,6 +152,7 @@ describe("sidebar workspace actions", () => {
         nextCursor: params?.quickFilter === "images" && !params.cursor ? "image-page-2" : null,
         coverage: status.coverage, filterCounts: { untagged: 0, images: 31, links: 0 },
         recentQuickFilterTags: params?.quickFilter === "images" ? ["生活"] : undefined,
+        quickFilterTagCounts: params?.quickFilter === "images" ? { 生活: 31 } : {},
       });
       return original(operation, params);
     });
@@ -204,11 +208,58 @@ describe("sidebar workspace actions", () => {
     });
   });
 
+  it("updates drawer tags and counts by type, retains zero-count selections, and restores all tags", async () => {
+    localStorage.setItem("memocard:tags:test-vault", JSON.stringify({ labels: { 空标签: "" } }));
+    const original = bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation: string, params?: Record<string, unknown>) => {
+      if (operation === "listTags") return Promise.resolve({ tags: [{ name: "生活", count: 5 }, { name: "工作", count: 3 }] });
+      if (operation === "queryNotes") return Promise.resolve({ notes: [note], nextCursor: null, coverage: status.coverage,
+        quickFilterTagCounts: params?.quickFilter === "links" ? { 生活: 2 } : params?.quickFilter === "images" ? { 工作: 1 } : {} });
+      return original(operation, params);
+    });
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText(note.body);
+    await user.click(screen.getByRole("button", { name: "筛选笔记" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "筛选笔记" }));
+    expect(dialog.getByRole("button", { name: "筛选标签 生活" }).textContent).toBe("生活5");
+    expect(dialog.getByRole("button", { name: "筛选标签 空标签" }).textContent).toBe("空标签0");
+    await user.click(dialog.getByRole("button", { name: "有链接" }));
+    await waitFor(() => expect(dialog.getByRole("button", { name: "筛选标签 生活" }).textContent).toBe("生活2"));
+    expect(dialog.queryByRole("button", { name: "筛选标签 工作" })).toBeNull();
+    expect(dialog.queryByRole("button", { name: "筛选标签 空标签" })).toBeNull();
+    await user.click(dialog.getByRole("button", { name: "筛选标签 生活" }));
+    await user.click(dialog.getByRole("button", { name: "有图片" }));
+    await waitFor(() => expect(dialog.getByRole("button", { name: "筛选标签 工作" }).textContent).toBe("工作1"));
+    expect(dialog.getByRole("button", { name: "筛选标签 生活", pressed: true }).textContent).toBe("生活0");
+    await user.click(dialog.getByRole("button", { name: "筛选标签 生活" }));
+    expect(dialog.queryByRole("button", { name: "筛选标签 生活" })).toBeNull();
+    await user.click(dialog.getByRole("button", { name: "无标签" }));
+    await waitFor(() => expect(dialog.getByRole("status").textContent).toBe("暂无标签"));
+    expect(dialog.getByRole("img", { name: "空的分类抽屉" }).querySelector("svg")).not.toBeNull();
+    await user.click(dialog.getByRole("button", { name: "全部类型" }));
+    expect(dialog.getByRole("button", { name: "筛选标签 生活" }).textContent).toBe("生活5");
+    expect(dialog.getByRole("button", { name: "筛选标签 工作" }).textContent).toBe("工作3");
+  });
+
+  it("retains usable tags when an older service omits type-scoped counts", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByText(note.body);
+    await user.click(screen.getByRole("button", { name: "筛选笔记" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "筛选笔记" }));
+    await user.click(dialog.getByRole("button", { name: "有图片" }));
+    await waitFor(() => expect(dialog.getByRole("button", { name: "筛选标签 生活" }).textContent).toBe("生活1"));
+    expect(dialog.queryByText("暂无标签")).toBeNull();
+    await user.click(dialog.getByRole("button", { name: "无标签" }));
+    expect(await dialog.findByText("暂无标签")).toBeTruthy();
+  });
+
   it("keeps multiple tags and one type through paging and background refresh", async () => {
     const original = bridge.request.getMockImplementation()!;
     bridge.request.mockImplementation((operation: string, params?: Record<string, unknown>) => {
       if (operation === "listTags") return Promise.resolve({ tags: [{ name: "生活", count: 1 }, { name: "工作", count: 1 }] });
-      if (operation === "queryNotes") return Promise.resolve({ notes: [note], nextCursor: params?.cursor ? null : "next-page", coverage: status.coverage, recentQuickFilterTags: ["生活", "工作"] });
+      if (operation === "queryNotes") return Promise.resolve({ notes: [note], nextCursor: params?.cursor ? null : "next-page", coverage: status.coverage, recentQuickFilterTags: ["生活", "工作"], quickFilterTagCounts: { 生活: 1, 工作: 1 } });
       return original(operation, params);
     });
     const user = userEvent.setup();

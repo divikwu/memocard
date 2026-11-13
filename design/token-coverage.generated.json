@@ -13948,6 +13948,26 @@
       ]
     },
     {
+      "id": "interaction.empty-illustration",
+      "category": "motion",
+      "layer": "component",
+      "type": "policy",
+      "status": "component-owned",
+      "axes": [
+        "state"
+      ],
+      "description": "Official Hairline state illustrations at intensity 0.5; shared light/dark line contrast and host-matched plates, with built-in pointer and reduced-motion handling.",
+      "sources": [
+        "apps/ui/ui/business/EmptyIllustration.css",
+        "apps/ui/ui/business/EmptyIllustration.tsx"
+      ],
+      "consumers": [
+        "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+        "apps/ui/ui/preview/Illustrations.tsx",
+        "apps/ui/ui/web/WebAppView.tsx"
+      ]
+    },
+    {
       "id": "interaction.input-focus",
       "category": "effects",
       "layer": "component",

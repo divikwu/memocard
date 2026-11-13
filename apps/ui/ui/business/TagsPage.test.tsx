@@ -8,6 +8,7 @@ const key = "memocard:tags:tag-directory-test";
 const tags = [{name: "area", count: 3}, {name: "area/coffee", count: 2}, {name: "area/coffee/beans", count: 1}, {name: "journal", count: 1}, {name: "journal/coffee", count: 1}];
 const props = () => ({tags, vaultId: "tag-directory-test", loading: false, connected: true, disabled: false, canRename: true, onSelect: vi.fn(), onRename: vi.fn(async () => {})});
 beforeEach(() => {
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   localStorage.clear();
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("matchMedia", vi.fn(() => ({matches: false, addEventListener() {}, removeEventListener() {}})));

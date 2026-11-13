@@ -25,9 +25,20 @@ export function ScenarioView({ state, scenario }: { state: AppViewState; scenari
     } else if (scenario.id === "search-empty") {
       prepared.current = true;
       state.onSearch();
-    } else if (scenario.id === "filter-empty") {
+    } else if (scenario.id === "pinned-empty") {
+      if (!state.collection.home) { void state.onNavigate("home"); return; }
       prepared.current = true;
-      void state.onNavigate("notes", null, "images");
+      state.collection.home.onTabChange("pinned");
+    } else if (scenario.id === "tags-empty" || scenario.id === "tags-search-empty") {
+      prepared.current = true;
+      void state.onNavigate("tags");
+    } else if (scenario.id === "combined-filter-empty") {
+      if (!state.collection.filters) return;
+      prepared.current = true;
+      state.collection.filters.onChange(["验收"], ["images"]);
+    } else if (["filter-empty", "links-empty", "tags-complete"].includes(scenario.id)) {
+      prepared.current = true;
+      void state.onNavigate("notes", null, scenario.id === "links-empty" ? "links" : scenario.id === "tags-complete" ? "untagged" : "images");
     }
   }, [state, scenario.id]);
   return renderWebApp(state);
