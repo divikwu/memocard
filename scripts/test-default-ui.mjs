@@ -9,7 +9,7 @@ const { chromium, webkit } = require('playwright');
 let server;
 let baseURL;
 const openNotes = async page => {
-  await page.getByRole('navigation', {name: '顶部导航'}).getByRole('button', {name: '所有笔记', exact: true}).click();
+  await page.getByRole('navigation', {name: '顶部导航'}).getByRole('button', {name: '笔记', exact: true}).click();
 };
 const newNote = async page => {
   await openNotes(page);
@@ -98,7 +98,7 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         const dialog = page.getByRole('dialog', { name: '将「Migration filesystem proof」移入回收站？', exact: true });
         await dialog.getByRole('button', { name: '移入回收站', exact: true }).click();
         await page.getByRole('button', { name: '更多', exact: true }).click();
-        await page.getByRole('menuitem', { name: '回收站', exact: true }).click();
+        await page.getByRole('dialog', {name: '更多', exact: true}).getByRole('button', { name: '回收站', exact: true }).click();
         await page.getByRole('button', { name: '查看已删除笔记：Migration filesystem proof', exact: true }).click();
         await page.getByRole('button', { name: '恢复笔记', exact: true }).click();
         await openNotes(page);

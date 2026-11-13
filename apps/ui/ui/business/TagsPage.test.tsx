@@ -94,7 +94,7 @@ it("keeps other tags and migrates only the renamed tag across groups", async () 
   await user.click((await openTagMenu(user, "area/coffee")).getByRole("menuitem", {name: "置顶标签"}));
   expect(JSON.parse(localStorage.getItem(key)!).pinned).toEqual(["journal", "area/coffee"]);
   expect(args.onSelect).not.toHaveBeenCalled();
-  await user.click(screen.getByRole("button", {name: "编辑标签图标 area"}));
+  await user.click((await openTagMenu(user, "area")).getByRole("menuitem", {name: "编辑名称/图标"}));
   const dialog = await screen.findByRole("dialog", {name: "编辑标签"});
   await user.clear(within(dialog).getByRole("textbox", {name: "标签名称"}));
   await user.type(within(dialog).getByRole("textbox", {name: "标签名称"}), "topics");
@@ -108,7 +108,7 @@ it("keeps failed renames editable and prevents renaming a read-only library", as
   const user = userEvent.setup(), args = props();
   args.onRename.mockRejectedValue(new Error("目标标签已存在"));
   const view = render(<TagsPage {...args} />);
-  await user.click(screen.getByRole("button", {name: "编辑标签图标 area"}));
+  await user.click((await openTagMenu(user, "area")).getByRole("menuitem", {name: "编辑名称/图标"}));
   const dialog = await screen.findByRole("dialog", {name: "编辑标签"});
   await user.type(within(dialog).getByRole("textbox", {name: "标签名称"}), "2");
   await user.keyboard("{Enter}");
@@ -124,7 +124,8 @@ it.each(["browse", "groups"])("saves and clears icons from %s without opening no
   const view = <TagsPage {...args} />;
   if (mode === "groups") renderGroupedTags(view);
   else render(view);
-  await user.click(screen.getByRole("button", {name: "编辑标签图标 journal/coffee"}));
+  if (mode === "groups") await user.click(screen.getByRole("button", {name: "编辑标签图标 journal/coffee"}));
+  else await user.click((await openTagMenu(user, "journal/coffee")).getByRole("menuitem", {name: "编辑名称/图标"}));
   const editor = await screen.findByRole("dialog", {name: "编辑标签"});
   const dialog = within(editor);
   const trigger = dialog.getByRole("button", {name: "更换图标"});
@@ -135,7 +136,7 @@ it.each(["browse", "groups"])("saves and clears icons from %s without opening no
   expect(screen.getByRole("dialog", {name: "编辑标签"})).toBe(editor);
   await waitFor(() => expect(document.activeElement).toBe(trigger));
   expect(JSON.parse(localStorage.getItem(key)!).icons["journal/coffee"]).toBe("☕");
-  expect(screen.getByRole("button", {name: "编辑标签图标 journal/coffee"}).textContent).toContain("☕");
+  expect(screen.getByRole("button", {name: mode === "groups" ? "编辑标签图标 journal/coffee" : "查看标签 journal/coffee 的笔记"}).textContent).toContain("☕");
   await user.click(trigger);
   await user.click(dialog.getByRole("button", {name: "清除图标"}));
   await waitFor(() => expect(dialog.queryByRole("region", {name: "标签图标选项"})).toBeNull());
@@ -210,9 +211,25 @@ it("keeps inline rename errors and drafts visible and permits retry", async () =
   expect(args.onRename).toHaveBeenLastCalledWith("area/coffee", "手冲");
 });
 
-it("toggles the existing icon picker from the icon without navigating", async () => {
+it("opens notes from a browse tag icon and edits only through the actions menu", async () => {
   const user = userEvent.setup(), args = props();
   render(<TagsPage {...args} />);
+  const chip = screen.getByRole("button", {name: "查看标签 area/coffee 的笔记"});
+  expect(screen.queryByRole("button", {name: "编辑标签图标 area/coffee"})).toBeNull();
+  await user.click(chip.querySelector("svg")!);
+  expect(args.onSelect).toHaveBeenCalledWith("area/coffee");
+  expect(screen.queryByRole("dialog")).toBeNull();
+  await user.click((await openTagMenu(user, "area/coffee")).getByRole("menuitem", {name: "编辑名称/图标"}));
+  await screen.findByRole("dialog", {name: "编辑标签"});
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  await waitFor(() => expect(document.activeElement).toBe(chip));
+  expect(args.onSelect).toHaveBeenCalledTimes(1);
+});
+
+it("toggles the group member icon picker from the icon without navigating", async () => {
+  const user = userEvent.setup(), args = props();
+  renderGroupedTags(<TagsPage {...args} />);
   const trigger = screen.getByRole("button", {name: "编辑标签图标 area/coffee"});
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
   await user.click(trigger);
@@ -234,7 +251,7 @@ it("keeps the icon editor open when its trigger is clicked during a save", async
   const user = userEvent.setup(), args = props();
   let finish!: () => void;
   args.onRename.mockImplementation(() => new Promise<void>(resolve => { finish = resolve; }));
-  render(<TagsPage {...args} />);
+  renderGroupedTags(<TagsPage {...args} />);
   const trigger = screen.getByRole("button", {name: "编辑标签图标 area/coffee"});
   await user.click(trigger);
   const dialog = within(await screen.findByRole("dialog", {name: "编辑标签"}));

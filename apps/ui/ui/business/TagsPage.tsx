@@ -30,6 +30,7 @@ import "./TagsPage.css";
 const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
 
 const groupIcon = <HugeiconsIcon icon={FoldersIcon} className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" />;
+const viewTabStyles = "group/view-tab flex-none gap-1.5 bg-control font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:bg-surface data-active:font-medium data-active:hover:bg-surface";
 
 type Tag = { name: string; count: number };
 type TagDraft = { kind: "label" | "group"; anchor: HTMLElement; group?: TagGroup };
@@ -60,7 +61,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   const [view, setView] = useState("all");
   const [draft, setDraft] = useState<TagDraft | null>(null);
   const mobile = useIsMobile();
-  const [editing, setEditing] = useState<{path: string; anchor: HTMLElement; list?: string; groupId?: string} | null>(null);
+  const [editing, setEditing] = useState<{path: string; anchor: HTMLElement; list?: string; groupId?: string; anchorIsTrigger?: boolean} | null>(null);
   const [pinning, setPinning] = useState(false);
   const [savingMembership, setSavingMembership] = useState(false);
   const [focusPath, setFocusPath] = useState<{name: string; groupId?: string} | null>(null);
@@ -138,14 +139,14 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
     : !matches.length ? <Empty><EmptyHeader>{connected && <EmptyIllustration kind={needle ? "loupe" : "drawer"} />}<EmptyTitle>{!connected ? "连接笔记库后查看标签" : needle ? "没有找到相关标签" : "还没有标签"}</EmptyTitle><EmptyDescription>{!connected ? "从左上角选择笔记库。" : needle ? "换个关键词，或清空搜索。" : "在笔记中添加标签后，会显示在这里。"}</EmptyDescription></EmptyHeader>{needle && <EmptyContent><Button variant="outline" onClick={() => { setQuery(""); search.current?.focus(); }}>清空搜索</Button></EmptyContent>}</Empty> : null;
   const chip = (tag: Tag, label: string) => <>
           <TagDirectoryChip tag={tag} disabled={disabled || !connected} onSelect={() => onSelect(tag.name)}
-            icon={canRename ? <span className="ui-tag-directory-chip-icon-space" aria-hidden="true" /> : <TagIcon value={preferences.icons[tag.name]} />} />
-          {canRename && <Button variant="ghost" size="icon-sm" className="ui-tag-directory-chip-icon" data-tag-path={tag.name} aria-label={`编辑标签图标 ${tag.name}`} aria-haspopup="dialog" aria-expanded={editing?.path === tag.name && editing.list === label} disabled={disabled || !connected} onClick={event => edit(tag.name, event.currentTarget, label)}>
-            <TagIcon value={preferences.icons[tag.name]} />
-          </Button>}
+            icon={<TagIcon value={preferences.icons[tag.name]} />} />
           {connected && !disabled && <TagActionsMenu label={`标签操作 ${tag.name}`} className="ui-tag-directory-chip-menu">
             {(getAnchor, afterClose) => <>
               {canEditGroups && <DropdownMenuItem onClick={() => afterClose(() => {
-                getAnchor()?.closest("li")?.querySelector<HTMLButtonElement>("button[data-tag-path]")?.click();
+                const anchor = getAnchor()?.closest("li")?.querySelector<HTMLButtonElement>(".ui-tag-directory-chip");
+                if (!anchor) return;
+                returnPath.current = tag.name;
+                setEditing({path: tag.name, anchor, list: label, anchorIsTrigger: false});
               })}>编辑名称/图标</DropdownMenuItem>}
               {canEditGroups && membershipMenu(tag.name)}
               <DropdownMenuItem disabled={pinning} onClick={() => void pin(tag.name)}>
@@ -242,22 +243,25 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
       {showSearch && <div className="ui-collection-search"><SidebarIcon name="search" className="ui-collection-search-icon" /><Input ref={search} value={query} aria-label="搜索标签" placeholder="搜索标签" className="ui-collection-search-input" onChange={event => setQuery(event.target.value)} />{query && <Button variant="ghost" size="icon-xs" className="ui-collection-search-clear" aria-label="清空标签搜索" onClick={() => { setQuery(""); search.current?.focus(); }}><SidebarIcon name="close" /></Button>}</div>}
     </div>}
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
-    <Tabs value={view} onValueChange={value => { setDraft(null); setView(value); }} className="ui-tag-directory-panel ui-tag-directory-tabs">
+    <Tabs value={view} onValueChange={value => { setDraft(null); setView(value); }} className="ui-tag-directory-tabs">
       <div className="ui-tag-directory-tab-header">
-        <TabsList ref={tabs} aria-label="标签视图"><TabsTrigger value="all">全部</TabsTrigger><TabsTrigger value="groups">标签群组</TabsTrigger></TabsList>
+        <TabsList ref={tabs} variant="pill" activateOnFocus aria-label="标签视图" data-transparent-inactive className="gap-2">
+          <TabsTrigger value="all" className={viewTabStyles}><span className="text-secondary group-data-active/view-tab:text-primary"><TagIcon /></span>全部</TabsTrigger>
+          <TabsTrigger value="groups" className={viewTabStyles}><span className="text-secondary group-data-active/view-tab:text-primary">{groupIcon}</span>标签群组</TabsTrigger>
+        </TabsList>
         <div className="ui-tag-directory-tools">
-          {view === "groups" && <CreateButton disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "group", anchor: event.currentTarget})}>新建群组</CreateButton>}
-          <CreateButton disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "label", anchor: event.currentTarget})}>新建标签</CreateButton>
+          {view === "groups" && <CreateButton className="border-transparent" disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "group", anchor: event.currentTarget})}>新建群组</CreateButton>}
+          <CreateButton className="border-transparent" disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "label", anchor: event.currentTarget})}>新建标签</CreateButton>
         </div>
       </div>
-      <TabsContent value="all" aria-busy={loading}>
+      <TabsContent value="all" aria-busy={loading} className="ui-tag-directory-panel">
         {view === "all" && draft && <Table className="ui-tag-directory-table ui-tag-directory-table-grouped ui-tag-directory-draft-table" aria-label="标签草稿">
           <colgroup><col /><col className="ui-tag-directory-description-column" /><col span={2} className="w-0" /></colgroup>
           {draftRows(draft)}
         </Table>}
         {status ?? <TagDirectoryList tags={matches} renderTag={chip} />}
       </TabsContent>
-      <TabsContent value="groups" aria-busy={loading}>
+      <TabsContent value="groups" aria-busy={loading} className="ui-tag-directory-panel">
         {visibleGroups.length || draft ? <TagDirectoryTable label="群组标签列表" sort={sort} onSort={column => setSort(current => ({
           column, descending: current.column === column && !current.descending,
         }))}>
@@ -268,7 +272,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
         </Empty>}
       </TabsContent>
     </Tabs>
-    {editing && (!editing.groupId || editedGroup) && <Suspense fallback={null}><TagEditor key={editing.groupId ? `group:${editing.groupId}` : `tag:${editing.path}`} path={editedGroup?.name ?? editing.path} anchor={editing.anchor} anchorIsTrigger
+    {editing && (!editing.groupId || editedGroup) && <Suspense fallback={null}><TagEditor key={editing.groupId ? `group:${editing.groupId}` : `tag:${editing.path}`} path={editedGroup?.name ?? editing.path} anchor={editing.anchor} anchorIsTrigger={editing.anchorIsTrigger ?? true}
       icon={(editedGroup ? editedGroup.icon : preferences.icons[editing.path]) ?? ""} mobile={mobile} initialPickerOpen
       groupAppearance={editedGroup && {
         icon: groupIcon,

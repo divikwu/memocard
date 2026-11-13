@@ -95,6 +95,7 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   for (const route of [
     { name: "list", entries: [], raw: 1120, gzip: 330 },
     { name: "minimal interface first list", entries: minimalLayout, raw: 1200, gzip: 350 },
+    { name: "minimal interface with more drawer", entries: [...minimalLayout, "ui/web/WebMoreDrawer.tsx"], raw: 1200, gzip: 350 },
     { name: "list with card previews", entries: ["ui/business/NoteCardPreview.tsx"], raw: 1780, gzip: 525 },
     { name: "home with quick capture", entries: ["ui/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
     { name: "home with capture and card previews", entries: ["ui/business/QuickCapture.tsx", "ui/business/NoteCardPreview.tsx"], raw: 2140, gzip: 645 },

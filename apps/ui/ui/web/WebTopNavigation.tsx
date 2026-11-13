@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { workspaceActions, workspaceVaultActions, type WorkspaceNavigationProps } from "../business/navigation-model";
+import { Suspense, useRef, useState } from "react";
+import { workspaceActions, type WorkspaceNavigationProps } from "../business/navigation-model";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowLeft02Icon from "@hugeicons/core-free-icons/ArrowLeft02Icon";
-import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
+import EqualIcon from "@hugeicons/core-free-icons/EqualIcon";
 import { Button } from "../components/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
+import { recoverableLazy } from "../components/recoverable-lazy";
 import { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from "../components/popover";
 import { SidebarGroup, SidebarMenu, SidebarProvider, SidebarSeparator } from "../components/sidebar";
 import { tabsListVariants, tabsPillTriggerStyles } from "../components/tabs";
@@ -15,7 +15,11 @@ import { TagNavigation } from "../business/tag-navigation";
 import { cn } from "../lib/utils";
 import "./layouts/topbar.css";
 
+const WebMoreDrawer = recoverableLazy(() => import("./WebMoreDrawer"), "更多");
+
 export function WebTopNavigation(p: WorkspaceNavigationProps) {
+  const [moreOpen, setMoreOpen] = useState<boolean | null>(null);
+  const moreTrigger = useRef<HTMLButtonElement>(null);
   const themeId = useThemeScopeProps()["data-interface-theme"];
   const actions = workspaceActions(p);
   const activeView = p.detailView ? undefined : p.view;
@@ -32,31 +36,19 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
     </div>
     <nav aria-label="顶部导航" data-variant="pill" data-transparent-inactive className={cn(tabsListVariants({ variant: "pill" }), "web-top-links rounded-none")}>
       <Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={activeView === "home" ? "page" : undefined} onClick={actions.home.run}>{actions.home.label}</Button>
-      <Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={notesActive ? "page" : undefined} onClick={actions.notes.run}>{actions.notes.label}</Button>
+      <Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={notesActive ? "page" : undefined} onClick={actions.notes.run}>笔记</Button>
       {themeId === "minimal"
         ? <Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={tagsCurrent} onClick={actions.tags.run}>{actions.tags.label}</Button>
         : <TagBrowsePopover navigation={p} action={actions.tags} current={tagsCurrent} />}
-      <DropdownMenu><DropdownMenuTrigger openOnHover render={<Button variant="ghost" data-slot="tabs-trigger" className={tabsPillTriggerStyles} aria-current={moreActive ? "page" : undefined} />}>更多</DropdownMenuTrigger><DropdownMenuContent align="start" className="web-top-menu">
-        {(p.draftCount ?? 0) > 0 && <>
-          <DropdownMenuItem onClick={actions.drafts.run}><SidebarIcon name="notebook" />{actions.drafts.label}</DropdownMenuItem>
-          <DropdownMenuSeparator />
-        </>}
-        <DropdownMenuGroup><DropdownMenuLabel className="truncate">{p.vaultName}</DropdownMenuLabel>
-        {workspaceVaultActions(p).map(vault => <DropdownMenuItem key={vault.vaultId} disabled={vault.disabled} onClick={vault.run}><SidebarIcon name="layers" /><span className="min-w-0 flex-1 truncate">{vault.name}</span>{vault.active && <span aria-label="当前笔记库"><SidebarIcon name="check" /></span>}</DropdownMenuItem>)}
-        {p.canChooseVault && <DropdownMenuItem disabled={actions.openVault.disabled} onClick={actions.openVault.run}><SidebarIcon name="folder" />{actions.openVault.label}</DropdownMenuItem>}
-        {p.canCreateVault && <DropdownMenuItem disabled={actions.createVault.disabled} onClick={actions.createVault.run}><SidebarIcon name="folderAdd" />{actions.createVault.label}</DropdownMenuItem>}
-        {p.needsPermission && <DropdownMenuItem disabled={actions.reauthorize.disabled} onClick={actions.reauthorize.run}><SidebarIcon name="shield" />{actions.reauthorize.label}</DropdownMenuItem>}
-        <DropdownMenuItem disabled={actions.refresh.disabled} onClick={actions.refresh.run}><HugeiconsIcon icon={RefreshIcon} strokeWidth={2} aria-hidden="true" className="size-4" />{actions.refresh.label}</DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={actions.settings.run}><SidebarIcon name="settings" />{actions.settings.label}</DropdownMenuItem>
-        <DropdownMenuItem disabled={actions.trash.disabled} onClick={actions.trash.run}><SidebarIcon name="trash" />{actions.trash.label}</DropdownMenuItem>
-      </DropdownMenuContent></DropdownMenu>
     </nav>
     <div className="web-top-actions">
       <Button variant="ghost" size="icon" className="web-top-icon" aria-label={actions.newNote.label}
         data-ui-tooltip={actions.newNote.label} disabled={actions.newNote.disabled} onClick={actions.newNote.run}><SidebarIcon name="add" /></Button>
       <Button variant="ghost" size="icon" className="web-top-icon" aria-label="搜索" aria-haspopup="dialog" aria-expanded={p.searchOpen} disabled={actions.search.disabled} onClick={actions.search.run}><SidebarIcon name="search" /></Button>
+      <Button ref={moreTrigger} variant="ghost" size="icon" className="web-top-icon" aria-label="更多" aria-haspopup="dialog" aria-expanded={Boolean(moreOpen)} aria-current={moreActive ? "page" : undefined} onClick={() => setMoreOpen(true)}><HugeiconsIcon icon={EqualIcon} strokeWidth={2} aria-hidden="true" /></Button>
+      {moreOpen !== null && <Suspense fallback={<span role="status" className="sr-only">正在打开更多…</span>}>
+        <WebMoreDrawer navigation={p} open={moreOpen} onOpenChange={setMoreOpen} finalFocus={moreTrigger} />
+      </Suspense>}
     </div>
   </div></header>;
 }

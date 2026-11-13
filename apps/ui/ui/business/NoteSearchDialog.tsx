@@ -1,8 +1,5 @@
 import { HugeiconsIcon } from "@hugeicons/react";
-import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon";
-import ArrowUp01Icon from "@hugeicons/core-free-icons/ArrowUp01Icon";
 import ArrowUpRight01Icon from "@hugeicons/core-free-icons/ArrowUpRight01Icon";
-import ArrowTurnDownIcon from "@hugeicons/core-free-icons/ArrowTurnDownIcon";
 import { useNoteSearch, type NoteSearchProps } from "../../src/use-note-search";
 import { isIOSNative, useIOSSurface } from "../../src/ios-native";
 import { useIsMobile } from "../../src/hooks/use-mobile";
@@ -10,6 +7,7 @@ import { Button } from "../components/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "../components/dialog";
 import { SheetCloseButton, SheetContent, SheetHeader, SheetTitle } from "../components/sheet";
 import { Input } from "../components/input";
+import { Kbd, KbdGroup } from "../components/kbd";
 import { Spinner } from "../components/spinner";
 import { CloseIcon, DocumentIcon, SearchIcon } from "../icons";
 import { cn } from "../lib/utils";
@@ -47,17 +45,18 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   });
   if(isIOSNative)return null;
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} className={isMobile ? "ui-note-search-sheet gap-4 overflow-hidden" : "ui-note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border border-border bg-surface p-0 ring-0 dark:ring-0"}>
+    <SearchContent {...(isMobile ? {side:"bottom" as const,swipeToClose:true} : {})} initialFocus={input} finalFocus={() => preserveSession ? false : returnFocus.current?.isConnected ? returnFocus.current : document.querySelector<HTMLElement>('main header button') ?? false} style={isMobile ? mobileViewport ?? undefined : undefined} showCloseButton={false} className={isMobile ? "ui-note-search-sheet gap-4 overflow-hidden" : "ui-note-search-dialog flex flex-col gap-0 overflow-hidden rounded-xl border bg-surface p-0 ring-0 dark:ring-0"}>
       {isMobile ? <SheetHeader className="flex-row shrink-0 items-center justify-between p-0"><SheetTitle className="font-sans font-semibold">搜索笔记</SheetTitle><SheetCloseButton aria-label="退出搜索" /></SheetHeader> : <DialogTitle className="sr-only">搜索笔记</DialogTitle>}
       <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
-      <div className="ui-note-search-field flex shrink-0 items-center gap-3 border-b px-4 py-2">
+      <div className="ui-note-search-field flex shrink-0 items-center gap-3 border-b border-divider px-4 py-2">
         <SearchIcon aria-hidden="true" className="size-5 shrink-0 text-icon-secondary" />
         <Input ref={input} role="combobox" name="note-search" autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); moveSelection(event.key === "ArrowDown" ? 1 : -1); }
           if (event.key === "Enter" && active && !loading && available) { event.preventDefault(); onOpenNote(active.id); }
         }} disabled={!available} placeholder={`在 ${vaultName} 中搜索…`} className="ui-note-search-input h-element-lg min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none" />
-        {query && <Button variant="ghost" size="icon-sm" className="ui-note-search-control" aria-label="清空搜索" onClick={() => { setQuery(""); input.current?.focus(); }}><CloseIcon aria-hidden="true" /></Button>}
+        {query && <Button variant="ghost" size="sm" className="ui-note-search-control text-secondary" aria-label="清空搜索" onClick={() => { setQuery(""); input.current?.focus(); }}>清空</Button>}
+        {!isMobile && <Button variant="ghost" size="icon-sm" className="ui-note-search-control ui-note-search-desktop-close" aria-label="退出搜索" onClick={() => onOpenChange(false)}><CloseIcon aria-hidden="true" /></Button>}
       </div>
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
@@ -81,7 +80,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
           </div>
         </div>
         <aside aria-label="笔记预览" className="ui-note-search-preview min-h-0 shrink-0 p-4">
-          {active && available ? <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border bg-body">
+          {active && available ? <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-body">
             <div className="ui-note-search-preview-content min-h-0 flex-1 p-5" key={active.id}>
               <div className="break-words">
                 <div className="ui-note-search-preview-heading flex items-start justify-between gap-3">
@@ -96,9 +95,9 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
           </div> : <div className="ui-note-search-empty text-center text-sm text-secondary"><DocumentIcon aria-hidden="true" className="mx-auto mb-3 size-7 opacity-50" />选择笔记以预览</div>}
         </aside>
       </div>
-      {!isMobile && <div className="ui-note-search-footer flex shrink-0 items-center justify-between gap-3 border-t px-4 py-3 text-xs text-secondary">
-        <span className="ui-note-search-keyboard-hints flex items-center gap-3"><span className="flex items-center gap-1"><HugeiconsIcon icon={ArrowUp01Icon} aria-hidden="true" className="size-3" /><HugeiconsIcon icon={ArrowDown01Icon} aria-hidden="true" className="size-3" />选择</span><span className="flex items-center gap-1"><HugeiconsIcon icon={ArrowTurnDownIcon} aria-hidden="true" className="size-3" />打开</span></span>
-        <span className="ui-note-search-escape ml-auto shrink-0">Esc 关闭</span>
+      {!isMobile && <div className="ui-note-search-footer flex shrink-0 items-center justify-between gap-3 border-t border-divider px-4 py-3 text-xs text-secondary">
+        <span className="ui-note-search-keyboard-hints flex items-center gap-4"><span className="flex items-center gap-2"><KbdGroup><Kbd aria-label="向上方向键">↑</Kbd><Kbd aria-label="向下方向键">↓</Kbd></KbdGroup>选择</span><span className="flex items-center gap-2"><Kbd aria-label="回车键">↵</Kbd>打开</span></span>
+        <span className="ui-note-search-escape ml-auto flex shrink-0 items-center gap-2"><Kbd>Esc</Kbd>关闭</span>
         <Button variant="ghost" size="sm" className="ui-note-search-control ui-note-search-dismiss ml-auto" aria-label="关闭搜索" onClick={() => onOpenChange(false)}>取消</Button>
       </div>}
     </SearchContent>

@@ -2,8 +2,8 @@
 .ui-tag-directory-toolbar { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); }
 .ui-tag-directory-tools { display: flex; gap: var(--spacing-1); }
 .ui-tag-directory-panel { flex: 1; min-width: 0; padding: calc(var(--spacing-1) * 2); border-radius: var(--radius-item); background: var(--color-background-surface); }
-.ui-tag-directory-tabs { padding-block-start: calc(var(--spacing-1) * 4); }
-.ui-tag-directory-tab-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--spacing-1); margin-inline: calc(var(--spacing-1) * 2); }
+.ui-tag-directory-tabs { flex: 1; min-width: 0; gap: calc(var(--spacing-1) * 4); }
+.ui-tag-directory-tab-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); }
 .ui-tag-draft-name { padding-inline-start: calc(var(--tree-toggle-size) + var(--tag-control-gap)); }
 .ui-tag-directory-draft-table .ui-tag-draft-name { padding-inline-start: 0; }
 .ui-tag-draft-row .ui-tag-directory-description { overflow: visible; }
@@ -19,8 +19,6 @@
 .ui-tag-directory-description-column { width: 54%; }
 .ui-tag-directory-table .ui-tag-directory-description { padding-inline: var(--spacing-1); overflow: hidden; text-overflow: ellipsis; }
 .ui-tag-directory-row .ui-tag-directory-description { color: var(--color-text-secondary); }
-.ui-tag-directory-chip-icon-space { flex: none; inline-size: calc(var(--spacing-1) * 4); }
-.ui-tag-directory-chip-icon { position: absolute; inset-block: 0; margin-block: auto; inset-inline-start: calc(var(--tag-control-gap) + var(--border-width)); inline-size: var(--tag-control-size); block-size: var(--tag-control-size); color: var(--tag-fg, var(--color-text-primary)); }
 .ui-tag-directory-group li:has(> .ui-tag-directory-chip-menu) > .ui-tag-directory-chip {
   padding-inline-end: calc(var(--tag-control-size) + var(--tag-control-gap));
 }
@@ -32,14 +30,13 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .ui-tag-directory-group li:has(> .ui-tag-directory-chip-menu):not(:hover, :has(:focus-visible, > .ui-tag-directory-chip-menu[aria-expanded="true"])) > .ui-tag-directory-chip {
-    padding-inline-end: calc(var(--spacing-1) * 2);
+    padding-inline-end: calc(var(--spacing-1) * 3);
   }
   .ui-tag-directory-group li:not(:hover, :has(:focus-visible)) > .ui-tag-directory-chip-menu:not([aria-expanded="true"]) {
     opacity: 0;
     pointer-events: none;
   }
 }
-.ui-tag-directory-chip-icon[aria-expanded="true"] { background-color: transparent; }
 .ui-tag-directory-table { min-width: calc(var(--spacing-1) * 120); table-layout: fixed; border-collapse: separate; border-spacing: 0 calc(var(--spacing-1) / 2); }
 .ui-tag-directory-table.ui-tag-directory-table-grouped {
   --tag-directory-row-height: var(--size-element-lg);
@@ -47,7 +44,6 @@
   --tree-toggle-size: var(--tag-control-size);
   --tag-tree-guide-inset: calc(var(--tree-toggle-size) + var(--tag-control-gap) + var(--tag-control-size) / 2);
   --tag-tree-guide: #dcdbdd;
-  margin-block-start: calc(var(--spacing-1) * 2);
   min-width: 0;
   border-spacing: 0 var(--tag-directory-row-gap);
 }

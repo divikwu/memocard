@@ -164,7 +164,8 @@ it("renames a legacy tag without touching other tags", async () => {
   const { fixture } = await mount();
   const coffeeId = fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")!.id;
   const directory = await screen.findByRole("region", { name: "标签目录" });
-  await user.click(await within(directory).findByRole("button", { name: "编辑标签图标 生活/咖啡" }));
+  await user.click(await within(directory).findByRole("button", { name: "标签操作 生活/咖啡" }));
+  await user.click(await screen.findByRole("menuitem", {name: "编辑名称/图标"}));
   const dialog = await screen.findByRole("dialog", { name: "编辑标签" });
   const name = within(dialog).getByRole("textbox", { name: "标签名称" });
   await user.clear(name);
@@ -188,7 +189,8 @@ it("refreshes the pinned sidebar tag after renaming a tag with no notes", async 
   await user.click(await screen.findByRole("menuitem", {name: "置顶标签"}));
   const sidebar = within(await screen.findByRole("navigation", {name: "置顶标签"}));
   await sidebar.findByRole("button", {name: "空标签"});
-  await user.click(directory.getByRole("button", {name: "编辑标签图标 空标签"}));
+  await user.click(directory.getByRole("button", {name: "标签操作 空标签"}));
+  await user.click(await screen.findByRole("menuitem", {name: "编辑名称/图标"}));
   const dialog = within(await screen.findByRole("dialog", {name: "编辑标签"}));
   const name = dialog.getByRole("textbox", {name: "标签名称"});
   await user.clear(name);
@@ -217,7 +219,7 @@ it("shares tag icons between the collection heading and tag directory", async ()
   await waitFor(() => expect(document.activeElement).toBe(icon));
   await user.click(within(screen.getByRole("navigation", { name: "主要导航" })).getByRole("button", { name: "标签" }));
   const directory = within(await screen.findByRole("region", { name: "标签目录" }));
-  expect(directory.getByRole("button", { name: "编辑标签图标 生活/咖啡" }).textContent).toContain("☕");
+  expect(directory.getByRole("button", { name: "查看标签 生活/咖啡 的笔记" }).textContent).toContain("☕");
   expect(request.mock.calls.some(([operation]) => operation === "setTagPreferences")).toBe(true);
 });
 
@@ -328,7 +330,7 @@ it("flushes unfinished edits before opening settings and preserves them across a
   await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   expect(document.documentElement.dataset.uiTheme).toBe("dark");
   expect(JSON.parse(localStorage.getItem("memocard-web-appearance-v1") || "{}").radius).toBe("none");
-  await user.click(screen.getByRole("button", { name: "所有笔记" }));
+  await user.click(screen.getByRole("button", { name: "笔记" }));
   await user.click(await screen.findByRole("button", { name: "打开 今天的手冲记录" }));
   expect((await screen.findByRole("textbox", { name: "笔记内容" })).textContent).toContain("离开编辑页前必须保留的正文");
 });
@@ -500,19 +502,22 @@ it("keeps desktop page headings without a page menu or duplicate header label", 
   expect(within(title.parentElement!).queryByRole("button", { name: "展开侧栏" })).toBeNull();
 });
 
-it("opens retained drafts from the vault menu on desktop tags without page actions", async () => {
+it.each(["classic", "minimal"])("opens retained drafts from %s navigation on desktop tags without page actions", async interfaceTheme => {
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({interfaceTheme}));
   const user = userEvent.setup();
   const { request } = await mount("draft-many");
   await screen.findByRole("button", { name: "查看草稿" });
-  await user.click(within(screen.getByRole("navigation", { name: "主要导航" })).getByRole("button", { name: "标签" }));
+  await user.click(within(screen.getByRole("navigation", { name: interfaceTheme === "minimal" ? "顶部导航" : "主要导航" })).getByRole("button", { name: "标签" }));
   await screen.findByRole("heading", { name: "标签", level: 1 });
   expect(screen.queryByRole("button", { name: "页面操作" })).toBeNull();
-  await user.click(screen.getByRole("button", { name: /^笔记库：/ }));
-  expect((await screen.findByRole("menuitem", { name: "刷新笔记库" })).getAttribute("aria-disabled")).not.toBe("true");
-  await user.click(screen.getByRole("menuitem", { name: /^保留草稿/ }));
+  await user.click(screen.getByRole("button", { name: interfaceTheme === "minimal" ? "更多" : /^笔记库：/ }));
+  const actionRole = interfaceTheme === "minimal" ? "button" : "menuitem";
+  expect((await screen.findByRole(actionRole, { name: "刷新笔记库" })).getAttribute("aria-disabled")).not.toBe("true");
+  await user.click(screen.getByRole(actionRole, { name: /^保留草稿/ }));
   const dialog = await screen.findByRole("dialog", { name: "保留的草稿" });
   expect(within(dialog).getByRole("heading", { name: "保留草稿 1" })).toBeDefined();
   expect(request.mock.calls.some(([operation]) => ["saveNote", "deleteNote", "deleteDraft"].includes(operation))).toBe(false);
+  await waitFor(() => expect(screen.queryByRole("dialog", {name: "更多"})).toBeNull());
 });
 
 it("keeps typography choices with the current note without saving its content", async () => {
@@ -662,6 +667,11 @@ it("opens the tag directory, search, and quick filters from the default minimal 
   const search = screen.getByRole("button", { name: "搜索" });
   const create = within(search.parentElement!).getByRole("button", { name: "新建笔记" });
   expect(create.nextElementSibling).toBe(search);
+  const more = screen.getByRole("button", { name: "更多" });
+  expect(search.nextElementSibling).toBe(more);
+  expect(within(nav).queryByRole("button", {name: "更多"})).toBeNull();
+  expect(more.textContent).toBe("");
+  expect(more.querySelector("svg")).not.toBeNull();
   expect(screen.queryByRole("dialog", { name: "浏览标签" })).toBeNull();
   expect(within(tags).queryByRole("textbox", { name: "搜索标签" })).toBeNull();
   await user.click(within(tags).getByRole("button", { name: "查看标签 设计 的笔记" }));
@@ -676,23 +686,30 @@ it("opens the tag directory, search, and quick filters from the default minimal 
   await screen.findByRole("button", { name: "打开 让设计语言走进真实页面" });
   expect(within(nav).getByRole("button", { name: "标签", current: "page" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "MemoCard，返回主页" })).toBeTruthy();
-  await user.click(within(nav).getByRole("button", { name: "更多" }));
-  const menu = await screen.findByRole("menu");
-  expect(within(menu).queryByRole("menuitem", { name: "新建笔记" })).toBeNull();
-  expect(within(menu).getByRole("menuitem", { name: "刷新笔记库" }).querySelector("svg")).not.toBeNull();
-  expect(within(menu).getAllByRole("menuitem").slice(-2).map(item => item.textContent)).toEqual(["设置", "回收站"]);
-  expect(within(menu).queryByRole("group", { name: "快捷筛选" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "更多" }));
+  const morePanel = await screen.findByRole("dialog", {name: "更多"});
+  expect(morePanel.getAttribute("data-swipe-direction")).toBe("right");
+  expect(within(morePanel).queryByRole("button", { name: "新建笔记" })).toBeNull();
+  expect(within(morePanel).getByRole("button", { name: "刷新笔记库" }).querySelector("svg")).not.toBeNull();
+  expect(within(morePanel).getByRole("button", { name: "回收站" })).toBeTruthy();
+  await user.click(within(morePanel).getByRole("button", {name: "设置"}));
+  await screen.findByRole("heading", {name: "设置", level: 1});
+  await waitFor(() => expect(screen.queryByRole("dialog", {name: "更多"})).toBeNull());
+  await user.click(more);
+  await screen.findByRole("dialog", {name: "更多"});
   await user.keyboard("{Escape}");
-  await user.click(within(nav).getByRole("button", { name: "所有笔记" }));
-  expect(within(nav).getByRole("button", { name: "所有笔记" }).getAttribute("aria-haspopup")).toBeNull();
+  await waitFor(() => expect(screen.queryByRole("dialog", {name: "更多"})).toBeNull());
+  expect(document.activeElement).toBe(more);
+  await user.click(within(nav).getByRole("button", { name: "笔记" }));
+  expect(within(nav).getByRole("button", { name: "笔记" }).getAttribute("aria-haspopup")).toBeNull();
   await user.click(screen.getByRole("button", { name: /^筛选笔记/ }));
   const filters = within(await screen.findByRole("dialog", { name: "筛选笔记" })).getByRole("group", { name: "类型" });
   expect(within(filters).getAllByRole("button").map(item => item.textContent)).toEqual(["全部类型", "无标签1", "有图片0", "有链接0"]);
   await user.click(within(filters).getByRole("button", { name: "有图片" }));
   await user.keyboard("{Escape}");
   await screen.findByText("在笔记中插入图片后，会自动出现在这里。");
-  expect(within(nav).getByRole("button", { name: "所有笔记", current: "page" })).toBeTruthy();
-  await user.click(within(nav).getByRole("button", { name: "所有笔记" }));
+  expect(within(nav).getByRole("button", { name: "笔记", current: "page" })).toBeTruthy();
+  await user.click(within(nav).getByRole("button", { name: "笔记" }));
   await screen.findByRole("heading", { name: "所有笔记", level: 1 });
   await user.click(screen.getByRole("button", { name: "搜索" }));
   await screen.findByRole("dialog", { name: "搜索笔记" });
