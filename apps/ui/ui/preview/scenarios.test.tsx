@@ -274,7 +274,7 @@ it.each([
   ["detail-missing", "表示笔记不存在的问号"],
   ["empty", "空的分类抽屉"],
   ["pinned-empty", "等待挂上内容的空衣架"],
-  ["combined-filter-empty", "没有留下内容的筛网"],
+  ["combined-filter-empty", "空的分类抽屉"],
   ["tags-empty", "空的分类抽屉"],
 ])("%s shows the matching official illustration", async (id, label) => {
   await show(id);
@@ -300,13 +300,14 @@ it("shows Loupe for a tag search miss and restores tags after clearing", async (
 
 
 it.each([
-  ["links-empty", "还没有包含链接的笔记", "links"],
+  ["filter-empty", "还没有包含图片的笔记", "images"],
+  ["links-empty", "还没有包含网页链接的笔记", "links"],
   ["tags-complete", "所有笔记都已添加标签", "untagged"],
 ])("%s keeps its type-specific feedback and can return to all notes", async (id, title, filter) => {
   const { request } = await show(id);
   await screen.findByText(title);
   expect(request.mock.calls.some(([operation, params]) => operation === "queryNotes" && params?.quickFilter === filter)).toBe(true);
-  expect(document.querySelector(".ui-note-empty .ui-empty-illustration")).toBeNull();
+  expect(await screen.findByRole("img", { name: "空的分类抽屉" })).toBeDefined();
   await userEvent.click(screen.getByRole("button", { name: "查看所有笔记" }));
   await screen.findByRole("list", { name: "笔记列表" });
 });

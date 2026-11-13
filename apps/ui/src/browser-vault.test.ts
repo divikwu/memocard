@@ -882,6 +882,7 @@ describe("independent browser vault", () => {
     h.notes.children.set("second.md", new TestFile("second.md", source(secondId, "![照片](https://example.com/photo.png)").replace(/tags: .*\n/, "tags: []\n")));
     const codeId = createId();
     h.notes.children.set("code.md", new TestFile("code.md", source(codeId, "```md\n![代码](photo.png) https://example.com\n```").replace(/tags: .*\n/, "tags: []\n")));
+    h.notes.children.set("internal.md", new TestFile("internal.md", source(createId(), "#internal [[项目]] [计划](项目计划.md)").replace(/tags: .*\n/, "tags: []\n")));
     const first = await call<NotePage>(h.core, "queryNotes", { quickFilter: "images", limit: 1 });
     expect(first.notes).toHaveLength(1);
     expect(first.recentQuickFilterTags).toEqual(["工作"]);
@@ -899,6 +900,10 @@ describe("independent browser vault", () => {
     expect(next.quickFilterTagCounts).toEqual({ 工作: 1 });
     expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "untagged" })).quickFilterTagCounts).toEqual({});
     expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "links", query: "example", tags: ["工作"] })).notes.map(note => note.id)).toEqual([noteId]);
+    const webLinks = await call<NotePage>(h.core, "queryNotes", { quickFilter: "links" });
+    expect(webLinks.notes.map(note => note.id)).toEqual([noteId]);
+    expect(webLinks.quickFilterTagCounts).toEqual({ 工作: 1 });
+    expect(webLinks.recentQuickFilterTags).toEqual(["工作"]);
     expect((await call<NotePage>(h.core, "queryNotes", { quickFilter: "untagged" })).notes.map(note => note.id).sort()).toEqual([secondId, codeId].sort());
     await expect(call(h.core, "queryNotes", { quickFilter: "links", limit: 1, cursor: first.nextCursor })).rejects.toMatchObject({ code: "CURSOR_QUERY_MISMATCH" });
     await expect(call(h.core, "queryNotes", { quickFilter: "voice" })).rejects.toMatchObject({ code: "INVALID_PARAMS" });

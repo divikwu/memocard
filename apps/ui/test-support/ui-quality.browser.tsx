@@ -143,7 +143,7 @@ function expectPropertyControlRadius(root: HTMLElement) {
   for (const control of root.querySelectorAll('button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]')) {
     if (control.getAttribute('aria-hidden') === 'true' || control.hasAttribute('hidden')) continue;
     const radius = control.matches('.note-tag-search') ? "0px"
-      : control.matches('.note-tag-pill, .note-tag-color-trigger, .note-tag-remove, [data-day], .note-date-picker .rdp-nav > button') ? "9999px" : "8px";
+      : control.matches('.ui-sheet-close-button, .note-tag-pill, .note-tag-color-trigger, .note-tag-remove, [data-day], .note-date-picker .rdp-nav > button') ? "9999px" : "8px";
     expect(getComputedStyle(control).borderRadius, control.outerHTML.slice(0, 350)).toBe(radius);
   }
 }
@@ -268,7 +268,9 @@ for (const mode of ["light", "dark"] as const) test(`property selectors expand i
       expect(sheet.getBoundingClientRect().right).toBeLessThanOrEqual(390);
       expect(sheet.getBoundingClientRect().bottom).toBeCloseTo(900, 0);
     });
-    expect(getComputedStyle(sheet).borderTopLeftRadius).toBe("12px");
+    expect(parseFloat(getComputedStyle(sheet).borderTopLeftRadius)).toBeCloseTo(20.8, 4);
+    expect(getComputedStyle(sheet).paddingInlineStart).toBe("16px");
+    expect(getComputedStyle(sheet.querySelector('[data-slot="sheet-header"]')!).paddingBlock).toBe("4px");
     expect(within(sheet).getByRole("option", { name: "属性标签 候选" }).getBoundingClientRect().height).toBe(32);
   } finally { view.unmount(); release(); }
 });
@@ -4464,19 +4466,31 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
     expect(canvas.getByRole("tab", { name: "有图片", selected: true })).toBeVisible();
     await waitFor(() => expect(body.queryByRole("dialog", { name: "筛选笔记" })).toBeNull());
     expect(filter).toHaveFocus();
+    expect(canvas.getByRole("button", { name: "清除所有筛选" })).toBeVisible();
     await userEvent.click(trigger);
     await canvas.findByRole("heading", { name: "所有笔记", level: 1 });
     await page.viewport(390, 844);
     await waitFor(() => expect(canvas.queryByRole("navigation", { name: "顶部导航" })).toBeNull());
     expect(filter).toBeVisible();
+    await userEvent.click(canvas.getByRole("tab", { name: "有图片" }));
+    expect(canvas.queryByRole("button", { name: "清除所有筛选" })).toBeNull();
     await userEvent.click(filter);
     const mobileDialog = await body.findByRole("dialog", { name: "筛选笔记" });
+    await settlePropertyPopup(mobileDialog);
+    expect(getComputedStyle(mobileDialog.querySelector('[data-slot="drawer-header"]')!).padding).toBe("4px 16px");
+    expect(getComputedStyle(within(mobileDialog).getByRole("textbox", { name: "搜索筛选标签" })).fontSize).toBe("14px");
+    expect(within(mobileDialog).getByRole("button", { name: "关闭筛选" }).closest('[data-mobile-actions]')).not.toBeNull();
     await userEvent.click(within(mobileDialog).getByRole("button", { name: "无标签" }));
     await userEvent.keyboard("{Escape}");
     await canvas.findByRole("button", { name: "视图选项 所有笔记" });
     expect(canvas.getByRole("tab", { name: "无标签", selected: true })).toBeVisible();
     await waitFor(() => expect(body.queryByRole("dialog", { name: "筛选笔记" })).toBeNull());
     expect(filter).toBeVisible();
+    await userEvent.click(filter);
+    await userEvent.click(within(await body.findByRole("dialog", { name: "筛选笔记" })).getByRole("button", { name: "清除筛选" }));
+    await userEvent.click(body.getByRole("button", { name: "完成" }));
+    await waitFor(() => expect(body.queryByRole("dialog", { name: "筛选笔记" })).toBeNull());
+    expect(canvas.getByRole("tab", { name: "全部类型", selected: true })).toBeVisible();
     expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(391);
   } finally {
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
@@ -4621,7 +4635,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
     await userEvent.click(await body.findByRole("button", {name: "链接"}));
     const input = await body.findByRole("textbox", {name: "链接地址"});
     const popup = input.closest<HTMLElement>('[role="dialog"]')!;
-    expect(getComputedStyle(popup).borderTopLeftRadius).toBe("12px");
+    expect(parseFloat(getComputedStyle(popup).borderTopLeftRadius)).toBeCloseTo(width < 768 ? 20.8 : 12, 4);
     if (width >= 768) expect(getComputedStyle(input).height).toBe("32px");
     for (const button of popup.querySelectorAll("button")) expect(getComputedStyle(button).fontWeight).toBe("400");
     await userEvent.click(within(popup).getByRole("button", {name: "取消"}));

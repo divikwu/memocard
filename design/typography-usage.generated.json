@@ -1146,6 +1146,11 @@
           "value": "var(--font-size-base)"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "text-base",
+          "value": "var(--font-size-base)"
+        },
+        {
           "source": "apps/ui/ui/business/QuickCapture.css",
           "scope": ".ui-capture-sheet .ui-capture-editor-content",
           "value": "var(--font-size-base)"
@@ -1798,12 +1803,18 @@
       "property": "font-size",
       "value": "var(--font-size-xl)",
       "utilities": [
-        "text-xl"
+        "text-xl",
+        "md:text-xl"
       ],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-title",
+          "value": "var(--font-size-xl)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "md:text-xl",
           "value": "var(--font-size-xl)"
         },
         {
@@ -2240,7 +2251,7 @@
         },
         {
           "source": "apps/ui/ui/business/note-properties.css",
-          "scope": ".mobile-tag-menu :is(button, [data-slot=\"sheet-title\"])",
+          "scope": ".mobile-tag-menu button",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2286,11 +2297,6 @@
         {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-tag-option",
-          "value": "var(--font-weight-normal)"
-        },
-        {
-          "source": "apps/ui/ui/business/note-properties.css",
-          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2401,11 +2407,6 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestions)",
-          "value": "var(--font-weight-normal)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-sheet.rich-format-sheet [data-slot=\"sheet-title\"]",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2543,6 +2544,7 @@
       "value": "var(--font-weight-medium)",
       "utilities": [
         "font-medium",
+        "md:font-medium",
         "file:font-medium",
         "data-active:font-medium",
         "group-aria-pressed/filter-chip:font-medium"
@@ -2596,6 +2598,11 @@
         {
           "source": "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
           "scope": "group-aria-pressed/filter-chip:font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "md:font-medium",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2821,6 +2828,11 @@
           "value": "var(--font-weight-semibold)"
         },
         {
+          "source": "apps/ui/ui/business/note-properties.css",
+          "scope": "@media (max-width: 767px) → .ui-property-confirm-sheet [data-slot=\"sheet-header\"] > h2",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown :is(h1,h2)",
           "value": "var(--font-weight-semibold)"
@@ -2828,6 +2840,11 @@
         {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-title",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
         },
         {
@@ -4067,6 +4084,11 @@
           "value": "var(--tw-leading, var(--text-base--line-height))"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "text-base",
+          "value": "var(--tw-leading, var(--text-base--line-height))"
+        },
+        {
           "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "text-base",
           "value": "var(--tw-leading, var(--text-base--line-height))"
@@ -4333,9 +4355,15 @@
       "property": "line-height",
       "value": "var(--tw-leading, var(--text-xl--line-height))",
       "utilities": [
-        "text-xl"
+        "text-xl",
+        "md:text-xl"
       ],
       "locations": [
+        {
+          "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+          "scope": "md:text-xl",
+          "value": "var(--tw-leading, var(--text-xl--line-height))"
+        },
         {
           "source": "apps/ui/ui/business/tag-navigation-editor.tsx",
           "scope": "text-xl",

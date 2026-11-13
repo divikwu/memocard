@@ -27,10 +27,10 @@ export function NoteCollectionFilters(props: NoteCollectionFiltersProps) {
   return <>
     <div className="ui-note-filter-control relative inline-flex shrink-0">
     <Button ref={trigger} variant="secondary" disabled={props.disabled} aria-haspopup="dialog" aria-expanded={Boolean(open)} onClick={() => setOpen(true)}
-      aria-label={count ? `筛选笔记，已选 ${count} 项` : "筛选笔记"} className={`ui-note-filter-trigger rounded-full data-[active]:bg-surface${count > 0 ? " pr-9" : ""}`} data-active={count > 0 || undefined}>
+      aria-label={count ? `筛选笔记，已选 ${count} 项` : "筛选笔记"} className={`ui-note-filter-trigger rounded-full data-[active]:bg-surface${count > 0 ? " md:pr-9" : ""}`} data-active={count > 0 || undefined}>
       <HugeiconsIcon icon={FilterHorizontalIcon} aria-hidden="true" strokeWidth={2} />筛选{count > 0 && <span className="text-xs tabular-nums">{count}</span>}
     </Button>
-    {count > 0 && <Button variant="ghost" size="icon-xs" disabled={props.disabled} aria-label="清除所有筛选" className="absolute inset-y-0 right-1.5 my-auto text-secondary"
+    {count > 0 && <Button variant="ghost" size="icon-xs" disabled={props.disabled} aria-label="清除所有筛选" className="absolute inset-y-0 right-1.5 my-auto hidden text-secondary md:inline-flex"
       onClick={() => { props.onChange([], []); trigger.current?.focus(); }}>
       <HugeiconsIcon icon={Cancel01Icon} aria-hidden="true" strokeWidth={2} />
     </Button>}

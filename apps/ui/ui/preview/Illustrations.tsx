@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Drawer, Loupe, Plug, Query, Rail, Sieve } from "@lucasmarkes/hairline/react";
+import { Drawer, Loupe, Plug, Query, Rail } from "@lucasmarkes/hairline/react";
 import { Card, CardContent } from "../components/card";
 import { PreviewModeProvider } from "../preview-mode";
 import { PreviewHeader } from "./PreviewHeader";
@@ -12,7 +12,6 @@ import "./preview.css";
 const illustrations = [
   { id: "drawer", label: "空的分类抽屉", Artwork: Drawer },
   { id: "loupe", label: "在空白纸上寻找的放大镜", Artwork: Loupe },
-  { id: "sieve", label: "没有留下内容的筛网", Artwork: Sieve },
   { id: "plug", label: "尚未连接的插头与插座", Artwork: Plug },
   { id: "query", label: "表示笔记不存在的问号", Artwork: Query },
   { id: "rail", label: "空衣架，悬停时衣架轻轻摆动", Artwork: Rail },

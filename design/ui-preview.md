@@ -14,7 +14,9 @@ pnpm --filter @memocard/ui dev:states
 
 [ScenarioView](../apps/ui/ui/preview/ScenarioView.tsx) 驱动共享 App 控制器，使用当前页面、编辑器、属性、搜索和确认组件。场景与操作说明位于 [scenarios.ts](../apps/ui/ui/preview/scenarios.ts)，基础故障位于 [mock.ts](../apps/ui/ui-state-fixtures/mock.ts)，页面状态补充位于 [state-fixture.ts](../apps/ui/ui-state-fixtures/state-fixture.ts)。
 
-场景可按组选择、前后切换和重置，支持浅/深色、桌面/375px 内容视口和读取延迟。URL 保留选择并支持浏览器前后导航；容器更窄时 iframe 收缩。吉祥物页使用实际 sprite、指针跟随、点击和键盘反应。插画页与吉祥物页共用单列／双列／四列响应式作品网格，插画卡片为 1:1，只展示 Hairline 官方 `Drawer`、`Loupe`、`Sieve`、`Rail`、`Plug` 和 `Query`，保留原版交互与默认 intensity 0.5；作品在 `Illustrations.tsx` 的列表中维护，许可见 [Hairline MIT License](licenses/hairline.txt)。首页目录卡片悬停时保留描边及原有阴影、缩放效果。
+场景可按组选择、前后切换和重置，支持浅/深色、桌面/375px 内容视口和读取延迟。URL 保留选择并支持浏览器前后导航；容器更窄时 iframe 收缩。吉祥物页使用实际 sprite、指针跟随、点击和键盘反应。插画页与吉祥物页共用单列／双列／四列响应式作品网格，插画卡片为 1:1，展示 Hairline 官方 `Drawer`、`Loupe`、`Rail`、`Plug` 和 `Query`，保留原版交互与默认 intensity 0.5；组合筛选无结果、图片类型为空、链接类型为空和所有笔记已有标签统一使用官方 `Drawer`，保留原版悬停动效；作品在 `Illustrations.tsx` 的列表中维护，许可见 [Hairline MIT License](licenses/hairline.txt)。首页目录卡片悬停时保留描边及原有阴影、缩放效果。
+
+“有链接”仅匹配正文中的 HTTP(S) 或 `www.` 网页网址，包括 Markdown 与 HTML 链接目标；笔记内部链接、锚点、邮件和文件链接不计入。网页端与原生端共用分类用例验证，类型数量、标签统计与结果列表使用同一识别规则。
 
 [Vite Preview 配置](../apps/ui/vite.preview.config.ts) 在加载前替换共享 bridge、client-mode 和 browser-runtime；未知操作明确失败，`/api/` 返回 403，不能回落用户文件、原生调用或本机服务。存储、草稿和设置都在该场景内隔离，重置即丢弃；生产不需要旧样式隔离插件。
 

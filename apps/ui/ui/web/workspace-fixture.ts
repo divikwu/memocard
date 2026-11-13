@@ -1,5 +1,6 @@
 import type { Note, NotePage, NotePins, TagPreferenceState, TrashItem, VaultStatus } from "@memocard/contracts";
 import { createPreviewMock } from "../../ui-state-fixtures/mock";
+import { noteQuickFilters } from "../../src/note-filters";
 import type { DraftList, Environment } from "../../src/bridge";
 import { editorContentReview } from "../../test-support/editor-content.fixture";
 
@@ -55,7 +56,7 @@ export async function createWorkspaceFixture(scenario = "loading") {
         const page = await base.request<NotePage>(operation, params);
         const all = page.notes.filter(note => !removed.has(note.id));
         const matchesTag = (note: Note, tag: string) => note.tags.some(value => value === tag || (params.exactTags !== true && value.startsWith(`${tag}/`)));
-        const filtered = all.filter(note => (!params.pinned || pins.pins[note.id]) && (!Array.isArray(params.tags) || !params.tags.length || params.tags[params.tagMatch === "any" ? "some" : "every"](tag => matchesTag(note, String(tag)))) && (params.quickFilter !== "untagged" || !note.tags.length) && (params.quickFilter !== "images" || /!\[|<img/.test(note.body)) && (params.quickFilter !== "links" || /https?:|\[\[/.test(note.body)));
+        const filtered = all.filter(note => (!params.pinned || pins.pins[note.id]) && (!Array.isArray(params.tags) || !params.tags.length || params.tags[params.tagMatch === "any" ? "some" : "every"](tag => matchesTag(note, String(tag)))) && (params.quickFilter !== "untagged" || !note.tags.length) && (params.quickFilter !== "images" || /!\[|<img/.test(note.body)) && (params.quickFilter !== "links" || noteQuickFilters(note).includes("links")));
         const paged = scenario === "review-search" && searchQuery;
         result = { ...page, notes: paged ? params.cursor ? filtered.slice(2) : filtered.slice(0, 2) : filtered, nextCursor: paged && !params.cursor && filtered.length > 2 ? "review-search-page-2" : null, filterCounts: { untagged: all.filter(note => !note.tags.length).length, images: 0, links: 0 } }; break;
       }

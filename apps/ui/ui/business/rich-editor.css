@@ -295,6 +295,4 @@
 
 .ui-rich-ui.rich-properties button { font-weight: var(--font-weight-normal); }
 .ui-rich-ui.rich-properties svg { color: var(--color-text-secondary); }
-.ui-rich-sheet.rich-format-sheet[data-side="bottom"] { border-radius: var(--radius-item) var(--radius-item) 0 0; }
-.ui-rich-sheet.rich-format-sheet [data-slot="sheet-title"] { font-weight: var(--font-weight-normal); }
 @media (min-width: 768px) { .ui-rich-ui.rich-properties :is([data-slot="input"], [data-slot="select-trigger"], [data-slot="button"]) { height: var(--size-element-sm); min-height: var(--size-element-sm); } }

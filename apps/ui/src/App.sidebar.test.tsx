@@ -179,7 +179,7 @@ describe("sidebar workspace actions", () => {
     await user.click(screen.getByRole("button", { name: "有图片", pressed: true }));
     await user.click(screen.getByRole("button", { name: "有链接" }));
     await user.keyboard("{Escape}");
-    expect(await screen.findByText("在笔记中添加网页或笔记链接后，会自动出现在这里。")).toBeTruthy();
+    expect(await screen.findByText("在笔记中添加网址后，会自动出现在这里。")).toBeTruthy();
     expect(screen.queryByRole("group", { name: "最近使用的笔记标签" })).toBeNull();
     await user.click(screen.getByRole("button", { name: "查看所有笔记" }));
     await screen.findByText(note.body);

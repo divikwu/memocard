@@ -20,9 +20,14 @@ export function noteQuickFilters(note: Pick<Note, "body" | "tags">): NoteQuickFi
   const images = /!\[[^\]\n]*\]\([^)\n]+\)|!\[\[[^\]\n]+\.(?:png|jpe?g|webp|gif|heic|heif)(?:\|[^\]\n]*)?\]\]|<img\b[^>]*>/gi;
   const hasImage = images.test(text);
   const links = text.replace(images, '');
+  // Consume internal links as whole tokens so URL-shaped labels do not count as webpage targets.
+  const linkTokens = /!?\[\[[^\]\n]+\]\]|\[[^\]\n]+\]\(\s*<?([^)\n]+)\)|<a\b[^>]*\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))[^>]*>(?:[\s\S]*?<\/a\s*>)?|(?:https?:\/\/|www\.)[^\s<>"']+/gi;
+  const hasWebLink = Array.from(links.matchAll(linkTokens)).some(match =>
+    /^(?:https?:\/\/|www\.)[^\s<>"')]+/i.test((match[1] ?? match[2] ?? match[3] ?? match[4] ?? match[0]).trim())
+  );
   return [
     ...(!note.tags.length ? ["untagged" as const] : []),
     ...(hasImage ? ["images" as const] : []),
-    ...(/\[[^\]\n]+\]\([^)\n]+\)|\[\[[^\]\n]+\]\]|(?:https?:\/\/|www\.)[^\s<>]+|<a\b[^>]*\bhref\s*=/i.test(links) ? ["links" as const] : []),
+    ...(hasWebLink ? ["links" as const] : []),
   ];
 }

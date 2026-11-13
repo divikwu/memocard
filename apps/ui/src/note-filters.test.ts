@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { noteQuickFilters } from "./note-filters";
 import unicodeCases from "../../../tests/fixtures/note-filters-unicode.json";
+import linkCases from "../../../tests/fixtures/note-filters-links.json";
 
 describe("note quick filters", () => {
-  it.each(unicodeCases)("shares native Unicode classification for $body", ({body,expected}) => {
+  it.each([...unicodeCases, ...linkCases])("shares native classification for $body", ({body,expected}) => {
     for (const prefix of ['', '[plain]\n', '普通正文 café 👩🏽‍💻 #工作/设计\n'.repeat(80)]) {
       for (const tags of [[], ['工作/设计']]) {
         expect(noteQuickFilters({body:prefix+body,tags})).toEqual([...(tags.length?[]:['untagged']),...expected]);
