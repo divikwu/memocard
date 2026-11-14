@@ -62,9 +62,12 @@ final class TunnelCompanion {
         // Foundation.Process creates a separate process group. Keep the tunnel in
         // launchd's group so launchd also cleans it up if this helper is SIGKILLed.
         var pid: pid_t = 0
-        var arguments = ["/bin/sh", scriptURL.path].map { strdup($0) } + [nil]
+        let command: [String] = ["/bin/sh", scriptURL.path]
+        var arguments = command.map { $0.withCString { strdup($0) } } + [nil]
         defer { arguments.forEach { free($0) } }
-        var environment = ProcessInfo.processInfo.environment.map { strdup("\($0.key)=\($0.value)") } + [nil]
+        var environment = ProcessInfo.processInfo.environment.map {
+            "\($0.key)=\($0.value)".withCString { strdup($0) }
+        } + [nil]
         defer { environment.forEach { free($0) } }
         var actions: posix_spawn_file_actions_t?
         posix_spawn_file_actions_init(&actions)
