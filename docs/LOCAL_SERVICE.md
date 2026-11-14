@@ -16,6 +16,16 @@ CLI 仅把 `memocard-service://open-web` 交给指定 App。它不读取 App 容
 
 在菜单栏启用“登录时启动”后，服务会在登录 macOS 时后台运行，恢复上次的笔记库并自动启动本机 Web，不会自动打开浏览器。手动启动 App 也采用相同行为；需要访问页面时点击“打开 Web”或运行 `memocard serve`。点击“停止 Web”可停止监听，之后“打开 Web”会重新启动监听。
 
+### 已配置的 ChatGPT 私有隧道
+
+安装脚本会在 `~/.config/memocard/.env.tunnel`、`tunnel-profiles/memocard.yaml` 和 `~/.local/bin/tunnel-client` 均已存在时，安装应用内的隧道辅助程序。它沿用 MemoCard 登录项：服务启动时连接隧道，服务退出时停止隧道，隧道异常退出后自动重试。关闭 MemoCard 的登录启动后，下次登录不会单独连接隧道。辅助程序由用户级 launchd 管理，并关联 `dev.divikwu.memocard.service`；无需管理员权限。
+
+API Key 仍仅保存在原 `.env.tunnel` 文件中，运行时传给隧道子进程，不写入应用包、启动项或日志。笔记服务保持原有 App Sandbox；辅助程序在沙盒外运行，以执行已配置的隧道及 MCP 命令。电脑需保持开机、联网，且 MemoCard 服务正在运行。安装程序不创建 Key、隧道或 ChatGPT 插件。
+
+系统设置将辅助进程归到 MemoCard 名下需要有效的开发者签名。构建可使用 `MEMOCARD_TEAM_ID`；本机也可把 Team ID 保存为 `~/.config/memocard/service-signing-team`，让后续构建沿用同一签名。环境变量优先。无开发者签名的构建仍可运行，但系统可能将辅助进程单独显示。
+
+安装更新前会先停止旧辅助进程。隧道与辅助进程属于同一 launchd 进程组，辅助进程崩溃时系统也会清理旧隧道，避免恢复后产生重复连接。启动项注册失败时恢复原配置。可用 `pnpm test:tunnel` 运行隔离的进程生命周期和安装迁移回归测试；测试不会访问真实笔记或 API Key。
+
 ## 笔记库与会话
 
 - 服务可以在未选择笔记库时打开 Web，页面显示未连接状态并提供打开或创建入口。

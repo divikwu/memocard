@@ -11,9 +11,12 @@ async function fixture(t, script) {
   const bin = join(root, 'bin');
   await mkdir(bin);
   await mkdir(join(root, 'scripts'));
+  await mkdir(join(root, 'home/.config/memocard'), { recursive: true });
+  await mkdir(join(root, 'apps/apple/Tunnel'), { recursive: true });
+  await writeFile(join(root, 'apps/apple/Tunnel/run-tunnel.sh'), '#!/bin/sh\n');
   await copyFile(new URL(script, import.meta.url), join(root, 'scripts', script));
   const trace = join(root, 'commands.log');
-  for (const command of ['pnpm', 'rsync', 'python3', 'xcodebuild', 'swift']) {
+  for (const command of ['pnpm', 'rsync', 'python3', 'xcodebuild', 'swift', 'swiftc', 'lipo', 'codesign', 'openssl']) {
     await writeFile(join(bin, command), `#!/usr/bin/env node
 import { appendFileSync, mkdirSync, writeFileSync, cpSync } from 'node:fs';
 const command = ${JSON.stringify(command)};
@@ -28,16 +31,25 @@ if (command === 'rsync') {
   cpSync(args.at(-2), args.at(-1), { recursive: true });
 }
 if (command === 'xcodebuild') {
-  mkdirSync('build/service-apple/Build/Products/Release/MemoCardService.app', { recursive: true });
+  for (const dir of ['MacOS', 'Resources']) mkdirSync('build/service-apple/Build/Products/Release/MemoCardService.app/Contents/' + dir, { recursive: true });
 }
+if (command === 'swiftc') writeFileSync(process.argv[process.argv.indexOf('-o') + 1], 'compiled helper');
+if (command === 'lipo') writeFileSync(process.argv[process.argv.indexOf('-output') + 1], 'universal helper');
+if (command === 'codesign') {
+  const extract = process.argv.find(arg => arg.startsWith('--extract-certificates='));
+  if (extract) writeFileSync(extract.slice('--extract-certificates='.length) + '0', 'selected Xcode certificate');
+  if (process.argv.includes('--extract-certificates')) throw new Error('Optional codesign arguments require =');
+}
+if (command === 'openssl') process.stdout.write('sha1 Fingerprint=' + Array(20).fill('AB').join(':') + '\\n');
 if (command === 'swift') {
   mkdirSync('build/service-cli/release', { recursive: true });
   writeFileSync('build/service-cli/release/memocard', 'test CLI');
 }
 `, { mode: 0o755 });
   }
-  const env = { ...process.env, PATH: bin + delimiter + process.env.PATH, TEST_BUILD_TRACE: trace };
+  const env = { ...process.env, HOME: join(root, 'home'), PATH: bin + delimiter + process.env.PATH, TEST_BUILD_TRACE: trace };
   delete env.MEMOCARD_USE_PREBUILT_UI;
+  delete env.MEMOCARD_TEAM_ID;
   return {
     root,
     async bundle(text) {
@@ -45,9 +57,9 @@ if (command === 'swift') {
       await mkdir(dirname(path), { recursive: true });
       await writeFile(path, text);
     },
-    run(args, prebuilt = false) {
+    run(args, prebuilt = false, overrides = {}) {
       return spawnSync('bash', [join(root, 'scripts', script), ...args], {
-        cwd: root, env: prebuilt ? { ...env, MEMOCARD_USE_PREBUILT_UI: '1' } : env, encoding: 'utf8', timeout: 10_000,
+        cwd: root, env: { ...env, ...(prebuilt ? { MEMOCARD_USE_PREBUILT_UI: '1' } : {}), ...overrides }, encoding: 'utf8', timeout: 20_000,
       });
     },
     commands: () => readFile(trace, 'utf8').then(text => text.trim().split('\n')),
@@ -66,6 +78,32 @@ test('service Release signing excludes injected debug entitlements without overr
   assert.ok(args.includes('CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO'));
   assert.ok(!args.some(arg => arg.startsWith('CODE_SIGN_ENTITLEMENTS=')));
   assert.ok(!args.includes('CODE_SIGNING_ALLOWED=NO'));
+});
+
+test('service embeds both helper architectures and preserves the exact Xcode signing identity', async t => {
+  const f = await fixture(t, 'build-service.sh');
+  await f.bundle('verified Web bundle');
+  await writeFile(join(f.root, 'home/.config/memocard/service-signing-team'), 'LOCALTEAM\n');
+  const result = f.run([], true, { MEMOCARD_TEAM_ID: 'OVERRIDETEAM' });
+  assert.equal(result.status, 0, result.stderr);
+  const calls = await f.invocations();
+  assert.ok(calls.find(c => c.command === 'xcodebuild').args.includes('DEVELOPMENT_TEAM=OVERRIDETEAM'));
+  assert.deepEqual(calls.filter(c => c.command === 'swiftc').map(c => c.args[c.args.indexOf('-target') + 1]),
+    ['arm64-apple-macos14.0', 'x86_64-apple-macos14.0']);
+  const signatures = calls.filter(c => c.command === 'codesign' && c.args.includes('--sign'));
+  assert.equal(signatures.length, 2);
+  for (const c of signatures) assert.equal(c.args[c.args.indexOf('--sign') + 1], 'AB'.repeat(20));
+  assert.ok(calls.some(c => c.command === 'codesign' && c.args.includes('--verify') && c.args.includes('--deep')));
+  assert.equal(await readFile(join(f.root, 'build/local-service/MemoCardService.app/Contents/MacOS/MemoCardTunnel'), 'utf8'), 'universal helper');
+});
+
+test('service uses the saved local signing team when no environment override is set', async t => {
+  const f = await fixture(t, 'build-service.sh');
+  await f.bundle('verified Web bundle');
+  await writeFile(join(f.root, 'home/.config/memocard/service-signing-team'), 'LOCALTEAM\n');
+  const result = f.run([], true);
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok((await f.invocations()).find(c => c.command === 'xcodebuild').args.includes('DEVELOPMENT_TEAM=LOCALTEAM'));
 });
 
 for (const [name, script, args] of [
