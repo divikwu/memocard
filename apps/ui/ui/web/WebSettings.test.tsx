@@ -3,7 +3,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import type { AppViewState } from "../../src/App";
-import { resetStorybookBridge, setStorybookClientMode } from "../../test-support/bridge";
+import { resetStorybookBridge } from "../../test-support/bridge";
 import { WebSettings } from "./WebSettings";
 import { TooltipHints } from "../components/tooltip";
 
@@ -53,31 +53,17 @@ it("keeps vault open/create actions and their busy, editor and unsupported-brows
   const model = state();
   const view = render(<WebSettings state={model} />);
   await user.click(screen.getByRole("button", { name: "切换笔记库" }));
-  await user.click(screen.getByRole("button", { name: "创建新笔记库" }));
+  await user.click(screen.getByRole("button", { name: "新建笔记库" }));
   expect(model.sidebar.onSelectVault).toHaveBeenNthCalledWith(1, false);
   expect(model.sidebar.onSelectVault).toHaveBeenNthCalledWith(2, true);
   for (const patch of [{ working: true }, { editor: {} as AppViewState["editor"] }]) {
     view.rerender(<WebSettings state={{ ...model, ...patch }} />);
     expect((screen.getByRole("button", { name: "切换笔记库" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByRole("button", { name: "创建新笔记库" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "新建笔记库" }) as HTMLButtonElement).disabled).toBe(true);
   }
   view.rerender(<WebSettings state={{ ...model, unsupportedBrowser: true }} />);
   expect(screen.queryByRole("button", { name: "切换笔记库" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "创建新笔记库" })).toBeNull();
-});
-
-it("keeps the local-host authorization explanation distinct from a browser-owned folder", () => {
-  const model = state();
-  const detach = setStorybookClientMode("local-web");
-  const view = render(<WebSettings state={model} />);
-  const details = screen.getByText("本机文件状态").closest("details")!;
-  expect(details.open).toBe(false);
-  expect(within(details).getByText("笔记与图片保存在 MemoCard 已授权的文件夹中。")).toBeTruthy();
-  detach();
-  const detachBrowser = setStorybookClientMode("browser");
-  view.rerender(<WebSettings state={model} />);
-  expect(within(details).getByText("笔记与图片保存在所选文件夹中。")).toBeTruthy();
-  detachBrowser();
+  expect(screen.queryByRole("button", { name: "新建笔记库" })).toBeNull();
 });
 
 it("keeps Mac MCP scope and the updating status while guarding actions during a pending update", async () => {

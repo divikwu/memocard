@@ -78,7 +78,8 @@ it("restores reading layout, ignores retired font choices and uses UI font roles
   for (const label of ["笔记标题字体", "笔记正文字体", "笔记等宽字体"]) expect(screen.queryByRole("combobox", { name: label })).toBeNull();
   expect(within(screen.getByRole("region", { name: "内容风格" })).getAllByRole("combobox")).toHaveLength(4);
   for (const role of ["body", "heading", "mono"]) expect(root.getPropertyValue(`--note-${role}-font`)).toBe("");
-  const markdown = within(screen.getByRole("region", { name: "笔记排版预览" })).getByRole("heading", { name: "把一闪而过的想法留下来" }).closest(".ui-note-markdown")!;
+  render(<NoteMarkdown body="# 排版验证" />);
+  const markdown = screen.getByRole("heading", { name: "排版验证" }).closest(".ui-note-markdown")!;
   const computed = getComputedStyle(markdown);
   expect(computed.getPropertyValue("--typeset-font-body")).toContain("--font-family-body");
   expect(computed.getPropertyValue("--typeset-size")).toContain("--note-size");

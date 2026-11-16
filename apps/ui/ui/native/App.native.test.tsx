@@ -124,12 +124,12 @@ it("keeps the native home layout menu and visible collection on the same default
   await mount();
   send("chrome", "navigation"); send("navigation", "home");
   await waitFor(() => expect(surface("chrome")?.title).toBe("主页"));
-  expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("list");
-  expect(surface("chrome")?.titleMenu?.find(action => action.id === "list")?.selected).toBe(true);
+  expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
+  expect(surface("chrome")?.titleMenu?.find(action => action.id === "cards")?.selected).toBe(true);
   send("chrome", "cards");
   await waitFor(() => expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards"));
   expect(surface("chrome")?.titleMenu?.find(action => action.id === "cards")?.selected).toBe(true);
-  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
+  expect(localStorage.getItem("memocard:note-layout")).toBe("cards");
   send("chrome", "list");
   await waitFor(() => expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("list"));
   expect(surface("chrome")?.titleMenu?.find(action => action.id === "list")?.selected).toBe(true);

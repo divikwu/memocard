@@ -80,12 +80,16 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
           </div>
         </div>
         <aside aria-label="笔记预览" className="ui-note-search-preview min-h-0 shrink-0 p-4">
-          {active && available ? <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl bg-body">
+          {active && available ? <div className="ui-note-search-preview-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
+            <div className="ui-note-search-preview-header">
+              <DocumentIcon aria-hidden="true" className="ui-note-search-preview-icon" />
+              <Button variant="outline" size="icon-sm" className="ui-note-search-control" aria-label="打开笔记" data-ui-tooltip="打开笔记" onClick={() => onOpenNote(active.id)}><HugeiconsIcon icon={ArrowUpRight01Icon} aria-hidden="true" /></Button>
+            </div>
             <div className="ui-note-search-preview-content min-h-0 flex-1 p-5" key={active.id}>
               <div className="break-words">
-                <div className="ui-note-search-preview-heading flex items-start justify-between gap-3">
-                  {(active.title || !active.body.trim()) && <h2 className="ui-note-search-preview-title min-w-0 flex-1">{active.title || "新内容"}</h2>}
-                  <Button variant="outline" size="icon-sm" className="ui-note-search-control ml-auto" aria-label="打开笔记" data-ui-tooltip="打开笔记" onClick={() => onOpenNote(active.id)}><HugeiconsIcon icon={ArrowUpRight01Icon} aria-hidden="true" /></Button>
+                <div className="ui-note-search-preview-heading">
+                  <p className="ui-note-search-preview-vault">{vaultName}</p>
+                  {(active.title || !active.body.trim()) && <h2 className="ui-note-search-preview-title">{active.title || "新内容"}</h2>}
                 </div>
                 <div inert><NoteMarkdown body={active.body || "还没有正文"} notePath={active.relativePath} onError={setPreviewError} /></div>
               </div>

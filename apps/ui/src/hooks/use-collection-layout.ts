@@ -11,9 +11,16 @@ export function useCollectionLayout(key = layoutKey, fallback: Layout = "cards")
       const change = (event as CustomEvent<LayoutChange>).detail;
       if (change.key === key) setLayout(change.layout);
     };
+    const syncStorage = (event: StorageEvent) => {
+      if (event.storageArea === localStorage && (event.key === key || event.key === null)) setLayout(savedLayout(key, fallback));
+    };
     window.addEventListener(layoutEvent, sync);
-    return () => window.removeEventListener(layoutEvent, sync);
-  }, [key]);
+    window.addEventListener("storage", syncStorage);
+    return () => {
+      window.removeEventListener(layoutEvent, sync);
+      window.removeEventListener("storage", syncStorage);
+    };
+  }, [key, fallback]);
   function changeLayout(next: Layout) {
     setLayout(next);
     try { localStorage.setItem(key, next); } catch { /* Keep switching available when browser storage is unavailable. */ }

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { useState } from "react";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Note } from "@memocard/contracts";
@@ -96,7 +96,7 @@ it("limits shared hover shadow and scale to openable cards", async () => {
 
 it("keeps list opening permission-aware and tag actions independent", async () => {
   const user = userEvent.setup();
-  localStorage.setItem("memocard:home-layout", "list");
+  localStorage.setItem("memocard:note-layout", "list");
   const options = props({ canOpen: false, home: { tab: "recent", pinnedCount: 0, onTabChange: vi.fn() } });
   const view = render(<NoteCollection {...options} />);
   const open = screen.getByRole("button", { name: "打开 咖啡记录" });
@@ -133,7 +133,7 @@ it("preserves create and open permission flags", async () => {
   expect(options.onOpen).not.toHaveBeenCalled();
 });
 
-it("switches recent and pinned home tabs with an independent persisted layout", async () => {
+it("switches recent and pinned home tabs with a shared persisted layout", async () => {
   const user = userEvent.setup();
   const options = props();
   const tabChange = vi.fn();
@@ -142,7 +142,7 @@ it("switches recent and pinned home tabs with an independent persisted layout", 
     return <NoteCollection {...options} home={{ tab, pinnedCount: 2, onTabChange: next => { tabChange(next); setTab(next); } }} />;
   }
   const view = render(<HomeFixture />);
-  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("list");
+  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("cards");
   expect(screen.getByText(note.updatedAt)).toBeTruthy();
   await user.click(screen.getByRole("tab", { name: /已固定/ }));
   expect(tabChange).toHaveBeenLastCalledWith("pinned");
@@ -150,13 +150,12 @@ it("switches recent and pinned home tabs with an independent persisted layout", 
   await user.keyboard("{ArrowLeft}");
   expect(tabChange).toHaveBeenLastCalledWith("recent");
   expect(screen.getByRole("tab", { name: /最近更新/ }).getAttribute("aria-selected")).toBe("true");
-  await user.click(screen.getByRole("button", { name: "卡片布局" }));
-  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("cards");
-  expect(localStorage.getItem("memocard:home-layout")).toBe("cards");
-  expect(localStorage.getItem("memocard:note-layout")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "列表布局" }));
+  expect(screen.getByRole("list").getAttribute("data-layout")).toBe("list");
+  expect(localStorage.getItem("memocard:note-layout")).toBe("list");
   view.unmount();
   render(<HomeFixture />);
-  expect(screen.getByRole("button", { name: "卡片布局" }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByRole("button", { name: "列表布局" }).getAttribute("aria-pressed")).toBe("true");
 });
 
 it("keeps existing results while loading and preserves caller empty and error feedback", () => {
@@ -204,4 +203,39 @@ it("loads the next page once and prevents duplicate requests while paging", asyn
   await user.click(more);
   expect(options.onLoadMore).toHaveBeenCalledTimes(1);
   expect(screen.getByRole("status").textContent).toBe("正在加载更多笔记…");
+});
+
+it("retains list layout through loading and empty results, then switches the empty collection to cards", async () => {
+  localStorage.setItem("memocard:note-layout", "list");
+  const user = userEvent.setup();
+  const options = props();
+  const view = render(<NoteCollection {...options} />);
+  const collection = screen.getByRole("region", { name: "笔记集合" });
+  expect(collection.getAttribute("data-layout")).toBe("list");
+  view.rerender(<NoteCollection {...options} notes={[]} loading />);
+  expect(collection.getAttribute("data-layout")).toBe("list");
+  view.rerender(<NoteCollection {...options} notes={[]} />);
+  expect(collection.getAttribute("data-layout")).toBe("list");
+  expect(screen.queryByRole("list", { name: "笔记列表" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "卡片布局" }));
+  expect(collection.getAttribute("data-layout")).toBe("cards");
+});
+
+
+it("synchronizes home and note collections in both directions and across browser tabs", async () => {
+  localStorage.setItem("memocard:home-layout", "list");
+  const user = userEvent.setup();
+  render(<><NoteCollection {...props({ home: { tab: "recent", pinnedCount: 0, onTabChange: vi.fn() } })} /><NoteCollection {...props()} /></>);
+  const layouts = () => screen.getAllByRole("list", { name: "笔记列表" }).map(list => list.getAttribute("data-layout"));
+  expect(layouts()).toEqual(["cards", "cards"]);
+  await user.click(screen.getAllByRole("button", { name: "列表布局" })[0]);
+  expect(layouts()).toEqual(["list", "list"]);
+  await user.click(screen.getAllByRole("button", { name: "卡片布局" })[1]);
+  expect(layouts()).toEqual(["cards", "cards"]);
+  localStorage.setItem("memocard:note-layout", "list");
+  fireEvent(window, new StorageEvent("storage", { key: "memocard:note-layout", newValue: "list", storageArea: localStorage }));
+  expect(layouts()).toEqual(["list", "list"]);
+  localStorage.removeItem("memocard:note-layout");
+  fireEvent(window, new StorageEvent("storage", { key: "memocard:note-layout", newValue: null, storageArea: localStorage }));
+  expect(layouts()).toEqual(["cards", "cards"]);
 });

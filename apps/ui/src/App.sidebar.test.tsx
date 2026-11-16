@@ -550,7 +550,7 @@ describe('mobile page navigation',()=>{
     expect((await screen.findByRole('menuitemradio',{name:'列表'})).getAttribute('aria-checked')).toBe('true');
   });
 
-  it('keeps the mobile home title layout independent from note views',async()=>{
+  it('shares the mobile home title layout with note views',async()=>{
     window.history.replaceState(null,'','#/home');
     localStorage.setItem('memocard:home-layout','cards');
     localStorage.setItem('memocard:note-layout','cards');
@@ -559,12 +559,11 @@ describe('mobile page navigation',()=>{
     await user.click(await screen.findByRole('button',{name:'视图选项 主页'}));
     await user.click(await screen.findByRole('menuitemradio',{name:'列表'}));
     await waitFor(()=>expect(screen.getByRole('list',{name:'笔记列表'}).getAttribute('data-layout')).toBe('list'));
-    expect(localStorage.getItem('memocard:home-layout')).toBe('list');
-    expect(localStorage.getItem('memocard:note-layout')).toBe('cards');
+    expect(localStorage.getItem('memocard:note-layout')).toBe('list');
     await user.click(screen.getByRole('button',{name:'打开导航'}));
     await user.click(await screen.findByRole('button',{name:'所有笔记'}));
     await user.click(await screen.findByRole('button',{name:'视图选项 所有笔记'}));
-    expect((await screen.findByRole('menuitemradio',{name:'卡片'})).getAttribute('aria-checked')).toBe('true');
+    expect((await screen.findByRole('menuitemradio',{name:'列表'})).getAttribute('aria-checked')).toBe('true');
     await user.keyboard('{Escape}');
     await user.click(screen.getByRole('button',{name:'打开导航'}));
     await user.click(await screen.findByRole('button',{name:'主页'}));
