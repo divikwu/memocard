@@ -14,11 +14,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioG
 import "./sidebar.css";
 
 const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
-export type MobileTagActionsProps = { tag?: string | null; title?: string; home?: boolean; vaultId?: string | null; onRename: (from: string, to: string) => Promise<void> };
+export type MobileTagActionsProps = { tag?: string | null; title?: string; vaultId?: string | null; onRename: (from: string, to: string) => Promise<void> };
 
-export function MobileTagActions({ tag, title, home = false, vaultId, onRename }: MobileTagActionsProps) {
+export function MobileTagActions({ tag, title, vaultId, onRename }: MobileTagActionsProps) {
   const { preferences, error, togglePinned, saveAppearance } = useTagPreferences(vaultId);
-  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : undefined, home ? "list" : "cards");
+  const [layout, changeLayout] = useCollectionLayout();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [pinning, setPinning] = useState(false);

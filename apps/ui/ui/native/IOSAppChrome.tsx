@@ -58,10 +58,8 @@ export function IOSAppChrome(p:IOSAppChromeProps) {
   const canCreate=p.canCreate && !p.busy;
   const [navigationOpen,setNavigationOpen]=useState(false),[vaultOpen,setVaultOpen]=useState(false),[editingTag,setEditingTag]=useState<string|null>(null);
   const vaultFromNavigation=useRef(false);
-  const [homeLayout,changeHomeLayout]=useCollectionLayout("memocard:home-layout","list");
-  const [noteLayout,changeNoteLayout]=useCollectionLayout();
+  const [layout,changeLayout]=useCollectionLayout();
   const {preferences,error:tagError,togglePinned,saveAppearance}=useTagPreferences(vaultId);
-  const layout=p.view === "home" ? homeLayout : noteLayout;
   const titleMenu:NativeAction[]=[
     {id:"cards",title:"卡片",icon:"square.grid.2x2",selected:layout === "cards"},
     {id:"list",title:"列表",icon:"list.bullet",selected:layout === "list"},
@@ -93,7 +91,7 @@ export function IOSAppChrome(p:IOSAppChromeProps) {
     if(action === "capture")window.dispatchEvent(new Event("memocard:open-native-capture"));
     if(action === "pin")p.onPin();
     if(action === "delete" && p.editing?.baseHash && vaultId)p.onDelete({id:p.editing.id,title:p.editing.title?.trim() || "新内容",vaultId:vaultId,vaultBinding:p.editing.vaultBinding ?? p.vaultBinding});
-    if(action === "cards" || action === "list")(p.view === "home" ? changeHomeLayout : changeNoteLayout)(action);
+    if(action === "cards" || action === "list")changeLayout(action);
     if(action === "pin-tag" && p.tag && !await togglePinned(p.tag))setNavigationOpen(true);
     if(action === "edit-tag" && p.tag)setEditingTag(p.tag);
   });

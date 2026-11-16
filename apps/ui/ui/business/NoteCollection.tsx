@@ -74,7 +74,7 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
 }
 
 export function NoteCollection({ home, heading, notes, activeTag, recentTags, loading = false, tagFiltersDisabled, filters, children, hasMore, paging, loadMoreDisabled, canOpen, canCreate, showCreateInToolbar = true, onNewNote, onOpen, onSelectTag, onSelectRecentTag = onSelectTag, onSelectAll, onLoadMore, onError, formatDate }: NoteCollectionProps) {
-  const [layout, changeLayout] = useCollectionLayout(home ? "memocard:home-layout" : "memocard:note-layout", home ? "list" : "cards");
+  const [layout, changeLayout] = useCollectionLayout();
   const recentTagScroller = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const scroller = recentTagScroller.current;
@@ -145,13 +145,13 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
     </div>
   </TooltipHints>;
 
-  if (home) return <Tabs value={home.tab} onValueChange={value => { if (value === "recent" || value === "pinned") home.onTabChange(value); }} className="ui-note-collection" data-slot="note-collection">
+  if (home) return <Tabs value={home.tab} onValueChange={value => { if (value === "recent" || value === "pinned") home.onTabChange(value); }} className="ui-note-collection" data-slot="note-collection" data-layout={layout}>
     <div className="ui-note-toolbar"><div className="ui-note-home-tabs"><TabsList variant="line" activateOnFocus aria-label="主页内容"><TabsTrigger value="recent"><HugeiconsIcon icon={Clock03Icon} aria-hidden="true" strokeWidth={2} />最近更新</TabsTrigger><TabsTrigger value="pinned"><HugeiconsIcon icon={PinIcon} aria-hidden="true" strokeWidth={2} />已固定<span className="text-xs text-secondary tabular-nums">{home.pinnedCount}</span></TabsTrigger></TabsList></div><div className="ui-note-actions">{loading && notes.length > 0 && <Spinner aria-hidden="true" className="text-icon-secondary" />}{layoutButtons}</div></div>
     <TabsContent value={home.tab}>{content}</TabsContent>
   </Tabs>;
 
   const typeTab = filters?.quickFilters.length === 1 ? filters.quickFilters[0] : filters?.quickFilters.length ? "custom" : "all";
-  return <Tabs render={<section aria-label="笔记集合" />} className="ui-note-collection" data-slot="note-collection" value={typeTab}
+  return <Tabs render={<section aria-label="笔记集合" />} className="ui-note-collection" data-slot="note-collection" data-layout={layout} value={typeTab}
     onValueChange={value => {
       if (filters && (value === "all" || value === "untagged" || value === "images" || value === "links")) filters.onChange(filters.activeTags, value === "all" ? [] : [value]);
     }}>

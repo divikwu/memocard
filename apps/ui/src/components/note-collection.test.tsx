@@ -26,19 +26,19 @@ it("shares the home layout across content tabs without exposing pin actions on n
   const updated = { ...note, updatedAt: "2026-10-14T08:00:00Z" };
   const view = render(<NoteCollection {...props} notes={[updated]} home={{tab:"recent", pinnedCount:1, onTabChange}} />);
   expect(screen.getByRole("tab", {name:"最近更新"}).getAttribute("aria-selected")).toBe("true");
-  expect(screen.getByRole("list", {name:"笔记列表"}).getAttribute("data-layout")).toBe("list");
+  expect(screen.getByRole("list", {name:"笔记列表"}).getAttribute("data-layout")).toBe("cards");
   expect(screen.getByText("10月10日 16:00").getAttribute("datetime")).toBe(updated.updatedAt);
-  await user.click(screen.getByRole("button", {name:"卡片布局"}));
+  await user.click(screen.getByRole("button", {name:"列表布局"}));
   await user.click(screen.getByRole("tab", {name:/已固定/}));
   expect(onTabChange).toHaveBeenCalledWith("pinned");
   view.rerender(<NoteCollection {...props} home={{tab:"pinned", pinnedCount:1, onTabChange}} />);
-  expect(screen.getByRole("list", {name:"笔记列表"}).getAttribute("data-layout")).toBe("cards");
+  expect(screen.getByRole("list", {name:"笔记列表"}).getAttribute("data-layout")).toBe("list");
   expect(screen.queryByRole("button", {name:/固定/})).toBeNull();
   expect(screen.queryByText("查看全部")).toBeNull();
   expect(screen.queryByRole("textbox")).toBeNull();
   view.unmount();
   render(<NoteCollection {...props} home={{tab:"recent", pinnedCount:1, onTabChange}} />);
-  expect(screen.getByRole("button", {name:"卡片布局"}).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.getByRole("button", {name:"列表布局"}).getAttribute("aria-pressed")).toBe("true");
 });
 
 it("shows titles, clickable tags and trailing time in the list and restores content in cards", async () => {

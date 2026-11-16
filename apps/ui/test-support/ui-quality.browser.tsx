@@ -2297,6 +2297,7 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
   localStorage.clear();
+  localStorage.setItem("memocard:note-layout", "list");
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode}));
   history.replaceState(null, "", "#/");
   const fixture = await createWorkspaceFixture();
@@ -3083,17 +3084,19 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
     const title = await canvas.findByRole("heading", {name: "设置", level: 1});
     const advanced = canvas.getByText("高级排版").closest("details")!;
     const card = canvas.getByRole("combobox", {name: "行宽"}).closest<HTMLElement>('[data-slot="card"]')!;
+    const panel = card.closest<HTMLElement>(".web-settings-panel")!;
     expect(advanced.closest('[data-slot="card"]')).toBe(card);
     for (const width of [320, 768, 1440]) {
       await page.viewport(width, 900);
       await waitFor(() => expect(title.getBoundingClientRect().height).toBeGreaterThanOrEqual(32));
-      expect(title.getBoundingClientRect().width).toBeGreaterThan(100);
+      expect(title.parentElement!.getBoundingClientRect().width).toBeCloseTo(panel.getBoundingClientRect().width, 1);
       const bounds = card.getBoundingClientRect(), disclosure = advanced.getBoundingClientRect();
       expect(disclosure.left).toBeGreaterThanOrEqual(bounds.left);
       expect(disclosure.right).toBeLessThanOrEqual(bounds.right);
-      const preview = canvas.getByRole("region", {name: "笔记排版预览"});
-      expect(getComputedStyle(preview).borderRadius).toBe(getComputedStyle(card).borderRadius);
-      expect(getComputedStyle(preview).backgroundColor).toBe(getComputedStyle(card).backgroundColor);
+      const panelBounds = panel.getBoundingClientRect();
+      expect(bounds.left).toBeGreaterThan(panelBounds.left);
+      expect(bounds.right).toBeLessThan(panelBounds.right);
+      expect(bounds.left - panelBounds.left).toBeCloseTo(panelBounds.right - bounds.right, 1);
       await userEvent.click(within(advanced).getByText("高级排版"));
       const controls = ["行宽", "字号", "行高", "段落间距"].map(name => canvas.getByRole("combobox", {name}));
       for (const control of controls) expect(control.getBoundingClientRect().width).toBeCloseTo(controls[0].getBoundingClientRect().width, 1);

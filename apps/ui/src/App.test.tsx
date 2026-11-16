@@ -632,7 +632,7 @@ describe("note workspace", () => {
     });
     window.history.replaceState(null, "", "#/settings");
     render(<App />);
-    expect(await screen.findByRole("button", { name: "创建新笔记库" })).toBeTruthy();
+    expect(await screen.findByRole("button", { name: "新建笔记库" })).toBeTruthy();
     fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("selectVault", { create: false }));
     expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=next");

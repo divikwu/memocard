@@ -517,7 +517,7 @@
         },
         {
           "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings > section > h2, .web-setting-section-heading h2",
+          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-family-heading)"
         },
         {
@@ -1182,6 +1182,11 @@
         },
         {
           "source": "apps/ui/ui/business/sidebar.css",
+          "scope": "@media (max-width: 767px) → .ui-business-sidebar[data-mobile=\"true\"] [data-sidebar=\"header\"] > nav → .ui-sidebar-row",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/ui/business/sidebar.css",
           "scope": "@media (max-width: 767px) → .ui-sidebar-vault-menu-item",
           "value": "var(--font-size-base)"
         },
@@ -1264,11 +1269,6 @@
         {
           "source": "apps/ui/ui/web/web-app.css",
           "scope": "@media (max-width: 767px) → .web-settings select",
-          "value": "var(--font-size-base)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-size-base)"
         },
         {
@@ -1782,15 +1782,15 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/web/web-typography.css",
           "scope": ":root[data-web-typography] .ui-note-search-preview-content .ui-note-markdown.typeset-memocard",
           "value": "var(--font-size-sm)",
           "variable": "--typeset-size"
-        },
-        {
-          "source": "apps/ui/ui/web/web-typography.css",
-          "scope": ".web-note-style-preview > header",
-          "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/web/WebAppView.tsx",
@@ -1921,6 +1921,11 @@
         {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown h6",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-vault",
           "value": "var(--font-size-xs)"
         },
         {
@@ -2558,6 +2563,11 @@
           "source": "apps/ui/ui/web/layouts/topbar.css",
           "scope": ".web-top-tag-tree [data-sidebar=group-label]",
           "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
+          "value": "var(--font-weight-normal)"
         }
       ]
     },
@@ -2818,16 +2828,6 @@
         {
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-file-status summary",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings > section > h2, .web-setting-section-heading h2",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-typography.css",
-          "scope": ".web-note-style-preview > header > p:first-child",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -4067,6 +4067,11 @@
         {
           "source": "apps/ui/ui/business/note-search.css",
           "scope": ".ui-note-search-preview-content .ui-note-markdown h6",
+          "value": "var(--text-supporting-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-search.css",
+          "scope": ".ui-note-search-preview-vault",
           "value": "var(--text-supporting-leading)"
         },
         {
