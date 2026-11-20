@@ -30,7 +30,7 @@ export function useAppearanceRuntime({ requested, revision, mobile, enabled, com
 }): AppearanceRuntime {
   const catalog = useAppearanceCatalog();
   const [intent, setIntent] = useState({ id: requested, persist: false });
-  const baseline = { ...resolveAppearance(appearanceCatalog, "classic", mobile), adapter: sidebarLayout };
+  const baseline = { ...resolveAppearance(appearanceCatalog, "classic", mobile), layoutId: mobile ? "drawer" : "sidebar", adapter: sidebarLayout };
   const [applied, setApplied] = useState(baseline);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);

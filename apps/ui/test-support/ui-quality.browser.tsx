@@ -1,3 +1,5 @@
+import { AppearanceCatalogProvider } from "../ui/web/appearance/AppearanceRuntime";
+import { expandedSidebarFixture } from "../ui-state-fixtures/appearance-fixture";
 import { afterEach, expect, inject, test, vi } from "vitest";
 import type { NoteProperties as Properties, PropertyLayout, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
@@ -2427,7 +2429,7 @@ test("Web collection headings align with the sidebar brand and retain compact sp
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
   await page.viewport(1440, 900);
-  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  const view = render(<AppearanceCatalogProvider catalog={expandedSidebarFixture}><WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider></AppearanceCatalogProvider>);
   try {
     const canvas = within(view.container);
     await canvas.findByRole("button", {name: "打开 今天的手冲记录"});
@@ -2885,7 +2887,7 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
   const plant = fixture.snapshot().notes.find(note => note.tags.includes("生活/植物"))!;
   await fixture.request("updateNoteProperty", {id: plant.id, name: "tags", type: "list", value: ["生活/植物/绿萝"]});
   const release = setStorybookRequestHandler(fixture.request);
-  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  const view = render(<AppearanceCatalogProvider catalog={expandedSidebarFixture}><WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider></AppearanceCatalogProvider>);
   try {
     const canvas = within(view.container), body = within(document.body);
     await canvas.findByRole("button", {name: "查看标签 生活/咖啡 的笔记"});
@@ -3078,7 +3080,7 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
   history.replaceState(null, "", "#/settings");
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
-  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  const view = render(<AppearanceCatalogProvider catalog={expandedSidebarFixture}><WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider></AppearanceCatalogProvider>);
   try {
     const canvas = within(view.container);
     const title = await canvas.findByRole("heading", {name: "设置", level: 1});
@@ -3144,7 +3146,7 @@ for (const mode of ["light", "dark"] as const) test(`desktop sidebar swaps its l
   const preferences = await fixture.request<TagPreferenceState>("getTagPreferences");
   await fixture.request("setTagPreferences", { ...preferences, pinned: ["生活"] });
   const release = setStorybookRequestHandler(fixture.request);
-  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  const view = render(<AppearanceCatalogProvider catalog={expandedSidebarFixture}><WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider></AppearanceCatalogProvider>);
   try {
     const canvas = within(view.container);
     await canvas.findByRole("button", {name: "打开 今天的手冲记录"});
@@ -4372,10 +4374,11 @@ test("lazy vault images wait for every ancestor clip and read once after nested 
 }
 
 
-test("minimal Web theme aligns navigation, collections and detail surfaces across breakpoints", async () => {
+test("classic Web theme aligns navigation, collections and detail surfaces across breakpoints", async () => {
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
   localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/notes");
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
@@ -4384,17 +4387,25 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
   try {
     const canvas = within(view.container);
     for (const width of [768, 900, 1024, 1440, 1920]) {
-      await page.viewport(width, 1000);
+      const height = width === 768 ? 680 : 1000;
+      await page.viewport(width, height);
       await waitFor(() => expect(current!.isMobile).toBe(false));
       await canvas.findByRole("button", { name: "打开 今天的手冲记录" });
-      await canvas.findByRole("navigation", { name: "顶部导航" });
-      const navigation = view.container.querySelector<HTMLElement>(".web-topbar-inner")!;
+      const rail = await canvas.findByRole("navigation", { name: "桌面导航" });
+      expect(rail.getBoundingClientRect()).toMatchObject({ left: 0, top: 0, width: 60, height });
+      const primary = within(rail).getByRole("group", { name: "主要入口" }).getBoundingClientRect();
+      const footer = within(rail).getByRole("group", { name: "笔记库和设置" }).getBoundingClientRect();
+      expect((primary.top + primary.bottom) / 2).toBeCloseTo(height / 2);
+      expect(footer.bottom).toBe(height - 16);
+      const scroll = view.container.querySelector<HTMLElement>("#web-main-content")!;
+      expect(scroll.getBoundingClientRect()).toMatchObject({ left: 60, top: 0, width: width - 60, height });
+      expect(getComputedStyle(scroll).paddingInlineStart).toBe(width >= 1084 ? "32px" : "24px");
+      expect(getComputedStyle(scroll).paddingBlockStart).toBe("0px");
       const content = view.container.querySelector<HTMLElement>(".web-page-content")!;
-      const bounds = navigation.getBoundingClientRect();
-      expect(bounds.width).toBeCloseTo(Math.min(1280, width - (width >= 1024 ? 64 : 48)), 1);
-      expect(content.getBoundingClientRect().left).toBeCloseTo(bounds.left, 1);
-      expect(content.getBoundingClientRect().width).toBeCloseTo(bounds.width, 1);
-      const logo = navigation.querySelector("img")!.getBoundingClientRect();
+      const bounds = content.getBoundingClientRect();
+      expect(bounds.width).toBeCloseTo(Math.min(1280, width - 60 - (width >= 1084 ? 64 : 48)), 1);
+      expect(bounds.left).toBeCloseTo(60 + (width - 60 - bounds.width) / 2, 1);
+      const logo = rail.querySelector("img")!.getBoundingClientRect();
       expect(logo.width).toBe(32); expect(logo.height).toBe(32);
       const recentTags = await canvas.findByRole("tablist", { name: "类型" });
       const tagRows = within(recentTags).getAllByRole("tab").map(button => button.getBoundingClientRect().top);
@@ -4403,8 +4414,12 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
       await userEvent.click(canvas.getByRole("button", { name: "打开 今天的手冲记录" }));
       await canvas.findByRole("textbox", { name: "笔记内容" });
       const detail = view.container.querySelector<HTMLElement>(".web-app-main")!.getBoundingClientRect();
-      expect(detail.left).toBeCloseTo(bounds.left, 1);
-      expect(detail.width).toBeCloseTo(bounds.width, 1);
+      expect(detail).toMatchObject({ left: 0, top: 0, width, height });
+      const header = view.container.querySelector<HTMLElement>(".web-app-header")!;
+      expect(canvas.queryByRole("navigation", { name: "桌面导航" })).toBeNull();
+      expect(within(header).getByRole("button", { name: "导航菜单" })).toBeVisible();
+      expect(header.getBoundingClientRect().height).toBe(56);
+      expect(getComputedStyle(scroll).paddingBlockStart).toBe("56px");
       expect(view.container.querySelector<HTMLElement>(".web-page-content")!.getBoundingClientRect().width).toBeLessThanOrEqual(720);
       expect(canvas.queryByRole("button", { name: "展开侧栏" })).toBeNull();
       await act(async () => { await current!.onNavigate("notes"); });
@@ -4412,7 +4427,7 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
     }
     await page.viewport(390, 844);
     await waitFor(() => expect(current!.isMobile).toBe(true));
-    expect(canvas.queryByRole("navigation", { name: "顶部导航" })).toBeNull();
+    expect(canvas.queryByRole("navigation", { name: "桌面导航" })).toBeNull();
     expect(canvas.getByRole("button", { name: "打开导航" })).toBeVisible();
     const recentTags = await canvas.findByRole("tablist", { name: "类型" });
     expect(recentTags).toBeVisible();
@@ -4433,45 +4448,59 @@ test("minimal Web theme aligns navigation, collections and detail surfaces acros
 if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collection filters support keyboard dismissal", async () => {
   await page.viewport(1440, 900);
   const previousHash = location.hash;
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/notes");
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
   const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
-    const nav = within(await canvas.findByRole("navigation", { name: "顶部导航" }));
+    const nav = within(await canvas.findByRole("navigation", { name: "桌面导航" }));
     const trigger = nav.getByRole("button", { name: "笔记" });
     const body = within(document.body);
     await userEvent.hover(trigger);
     expect(trigger).not.toHaveAttribute("aria-haspopup");
-    const more = canvas.getByRole("button", { name: "更多" });
-    const search = canvas.getByRole("button", { name: "搜索" });
-    expect(more.getBoundingClientRect().left).toBeGreaterThan(search.getBoundingClientRect().right);
-    expect(getComputedStyle(more).backgroundColor).toBe(getComputedStyle(search).backgroundColor);
-    expect(more.getBoundingClientRect().width).toBe(search.getBoundingClientRect().width);
-    expect(more.getBoundingClientRect().height).toBe(search.getBoundingClientRect().height);
+    await userEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-current", "page");
+    const stateSwatch = document.createElement("span");
+    stateSwatch.hidden = true;
+    stateSwatch.style.backgroundColor = "color-mix(in srgb, var(--color-overlay-pressed) 40%, transparent)";
+    stateSwatch.style.color = "var(--color-icon-primary)";
+    trigger.parentElement!.append(stateSwatch);
+    await waitFor(() => {
+      expect(getComputedStyle(trigger).backgroundColor).toBe(getComputedStyle(stateSwatch).backgroundColor);
+      expect(getComputedStyle(trigger).color).toBe(getComputedStyle(stateSwatch).color);
+      expect(getComputedStyle(trigger).outlineStyle).toBe("none");
+    });
+    stateSwatch.remove();
+    await userEvent.keyboard("{Tab}");
+    trigger.focus();
+    await waitFor(() => expectKeyboardOutline(trigger, trigger.closest("[data-ui-theme=dark]") ? "dark" : "light"));
+    const more = nav.getByRole("button", { name: /^笔记库：/ });
+    const search = nav.getByRole("button", { name: "搜索" });
+    expect(search.getBoundingClientRect().bottom).toBeLessThan(trigger.getBoundingClientRect().top);
+    expect(more.getBoundingClientRect().top).toBeGreaterThan(trigger.getBoundingClientRect().bottom);
     await userEvent.hover(more);
-    expect(body.queryByRole("dialog", {name: "更多"})).toBeNull();
+    expect(body.queryByRole("dialog", {name: "切换笔记库"})).toBeNull();
     more.focus();
     await userEvent.keyboard("{Enter}");
-    const morePanel = await body.findByRole("dialog", { name: "更多" });
-    expect(morePanel).toHaveAttribute("data-swipe-direction", "right");
-    await waitFor(() => expect(morePanel.getBoundingClientRect().right).toBeCloseTo(1432, 0));
+    const morePanel = await body.findByRole("dialog", { name: "切换笔记库" });
+    expect(morePanel).toHaveAttribute("data-swipe-direction", "left");
+    await waitFor(() => expect(morePanel.getBoundingClientRect().left).toBeCloseTo(8, 0));
     expect(morePanel.getBoundingClientRect().width).toBe(384);
     expect(morePanel.getBoundingClientRect().top).toBe(8);
     const moreRadius = getComputedStyle(morePanel).borderRadius;
     expect(more).toHaveAttribute("aria-expanded", "true");
     await userEvent.keyboard("{Escape}");
-    await waitFor(() => expect(body.queryByRole("dialog", {name: "更多"})).toBeNull());
+    await waitFor(() => expect(body.queryByRole("dialog", {name: "切换笔记库"})).toBeNull());
     expect(more).toHaveFocus();
-    await userEvent.click(more);
-    const reopened = await body.findByRole("dialog", {name: "更多"});
-    await settlePropertyPopup(reopened);
-    await userEvent.click(within(reopened).getByRole("button", {name: "设置"}));
+    await userEvent.click(nav.getByRole("button", {name: "设置"}));
     await canvas.findByRole("heading", {name: "设置", level: 1});
-    await waitFor(() => expect(body.queryByRole("dialog", {name: "更多"})).toBeNull());
     await userEvent.click(nav.getByRole("button", { name: "主页" }));
     await canvas.findByRole("tab", { name: "最近更新", selected: true });
+    const capture = await canvas.findByRole("form", { name: "快速输入" });
+    const collection = view.container.querySelector<HTMLElement>(".web-page-content > .ui-note-collection")!;
+    expect(collection.getBoundingClientRect().top - capture.getBoundingClientRect().bottom).toBe(32);
     await userEvent.click(trigger);
     await canvas.findByRole("heading", { name: "所有笔记", level: 1 });
     const filter = canvas.getByRole("button", { name: "筛选笔记" });
@@ -4490,7 +4519,7 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
     await userEvent.click(trigger);
     await canvas.findByRole("heading", { name: "所有笔记", level: 1 });
     await page.viewport(390, 844);
-    await waitFor(() => expect(canvas.queryByRole("navigation", { name: "顶部导航" })).toBeNull());
+    await waitFor(() => expect(canvas.queryByRole("navigation", { name: "桌面导航" })).toBeNull());
     expect(filter).toBeVisible();
     await userEvent.click(canvas.getByRole("tab", { name: "有图片" }));
     expect(canvas.queryByRole("button", { name: "清除所有筛选" })).toBeNull();

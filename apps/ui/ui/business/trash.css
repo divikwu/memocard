@@ -1,6 +1,6 @@
 .ui-trash { display: grid; gap: calc(var(--spacing-1) * 4); container: ui-trash / inline-size; }
 .ui-trash > header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: calc(var(--spacing-1) * 3); padding-inline: var(--spacing-1); }
-.ui-trash h1 { font-family: var(--font-family-heading); font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); line-height: var(--text-heading-2-leading); }
+.ui-trash h1 { font-family: var(--font-family-heading); font-size: var(--workspace-title-font-size, var(--font-size-2xl)); font-weight: var(--font-weight-semibold); line-height: var(--workspace-title-line-height, var(--text-heading-2-leading)); }
 .ui-trash-list { margin: 0; padding: calc(var(--spacing-1) * 2); list-style: none; border-radius: var(--radius-item); background: var(--color-background-surface); }
 .ui-trash-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: calc(var(--spacing-1) * 4); padding: calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 3); border-radius: var(--radius-item); }
 .ui-trash-card:has(.ui-trash-open:focus-visible) { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }

@@ -44,7 +44,9 @@ export async function productionGraph(root = repository) {
         local.push(target);
       }
     }
-    graph.set(normalize(relative(root, file)), { imports: [...imports], local: local.map(path => normalize(relative(root, path))) });
+    // Token and typography catalogs read the CSS source, including Vite inlined styles.
+    const sourceImports = Array.from(imports, specifier => specifier.replace(/\.css\?.+$/, '.css'));
+    graph.set(normalize(relative(root, file)), { imports: sourceImports, local: local.map(path => normalize(relative(root, path))) });
     for (const target of local) await visit(target);
   }
   await visit(resolve(root, 'apps/ui/src/main.tsx'));

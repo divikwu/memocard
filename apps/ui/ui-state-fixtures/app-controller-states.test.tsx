@@ -166,7 +166,7 @@ it('shows an initial timeout below the heading and retries through a loading sta
   });
   mock.retry();fireEvent.click(within(alert).getByRole('button',{name:'重试'}));
   expect(await screen.findByRole('status',{name:'正在读取笔记库'})).toBeTruthy();
-  expect(screen.getByRole('button',{name:'新建'})).toBeTruthy();
+  expect(screen.getByRole('button',{name:'新建笔记'})).toBeTruthy();
   await waitFor(()=>expect(finish).toBeTypeOf('function'));
   finish();
   expect(await screen.findByRole('list',{name:'笔记列表'})).toBeTruthy();
@@ -349,7 +349,7 @@ it('keeps the original list when selecting another folder is not authorized',asy
   window.history.replaceState(null,'','#/settings');fireEvent(window,new HashChangeEvent('hashchange'));
   fireEvent.click(await screen.findByRole('button',{name:'切换笔记库'}));
   expect(await screen.findByText('模拟：未授予文件夹访问权限')).toBeTruthy();
-  fireEvent.click(screen.getByRole('button',{name:'所有笔记'}));
+  fireEvent.click(within(await screen.findByRole('navigation',{name:'桌面导航'})).getByRole('button',{name:'笔记'}));
   expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
   expect(screen.queryByRole('heading',{name:'文件夹授权未完成'})).toBeNull();
   expect(mock.calls.filter(op=>op === 'selectVault')).toHaveLength(1);

@@ -48,6 +48,14 @@ test('follows runtime barrels and alias lazy imports, excluding type-only syntax
   assert.deepEqual(await checkInventory({ root }), { productionModules: 3, entries: 3 });
 });
 
+test('keeps inlined Vite styles reachable to the CSS catalogs', async t => {
+  const { root, put } = await fixture(t);
+  await put('apps/ui/src/Lazy.tsx', 'export const loadStyles = () => import("./theme.css?inline");');
+  await put('apps/ui/src/theme.css', '.frame { color: red; }');
+  const graph = await productionGraph(root);
+  assert.deepEqual(graph.get('apps/ui/src/Lazy.tsx').imports, ['./theme.css']);
+});
+
 test('keeps inline type module edges and their real runtime TSX descendants conservatively', async t => {
   const { root, put, paths } = await fixture(t);
   await put('apps/ui/src/Lazy.tsx', 'import { type T } from "./InlineImport"; export { type U } from "./InlineExport"; export default function Lazy() { return null; }');

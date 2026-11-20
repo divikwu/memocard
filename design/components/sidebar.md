@@ -28,16 +28,10 @@ iOS 保留边缘展开、主页面推移、侧滑/点击关闭和系统安全区
 
 ## Web 界面主题
 
-Web 设置的「界面主题」提供默认「经典」侧栏与「简约」顶部栏；「颜色模式」独立控制浅色、深色或跟随系统。选择保存在当前浏览器，旧偏好默认经典。简约仅作用于宽度至少 768px 的 Web；窄屏仍使用抽屉，原生端不提供该选项。切换主题不重建编辑器或重置路由、筛选和撤销记录。
+Web 设置的「界面主题」提供「经典」和「轻简」，默认使用「轻简」。「颜色模式」独立控制浅色、深色或跟随系统。两套桌面导航适用于宽度至少 768px 的 Web，窄屏共用抽屉，原生端沿用原来的导航。
 
-[WebTopNavigation](../../apps/ui/ui/web/WebTopNavigation.tsx) 的简约导航为「主页 / 笔记 / 标签」，标签直接进入目录；经典顶部布局的标签弹层继续复用 TagNavigation 与 SidebarTreeItem。搜索右侧的等号图标打开「更多」侧边抽屉，与筛选抽屉共用 Drawer。抽屉集中设置、回收站、草稿及笔记库操作，保留忙碌和权限限制，支持 Escape、关闭按钮与焦点返回。新建笔记位于搜索左侧。
+「经典」使用 60px 的[左侧图标栏](../../apps/ui/ui/web/WebRailNavigation.tsx)。主页、新建、搜索、笔记和标签居中，笔记库和设置在底部。进入详情后，页头菜单提供导航和搜索。内容区从窗口顶部开始并独立滚动，左右由 `padding-inline` 留白。
 
-简约导航、集合与详情白色外层最大宽度同为 80rem；768–1023px 两侧各留 24px，1024px 起各留 32px。详情正文继续遵循内容行宽。桌面 Web 首页与笔记列表撑满剩余视口，内容较长时自然滚动；首页、笔记页和标签页底部统一保留 16px。移动端列表仍随内容收尾。
+「轻简」使用[顶部导航](../../apps/ui/ui/web/WebTopNavigation.tsx)。主页、笔记和标签居中，新建、搜索和更多在右侧。「更多」抽屉包含笔记库操作、设置、草稿和回收站。详情页保留顶部导航和返回入口。
 
-当前主题按“视觉主题＋可复用布局”组合；[共享导航模型](../../apps/ui/ui/business/navigation-model.ts)统一动作与可用性，[WorkspaceFrame](../../apps/ui/ui/web/WorkspaceFrame.tsx)保持内容树稳定，[组合目录](../../apps/ui/ui/web/appearance/catalog.ts)按需加载布局与视觉资源。主页面和浮层共享 ThemeScope，富文本内核经工厂注入 Portal。新增视觉主题只需 CSS/参数与布局引用；详见[Web 界面主题架构](../../docs/WEB_INTERFACE_THEMES_ARCHITECTURE.md)。仍使用 v1 偏好，未知主题 ID 保留并回退到可用界面。
-
-## 验证与性能
-
-执行 `pnpm verify:design`、`pnpm test:sidebar-native`、`pnpm test:native-surfaces` 和相关产品回归。真实浏览器检查宽窄屏、焦点、触摸关闭和主题；Xcode Preview、Simulator probe 与完整 App 手势分开记录，不能互相替代。
-
-当前 Web 基准命令为 `pnpm bench:sidebar:web`，默认比较已发布 MemoCard UI 起点 `de51cec` 与工作树的 TagNavigation 模块，统一共享 helpers、展示层/存储 mock 和 SSR 冷挂载测量。它不是完整历史 App、DOM 布局、动画、FPS 或真机性能。历史算法及原生测量与复跑边界见[性能记录](../performance.md)。
+两套桌面主题都在首页输入框下方显示带数量的草稿入口，并在笔记列表右下角用 Toast 提醒。关闭提醒后，仍可从首页或笔记库抽屉查看草稿。组件适配自 [shadcn/ui Base Luma Toast](https://ui.shadcn.com/docs/components/base/toast)。

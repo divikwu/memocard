@@ -1036,11 +1036,6 @@
       ],
       "locations": [
         {
-          "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash h1",
-          "value": "var(--font-size-2xl)"
-        },
-        {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-1",
           "value": "var(--font-size-2xl)"
@@ -1048,16 +1043,6 @@
         {
           "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
           "scope": "text-2xl",
-          "value": "var(--font-size-2xl)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-app.css",
-          "scope": ".web-collection-heading h1",
-          "value": "var(--font-size-2xl)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings-title",
           "value": "var(--font-size-2xl)"
         },
         {
@@ -1079,8 +1064,9 @@
         },
         {
           "source": "apps/ui/ui/web/appearance/themes/minimal.css",
-          "scope": ".web-app[data-interface-theme=minimal] .web-page-content :is(.web-collection-heading h1, .web-settings-title, .ui-trash > header > h1, .note-page-title)",
-          "value": "var(--font-size-3xl)"
+          "scope": ".web-app[data-interface-theme=minimal] .web-page-content",
+          "value": "var(--font-size-3xl)",
+          "variable": "--workspace-title-font-size"
         }
       ]
     },
@@ -1304,18 +1290,6 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-large",
           "value": "var(--font-size-lg)"
-        }
-      ]
-    },
-    {
-      "property": "font-size",
-      "value": "var(--font-size-note-title)",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/business/NotePageTitle.css",
-          "scope": ".note-page-title",
-          "value": "var(--font-size-note-title)"
         }
       ]
     },
@@ -1692,6 +1666,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/components/native-select.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/components/popover.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1729,6 +1708,11 @@
         {
           "source": "apps/ui/ui/components/textarea.tsx",
           "scope": "md:text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/components/toast.css",
+          "scope": ".ui-toast-message",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2229,6 +2213,40 @@
       ]
     },
     {
+      "property": "font-size",
+      "value": "var(--workspace-title-font-size, var(--font-size-2xl))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash h1",
+          "value": "var(--workspace-title-font-size, var(--font-size-2xl))"
+        },
+        {
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": ".web-collection-heading h1",
+          "value": "var(--workspace-title-font-size, var(--font-size-2xl))"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-title",
+          "value": "var(--workspace-title-font-size, var(--font-size-2xl))"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--workspace-title-font-size, var(--font-size-note-title))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/NotePageTitle.css",
+          "scope": ".note-page-title",
+          "value": "var(--workspace-title-font-size, var(--font-size-note-title))"
+        }
+      ]
+    },
+    {
       "property": "font-weight",
       "value": "400",
       "utilities": [],
@@ -2550,23 +2568,18 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui/web/layouts/topbar.css",
-          "scope": ".web-top-more-item",
-          "value": "var(--font-weight-normal)"
-        },
-        {
-          "source": "apps/ui/ui/web/layouts/topbar.css",
-          "scope": ".web-top-tag-tree .ui-sidebar-row",
-          "value": "var(--font-weight-normal)"
-        },
-        {
-          "source": "apps/ui/ui/web/layouts/topbar.css",
-          "scope": ".web-top-tag-tree [data-sidebar=group-label]",
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": ".web-app:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) .ui-capture-drafts > button",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebMoreDrawer.css",
+          "scope": ".web-more-drawer-item",
           "value": "var(--font-weight-normal)"
         }
       ]
@@ -2773,6 +2786,11 @@
         {
           "source": "apps/ui/ui/components/tabs.tsx",
           "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/components/toast.css",
+          "scope": ".ui-toast [data-slot=toast-title]",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -3820,6 +3838,11 @@
           "value": "var(--text-body-leading)"
         },
         {
+          "source": "apps/ui/ui/components/toast.css",
+          "scope": ".ui-toast-message",
+          "value": "var(--text-body-leading)"
+        },
+        {
           "source": "apps/ui/ui/styles.css",
           "scope": "@layer base → .ui-theme",
           "value": "var(--text-body-leading)"
@@ -3900,29 +3923,15 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash h1",
-          "value": "var(--text-heading-2-leading)"
-        },
-        {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
           "value": "var(--text-heading-2-leading)"
         },
         {
           "source": "apps/ui/ui/web/appearance/themes/minimal.css",
-          "scope": ".web-app[data-interface-theme=minimal] .web-page-content :is(.web-collection-heading h1, .web-settings-title, .ui-trash > header > h1, .note-page-title)",
-          "value": "var(--text-heading-2-leading)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-app.css",
-          "scope": ".web-collection-heading h1",
-          "value": "var(--text-heading-2-leading)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings-title",
-          "value": "var(--text-heading-2-leading)"
+          "scope": ".web-app[data-interface-theme=minimal] .web-page-content",
+          "value": "var(--text-heading-2-leading)",
+          "variable": "--workspace-title-line-height"
         }
       ]
     },
@@ -4000,18 +4009,6 @@
           "source": "apps/ui/ui/business/QuickCapture.css",
           "scope": "@media (max-width: 767px) → .ui-capture-editor-content, .ui-capture-editor[data-empty]::before",
           "value": "var(--text-note-body-leading)"
-        }
-      ]
-    },
-    {
-      "property": "line-height",
-      "value": "var(--text-note-title-leading)",
-      "utilities": [],
-      "locations": [
-        {
-          "source": "apps/ui/ui/business/NotePageTitle.css",
-          "scope": ".note-page-title",
-          "value": "var(--text-note-title-leading)"
         }
       ]
     },
@@ -4360,6 +4357,11 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
+          "source": "apps/ui/ui/components/native-select.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
           "source": "apps/ui/ui/components/popover.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
@@ -4601,6 +4603,40 @@
           "source": "apps/ui/ui/typeset.css",
           "scope": "@layer components → .typeset:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--typeset-leading)"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--workspace-title-line-height, var(--text-heading-2-leading))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash h1",
+          "value": "var(--workspace-title-line-height, var(--text-heading-2-leading))"
+        },
+        {
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": ".web-collection-heading h1",
+          "value": "var(--workspace-title-line-height, var(--text-heading-2-leading))"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-settings-title",
+          "value": "var(--workspace-title-line-height, var(--text-heading-2-leading))"
+        }
+      ]
+    },
+    {
+      "property": "line-height",
+      "value": "var(--workspace-title-line-height, var(--text-note-title-leading))",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/business/NotePageTitle.css",
+          "scope": ".note-page-title",
+          "value": "var(--workspace-title-line-height, var(--text-note-title-leading))"
         }
       ]
     }

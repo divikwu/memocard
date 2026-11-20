@@ -19,3 +19,11 @@ export const appearanceFixture: AppearanceCatalog = {
     experimental: { viewport: "desktop", load: async () => { await import("./appearance-layout-fixture.css"); return { TopNavigation: FixtureNavigation }; } },
   },
 };
+
+export const expandedSidebarFixture: AppearanceCatalog = {
+  ...appearanceCatalog,
+  themes: {
+    ...appearanceCatalog.themes,
+    classic: { ...appearanceCatalog.themes.classic, layouts: { desktop: "sidebar", mobile: "drawer" } },
+  },
+};

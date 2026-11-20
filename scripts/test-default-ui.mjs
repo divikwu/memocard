@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { before, after, test } from 'node:test';
 
@@ -8,21 +9,67 @@ const require = createRequire(`${uiRoot}package.json`);
 const { chromium, webkit } = require('playwright');
 let server;
 let baseURL;
+let manifest;
 const openNotes = async page => {
   await page.getByRole('navigation', {name: '顶部导航'}).getByRole('button', {name: '笔记', exact: true}).click();
 };
+const topbarCreate = page => page.locator('.web-top-actions').getByRole('button', {name: '新建笔记', exact: true});
 const newNote = async page => {
   await openNotes(page);
-  const topbar = page.getByRole('banner').filter({ has: page.getByRole('navigation', {name: '顶部导航'}) });
-  await topbar.getByRole('button', {name: '新建笔记', exact: true}).click();
+  await topbarCreate(page).click();
 };
 const returnToNotes = page => page.getByRole('navigation', {name: '当前位置'}).getByRole('button', {name: '所有笔记', exact: true}).click();
 before(async () => {
+  manifest = JSON.parse(await readFile(`${uiRoot}dist/.vite/manifest.json`, 'utf8'));
   const { preview } = await import(require.resolve('vite'));
   server = await preview({ configFile: false, root: uiRoot, base: './', logLevel: 'error', build: { outDir: `${uiRoot}dist` }, preview: { host: '127.0.0.1', port: 0, strictPort: true } });
   baseURL = `http://127.0.0.1:${server.httpServer.address().port}`;
 });
 after(async () => { if (server) await new Promise(resolve => server.httpServer.close(resolve)); });
+
+for (const [interfaceTheme, layout] of [['classic', 'rail'], ['minimal', 'topbar']]) {
+  test(`cold start keeps a usable fallback while the ${layout} layout loads`, { timeout: 20_000 }, async t => {
+    const browser = await chromium.launch();
+    const gate = Promise.withResolvers();
+    try {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+      await page.addInitScript(interfaceTheme => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme })), interfaceTheme);
+      const resource = manifest[`ui/web/layouts/${layout}.tsx`].file;
+      await page.route(`${baseURL}/${resource}`, async route => { await gate.promise; await route.continue(); });
+      const started = performance.now();
+      await page.goto(`${baseURL}/#/settings`, { waitUntil: 'domcontentloaded' });
+      const fallback = page.getByRole('navigation', { name: '主要导航', exact: true });
+      await fallback.waitFor();
+      const fallbackAt = performance.now();
+      await page.getByRole('heading', { name: '设置', exact: true, level: 1 }).waitFor();
+      gate.resolve();
+      await page.locator(`.web-app[data-interface-theme="${interfaceTheme}"][data-workspace-layout="${layout}"]`).waitFor();
+      await page.getByRole('navigation', { name: layout === 'rail' ? '桌面导航' : '顶部导航', exact: true }).waitFor();
+      await fallback.waitFor({ state: 'detached' });
+      t.diagnostic(`Fallback visible at ${Math.round(fallbackAt - started)} ms, requested layout ready at ${Math.round(performance.now() - started)} ms`);
+    } finally { gate.resolve(); await browser.close(); }
+  });
+}
+
+test('recovers from a failed layout download in the production UI', { timeout: 20_000 }, async () => {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.addInitScript(() => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: 'classic' })));
+    const resource = manifest['ui/web/layouts/rail.tsx'].file;
+    const layoutURL = `${baseURL}/${resource}`;
+    await page.route(layoutURL, route => route.abort());
+    await page.goto(`${baseURL}/#/settings`, { waitUntil: 'domcontentloaded' });
+    const retry = page.getByRole('button', { name: '重试加载界面主题', exact: true });
+    await retry.waitFor({ timeout: 5000 });
+    await page.getByRole('navigation', { name: '主要导航', exact: true }).waitFor({ timeout: 5000 });
+    await page.unroute(layoutURL);
+    await retry.click();
+    await page.getByRole('navigation', { name: '桌面导航', exact: true }).waitFor({ timeout: 5000 });
+    assert.equal(await page.locator('.web-app[data-workspace-layout=rail]').evaluate(element => getComputedStyle(element).display), 'grid');
+    await retry.waitFor({ state: 'detached' });
+  } finally { await browser.close(); }
+});
 
 for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
   test(`default UI in ${engine.name()}: ${width === 1440 ? 'persist, reload, search, delete and restore' : 'connection guide and settings'}`, { timeout: 60_000 }, async () => {
@@ -47,8 +94,9 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         await page.getByRole('button', { name: '更多属性', exact: true }).click();
         await page.getByRole('button', { name: '编辑标签', exact: true }).click();
         await page.getByRole('combobox', { name: '搜索或新建属性标签', exact: true }).press('Escape');
-        assert.equal(await page.getByRole('navigation', { name: '顶部导航' }).locator('[aria-current="page"]').count(), 0);
-        await page.getByRole('button', { name: '返回笔记列表', exact: true }).click();
+        assert.equal(await page.getByRole('navigation', { name: '桌面导航' }).count(), 0);
+        assert.equal(await page.getByRole('button', { name: '返回笔记列表', exact: true }).count(), 1);
+        await returnToNotes(page);
         await page.getByRole('heading', { name: '所有笔记', exact: true }).waitFor();
         assert.equal(await page.getByRole('button', { name: /^打开 新内容/ }).count(), 0);
         assert.equal(await page.evaluate(async () => {
@@ -175,7 +223,7 @@ test('property-first new note retains empty fields, zero, false and choice edits
     await page.getByRole('button', {name: '编辑属性 stage', exact: true}).filter({hasText: 'a'}).waitFor();
     await page.getByRole('button', {name: '编辑属性 areas', exact: true}).filter({hasText: 'b'}).waitFor();
     assert.equal(await page.getByRole('checkbox', {name: '切换属性 done', exact: true}).isChecked(), false);
-    await newNote(page);
+    await topbarCreate(page).click();
     await page.getByRole('button', {name: '更多属性', exact: true}).click();
     await page.getByRole('button', {name: '编辑属性 zero', exact: true}).waitFor({timeout: 2000});
     await page.getByRole('button', {name: '编辑属性 zero', exact: true}).click();

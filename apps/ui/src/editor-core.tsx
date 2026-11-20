@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ComponentProps } from 'react';
+import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ComponentProps } from 'react';
 import { request, errorMessage, type Attachment, type Draft } from './bridge';
 import type { Note, NoteProperties as Properties, PropertyChange, PropertyUpdateResult } from '@memocard/contracts';
 import { EditorSession } from './editor-session';
@@ -10,6 +10,9 @@ import { changeTagSettings } from './tag-settings';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { changeNoteProperty, changeNoteTitle, endNoteTyping, resetNoteHistory, type NoteEdit } from './rich-note-history';
 import { useIsMobile } from './hooks/use-mobile';
+import { recoverableLazy } from '@ui/components/recoverable-lazy';
+
+const DraftFolderDialog = recoverableLazy(() => import('@ui/business/DraftFolderDialog'), '目录选择器');
 
 export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void>; prepareDelete: () => Promise<{id:string; contentHash:string} | null> };
 export type EditorProps = {
@@ -49,6 +52,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   const [propertyData, setPropertyData] = useState<Properties>();
   const restoreImageFocus = useRef(false);
   const [localError, setLocalError] = useState('');
+  const [folderPickerOpen, setFolderPickerOpen] = useState(false);
   const lastNote = useRef<Note | null>(null);
   const callbacks = useRef({ onCommitted, onTitleChange });
   callbacks.current = { onCommitted, onTitleChange };
@@ -81,12 +85,12 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       field.current?.focus();
     }
   }, [working]);
-  const update = (nextBody: string, path = relativePath) => { if (canSave) session.update(nextBody, path); };
-  async function flush() {
+  const update = (nextBody: string, path?: string) => { if (canSave) session.update(nextBody, path); };
+  async function flush(folder?: string) {
     if (busy.current) return false;
     if (!canSave) return !session.dirty;
     busy.current = true; setWorking(true); setLocalError('');
-    try { await session.flush(); return true; }
+    try { await session.flush(folder); return true; }
     catch { return false; }
     finally { busy.current = false; setWorking(false); }
   }
@@ -228,10 +232,11 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   }
   const error = localError || (session.error ? errorMessage(session.error) : '');
   const propertyRejected = session.propertyRejected;
+  const canChooseFolder = session.missingSaveFolder && capabilities.has('listFolders');
   const heading = <textarea ref={titleField} rows={1} aria-label="页面标题" placeholder="新内容" className="note-page-title" value={titleValue} readOnly={working || !canSave} onChange={event => {
       const value = event.target.value.replace(/[\r\n]+/g, ' ');
       lastEnteredTitle.current = value;
-      if (richEditor.current) changeNoteTitle(richEditor.current, value); else session.update(body, relativePath, value);
+      if (richEditor.current) changeNoteTitle(richEditor.current, value); else session.update(session.current.body, undefined, value);
     }} onBlur={() => { if (richEditor.current) endNoteTyping(richEditor.current); }} onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
       if (event.key === 'Enter') { event.preventDefault(); if (event.metaKey || event.ctrlKey) void finish(); else field.current?.focus(); }
@@ -255,12 +260,13 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [undoKey]);
-  const saveStatus = session.state === 'conflict' ? '存在冲突，尚未保存' : propertyRejected ? '属性未更改' : '保存失败，请重试';
+  const saveStatus = session.state === 'conflict' ? '存在冲突，尚未保存' : propertyRejected ? '属性未更改' : canChooseFolder ? error : '保存失败，请重试';
   const showSaveStatus = isMobile && canSave && (session.state === 'error' || session.state === 'conflict');
   return <section ref={page} tabIndex={!autoFocus ? -1 : undefined} aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className={className} onKeyDownCapture={undoKey}>
     <NoteProperties scopeKey={initialDraft.id} reserveBodySpace={Boolean(initialDraft.baseHash && capabilities.has('getNoteProperties'))} saveError={error} renderHeader={(notice, ownsSaveError) => <>
-      {error && !ownsSaveError && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : propertyRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !propertyRejected || session.state === 'conflict') ? <>
-        {session.state === 'error' && !propertyRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
+      {error && (!ownsSaveError || canChooseFolder) && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : propertyRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !propertyRejected || session.state === 'conflict') ? <>
+        {canChooseFolder ? <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => setFolderPickerOpen(true)}>重新选择目录</Button> :
+          session.state === 'error' && !propertyRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
         {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
       </> : undefined}>{error}</PageNotice>}
       {notice}
@@ -276,6 +282,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       target.scrollIntoView({block:'center'});
     }} />
     <div className={contentClassName}><RichMarkdownEditor autoFocus={autoFocus && !titleFirst} ref={field} value={body} title={title} onEditorReady={editor => { richEditor.current = editor; }} onNoteEdit={applyNoteEdit} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
+    {folderPickerOpen && <Suspense fallback={null}><DraftFolderDialog onClose={() => setFolderPickerOpen(false)} onSave={folder => { setFolderPickerOpen(false); void flush(folder); }} /></Suspense>}
   </section>;
 }
 }

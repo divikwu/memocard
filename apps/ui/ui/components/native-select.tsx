@@ -1,8 +1,8 @@
 // Adapted from shadcn/ui base-luma (MIT); see design/licenses/shadcn-ui.txt and design/licenses/shadcn-preview-02.md.
 import * as React from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import UnfoldMoreIcon from "@hugeicons/core-free-icons/UnfoldMoreIcon"
 import { cn } from "@ui/lib/utils"
-
-import { IconPlaceholder } from "@ui/showcase-icons"
 
 type NativeSelectProps = Omit<React.ComponentProps<"select">, "size"> & {
   size?: "sm" | "default"
@@ -28,12 +28,9 @@ function NativeSelect({
         className="h-element-md w-full min-w-0 appearance-none rounded-control border border-transparent bg-control py-1 pr-8 pl-3 text-sm transition-[color,box-shadow,background-color] outline-none select-none selection:bg-accent-bg selection:text-on-accent placeholder:text-control-secondary focus-visible:focus-ring disabled:pointer-events-none disabled:cursor-not-allowed aria-invalid:border-error aria-invalid:ring-3 aria-invalid:ring-error/20 data-[size=sm]:h-element-sm dark:aria-invalid:border-error/50 dark:aria-invalid:ring-error/40"
         {...props}
       />
-      <IconPlaceholder
-        lucide="ChevronDownIcon"
-        tabler="IconSelector"
-        hugeicons="UnfoldMoreIcon"
-        phosphor="CaretDownIcon"
-        remixicon="RiArrowDownSLine"
+      <HugeiconsIcon
+        icon={UnfoldMoreIcon}
+        strokeWidth={2}
         className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-control-secondary select-none"
         aria-hidden="true"
         data-slot="native-select-icon"

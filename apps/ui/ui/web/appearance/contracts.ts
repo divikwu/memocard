@@ -12,6 +12,7 @@ export type NavigationControlsProps = {
 export type LayoutAdapter = {
   TopNavigation?: ComponentType<WorkspaceNavigationProps>;
   SideNavigation?: ComponentType<WorkspaceNavigationProps>;
+  DetailNavigation?: ComponentType<WorkspaceNavigationProps>;
   NavigationControls?: ComponentType<NavigationControlsProps>;
 };
 export type AppearanceCatalog<LayoutId extends string = string> = {

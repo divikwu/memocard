@@ -55,9 +55,7 @@ const meta = { title: "verification/Sidebar-10 business parity", id: "ui-sidebar
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const LayoutAndCardActions: Story = {};
 export const LayoutAndCardActionsRegression: Story = {
-  ...LayoutAndCardActions,
   tags: ["!dev", "!autodocs"],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

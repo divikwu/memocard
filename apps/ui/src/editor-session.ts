@@ -38,6 +38,9 @@ export class EditorSession {
   }
   private get bodyDirty() { return key(this.current) !== this.persisted && Boolean(this.current.baseHash || this.current.title?.trim() || this.current.body.trim() || this.hasPropertyInput()); }
   get dirty() { return this.bodyDirty || Boolean(this.current.baseHash && this.current.pendingProperties?.length); }
+  get missingSaveFolder() {
+    return !this.current.baseHash && (this.error as { code?: string } | null)?.code === 'FOLDER_NOT_FOUND';
+  }
   private emit() { if (!this.disposed) this.notify(); }
   private failed(error: unknown, propertyRejected = false) {
     const indexing = Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'INDEXING');
@@ -57,11 +60,11 @@ export class EditorSession {
   }
   update(body: string, relativePath = this.current.relativePath, title = this.current.title) {
     this.current = { ...this.current, body, tags: inlineTags(body), relativePath, ...(title === undefined ? {} : { title }) };
-    if (this.state !== 'conflict') this.state = this.dirty ? 'idle' : this.writing ? 'saving' : 'saved';
+    if (this.state !== 'conflict' && !this.missingSaveFolder) this.state = this.dirty ? 'idle' : this.writing ? 'saving' : 'saved';
     this.emit();
     void this.recover().catch(error => { this.error = error; this.propertyRejected = false; if (this.state !== 'conflict') this.state = 'error'; this.emit(); });
     clearTimeout(this.timer);
-    if (this.dirty && this.state !== 'conflict') this.timer = setTimeout(() => { void this.save().catch(() => undefined); }, 650);
+    if (this.dirty && this.state !== 'conflict' && !this.missingSaveFolder) this.timer = setTimeout(() => { void this.save().catch(() => undefined); }, 650);
   }
   recover(): Promise<unknown> {
     if (!this.canDraft || (!this.dirty && !this.hadRecovery)) return Promise.resolve();
@@ -167,12 +170,18 @@ export class EditorSession {
       this.failed(error, propertyRejected); throw error;
     }
   }
-  save(): Promise<void> {
+  save(folder?: string): Promise<void> {
     clearTimeout(this.timer);
-    return this.enqueue(() => this.drain());
+    return this.enqueue(() => {
+      if (folder !== undefined && this.missingSaveFolder) {
+        const name = this.current.relativePath?.split('/').pop() ?? `${this.current.id}.md`;
+        this.current = { ...this.current, relativePath: folder ? `${folder}/${name}` : name };
+      }
+      return this.drain();
+    });
   }
-  async flush() {
-    await this.save();
+  async flush(folder?: string) {
+    await this.save(folder);
     // Input may have changed while the first write was in flight.
     while (this.dirty) await this.save();
   }

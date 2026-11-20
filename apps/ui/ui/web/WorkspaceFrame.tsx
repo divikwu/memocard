@@ -16,6 +16,11 @@ export function LayoutNavigationControls(props: NavigationControlsProps) {
   return Controls ? <Controls {...props} /> : null;
 }
 
+export function LayoutDetailNavigation({ state }: { state: AppViewState }) {
+  const Navigation = useWorkspaceAppearance()?.applied.adapter.DetailNavigation;
+  return Navigation ? <Navigation {...workspaceNavigation(state)} /> : null;
+}
+
 // This component and the SidebarInset/content path stay fixed for every layout.
 export function WorkspaceFrame({ state, leading, overlays, children }: {
   state: AppViewState;
@@ -48,11 +53,11 @@ export function WorkspaceFrame({ state, leading, overlays, children }: {
 function FrameSurface({ state: s, leading, overlays, children }: { state: AppViewState; leading: ReactNode; overlays: ReactNode; children: ReactNode }) {
   const scope = useThemeScopeProps();
   const runtime = useWorkspaceAppearance()!;
-  const { TopNavigation, SideNavigation } = runtime.applied.adapter;
-  const navigation = workspaceNavigation(s, runtime.applied.themeId);
+  const { TopNavigation, SideNavigation, DetailNavigation } = runtime.applied.adapter;
+  const navigation = workspaceNavigation(s);
   return <div {...scope} className={`${scope.className} web-app sb-unstyled`} data-web-client={!s.nativeChrome && !isNative || undefined} data-native-chrome={s.nativeChrome ? "true" : undefined} data-detail={s.detailView || undefined}>
     {leading}
-    {!s.nativeChrome && TopNavigation && <TopNavigation {...navigation} />}
+    {!s.nativeChrome && TopNavigation && !(s.detailView && DetailNavigation) && <TopNavigation {...navigation} />}
     <SidebarProvider open={s.sidebarOpen} onOpenChange={s.onSidebarOpenChange} openMobile={s.menuOpen} onOpenMobileChange={s.onMenuOpenChange} persistState={false} className="web-app-shell">
       {!s.nativeChrome && SideNavigation && <SideNavigation {...navigation} />}
       <SidebarInset className="web-app-main">{children}</SidebarInset>

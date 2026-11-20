@@ -1,0 +1,12 @@
+.web-app[data-workspace-layout=rail] { height: 100dvh; min-height: 0; display: grid; grid-template-columns: calc(var(--spacing-1) * 15) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.web-app[data-workspace-layout=rail] > .web-app-shell { grid-area: 1 / 2; height: auto; min-width: 0; }
+.web-desktop-rail { grid-area: 1 / 1; display: grid; grid-template-rows: minmax(min-content, 1fr) auto minmax(min-content, 1fr); justify-items: center; align-items: start; gap: calc(var(--spacing-1) * 4); overflow-y: auto; padding-block: calc(var(--spacing-1) * 4); }
+.web-rail-group { display: grid; gap: var(--spacing-1); padding: var(--spacing-1); border-radius: var(--radius-full); background: var(--color-background-surface); }
+.web-rail-footer { align-self: end; }
+.web-rail-group > button { width: calc(var(--spacing-1) * 10); height: calc(var(--spacing-1) * 10); color: var(--color-text-secondary); border-radius: var(--radius-full); }
+.web-rail-group > button:is([aria-current=page], [aria-expanded=true]) { background-color: color-mix(in srgb, var(--color-overlay-pressed) 40%, transparent); color: var(--color-icon-primary); }
+.web-rail-group > button svg { width: calc(var(--spacing-1) * 4.5); height: calc(var(--spacing-1) * 4.5); }
+.web-desktop-rail .web-top-logo { width: calc(var(--spacing-1) * 9); height: calc(var(--spacing-1) * 9); padding: 0; border-radius: var(--radius-full); }
+.web-desktop-rail .web-top-logo img { width: var(--size-element-sm); height: var(--size-element-sm); flex-shrink: 0; object-fit: contain; }
+.web-app[data-workspace-layout=rail][data-detail] > .web-app-shell { grid-column: 1 / -1; }
+.web-app[data-workspace-layout=rail][data-detail] .web-app-main { margin: 0; border-radius: 0; }

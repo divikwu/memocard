@@ -18,9 +18,9 @@ Obsidian 官方的公开主题机制以 CSS 变量与样式为主，推荐低特
 
 | 界面主题 | 视觉 | 桌面布局引用 | 窄屏布局引用 | 状态 |
 | --- | --- | --- | --- | --- |
-| 经典 / classic | 当前基础视觉 | sidebar | drawer | 已有产品 |
-| 简约 / minimal | 当前简约视觉 | topbar | drawer | 已有产品 |
-| paper | 测试 CSS，改变菜单间距与工作区宽度 | topbar | drawer | 测试 fixture，不加入产品 |
+| 经典 / classic | 当前基础视觉 | rail | drawer | 已有产品 |
+| 轻简 / minimal | 当前简约视觉 | topbar | drawer | 已有产品 |
+| paper | 64rem 工作区宽度 | topbar | drawer | 浏览器测试 |
 | experimental | 测试视觉 | experimental | drawer | 测试布局 fixture，不加入产品 |
 
 简约迁移后在窄屏仍保持当前抽屉外观与触摸尺寸。将布局改成 drawer 不等于把用户选择改成 classic；当前视觉参数必须在该组合下与迁移前一致，不能把桌面标签菜单的 36px 行密度传播到移动抽屉。
@@ -59,7 +59,7 @@ flowchart TB
 
 ## 4. 注册与窄 Interface
 
-主题与布局是两个逻辑目录，可先放在同一注册文件中，避免过早增加文件层级。静态元数据常驻，视觉与布局 Implementation 按需加载。ID 使用稳定英文键，文案可改名；注册校验确保引用有效。
+主题与布局共用一个注册文件。静态元数据常驻，主题资源和布局按需加载。内置布局的样式与布局代码一起加载，重试时可一并恢复。ID 使用稳定英文键，界面文案可单独改名。
 
 生产类型位于 [contracts.ts](../apps/ui/ui/web/appearance/contracts.ts)，目录位于 [catalog.ts](../apps/ui/ui/web/appearance/catalog.ts)。布局 ID 从静态目录推导，生产主题引用通过类型校验；运行时另外检查视口支持并提供回退。
 
@@ -99,7 +99,7 @@ Frame 始终拥有现有顶部导航区、侧导航区和内容区。Adapter 只
 | 笔记行宽、字号、行高、段距 | 既有正文排版偏好 | 主题切换不能改写阅读设置 |
 | 权限、保存前校验、搜索、笔记库与草稿 | 业务内核 | 不属于主题差异 |
 
-原 web-interface-theme.css 已拆分：根 flex/高度和详情外框规则由 layouts/topbar.css 按 data-workspace-layout 控制；minimal.css 仅提供主题参数。工作区宽度、菜单宽度/间距均有真实消费者，集合容器与导航/详情共用 --workspace-max-width。共享菜单呈现仍归布局组件维护。
+`rail` 和 `topbar` 管理各自的外框与导航结构，`minimal.css` 管理轻简的标题字号、行高和留白。集合、顶部导航和详情外框共用 `--workspace-max-width`。两种布局共用 `WebMoreDrawer` 的行样式。
 
 沿用现有 `ui/theme.css`、palette 和 token registry。只增加有实际消费者的参数；为工作区最大宽度、留白、菜单密度等建立语义角色，不引入一个可配置任意 CSS/页面结构的 DSL。
 
@@ -146,7 +146,7 @@ Storybook/Preview 的独立示例可各有作用域。既有 documentElement 外
 一个 AppearanceRuntime 负责加载与提交：
 
 1. 接到选择后记录目标，以 effect 生命周期使旧请求失效，保留当前可用视觉与布局。
-2. 并行加载目标 CSS 以及引用的布局代码/CSS。已有布局资源直接复用；可选字体沿用现有回退与重试，不阻塞整个主题提交。
+2. 并行加载主题声明的资源和引用的布局代码，复用已经加载的资源。可选字体独立回退和重试。
 3. 仅当请求仍最新且必需资源成功时，一次性提交主题、布局与作用域属性，再保存用户主动选择。
 4. 完成时合并最新外观偏好，不能用加载前捕获的旧对象覆盖刚修改的颜色模式或强调色。
 5. 快速 A→B→C、窗口断点变化、跨标签更新和恢复默认都能使旧请求失效；迟到的完成/失败不改变当前状态。

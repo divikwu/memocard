@@ -52,7 +52,7 @@ async function mount() {
 it("mounts the native chrome from the default App and routes native navigation, search and back actions", async () => {
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "minimal" }));
   await mount();
-  expect(screen.queryByRole("navigation", { name: "顶部导航" })).toBeNull();
+  expect(screen.queryByRole("navigation", { name: "桌面导航" })).toBeNull();
   expect(document.querySelector(".web-app[data-native-chrome=true]")).not.toBeNull();
   expect(document.querySelector(".web-app-header")).toBeNull();
   expect(screen.queryByRole("button", { name: "搜索全部笔记" })).toBeNull();

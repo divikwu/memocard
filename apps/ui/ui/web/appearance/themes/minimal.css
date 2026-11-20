@@ -1,7 +1,5 @@
 .ui-appearance-scope[data-interface-theme=minimal] {
   --workspace-max-width: 80rem;
-  --workspace-menu-width: calc(var(--spacing-1) * 64);
-  --workspace-menu-padding: calc(var(--spacing-1) * 1.5);
 }
 
 .ui-appearance-scope[data-interface-theme=minimal] .web-top-logo img {
@@ -9,9 +7,9 @@
   height: var(--size-element-sm);
 }
 
-.web-app[data-interface-theme=minimal] .web-page-content :is(.web-collection-heading h1, .web-settings-title, .ui-trash > header > h1, .note-page-title) {
-  font-size: var(--font-size-3xl);
-  line-height: var(--text-heading-2-leading);
+.web-app[data-interface-theme=minimal] .web-page-content {
+  --workspace-title-font-size: var(--font-size-3xl);
+  --workspace-title-line-height: var(--text-heading-2-leading);
 }
 
 @media (min-width: 768px) {
