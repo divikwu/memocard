@@ -1,6 +1,6 @@
 .web-settings { display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 4); min-width: 0; }
 .web-settings-panel { flex: 1; min-width: 0; padding: calc(var(--spacing-1) * 4); border-radius: var(--radius-item); background: var(--color-background-surface); }
-.web-settings-title { display: flex; align-items: center; min-height: calc(var(--size-element-md) + var(--spacing-1)); margin: 0; font-family: var(--font-family-heading); font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); line-height: var(--text-heading-2-leading); }
+.web-settings-title { display: flex; align-items: center; min-height: calc(var(--size-element-md) + var(--spacing-1)); margin: 0; font-family: var(--font-family-heading); font-size: var(--workspace-title-font-size, var(--font-size-2xl)); font-weight: var(--font-weight-semibold); line-height: var(--workspace-title-line-height, var(--text-heading-2-leading)); }
 .web-settings-panel > section { display: grid; width: 100%; max-width: 45rem; margin-inline: auto; min-width: 0; gap: calc(var(--spacing-1) * 2); }
 .web-settings-panel > section + section { margin-block-start: calc(var(--spacing-1) * 6); }
 .web-settings-panel > section > [data-slot="card"] { min-width: 0; border: 0; border-radius: var(--radius-item); background: var(--color-background-body); }

@@ -1,0 +1,1 @@
+.web-more-drawer-item { width: 100%; justify-content: flex-start; gap: calc(var(--spacing-1) * 2); padding-inline: calc(var(--spacing-1) * 2); border-width: 0; border-radius: var(--radius-element); text-align: start; font-weight: var(--font-weight-normal); }

@@ -5,20 +5,19 @@ import { usePreviewAppearance } from "../preview-mode";
 import type { PreviewAppearance } from "../preview-appearance";
 import { DEFAULT_WEB_APPEARANCE, WebAppearanceContext, WebPaletteStyles, type WebAppearance } from "./WebAppearance";
 
-type PreviewGlobals = PreviewAppearance & { theme: "light" | "dark" };
+type PreviewGlobals = PreviewAppearance & { theme: "light" | "dark"; interfaceTheme: string };
 
 // The toolbar has two resolved modes; Web settings also retain the system choice.
-export function StorybookAppearanceBridge({ children }: { children: ReactNode }) {
+export function StorybookAppearanceBridge({ children, interfaceTheme }: { children: ReactNode; interfaceTheme: string }) {
   const appearance = usePreviewAppearance();
   const [theme, setTheme] = useState<WebAppearance["theme"]>(appearance.mode);
-  const [interfaceTheme, setInterfaceThemeState] = useState<WebAppearance["interfaceTheme"]>("classic");
   const [themeRevision, setThemeRevision] = useState(0);
   const [colors, setColors] = useState<Pick<WebAppearance, "palette" | "neutralPalette">>({ palette: "mono", neutralPalette: "neutral" });
   const [systemDark, setSystemDark] = useState(() => matchMedia("(prefers-color-scheme: dark)").matches);
   const current = useRef(appearance); current.current = appearance;
   const publishing = useRef(false);
   const channel = addons.getChannel();
-  const publish = useCallback((globals: PreviewGlobals) => {
+  const publish = useCallback((globals: Partial<PreviewGlobals>) => {
     publishing.current = true;
     try { channel.emit(UPDATE_GLOBALS, { globals }); }
     finally { publishing.current = false; }
@@ -45,13 +44,15 @@ export function StorybookAppearanceBridge({ children }: { children: ReactNode })
   }, [publish, theme]);
   const onChange = (next: WebAppearance) => {
     setTheme(next.theme);
-    setInterfaceThemeState(next.interfaceTheme);
     setColors({ palette: next.palette, neutralPalette: next.neutralPalette });
-    publish({ radius: next.radius, headingFont: next.headingFont, bodyFont: next.bodyFont, theme: next.theme === "system" ? systemDark ? "dark" : "light" : next.theme });
+    publish({
+      ...(next.interfaceTheme !== interfaceTheme && { interfaceTheme: next.interfaceTheme }),
+      radius: next.radius,
+      headingFont: next.headingFont,
+      bodyFont: next.bodyFont,
+      theme: next.theme === "system" ? systemDark ? "dark" : "light" : next.theme,
+    });
   };
-  const setInterfaceTheme = (id: string) => {
-    setThemeRevision(value => value + 1);
-    setInterfaceThemeState(id);
-  };
+  const setInterfaceTheme = (id: string) => publish({ interfaceTheme: id });
   return <WebAppearanceContext.Provider value={{ value: { ...appearance, ...colors, theme, interfaceTheme }, onChange, setInterfaceTheme, themeRevision, resetAppearance: () => { setThemeRevision(value => value + 1); onChange({ ...DEFAULT_WEB_APPEARANCE }); } }}><WebPaletteStyles value={colors} />{children}</WebAppearanceContext.Provider>;
 }

@@ -92,6 +92,67 @@ afterEach(() => {
 });
 
 describe("note workspace", () => {
+  it.each([false, true])("waits for the folder list before creating a root note (direct route=%s)", async (directRoute) => {
+    bridge.native = false;
+    bridge.web = true;
+    if (directRoute) window.history.replaceState(null, "", "#/notes/new");
+    const implementation = bridge.request.getMockImplementation()!;
+    let resolveFolders!: (value: { folders: string[] }) => void;
+    const folderList = new Promise<{ folders: string[] }>(resolve => { resolveFolders = resolve; });
+    bridge.request.mockImplementation((operation, params) => {
+      if (operation === "getStatus") return { ...status, capabilities: [...status.capabilities, "listFolders"] };
+      if (operation === "listFolders") return folderList;
+      return implementation(operation, params);
+    });
+    render(<App />);
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("listFolders"));
+    if (!directRoute) expect(screen.getByRole("button", { name: "新建" })).toHaveProperty("disabled", true);
+    expect(screen.queryByRole("region", { name: "新建笔记" })).toBeNull();
+    await act(async () => { resolveFolders({ folders: ["", "工作"] }); });
+    if (!directRoute) await createNote();
+    replaceEditorText("保存到笔记库根目录", await screen.findByRole("textbox", { name: "笔记内容" }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({
+      body: "保存到笔记库根目录", relativePath: expect.stringMatching(/^[^/]+\.md$/),
+    })), {timeout: 3000});
+  });
+
+  it("keeps a new draft editable when its folder disappears and saves it to the selected folder", async () => {
+    const implementation = bridge.request.getMockImplementation()!;
+    let folders = ["notes", "notes/已移除"];
+    pendingDrafts = [{ id: note.id, draftKey: "folder-draft", title: "待保存标题", body: "待保存草稿", tags: [], baseHash: null, relativePath: `notes/已移除/${note.id}.md` }];
+    bridge.request.mockImplementation(async (operation, params) => {
+      if (operation === "getStatus") return { ...status, capabilities: [...status.capabilities, "listFolders"] };
+      if (operation === "listFolders") return { folders };
+      if (operation === "saveNote" && params?.relativePath === pendingDrafts[0].relativePath) {
+        folders = ["notes", "notes/新目录"];
+        throw Object.assign(new Error("保存目录已移除，请保留草稿并重新选择目录。"), { code: "FOLDER_NOT_FOUND" });
+      }
+      return implementation(operation, params);
+    });
+    render(<App />);
+    fireEvent.click(await screen.findByRole("button", { name: "查看草稿" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^继续编辑：/ }));
+    const picker = await screen.findByRole("button", { name: "重新选择目录" });
+    const original = bridge.request.mock.calls.find(([operation]) => operation === "saveDraft")?.[1];
+    expect(original).toMatchObject({ body: "待保存草稿", relativePath: pendingDrafts[0].relativePath });
+    replaceEditorText("继续编辑后的草稿", screen.getByRole("textbox", { name: "笔记内容" }));
+    fireEvent.click(picker);
+    let dialog = await screen.findByRole("dialog", { name: "重新选择保存目录" });
+    expect(within(dialog).queryByRole("option", { name: "notes/已移除" })).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "取消" }));
+    expect(readEditorText()).toBe("继续编辑后的草稿");
+    fireEvent.click(screen.getByRole("button", { name: "重新选择目录" }));
+    dialog = await screen.findByRole("dialog", { name: "重新选择保存目录" });
+    fireEvent.change(await within(dialog).findByRole("combobox", { name: "保存目录" }), { target: { value: "notes/新目录" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "保存到此目录" }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveNote", expect.objectContaining({
+      id: note.id, title: "待保存标题", body: "继续编辑后的草稿",
+      draftKey: original?.draftKey, baseHash: null, relativePath: `notes/新目录/${note.id}.md`,
+    })));
+    expect(screen.queryByText("保存未完成")).toBeNull();
+    expect(readEditorText()).toBe("继续编辑后的草稿");
+  });
+
   it("clears quick capture only after saving and refreshes the recent tab from its first page", async () => {
     window.history.replaceState(null, "", "#/home");
     const implementation=bridge.request.getMockImplementation()!;
@@ -557,7 +618,7 @@ describe("note workspace", () => {
       expect(bridge.request.mock.calls.filter(([operation]) => operation === "queryNotes").at(-1)).toEqual(["queryNotes", { query: "", tags: [], limit: 30 }]);
       expect(screen.queryByRole("button", { name: /生活 1/ })).toBeNull();
     }
-    fireEvent.click(screen.getByRole("button", { name: "所有笔记" }));
+    fireEvent.click(within(await screen.findByRole("navigation", { name: "桌面导航" })).getByRole("button", { name: "笔记" }));
     expect(await screen.findByText(cancelled ? note.body : otherNote.body)).toBeTruthy();
     expect(screen.queryByRole("textbox", { name: "搜索当前视图笔记" })).toBeNull();
   });
@@ -650,7 +711,8 @@ describe("note workspace", () => {
     render(<App />);
     await screen.findByText(note.body);
     await userEvent.click(screen.getByRole("button", { name: `笔记库：${status.vaultName}` }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "另一个库" }));
+    const vaultDrawer = await screen.findByRole("dialog", { name: "切换笔记库" });
+    fireEvent.click(within(vaultDrawer).getByRole("button", { name: "另一个库" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("activateVault", { vaultId: "other-vault" }));
     expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=other");
   });
@@ -687,11 +749,12 @@ describe("note workspace", () => {
     const disconnected = Object.assign(new Error("此页面连接的 MemoCard 本机服务已停止。请重新打开；编辑中的内容仍保留在此页面。"), { code: "BRIDGE_UNAVAILABLE", retryable: false });
     bridge.request.mockImplementation((operation, params) => ["getStatus", "saveDraft", "saveNote"].includes(operation) ? Promise.reject(disconnected) : implementation(operation, params));
     fireEvent.focus(window);
-    await screen.findByText("等待连接本机服务");
-    expect(screen.getByText("连接已断开")).toBeTruthy();
+    expect(await screen.findByText("连接已断开")).toBeTruthy();
     expect(screen.getByRole("link", { name: "重新打开", hidden: true }).getAttribute("href")).toBe("memocard-service://open-web");
     expect(screen.queryByRole("button", { name: "重试", hidden: true })).toBeNull();
-    expect(screen.getByRole("button", { name: "新建笔记" })).toHaveProperty("disabled", true);
+    await userEvent.click(screen.getByRole("button", { name: "导航菜单" }));
+    expect((await screen.findByRole("menuitem", { name: "新建笔记" })).getAttribute("aria-disabled")).toBe("true");
+    await userEvent.keyboard("{Escape}");
     replaceEditorText("断开时还在编辑的内容", editor);
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveDraft", expect.objectContaining({ id: note.id, body: "断开时还在编辑的内容" })));
     expect(bridge.request).not.toHaveBeenCalledWith("saveNote", expect.anything());
@@ -730,7 +793,7 @@ describe("note workspace", () => {
     expect(screen.queryByText(note.body)).toBeNull();
     expect(screen.queryByText(second.body)).toBeNull();
     expect(within(screen.getByRole("list", {name:"笔记列表"})).getAllByRole("listitem")).toHaveLength(2);
-    expect(screen.getByText("有尚未完成的草稿")).toBeTruthy();
+    expect(await screen.findByText("有 1 条未完成的草稿")).toBeTruthy();
     expect(bridge.request).toHaveBeenCalledWith("queryNotes", expect.objectContaining({cursor:"fresh-page-two"}));
   });
 

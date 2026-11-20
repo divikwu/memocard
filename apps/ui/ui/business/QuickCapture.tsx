@@ -35,10 +35,10 @@ export type { QuickCaptureHandle, QuickCaptureMemory, QuickCaptureProps } from "
 const icons = { add: Add01Icon, send: TelegramIcon, continue: ArrowUpRight01Icon, close: Cancel01Icon, folder: FolderOpenIcon, tag: Tag01Icon, image: ImageAdd01Icon, loading: Loading03Icon, check: Tick02Icon };
 function Icon({ name, className }: { name: keyof typeof icons; className?: string }) { return <HugeiconsIcon icon={icons[name]} aria-hidden="true" strokeWidth={2} className={className || "size-4 shrink-0"} />; }
 
-export function QuickCapture(props: QuickCaptureProps) {
+export function QuickCapture(props: QuickCaptureProps & { draftLabel?: string }) {
   const mobileActions = useMobileActionGroup();
   const { preferences } = useTagPreferences(props.vaultId);
-  const { tags: options, canImage, onContinue, draftCount = 0, onOpenDrafts, docked = false, active = true } = props;
+  const { tags: options, canImage, onContinue, draftCount = 0, draftLabel = "保留草稿", onOpenDrafts, docked = false, active = true } = props;
   const { expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
   const [, setTagOptions] = useScrollOverflow(`${matches.length}:${tagQuery}`);
   const savedTags = new Set(options);
@@ -70,7 +70,7 @@ export function QuickCapture(props: QuickCaptureProps) {
         <InputGroupButton type="submit" variant="default" size="sm" className="ui-capture-submit" disabled={!canRecord} aria-label={busy ? "处理中" : "记录"}><Icon name={busy ? "loading" : "send"} className={busy ? "size-4 animate-spin motion-reduce:animate-none" : undefined} /><span>{busy ? "处理中" : "记录"}</span></InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
-    {draftCount > 0 && onOpenDrafts && <div className="ui-capture-drafts"><Button type="button" variant="ghost" size="sm" disabled={docked && busy} onClick={() => { if (docked) setExpanded(false); onOpenDrafts(); }}><Icon name="folder" />保留草稿（{draftCount}）</Button></div>}
+    {draftCount > 0 && onOpenDrafts && <div className="ui-capture-drafts"><Button type="button" variant="ghost" size="sm" disabled={docked && busy} onClick={() => { if (docked) setExpanded(false); onOpenDrafts(); }}><Icon name="folder" />{`${draftLabel}（${draftCount}）`}</Button></div>}
     {docked && isMobile && onContinue && <Button type="button" variant="outline" className="ui-capture-continue" disabled={blocked || restoreFailed} onClick={() => void continueInPage()}><Icon name="continue" />切换为页面</Button>}
     {error && <p role="alert" className="ui-capture-error">{error}</p>}
     {isMobile && <div className="ui-capture-save-status" role="status" aria-live="polite" aria-atomic="true">{draftError ? <><span className="text-error">{recordedLocally ? "记录已保存，临时草稿未清除。" : draftError}</span><Button type="button" variant="ghost" size="sm" disabled={blocked} onClick={retryProtection}>{restoreFailed ? "重试恢复草稿" : recordedLocally ? "重试清理草稿" : "重试草稿保护"}</Button></> : recordedLocally ? "已保存到本机" : null}</div>}

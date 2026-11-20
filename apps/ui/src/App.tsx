@@ -133,7 +133,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const [tags, setTags] = useState<TagCount[]>([]);
   const [indexedRecentTags, setIndexedRecentTags] = useState<{ quickFilter: string | null; tags: string[] }>();
   const recentTagFallback = useRef<{ vaultId: string; quickFilter: string | null; tags: string[] } | null>(null);
-  const [folders, setFolders] = useState<string[]>([]);
+  const [folderList, setFolderList] = useState<{ vaultId: VaultStatus["vaultId"]; folders: string[] } | null>(null);
   const [registeredVaults, setRegisteredVaults] = useState<RegisteredVault[]>([]);
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [quickFilters, setQuickFilters] = useState<NoteQuickFilter[]>([]);
@@ -235,7 +235,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
         // Keep the last list only when the same vault needs its permission renewed.
         if (!allowed.has("reauthorizeVault") || !nextStatus.vaultId || nextStatus.vaultId !== loadedVaultId.current) {
           loadedListKey.current = null;
-          setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setIndexedRecentTags(undefined); setFolders([]); setFilterCounts(undefined); setNotePins(null);
+          setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setIndexedRecentTags(undefined); setFolderList(null); setFilterCounts(undefined); setNotePins(null);
         }
         setCursor(null); return;
       }
@@ -274,10 +274,12 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
         if (current === generation.current && epoch === pinEpoch.current && nextStatus.vaultId) { setNotePins({ ...pins, vaultId: nextStatus.vaultId }); setPinReadError(null); }
       }).catch(cause => { if (current === generation.current && epoch === pinEpoch.current) { setNotePins(null); setPinReadError(cause); } }) : Promise.resolve();
       const includeRecent = view === "notes" && (resetFilters || !filterScope);
-      const [page, tagResult, folderResult] = await Promise.all([
+      const [page, tagResult] = await Promise.all([
         readPages(),
         allowed.has("listTags") ? request<{ tags: TagCount[]; recentTags?: string[] }>("listTags", { flat: true, ...(includeRecent && { includeRecent: true }) }) : null,
-        allowed.has("listFolders") ? request<{ folders: string[] }>("listFolders") : Promise.resolve({ folders: [] }),
+        allowed.has("listFolders") ? request<{ folders: string[] }>("listFolders").then(({ folders }) => {
+          if (current === generation.current) setFolderList({ vaultId: nextStatus.vaultId, folders });
+        }) : null,
         registry, pinsResult,
       ]);
       if (current !== generation.current) return;
@@ -298,7 +300,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       setTypeTags({ scope: recentScope, vaultId: nextStatus.vaultId, tags: scopedTags });
       const indexedTags = recentScope ? page?.recentQuickFilterTags : tagResult?.recentTags;
       setIndexedRecentTags(indexedTags && { quickFilter: recentScope, tags: indexedTags });
-      setTags(tagResult?.tags ?? []); setFolders(folderResult.folders);
+      setTags(tagResult?.tags ?? []);
       if (!background || resetFilters) loadedPages.current = 1;
     } catch (cause) { if (current === generation.current) {
       if (listReadTimedOut) setListTimeout(loadedListKey.current === listKey ? "refresh" : "initial");
@@ -365,7 +367,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       setActiveTags([]); setQuickFilters([]); setFilterCounts(undefined); setNotePins(null); setPinReadError(null);
       setRecoveryDismissed(false); setRecoveryOpen(false);
       loadedListKey.current = null;
-      setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setIndexedRecentTags(undefined); setFolders([]); setCursor(null);
+      setNotes([]); setDrafts([]); setDraftIssues([]); setTags([]); setIndexedRecentTags(undefined); setFolderList(null); setCursor(null);
       setPendingOpenNote(null); openingLink.current = null;
       loadedPages.current = 1;
       await refresh(false, true);
@@ -568,7 +570,11 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   }
 
   const isNotePinned = Boolean(editing && notePins?.vaultId === status?.vaultId && notePins?.pins[editing.id]);
-  const canCreate = Boolean(status?.connected && capabilities.has("saveNote") && (!isLocalWeb || webConnected) && (!isBrowserVault || !loading) && !switchingVault);
+  const canWrite = Boolean(status?.connected && capabilities.has("saveNote") && (!isLocalWeb || webConnected) && (!isBrowserVault || !loading) && !switchingVault);
+  const canListFolders = capabilities.has("listFolders");
+  const folders = canListFolders && folderList?.vaultId === status?.vaultId ? folderList?.folders : undefined;
+  const canCreate = canWrite && (!canListFolders || Boolean(folders?.length));
+  const rootNotes = folders?.includes('') ?? false;
   const localWebReconnectRequired = isLocalWeb && ["BRIDGE_UNAVAILABLE", "WEB_UNAUTHORIZED"].includes(bridgeErrorCode(error) ?? "");
   const retryableError = bridgeErrorRetryable(error) ?? true;
   const chooseAllowed = capabilities.has("selectVault");
@@ -591,13 +597,13 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const listTimeoutVisible = !detailView && view !== "settings" && view !== "tags" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
   const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "tags" ? "标签" : view === "home" ? "主页" : activeTags.length > 1 ? "筛选笔记" : tag ? `# ${tag}` : "所有笔记";
   const newNote = async () => {
-    if (selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
+    if (!canCreate || selectingVault.current || ((editingRef.current || editorHash.current) && !(await leaveEditor()))) return;
     setError('');
     editorGeneration.current++;
     if (openingLink.current) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
     const id = createId();
-    showEditor({ id, title: '', body: '', tags: [], ...(tag ? { inheritedTags: [tag] } : {}), baseHash: null, relativePath: `${folders.includes('') ? '' : 'notes/'}${id}.md`, ...(isBrowserVault ? { vaultBinding: environment?.vaultBinding } : {}) });
+    showEditor({ id, title: '', body: '', tags: [], ...(tag ? { inheritedTags: [tag] } : {}), baseHash: null, relativePath: `${rootNotes ? '' : 'notes/'}${id}.md`, ...(isBrowserVault ? { vaultBinding: environment?.vaultBinding } : {}) });
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
   };
 
@@ -711,6 +717,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     routeHandler.current = () => {
       const requested = window.location.hash || '#/home';
       if (requested === editorHash.current || routeLoading.current === requested) return;
+      if (requested === '#/notes/new' && !canCreate) return;
       routeLoading.current = requested;
       attemptedRoute.current = requested;
       const noteId = getNoteRouteId(requested);
@@ -734,7 +741,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
 
   const captureProps: QuickCaptureProps | null = (captureOpened || isMobile) && status?.vaultId && loadedVaultId.current === status.vaultId ? {
     handle: quickCaptureHandle, memory: quickCaptureMemory, vaultId: status.vaultId,
-    vaultBinding: environment?.vaultBinding, rootNotes: folders.includes(''), tags: tags.map(tag => tag.name),
+    vaultBinding: environment?.vaultBinding, rootNotes, tags: tags.map(tag => tag.name),
     disabled: !canCreate || (isMobile && working), canImage: capabilities.has('importAttachment') || capabilities.has('pickImage'),
     docked: isMobile, active: showMobileRecord,
     draftCount: status.connected && (recoveryDismissed || recoveryChoices.length === 0) ? recoveryRecords.length : 0,
@@ -836,7 +843,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     sidebarOpen, onSidebarOpenChange: handleSidebarOpenChange, menuOpen, onMenuOpenChange: setMenuOpen, scrollContainer,
     sidebar: sidebarProps, collection: collectionProps, editor: editorProps, capture: captureProps, search: searchProps,
     pinned: isNotePinned, pinDisabled: !editing?.baseHash || !notePins || notePins.vaultId !== status?.vaultId || pinWorking || switchingVault || !status?.connected || (isLocalWeb && !webConnected),
-    canDeleteNote: canCreate && !pinWorking && !working, searchMounted: Boolean(searchOpen || (isMobile && searchNoteReturn.current && searchNoteReturn.current === status?.vaultId)), onTogglePin: () => void togglePinned(),
+    canDeleteNote: canWrite && !pinWorking && !working, searchMounted: Boolean(searchOpen || (isMobile && searchNoteReturn.current && searchNoteReturn.current === status?.vaultId)), onTogglePin: () => void togglePinned(),
     onNavigate: navigate, onBack: () => openingNote ? void navigate(returnView.current, activeTags, quickFilters) : void editorHandle.current?.finish(),
     onNew: newNote, onSearch: searchNotes, onRefresh: refreshCurrentView, onRefreshBackground: () => void refresh(true),
     onToggleMCP: toggleMCP, onOpenLocalWeb: openLocalWeb,

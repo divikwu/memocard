@@ -41,6 +41,7 @@
 | `apps/ui/ui/business/CalloutIconPicker.tsx` | 当前编辑器内部适配 | 格式、图片、Callout、代码或图标；保留选区/撤销契约 | editor / selection / content | `apps/ui/ui/business/RichAdapters.test.tsx`；`apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | 内部组合无需独立Story；触摸/IME与复杂选区另验 |
 | `apps/ui/ui/business/CreateButton.tsx` | 网页新建操作按钮 | 复用 Button 的描边样式和默认尺寸，统一加号和表面颜色 | button / action / theme | `apps/ui/ui/business/TagsPage.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 随调用页面验证 |
 | `apps/ui/ui/business/Editor.tsx` | 当前编辑器适配 | 共享 editor-core；标题/正文、保存/冲突/草稿、撤销 | editor / typeset / state | `apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | IME、真机键盘和真实附件选择另验 |
+| `apps/ui/ui/business/DraftFolderDialog.tsx` | 草稿保存目录选择 | 读取笔记库目录并提交用户选择 | overlay / state | `apps/ui/src/App.test.tsx` | 由编辑器负责保存草稿及重试 |
 | `apps/ui/ui/business/EmptyIllustrationArt.tsx` | 空状态插画实现 | 官方图形映射、主题与动效；按需加载 | state / illustration / motion | `apps/ui/ui/preview/scenarios.test.tsx`；`apps/ui/ui/preview/Illustrations.tsx` | 实际浏览器动效另验 |
 | `apps/ui/ui/business/EmptyIllustration.tsx` | 官方空状态插画 | 场景映射、浅深色线条层级与原版悬停动效 | state / illustration / motion | `apps/ui/ui/preview/scenarios.test.tsx`；`apps/ui/ui/preview/Illustrations.tsx` | 复用 Hairline 官方插画；真实设备指针与性能另验 |
 | `apps/ui/ui/business/HomeMascot.tsx` | 当前生产吉祥物 | 固定素材、指针方向、交互及减少动态效果 | mascot / motion | `apps/ui/mascot-fixtures/catalog.ts`；`apps/ui/ui/stories/illustrations.stories.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内容页面组合维护；真实设备指针与性能另验 |
@@ -101,6 +102,7 @@
 | `apps/ui/ui/components/input.tsx` | 当前Base UI/HTML控件适配 | input；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-input.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/kbd.tsx` | 键盘提示控件 | 原生 kbd 与组合容器；统一快捷键视觉和语义 | theme / type / size | `apps/ui/ui/stories/business-note-search.stories.tsx`；`apps/ui/ui/business/note-search.test.tsx` | 随搜索组合验证；辅助技术另验 |
 | `apps/ui/ui/components/label.tsx` | 当前Base UI/HTML控件适配 | label；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-label.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
+| `apps/ui/ui/components/native-select.tsx` | HTML 原生选择控件 | 复用浏览器原生选择交互和项目样式 | theme / size / focus | `apps/ui/ui/stories/luma-native-select.stories.tsx` | 消费端维护选项和选中值 |
 | `apps/ui/ui/components/popover.tsx` | 当前Base UI/HTML控件适配 | popover；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-popover.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/select.tsx` | 当前Base UI/HTML控件适配 | select；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-select.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/separator.tsx` | 当前Base UI/HTML控件适配 | separator；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-separator.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
@@ -114,18 +116,22 @@
 | `apps/ui/ui/components/tabs.tsx` | 当前Base UI/HTML控件适配 | tabs；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-tabs.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/textarea.tsx` | 当前Base UI/HTML控件适配 | textarea；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-textarea.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/tooltip.tsx` | 当前Base UI/HTML控件适配 | tooltip；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-tooltip.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
+| `apps/ui/ui/components/toast.tsx` | 当前 Base UI 通知适配 | 基于 shadcn/ui Base Luma Toast，复用项目按钮、图标和主题 | theme / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 消费端控制显示时机和操作 |
 | `apps/ui/ui/icons.tsx` | 当前图标适配与目录 | 生产图标引用、运行时组件和静态映射 | icon / color / size | `apps/ui/ui/stories/icons.stories.tsx` | 内部映射无需独立Story；全图标组合另验 |
 | `apps/ui/ui/native/IOSAppChrome.tsx` | iOS原生表面producer | 保留chrome/sidebar/vault/draft/tag与原生动作；解析当前主题palette/radius | native / palette / runtime | `apps/ui/ui/native/IOSAppChrome.test.tsx`；`apps/ui/src/ios-native.test.tsx` | React投影回归不代替SwiftUI/WKWebView真机验收 |
 | `apps/ui/ui/preview-mode.tsx` | 当前产品与Storybook共享外观上下文 | 模式、字体加载结果、重试及CSS偏好输出 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx` | 生产偏好与示例存储隔离；真实字体加载另验 |
 | `apps/ui/ui/showcase-icons.tsx` | 当前图标适配与目录 | 生产图标引用、运行时组件和静态映射 | icon / color / size | `apps/ui/ui/stories/icons.stories.tsx` | 内部映射无需独立Story；全图标组合另验 |
 | `apps/ui/ui/web/WebAppView.tsx` | 当前产品视图编排 | AppViewState；主页/编辑/设置/回收站、通知和草稿 | theme / layout / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 内存夹具不替代真实库和WKWebView生命周期 |
+| `apps/ui/ui/web/DraftReminderToast.tsx` | Web 草稿提醒 | 桌面笔记列表按需加载；打开草稿与关闭提醒 | layout / state | `apps/ui/ui/web/WebApp.test.tsx` | 按会话处理提醒，草稿保留在原入口 |
 | `apps/ui/ui/web/WorkspaceFrame.tsx` | 稳定工作区宿主 | 固定内容路径、布局区域与外观作用域 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 编辑器和业务弹层不因主题更换宿主 |
 | `apps/ui/ui/web/appearance/AppearanceRuntime.tsx` | 外观解析与资源提交 | 只读目录、环境回退、按需加载、竞态和重试 | theme / layout / state | `apps/ui/ui/web/appearance/AppearanceRuntime.test.tsx` | 不迁移偏好 v2，不注册第三方运行时代码 |
 | `apps/ui/ui/web/layouts/sidebar.tsx` | 侧栏及抽屉布局出口 | 复用 AppSidebar 和现有页头入口 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 原生仍走已有外框 |
-| `apps/ui/ui/web/layouts/topbar.tsx` | 顶部布局出口 | 受控顶部导航；与视觉主题分开 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 同一布局供多个视觉主题使用 |
+| `apps/ui/ui/web/layouts/rail.tsx` | 桌面图标侧栏布局出口 | 复用工作区内容与详情页菜单 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 桌面经典主题使用 |
+| `apps/ui/ui/web/layouts/topbar.tsx` | 桌面顶部布局出口 | 顶部导航与全局操作；与视觉主题分开 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 同一布局供多个视觉主题使用 |
 | `apps/ui/ui/components/theme-scope.tsx` | 页面及 Portal 样式作用域 | 保留 Base UI Portal 根与焦点管理，复制已解析属性/变量 | theme / focus / overlay | `apps/ui/ui/components/theme-scope.test.tsx`；`apps/ui/test-support/interface-themes.browser.tsx` | 不移动 Portal 容器，局部模式继续优先 |
-| `apps/ui/ui/web/WebMoreDrawer.tsx` | 按需加载的更多抽屉 | 笔记库、草稿、设置与回收站动作；关闭和回焦 | overlay / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 不计入页面首屏依赖；窄屏和原生沿用自身导航 |
-| `apps/ui/ui/web/WebTopNavigation.tsx` | Web 简约界面导航 | 主页/笔记/标签、按需更多抽屉；桌面 Web 专用 | theme / layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉，原生端不消费简约导航 |
+| `apps/ui/ui/web/WebMoreDrawer.tsx` | 按需加载的笔记库抽屉 | 切换笔记库、草稿与回收站动作；关闭和回焦 | overlay / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 不计入页面首屏依赖；窄屏和原生沿用自身导航 |
+| `apps/ui/ui/web/WebRailNavigation.tsx` | Web 经典图标导航 | 左栏主页/新建/搜索/笔记/标签，底部笔记库与设置 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉 |
+| `apps/ui/ui/web/WebTopNavigation.tsx` | Web 轻简顶部导航 | 主页/笔记/标签，新建/搜索/更多与详情返回 | theme / layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉，原生端不消费顶部导航 |
 | `apps/ui/ui/web/WebAppearance.tsx` | 当前外观偏好 | 界面主题、明暗/系统、强调色、中性色、字体与圆角；兼容旧设备值 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/web/WebFontRecovery.test.tsx` | 全字体与所有组合不等于已逐项真机验收 |
 | `apps/ui/ui/web/WebSettingSelect.tsx` | 当前设置选择控件 | label关联、受控值、键盘和回焦 | input / focus / type | `apps/ui/ui/web/WebAppearance.test.tsx` | 内部组合无需独立Story；辅助技术另验 |
 | `apps/ui/ui/web/WebSettings.tsx` | 当前设置页面 | 库操作、文件状态、外观、正文风格、MCP和本机Web | theme / property / state | `apps/ui/ui/web/WebSettings.test.tsx`；`apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 系统授权、跨窗口与全部字体矩阵另验 |

@@ -1009,7 +1009,8 @@
       "value": "3",
       "consumers": [
         "apps/ui/ui/business/MobileTagActions.tsx",
-        "apps/ui/ui/components/input-group.tsx"
+        "apps/ui/ui/components/input-group.tsx",
+        "apps/ui/ui/components/native-select.tsx"
       ]
     },
     {
@@ -1042,7 +1043,8 @@
       "step": "8",
       "value": "8",
       "consumers": [
-        "apps/ui/ui/components/dropdown-menu.tsx"
+        "apps/ui/ui/components/dropdown-menu.tsx",
+        "apps/ui/ui/components/native-select.tsx"
       ]
     },
     {
@@ -1236,6 +1238,7 @@
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/input.tsx",
+        "apps/ui/ui/components/native-select.tsx",
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/tabs.tsx",
         "apps/ui/ui/web/WebMoreDrawer.tsx"

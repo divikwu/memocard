@@ -28,10 +28,9 @@ it("keeps navigation mounted when a feature chunk fails and retries the loader",
   const root = createRoot(host, { onUncaughtError: uncaught, onCaughtError: () => {} });
   try {
     await act(async () => { root.render(<App />); });
-    await waitFor(() => expect(host.querySelector("#desktop-sidebar")).not.toBeNull());
-    const navigation = host.querySelector("#desktop-sidebar");
+    const navigation = await within(host).findByRole("navigation", { name: "桌面导航" });
     await act(async () => { settings.reject(new TypeError("Failed to fetch dynamically imported module")); });
-    await waitFor(() => expect(host.querySelector("#desktop-sidebar")).toBe(navigation));
+    await waitFor(() => expect(within(host).getByRole("navigation", { name: "桌面导航" })).toBe(navigation));
     expect(uncaught).not.toHaveBeenCalled();
     const alert = await within(host).findByRole("alert");
     expect(alert.textContent).toContain("无法打开设置");
@@ -39,7 +38,7 @@ it("keeps navigation mounted when a feature chunk fails and retries the loader",
     vi.doMock("./WebSettings", () => ({ WebSettings: () => <h1>设置已恢复</h1> }));
     await userEvent.setup().click(within(alert).getByRole("button", { name: "重试加载设置" }));
     await within(host).findByRole("heading", { name: "设置已恢复" });
-    expect(host.querySelector("#desktop-sidebar")).toBe(navigation);
+    expect(within(host).getByRole("navigation", { name: "桌面导航" })).toBe(navigation);
     expect(within(host).queryByRole("alert")).toBeNull();
     await act(async () => { root.render(null); });
     await act(async () => { root.render(<App />); });

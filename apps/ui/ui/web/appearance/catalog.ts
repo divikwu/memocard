@@ -1,16 +1,19 @@
 import type { AppearanceCatalog, AppearanceResolution } from "./contracts";
 import { sidebarLayout } from "../layouts/sidebar";
+import { applyAppearanceStyles } from "./appearance-styles";
+import { interfaceThemeLabels } from "./interface-theme-labels";
 
 const layouts = {
   sidebar: { viewport: "desktop", load: () => Promise.resolve(sidebarLayout) },
   drawer: { viewport: "mobile", load: () => Promise.resolve(sidebarLayout) },
   topbar: { viewport: "desktop", load: () => import("../layouts/topbar").then(module => module.topbarLayout) },
+  rail: { viewport: "desktop", load: () => import("../layouts/rail").then(module => module.railLayout) },
 } as const satisfies AppearanceCatalog["layouts"];
 
 export const appearanceCatalog = {
   themes: {
-    classic: { label: "经典", layouts: { desktop: "sidebar", mobile: "drawer" }, loadStyles: () => Promise.resolve() },
-    minimal: { label: "简约", layouts: { desktop: "topbar", mobile: "drawer" }, loadStyles: () => import("./themes/minimal.css") },
+    classic: { label: interfaceThemeLabels.classic, layouts: { desktop: "rail", mobile: "drawer" }, loadStyles: () => Promise.resolve() },
+    minimal: { label: interfaceThemeLabels.minimal, layouts: { desktop: "topbar", mobile: "drawer" }, loadStyles: () => import("./themes/minimal.css?inline").then(({ default: css }) => applyAppearanceStyles("minimal", css)) },
   },
   layouts,
 } as const satisfies AppearanceCatalog<keyof typeof layouts>;

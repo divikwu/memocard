@@ -33,7 +33,7 @@ import TextFontIcon from "@hugeicons/core-free-icons/TextFontIcon";
 import { WebTypographyProvider } from "./WebTypographyProvider";
 import { useNoteAppearance } from "./note-appearance";
 import { recoverableLazy } from "../components/recoverable-lazy";
-import { WorkspaceFrame, LayoutNavigationControls } from "./WorkspaceFrame";
+import { WorkspaceFrame, LayoutDetailNavigation, LayoutNavigationControls } from "./WorkspaceFrame";
 import { useWorkspaceAppearance } from "./appearance/AppearanceRuntime";
 import "../business/NotePageTitle.css";
 import "./web-app.css";
@@ -46,6 +46,7 @@ const TrashPage = recoverableLazy(() => import("../business/TrashPage").then(mod
 const TagsPage = recoverableLazy(() => import("../business/TagsPage").then(module => ({ default: module.TagsPage })), "标签");
 const TagEditor = recoverableLazy(() => import("../business/tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
 const NoteDeleteDialog = recoverableLazy(() => import("../business/NoteDeleteDialog").then(module => ({ default: module.NoteDeleteDialog })), "删除确认");
+const DraftReminderToast = recoverableLazy(() => import("./DraftReminderToast"), "草稿提醒", () => null);
 const NoteAppearanceMenu = recoverableLazy(() => import("./NoteAppearanceMenu").then(module => ({ default: module.NoteAppearanceMenu })), "笔记外观",
   (_props, retry) => <DropdownMenuItem closeOnClick={false} onClick={retry}>重试加载笔记外观</DropdownMenuItem>);
 
@@ -108,8 +109,24 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
   return <Empty className="ui-note-empty border"><EmptyHeader>{s.status?.indexing ? <EmptyMedia variant="icon"><DocumentIcon aria-hidden="true" /></EmptyMedia> : <EmptyIllustration kind={pinned ? "rail" : "drawer"} />}<EmptyTitle>{title}</EmptyTitle><EmptyDescription>{description}</EmptyDescription></EmptyHeader><EmptyContent>{pinned ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>浏览笔记</Button> : filter || filtered ? <Button variant="outline" onClick={() => void s.onNavigate("notes")}>查看所有笔记</Button> : <CreateButton disabled={!s.canCreate} onClick={() => void s.onNew()}>新建笔记</CreateButton>}</EmptyContent></Empty>;
 }
 
+function DraftReminder({ state: s }: { state: AppViewState }) {
+  const layoutId = useWorkspaceAppearance()?.applied.layoutId;
+  if (!s.drafts.reminderVisible) return null;
+  const compactNavigation = layoutId === "rail" || layoutId === "topbar";
+  const toastLayout = compactNavigation && !s.isMobile && s.status?.connected;
+  const inline = !s.detailView && s.view !== "settings" && !(toastLayout && s.view === "notes")
+    && !(compactNavigation && s.view === "home" && !s.connectionState && s.listTimeout !== "initial" && (s.loading || s.capture));
+  return <>
+    {toastLayout && <Suspense fallback={null}>
+      <DraftReminderToast key={s.status?.vaultId} active={s.view === "notes" && !s.detailView && !s.drafts.open && !s.search.open} count={s.drafts.records.length} onOpen={() => s.drafts.onOpenChange(true)} onDismiss={s.drafts.onDismissReminder} />
+    </Suspense>}
+    {inline && <Notice title="有尚未完成的草稿" action={<><Button variant="outline" size="sm" onClick={() => s.drafts.onOpenChange(true)}>查看草稿</Button><Button variant="ghost" size="sm" onClick={s.drafts.onDismissReminder}>稍后处理</Button></>}>可继续编辑，稍后处理不会删除草稿。</Notice>}
+  </>;
+}
+
 function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppViewState; tagHeading?: ReactNode; noteHeading?: ReactNode }) {
   const layoutId = useWorkspaceAppearance()?.applied.layoutId;
+  const compactNavigation = layoutId === "rail" || layoutId === "topbar";
   if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection illustration={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "query" : undefined} title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
   const editor = s.editor;
   if (s.openingNote || editor) return <NoteDetail
@@ -132,10 +149,10 @@ function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppVie
   </WorkspaceEmpty></>;
   const headingInToolbar = !s.collection.filters && s.collection.recentTags === undefined;
   return <>
-    {!s.isMobile && s.view === "home" && s.capture && <Suspense fallback={<PageLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
+    {!s.isMobile && s.view === "home" && s.capture && <Suspense fallback={<PageLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} draftCount={compactNavigation ? s.drafts.records.length : s.capture.draftCount} draftLabel={compactNavigation ? "草稿" : undefined} /></Suspense>}
     {!headingInToolbar && noteHeading}
     <NoteCollection key={s.view === "home" ? "home" : "notes"} {...s.collection} heading={headingInToolbar ? noteHeading : undefined}
-      showCreateInToolbar={layoutId !== "topbar"}>{s.error ? null : <CollectionEmpty state={s} />}</NoteCollection>
+      showCreateInToolbar={!compactNavigation}>{s.error ? null : <CollectionEmpty state={s} />}</NoteCollection>
   </>;
 }
 
@@ -178,6 +195,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
     {collectionTag ? <TagCollectionHeading key={JSON.stringify([s.sidebar.vaultId, collectionTag])} tag={collectionTag} state={s} /> : <h1>{s.title}</h1>}
   </>;
   const navigationControls = <>
+    {s.detailView && <LayoutDetailNavigation state={s} />}
     <LayoutNavigationControls position="header" {...navigationState} />
     {s.isMobile && s.detailView && <Button variant="ghost" size="icon" className="web-header-icon" aria-label={s.backLabel} onClick={s.onBack}><HugeiconsIcon icon={ArrowLeft02Icon} className="size-5" aria-hidden="true" /></Button>}
   </>;
@@ -228,7 +246,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           {s.status?.indexing && <Notice title={s.status.indexing.phase === "reading" ? "正在读取笔记库" : "正在建立索引"}>已处理 {s.status.indexing.processed}{s.status.indexing.total === null ? "" : ` / ${s.status.indexing.total}`} 篇，可继续使用已加载的笔记。草稿先保存在本机，校验后写入文件；搜索和筛选会逐步补齐。</Notice>}
           {s.status?.connected && !s.status.indexing && !s.status.coverage.complete && <CoverageNotice state={s} />}
           {s.drafts.issues.length > 0 && <Notice title="部分草稿无法读取">{s.drafts.issues.map((issue, i) => <p className="break-words not-last:mb-2" key={i}>{issue.message}{issue.path && <code className="block break-all">{issue.path}</code>}</p>)}</Notice>}
-          {s.drafts.reminderVisible && !s.detailView && s.view !== "settings" && <Notice title="有尚未完成的草稿" action={<><Button variant="outline" size="sm" onClick={() => s.drafts.onOpenChange(true)}>查看草稿</Button><Button variant="ghost" size="sm" onClick={s.drafts.onDismissReminder}>稍后处理</Button></>}>可继续编辑，稍后处理不会删除草稿。</Notice>}
+          <DraftReminder state={s} />
           {s.listTimeout === "refresh" && <Notice title="刷新超时" error action={<Button variant="outline" size="sm" disabled={s.refreshingPages || s.switchingVault} onClick={s.onRefreshBackground}>重试</Button>}>继续显示上次读取的内容。</Notice>}
           {!s.detailView && s.view !== "settings" && s.view !== "trash" && !showTagHeading && !showNoteHeading && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}>{collectionHeading}</div>)}
           <WorkspaceContent state={s} tagHeading={showTagHeading ? collectionHeading : undefined} noteHeading={showNoteHeading ? <div className="web-collection-heading">{collectionHeading}</div> : undefined} />

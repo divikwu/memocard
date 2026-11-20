@@ -13792,8 +13792,11 @@
         "apps/ui/ui/web/web-app.css",
         "apps/ui/ui/web/web-settings.css",
         "apps/ui/ui/web/web-typography.css",
+        "apps/ui/ui/web/WebMoreDrawer.css",
         "apps/ui/ui/components/theme-scope.css",
+        "apps/ui/ui/components/toast.css",
         "apps/ui/ui/web/layouts/topbar.css",
+        "apps/ui/ui/web/layouts/rail.css",
         "apps/ui/ui/web/appearance/themes/minimal.css",
         "apps/ui/ui/components/drawer.tsx"
       ],
@@ -13814,7 +13817,8 @@
         "apps/ui/ui/components/dialog.tsx",
         "apps/ui/ui/components/sheet.tsx",
         "apps/ui/ui/components/popover.tsx",
-        "apps/ui/ui/components/drawer.tsx"
+        "apps/ui/ui/components/drawer.tsx",
+        "apps/ui/ui/components/toast.css"
       ],
       "consumers": [
         "apps/ui/ui/web/WebAppView.tsx"

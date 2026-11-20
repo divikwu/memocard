@@ -40,12 +40,15 @@
 .web-page-content > :is(.web-notice, .ui-page-notice):has(+ :is(.web-notice, .ui-page-notice)) { margin-block-end: calc(var(--spacing-1) * 2); }
 .web-page-content > :is(.web-notice, .ui-page-notice):has(+ .web-collection-heading, + .ui-note-collection > .ui-note-toolbar > .web-collection-heading) { margin-block-end: calc(var(--spacing-1) * 8); }
 .web-page-content[data-view=home] > .ui-quick-capture { max-width: 48rem; margin-inline: auto; margin-block-end: calc(var(--spacing-1) * 14); }
+.web-app:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) .web-page-content[data-view=home] > .ui-quick-capture { margin-block-end: calc(var(--spacing-1) * 8); }
+.web-app:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) .ui-quick-capture > .ui-capture-drafts { margin-inline: calc(var(--spacing-1) * 4); padding: var(--spacing-1); border-end-start-radius: var(--radius-container); border-end-end-radius: var(--radius-container); background: var(--color-background-control); }
+.web-app:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) .ui-capture-drafts > button { color: var(--color-text-control-secondary); font-weight: var(--font-weight-normal); }
 .web-page-content:is([data-view=home], [data-view=notes], [data-view=tags], [data-view=trash], [data-view=settings]):not([data-detail]) { max-width: var(--workspace-max-width, 80rem); }
 .web-page-content[data-view=home]:not([data-detail]) { padding-block-start: calc(var(--spacing-1) * 4); }
 .web-page-content[data-detail] { max-width: var(--note-measure, 45rem); }
 .web-page-content > .web-home-mascot { display: flex; justify-content: center; margin-block: calc(var(--spacing-1) * 6) calc(var(--spacing-1) * 2); }
 .web-collection-heading { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-width: 0; padding: 0 calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 2); }
-.web-collection-heading h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-family-heading); font-size: var(--font-size-2xl); font-weight: var(--font-weight-semibold); line-height: var(--text-heading-2-leading); }
+.web-collection-heading h1 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-family-heading); font-size: var(--workspace-title-font-size, var(--font-size-2xl)); font-weight: var(--font-weight-semibold); line-height: var(--workspace-title-line-height, var(--text-heading-2-leading)); }
 @media (max-width: 767px) {
   .web-app[data-web-client] .ui-trash > header { justify-content: flex-end; }
   .web-app[data-web-client] .ui-trash > header > h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

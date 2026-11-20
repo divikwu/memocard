@@ -325,7 +325,7 @@ it("persists the interface theme independently of color mode and restores it on 
   const user = userEvent.setup();
   localStorage.setItem(key, JSON.stringify({ theme: "dark" }));
   const view = render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("简约");
+  expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("轻简");
   await choose(user, "界面主题", "经典");
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "dark", interfaceTheme: "classic" });
   await choose(user, "颜色模式", "浅色");
@@ -335,7 +335,7 @@ it("persists the interface theme independently of color mode and restores it on 
   expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("经典");
   await user.click(screen.getAllByRole("button", { name: "恢复默认" })[0]);
   expect(JSON.parse(localStorage.getItem(key)!)).toEqual(DEFAULT_WEB_APPEARANCE);
-  expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("简约");
+  expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("轻简");
   receive({ interfaceTheme: "unknown", theme: "dark" });
   expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("暂不可用");
   expect(screen.getByRole("combobox", { name: "颜色模式" }).textContent).toContain("深色");
