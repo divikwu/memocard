@@ -9,6 +9,7 @@ import { TooltipHints } from "../ui/components/tooltip";
 import { DEFAULT_PREVIEW_APPEARANCE, parsePreviewAppearance, PREVIEW_RADII } from "../ui/preview-appearance";
 import { PREVIEW_FONTS } from "../ui/preview-fonts";
 import { componentDocsRenderer } from "../ui/component-docs-renderer";
+import { DEFAULT_INTERFACE_THEME } from "../ui/web/appearance/interface-theme-labels";
 import "./preview.css";
 import "../ui/preview-appearance.css";
 
@@ -37,7 +38,7 @@ const preview: Preview = {
     headingFont: { description: "标题字体", toolbar: { title: "标题字体", items: [{ value: "inherit", title: "标题 · 跟随正文" }, ...PREVIEW_FONTS.map(font => ({ value: font.id, title: `标题 · ${font.label}` }))], dynamicTitle: true } },
     bodyFont: { description: "正文字体", toolbar: { title: "正文字体", items: PREVIEW_FONTS.map(font => ({ value: font.id, title: `正文 · ${font.label}` })), dynamicTitle: true } },
   },
-  initialGlobals: { theme: "light", interfaceTheme: "classic", viewport: { value: "desktop", isRotated: false }, ...DEFAULT_PREVIEW_APPEARANCE },
+  initialGlobals: { theme: "light", interfaceTheme: DEFAULT_INTERFACE_THEME, viewport: { value: "desktop", isRotated: false }, ...DEFAULT_PREVIEW_APPEARANCE },
   parameters: {
     layout: "fullscreen",
     viewport: {

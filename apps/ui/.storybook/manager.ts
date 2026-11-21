@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { Select } from "storybook/internal/components";
 import { addons, types, useGlobals } from "storybook/manager-api";
 import { create } from "storybook/theming";
-import { interfaceThemeLabels } from "../ui/web/appearance/interface-theme-labels";
+import { DEFAULT_INTERFACE_THEME, interfaceThemeLabels } from "../ui/web/appearance/interface-theme-labels";
 
 addons.setConfig({
   theme: create({ base: "light", brandTitle: "MemoCard UI" }),
@@ -15,7 +15,8 @@ const interfaceThemeOptions = Object.entries(interfaceThemeLabels).map(([value, 
 
 function InterfaceThemeToolbar() {
   const [globals, updateGlobals] = useGlobals();
-  const selected = interfaceThemeOptions.find(option => option.value === globals.interfaceTheme) ?? interfaceThemeOptions[0];
+  const interfaceTheme = typeof globals.interfaceTheme === "string" ? globals.interfaceTheme : DEFAULT_INTERFACE_THEME;
+  const selected = interfaceThemeOptions.find(option => option.value === interfaceTheme) ?? interfaceThemeOptions[0];
   return createElement(Select, {
     ariaLabel: "界面主题",
     tooltip: "界面主题",

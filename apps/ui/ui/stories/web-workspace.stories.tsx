@@ -4,6 +4,7 @@ import { App } from "../../src/App";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { setStorybookClientMode, setStorybookRequestHandler } from "../../test-support/bridge";
 import { StorybookAppearanceBridge } from "../web/StorybookAppearanceBridge";
+import { DEFAULT_INTERFACE_THEME } from "../web/appearance/interface-theme-labels";
 import { createWorkspaceFixture } from "../web/workspace-fixture";
 
 function WorkspaceExample({ scenario = "loading", initialRoute = "#/home" }: { scenario?: string; initialRoute?: string }) {
@@ -37,7 +38,7 @@ const meta = {
   title: "pages/Web & H5",
   id: "ui-web",
   component: WorkspaceExample,
-  decorators: [(Story, { globals }) => <StorybookAppearanceBridge interfaceTheme={typeof globals.interfaceTheme === "string" ? globals.interfaceTheme : "classic"}><Story /></StorybookAppearanceBridge>],
+  decorators: [(Story, { globals }) => <StorybookAppearanceBridge interfaceTheme={typeof globals.interfaceTheme === "string" ? globals.interfaceTheme : DEFAULT_INTERFACE_THEME}><Story /></StorybookAppearanceBridge>],
   parameters: { layout: "fullscreen", docs: { description: { component: "使用真实页面控制器与当前业务组件。示例笔记只存于内存，关闭或切换示例即重置，不连接你的笔记库。" } } },
 } satisfies Meta<typeof WorkspaceExample>;
 export default meta;
