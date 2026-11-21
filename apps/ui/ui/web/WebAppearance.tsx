@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useState, useRef, type ReactNode } from "react";
 import { DEFAULT_PREVIEW_APPEARANCE, parsePreviewAppearance, type PreviewAppearance } from "../preview-appearance";
 import { PreviewModeProvider } from "../preview-mode";
+import { DEFAULT_INTERFACE_THEME } from "./appearance/interface-theme-labels";
 import "../preview-appearance.css";
 import "./web-palette.css";
 
@@ -14,7 +15,7 @@ export type WebAppearanceControls = { value: WebAppearance; onChange: (value: We
 export const WebAppearanceContext = createContext<WebAppearanceControls | null>(null);
 const storageKey = "memocard-web-appearance-v1";
 const legacyStorageKey = "memocard-appearance-v1";
-export const DEFAULT_WEB_APPEARANCE: WebAppearance = { ...DEFAULT_PREVIEW_APPEARANCE, theme: "light", interfaceTheme: "minimal", palette: "mono", neutralPalette: "neutral" };
+export const DEFAULT_WEB_APPEARANCE: WebAppearance = { ...DEFAULT_PREVIEW_APPEARANCE, theme: "light", interfaceTheme: DEFAULT_INTERFACE_THEME, palette: "mono", neutralPalette: "neutral" };
 const legacyRadii: Record<string, PreviewAppearance["radius"]> = { none: "none", xs: "legacy-xs", sm: "legacy-sm", md: "default", lg: "medium", xl: "legacy-xl", "2xl": "legacy-2xl" };
 
 function parse(raw: string | null, legacy = false): WebAppearance {

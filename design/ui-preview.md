@@ -24,7 +24,7 @@ pnpm --filter @memocard/ui dev:states
 
 界面主题预览使用 [NavigationPrototype](../apps/ui/ui/preview/NavigationPrototype.tsx)，沿用隔离存储与模拟笔记，直接渲染正式 Web 组件。入口为 <http://127.0.0.1:5182/navigation-prototype.html?variant=top#/notes>，可在设置中切换「经典 / 轻简」；`variant=sidebar` 以经典启动。
 
-Storybook 的「Web & H5」页面在工具栏提供「界面主题」，默认预览「经典」。它与预览内设置页同步，浅色和深色可单独切换。
+Storybook 的「Web & H5」页面在工具栏提供「界面主题」，默认预览「轻简」，与 MemoCard 网页端一致。它与预览内设置页同步，浅色和深色可单独切换。
 
 插画页、筛选抽屉与产品空状态共用 `EmptyIllustration.css` 的浅／深色线条层级，填充色匹配所在容器。保留官方 0.9px 线宽与悬停动效，仅增强轮廓、结构线和辅助线的对比度。
 
