@@ -1,27 +1,4 @@
-.ui-appearance-scope[data-interface-theme=minimal] {
-  --workspace-max-width: 80rem;
-}
-
 .ui-appearance-scope[data-interface-theme=minimal] .web-top-logo img {
   width: var(--size-element-sm);
   height: var(--size-element-sm);
-}
-
-.web-app[data-interface-theme=minimal] .web-page-content {
-  --workspace-title-font-size: var(--font-size-3xl);
-  --workspace-title-line-height: var(--text-heading-2-leading);
-}
-
-@media (min-width: 768px) {
-  .ui-appearance-scope[data-interface-theme=minimal] .web-app-scroll > .web-page-content:is([data-view=notes], [data-view=tags], [data-view=settings]):not([data-detail]) {
-    padding-block-start: calc(var(--spacing-1) * 8);
-  }
-  .ui-appearance-scope[data-interface-theme=minimal] .web-app-scroll > .web-page-content[data-view=notes] > .web-collection-heading,
-  .ui-appearance-scope[data-interface-theme=minimal] .web-app-scroll > .web-page-content[data-view=tags] > .ui-tag-directory > .web-collection-heading,
-  .ui-appearance-scope[data-interface-theme=minimal] .web-app-scroll > .web-page-content[data-view=settings] > .web-settings > .web-collection-heading {
-    padding-inline: var(--spacing-1);
-  }
-  .ui-appearance-scope[data-interface-theme=minimal] .web-page-content[data-view=notes] > .web-collection-heading + .ui-note-collection {
-    padding-block-start: calc(var(--spacing-1) * 4);
-  }
 }

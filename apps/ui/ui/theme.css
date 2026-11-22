@@ -219,7 +219,7 @@
   --focus-outline-width: 2px;
   --focus-outline-style: solid;
   --focus-outline-color: var(--color-blue-600);
-  --focus-outline-offset: 2px;
+  --focus-outline-offset: 0px;
   --radius-none: 0px;
   --radius-inner: calc(var(--radius-element) * 0.6);
   --radius-element: 0.5rem;

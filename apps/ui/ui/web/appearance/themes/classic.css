@@ -1,0 +1,56 @@
+.web-app[data-web-client][data-interface-theme=classic][data-workspace-layout=rail][data-ui-theme=light] {
+  --color-background-body: var(--color-white);
+  --color-background-card: var(--color-neutral-100);
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) .ui-capture-group,
+:where(.ui-capture-sheet[data-interface-theme=classic][data-ui-theme=light]) .ui-capture-group {
+  --color-background-surface: var(--color-neutral-100);
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-workspace-layout=rail][data-ui-theme=light]) .web-settings .web-settings-panel > section > [data-slot=card] {
+  background-color: var(--color-background-card);
+}
+
+@media (min-width: 768px) {
+  .web-app:where([data-web-client][data-interface-theme=classic][data-workspace-layout=rail]) .web-page-content:is([data-view=settings], [data-view=tags]) { --workspace-max-width: 45rem; }
+  .web-app:where([data-web-client][data-interface-theme=classic][data-workspace-layout=rail]) .web-settings-panel { padding-block-start: 0; padding-inline: 0; }
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) :is(.web-workspace-empty, .ui-note-empty, [data-slot=card]:has(> .ui-trash-empty)) {
+  --color-background-sidebar: var(--color-background-card);
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) .ui-note-cards[data-slot=collection-skeleton] {
+  --color-skeleton: var(--color-neutral-200);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .web-app:where([data-web-client][data-interface-theme=classic]) .ui-note-cards .ui-note-card[data-note-openable=true]:hover {
+    background-color: color-mix(in oklab, var(--color-background-card), var(--color-black) 4%);
+    box-shadow: var(--shadow-flat);
+    transform: none;
+    z-index: auto;
+  }
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) [data-slot=tabs-list][data-variant=pill][data-transparent-inactive] {
+  --color-background-control: var(--color-white);
+  --color-background-surface: var(--color-background-card);
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-workspace-layout=rail]) .web-page-content :is(
+  .ui-note-list,
+  .ui-tag-directory-panel,
+  .ui-tag-directory-panel > .ui-tag-directory-groups,
+  .ui-trash-list
+) {
+  padding: 0;
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-workspace-layout=rail]) .web-page-content :is(
+  [data-slot=tabs-list][data-variant=pill][data-transparent-inactive],
+  [data-view=notes] .ui-note-toolbar > .ui-note-actions
+) {
+  column-gap: var(--spacing-1);
+}

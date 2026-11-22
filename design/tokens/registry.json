@@ -542,8 +542,10 @@
         "apps/ui/ui/web/WebMoreDrawer.css",
         "apps/ui/ui/components/theme-scope.css",
         "apps/ui/ui/components/toast.css",
+        "apps/ui/ui/web/layouts/desktop.css",
         "apps/ui/ui/web/layouts/topbar.css",
         "apps/ui/ui/web/layouts/rail.css",
+        "apps/ui/ui/web/appearance/themes/classic.css",
         "apps/ui/ui/web/appearance/themes/minimal.css",
         "apps/ui/ui/components/drawer.tsx"
       ],
