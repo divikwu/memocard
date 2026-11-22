@@ -3606,7 +3606,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
   }
 }, 30_000);
 
-test("Web detail aligns title, properties and body across breakpoints", async () => {
+test("Web detail aligns title, properties and body across breakpoints", { repeats: 14, timeout: 30_000 }, async () => {
   await page.viewport(320, 900);
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -3680,9 +3680,16 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
         ]));
       };
       const collapsedOffsets = propertyOffsets();
+      const scroller = title.closest(".web-app-scroll")!;
+      const titleBefore = title.getBoundingClientRect();
+      const scrollBefore = scroller.scrollTop;
       const checkPropertyOffsets = () => {
         const current = propertyOffsets();
         for (const [key, top] of Object.entries(collapsedOffsets)) {
+          if (Math.abs(current[key] - top) > 0.05) {
+            const titleAfter = title.getBoundingClientRect();
+            console.info(`[DEBUG-release-layout] ${width}px ${key} offset ${top} -> ${current[key]}; title y/height ${titleBefore.y}/${titleBefore.height} -> ${titleAfter.y}/${titleAfter.height}; scroll ${scrollBefore} -> ${scroller.scrollTop}; ${document.fonts.status}`);
+          }
           expect(current[key], `${width}px ${key} offset from title`).toBeCloseTo(top, 1);
         }
       };
@@ -3712,7 +3719,7 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
     view.unmount(); release();
     history.replaceState(null, "", previousHash || "#/notes");
   }
-}, 30_000);
+});
 
 test("pointer blur save keeps the next value clickable when an empty property hides", async () => {
   await page.viewport(390, 900);

@@ -331,7 +331,7 @@ test("interface theme fixture extends CSS and layout independently without repla
 }, 30_000);
 
 
-test("real editor menus and property confirmation inherit a local dialog scope", async () => {
+test("real editor menus and property confirmation inherit a local dialog scope", { repeats: 19, timeout: 10_000 }, async () => {
   await appearanceFixture.themes.paper.loadStyles();
   await page.viewport(1024, 900);
   let editor!: Editor;
@@ -364,7 +364,9 @@ test("real editor menus and property confirmation inherit a local dialog scope",
     const deleteColor = getComputedStyle(body.getByTestId("local-delete-color")).color;
     expect(getComputedStyle(deleteBlock).color).toBe(deleteColor);
     expect(getComputedStyle(deleteBlock.querySelector("svg")!).color).toBe(deleteColor);
+    const focusedBeforeEscape = document.activeElement;
     await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(menu, `[DEBUG-release-menu] Escape target: ${focusedBeforeEscape?.outerHTML.slice(0, 250)}`).not.toBeInTheDocument());
     await userEvent.click(body.getByRole("button", { name: "管理标签 测试" }));
     await userEvent.click(await body.findByRole("menuitem", { name: "删除标签" }));
     const confirmation = await body.findByRole("alertdialog");
@@ -379,7 +381,7 @@ test("real editor menus and property confirmation inherit a local dialog scope",
     expect(body.getByRole("dialog", { name: "局部编辑器" })).toBeVisible();
     expect(body.getByRole("textbox", { name: "笔记内容" })).toBe(content);
   } finally { view.unmount(); }
-}, 30_000);
+});
 
 
 for (const local of ["light", "dark"] as const) test(`local ${local} interaction colors ignore the opposite document mode`, async () => {
