@@ -3,6 +3,7 @@ import { useMemo, useState, useSyncExternalStore } from "react";
 import { tagKey } from "@/inline-tags";
 import { updatedTagReferences } from "@/tag-settings";
 import { renameTagColors } from "@/tag-colors";
+import { useTagVaultBinding } from "@/TagColorProvider";
 
 import { parseTagPreferences, sharedTagPreferences, tagPreferenceEvent, tagPreferenceKey, updateSharedTagPreferences } from "@/shared-tag-preferences";
 
@@ -16,6 +17,7 @@ function subscribe(callback: () => void) {
 function read(key: string) { try { return localStorage.getItem(key); } catch { return null; } }
 
 export function useTagPreferences(vaultId?: string | null) {
+  const vaultBinding = useTagVaultBinding();
   const key = tagPreferenceKey(vaultId);
   const raw = useSyncExternalStore(subscribe, () => (vaultId && sharedTagPreferences(vaultId)?.raw) || read(key));
   const sharedError = useSyncExternalStore(subscribe, () => (vaultId && sharedTagPreferences(vaultId)?.error) || "");
@@ -42,20 +44,27 @@ export function useTagPreferences(vaultId?: string | null) {
     saveAppearance: async (from: string, name: string, icon: string | undefined, onRename?: (from: string, to: string) => Promise<void>) => {
       name = tagKey(name);
       const renamed = name !== tagKey(from);
+      const saveAppearance = async () => {
+        if (renamed) renameTagColors(vaultId, from, name);
+        const change = (current: Preferences) => {
+          if (!renamed) return icon === undefined ? current : {...current, icons:{...current.icons, [name]:icon}};
+          const next = updatedTagReferences(current, from, name);
+          return icon === undefined ? next : {...next, icons:{...next.icons, [name]:icon}};
+        };
+        const pending = vaultId && updateSharedTagPreferences(vaultId, change, {optimistic:!renamed, vaultBinding:renamed ? vaultBinding : undefined});
+        if (pending) await pending;
+        else if (!save(change(parseTagPreferences(read(key))))) throw new Error("无法保存标签外观，请检查存储权限。");
+        if (renamed) window.dispatchEvent(new CustomEvent("memocard:event", {detail: {type: "tagsChanged"}}));
+      };
       if (renamed) {
         if (!onRename) throw new Error("当前连接不支持标签重命名。");
+        if (vaultId && vaultBinding) {
+          const { renameTagWithAppearance } = await import("@/rename-tag-operation");
+          return renameTagWithAppearance({vaultId,vaultBinding}, from, name, () => onRename(from, name), saveAppearance);
+        }
         await onRename(from, name);
-        renameTagColors(vaultId, from, name);
       }
-      const change = (current: Preferences) => {
-        if (!renamed) return icon === undefined ? current : {...current, icons:{...current.icons, [name]:icon}};
-        const next = updatedTagReferences(current, from, name);
-        return icon === undefined ? next : {...next, icons:{...next.icons, [name]:icon}};
-      };
-      const pending = vaultId && updateSharedTagPreferences(vaultId, change, {optimistic:!renamed});
-      if (pending) await pending;
-      else if (!save(change(parseTagPreferences(read(key))))) throw new Error("笔记已保存，但标签外观未能保存，请检查存储权限。");
-      if (renamed) window.dispatchEvent(new CustomEvent("memocard:event", {detail: {type: "tagsChanged"}}));
+      await saveAppearance();
     },
   };
 }

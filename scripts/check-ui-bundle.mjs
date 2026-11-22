@@ -110,8 +110,9 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "detail editor", entries: ["ui/business/Editor.tsx"], raw: 2250, gzip: 675 },
     { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
     { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", ...minimalLayout], raw: 2700, gzip: 820 },
-    { name: "classic detail with all property editors", entries: [...propertyEditors, ...classicLayout], raw: 2760, gzip: 821 },
-    { name: "minimal detail with all property editors", entries: [...propertyEditors, ...minimalLayout], raw: 2760, gzip: 820 },
+    // Both desktop layouts carry the refresh action used when the old drawer chunk is gone.
+    { name: "classic detail with all property editors", entries: [...propertyEditors, ...classicLayout], raw: 2760, gzip: 822 },
+    { name: "minimal detail with all property editors", entries: [...propertyEditors, ...minimalLayout], raw: 2760, gzip: 821 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";

@@ -50,10 +50,10 @@ it('does not save invalid names and leaves failed renames editable', async () =>
 it('migrates colors, pins and icons while deleting only the exact identity', () => {
   setTagColor('v','work','green'); setTagColor('v','work/child','purple'); setTagColor('other','work','red');
   localStorage.setItem('memocard:tags:v',JSON.stringify({pinned:['work','work/child','other'],icons:{work:'💼','work/child':'✏️'}}));
-  changeTagSettings('v','work','project');
+  changeTagSettings({vaultId:'v',vaultBinding:'binding'},'work','project');
   expect(parseTagColors(readTagColors('v'))).toEqual({project:'green','work/child':'purple'});
   expect(JSON.parse(localStorage.getItem('memocard:tags:v')!)).toEqual({pinned:['project','work/child','other'],icons:{project:'💼','work/child':'✏️'}});
-  changeTagSettings('v','project',null);
+  changeTagSettings({vaultId:'v',vaultBinding:'binding'},'project',null);
   expect(parseTagColors(readTagColors('v'))).toEqual({'work/child':'purple'});
   expect(JSON.parse(localStorage.getItem('memocard:tags:v')!)).toEqual({pinned:['work/child','other'],icons:{'work/child':'✏️'}});
   expect(parseTagColors(readTagColors('other'))).toEqual({work:'red'});

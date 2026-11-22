@@ -12,7 +12,7 @@ const coverage = { complete: true, indexed: 1, pending: 0, issues: 0, indexedAt:
 beforeEach(() => {
   bridge.request.mockReset();
   bridge.request.mockResolvedValue({ notes: [note], nextCursor: null, coverage });
-  vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("(min-width: 1024px)"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -46,4 +46,12 @@ it("keeps a body-only note free from an invented preview title", async () => {
   expect(preview.querySelector(".ui-note-search-preview-title")).toBeNull();
   expect(preview.querySelector("h1")?.textContent).toBe("正文标题");
   expect(within(preview).getByRole("button", { name: "打开笔记" })).toBeTruthy();
+});
+
+it("does not mount Markdown when the viewport does not fit the preview", async () => {
+  vi.stubGlobal("matchMedia", vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+  render(<NoteSearchDialog open available vaultName="测试库" returnFocus={{ current: null }} onOpenChange={vi.fn()} onOpenNote={vi.fn()} />);
+  await screen.findByRole("option", { name: note.title });
+  expect(document.querySelector(".ui-note-search-preview")).toBeNull();
+  expect(screen.queryByText("正文标题")).toBeNull();
 });

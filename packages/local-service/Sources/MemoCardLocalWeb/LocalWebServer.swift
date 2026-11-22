@@ -52,7 +52,7 @@ public final class LocalWebServer: @unchecked Sendable {
     private final class StartState: @unchecked Sendable { var resumed = false }
     private static let operations: Set<String> = ["getEnvironment", "getStatus", "selectVault", "listVaults", "activateVault", "queryNotes", "getNote", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "getPropertyLayout", "setPropertyLayout", "getPropertyIcons", "setPropertyIcon", "getNotePins", "setNotePinned", "getTagPreferences", "setTagPreferences", "listTags", "listFolders", "resolveLink", "getDrafts", "saveDraft", "dismissDraftReminder", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "saveNote", "importAttachment"]
     // Once dispatched, a write can still commit even if its HTTP connection is closed.
-    private static let completionOperations: Set<String> = ["selectVault", "saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout", "setPropertyIcon", "importAttachment"]
+    private static let completionOperations: Set<String> = ["selectVault", "saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout", "setPropertyIcon", "importAttachment", "deleteNote", "restoreNote", "permanentlyDeleteNote"]
 
     public init(resourceRoot: URL, authorizationEpoch: Int = 0, restartFile: URL? = nil,
                 vaultScope: VaultScope? = nil, handler: @escaping Handler, assetHandler: @escaping AssetHandler) {

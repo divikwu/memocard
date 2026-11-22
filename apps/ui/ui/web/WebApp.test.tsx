@@ -161,7 +161,7 @@ it.each([1200, 390])("opens the tag directory and navigates its results at %spx"
 it("renames a legacy tag without touching other tags", async () => {
   history.replaceState(null, "", "#/tags");
   const user = userEvent.setup();
-  const { fixture } = await mount();
+  const { fixture, request } = await mount();
   const coffeeId = fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")!.id;
   const directory = await screen.findByRole("region", { name: "标签目录" });
   await user.click(await within(directory).findByRole("button", { name: "标签操作 生活/咖啡" }));
@@ -176,6 +176,61 @@ it("renames a legacy tag without touching other tags", async () => {
   expect(coffee.tags).toContain("日常");
   expect(coffee.body).toContain("#日常");
   expect(coffee.tags).not.toContain("生活/咖啡");
+  expect(request).toHaveBeenCalledWith("updateNoteProperty", expect.objectContaining({id:coffeeId,vaultBinding:"preview-vault-binding"}));
+  expect(request).toHaveBeenCalledWith("saveNote", expect.objectContaining({id:coffeeId,vaultBinding:"preview-vault-binding"}));
+});
+
+it.each(["标签目录", "笔记编辑器"])("retries tag appearance without a second note write from %s", async entry => {
+  if (entry === "标签目录") history.replaceState(null, "", "#/tags");
+  const user = userEvent.setup();
+  const { fixture, request } = await mount();
+  const sourceTag = "设计", targetTag = "设计案例";
+  const renamedNote = fixture.snapshot().notes.find(note => note.title === "让设计语言走进真实页面")!;
+  await fixture.request("updateNoteProperty", {id:renamedNote.id, name:"tags", type:"list", value:[]});
+
+  const respond = request.getMockImplementation()!;
+  let failAppearance = true;
+  request.mockImplementation(async (operation, params) => {
+    if (operation === "setTagPreferences" && failAppearance) {
+      failAppearance = false;
+      throw new Error("模拟外观写入失败");
+    }
+    return respond(operation, params);
+  });
+
+  if (entry === "标签目录") {
+    const directory = await screen.findByRole("region", {name:"标签目录"});
+    await user.click(await within(directory).findByRole("button", {name:`标签操作 ${sourceTag}`}));
+    await user.click(await screen.findByRole("menuitem", {name:"编辑名称/图标"}));
+  } else {
+    await user.click(await screen.findByRole("button", {name:"打开 今天的手冲记录"}));
+    await user.click(await screen.findByRole("button", {name:"更多属性"}));
+    await user.click(await screen.findByRole("button", {name:"编辑标签"}));
+    await user.click(await screen.findByRole("button", {name:`管理标签 ${sourceTag}`}));
+  }
+
+  const name = await screen.findByRole("textbox", {name:"标签名称"});
+  await user.clear(name);
+  await user.type(name, targetTag + "{Enter}");
+  await screen.findByText("「设计案例」已改名，可继续保存标签外观和分组。");
+  const committed = fixture.snapshot().notes.find(note => note.id === renamedNote.id)!;
+  expect(committed.body).toContain("#" + targetTag);
+  expect(request.mock.calls.filter(([operation]) => operation === "saveNote")).toHaveLength(1);
+  expect(request.mock.calls.filter(([operation]) => operation === "setTagPreferences")).toHaveLength(1);
+
+  if (entry === "标签目录") {
+    await user.type(name, "{Enter}", {skipClick:true});
+    await waitFor(() => expect(screen.queryByRole("textbox", {name:"标签名称"})).toBeNull());
+  } else {
+    await user.keyboard("{Escape}");
+    await user.click(await screen.findByRole("button", {name:"重试标签外观"}));
+  }
+  await waitFor(() => expect(screen.queryByRole("button", {name:"重试标签外观"})).toBeNull());
+  expect(request.mock.calls.filter(([operation]) => operation === "saveNote")).toHaveLength(1);
+  expect(request.mock.calls.filter(([operation]) => operation === "updateNoteProperty")).toHaveLength(0);
+  expect(request.mock.calls.filter(([operation]) => operation === "setTagPreferences")).toHaveLength(2);
+  expect(fixture.snapshot().notes.find(note => note.id === renamedNote.id)).toEqual(committed);
+  expect(await fixture.request("getTagPreferences")).toMatchObject({pinned:[targetTag]});
 });
 
 it("refreshes the pinned sidebar tag after renaming a tag with no notes", async () => {

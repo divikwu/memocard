@@ -221,7 +221,7 @@ public actor VaultStore {
     public func perform(operation: String, params: Data, expectedBinding: UUID? = nil) async throws -> Data {
         do {
             try requireBinding(expectedBinding)
-            if ["getTagPreferences", "setTagPreferences", "getPropertyLayout", "setPropertyLayout", "getPropertyIcons", "setPropertyIcon", "getNoteProperties", "getPropertyLabels", "renamePropertyLabel", "listTags", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
+            if ["getTagPreferences", "setTagPreferences", "getPropertyLayout", "setPropertyLayout", "getPropertyIcons", "setPropertyIcon", "getNoteProperties", "updateNoteProperty", "getPropertyLabels", "renamePropertyLabel", "listTags", "queryNotes", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].contains(operation) {
                 struct Scope: Decodable { var vaultId: String?; var vaultBinding: UUID? }
                 let scope = try decode(Scope.self, params)
                 try requireBinding(scope.vaultBinding)

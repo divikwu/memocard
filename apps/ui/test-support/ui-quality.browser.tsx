@@ -780,12 +780,14 @@ for (const width of [390, 1280]) test(`search preview remains stationary and exc
     const dialog = await within(document.body).findByRole("dialog", { name: "搜索笔记" });
     const search = within(dialog);
     await search.findByRole("option", { name: fixture.notes[0].title! });
-    const preview = dialog.querySelector<HTMLElement>(".ui-note-search-preview-content")!;
-    const containers = [preview, ...preview.querySelectorAll<HTMLElement>("div,pre")];
+    const preview = dialog.querySelector<HTMLElement>(".ui-note-search-preview-content");
+    const containers = preview ? [preview, ...preview.querySelectorAll<HTMLElement>("div,pre")] : [];
     const scrollPositions = () => containers.map(element => [element.scrollLeft, element.scrollTop]);
     const before = scrollPositions();
-    if (width >= 1024) expect(preview.scrollHeight).toBeGreaterThan(preview.clientHeight);
-    else expect(getComputedStyle(preview.closest("aside")!).display).toBe("none");
+    if (width >= 1024) {
+      expect(preview).not.toBeNull();
+      expect(preview!.scrollHeight).toBeGreaterThan(preview!.clientHeight);
+    } else expect(dialog.querySelector(".ui-note-search-preview")).toBeNull();
     search.getByRole("combobox", { name: "搜索笔记" }).focus();
     for (const keys of [
       server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}",
@@ -795,6 +797,30 @@ for (const width of [390, 1280]) test(`search preview remains stationary and exc
       expect(document.activeElement?.closest("[inert]")).toBeNull();
       expect(scrollPositions()).toEqual(before);
     }
+  } finally { release(); }
+});
+
+test("search preview mounts only while the open dialog meets both viewport thresholds", async () => {
+  await page.viewport(1023, 480);
+  const fixture = createSearchFixture("normal");
+  const release = setStorybookRequestHandler(fixture.request);
+  try {
+    render(<NoteSearchDialog open available vaultName="预览检查库" returnFocus={{ current: null }} onOpenChange={() => {}} onOpenNote={() => {}} />);
+    const dialog = await within(document.body).findByRole("dialog", { name: "搜索笔记" });
+    const search = within(dialog);
+    const option = await search.findByRole("option", { name: fixture.notes[0].title! });
+    const input = search.getByRole("combobox", { name: "搜索笔记" });
+    const preview = () => dialog.querySelector(".ui-note-search-preview .ui-note-markdown");
+    input.focus();
+    expect(preview()).toBeNull();
+    await page.viewport(1024, 480);
+    await waitFor(() => expect(preview()).not.toBeNull());
+    await page.viewport(1024, 479);
+    await waitFor(() => expect(preview()).toBeNull());
+    await page.viewport(1024, 480);
+    await waitFor(() => expect(preview()).not.toBeNull());
+    expect(input.getAttribute("aria-activedescendant")).toBe(option.id);
+    expect(document.activeElement).toBe(input);
   } finally { release(); }
 });
 

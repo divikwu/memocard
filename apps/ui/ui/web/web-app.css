@@ -35,6 +35,7 @@
 .web-crumb :is([aria-current=page], button) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .web-app-scroll { --page-gutter: calc(var(--spacing-1) * 4); flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: calc(var(--spacing-1) * 14 + var(--spacing-glass-fade)) var(--spacing-glass-fade); padding-block-start: calc(var(--spacing-1) * 14); padding-inline: calc(var(--page-gutter) + var(--note-rail, 0px)); outline: none; }
 .web-page-content { width: 100%; max-width: 48rem; margin-inline: auto; padding-block: calc(var(--spacing-1) * 4); display: block; }
+.web-page-content:has(> .web-collection-heading + .web-workspace-empty) { display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 4); }
 .web-page-content > :not(:last-child) { margin-block-end: calc(var(--spacing-1) * 4); }
 .web-page-content > .web-collection-heading:not(:last-child) { margin-block-end: 0; }
 .web-page-content > :is(.web-notice, .ui-page-notice):has(+ :is(.web-notice, .ui-page-notice)) { margin-block-end: calc(var(--spacing-1) * 2); }
@@ -96,6 +97,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
 .web-notice-actions { display: flex; flex-wrap: wrap; gap: calc(var(--spacing-1) * 2); }
 .web-workspace-empty { flex: none; gap: calc(var(--spacing-1) * 4); padding: calc(var(--spacing-1) * 10) calc(var(--spacing-1) * 6); border: 0; }
 .web-workspace-empty, .web-app .ui-note-empty, .web-app .ui-trash-empty, .web-app [data-slot=card]:has(> .ui-trash-empty) { --color-text-secondary: var(--color-text-control-secondary); border-radius: var(--radius-card); background: var(--color-background-sidebar); }
+.web-workspace-empty[role=status] { border-radius: calc(var(--radius-element) * 2); padding-block-start: calc(var(--spacing-1) * 6); }
 .web-workspace-empty [data-slot=empty-icon], .web-app .ui-note-empty [data-slot=empty-icon], .web-app .ui-trash-empty [data-slot=empty-icon] { background: var(--color-neutral); }
 .web-workspace-empty [data-slot=empty-icon] { width: calc(var(--spacing-1) * 12); height: calc(var(--spacing-1) * 12); }
 .web-workspace-empty [data-slot=empty-description] { overflow-wrap: anywhere; white-space: pre-line; text-wrap: pretty; }

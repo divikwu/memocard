@@ -5,7 +5,7 @@ import { EditorSession } from './editor-session';
 import { isBrowserVault } from './client-mode';
 import { localWebReconnected } from './web-connection';
 import { createId } from './uuid';
-import { useTagColorVault } from './TagColorProvider';
+import { useTagColorVault, useTagVaultBinding } from './TagColorProvider';
 import { changeTagSettings } from './tag-settings';
 import type { Editor as TiptapEditor } from '@tiptap/react';
 import { changeNoteProperty, changeNoteTitle, endNoteTyping, resetNoteHistory, type NoteEdit } from './rich-note-history';
@@ -35,6 +35,7 @@ export function createEditor({ Button, PageNotice, NoteProperties, RichMarkdownE
 return function Editor({ initial, initialNote, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, onTagsChanged, handle }: EditorProps) {
   const isMobile = useIsMobile();
   const vaultId = useTagColorVault();
+  const vaultBinding = useTagVaultBinding();
   const page = useRef<HTMLElement>(null);
   const field = useRef<HTMLDivElement>(null);
   const titleField = useRef<HTMLTextAreaElement>(null);
@@ -163,21 +164,31 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     } finally { libraryEdit.current = false; }
   }
   async function changeTag(from:string, to:string | null) {
-    if (busy.current || !vaultId || !canSave || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑标签。');
+    const binding = session.current.vaultBinding ?? vaultBinding;
+    if (busy.current || !vaultId || !binding || !canSave || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑标签。');
+    const vault = {vaultId, vaultBinding:binding};
     busy.current = true; setWorking(true);
     let flushed = false;
     try {
-      await session.flush(); flushed = true;
       const operations = await import('./rename-tag-operation');
-      if (to === null) await operations.deleteTag(from, vaultId, request);
-      else await operations.renameTag(from, to, vaultId, request);
-      try { await changeTagSettings(vaultId, from, to); }
-      catch { throw new Error('标签内容已更新，但外观设置未能保存，请重试。'); }
+      const changeNotes = async () => {
+        await session.flush();
+        flushed = true;
+        if (to === null) await operations.deleteTag(from, vault, request);
+        else await operations.renameTag(from, to, vault, request);
+      };
+      if (to === null) {
+        await changeNotes();
+        try { await changeTagSettings(vault, from, to); }
+        catch { throw new Error('标签内容已更新，但外观设置未能保存，请重试。'); }
+      } else {
+        await operations.renameTagWithAppearance(vault, from, to, changeNotes, () => changeTagSettings(vault, from, to));
+      }
     } finally {
       try {
         // Refresh even after a partial operation, so a later edit uses the current hash.
         if (flushed) {
-          const saved = await request<Note>('getNote', {id:session.current.id});
+          const saved = await request<Note>('getNote', {...vault, id:session.current.id});
           lastNote.current = saved;
           session.replace({...session.current, body:saved.body, title:saved.title, tags:saved.tags, relativePath:saved.relativePath, baseHash:saved.contentHash});
           if (richEditor.current) resetNoteHistory(richEditor.current, saved.title);

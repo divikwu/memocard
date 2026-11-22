@@ -133,9 +133,10 @@ export function connectSharedTagPreferences(vaultId: string) {
   };
 }
 
-export function updateSharedTagPreferences(vaultId: string, change: Change, { optimistic = false } = {}) {
+export function updateSharedTagPreferences(vaultId: string, change: Change, { optimistic = false, vaultBinding }: {optimistic?: boolean; vaultBinding?: string} = {}) {
   const state = sharedTagPreferences(vaultId);
   if (!state) return undefined;
+  const scope = {vaultId, ...(vaultBinding ? {vaultBinding} : {})};
   const removeOptimisticChange = () => {
     if (optimistic) state.optimistic = state.optimistic.filter(entry => entry !== change);
   };
@@ -151,7 +152,7 @@ export function updateSharedTagPreferences(vaultId: string, change: Change, { op
         const next = change(values(current));
         try {
           requireTagMetadataSupport(current, next);
-          const saved = await request<TagPreferenceState>('setTagPreferences', {...next,baseHash:current.contentHash,vaultId});
+          const saved = await request<TagPreferenceState>('setTagPreferences', {...next,baseHash:current.contentHash,...scope});
           check(state);
           verifyTagMetadata(saved, next);
           removeOptimisticChange();
@@ -159,7 +160,7 @@ export function updateSharedTagPreferences(vaultId: string, change: Change, { op
           return;
         } catch (cause) {
           if ((cause as {code?:string}).code !== 'HASH_CONFLICT' || attempt === 2) throw cause;
-          current = await request<TagPreferenceState>('getTagPreferences', {vaultId});
+          current = await request<TagPreferenceState>('getTagPreferences', scope);
           check(state);
         }
       }

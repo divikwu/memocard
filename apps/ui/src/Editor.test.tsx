@@ -859,7 +859,7 @@ it('flushes the current note before a global tag rename and continues with the r
     expect(current.body).toBe('#work/child 待保存');
     current = {...current,body:'#project/child 待保存',contentHash:'renamed-hash'};
   });
-  render(<TagColorProvider vaultId="v"><Editor initial={{...initial,body:current.body,baseHash:current.contentHash}} initialNote={current} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} /></TagColorProvider>);
+  render(<TagColorProvider vaultId="v" vaultBinding="editor-binding"><Editor initial={{...initial,body:current.body,baseHash:current.contentHash}} initialNote={current} capabilities={new Set(['saveNote','getNoteProperties','updateNoteProperty'])} onClose={vi.fn()} onSaved={vi.fn()} /></TagColorProvider>);
   fireEvent.click(await screen.findByRole('button',{name:'更多属性'}));
   await waitFor(() => expect(screen.getByRole('button',{name:'编辑标签'}).hasAttribute('disabled')).toBe(false));
   replaceEditorText('#work/child 待保存');
@@ -868,7 +868,7 @@ it('flushes the current note before a global tag rename and continues with the r
   const input = await screen.findByRole('textbox',{name:'标签名称'});
   fireEvent.change(input,{target:{value:'Project'}});
   fireEvent.submit(input.closest('form')!);
-  await waitFor(() => expect(rename).toHaveBeenCalledWith('work','project','v',request));
+  await waitFor(() => expect(rename).toHaveBeenCalledWith('work','project',{vaultId:'v',vaultBinding:'editor-binding'},request));
   await waitFor(() => expect(readEditorText()).toBe('#project/child 待保存'));
   replaceEditorText('#project/child 后续编辑');
   finishEditor();

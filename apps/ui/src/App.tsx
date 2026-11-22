@@ -593,7 +593,8 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const canRetryDetail = retryableError && bridgeErrorCode(error) !== "NOTE_NOT_FOUND";
   const openingNoteId = openingNote ? pendingNoteId : undefined;
   const openingTitle = openingNoteId ? notes.find(note => note.id === openingNoteId)?.title?.trim() : undefined;
-  const connectionState = !detailView && view !== "settings" && view !== "tags" && !loading && notes.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
+  const visibleItems = view === "tags" ? tags : notes;
+  const connectionState = !detailView && view !== "settings" && !loading && visibleItems.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
   const listTimeoutVisible = !detailView && view !== "settings" && view !== "tags" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
   const title = editing ? (editing.title?.trim() || "新内容") : openingNote ? openingTitle || (error ? "笔记" : "正在打开笔记") : view === "settings" ? "设置" : view === "trash" ? "回收站" : view === "tags" ? "标签" : view === "home" ? "主页" : activeTags.length > 1 ? "筛选笔记" : tag ? `# ${tag}` : "所有笔记";
   const newNote = async () => {
@@ -755,9 +756,10 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     },
   } : null;
   async function renameNavigationTag(from: string, to: string) {
-    if (!status?.vaultId || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
+    const vaultId = status?.vaultId, vaultBinding = environment?.vaultBinding;
+    if (!vaultId || !vaultBinding || !canCreate || editing) throw new Error("请先完成当前编辑并连接笔记库。");
     try {
-      await (await import("./rename-tag-operation")).renameTag(from, to, status.vaultId, request);
+      await (await import("./rename-tag-operation")).renameTag(from, to, {vaultId,vaultBinding}, request);
       setActiveTags(current => [...new Set(current.map(tag => renamedTag(tag, from, to)))].sort());
     } finally { await refresh(); }
   }
@@ -831,7 +833,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     },
   } : null;
   const onRequestDelete = editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => setNoteToDelete({ id: editing.id, title, vaultId: status.vaultId!, vaultBinding: editing.vaultBinding ?? environment?.vaultBinding }) : undefined;
-  return <TagColorProvider vaultId={status?.vaultId}>{renderView({
+  return <TagColorProvider vaultId={status?.vaultId} vaultBinding={environment?.vaultBinding}>{renderView({
     view, title, backLabel: isMobile && searchNoteReturn.current ? "返回搜索结果" : returnView.current === "home" ? "返回主页" : "返回笔记列表", isMobile, detailView, openingNote, loading, working, switchingVault, refreshingPages,
     openingNoteId, openingTitle, status, environment, capabilities, error, notice, selectionNotice, pinReadError, needsPermission, unsupportedBrowser,
     localWebReconnectRequired, connectionState, detailReadFailed, canRetryDetail,

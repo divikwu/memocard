@@ -6,7 +6,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
-    "test:ci": "node --test scripts/ci-scope.test.mjs scripts/verified-web.test.mjs scripts/check-ui-bundle.test.mjs scripts/benchmark-sidebar-tags.test.mjs && pnpm test:memocard-skill",
+    "test:ci": "node --test scripts/ci-scope.test.mjs scripts/verified-web.test.mjs scripts/check-ui-bundle.test.mjs scripts/benchmark-sidebar-tags.test.mjs scripts/migrate-uuid-notes.test.mjs && pnpm test:memocard-skill",
     "test:memocard-skill": "python3 skills/memocard/tests/check_vault_switch_results.py && python3 skills/memocard/tests/test_vault_switch_checker.py",
     "test:apple-build": "node --test scripts/apple-build.test.mjs",
     "test:native": "swift test --package-path packages/native-core",

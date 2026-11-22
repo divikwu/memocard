@@ -13,12 +13,15 @@ import TrophyIcon from "@hugeicons/core-free-icons/TrophyIcon";
 import emojiData from "../../src/lib/emoji-zh.json";
 import { errorMessage } from "../../src/bridge";
 import { tagKey } from "../../src/inline-tags";
+import { retryTagAppearance } from "../../src/rename-tag-operation";
+import type { TagAppearance } from "../../src/tag-settings";
 import type { TagColor } from "../../src/tag-colors";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
 import { NameEditor } from "./NameEditor";
+import { PageNotice } from "./PageNotice";
 import { useScrollOverflow } from "../hooks/use-scroll-overflow";
 import { IconOptions } from "./PropertyIconPicker";
 import { TagIcon } from "./property-icon-catalog";
@@ -117,6 +120,13 @@ export function EmojiPicker({ selected, disabled, onSelect, autoFocus = false, s
     {!items.length && !customEmoji && <p role="status" className="text-sm text-secondary">没有匹配的 Emoji</p>}
     <TooltipProvider><div role="group" aria-label="Emoji 分类" className="ui-sidebar-emoji-categories">{Object.entries(categories).map(([key, { label, icon }]) => <Tooltip key={key}><TooltipTrigger render={<Button type="button" size={embedded ? "icon-sm" : "icon"} variant="ghost" className={cn("text-icon-secondary", category === key && !needle && "bg-control text-primary")} aria-label={`Emoji 分类：${label}`} aria-pressed={category === key && !needle} disabled={disabled} onClick={() => { setCategory(key); setQuery(""); }}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></Button>} /><TooltipContent>{label}</TooltipContent></Tooltip>)}</div></TooltipProvider>
   </section>;
+}
+
+export function TagAppearanceNotice({appearance, disabled}: {appearance: TagAppearance; disabled: boolean}) {
+  return <PageNotice title="标签外观未保存" actions={
+    <Button variant="outline" size="sm" disabled={disabled || Boolean(appearance.request)}
+      onClick={() => void retryTagAppearance(appearance).catch(() => {})}>重试标签外观</Button>
+  }>「{appearance.target}」已改名，可继续保存标签外观和分组。</PageNotice>;
 }
 
 export function TagEditor({ path, icon, anchor, mobile, onClose, onSave, onDelete, title, appearanceOnly, busy, finalFocus, initialPickerOpen = false, anchorIsTrigger = false, groupAppearance }: {

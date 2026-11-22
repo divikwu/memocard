@@ -6,8 +6,9 @@ import { Button } from "../components/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { SidebarIcon } from "../business/sidebar-icons";
+import { loadWebMoreDrawer } from "./loadWebMoreDrawer";
 
-const WebMoreDrawer = recoverableLazy(() => import("./WebMoreDrawer"), "切换笔记库");
+const WebMoreDrawer = recoverableLazy(loadWebMoreDrawer, "切换笔记库");
 
 export function WebRailNavigation(p: WorkspaceNavigationProps) {
   const [moreOpen, setMoreOpen] = useState<boolean | null>(null);

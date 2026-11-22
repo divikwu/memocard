@@ -1,9 +1,10 @@
-import { Fragment, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-labels";
 import { errorMessage } from "../../src/error-messages";
 import { tagKey } from "../../src/inline-tags";
 import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
+import { pendingTagAppearance, subscribeTagAppearance } from "../../src/tag-settings";
 import { EmptyIllustration } from "../business/EmptyIllustration";
 import { HomeMascot } from "../business/HomeMascot";
 import { Button } from "../components/button";
@@ -31,6 +32,7 @@ import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon";
 import TextFontIcon from "@hugeicons/core-free-icons/TextFontIcon";
 import { WebTypographyProvider } from "./WebTypographyProvider";
+import { ReopenLocalWeb } from "./ReopenLocalWeb";
 import { useNoteAppearance } from "./note-appearance";
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { WorkspaceFrame, LayoutDetailNavigation, LayoutNavigationControls } from "./WorkspaceFrame";
@@ -43,8 +45,9 @@ const Editor = recoverableLazy(() => import("../business/Editor").then(module =>
 const QuickCapture = recoverableLazy(() => import("../business/QuickCapture").then(module => ({ default: module.QuickCapture })), "快速记录");
 const NoteSearchDialog = recoverableLazy(() => import("../business/NoteSearchDialog").then(module => ({ default: module.NoteSearchDialog })), "搜索");
 const TrashPage = recoverableLazy(() => import("../business/TrashPage").then(module => ({ default: module.TrashPage })), "回收站");
-const TagsPage = recoverableLazy(() => import("../business/TagsPage").then(module => ({ default: module.TagsPage })), "标签");
+const WorkspaceTags = recoverableLazy(() => import("../business/TagsPage").then(module => ({ default: module.WorkspaceTags })), "标签");
 const TagEditor = recoverableLazy(() => import("../business/tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
+const TagAppearanceNotice = recoverableLazy(() => import("../business/tag-navigation-editor").then(module => ({ default: module.TagAppearanceNotice })), "标签外观重试");
 const NoteDeleteDialog = recoverableLazy(() => import("../business/NoteDeleteDialog").then(module => ({ default: module.NoteDeleteDialog })), "删除确认");
 const DraftReminderToast = recoverableLazy(() => import("./DraftReminderToast"), "草稿提醒", () => null);
 const NoteAppearanceMenu = recoverableLazy(() => import("./NoteAppearanceMenu").then(module => ({ default: module.NoteAppearanceMenu })), "笔记外观",
@@ -124,7 +127,7 @@ function DraftReminder({ state: s }: { state: AppViewState }) {
   </>;
 }
 
-function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppViewState; tagHeading?: ReactNode; noteHeading?: ReactNode }) {
+function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?: ReactNode }) {
   const layoutId = useWorkspaceAppearance()?.applied.layoutId;
   const compactNavigation = layoutId === "rail" || layoutId === "topbar";
   if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection illustration={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "query" : undefined} title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
@@ -137,21 +140,22 @@ function WorkspaceContent({ state: s, tagHeading, noteHeading }: { state: AppVie
   >
     {editor && <><h1 className="sr-only">{s.title}</h1><Editor {...editor} /></>}
   </NoteDetail>;
-  if (s.view === "tags") return <Suspense fallback={<PageLoading />}><TagsPage key={s.sidebar.vaultId || "disconnected"} heading={tagHeading} tags={s.sidebar.tags} vaultId={s.sidebar.vaultId} loading={Boolean(s.sidebar.loadingTags)} connected={Boolean(s.status?.connected)} disabled={s.working || s.switchingVault} canRename={s.canCreate && !s.working && !s.switchingVault} onSelect={path => void s.onNavigate("notes", path)} onRename={s.sidebar.onRenameTag} /></Suspense>;
   if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
-  if (s.connectionState) return <>{noteHeading}<WorkspaceEmpty role="status" connection={s.localWebReconnectRequired} illustration={s.localWebReconnectRequired ? "plug" : undefined} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
-    {s.localWebReconnectRequired ? <Button role="link" nativeButton={false} render={<a href="memocard-service://open-web" />}>重新打开</Button> : <Button onClick={s.needsPermission ? s.sidebar.onReauthorize : () => s.sidebar.onSelectVault(false)} disabled={s.working}>{s.needsPermission ? "重新授权" : "重新选择文件夹"}</Button>}
+  const pageHeading = heading && <div className="web-collection-heading">{heading}</div>;
+  if (s.connectionState) return <>{pageHeading}<WorkspaceEmpty role="status" illustration={s.localWebReconnectRequired ? "plug" : undefined} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
+    {s.localWebReconnectRequired ? <ReopenLocalWeb /> : <Button onClick={s.needsPermission ? s.sidebar.onReauthorize : () => s.sidebar.onSelectVault(false)} disabled={s.working}>{s.needsPermission ? "重新授权" : "重新选择文件夹"}</Button>}
   </WorkspaceEmpty></>;
-  if (s.listTimeout === "initial") return <>{noteHeading}<WorkspaceEmpty role="alert" connection title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button onClick={s.onRefresh} disabled={s.refreshingPages || s.switchingVault}>重试</Button></WorkspaceEmpty></>;
-  if (!s.loading && !s.status?.connected && !s.collection.notes.length) return <>{noteHeading}<WorkspaceEmpty guide title={s.unsupportedBrowser ? "通过本机服务连接笔记库" : "打开你的笔记文件夹"} description={s.unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或使用 memocard serve。" : "打开已有的 Markdown / Obsidian 文件夹，或创建一个新笔记库。内容保存在你授权的文件夹中。"}>
+  if (s.listTimeout === "initial") return <>{pageHeading}<WorkspaceEmpty role="alert" connection title="笔记加载超时" description="暂时无法读取笔记列表，请重试。"><Button onClick={s.onRefresh} disabled={s.refreshingPages || s.switchingVault}>重试</Button></WorkspaceEmpty></>;
+  if (!s.loading && !s.status?.connected && !(s.view === "tags" ? s.sidebar.tags : s.collection.notes).length) return <>{pageHeading}<WorkspaceEmpty guide title={s.unsupportedBrowser ? "通过本机服务连接笔记库" : "打开你的笔记文件夹"} description={s.unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或使用 memocard serve。" : "打开已有的 Markdown / Obsidian 文件夹，或创建一个新笔记库。内容保存在你授权的文件夹中。"}>
     {!s.unsupportedBrowser && <div className="web-workspace-actions">{s.sidebar.canCreateVault && <CreateButton disabled={s.working} onClick={() => s.sidebar.onSelectVault(true)}>创建笔记库</CreateButton>}<Button variant="outline" disabled={!s.sidebar.canChooseVault || s.working} onClick={() => s.sidebar.onSelectVault(false)}><FolderIcon aria-hidden="true" />打开已有笔记库</Button></div>}
   </WorkspaceEmpty></>;
+  if (s.view === "tags") return <Suspense fallback={<PageLoading />}><WorkspaceTags state={s} heading={heading} /></Suspense>;
   const headingInToolbar = !s.collection.filters && s.collection.recentTags === undefined;
   return <>
     {!s.isMobile && s.view === "home" && s.capture && <Suspense fallback={<PageLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} draftCount={compactNavigation ? s.drafts.records.length : s.capture.draftCount} draftLabel={compactNavigation ? "草稿" : undefined} /></Suspense>}
-    {!headingInToolbar && noteHeading}
-    <NoteCollection key={s.view === "home" ? "home" : "notes"} {...s.collection} heading={headingInToolbar ? noteHeading : undefined}
+    {!headingInToolbar && pageHeading}
+    <NoteCollection key={s.view === "home" ? "home" : "notes"} {...s.collection} heading={headingInToolbar ? pageHeading : undefined}
       showCreateInToolbar={!compactNavigation}>{s.error ? null : <CollectionEmpty state={s} />}</NoteCollection>
   </>;
 }
@@ -178,6 +182,7 @@ function TagCollectionHeading({ tag, state: s }: { tag: string; state: AppViewSt
 }
 
 export function WebAppView({ state: s }: { state: AppViewState }) {
+  const pendingAppearance = useSyncExternalStore(subscribeTagAppearance, () => pendingTagAppearance(s.status?.vaultId, s.environment?.vaultBinding));
   const menuDelete = useRef(false);
   const savedNoteId = s.editor?.initial.baseHash ? s.editor.initial.id : undefined;
   const loadingNoteId = s.openingNoteId === "new" ? undefined : s.openingNoteId;
@@ -239,7 +244,9 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
         </header>}
         <div ref={s.scrollContainer} id="web-main-content" tabIndex={-1} className={`web-app-scroll${s.detailView ? " note-page-scroll" : ""}`} data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined}><div className="web-page-content" data-detail={s.detailView || undefined} data-settings={s.view === "settings" || undefined} data-view={s.view} data-small-text={noteAppearance.value.smallText || undefined} style={noteAppearance.available ? noteAppearance.style : undefined}>
           {s.switchingVault && <Notice title="正在打开笔记库"><Spinner aria-hidden="true" className="mr-2 inline" />首次读取可能需要一些时间。</Notice>}
-          {Boolean(s.error) && !s.detailReadFailed && !(s.connectionState && s.localWebReconnectRequired) && <Notice title={s.localWebReconnectRequired ? "连接已断开" : "操作未完成"} error action={s.localWebReconnectRequired ? <Button role="link" nativeButton={false} variant="outline" size="sm" render={<a href="memocard-service://open-web" />}>重新打开</Button> : s.retryableError && <Button variant="outline" size="sm" disabled={!s.canRefresh || s.switchingVault} onClick={s.openingNote ? s.onRetryDetail : s.onRefresh}>重试</Button>}>{errorMessage(s.error)}</Notice>}
+          {Boolean(s.error) && !s.detailReadFailed && !(s.localWebReconnectRequired && (s.connectionState || s.view === "settings")) && <Notice title={s.localWebReconnectRequired ? "连接已断开" : "操作未完成"} error action={s.localWebReconnectRequired ? <ReopenLocalWeb inline /> : s.retryableError && <Button variant="outline" size="sm" disabled={!s.canRefresh || s.switchingVault} onClick={s.openingNote ? s.onRetryDetail : s.onRefresh}>重试</Button>}>{errorMessage(s.error)}</Notice>}
+          {pendingAppearance && <Suspense fallback={null}><TagAppearanceNotice appearance={pendingAppearance}
+            disabled={!s.status?.connected || s.switchingVault} /></Suspense>}
           {s.pinReadError != null && <Notice title="固定状态暂不可用" error action={<Button variant="outline" size="sm" disabled={s.pinRetryDisabled} onClick={s.onRefreshBackground}>重试</Button>}>{errorMessage(s.pinReadError)}</Notice>}
           {s.selectionNotice && !s.switchingVault && !s.connectionState && <Notice title="文件夹授权未完成" action={<Button variant="outline" size="sm" disabled={s.working} onClick={() => s.sidebar.onSelectVault(false)}>重新选择</Button>}>{s.selectionNotice}</Notice>}
           {s.needsPermission && !s.connectionState && <Notice title="重新授权笔记文件夹" action={<Button variant="outline" size="sm" disabled={s.working} onClick={s.sidebar.onReauthorize}>重新授权</Button>}>文件夹访问权限已失效，请重新授权以读取和保存。</Notice>}
@@ -249,7 +256,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           <DraftReminder state={s} />
           {s.listTimeout === "refresh" && <Notice title="刷新超时" error action={<Button variant="outline" size="sm" disabled={s.refreshingPages || s.switchingVault} onClick={s.onRefreshBackground}>重试</Button>}>继续显示上次读取的内容。</Notice>}
           {!s.detailView && s.view !== "settings" && s.view !== "trash" && !showTagHeading && !showNoteHeading && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}>{collectionHeading}</div>)}
-          <WorkspaceContent state={s} tagHeading={showTagHeading ? collectionHeading : undefined} noteHeading={showNoteHeading ? <div className="web-collection-heading">{collectionHeading}</div> : undefined} />
+          <WorkspaceContent state={s} heading={showNoteHeading || showTagHeading ? collectionHeading : undefined} />
         </div></div>
         {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录">{mobileActions ? <ActionGroup size="lg">{searchControl}</ActionGroup> : searchControl}<div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
   </WorkspaceFrame></MobileActionGroupProvider>;

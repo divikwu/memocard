@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowUpRight01Icon from "@hugeicons/core-free-icons/ArrowUpRight01Icon";
 import { useNoteSearch, type NoteSearchProps } from "../../src/use-note-search";
@@ -26,6 +27,15 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
   const isMobile = useIsMobile() || isIOSNative;
   const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, retrySearch, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, sessionRef, isMobile });
   const SearchContent = isMobile ? SheetContent : DialogContent;
+  const [showPreview, setShowPreview] = useState(false);
+  useEffect(() => {
+    if (isIOSNative) return;
+    const media = window.matchMedia("(min-width: 1024px) and (min-height: 480px)");
+    const update = () => setShowPreview(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   useIOSSurface("search", () => ({
     kind:"search",title:"搜索笔记",presented:open,loading:loading || paging,error,
     message:!available ? "请先连接笔记库，再搜索内容。" : loading ? "正在搜索笔记…" : !notes.length ? searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记" : undefined,
@@ -53,7 +63,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
         <Input ref={input} role="combobox" name="note-search" autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); moveSelection(event.key === "ArrowDown" ? 1 : -1); }
-          if (event.key === "Enter" && active && !loading && available) { event.preventDefault(); onOpenNote(active.id); }
+          if (event.key === "Enter" && event.nativeEvent.keyCode !== 229 && active && !loading && available) { event.preventDefault(); onOpenNote(active.id); }
         }} disabled={!available} placeholder={`在 ${vaultName} 中搜索…`} className="ui-note-search-input h-element-lg min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none" />
         {query && <Button variant="ghost" size="sm" className="ui-note-search-control text-secondary" aria-label="清空搜索" onClick={() => { setQuery(""); input.current?.focus(); }}>清空</Button>}
         {!isMobile && <Button variant="ghost" size="icon-sm" className="ui-note-search-control ui-note-search-desktop-close" aria-label="退出搜索" onClick={() => onOpenChange(false)}><CloseIcon aria-hidden="true" /></Button>}
@@ -79,7 +89,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
             {page && !page.coverage.complete && <p className="px-3 py-3 text-xs text-secondary">部分文件尚未读入，搜索结果可能不完整。</p>}
           </div>
         </div>
-        <aside aria-label="笔记预览" className="ui-note-search-preview min-h-0 shrink-0 p-4">
+        {!isMobile && showPreview && <aside aria-label="笔记预览" className="ui-note-search-preview min-h-0 shrink-0 p-4">
           {active && available ? <div className="ui-note-search-preview-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
             <div className="ui-note-search-preview-header">
               <DocumentIcon aria-hidden="true" className="ui-note-search-preview-icon" />
@@ -97,7 +107,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
               {previewError && <p role="alert" className="mt-3 text-sm text-error">{previewError}</p>}
             </div>
           </div> : <div className="ui-note-search-empty text-center text-sm text-secondary"><DocumentIcon aria-hidden="true" className="mx-auto mb-3 size-7 opacity-50" />选择笔记以预览</div>}
-        </aside>
+        </aside>}
       </div>
       {!isMobile && <div className="ui-note-search-footer flex shrink-0 items-center justify-between gap-3 border-t border-divider px-4 py-3 text-xs text-secondary">
         <span className="ui-note-search-keyboard-hints flex items-center gap-4"><span className="flex items-center gap-2"><KbdGroup><Kbd aria-label="向上方向键">↑</Kbd><Kbd aria-label="向下方向键">↓</Kbd></KbdGroup>选择</span><span className="flex items-center gap-2"><Kbd aria-label="回车键">↵</Kbd>打开</span></span>
