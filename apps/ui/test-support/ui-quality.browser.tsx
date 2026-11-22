@@ -3038,7 +3038,8 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
     await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑标签"})).toBeNull());
     expect(fixture.snapshot().notes.some(note => note.tags.includes("手冲记录"))).toBe(true);
     await page.viewport(390, 1000);
-    await userEvent.type(directory.getByRole("textbox", {name: "搜索标签"}), "手冲");
+    await expect.element(directoryControls.getByRole("tablist", {name: "标签视图"})).toHaveAttribute("data-variant", "default");
+    await directoryControls.getByRole("textbox", {name: "搜索标签", exact: true}).fill("手冲");
     expect(directory.getByRole("button", {name: "查看标签 手冲记录 的笔记"})).toBeTruthy();
     await userEvent.click(directory.getByRole("button", {name: "清空标签搜索"}));
     await selectTagAction("生活", "置顶标签");
