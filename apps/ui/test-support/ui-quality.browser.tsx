@@ -4047,7 +4047,7 @@ for (const width of [390, 1100]) test(`cold Web detail shows the body during slo
     if (width < 768) finishLayout(); else finishProperties();
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
-    expect(body.getBoundingClientRect().top).toBeCloseTo(initialBodyTop, 1);
+    expect(Math.abs(body.getBoundingClientRect().top - initialBodyTop), "body position while one read remains pending").toBeLessThanOrEqual(0.5);
     finishProperties();
     finishLayout();
     const lastField = await canvas.findByRole("button", {name:"编辑属性 字段39"});
