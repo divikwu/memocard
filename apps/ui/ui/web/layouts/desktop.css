@@ -1,0 +1,13 @@
+.web-desktop-rail button, .web-top-icon, .web-topbar .web-top-logo { --focus-outline-offset: calc(var(--focus-outline-width) * -1); }
+:is(.web-rail-group > button, .web-top-icon):enabled:is(:hover, [aria-current=page], [aria-expanded=true]) { background-color: var(--color-background-control); }
+
+@media (min-width: 768px) {
+  .web-app[data-web-client]:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) {
+    & .web-page-content {
+      --workspace-title-font-size: var(--font-size-note-title);
+      --workspace-title-line-height: var(--text-heading-2-leading);
+    }
+    & .web-page-content:is([data-view=notes], [data-view=tags], [data-view=settings], [data-view=trash]):not([data-detail]) { padding-block-start: var(--workspace-content-top); }
+    & .web-page-content[data-view=notes] > .ui-note-collection { margin-block-start: calc(var(--spacing-1) * 4); padding-block-start: 0; }
+  }
+}

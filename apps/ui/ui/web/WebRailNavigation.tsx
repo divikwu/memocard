@@ -18,7 +18,7 @@ export function WebRailNavigation(p: WorkspaceNavigationProps) {
   const tagsCurrent = activeView === "tags" || (activeView === "notes" && p.tag && !p.quickFilter) ? "page" : undefined;
   const vaultLabel = `笔记库：${p.vaultName}`;
   return <>
-    <nav className="web-desktop-rail" aria-label="桌面导航">
+    <nav className="web-desktop-rail" aria-label="桌面导航" data-ui-tooltip-side="right">
       <Button variant="ghost" size="icon" className="web-top-logo" aria-label="MemoCard，返回主页" onClick={actions.home.run}><img src="./favicon.png" draggable={false} alt="" /></Button>
       <div className="web-rail-group" role="group" aria-label="主要入口">
         <Button variant="ghost" size="icon" aria-label="主页" data-ui-tooltip="主页" aria-current={activeView === "home" ? "page" : undefined} onClick={actions.home.run}><SidebarIcon name="home" /></Button>
@@ -42,10 +42,15 @@ export function WebRailNavigation(p: WorkspaceNavigationProps) {
 export function WebDetailNavigation(p: WorkspaceNavigationProps) {
   const trigger = useRef<HTMLButtonElement>(null);
   const openSearch = useRef(false);
+  const openedByHover = useRef(false);
   const actions = workspaceActions(p);
-  return <DropdownMenu>
-    <DropdownMenuTrigger render={<Button ref={trigger} variant="ghost" size="icon" className="web-header-icon" aria-label="导航菜单" data-ui-tooltip="导航菜单" />}><HugeiconsIcon icon={Menu01Icon} strokeWidth={2} aria-hidden="true" /></DropdownMenuTrigger>
-    <DropdownMenuContent aria-label="导航菜单" finalFocus={() => {
+  // Base UI 1.9's Menu.Popup reads initialFocus at runtime but omits it from its public type.
+  const hoverFocusProps = { initialFocus: () => !openedByHover.current };
+  return <DropdownMenu onOpenChange={(open, event) => {
+    if (open) openedByHover.current = event.reason === "trigger-hover";
+  }}>
+    <DropdownMenuTrigger openOnHover render={<Button ref={trigger} variant="ghost" size="icon" className="web-header-icon" aria-label="导航菜单" />}><HugeiconsIcon icon={Menu01Icon} strokeWidth={2} aria-hidden="true" /></DropdownMenuTrigger>
+    <DropdownMenuContent aria-label="导航菜单" {...hoverFocusProps} finalFocus={() => {
       if (!openSearch.current) return true;
       openSearch.current = false;
       trigger.current?.focus();

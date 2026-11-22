@@ -112,11 +112,11 @@ function paintedContrast(foreground: string, background: string) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
-function expectKeyboardOutline(element: Element, mode: "light" | "dark") {
+function expectKeyboardOutline(element: Element, mode: "light" | "dark", offset = "0px") {
   const style = getComputedStyle(element);
   expect(style.outlineStyle).toBe("solid");
   expect(style.outlineWidth).toBe("2px");
-  expect(style.outlineOffset).toBe("2px");
+  expect(style.outlineOffset).toBe(offset);
   const swatch = document.createElement("span");
   swatch.style.color = `var(--color-blue-${mode === "light" ? "600" : "400"})`;
   document.body.append(swatch);
@@ -2692,8 +2692,10 @@ test("Web tag color picker applies the shared palette without submitting the tag
 
 test("Web tag groups save shared membership without changing any notes", async () => {
   await commands.setReducedMotion("reduce");
+  await page.viewport(1440, 1000);
   const previousHash = location.hash;
   localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/tags");
   const fixture = await createWorkspaceFixture();
   const original = fixture.snapshot().notes.map(note => [note.id, note.body, note.tags]);
@@ -2704,7 +2706,10 @@ test("Web tag groups save shared membership without changing any notes", async (
     await canvas.findByRole("button", {name: "查看标签 生活/咖啡 的笔记"});
     expect(canvas.queryByRole("button", {name: "新建群组"})).toBeNull();
     await userEvent.click(canvas.getByRole("tab", {name: "标签群组"}));
-    await userEvent.click(canvas.getByRole("button", {name: "新建标签"}));
+    const create = canvas.getByRole("button", {name: "新建"});
+    await userEvent.hover(create);
+    const createMenu = await body.findByRole("menu", {name: "新建"});
+    await userEvent.click(within(createMenu).getByRole("menuitem", {name: "新建标签"}));
     const newLabel = within(await canvas.findByRole("rowgroup", {name: "新建标签"}));
     expect(body.queryByRole("dialog", {name: "新建标签"})).toBeNull();
     await userEvent.type(newLabel.getByRole("textbox", {name: "标签名称"}), "brewing");
@@ -2718,10 +2723,14 @@ test("Web tag groups save shared membership without changing any notes", async (
     const unused = await canvas.findByRole("button", {name: "查看标签 brewing 的笔记"});
     expect(unused.getAttribute("aria-description")).toBe("0 条笔记");
     expect((await fixture.request<TagPreferenceState>("getTagPreferences")).labels?.brewing).toBe("手冲冲煮笔记");
-    await userEvent.click(canvas.getByRole("tab", {name: "标签群组"}));
     for (const [name, width] of [["收藏", 1440], ["饮品", 390]] as const) {
       await page.viewport(width, 1000);
-      await userEvent.click(canvas.getByRole("button", {name: "新建群组"}));
+      await userEvent.click(canvas.getByRole("tab", {name: "全部"}));
+      if (width === 1440) {
+        create.focus();
+        await userEvent.keyboard("{Enter}");
+      } else await userEvent.click(create);
+      await userEvent.click(await body.findByRole("menuitem", {name: "新建群组"}));
       const dialog = within(await canvas.findByRole("rowgroup", {name: "新建群组"}));
       expect(body.queryByRole("dialog", {name: "新建群组"})).toBeNull();
       const addDescription = dialog.getByRole("button", {name: "添加群组说明"});
@@ -2754,34 +2763,105 @@ test("Web tag groups save shared membership without changing any notes", async (
         await waitFor(() => expect(body.queryByRole("menu", {name: actionsName})).toBeNull());
       }
       await userEvent.click(canvas.getByRole("tab", {name: "标签群组"}));
-      expect(within(canvas.getByRole("rowgroup", {name})).getByRole("button", {name: "查看标签 生活/咖啡 的笔记"})).toBeTruthy();
-      const member = within(canvas.getByRole("rowgroup", {name})).getByRole("button", {name: "查看标签 生活/咖啡 的笔记"}).closest("tr")!;
-      expect(member.getBoundingClientRect().height).toBe(40);
-      const groupIcon = canvas.getByRole("button", {name: `编辑群组图标 ${name}`}).getBoundingClientRect();
+      const noteCount = within(canvas.getByRole("rowgroup", {name})).getByRole("button", {name: "查看标签 生活/咖啡 的笔记"});
+      const member = noteCount.closest("tr")!;
+      const groupIconButton = canvas.getByRole("button", {name: `编辑群组图标 ${name}`});
+      const groupIcon = groupIconButton.getBoundingClientRect();
       const memberIcon = within(member).getByRole("button", {name: "编辑标签图标 生活/咖啡"}).getBoundingClientRect();
       const label = member.querySelector(".ui-tag-directory-label")!;
       const guide = parseFloat(getComputedStyle(label, "::before").insetInlineStart);
+      const table = within(canvas.getByRole("table", {name: "群组标签列表"}));
+      const countHeading = table.getByRole("columnheader", {name: "笔记数"});
+      for (const row of [countHeading.closest("tr")!, groupIconButton.closest("tr")!, member]) {
+        expect(row.getBoundingClientRect().height).toBe(36);
+      }
+      const actionsHeading = table.getByRole("columnheader", {name: "操作"});
+      const tagName = within(member).getByRole("button", {name: "编辑标签名称 生活/咖啡"});
+      const tagDescription = within(member).getByRole("button", {name: "添加标签说明 生活/咖啡"});
+      expect(actionsHeading.querySelector(".sr-only")).toBeNull();
+      for (const button of [tagName, tagDescription, noteCount, table.getByRole("button", {name: `编辑群组名称 ${name}`})]) {
+        expect(getComputedStyle(button).borderRadius).toBe("4px");
+      }
+      const memberActions = within(member).getByRole("button", {name: "标签操作 生活/咖啡"});
+      await waitFor(() => expect(getComputedStyle(memberActions).opacity).toBe("1"));
+      await userEvent.keyboard("{Tab}");
+      for (const button of [groupIconButton, tagName, tagDescription, noteCount, memberActions]) {
+        button.focus();
+        expectKeyboardOutline(button, "light", "-2px");
+      }
+      for (const heading of table.getAllByRole("columnheader")) {
+        expect(getComputedStyle(heading.querySelector("button") ?? heading).fontSize).toBe("14px");
+      }
+      expect(getComputedStyle(noteCount).fontSize).toBe("14px");
+      expect(getComputedStyle(noteCount).color).toBe("rgb(0, 0, 0)");
+      for (const heading of [countHeading, actionsHeading]) {
+        expect(getComputedStyle(heading).paddingInlineStart).toBe("8px");
+        expect(getComputedStyle(heading).paddingInlineEnd).toBe("8px");
+      }
+      expect(countHeading.getBoundingClientRect().width).toBe(80);
+      expect(actionsHeading.getBoundingClientRect().width).toBe(width === 1440 ? 80 : 44);
+      const descriptionWidth = table.getByRole("columnheader", {name: "说明"}).getBoundingClientRect().width;
+      const rowWidth = member.getBoundingClientRect().width;
+      if (width === 1440) {
+        expect(tagName.getBoundingClientRect().width).toBe(120);
+        expect(descriptionWidth).toBeCloseTo(rowWidth - table.getByRole("columnheader", {name: "名称"}).getBoundingClientRect().width - 160);
+      } else {
+        expect(descriptionWidth / rowWidth).toBeCloseTo(0.24);
+      }
       expect(groupIcon.width).toBe(memberIcon.width);
       expect(groupIcon.left + groupIcon.width / 2).toBeCloseTo(label.getBoundingClientRect().left + guide);
       expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
     }
     const groupedTable = canvas.getByRole("table", {name: "群组标签列表"});
     const nameColumn = within(groupedTable).getByRole("columnheader", {name: "名称"});
-    expect(nameColumn.getAttribute("aria-sort")).toBe("ascending");
-    await userEvent.click(within(nameColumn).getByRole("button"));
-    expect(nameColumn.getAttribute("aria-sort")).toBe("descending");
+    const controlFill = getComputedStyle(canvas.getByRole("textbox", {name: "搜索标签"})).backgroundColor;
+    await userEvent.hover(nameColumn);
+    await waitFor(() => expect(getComputedStyle(nameColumn).backgroundColor).toBe(controlFill));
+    const groupCell = canvas.getByRole("button", {name: "编辑群组图标 饮品"}).closest("td")!;
+    await userEvent.hover(groupCell);
+    await waitFor(() => expect(getComputedStyle(groupCell).backgroundColor).toBe(controlFill));
     const descriptionColumn = within(groupedTable).getByRole("columnheader", {name: "说明"});
     expect(within(descriptionColumn).queryByRole("button")).toBeNull();
     const countColumn = within(groupedTable).getByRole("columnheader", {name: "笔记数"});
+    const nameSort = within(nameColumn).getByRole("button");
+    const countSort = within(countColumn).getByRole("button");
+    const inactiveSortIcon = countSort.querySelector('svg[aria-hidden="true"]')!.innerHTML;
+    const ascendingSortIcon = nameSort.querySelector("svg")!.innerHTML;
+    expect(inactiveSortIcon).not.toBe(ascendingSortIcon);
+    nameSort.focus();
+    await userEvent.tab();
+    await expect.element(countSort).toHaveFocus();
+    expectKeyboardOutline(countSort, "light", "-2px");
+    await userEvent.tab({shift: true});
+    await expect.element(nameSort).toHaveFocus();
+    const sortFocus = getComputedStyle(nameSort);
+    expect([sortFocus.height, sortFocus.borderRadius, sortFocus.outlineStyle, sortFocus.outlineWidth, sortFocus.outlineOffset])
+      .toEqual(["24px", "4px", "solid", "2px", "-2px"]);
+    expect(nameColumn.getAttribute("aria-sort")).toBe("ascending");
+    await userEvent.keyboard("{Enter}");
+    expect(nameColumn.getAttribute("aria-sort")).toBe("descending");
+    const descendingSortIcon = nameSort.querySelector("svg")!.innerHTML;
+    expect(descendingSortIcon).not.toBe(inactiveSortIcon);
+    expect(descendingSortIcon).not.toBe(ascendingSortIcon);
     const memberCounts = () => within(canvas.getByRole("rowgroup", {name: "饮品"}))
       .getAllByRole("button", {name: /查看标签 .* 的笔记/}).map(button => Number(button.textContent));
-    await userEvent.click(within(countColumn).getByRole("button"));
+    await userEvent.tab();
+    await expect.element(countSort).toHaveFocus();
+    await userEvent.keyboard(" ");
     expect(countColumn.getAttribute("aria-sort")).toBe("ascending");
+    expect(nameColumn.hasAttribute("aria-sort")).toBe(false);
+    expect(nameSort.querySelector("svg")!.innerHTML).toBe(inactiveSortIcon);
+    expect(countSort.querySelector("svg")!.innerHTML).toBe(ascendingSortIcon);
+    const countHeadingBounds = countColumn.getBoundingClientRect();
+    const countSortBounds = within(countColumn).getByRole("button").getBoundingClientRect();
+    expect(countSortBounds.left).toBeGreaterThanOrEqual(countHeadingBounds.left);
+    expect(countSortBounds.right).toBeLessThanOrEqual(countHeadingBounds.right);
     const ascendingCounts = memberCounts();
     expect(ascendingCounts[0]).toBe(0);
     expect(ascendingCounts[1]).toBeGreaterThan(0);
     await userEvent.click(within(countColumn).getByRole("button"));
     expect(countColumn.getAttribute("aria-sort")).toBe("descending");
+    expect(countSort.querySelector("svg")!.innerHTML).toBe(descendingSortIcon);
     expect(memberCounts()).toEqual([...ascendingCounts].reverse());
     const groupToggle = canvas.getByRole("button", {name: /^(收起|展开)群组 收藏$/});
     await userEvent.click(groupToggle);
@@ -2821,12 +2901,12 @@ test("Web tag groups save shared membership without changing any notes", async (
     await userEvent.click(drinks.getByRole("button", {name: "编辑标签名称 生活/咖啡"}));
     const tagName = drinks.getByRole("textbox", {name: "标签名称"});
     expect(tagName).toHaveValue("生活/咖啡");
-    const tagNameWidth = tagName.getBoundingClientRect().width;
+    expect(tagName.getBoundingClientRect().width).toBe(120);
     await userEvent.fill(tagName, "咖啡");
     await userEvent.keyboard("{Escape}");
     await userEvent.click(drinks.getByRole("button", {name: "添加标签说明 生活/咖啡"}));
     const tagDescription = drinks.getByRole("textbox", {name: "标签说明"});
-    expect(tagDescription.getBoundingClientRect().width).toBeCloseTo(tagNameWidth, 1);
+    expect(tagDescription.getBoundingClientRect().width).toBe(200);
     await userEvent.fill(tagDescription, "冲煮笔记");
     await userEvent.tab();
     await waitFor(async () => expect((await fixture.request<TagPreferenceState>("getTagPreferences")).labels?.["生活/咖啡"]).toBe("冲煮笔记"));
@@ -2855,7 +2935,7 @@ test("Web tag groups save shared membership without changing any notes", async (
     const groupDescription = canvas.getByRole("textbox", {name: "群组说明"});
     expect(groupDescription.getBoundingClientRect().height).toBe(36);
     const groupDescriptionWidth = groupDescription.getBoundingClientRect().width;
-    expect(groupDescription.closest("tr")!.getBoundingClientRect().height).toBe(40);
+    expect(groupDescription.closest("tr")!.getBoundingClientRect().height).toBe(36);
     await userEvent.fill(groupDescription, "收藏的阅读笔记");
     await userEvent.keyboard("{Enter}");
     expect(await canvas.findByRole("button", {name: "编辑群组说明 收藏"})).toHaveTextContent("收藏的阅读笔记");
@@ -2864,7 +2944,7 @@ test("Web tag groups save shared membership without changing any notes", async (
     expect(groupName).toHaveValue("收藏");
     expect(groupName.getBoundingClientRect().height).toBe(36);
     expect(groupName.getBoundingClientRect().width).toBeCloseTo(groupDescriptionWidth, 1);
-    expect(groupName.closest("tr")!.getBoundingClientRect().height).toBe(40);
+    expect(groupName.closest("tr")!.getBoundingClientRect().height).toBe(36);
     await userEvent.fill(groupName, "我的收藏");
     await userEvent.keyboard("{Enter}");
     expect(await canvas.findByRole("heading", {name: "我的收藏"})).toBeTruthy();
@@ -2908,7 +2988,8 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
         const tab = directory.getByRole("tab", {name: "全部"});
         expect(getComputedStyle(coffee).paddingInlineStart).toBe(getComputedStyle(tab).paddingInlineStart);
         expect(getComputedStyle(coffee).columnGap).toBe(getComputedStyle(tab).columnGap);
-        expect(getComputedStyle(coffee.closest("ul")!).gap).toBe(getComputedStyle(tab.parentElement!).gap);
+        expect(getComputedStyle(coffee.closest("ul")!).gap).toBe("8px");
+        expect(getComputedStyle(tab.closest('[role="tablist"]')!).columnGap).toBe(width < 768 ? "normal" : "8px");
         expect(actions.right).toBeLessThan(chip.right);
         expect(actions.top + actions.height / 2).toBeCloseTo(chip.top + chip.height / 2, 1);
         expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
@@ -3439,8 +3520,8 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
       expectUnclippedOutline(button);
       const style = getComputedStyle(button), rect = button.getBoundingClientRect(), frame = group.getBoundingClientRect();
       const outset = parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
-      expect(rect.top - outset).toBeCloseTo(frame.top - 2, 1);
-      expect(rect.bottom + outset).toBeCloseTo(frame.bottom + 2, 1);
+      expect(rect.top - outset).toBeCloseTo(frame.top, 1);
+      expect(rect.bottom + outset).toBeCloseTo(frame.bottom, 1);
     }
     expect(getComputedStyle(searchGroup).flexGrow).toBe("0");
     const pressFooter = async (control: HTMLElement) => {
@@ -4386,25 +4467,37 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
   const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={state => { current = state; return renderWebApp(state); }} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
+    const railPadding = 8;
+    const railWidth = 40 + railPadding * 2;
     for (const width of [768, 900, 1024, 1440, 1920]) {
       const height = width === 768 ? 680 : 1000;
+      const workspaceWidth = width - railWidth;
+      const pageGutter = workspaceWidth >= 1024 ? 32 : 24;
       await page.viewport(width, height);
       await waitFor(() => expect(current!.isMobile).toBe(false));
       await canvas.findByRole("button", { name: "打开 今天的手冲记录" });
       const rail = await canvas.findByRole("navigation", { name: "桌面导航" });
-      expect(rail.getBoundingClientRect()).toMatchObject({ left: 0, top: 0, width: 60, height });
+      expect(rail.getBoundingClientRect()).toMatchObject({ left: 0, top: 0, width: railWidth, height });
+      expect(getComputedStyle(rail).padding).toBe(`${railPadding}px`);
       const primary = within(rail).getByRole("group", { name: "主要入口" }).getBoundingClientRect();
       const footer = within(rail).getByRole("group", { name: "笔记库和设置" }).getBoundingClientRect();
+      expect(primary).toMatchObject({ left: railPadding, right: railWidth - railPadding });
       expect((primary.top + primary.bottom) / 2).toBeCloseTo(height / 2);
-      expect(footer.bottom).toBe(height - 16);
+      expect(footer).toMatchObject({ left: railPadding, right: railWidth - railPadding, bottom: height - railPadding });
       const scroll = view.container.querySelector<HTMLElement>("#web-main-content")!;
-      expect(scroll.getBoundingClientRect()).toMatchObject({ left: 60, top: 0, width: width - 60, height });
-      expect(getComputedStyle(scroll).paddingInlineStart).toBe(width >= 1084 ? "32px" : "24px");
+      expect(scroll.getBoundingClientRect()).toMatchObject({ left: railWidth, top: 0, width: workspaceWidth, height });
+      expect(getComputedStyle(scroll).paddingInlineStart).toBe(`${pageGutter}px`);
       expect(getComputedStyle(scroll).paddingBlockStart).toBe("0px");
       const content = view.container.querySelector<HTMLElement>(".web-page-content")!;
       const bounds = content.getBoundingClientRect();
-      expect(bounds.width).toBeCloseTo(Math.min(1280, width - 60 - (width >= 1084 ? 64 : 48)), 1);
-      expect(bounds.left).toBeCloseTo(60 + (width - 60 - bounds.width) / 2, 1);
+      expect(getComputedStyle(content).paddingBlockStart).toBe("56px");
+      expect(bounds.width).toBeCloseTo(Math.min(1280, workspaceWidth - pageGutter * 2), 1);
+      expect(bounds.left).toBeCloseTo(railWidth + (workspaceWidth - bounds.width) / 2, 1);
+      const title = canvas.getByRole("heading", { name: "所有笔记", level: 1 });
+      const collection = canvas.getByRole("region", { name: "笔记集合" });
+      expect(getComputedStyle(title).fontSize).toBe("32px");
+      expect(getComputedStyle(collection).paddingBlockStart).toBe("0px");
+      expect(collection.getBoundingClientRect().top - title.getBoundingClientRect().bottom).toBeCloseTo(16);
       const logo = rail.querySelector("img")!.getBoundingClientRect();
       expect(logo.width).toBe(32); expect(logo.height).toBe(32);
       const recentTags = await canvas.findByRole("tablist", { name: "类型" });
@@ -4425,9 +4518,64 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
       await act(async () => { await current!.onNavigate("notes"); });
       expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
     }
+    const rail = within(canvas.getByRole("navigation", { name: "桌面导航" }));
+    rail.getByRole("button", { name: "MemoCard，返回主页" }).focus();
+    await userEvent.keyboard("{Tab}");
+    const homeButton = rail.getByRole("button", { name: "主页" });
+    await expect.element(homeButton).toHaveFocus();
+    expectKeyboardOutline(homeButton, homeButton.closest("[data-ui-theme=dark]") ? "dark" : "light", "-2px");
+    const homeHint = await within(document.body).findByRole("tooltip", { name: "主页" });
+    const hintStyle = getComputedStyle(homeHint);
+    expect([hintStyle.fontSize, hintStyle.padding]).toEqual(["14px", "4px 12px"]);
+    expect(parseFloat(hintStyle.borderTopLeftRadius) * 2).toBeGreaterThanOrEqual(homeHint.offsetHeight);
+    for (const [route, name, mainContent] of [
+      ["tags", "标签", ".ui-tag-directory-tabs"],
+      ["settings", "设置", ".web-settings-panel"],
+      ["trash", "回收站", ".ui-trash > header + *"],
+    ] as const) {
+      await act(async () => { await current!.onNavigate(route); });
+      const title = await canvas.findByRole("heading", { name, level: 1 });
+      const content = title.closest(".web-page-content")!;
+      const panel = content.querySelector(mainContent)!;
+      expect(getComputedStyle(title).fontSize).toBe("32px");
+      expect(getComputedStyle(content).paddingBlockStart).toBe("56px");
+      expect(title.getBoundingClientRect().top - content.getBoundingClientRect().top).toBeCloseTo(56);
+      expect(panel.getBoundingClientRect().top - title.getBoundingClientRect().bottom).toBeCloseTo(16);
+      if (route === "tags" || route === "settings") {
+        expect(content.getBoundingClientRect().width).toBe(720);
+        const body = route === "settings" ? panel.querySelector("[data-slot=card]")! : panel;
+        expect(body.getBoundingClientRect().width).toBe(720);
+        expect(body.getBoundingClientRect().left).toBe(title.getBoundingClientRect().left);
+      }
+      if (route === "tags") {
+        expect(canvas.getByRole("tablist", { name: "标签视图" })).toHaveAttribute("data-variant", "default");
+        const search = canvas.getByRole("textbox", { name: "搜索标签" });
+        const create = canvas.getByRole("button", { name: "新建" });
+        expect(search.parentElement?.parentElement).toBe(create.parentElement);
+        const createLeft = create.getBoundingClientRect().left;
+        const expectSearchWidth = (width: number) => {
+          expect(search.getBoundingClientRect().width).toBe(width);
+          expect(create.getBoundingClientRect().left).toBe(createLeft);
+          expect(createLeft - search.getBoundingClientRect().right).toBe(4);
+        };
+        expectSearchWidth(160);
+        if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+          await userEvent.hover(search);
+          await waitFor(() => expectSearchWidth(240));
+          await userEvent.unhover(search);
+          await waitFor(() => expectSearchWidth(160));
+        }
+        search.focus();
+        await waitFor(() => expectSearchWidth(240));
+        search.blur();
+        await waitFor(() => expectSearchWidth(160));
+      }
+    }
+    await act(async () => { await current!.onNavigate("notes"); });
     await page.viewport(390, 844);
     await waitFor(() => expect(current!.isMobile).toBe(true));
     expect(canvas.queryByRole("navigation", { name: "桌面导航" })).toBeNull();
+    expect(getComputedStyle(view.container.querySelector(".web-page-content")!).paddingBlockStart).toBe("4px");
     expect(canvas.getByRole("button", { name: "打开导航" })).toBeVisible();
     const recentTags = await canvas.findByRole("tablist", { name: "类型" });
     expect(recentTags).toBeVisible();
@@ -4445,6 +4593,40 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 }, 30_000);
 
+if (!inject("uiQualityTouch")) test("classic note navigation opens on hover and remains keyboard operable", async () => {
+  await page.viewport(1440, 900);
+  const previousHash = location.hash;
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    const body = within(document.body);
+    await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
+    const editor = await canvas.findByRole("textbox", { name: "笔记内容" });
+    const trigger = canvas.getByRole("button", { name: "导航菜单" });
+    editor.focus();
+    await userEvent.hover(trigger);
+    const menu = await body.findByRole("menu", { name: "导航菜单" });
+    expect(editor).toHaveFocus();
+    expect(body.queryByRole("tooltip", { name: "导航菜单" })).toBeNull();
+    await userEvent.hover(within(menu).getByRole("menuitem", { name: "主页" }));
+    expect(menu).toBeVisible();
+    await userEvent.hover(editor);
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
+    await waitFor(() => expect(menu).not.toBeInTheDocument());
+    trigger.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    const home = await body.findByRole("menuitem", { name: "主页" });
+    await expect.element(home).toHaveFocus();
+    await userEvent.keyboard("{Escape}");
+    await expect.element(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+});
+
 if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collection filters support keyboard dismissal", async () => {
   await page.viewport(1440, 900);
   const previousHash = location.hash;
@@ -4459,13 +4641,16 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
     const trigger = nav.getByRole("button", { name: "笔记" });
     const body = within(document.body);
     await userEvent.hover(trigger);
+    const notesHint = await body.findByText("笔记", { selector: '[role="tooltip"]' });
+    expect(notesHint).toHaveAttribute("data-side", "right");
+    expect(notesHint.getBoundingClientRect().left).toBeGreaterThan(trigger.getBoundingClientRect().right);
     expect(trigger).not.toHaveAttribute("aria-haspopup");
     await userEvent.click(trigger);
     expect(trigger).toHaveAttribute("aria-current", "page");
     const stateSwatch = document.createElement("span");
     stateSwatch.hidden = true;
-    stateSwatch.style.backgroundColor = "color-mix(in srgb, var(--color-overlay-pressed) 40%, transparent)";
-    stateSwatch.style.color = "var(--color-icon-primary)";
+    stateSwatch.style.backgroundColor = "var(--color-background-control)";
+    stateSwatch.style.color = trigger.closest("[data-ui-theme=dark]") ? "var(--color-icon-primary)" : "var(--color-black)";
     trigger.parentElement!.append(stateSwatch);
     await waitFor(() => {
       expect(getComputedStyle(trigger).backgroundColor).toBe(getComputedStyle(stateSwatch).backgroundColor);
@@ -4475,12 +4660,17 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
     stateSwatch.remove();
     await userEvent.keyboard("{Tab}");
     trigger.focus();
-    await waitFor(() => expectKeyboardOutline(trigger, trigger.closest("[data-ui-theme=dark]") ? "dark" : "light"));
+    await waitFor(() => expectKeyboardOutline(trigger, trigger.closest("[data-ui-theme=dark]") ? "dark" : "light", "-2px"));
     const more = nav.getByRole("button", { name: /^笔记库：/ });
     const search = nav.getByRole("button", { name: "搜索" });
+    expect(getComputedStyle(search).color).toBe(getComputedStyle(trigger).color);
+    await userEvent.hover(search);
+    await waitFor(() => expect(getComputedStyle(search).backgroundColor).toBe(getComputedStyle(trigger).backgroundColor));
     expect(search.getBoundingClientRect().bottom).toBeLessThan(trigger.getBoundingClientRect().top);
     expect(more.getBoundingClientRect().top).toBeGreaterThan(trigger.getBoundingClientRect().bottom);
     await userEvent.hover(more);
+    const vaultHint = await body.findByText(/^笔记库：/, { selector: '[role="tooltip"]' });
+    expect(vaultHint).toHaveAttribute("data-side", "right");
     expect(body.queryByRole("dialog", {name: "切换笔记库"})).toBeNull();
     more.focus();
     await userEvent.keyboard("{Enter}");

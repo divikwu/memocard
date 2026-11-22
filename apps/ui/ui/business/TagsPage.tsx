@@ -1,7 +1,8 @@
-import { Fragment, Suspense, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, Suspense, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowDown02Icon from "@hugeicons/core-free-icons/ArrowDown02Icon";
 import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon";
+import UnfoldMoreIcon from "@hugeicons/core-free-icons/UnfoldMoreIcon";
 import { useIsMobile } from "../hooks/use-mobile";
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
@@ -9,6 +10,7 @@ import type { TagGroup } from "@memocard/contracts";
 import { createId } from "../../src/uuid";
 import { normalizePropertyTag, tagKey } from "../../src/inline-tags";
 import { Button } from "../components/button";
+import { AddIcon } from "../icons";
 import { EmptyIllustration } from "./EmptyIllustration";
 import { CreateButton } from "./CreateButton";
 import { Input } from "../components/input";
@@ -48,7 +50,11 @@ type TagsPageProps = {
 };
 
 export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connected, disabled, canRename, onSelect, onRename }: TagsPageProps) {
-  const showSearch = useThemeScopeProps()["data-interface-theme"] !== "minimal";
+  const { "data-interface-theme": interfaceTheme, "data-workspace-layout": layout } = useThemeScopeProps();
+  const classicTheme = interfaceTheme === "classic" && layout !== "sidebar";
+  const minimalTheme = interfaceTheme === "minimal" && layout !== "sidebar";
+  const hasCreateMenu = classicTheme || minimalTheme;
+  const viewTabClassName = classicTheme ? "group/view-tab gap-1.5" : viewTabStyles;
   const { preferences, error, togglePinned, saveAppearance, updatePreferences } = useTagPreferences(vaultId);
   const tags = useMemo(() => {
     const known = new Set(indexedTags.map(tag => tag.name));
@@ -70,7 +76,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   const directory = useRef<HTMLElement>(null);
   const returnPath = useRef("");
   const fallbackFocus = () => search.current ?? tabs.current?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]');
-  const needle = showSearch ? query.trim().toLocaleLowerCase() : "";
+  const needle = query.trim().toLocaleLowerCase();
   const matches = useMemo(() => tags.filter(tag => tag.name.toLocaleLowerCase().includes(needle)), [tags, needle]);
   const descriptions = new Map(Object.entries(preferences.labels ?? {}));
   const tagGroups = preferences.groups ?? [];
@@ -237,22 +243,47 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
       </TableBody>}
     </Fragment>;
   };
+  const searchControl = <div className="ui-collection-search">
+    <SidebarIcon name="search" className="ui-collection-search-icon" />
+    <Input ref={search} value={query} aria-label="搜索标签" placeholder="搜索标签" className="ui-collection-search-input" onChange={event => setQuery(event.target.value)} />
+    {query && <Button variant="ghost" size="icon-xs" className="ui-collection-search-clear" aria-label="清空标签搜索" onClick={() => { setQuery(""); search.current?.focus(); }}><SidebarIcon name="close" /></Button>}
+  </div>;
+  const searchActions = hasCreateMenu ? <div className="ui-tag-directory-search-actions">
+    {searchControl}
+    <TagActionsMenu label="新建" triggerProps={{
+      openOnHover: true,
+      disabled: !canEditGroups || !!draft,
+      render: <Button variant="secondary" className="aria-expanded:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)]"><AddIcon aria-hidden="true" />新建</Button>,
+    }}>{(getAnchor, afterClose) => ([
+      ["label", "新建标签", <TagIcon />],
+      ["group", "新建群组", groupIcon],
+    ] as const).map(([kind, label, icon]) => (
+      <DropdownMenuItem key={kind} onClick={() => afterClose(() => {
+        const anchor = getAnchor();
+        if (!anchor) return;
+        if (kind === "group") setView("groups");
+        setDraft({kind, anchor});
+      })}>{icon}{label}</DropdownMenuItem>
+    ))}</TagActionsMenu>
+  </div> : searchControl;
   return <section ref={directory} className="ui-tag-directory" aria-label="标签目录">
-    {(heading || showSearch) && <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
+    {(heading || !minimalTheme) && <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
       {heading}
-      {showSearch && <div className="ui-collection-search"><SidebarIcon name="search" className="ui-collection-search-icon" /><Input ref={search} value={query} aria-label="搜索标签" placeholder="搜索标签" className="ui-collection-search-input" onChange={event => setQuery(event.target.value)} />{query && <Button variant="ghost" size="icon-xs" className="ui-collection-search-clear" aria-label="清空标签搜索" onClick={() => { setQuery(""); search.current?.focus(); }}><SidebarIcon name="close" /></Button>}</div>}
+      {!minimalTheme && searchActions}
     </div>}
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
     <Tabs value={view} onValueChange={value => { setDraft(null); setView(value); }} className="ui-tag-directory-tabs">
       <div className="ui-tag-directory-tab-header">
-        <TabsList ref={tabs} variant="pill" activateOnFocus aria-label="标签视图" data-transparent-inactive className="gap-2">
-          <TabsTrigger value="all" className={viewTabStyles}><span className="text-secondary group-data-active/view-tab:text-primary"><TagIcon /></span>全部</TabsTrigger>
-          <TabsTrigger value="groups" className={viewTabStyles}><span className="text-secondary group-data-active/view-tab:text-primary">{groupIcon}</span>标签群组</TabsTrigger>
+        <TabsList ref={tabs} variant={classicTheme ? "default" : "pill"} activateOnFocus aria-label="标签视图"
+          data-transparent-inactive={!classicTheme || undefined} className={classicTheme ? "w-full" : "gap-2"}>
+          <TabsTrigger value="all" className={viewTabClassName}><span className="text-secondary group-data-active/view-tab:text-primary"><TagIcon /></span>全部</TabsTrigger>
+          <TabsTrigger value="groups" className={viewTabClassName}><span className="text-secondary group-data-active/view-tab:text-primary">{groupIcon}</span>标签群组</TabsTrigger>
         </TabsList>
-        <div className="ui-tag-directory-tools">
+        {minimalTheme && searchActions}
+        {!hasCreateMenu && <div className="ui-tag-directory-tools">
           {view === "groups" && <CreateButton className="border-transparent" disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "group", anchor: event.currentTarget})}>新建群组</CreateButton>}
           <CreateButton className="border-transparent" disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "label", anchor: event.currentTarget})}>新建标签</CreateButton>
-        </div>
+        </div>}
       </div>
       <TabsContent value="all" aria-busy={loading} className="ui-tag-directory-panel">
         {view === "all" && draft && <Table className="ui-tag-directory-table ui-tag-directory-table-grouped ui-tag-directory-draft-table" aria-label="标签草稿">
@@ -295,23 +326,32 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   </section>;
 }
 
-function TagActionsMenu({ label, className = "ui-tag-directory-menu", children }: {
+function TagActionsMenu({ label, className = "ui-tag-directory-menu", triggerProps, children }: {
   label: string;
   className?: string;
+  triggerProps?: Pick<ComponentProps<typeof DropdownMenuTrigger>, "render" | "openOnHover" | "disabled">;
   children: (getAnchor: () => HTMLButtonElement | null, afterClose: (action: () => void) => void) => ReactNode;
 }) {
   const trigger = useRef<HTMLButtonElement>(null);
   const pendingAction = useRef<(() => void) | null>(null);
   const handoffFocus = useRef(false);
-  return <DropdownMenu onOpenChange={open => { if (open) handoffFocus.current = false; }} onOpenChangeComplete={open => {
+  const openedByHover = useRef(false);
+  // Base UI 1.9 reads initialFocus at runtime but omits it from Menu.Popup's type.
+  const hoverFocusProps = triggerProps?.openOnHover ? { initialFocus: () => !openedByHover.current } : undefined;
+  return <DropdownMenu onOpenChange={(open, event) => {
+    if (open) {
+      handoffFocus.current = false;
+      openedByHover.current = event.reason === "trigger-hover";
+    }
+  }} onOpenChangeComplete={open => {
     if (!open) {
       const action = pendingAction.current;
       pendingAction.current = null;
       action?.();
     }
   }}>
-    <DropdownMenuTrigger render={<TreeMoreButton ref={trigger} className={className} aria-label={label} />} />
-    <DropdownMenuContent align="end" aria-label={label} finalFocus={() => !handoffFocus.current}>{children(() => trigger.current, action => {
+    <DropdownMenuTrigger ref={trigger} aria-label={label} render={<TreeMoreButton className={className} />} {...triggerProps} />
+    <DropdownMenuContent align="end" aria-label={label} {...hoverFocusProps} finalFocus={() => !handoffFocus.current}>{children(() => trigger.current, action => {
       handoffFocus.current = true;
       pendingAction.current = action;
     })}</DropdownMenuContent>
@@ -321,19 +361,23 @@ function TagActionsMenu({ label, className = "ui-tag-directory-menu", children }
 function TagDirectoryTable({ label, sort, onSort, children }: {
   label: string; sort: GroupSort; onSort: (column: GroupSort["column"]) => void; children: ReactNode;
 }) {
-  const heading = (column: GroupSort["column"], text: string, className: string) =>
-    <TableHead scope="col" className={className} aria-sort={sort.column === column ? sort.descending ? "descending" : "ascending" : undefined}>
-      <button type="button" className="ui-tag-directory-sort" onClick={() => onSort(column)}>
-        {text}{sort.column === column && <HugeiconsIcon icon={sort.descending ? ArrowDown02Icon : ArrowUp02Icon} strokeWidth={1.5} aria-hidden="true" />}
+  // Match the row buttons' explicit tab stop when WebKit skips implicit button stops.
+  const heading = (column: GroupSort["column"], text: string, className: string) => {
+    const sorted = sort.column === column;
+    const icon = sorted ? (sort.descending ? ArrowDown02Icon : ArrowUp02Icon) : UnfoldMoreIcon;
+    return <TableHead scope="col" className={className} aria-sort={sorted ? sort.descending ? "descending" : "ascending" : undefined}>
+      <button type="button" className="ui-tag-directory-sort focus-visible:focus-ring" tabIndex={0} onClick={() => onSort(column)}>
+        {text}<HugeiconsIcon icon={icon} strokeWidth={1.5} aria-hidden="true" />
       </button>
     </TableHead>;
+  };
   return <Table className="ui-tag-directory-table ui-tag-directory-table-grouped" aria-label={label}>
-    <colgroup><col /><col className="ui-tag-directory-description-column" /><col className="ui-tag-directory-count-column" /><col className="ui-tag-directory-actions-column" /></colgroup>
+    <colgroup><col className="ui-tag-directory-name-column" /><col className="ui-tag-directory-description-column" /><col className="ui-tag-directory-count-column" /><col className="ui-tag-directory-actions-column" /></colgroup>
     <TableHeader><TreeRow render={<TableRow />}>
       {heading("name", "名称", "ui-tag-directory-label-heading")}
       <TableHead scope="col" className="ui-tag-directory-description">说明</TableHead>
       {heading("count", "笔记数", "ui-tag-directory-count-heading")}
-      <TableHead scope="col" className="ui-tag-directory-actions-heading"><span className="sr-only">操作</span></TableHead>
+      <TableHead scope="col" className="ui-tag-directory-actions-heading">操作</TableHead>
     </TreeRow></TableHeader>
     {children}
   </Table>;

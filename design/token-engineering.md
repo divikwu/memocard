@@ -82,7 +82,7 @@ Dialog / Sheet 与属性确认弹窗的 surface / on-surface 默认等于既有 
 
 `--pressed-bg` 在浅色使用 neutral-800 的 12% 混合，深色使用 neutral-200 的 24% 混合。可操作按钮、链接及相应 ARIA 控件在真实 `:active` 时使用背景图叠加；禁用控件排除。Sidebar 移除原 active 填充切换，保留 data-active 选中状态。松开后恢复既有 hover/默认背景，不修改变换、关键帧或过渡时长。
 
-焦点四项为 width 2px、style solid、offset 3px，color 浅色 accent-700 / 深色 accent-400，避免亮配色直接作为焦点时对比不足。`focus-visible:focus-ring` 和原 CSS 消费者共用四项；输入框组与快速记录由外框显示，内部输入不重复描边。强制颜色模式保留系统 Highlight。Storybook 代码滚动区在裁切容器内使用宽度 token 的负偏移，其余文档表格沿用统一偏移。旧 ring / sidebar-ring 底层值保持兼容，不再定义新控件的焦点几何。
+焦点默认使用紧贴控件边缘的 2px 实线，偏移为 0。浅色用 `blue-600`，深色用 `blue-400`，强制颜色模式使用 `CanvasText`。`focus-visible:focus-ring` 和 CSS 消费者共用 `--focus-outline-*`。输入框组与快速记录由外框显示焦点。经典和简约主题的桌面导航按钮、标签群组表格按钮使用内描边。
 
 `theme-tokens` 在 Chromium / WebKit 检查全部 32 种模式/配色组合，焦点色相对页面、卡片、浮层和侧栏表面均达到 3:1；这不是整页无障碍合规结论。独立回归覆盖文字/填充分离、禁用文字/图标独立覆盖、原生/ARIA/Base UI 禁用状态、单圈焦点、四项焦点覆盖和真实鼠标按下/松开。macOS WebKit 使用 Option+Tab 遍历按钮，其他环境使用 Tab。
 

@@ -568,14 +568,6 @@
       ]
     },
     {
-      "utility": "has-data-[slot=kbd]:pr-1.5",
-      "step": "1.5",
-      "value": "1.5",
-      "consumers": [
-        "apps/ui/ui/components/tooltip.tsx"
-      ]
-    },
-    {
       "utility": "m-(--drawer-inset,0px)",
       "step": null,
       "value": "var(--drawer-inset,0px)",
@@ -1241,6 +1233,7 @@
         "apps/ui/ui/components/native-select.tsx",
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/tabs.tsx",
+        "apps/ui/ui/components/tooltip.tsx",
         "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
@@ -1251,7 +1244,6 @@
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/ui/business/QuickCapture.tsx",
-        "apps/ui/ui/components/tooltip.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx"
       ]
     },

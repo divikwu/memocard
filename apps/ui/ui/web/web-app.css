@@ -58,7 +58,6 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
 .ui-note-toolbar:has(> .web-collection-heading) { flex-wrap: nowrap; }
 .ui-note-toolbar > .web-collection-heading { padding: 0; }
 .ui-tag-directory-toolbar.web-collection-heading { justify-content: flex-start; }
-.ui-tag-directory-toolbar.web-collection-heading > .ui-collection-search { margin-inline-start: auto; flex-basis: calc(var(--spacing-1) * 80); max-width: calc(var(--spacing-1) * 80); }
 @container (min-width: 640px) { .web-app-scroll { --page-gutter: calc(var(--spacing-1) * 6); } }
 @container (min-width: 1024px) { .web-app-scroll { --page-gutter: calc(var(--spacing-1) * 8); } }
 @media (min-width: 768px) {

@@ -1,6 +1,7 @@
 import { afterEach, expect, test } from "vitest";
 import { act, cleanup, render, waitFor, within } from "@testing-library/react";
-import { page, userEvent } from "vitest/browser";
+import { commands, page, userEvent } from "vitest/browser";
+import type { TagPreferenceState } from "@memocard/contracts";
 import { App, type AppViewState } from "../src/App";
 import { WebAppearanceProvider, WebPaletteStyles } from "../ui/web/WebAppearance";
 import { AppearanceCatalogProvider } from "../ui/web/appearance/AppearanceRuntime";
@@ -63,6 +64,7 @@ test("interface theme scopes isolate light/dark palettes across independent stab
 });
 
 test("minimal theme aligns visible page titles with the all-notes heading", async () => {
+  await commands.setReducedMotion("reduce");
   await page.viewport(1440, 1000);
   const previousHash = location.hash;
   const appearanceKey = "memocard-web-appearance-v1";
@@ -75,23 +77,191 @@ test("minimal theme aligns visible page titles with the all-notes heading", asyn
   const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={state => { current = state; return renderWebApp(state); }} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
-    await canvas.findByRole("navigation", { name: "顶部导航" });
+    const navigation = await canvas.findByRole("navigation", { name: "顶部导航" });
+    const search = canvas.getByRole("button", { name: "搜索" });
+    const restFill = getComputedStyle(search).backgroundColor;
+    await userEvent.hover(search);
+    const tooltip = await within(document.body).findByRole("tooltip", { name: "搜索" });
+    expect(tooltip).toHaveAttribute("data-side", "bottom");
+    const hintStyle = getComputedStyle(tooltip);
+    expect([hintStyle.fontSize, hintStyle.padding]).toEqual(["14px", "4px 12px"]);
+    expect(parseFloat(hintStyle.borderTopLeftRadius) * 2).toBeGreaterThanOrEqual(tooltip.offsetHeight);
+    await waitFor(() => expect(getComputedStyle(search).backgroundColor).not.toBe(restFill));
+    const hoverFill = getComputedStyle(search).backgroundColor;
+    await userEvent.unhover(search);
+    await waitFor(() => expect(getComputedStyle(search).backgroundColor).toBe(restFill));
+    search.focus();
+    await userEvent.keyboard("{Enter}");
+    await within(document.body).findByRole("dialog", { name: "搜索笔记" });
+    await waitFor(() => expect(getComputedStyle(search).backgroundColor).toBe(hoverFill));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(search).toHaveAttribute("aria-expanded", "false"));
+    search.focus();
+    await userEvent.keyboard("{Tab}");
+    search.focus();
+    await waitFor(() => {
+      const { outlineStyle, outlineWidth, outlineOffset } = getComputedStyle(search);
+      expect([outlineStyle, outlineWidth, outlineOffset]).toEqual(["solid", "2px", "-2px"]);
+    });
+    const notes = within(navigation).getByRole("button", { name: "笔记" });
+    notes.focus();
+    await waitFor(() => {
+      const { outlineStyle, outlineWidth, outlineOffset } = getComputedStyle(notes);
+      expect([outlineStyle, outlineWidth, outlineOffset]).toEqual(["solid", "2px", "-2px"]);
+    });
     const typography = (title: HTMLElement) => {
       const { fontFamily, fontSize, fontWeight, lineHeight } = getComputedStyle(title);
       return { fontFamily, fontSize, fontWeight, lineHeight };
     };
     const baseline = typography(await canvas.findByRole("heading", { name: "所有笔记", level: 1 }));
-    expect(baseline).toMatchObject({ fontSize: "30px", fontWeight: "600", lineHeight: "42px" });
-    for (const [route, name] of [["tags", "标签"], ["settings", "设置"], ["trash", "回收站"]] as const) {
+    expect(baseline).toMatchObject({ fontSize: "32px", fontWeight: "600" });
+    for (const [route, name, bodySelector] of [
+      ["notes", "所有笔记", ".ui-note-collection"], ["tags", "标签", ".ui-tag-directory-tabs"],
+      ["settings", "设置", ".web-settings-panel"], ["trash", "回收站", ".ui-trash > header + *"],
+    ] as const) {
       await act(async () => { await current.onNavigate(route); });
-      expect(typography(await canvas.findByRole("heading", { name, level: 1 }))).toEqual(baseline);
+      const title = await canvas.findByRole("heading", { name, level: 1 });
+      const content = title.closest(".web-page-content")!;
+      const body = content.querySelector(bodySelector)!;
+      expect(typography(title)).toEqual(baseline);
+      expect(getComputedStyle(content).paddingBlockStart).toBe("32px");
+      expect(body.getBoundingClientRect().top - title.getBoundingClientRect().bottom).toBeCloseTo(16);
+      expect(body.getBoundingClientRect().left).toBeCloseTo(title.getBoundingClientRect().left);
+      if (route === "tags") expect(body.getBoundingClientRect().width).toBe(1280);
+      if (route === "settings") {
+        expect(body.getBoundingClientRect().width).toBe(1280);
+        expect(getComputedStyle(body).padding).toBe("32px 24px");
+        const section = body.querySelector("section")!.getBoundingClientRect();
+        expect(section.width).toBe(720);
+        expect(section.left - body.getBoundingClientRect().left).toBeCloseTo(280);
+      }
     }
     await act(async () => { await current.onNavigate("notes"); });
     await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
     const noteTitle = await canvas.findByRole("textbox", { name: "页面标题" });
     expect(typography(noteTitle)).toEqual(baseline);
     act(() => window.dispatchEvent(new StorageEvent("storage", { key: appearanceKey, newValue: JSON.stringify({ interfaceTheme: "classic" }), storageArea: localStorage })));
-    await waitFor(() => expect(typography(noteTitle).fontSize).toBe("32px"));
+    await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", "rail"));
+    expect(typography(noteTitle)).toEqual(baseline);
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    await commands.setReducedMotion("no-preference");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
+});
+
+test("minimal tag groups support keyboard sorting, narrow columns and tag search", async () => {
+  await page.viewport(1440, 1000);
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: "minimal" }));
+  history.replaceState(null, "", "#/tags");
+  const fixture = await createWorkspaceFixture();
+  const preferences = await fixture.request<TagPreferenceState>("getTagPreferences");
+  await fixture.request("setTagPreferences", { ...preferences, groups: [
+    { id: "drinks", name: "饮品", tags: ["生活/咖啡"] },
+    { id: "books", name: "书单", tags: ["阅读"] },
+  ] });
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("navigation", { name: "顶部导航" });
+    await userEvent.click(await canvas.findByRole("tab", { name: "标签群组" }));
+    const search = canvas.getByRole("textbox", { name: "搜索标签" });
+    const create = canvas.getByRole("button", { name: "新建" });
+    const tabs = canvas.getByRole("tablist", { name: "标签视图" });
+    const body = within(document.body);
+    expect(search.parentElement?.parentElement).toBe(create.parentElement);
+    expect(tabs.parentElement).toBe(create.parentElement?.parentElement);
+    expect(canvas.queryByRole("button", { name: /新建(群组|标签)/ })).toBeNull();
+    const restingFill = getComputedStyle(create).backgroundColor;
+    search.focus();
+    await userEvent.hover(create);
+    const menu = await body.findByRole("menu", { name: "新建" });
+    await Promise.all(create.getAnimations().map(animation => animation.finished));
+    expect(search).toHaveFocus();
+    const hoverFill = getComputedStyle(create).backgroundColor;
+    expect(hoverFill).not.toBe(restingFill);
+    const labelAction = within(menu).getByRole("menuitem", { name: "新建标签" });
+    await userEvent.hover(labelAction);
+    await Promise.all(create.getAnimations().map(animation => animation.finished));
+    expect(getComputedStyle(create).backgroundColor).toBe(hoverFill);
+    await userEvent.click(labelAction);
+    const labelDraft = await canvas.findByRole("textbox", { name: "标签名称" });
+    await waitFor(() => expect(labelDraft).toHaveFocus());
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(labelDraft).not.toBeInTheDocument());
+    await waitFor(() => expect(getComputedStyle(create).backgroundColor).toBe(restingFill));
+    await page.viewport(480, 844);
+    expect(create.getBoundingClientRect().top + create.getBoundingClientRect().height / 2)
+      .toBeCloseTo(tabs.getBoundingClientRect().top + tabs.getBoundingClientRect().height / 2);
+    const searchWidth = search.getBoundingClientRect().width;
+    await userEvent.hover(search);
+    await waitFor(() => expect(search.getBoundingClientRect().width).toBeGreaterThan(searchWidth + 8));
+    expect(create.getBoundingClientRect().top + create.getBoundingClientRect().height / 2)
+      .toBeCloseTo(tabs.getBoundingClientRect().top + tabs.getBoundingClientRect().height / 2);
+    await page.viewport(1440, 1000);
+    await userEvent.type(search, "咖啡");
+    const table = await canvas.findByRole("table", { name: "群组标签列表" });
+    const grouped = within(table);
+    expect(grouped.queryByRole("rowgroup", { name: "书单" })).toBeNull();
+    const drinks = within(grouped.getByRole("rowgroup", { name: "饮品" }));
+    const action = drinks.getByRole("button", { name: "标签操作 生活/咖啡" });
+    expect(getComputedStyle(action).opacity).toBe("1");
+    const name = grouped.getByRole("button", { name: "名称" });
+    const count = grouped.getByRole("button", { name: "笔记数" });
+    const countColumn = grouped.getByRole("columnheader", { name: "笔记数" });
+    expect(count.querySelector("svg")).not.toBeNull();
+    expect(grouped.getByRole("columnheader", { name: "操作" }).querySelector(".sr-only")).toBeNull();
+    name.focus();
+    await userEvent.keyboard("{Tab}");
+    await waitFor(() => {
+      expect(count).toHaveFocus();
+      expect(getComputedStyle(count).outlineOffset).toBe("-2px");
+    });
+    await userEvent.keyboard("{Enter}");
+    expect(countColumn).toHaveAttribute("aria-sort", "ascending");
+    action.focus();
+    await waitFor(() => expect(getComputedStyle(action).outlineOffset).toBe("-2px"));
+    for (const width of [1440, 1002, 390, 320]) {
+      await page.viewport(width, 844);
+      const expectedLayout = width >= 768 ? "topbar" : "drawer";
+      await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", expectedLayout));
+      if (expectedLayout === "topbar") {
+        expect(create.getBoundingClientRect().top).toBeCloseTo(tabs.getBoundingClientRect().top);
+        expect(create.getBoundingClientRect().left).toBeGreaterThan(tabs.getBoundingClientRect().right);
+        expect(search.getBoundingClientRect().top).toBeCloseTo(create.getBoundingClientRect().top);
+      } else {
+        expect(search.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+      }
+      const column = countColumn.getBoundingClientRect();
+      const button = count.getBoundingClientRect();
+      expect(column.width).toBe(80);
+      expect(column.height).toBe(36);
+      expect(getComputedStyle(count).paddingInlineStart).toBe("4px");
+      expect(button.left).toBeGreaterThanOrEqual(column.left);
+      expect(button.right).toBeLessThanOrEqual(column.right);
+      const label = document.createRange();
+      label.selectNode(count.firstChild!);
+      expect(label.getBoundingClientRect().left).toBeGreaterThanOrEqual(button.left + 3.5);
+      const icon = count.querySelector("svg")!.getBoundingClientRect();
+      expect(icon.width).toBe(16);
+      expect(icon.right).toBeLessThanOrEqual(button.right - 3.5);
+      expect(action.closest("tr")!.getBoundingClientRect().height).toBe(36);
+      expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width + 1);
+    }
+    await userEvent.click(canvas.getByRole("button", { name: "清空标签搜索" }));
+    expect(grouped.getByRole("rowgroup", { name: "书单" })).toBeVisible();
+    await userEvent.click(canvas.getByRole("tab", { name: "全部" }));
+    create.focus();
+    await userEvent.keyboard("{Enter}");
+    const groupAction = await body.findByRole("menuitem", { name: "新建群组" });
+    await userEvent.click(groupAction);
+    expect(await canvas.findByRole("textbox", { name: "群组名称" })).toBeVisible();
+    expect(canvas.getByRole("tab", { name: "标签群组", selected: true })).toBeVisible();
   } finally {
     view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
     if (previousAppearance === null) localStorage.removeItem(appearanceKey);

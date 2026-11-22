@@ -12,7 +12,7 @@ const layouts = {
 
 export const appearanceCatalog = {
   themes: {
-    classic: { label: interfaceThemeLabels.classic, layouts: { desktop: "rail", mobile: "drawer" }, loadStyles: () => Promise.resolve() },
+    classic: { label: interfaceThemeLabels.classic, layouts: { desktop: "rail", mobile: "drawer" }, loadStyles: () => import("./themes/classic.css?inline").then(({ default: css }) => applyAppearanceStyles("classic", css)) },
     minimal: { label: interfaceThemeLabels.minimal, layouts: { desktop: "topbar", mobile: "drawer" }, loadStyles: () => import("./themes/minimal.css?inline").then(({ default: css }) => applyAppearanceStyles("minimal", css)) },
   },
   layouts,

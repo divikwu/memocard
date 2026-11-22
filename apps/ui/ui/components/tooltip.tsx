@@ -58,12 +58,11 @@ function TooltipContent({
           role="tooltip"
           className={cnState(
             className,
-            "duration-fast ease-standard z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-xl bg-inverted px-3 py-1.5 text-xs text-tooltip-text has-data-[slot=kbd]:pr-1.5 data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-lg data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
+            "duration-fast ease-standard z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-full bg-inverted px-3 py-1 text-sm text-tooltip-text data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-lg data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95"
           )}
           {...props}
         >
           {children}
-          <TooltipPrimitive.Arrow className="z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px] bg-inverted fill-inverted data-[side=bottom]:top-1 data-[side=inline-end]:top-1/2! data-[side=inline-end]:-left-1 data-[side=inline-end]:translate-x-[1.5px] data-[side=inline-end]:-translate-y-1/2 data-[side=inline-start]:top-1/2! data-[side=inline-start]:-right-1 data-[side=inline-start]:translate-x-[-1.5px] data-[side=inline-start]:-translate-y-1/2 data-[side=left]:top-1/2! data-[side=left]:-right-1 data-[side=left]:translate-x-[-1.5px] data-[side=left]:-translate-y-1/2 data-[side=right]:top-1/2! data-[side=right]:-left-1 data-[side=right]:translate-x-[1.5px] data-[side=right]:-translate-y-1/2 data-[side=top]:-bottom-2.5" />
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>
     </TooltipPrimitive.Portal>
@@ -85,7 +84,7 @@ function TooltipHintController() {
   const [open, setOpenState] = useState(false)
   const openRef = useRef(false)
   const setOpen = useCallback((value: boolean) => { openRef.current = value; setOpenState(value) }, [])
-  const [hint, setHint] = useState<{ anchor: HTMLElement; target: HTMLElement; text: string; side: "left" | "top"; scope?: ThemeScopeValue } | null>(null)
+  const [hint, setHint] = useState<{ anchor: HTMLElement; target: HTMLElement; text: string; side: "left" | "right" | "top" | "bottom"; scope?: ThemeScopeValue } | null>(null)
 
   useEffect(() => {
     let current: HTMLElement | null = null
@@ -103,7 +102,10 @@ function TooltipHintController() {
       const text = anchor?.getAttribute("data-ui-tooltip")
       current = text ? anchor : null
       const target = anchor?.closest<HTMLElement>('button, a[href], [tabindex], [role="menuitem"], [role="button"]') ?? anchor
-      if (text && anchor && target) setHint({ anchor, target, text, side: anchor.dataset.uiTooltipSide === "left" && window.matchMedia("(min-width: 768px)").matches ? "left" : "top", scope: themeScopeForElement(anchor) })
+      if (text && anchor && target) {
+        const side = anchor.closest<HTMLElement>("[data-ui-tooltip-side]")?.dataset.uiTooltipSide
+        setHint({ anchor, target, text, side: (side === "left" || side === "right" || side === "bottom") && window.matchMedia("(min-width: 768px)").matches ? side : "top", scope: themeScopeForElement(anchor) })
+      }
       setOpen(!!text && !!anchor && !!target)
     }
     const over = (event: PointerEvent) => {

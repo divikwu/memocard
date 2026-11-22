@@ -1061,12 +1061,6 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-display-3",
           "value": "var(--font-size-3xl)"
-        },
-        {
-          "source": "apps/ui/ui/web/appearance/themes/minimal.css",
-          "scope": ".web-app[data-interface-theme=minimal] .web-page-content",
-          "value": "var(--font-size-3xl)",
-          "variable": "--workspace-title-font-size"
         }
       ]
     },
@@ -1290,6 +1284,19 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-large",
           "value": "var(--font-size-lg)"
+        }
+      ]
+    },
+    {
+      "property": "font-size",
+      "value": "var(--font-size-note-title)",
+      "utilities": [],
+      "locations": [
+        {
+          "source": "apps/ui/ui/web/layouts/desktop.css",
+          "scope": "@media (min-width: 768px) → .web-app[data-web-client]:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) → & .web-page-content",
+          "value": "var(--font-size-note-title)",
+          "variable": "--workspace-title-font-size"
         }
       ]
     },
@@ -1581,6 +1588,16 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-table .ui-tag-directory-count",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/TagsPage.css",
+          "scope": ".ui-tag-directory-table th",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/business/TagsPage.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1713,6 +1730,11 @@
         {
           "source": "apps/ui/ui/components/toast.css",
           "scope": ".ui-toast-message",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/components/tooltip.tsx",
+          "scope": "text-sm",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2038,16 +2060,6 @@
           "value": "var(--font-size-xs)"
         },
         {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-table .ui-tag-directory-count",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/business/TagsPage.css",
-          "scope": ".ui-tag-directory-table th",
-          "value": "var(--font-size-xs)"
-        },
-        {
           "source": "apps/ui/ui/business/trash.css",
           "scope": ".ui-trash-path, .ui-trash-date",
           "value": "var(--font-size-xs)"
@@ -2089,11 +2101,6 @@
         },
         {
           "source": "apps/ui/ui/components/sidebar.tsx",
-          "scope": "text-xs",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/components/tooltip.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         },
@@ -3928,8 +3935,8 @@
           "value": "var(--text-heading-2-leading)"
         },
         {
-          "source": "apps/ui/ui/web/appearance/themes/minimal.css",
-          "scope": ".web-app[data-interface-theme=minimal] .web-page-content",
+          "source": "apps/ui/ui/web/layouts/desktop.css",
+          "scope": "@media (min-width: 768px) → .web-app[data-web-client]:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) → & .web-page-content",
           "value": "var(--text-heading-2-leading)",
           "variable": "--workspace-title-line-height"
         }
@@ -4402,6 +4409,11 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
+          "source": "apps/ui/ui/components/tooltip.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
           "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
@@ -4569,11 +4581,6 @@
         },
         {
           "source": "apps/ui/ui/components/sidebar.tsx",
-          "scope": "text-xs",
-          "value": "var(--tw-leading, var(--text-xs--line-height))"
-        },
-        {
-          "source": "apps/ui/ui/components/tooltip.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         },
