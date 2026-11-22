@@ -241,16 +241,19 @@ test('authenticates presentation metadata reads and writes before dispatch', asy
   }
 });
 
-test('waits for the result of a property write past the HTTP read deadline', { timeout: 45_000 }, async t => {
+test('waits for property and trash writes past the HTTP read deadline', { timeout: 45_000 }, async t => {
   const host = await webHost(t);
   const cookie = await authenticate(host);
   const delayed = operation => exchange(host.config, [requestBytes(host.config, {
     body: envelope({delayMilliseconds:31_000}, {operation}), headers: {Cookie:cookie},
   })], {timeoutMs:40_000});
-  const [read, write] = await Promise.all([delayed('getNoteProperties'), delayed('updateNoteProperty')]);
+  const operations = ['updateNoteProperty', 'deleteNote', 'restoreNote', 'permanentlyDeleteNote'];
+  const [read, ...writes] = await Promise.all([delayed('getNoteProperties'), ...operations.map(delayed)]);
   assert.equal(read, null);
-  assert.equal(write?.status, 200);
-  assert.equal(JSON.parse(write.body).data.operation, 'updateNoteProperty');
+  for (const [index, write] of writes.entries()) {
+    assert.equal(write?.status, 200, operations[index]);
+    assert.equal(JSON.parse(write.body).data.operation, operations[index]);
+  }
 });
 
 test('requires exact Host and Origin and refuses cross-site requests and duplicate cookies', async t => {

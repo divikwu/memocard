@@ -55,7 +55,7 @@ beforeEach(() => {
   vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   bridge.request.mockReset();
   bridge.request.mockResolvedValue({ notes: [note, second], nextCursor: null, coverage });
-  window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+  vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("(min-width: 1024px)"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
 });
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 
@@ -74,6 +74,18 @@ it("queries all notes by update time, previews keyboard selection and opens on E
   expect(onOpenNote).not.toHaveBeenCalled();
   fireEvent.keyDown(input, { key: "Enter" });
   expect(onOpenNote).toHaveBeenCalledWith("second");
+});
+
+it("keeps the search open when WebKit confirms an IME candidate", async () => {
+  const { onOpenNote, onOpenChange } = setup();
+  await screen.findByRole("option", { name: note.title });
+  const input = screen.getByRole("combobox", { name: "搜索笔记" });
+  fireEvent.compositionEnd(input, { data: "计划" });
+  fireEvent.keyDown(input, { key: "Enter", keyCode: 229, isComposing: false });
+  expect(onOpenNote).not.toHaveBeenCalled();
+  expect(onOpenChange).not.toHaveBeenCalled();
+  fireEvent.keyDown(input, { key: "Enter", keyCode: 13 });
+  expect(onOpenNote).toHaveBeenCalledExactlyOnceWith(note.id);
 });
 
 it("discards late responses after a new query and clears back to recent notes", async () => {

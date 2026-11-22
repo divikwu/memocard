@@ -53,7 +53,7 @@ describe("native bridge", () => {
     await vi.advanceTimersByTimeAsync(51);
     await assertion;
   });
-  it.each(["selectVault", "saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout"])("waits for %s past the read timeout", async (operation) => {
+  it.each(["selectVault", "saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout", "deleteNote", "restoreNote", "permanentlyDeleteNote"])("waits for %s past the read timeout", async (operation) => {
     vi.useFakeTimers();
     let finish: ((value: unknown) => void) | undefined;
     const call = createBridge(() => new Promise((resolve) => { finish = resolve; }), 50)(operation);

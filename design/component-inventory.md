@@ -130,11 +130,13 @@
 | `apps/ui/ui/web/layouts/topbar.tsx` | 桌面顶部布局出口 | 顶部导航与全局操作；与视觉主题分开 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 同一布局供多个视觉主题使用 |
 | `apps/ui/ui/components/theme-scope.tsx` | 页面及 Portal 样式作用域 | 保留 Base UI Portal 根与焦点管理，复制已解析属性/变量 | theme / focus / overlay | `apps/ui/ui/components/theme-scope.test.tsx`；`apps/ui/test-support/interface-themes.browser.tsx` | 不移动 Portal 容器，局部模式继续优先 |
 | `apps/ui/ui/web/WebMoreDrawer.tsx` | 按需加载的笔记库抽屉 | 切换笔记库、草稿与回收站动作；关闭和回焦 | overlay / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 不计入页面首屏依赖；窄屏和原生沿用自身导航 |
+| `apps/ui/ui/web/loadWebMoreDrawer.tsx` | 笔记库抽屉加载 | 本机 Web 旧版资源失效时提示刷新 | state | `scripts/test-default-ui.mjs` | 刷新由用户触发 |
 | `apps/ui/ui/web/WebRailNavigation.tsx` | Web 经典图标导航 | 左栏主页/新建/搜索/笔记/标签，底部笔记库与设置 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉 |
 | `apps/ui/ui/web/WebTopNavigation.tsx` | Web 轻简顶部导航 | 主页/笔记/标签，新建/搜索/更多与详情返回 | theme / layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉，原生端不消费顶部导航 |
 | `apps/ui/ui/web/WebAppearance.tsx` | 当前外观偏好 | 界面主题、明暗/系统、强调色、中性色、字体与圆角；兼容旧设备值 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/web/WebFontRecovery.test.tsx` | 全字体与所有组合不等于已逐项真机验收 |
 | `apps/ui/ui/web/WebSettingSelect.tsx` | 当前设置选择控件 | label关联、受控值、键盘和回焦 | input / focus / type | `apps/ui/ui/web/WebAppearance.test.tsx` | 内部组合无需独立Story；辅助技术另验 |
 | `apps/ui/ui/web/WebSettings.tsx` | 当前设置页面 | 库操作、文件状态、外观、正文风格、MCP和本机Web | theme / property / state | `apps/ui/ui/web/WebSettings.test.tsx`；`apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 系统授权、跨窗口与全部字体矩阵另验 |
+| `apps/ui/ui/web/ReopenLocalWeb.tsx` | 本机 Web 重新打开入口 | 连接提示及设置页中的原生链接 | navigation / state | `apps/ui/ui-state-fixtures/app-controller-states.test.tsx` | 跳转由本机菜单栏服务处理 |
 | `apps/ui/ui/web/WebTypographyProvider.tsx` | 正文风格适配 | 共享TypographyProvider；实际字体与笔记变量 | typeset / typography | `apps/ui/ui/web/WebTypography.test.tsx` | 浏览器实际字形与字体失败另验 |
 | `apps/ui/ui/web/WebTypographySettings.tsx` | 正文风格设置 | 共享四项排版偏好、随机/重置与当前正文预览 | typeset / typography | `apps/ui/ui/web/WebTypography.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 全部偏好组合不逐项覆盖 |
 | `apps/ui/ui/web/NoteAppearanceMenu.tsx` | 笔记外观菜单 | 单篇笔记的标题字体、正文字体和小字号 | theme / typography | `apps/ui/ui/web/WebApp.test.tsx` | 偏好按笔记保存在当前浏览器 |

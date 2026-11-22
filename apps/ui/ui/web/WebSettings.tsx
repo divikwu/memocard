@@ -13,6 +13,7 @@ import { Spinner } from "../components/spinner";
 import { useWebAppearance, WEB_NEUTRALS, WEB_PALETTES } from "./WebAppearance";
 import { WebSettingSelect } from "./WebSettingSelect";
 import { WebTypographySettings } from "./WebTypographySettings";
+import { ReopenLocalWeb } from "./ReopenLocalWeb";
 import { useAppearanceCatalog, useWorkspaceAppearance } from "./appearance/AppearanceRuntime";
 import "./web-settings.css";
 
@@ -37,8 +38,13 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
   return <div className="web-settings"><header className="web-collection-heading"><h1 className="web-settings-title text-balance">设置</h1></header><div className="web-settings-panel">
     <section aria-labelledby={field("vault-heading")}><h2 id={field("vault-heading")}>笔记库</h2>
       <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content">
+        {s.localWebReconnectRequired ? <div className="web-setting-row">
+          <p className="web-setting-description font-medium" role="status">需要重新连接本机服务</p>
+          <div className="web-setting-vault-actions"><ReopenLocalWeb inline /></div>
+        </div> : <>
         <div className="web-setting-row"><div className="web-setting-description"><p className="truncate font-medium" data-ui-tooltip={s.status?.vaultName || undefined} data-ui-tooltip-overflow>{s.status?.vaultName || "尚未连接笔记库"}</p></div>{!s.unsupportedBrowser && <div className="web-setting-vault-actions"><Button variant="outline" aria-label={s.status?.connected ? "切换笔记库" : "打开已有笔记库"} disabled={!s.sidebar.canChooseVault || s.working || !!s.editor} onClick={() => s.sidebar.onSelectVault(false)}>{s.status?.connected ? "切换" : "打开"}</Button>{s.sidebar.canCreateVault && <Button type="button" variant="outline" className="bg-surface text-primary dark:bg-surface" aria-label="新建笔记库" data-ui-tooltip="选择空文件夹创建笔记库" disabled={s.working || !!s.editor} onClick={() => s.sidebar.onSelectVault(true)}>新建</Button>}</div>}</div>
         {s.status?.connected && <details className="web-file-status"><summary>本机文件状态<ChevronDownIcon aria-hidden="true" /></summary><div className="web-file-status-content"><dl><div><dt>已索引笔记</dt><dd>{s.status.coverage.indexed}</dd></div><div><dt>待读取文件</dt><dd>{s.status.coverage.pending}</dd></div><div><dt>需要处理的文件</dt><dd>{s.status.coverage.issues}</dd></div><div><dt>最近索引时间</dt><dd>{s.status.coverage.indexedAt ? <time dateTime={s.status.coverage.indexedAt}>{formatIndexDate(s.status.coverage.indexedAt)}</time> : "—"}</dd></div></dl></div></details>}
+        </>}
       </CardContent></Card>
     </section>
     {appearance && <section aria-labelledby={field("appearance-heading")}><div className="web-setting-section-heading"><h2 id={field("appearance-heading")}>外观</h2><Button variant="ghost" className="text-secondary" onClick={appearance.resetAppearance}>恢复默认</Button></div><Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">

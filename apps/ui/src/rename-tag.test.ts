@@ -1,8 +1,9 @@
 import { expect, it, vi } from "vitest";
 import type { Note } from "@memocard/contracts";
 import { renamedTag } from "./rename-tag";
-import { renameTag, renameBodyTags } from "./rename-tag-operation";
+import { deleteTag, renameTag, renameBodyTags, renameTagWithAppearance } from "./rename-tag-operation";
 import type { request } from "./bridge";
+const vault = {vaultId:"vault", vaultBinding:"binding"};
 it("renames only the exact tag without changing code, links, or neighboring names", () => {
   const body = '#工作 #工作/设计 #工作室 #工作流\n`#工作`\n```md\n#工作/设计\n```\n[链接](page#工作)';
   expect(renameBodyTags(body, '工作', '职业')).toBe('#职业 #工作/设计 #工作室 #工作流\n`#工作`\n```md\n#工作/设计\n```\n[链接](page#工作)');
@@ -16,7 +17,6 @@ function transport(conflict = false) {
   return vi.fn(async (operation: string, params?: Record<string, unknown>) => {
     if (operation === 'listTags') return { tags: [{ name: '工作' }] };
     if (operation === 'queryNotes') return { notes: [note], nextCursor: null, coverage: { complete: true } };
-    if (operation === 'getStatus') return { vaultId: 'vault' };
     if (operation === 'getNote') return { ...note, contentHash: conflict ? 'changed' : 'hash', vaultBinding: 'binding' };
     if (operation === 'getNoteProperties') return {properties:[],contentHash:'hash',writable:true,tagProperty:{name:'tags',type:'list',value:[],editable:true}};
     if (operation === 'saveNote') return { ...note, ...params };
@@ -24,8 +24,8 @@ function transport(conflict = false) {
 }
 it("uses existing conditional saves and keeps file paths and unrelated tags", async () => {
   const mock = transport();
-  await renameTag('工作/设计', '职业', 'vault', mock as typeof request);
-  expect(mock).toHaveBeenCalledWith('saveNote', { id: 'a', body: '#职业', tags: ['职业', '其他'], baseHash: 'hash', relativePath: 'Projects/a.md', vaultBinding: 'binding' });
+  await renameTag('工作/设计', '职业', vault, mock as typeof request);
+  expect(mock).toHaveBeenCalledWith('saveNote', { id: 'a', body: '#职业', tags: ['职业', '其他'], baseHash: 'hash', relativePath: 'Projects/a.md', ...vault });
 });
 it('renames both sources and uses the updated property hash for the body write', async () => {
   const base = transport();
@@ -34,7 +34,7 @@ it('renames both sources and uses the updated property hash for the body write',
     if (operation === 'updateNoteProperty') return {id:'a',body:'#工作/设计',contentHash:'property-hash',relativePath:'Projects/a.md'};
     return base(operation,params);
   });
-  await renameTag('工作/设计','职业','vault',mock as typeof request);
+  await renameTag('工作/设计','职业',vault,mock as typeof request);
   expect(mock).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining({value:['职业','保留'],baseHash:'hash',vaultBinding:'binding'}));
   expect(mock).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'#职业',baseHash:'property-hash',vaultBinding:'binding'}));
 });
@@ -46,17 +46,34 @@ it('reports a partial rename if a body write conflicts after property tags were 
     if (operation === 'saveNote') throw new Error('文件冲突');
     return base(operation,params);
   });
-  await expect(renameTag('工作/设计','职业','vault',mock as typeof request)).rejects.toThrow('属性标签已更新，正文尚未更新');
+  await expect(renameTag('工作/设计','职业',{...vault,vaultBinding:'partial'},mock as typeof request)).rejects.toThrow('属性标签已更新，正文尚未更新');
 });
 it("does not overwrite a changed source", async () => {
   const mock = transport(true);
-  await expect(renameTag('工作/设计', '职业', 'vault', mock as typeof request)).rejects.toThrow('已更新 0/1');
+  await expect(renameTag('工作/设计', '职业', vault, mock as typeof request)).rejects.toThrow('已更新 0/1');
   expect(mock.mock.calls.some(([op]) => op === 'saveNote')).toBe(false);
 });
 it("rejects malformed names before touching files", async () => {
   const mock = transport();
-  await expect(renameTag('工作', '职业//设计', 'vault', mock as typeof request)).rejects.toThrow('标签名称');
+  await expect(renameTag('工作', '职业//设计', vault, mock as typeof request)).rejects.toThrow('标签名称');
   expect(mock).not.toHaveBeenCalled();
+});
+
+it("finishes a pending appearance change before reusing either tag in another operation", async () => {
+  const scope = {...vault, vaultBinding:"appearance-order"};
+  const rename = vi.fn(async () => {});
+  const save = vi.fn(async () => {}).mockRejectedValueOnce(new Error("settings unavailable"));
+  const other = vi.fn(async () => {});
+  const mock = transport();
+  await expect(renameTagWithAppearance(scope, "work", "project", rename, save)).rejects.toThrow("重试标签外观");
+  await expect(renameTagWithAppearance(scope, "project", "archive", other, save)).rejects.toThrow("重试标签外观");
+  await expect(deleteTag("work", scope, mock as typeof request)).rejects.toThrow("重试标签外观");
+  expect(other).not.toHaveBeenCalled();
+  expect(mock).not.toHaveBeenCalled();
+  await renameTagWithAppearance(scope, "work", "project", rename, save);
+  await renameTagWithAppearance(scope, "project", "archive", other, save);
+  expect(rename).toHaveBeenCalledOnce();
+  expect(other).toHaveBeenCalledOnce();
 });
 
 it('changes only indexed tags, preserving invalid tags and excluded Markdown verbatim', async () => {
@@ -68,7 +85,6 @@ it('changes only indexed tags, preserving invalid tags and excluded Markdown ver
     .toBe('Work (WORK) #work/design #workshop\n' + protectedText);
 });
 it('deletes both sources without deleting notes, children, or unrelated properties', async () => {
-  const { deleteTag } = await import('./rename-tag-operation');
   const base = transport();
   const mock = vi.fn(async (operation:string, params?:Record<string,unknown>) => {
     if (operation === 'queryNotes') return {notes:[{id:'a',body:'#Work #work/child',tags:['work','work/child'],contentHash:'hash'}],nextCursor:null,coverage:{complete:true}};
@@ -76,26 +92,27 @@ it('deletes both sources without deleting notes, children, or unrelated properti
     if (operation === 'updateNoteProperty') return {contentHash:'property-hash'};
     return base(operation,params);
   });
-  await deleteTag('work','vault',mock as typeof request);
+  await deleteTag('work',vault,mock as typeof request);
   expect(mock).toHaveBeenCalledWith('updateNoteProperty',expect.objectContaining({name:'tags',type:'list',value:['work/child','other'],baseHash:'hash'}));
   expect(mock).toHaveBeenCalledWith('saveNote',expect.objectContaining({body:'Work #work/child',tags:['work/child'],baseHash:'property-hash'}));
 });
 it('does not delete tags from an incomplete index or a switched vault', async () => {
-  const { deleteTag } = await import('./rename-tag-operation');
   const base = transport();
   const incomplete = vi.fn(async (op:string,p?:Record<string,unknown>) => op === 'queryNotes' ? {notes:[],coverage:{complete:false}} : base(op,p));
-  await expect(deleteTag('work','vault',incomplete as typeof request)).rejects.toThrow('完整读取');
+  await expect(deleteTag('work',vault,incomplete as typeof request)).rejects.toThrow('完整读取');
   expect(incomplete).toHaveBeenCalledTimes(1);
-  const switched = vi.fn(async (op:string,p?:Record<string,unknown>) => op === 'getStatus' ? {vaultId:'another'} : base(op,p));
-  await expect(deleteTag('工作','vault',switched as typeof request)).rejects.toThrow('笔记库已切换');
+  const switched = vi.fn(async (op:string,p?:Record<string,unknown>) => {
+    if (op === 'getNote') throw new Error('笔记库已切换');
+    return base(op,p);
+  });
+  await expect(deleteTag('工作',vault,switched as typeof request)).rejects.toThrow('笔记库已切换');
   expect(switched.mock.calls.some(([op]) => op === 'saveNote' || op === 'updateNoteProperty')).toBe(false);
 });
 it('paginates before writing and stops deletion on a changed source', async () => {
-  const { deleteTag } = await import('./rename-tag-operation');
   const base = transport(true);
   const mock = vi.fn(async (op:string,p?:Record<string,unknown>) => op === 'queryNotes' ? p?.cursor ? {notes:[],nextCursor:null,coverage:{complete:true}} : {...await base(op,p) as object,nextCursor:'next'} : base(op,p));
-  await expect(deleteTag('工作','vault',mock as typeof request)).rejects.toThrow('已更新 0/1');
-  expect(mock).toHaveBeenCalledWith('queryNotes',{tags:['工作'],exactTags:true,limit:100,cursor:'next'});
+  await expect(deleteTag('工作',vault,mock as typeof request)).rejects.toThrow('已更新 0/1');
+  expect(mock).toHaveBeenCalledWith('queryNotes',{...vault,tags:['工作'],exactTags:true,limit:100,cursor:'next'});
   expect(mock.mock.calls.some(([op]) => op === 'saveNote' || op === 'updateNoteProperty')).toBe(false);
 });
 

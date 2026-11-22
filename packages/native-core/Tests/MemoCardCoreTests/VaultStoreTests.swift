@@ -56,7 +56,7 @@ final class VaultStoreTests: XCTestCase {
 
     func testCaptureOperationsRejectAnotherVaultOrDirectoryBindingBeforeMutation() async throws {
         let core = try await store()
-        for operation in ["getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"] {
+        for operation in ["listTags", "queryNotes", "getNoteProperties", "updateNoteProperty", "getNote", "createNote", "updateNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"] {
             await expectCode("VAULT_CHANGED") { _ = try await self.call(core, operation, ["vaultId": "other-vault"]) }
             await expectCode("UNAUTHORIZED") { _ = try await self.call(core, operation, ["vaultBinding": UUID().uuidString.lowercased()]) }
         }

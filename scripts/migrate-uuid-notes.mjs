@@ -11,23 +11,47 @@ const resolver = moduleUrl(await fs.readFile(path.join(repo, 'apps/ui/src/link-c
 const naming = await import(moduleUrl((await fs.readFile(path.join(repo, 'apps/ui/src/note-files.ts'), 'utf8')).replace("'./link-candidates'", JSON.stringify(resolver))));
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 
+async function markdownPaths(root) {
+  const paths = [];
+  async function walk(directory) {
+    for (const item of await fs.readdir(directory, { withFileTypes: true })) {
+      if (item.isSymbolicLink()) throw new Error('Symlinks are not supported.');
+      const full = path.join(directory, item.name);
+      if (item.isDirectory()) await walk(full);
+      else if (/\.md$/i.test(item.name)) paths.push(path.relative(root, full));
+    }
+  }
+  await walk(path.join(root, 'notes'));
+  return paths;
+}
+
+async function verifyMarkdownPaths(root, expected) {
+  const actual = new Set(await markdownPaths(root));
+  for (const name of actual) {
+    if (!expected.has(name)) throw new Error(`Markdown files changed since planning (added ${name}). Replan the migration.`);
+  }
+  for (const name of expected.keys()) {
+    if (!actual.has(name)) throw new Error(`Markdown files changed since planning (missing ${name}). Replan the migration.`);
+  }
+}
+
+async function verifyMarkdownFiles(root, expected) {
+  await verifyMarkdownPaths(root, expected);
+  for (const [name, bytes] of expected) {
+    if (!bytes.equals(await fs.readFile(path.join(root, name)))) throw new Error(`Source changed: ${name}`);
+  }
+}
+
 export async function planMigration(root) {
   root = await fs.realpath(root);
   // This maintenance command is intentionally restricted to legacy MemoCard vaults.
   if (path.basename(root) === 'diw_os') throw new Error('diw_os is read-only and excluded from migration.');
   const metadata = JSON.parse(await fs.readFile(path.join(root, '.memocard/vault.json'), 'utf8'));
   if (metadata.formatVersion !== 1) throw new Error('Only legacy MemoCard formatVersion 1 is supported.');
+  const paths = (await markdownPaths(root)).sort();
   const files = new Map();
-  async function walk(directory) {
-    for (const item of await fs.readdir(directory, { withFileTypes: true })) {
-      if (item.isSymbolicLink()) throw new Error('Symlinks are not supported.');
-      const full = path.join(directory, item.name);
-      if (item.isDirectory()) await walk(full);
-      else if (item.name.endsWith('.md')) files.set(path.relative(root, full), await fs.readFile(full));
-    }
-  }
-  await walk(path.join(root, 'notes'));
-  const paths = [...files.keys()].sort(), occupied = [...paths], renames = {};
+  for (const name of paths) files.set(name, await fs.readFile(path.join(root, name)));
+  const occupied = [...paths], renames = {};
   const ids = new Set();
   for (const old of paths) {
     const source = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(files.get(old));
@@ -58,9 +82,9 @@ export async function applyMigration(plan, destination) {
   const manifestPath = path.join(backup, 'manifest.json');
   const record = () => fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
   await record();
-  for (const [name, bytes] of plan.files) {
-    if (!bytes.equals(await fs.readFile(path.join(plan.root, name))) || !bytes.equals(await fs.readFile(path.join(backup, 'vault', name)))) throw new Error(`Source or backup changed: ${name}`);
-  }
+  const expected = new Map(plan.files);
+  await verifyMarkdownFiles(plan.root, expected);
+  await verifyMarkdownFiles(path.join(backup, 'vault'), expected);
   const written = [];
   try {
     // Create every destination first; remove old files only after all content is verified.
@@ -73,14 +97,17 @@ export async function applyMigration(plan, destination) {
         await fs.rename(temporary, path.join(plan.root, change.old));
       }
       written.push(change);
+      expected.set(change.next, change.after);
     }
+    await verifyMarkdownFiles(plan.root, expected);
     for (const change of plan.changes) {
-      if (!change.after.equals(await fs.readFile(path.join(plan.root, change.next)))) throw new Error(`Verification failed: ${change.next}`);
       if (change.old !== change.next) {
         if (!change.before.equals(await fs.readFile(path.join(plan.root, change.old)))) throw new Error(`Source changed: ${change.old}`);
         await fs.unlink(path.join(plan.root, change.old));
+        expected.delete(change.old);
       }
     }
+    await verifyMarkdownFiles(plan.root, expected);
     manifest.status = 'complete'; await record();
   } catch (error) {
     manifest.status = 'recovery-required'; await record();

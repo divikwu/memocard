@@ -8,6 +8,8 @@ import { parseBrowserNote } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserWritable } from "./browser-files";
 import type { BrowserDraft, BrowserVaultStorage, StoredSelection } from "./browser-storage";
 import { createId } from "./uuid";
+import { renameTag } from "./rename-tag-operation";
+import type { request } from "./bridge";
 
 const vaultId = "22222222-2222-4222-8222-222222222222";
 const noteId = "11111111-1111-4111-8111-111111111111";
@@ -21,6 +23,76 @@ it('rejects capture operations from a different vault before reading or writing 
   for(const operation of ['getNote','saveNote','saveDraft','getTrash','getTrashedNote','restoreNote','permanentlyDeleteNote','importAttachment']) await expect(call(h.core,operation,{vaultId:'other-vault'})).rejects.toMatchObject({code:'VAULT_CHANGED'});
   expect((await call<NotePage>(h.core,'queryNotes')).notes).toHaveLength(1);
   expect((await call<{drafts:BrowserDraft[]}>(h.core,'getDrafts')).drafts).toHaveLength(0);
+});
+
+it.each(['getNote', 'updateNoteProperty'])('stops a tag rename if the original vault is replaced before %s', async checkpoint => {
+  const original = await fixture('original'), copy = await fixture('copy');
+  const originalFile = await (await original.getDirectoryHandle('notes')).getFileHandle(`${noteId}.md`);
+  const copiedFile = await (await copy.getDirectoryHandle('notes')).getFileHandle(`${noteId}.md`);
+  const text = source(noteId,'正文 #old').replace(/^tags:.*$/m,'tags: [old]');
+  originalFile.bytes = bytes(text);
+  copiedFile.bytes = bytes(text);
+
+  const h = harness(original);
+  const scope = await call<{vaultId:string; vaultBinding:string}>(h.core,'selectVault');
+  const transport: typeof request = async (operation, params) => {
+    if (operation === checkpoint) {
+      h.choose(copy);
+      const selected = await call<typeof scope>(h.core,'selectVault');
+      expect(selected.vaultId).toBe(scope.vaultId);
+      expect(selected.vaultBinding).not.toBe(scope.vaultBinding);
+    }
+    return call(h.core,operation,params);
+  };
+  await expect(renameTag('old','new',scope,transport)).rejects.toThrow('笔记库已切换');
+  expect(originalFile.text).toBe(text);
+  expect(copiedFile.text).toBe(text);
+});
+
+it('resumes only the original tag batch after a property-only commit or lost write reply', async () => {
+  const root = await fixture(), notes = await root.getDirectoryHandle('notes');
+  const firstFile = await notes.getFileHandle(`${noteId}.md`);
+  const secondFile = await notes.getFileHandle(`${secondId}.md`,{create:true});
+  firstFile.bytes = bytes(source(noteId,'正文 #old').replace(/^tags:.*$/m,'tags: [old]'));
+  secondFile.bytes = bytes(source(secondId,'正文 #old').replace(/^tags:.*$/m,'tags: []'));
+  const h = harness(root);
+  const scope = await call<{vaultId:string; vaultBinding:string}>(h.core,'selectVault');
+  const bodyWrites: unknown[] = [];
+  const propertyWrites: unknown[] = [];
+  let interrupted = false;
+  const transport: typeof request = async (operation, params) => {
+    if (operation === 'updateNoteProperty') propertyWrites.push(params?.id);
+    if (operation === 'saveNote') {
+      bodyWrites.push(params?.id);
+      if (params?.id === noteId && !interrupted) {
+        interrupted = true;
+        throw new Error('模拟写入失败');
+      }
+      if (params?.id === secondId) {
+        await call(h.core,operation,params);
+        throw new Error('模拟提交结果丢失');
+      }
+    }
+    return call(h.core,operation,params);
+  };
+  await expect(renameTag('old','new',scope,transport)).rejects.toThrow('当前笔记的属性标签已更新');
+  expect(firstFile.text).toMatch(/^"tags":.*new/m);
+  expect(firstFile.text).toContain('正文 #old');
+
+  const extraId = '11111111-1111-4111-8111-111111111113';
+  const lateFile = await notes.getFileHandle(`${extraId}.md`,{create:true});
+  lateFile.bytes = bytes(source(extraId,'正文 #new').replace(/^tags:.*$/m,'tags: []'));
+  await expect(renameTag('old','new',scope,transport)).rejects.toThrow('目标标签已存在');
+  expect(bodyWrites).toEqual([noteId]);
+
+  lateFile.bytes = bytes(source(extraId,'正文 #old').replace(/^tags:.*$/m,'tags: []'));
+  await expect(renameTag('old','new',scope,transport)).rejects.toThrow('模拟提交结果丢失');
+  expect(firstFile.text).toContain('正文 #new');
+  expect(secondFile.text).toContain('正文 #new');
+  await renameTag('old','new',scope,transport);
+  expect(propertyWrites).toEqual([noteId]);
+  expect(bodyWrites).toEqual([noteId,noteId,secondId]);
+  expect(lateFile.text).toContain('正文 #old');
 });
 
 it('shares tag groups, pins and emoji across independent clients, guards conflicts and preserves corrupt metadata', async () => {

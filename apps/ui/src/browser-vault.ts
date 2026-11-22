@@ -728,7 +728,7 @@ export class BrowserVault {
     if (operation === "getEnvironment") return this.environment();
     if (operation === "getStatus") return this.status(selected);
     this.requireBinding(selected, params.vaultBinding);
-    if (["getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].includes(operation) && params.vaultId !== undefined && params.vaultId !== selected.vaultId) throw new BrowserVaultError('VAULT_CHANGED', '笔记库已切换，请重新打开笔记。');
+    if (["queryNotes", "listTags", "getNoteProperties", "updateNoteProperty", "getNote", "saveNote", "saveDraft", "deleteDraft", "deleteNote", "getTrash", "getTrashedNote", "restoreNote", "permanentlyDeleteNote", "importAttachment"].includes(operation) && params.vaultId !== undefined && params.vaultId !== selected.vaultId) throw new BrowserVaultError('VAULT_CHANGED', '笔记库已切换，请重新打开笔记。');
     if (operation === "saveDraft") return this.storeDraft(selected, this.saveParams(params));
     if (operation === "getDrafts") {
       const drafts = await this.storage.drafts(this.scope(selected));

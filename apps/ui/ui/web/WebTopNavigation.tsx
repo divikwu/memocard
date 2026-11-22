@@ -8,8 +8,9 @@ import { recoverableLazy } from "../components/recoverable-lazy";
 import { tabsListVariants, tabsPillTriggerStyles } from "../components/tabs";
 import { SidebarIcon } from "../business/sidebar-icons";
 import { cn } from "../lib/utils";
+import { loadWebMoreDrawer } from "./loadWebMoreDrawer";
 
-const WebMoreDrawer = recoverableLazy(() => import("./WebMoreDrawer"), "更多");
+const WebMoreDrawer = recoverableLazy(loadWebMoreDrawer, "更多");
 
 export function WebTopNavigation(p: WorkspaceNavigationProps) {
   const [moreOpen, setMoreOpen] = useState<boolean | null>(null);
@@ -19,7 +20,7 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
   const notesActive = activeView === "notes" && (!p.tag || Boolean(p.quickFilter));
   const tagsCurrent = activeView === "tags" || (activeView === "notes" && p.tag && !p.quickFilter) ? "page" : undefined;
   const moreActive = activeView === "settings" || activeView === "trash";
-  return <header className="web-topbar" data-ui-tooltip-side="bottom"><div className="web-topbar-inner">
+  return <><header className="web-topbar" data-ui-tooltip-side="bottom"><div className="web-topbar-inner">
     <div className="web-top-brand">
       {p.detailBack
         ? <Button variant="ghost" size="icon" className="web-top-icon" aria-label={p.detailBack.label} onClick={p.detailBack.run}>
@@ -37,9 +38,10 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
         data-ui-tooltip={actions.newNote.label} disabled={actions.newNote.disabled} onClick={actions.newNote.run}><SidebarIcon name="add" /></Button>
       <Button variant="ghost" size="icon" className="web-top-icon" aria-label="搜索" data-ui-tooltip="搜索" aria-haspopup="dialog" aria-expanded={p.searchOpen} disabled={actions.search.disabled} onClick={actions.search.run}><SidebarIcon name="search" /></Button>
       <Button ref={moreTrigger} variant="ghost" size="icon" className="web-top-icon" aria-label="更多" data-ui-tooltip="更多" aria-haspopup="dialog" aria-expanded={Boolean(moreOpen)} aria-current={moreActive ? "page" : undefined} onClick={() => setMoreOpen(true)}><HugeiconsIcon icon={EqualIcon} strokeWidth={2} aria-hidden="true" /></Button>
-      {moreOpen !== null && <Suspense fallback={<span role="status" className="sr-only">正在打开更多…</span>}>
-        <WebMoreDrawer fromTopbar navigation={p} open={moreOpen} onOpenChange={setMoreOpen} finalFocus={moreTrigger} />
-      </Suspense>}
     </div>
-  </div></header>;
+  </div></header>
+    {moreOpen !== null && <Suspense fallback={<span role="status" className="sr-only">正在打开更多…</span>}>
+      <WebMoreDrawer fromTopbar navigation={p} open={moreOpen} onOpenChange={setMoreOpen} finalFocus={moreTrigger} />
+    </Suspense>}
+  </>;
 }

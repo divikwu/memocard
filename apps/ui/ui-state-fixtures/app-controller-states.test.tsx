@@ -21,10 +21,10 @@ beforeEach(()=>{
   localStorage.clear();
 });
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
-async function show(id:string){
+async function show(id:string, view='notes'){
   const scenario=scenarios.find(item=>item.id === id)!;
   const mock=createPreviewMock(id);fixture.browser=mock.browser;fixture.request.mockImplementation(mock.request);
-  window.history.replaceState(null,'',scenario.detail?`#/notes/${noteId}`:'#/notes');
+  window.history.replaceState(null,'',scenario.detail?`#/notes/${noteId}`:`#/${view}`);
   render(<App />);
   await act(async()=>{await vi.dynamicImportSettled();});
   return mock;
@@ -277,29 +277,35 @@ it('shows a rejected conversion only in its confirmation and keeps its original 
 
 
 it.each([
-  ['disconnected','需要重新连接本机服务','重新打开'],
-  ['unauthorized','需要重新连接本机服务','重新打开'],
-  ['permission','需要文件夹访问权限','重新授权'],
-])('%s uses a centered state below the page title without duplicate notices',async(id,title,action)=>{
-  const mock=await show(id);
+  ['disconnected','notes','所有笔记','需要重新连接本机服务','重新打开'],
+  ['unauthorized','notes','所有笔记','需要重新连接本机服务','重新打开'],
+  ['permission','notes','所有笔记','需要文件夹访问权限','重新授权'],
+  ['disconnected','tags','标签','需要重新连接本机服务','重新打开'],
+  ['unauthorized','tags','标签','需要重新连接本机服务','重新打开'],
+  ['permission','tags','标签','需要文件夹访问权限','重新授权'],
+])('%s on %s uses a centered state below the page title without duplicate notices',async(id,view,pageTitle,title,action)=>{
+  const mock=await show(id,view);
   const heading=await screen.findByRole('heading',{name:title});
   const state=heading.closest('[data-slot="empty"]')!;
-  const page=screen.getByRole('heading',{name:'所有笔记'});
+  const page=screen.getByRole('heading',{name:pageTitle,level:1});
   expect(page.compareDocumentPosition(state) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(state.getAttribute('role')).toBe('status');
   expect(screen.queryByRole('alert')).toBeNull();
   expect(screen.queryByText('记下第一条笔记')).toBeNull();
+  expect(screen.queryByRole('region',{name:'标签目录'})).toBeNull();
   const button=within(state as HTMLElement).getByRole(id === 'permission'?'button':'link',{name:action});
   expect(button.className).toContain('bg-accent-bg');
   if(id === 'permission'){
     fireEvent.click(button);
-    expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
+    if(view === 'tags') expect(await screen.findByRole('region',{name:'标签目录'})).toBeTruthy();
+    else expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
     expect(screen.queryByRole('heading',{name:title})).toBeNull();
   } else expect(button.getAttribute('href')).toBe('memocard-service://open-web');
   expect(mock.calls.some(op=>['saveNote','saveDraft','dismissDraftReminder'].includes(op))).toBe(false);
 });
 
-it('shows an incomplete first authorization with diagnostics and can select again',async()=>{
-  const mock=await show('folder-cancel');
+it.each(['notes','tags'])('shows an incomplete first authorization with diagnostics on %s and can select again',async view=>{
+  const mock=await show('folder-cancel',view);
   const original=mock.snapshot();
   fireEvent.click(await screen.findByRole('button',{name:'打开已有笔记库'}));
   const heading=await screen.findByRole('heading',{name:'文件夹授权未完成'});
@@ -309,9 +315,21 @@ it('shows an incomplete first authorization with diagnostics and can select agai
   expect(card.querySelector('details, summary')).toBeNull();
   expect(within(card as HTMLElement).getByRole('button',{name:'重新选择文件夹'}).className).toContain('bg-accent-bg');
   mock.retry();fireEvent.click(within(card as HTMLElement).getByRole('button',{name:'重新选择文件夹'}));
-  expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
+  if(view === 'tags') expect(await screen.findByRole('region',{name:'标签目录'})).toBeTruthy();
+  else expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
   expect(screen.queryByRole('heading',{name:'文件夹授权未完成'})).toBeNull();
   expect(mock.snapshot()).toEqual(original);
+});
+
+it.each(['disconnected','unauthorized'])('%s keeps the settings reconnect action in the vault section',async id=>{
+  await show(id,'settings');
+  const vault=await screen.findByRole('region',{name:'笔记库'});
+  const action=within(vault).getByRole('link',{name:'重新打开'});
+  expect(action.getAttribute('href')).toBe('memocard-service://open-web');
+  expect(within(vault).getByRole('status').textContent).toBe('需要重新连接本机服务');
+  expect(within(vault).queryByRole('button',{name:'打开已有笔记库'})).toBeNull();
+  expect(screen.queryByRole('alert')).toBeNull();
+  expect(screen.getByRole('region',{name:'内容风格'})).toBeTruthy();
 });
 
 it.each(['disconnected','unauthorized','permission'])('%s keeps the already loaded list and a local notice',async id=>{
@@ -339,6 +357,18 @@ it.each(['disconnected','unauthorized','permission'])('%s keeps the already load
   expect(screen.queryByRole('heading',{name:/本机服务未连接|访问授权已失效|需要文件夹访问权限/})).toBeNull();
   expect(screen.getByRole('button',{name:'筛选笔记'})).toHaveProperty('disabled',true);
   expect(mock.calls.some(op=>['saveNote','saveDraft'].includes(op))).toBe(false);
+});
+
+it('keeps the already loaded tag directory with the inline reconnect notice',async()=>{
+  await show('loading','tags');
+  const directory=await screen.findByRole('region',{name:'标签目录'});
+  expect(within(directory).getByText('验收')).toBeTruthy();
+  fixture.request.mockImplementation(createPreviewMock('unauthorized').request);
+  fireEvent(window,new CustomEvent('memocard:event',{detail:{type:'statusChanged'}}));
+  await within(await screen.findByRole('alert')).findByText('连接已断开');
+  expect(screen.getByRole('region',{name:'标签目录'})).toBe(directory);
+  expect(within(directory).getByText('验收')).toBeTruthy();
+  expect(screen.queryByRole('heading',{name:'需要重新连接本机服务'})).toBeNull();
 });
 
 it('keeps the original list when selecting another folder is not authorized',async()=>{

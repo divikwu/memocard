@@ -71,6 +71,58 @@ test('recovers from a failed layout download in the production UI', { timeout: 2
   } finally { await browser.close(); }
 });
 
+for (const [interfaceTheme, oldBuild] of [['classic', true], ['minimal', true], ['minimal', false]]) {
+  test(`local Web drawer in ${interfaceTheme} ${oldBuild ? 'refreshes an obsolete page' : 'keeps retry for a current page'} following a 404`, { timeout: 20_000 }, async () => {
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage({ viewport: { width: 1205, height: 900 } });
+      page.setDefaultTimeout(5000);
+      await page.addInitScript(theme => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: theme })), interfaceTheme);
+      const entry = manifest['index.html'].file;
+      const drawer = manifest['ui/web/WebMoreDrawer.tsx'].file;
+      const html = (await readFile(`${uiRoot}dist/index.html`, 'utf8')).replace('<head>', '<head><meta name="memocard-local-web" content="1">');
+      let updateAvailable = false, newDocument = false, failedDrawerRequests = 0;
+      await page.route(baseURL + '/', route => {
+        newDocument = updateAvailable;
+        return route.fulfill({ contentType: 'text/html', headers: { 'cache-control': 'no-store' }, body: html });
+      });
+      await page.route(baseURL + '/api/bridge', route => route.fulfill({ status: 401, json: {} }));
+      await page.route(baseURL + '/' + entry, route =>
+        oldBuild && updateAvailable && !newDocument ? route.fulfill({ status: 404, headers: { 'cache-control': 'no-store' }, body: '' }) : route.continue());
+      await page.route(baseURL + '/' + drawer, route => {
+        if (newDocument) return route.continue();
+        failedDrawerRequests++;
+        return route.fulfill({ status: 404, headers: { 'cache-control': 'no-store' }, body: '' });
+      });
+      await page.goto(baseURL + '/#/tags');
+      const classic = interfaceTheme === 'classic';
+      const title = classic ? '切换笔记库' : '更多';
+      const trigger = page.getByRole('button', { name: classic ? /^笔记库：/ : '更多', exact: true });
+      await trigger.waitFor();
+      updateAvailable = true;
+      await trigger.click();
+      const retry = page.getByRole('button', { name: `重试加载${title}`, exact: true });
+      const refresh = page.getByRole('button', { name: '刷新页面', exact: true });
+      if (oldBuild) {
+        await refresh.waitFor({ timeout: 5000 });
+        assert.equal(await retry.count(), 0);
+        const requestsBeforeRefresh = failedDrawerRequests;
+        assert.ok(requestsBeforeRefresh > 0);
+        assert.equal(newDocument, false);
+        await Promise.all([page.waitForEvent('load'), refresh.click()]);
+        await page.getByRole('heading', { name: '标签', exact: true }).waitFor();
+        await trigger.click();
+        await page.getByRole('dialog', { name: title, exact: true }).waitFor();
+        assert.equal(new URL(page.url()).hash, '#/tags');
+        assert.equal(failedDrawerRequests, requestsBeforeRefresh);
+      } else {
+        await retry.waitFor({ timeout: 5000 });
+        assert.equal(await refresh.count(), 0);
+      }
+    } finally { await browser.close(); }
+  });
+}
+
 for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
   test(`default UI in ${engine.name()}: ${width === 1440 ? 'persist, reload, search, delete and restore' : 'connection guide and settings'}`, { timeout: 60_000 }, async () => {
     const browser = await engine.launch({ headless: true });

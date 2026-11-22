@@ -57,7 +57,7 @@ export function createPreviewMock(scenario:string) {
     const currentCoverage = scenario === 'partial' && !failureActive ? {...coverage,complete:true,pending:0} : coverage;
     let result:unknown;
     switch (operation) {
-      case 'getEnvironment':result={platform:browser?'web':'mac',storage:browser?'browser':'local-web',phase:'M1',mcpEnabled:false,capabilities};break;
+      case 'getEnvironment':result={platform:browser?'web':'mac',storage:browser?'browser':'local-web',phase:'M1',mcpEnabled:false,capabilities,vaultBinding:status.connected ? 'preview-vault-binding' : undefined};break;
       case 'getStatus':
         if (['disconnected','unauthorized'].includes(scenario)) return fail(scenario === 'disconnected'?'BRIDGE_UNAVAILABLE':'WEB_UNAUTHORIZED',scenario === 'disconnected'?'此页面连接的 MemoCard 本机服务已停止。请重新打开本机 Web；编辑中的内容仍保留在此页面。':'此页面的本机 Web 授权已失效。请重新打开本机 Web；编辑中的内容仍保留在此页面。');
         result={...status,coverage:currentCoverage};break;

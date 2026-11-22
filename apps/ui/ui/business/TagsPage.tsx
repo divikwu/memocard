@@ -6,6 +6,7 @@ import UnfoldMoreIcon from "@hugeicons/core-free-icons/UnfoldMoreIcon";
 import { useIsMobile } from "../hooks/use-mobile";
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
+import type { AppViewState } from "../../src/App";
 import type { TagGroup } from "@memocard/contracts";
 import { createId } from "../../src/uuid";
 import { normalizePropertyTag, tagKey } from "../../src/inline-tags";
@@ -48,6 +49,13 @@ type TagsPageProps = {
   onSelect: (path: string) => void;
   onRename: (from: string, to: string) => Promise<void>;
 };
+
+export function WorkspaceTags({ state, heading }: { state: AppViewState; heading?: ReactNode }) {
+  const { sidebar, status, working, switchingVault, canCreate, onNavigate } = state;
+  return <TagsPage key={sidebar.vaultId || "disconnected"} heading={heading} tags={sidebar.tags} vaultId={sidebar.vaultId}
+    loading={Boolean(sidebar.loadingTags)} connected={Boolean(status?.connected)} disabled={working || switchingVault}
+    canRename={canCreate && !working && !switchingVault} onSelect={path => void onNavigate("notes", path)} onRename={sidebar.onRenameTag} />;
+}
 
 export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connected, disabled, canRename, onSelect, onRename }: TagsPageProps) {
   const { "data-interface-theme": interfaceTheme, "data-workspace-layout": layout } = useThemeScopeProps();

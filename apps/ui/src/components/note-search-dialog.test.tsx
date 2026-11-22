@@ -23,7 +23,7 @@ beforeEach(() => {
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   bridge.request.mockReset();
   bridge.request.mockResolvedValue({ notes: [note, second], nextCursor: null, coverage });
-  window.matchMedia = vi.fn().mockReturnValue({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
+  vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("(min-width: 1024px)"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
 });
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
 

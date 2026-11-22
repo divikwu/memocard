@@ -906,7 +906,8 @@
         "apps/ui/ui/components/dialog.tsx",
         "apps/ui/ui/components/drawer.tsx",
         "apps/ui/ui/components/popover.tsx",
-        "apps/ui/ui/components/recoverable-lazy.tsx"
+        "apps/ui/ui/components/recoverable-lazy.tsx",
+        "apps/ui/ui/web/loadWebMoreDrawer.tsx"
       ]
     },
     {
@@ -1341,7 +1342,8 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/ui/components/recoverable-lazy.tsx"
+        "apps/ui/ui/components/recoverable-lazy.tsx",
+        "apps/ui/ui/web/loadWebMoreDrawer.tsx"
       ]
     },
     {

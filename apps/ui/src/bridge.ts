@@ -10,7 +10,7 @@ export { isBrowserVault, isLocalWeb } from "./client-mode";
 type Transport = (request: BridgeRequest) => Promise<unknown>;
 const pickerOperations = new Set(["selectVault", "reauthorizeVault", "pickImage", "setMCPEnabled"]);
 // These writes can still commit after a UI timeout. Keep the queue waiting for the actual reply.
-const commitOperations = new Set(["saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout", "setPropertyIcon"]);
+const commitOperations = new Set(["saveDraft", "saveNote", "updateNoteProperty", "renamePropertyLabel", "setPropertyLayout", "setPropertyIcon", "deleteNote", "restoreNote", "permanentlyDeleteNote"]);
 
 declare global {
   interface Window {
