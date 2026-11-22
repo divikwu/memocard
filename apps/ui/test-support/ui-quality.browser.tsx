@@ -3673,24 +3673,20 @@ test("Web detail aligns title, properties and body across breakpoints", { repeat
       };
       await waitFor(checkLayout);
       const propertyOffsets = () => {
-        const titleTop = title.getBoundingClientRect().top;
+        // The title autosizer rounds scrollHeight to a whole CSS pixel after a breakpoint change.
+        const titleBottom = title.getBoundingClientRect().bottom;
         return Object.fromEntries(Array.from(view.container.querySelectorAll<HTMLElement>(".note-property-row[data-property-key]"), row => [
           row.dataset.propertyKey!,
-          row.querySelector("dd")!.getBoundingClientRect().top - titleTop,
+          row.querySelector("dd")!.getBoundingClientRect().top - titleBottom,
         ]));
       };
       const collapsedOffsets = propertyOffsets();
-      const scroller = title.closest(".web-app-scroll")!;
-      const titleBefore = title.getBoundingClientRect();
-      const scrollBefore = scroller.scrollTop;
+      const collapsedTitleHeight = title.getBoundingClientRect().height;
       const checkPropertyOffsets = () => {
+        expect(Math.abs(title.getBoundingClientRect().height - collapsedTitleHeight), `${width}px title height change`).toBeLessThanOrEqual(0.5);
         const current = propertyOffsets();
         for (const [key, top] of Object.entries(collapsedOffsets)) {
-          if (Math.abs(current[key] - top) > 0.05) {
-            const titleAfter = title.getBoundingClientRect();
-            console.info(`[DEBUG-release-layout] ${width}px ${key} offset ${top} -> ${current[key]}; title y/height ${titleBefore.y}/${titleBefore.height} -> ${titleAfter.y}/${titleAfter.height}; scroll ${scrollBefore} -> ${scroller.scrollTop}; ${document.fonts.status}`);
-          }
-          expect(current[key], `${width}px ${key} offset from title`).toBeCloseTo(top, 1);
+          expect(current[key], `${width}px ${key} offset from title bottom`).toBeCloseTo(top, 1);
         }
       };
       await userEvent.click(canvas.getByRole("button", {name: "更多属性"}));
