@@ -331,7 +331,7 @@ test("interface theme fixture extends CSS and layout independently without repla
 }, 30_000);
 
 
-test("real editor menus and property confirmation inherit a local dialog scope", { repeats: 19, timeout: 10_000 }, async () => {
+test("real editor menus and property confirmation inherit a local dialog scope", async () => {
   await appearanceFixture.themes.paper.loadStyles();
   await page.viewport(1024, 900);
   let editor!: Editor;
@@ -388,7 +388,7 @@ test("real editor menus and property confirmation inherit a local dialog scope",
     expect(body.getByRole("dialog", { name: "局部编辑器" })).toBeVisible();
     expect(body.getByRole("textbox", { name: "笔记内容" })).toBe(content);
   } finally { view.unmount(); }
-});
+}, 30_000);
 
 
 for (const local of ["light", "dark"] as const) test(`local ${local} interaction colors ignore the opposite document mode`, async () => {

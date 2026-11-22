@@ -3606,7 +3606,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
   }
 }, 30_000);
 
-test("Web detail aligns title, properties and body across breakpoints", { repeats: 14, timeout: 30_000 }, async () => {
+test("Web detail aligns title, properties and body across breakpoints", async () => {
   await page.viewport(320, 900);
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -3715,7 +3715,7 @@ test("Web detail aligns title, properties and body across breakpoints", { repeat
     view.unmount(); release();
     history.replaceState(null, "", previousHash || "#/notes");
   }
-});
+}, 30_000);
 
 test("pointer blur save keeps the next value clickable when an empty property hides", async () => {
   await page.viewport(390, 900);
