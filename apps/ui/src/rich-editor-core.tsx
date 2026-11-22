@@ -778,6 +778,9 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     onKeyDownCapture={event => {
     toolbarTarget.current.pointer = null;
     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229 || editor.view.composing) return;
+    if (event.key === 'Escape' && menu === 'block' && event.target === gripRef.current) {
+      event.preventDefault(); event.stopPropagation(); closeMenu(); return;
+    }
     if (event.shiftKey && event.key === 'F10' && editor.isActive('table') && !props.disabled) {
       const trigger = root.current?.querySelector<HTMLButtonElement>('.rich-table-tools button[aria-keyshortcuts]');
       if (trigger) { event.preventDefault(); trigger.focus(); trigger.click(); }

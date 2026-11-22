@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "vitest";
-import { act, cleanup, render, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
 import { commands, page, userEvent } from "vitest/browser";
 import type { TagPreferenceState } from "@memocard/contracts";
 import { App, type AppViewState } from "../src/App";
@@ -347,7 +347,8 @@ test("real editor menus and property confirmation inherit a local dialog scope",
     const content = await body.findByRole("textbox", { name: "笔记内容" });
     await userEvent.click(content);
     act(() => { editor.chain().focus().setTextSelection(1).run(); });
-    await userEvent.click(body.getByRole("button", { name: "内容块操作" }));
+    const grip = body.getByRole("button", { name: "内容块操作" });
+    await userEvent.click(grip);
     const menu = await body.findByRole("menu", { name: "内容块操作菜单" });
     expect(getComputedStyle(menu).borderRadius).toBe("12px");
     for (const item of menu.querySelectorAll<HTMLElement>('[role^="menuitem"]')) {
@@ -364,7 +365,15 @@ test("real editor menus and property confirmation inherit a local dialog scope",
     const deleteColor = getComputedStyle(body.getByTestId("local-delete-color")).color;
     expect(getComputedStyle(deleteBlock).color).toBe(deleteColor);
     expect(getComputedStyle(deleteBlock.querySelector("svg")!).color).toBe(deleteColor);
-    await userEvent.keyboard("{Escape}");
+    // Escape can arrive on the grip before the popup takes focus.
+    grip.focus();
+    expect(grip).toHaveFocus();
+    expect(menu).toBeVisible();
+    fireEvent.keyDown(grip, { key: "Escape" });
+    await waitFor(() => {
+      expect(menu).not.toBeInTheDocument();
+      expect(content).toHaveFocus();
+    });
     await userEvent.click(body.getByRole("button", { name: "管理标签 测试" }));
     await userEvent.click(await body.findByRole("menuitem", { name: "删除标签" }));
     const confirmation = await body.findByRole("alertdialog");

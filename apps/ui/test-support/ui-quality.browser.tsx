@@ -3673,17 +3673,20 @@ test("Web detail aligns title, properties and body across breakpoints", async ()
       };
       await waitFor(checkLayout);
       const propertyOffsets = () => {
-        const titleTop = title.getBoundingClientRect().top;
+        // The title autosizer rounds scrollHeight to a whole CSS pixel after a breakpoint change.
+        const titleBottom = title.getBoundingClientRect().bottom;
         return Object.fromEntries(Array.from(view.container.querySelectorAll<HTMLElement>(".note-property-row[data-property-key]"), row => [
           row.dataset.propertyKey!,
-          row.querySelector("dd")!.getBoundingClientRect().top - titleTop,
+          row.querySelector("dd")!.getBoundingClientRect().top - titleBottom,
         ]));
       };
       const collapsedOffsets = propertyOffsets();
+      const collapsedTitleHeight = title.getBoundingClientRect().height;
       const checkPropertyOffsets = () => {
+        expect(Math.abs(title.getBoundingClientRect().height - collapsedTitleHeight), `${width}px title height change`).toBeLessThanOrEqual(0.5);
         const current = propertyOffsets();
         for (const [key, top] of Object.entries(collapsedOffsets)) {
-          expect(current[key], `${width}px ${key} offset from title`).toBeCloseTo(top, 1);
+          expect(current[key], `${width}px ${key} offset from title bottom`).toBeCloseTo(top, 1);
         }
       };
       await userEvent.click(canvas.getByRole("button", {name: "更多属性"}));
