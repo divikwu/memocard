@@ -1,6 +1,3 @@
-.ui-tag-directory { --tag-directory-row-height: var(--size-element-sm); --tag-control-size: calc(var(--spacing-1) * 7); --tag-control-gap: calc(var(--spacing-1) / 2); display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 3); min-width: 0; }
-.ui-tag-directory-toolbar { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); }
-.ui-tag-directory-search-actions { display: flex; align-items: center; column-gap: var(--spacing-1); min-width: 0; margin-inline-start: auto; }
 .ui-tag-directory .ui-collection-search { flex: 0 1 auto; width: 10rem; margin-inline-start: auto; transition: width var(--duration-fast) var(--ease-standard); }
 .web-app[data-workspace-layout=sidebar] .ui-tag-directory-toolbar > .ui-collection-search { flex-basis: 20rem; max-width: 20rem; }
 .ui-tag-directory .ui-collection-search:focus-within { width: 15rem; }
@@ -9,10 +6,6 @@
 }
 :where(.web-app[data-web-client]) .ui-tag-directory .ui-collection-search-input { background: var(--color-background-control); border-color: transparent; }
 .ui-tag-directory-tools { display: flex; gap: var(--spacing-1); }
-.ui-tag-directory-panel { flex: 1; min-width: 0; padding: calc(var(--spacing-1) * 2); border-radius: var(--radius-item); background: var(--color-background-surface); }
-.ui-tag-directory-tabs { flex: 1; min-width: 0; gap: calc(var(--spacing-1) * 4); }
-.ui-tag-directory-tab-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 3); }
-.ui-tag-directory-tab-header > .ui-tag-directory-search-actions { flex: 1 1 15rem; }
 .ui-tag-draft-name { padding-inline-start: calc(var(--tree-toggle-size) + var(--tag-control-gap)); }
 .ui-tag-directory-draft-table .ui-tag-draft-name { padding-inline-start: 0; }
 .ui-tag-draft-row .ui-tag-directory-description { overflow: visible; }

@@ -19,13 +19,13 @@ import { Textarea } from "../components/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/table";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "../components/empty";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "../components/dropdown-menu";
-import { Skeleton } from "../components/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
 import { useThemeScopeProps } from "../components/theme-scope";
 import { SidebarIcon } from "./sidebar-icons";
 import { TreeMoreButton, TreeRow, TreeToggleButton } from "./sidebar-tree-item";
 import { TagIcon } from "./property-icon-catalog";
 import { TagDirectoryList, TagDirectoryChip } from "./TagDirectoryList";
+import { TagChipsLoading } from "./TagsLoading";
 import { FoldersIcon } from "./folders-icon";
 import "./note-properties.css";
 import "./TagsPage.css";
@@ -149,7 +149,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
     try { await togglePinned(path); }
     finally { setPinning(false); }
   };
-  const status = loading && !tags.length ? <div role="status" aria-label="正在读取标签" className="grid gap-2 p-2">{[0, 1, 2, 3].map(item => <Skeleton key={item} className="h-8 rounded-xl" />)}</div>
+  const status = loading && !tags.length ? <TagChipsLoading />
     : !matches.length ? <Empty><EmptyHeader>{connected && <EmptyIllustration kind={needle ? "loupe" : "drawer"} />}<EmptyTitle>{!connected ? "连接笔记库后查看标签" : needle ? "没有找到相关标签" : "还没有标签"}</EmptyTitle><EmptyDescription>{!connected ? "从左上角选择笔记库。" : needle ? "换个关键词，或清空搜索。" : "在笔记中添加标签后，会显示在这里。"}</EmptyDescription></EmptyHeader>{needle && <EmptyContent><Button variant="outline" onClick={() => { setQuery(""); search.current?.focus(); }}>清空搜索</Button></EmptyContent>}</Empty> : null;
   const chip = (tag: Tag, label: string) => <>
           <TagDirectoryChip tag={tag} disabled={disabled || !connected} onSelect={() => onSelect(tag.name)}

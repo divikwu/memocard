@@ -27,6 +27,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton } from "../components/inp
 import { useScrollOverflow } from "../hooks/use-scroll-overflow";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/popover";
 import { Sheet, SheetCloseButton, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "../components/sheet";
+import "./QuickCaptureLayout.css";
 import "./QuickCapture.css";
 const VaultImage = recoverableLazy(() => import("./NoteMarkdown").then(module => ({ default: module.VaultImage })), "图片");
 

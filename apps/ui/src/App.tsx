@@ -32,7 +32,7 @@ const bridgeErrorRetryable = (error: unknown): boolean | null => typeof error ==
 // Web/H5 can replace the view while sharing the existing request, route and draft lifecycle.
 export type AppViewState = {
   view: View; title: string; backLabel: string; isMobile: boolean; detailView: boolean; openingNote: boolean;
-  openingNoteId?: string; openingTitle?: string;
+  openingNoteId?: string; openingTitle?: string; openingContentHash?: string;
   loading: boolean; working: boolean; switchingVault: boolean; refreshingPages: boolean;
   status: VaultStatus | null; environment: Environment | null; capabilities: Set<string>;
   error: unknown; notice: string; selectionNotice: string; pinReadError: unknown;
@@ -87,7 +87,8 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       document.querySelector<HTMLButtonElement>(open ? '#desktop-sidebar [data-slot="sidebar-trigger"]' : 'main [data-slot="sidebar-trigger"]')?.focus();
     });
   }, []);
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchPresentation, setSearchPresentation] = useState<"closed" | "open" | "shortcut">("closed");
+  const searchOpen = searchPresentation !== "closed";
   const searchSession = useRef<NoteSearchSession | null>(null);
   const searchReturnFocus = useRef<HTMLElement | null>(null);
   const searchPageScroll = useRef(0);
@@ -179,12 +180,15 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const restoreListPosition = useCallback(() => {
     if (isMobile && searchNoteReturn.current && searchNoteReturn.current === status?.vaultId) {
       searchNoteReturn.current = null;
-      setSearchOpen(true);
+      setSearchPresentation("open");
       return;
     }
+    const activeAtReturn = document.activeElement;
     requestAnimationFrame(() => {
       const container = scrollContainer.current;
       if (container) container.scrollTop = returnScroll.current;
+      const active = document.activeElement;
+      if (active !== activeAtReturn && active !== document.body && active !== container) return;
       const previous = returnFocus.current;
       const id = previous?.closest<HTMLElement>('[data-note-id]')?.dataset.noteId;
       const row = id && container ? Array.from(container.querySelectorAll<HTMLElement>('[data-note-id]')).find(item => item.dataset.noteId === id) : undefined;
@@ -470,7 +474,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   useEffect(() => () => { editorGeneration.current++; }, []);
 
   useEffect(() => {
-    const unsubscribe = subscribeToOpenNotes(window, (id) => { setSearchOpen(false); void openNote(id, true); });
+    const unsubscribe = subscribeToOpenNotes(window, (id) => { setSearchPresentation("closed"); void openNote(id, true); });
     if (isNative && !readySent.current) {
       readySent.current = true;
       void request("uiReady").catch((cause: unknown) => setError(cause));
@@ -592,7 +596,8 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const detailReadFailed = openingNote && Boolean(error) && !localWebReconnectRequired;
   const canRetryDetail = retryableError && bridgeErrorCode(error) !== "NOTE_NOT_FOUND";
   const openingNoteId = openingNote ? pendingNoteId : undefined;
-  const openingTitle = openingNoteId ? notes.find(note => note.id === openingNoteId)?.title?.trim() : undefined;
+  const openingSummary = openingNoteId ? notes.find(note => note.id === openingNoteId) : undefined;
+  const openingTitle = openingSummary?.title?.trim();
   const visibleItems = view === "tags" ? tags : notes;
   const connectionState = !detailView && view !== "settings" && !loading && visibleItems.length === 0 && (localWebReconnectRequired || needsPermission || (Boolean(selectionNotice) && !status?.connected));
   const listTimeoutVisible = !detailView && view !== "settings" && view !== "tags" && status?.connected && !localWebReconnectRequired && !needsPermission && listTimeout;
@@ -683,15 +688,15 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     if (returningFromDetail && nextView === returnView.current) restoreListPosition();
   };
 
-  const searchNotes = () => {
+  const searchNotes = (source?: "shortcut") => {
     searchReturnFocus.current = document.activeElement as HTMLElement;
     searchPageScroll.current = scrollContainer.current?.scrollTop ?? 0;
     searchNoteReturn.current = null;
     setMenuOpen(false);
-    setSearchOpen(true);
+    setSearchPresentation(source === "shortcut" ? "shortcut" : "open");
   };
   const changeSearchOpen = (open: boolean) => {
-    setSearchOpen(open);
+    setSearchPresentation(open ? "open" : "closed");
     if (!open && isMobile) {
       searchNoteReturn.current = null;
       requestAnimationFrame(() => {
@@ -707,7 +712,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     const onSearchKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k" && !event.altKey && !event.shiftKey && !event.isComposing && searchAvailable) {
         event.preventDefault();
-        if (!event.repeat && !searchOpen) searchNotes();
+        if (!event.repeat && !searchOpen) searchNotes("shortcut");
       }
     };
     window.addEventListener("keydown", onSearchKey);
@@ -816,7 +821,10 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const searchProps: NoteSearchProps = {
     open: searchOpen, preserveSession: isMobile, sessionRef: searchSession, onOpenChange: changeSearchOpen, vaultName: status?.vaultName || "笔记库",
     available: searchAvailable, returnFocus: searchReturnFocus,
-    onOpenNote: id => { searchNoteReturn.current = isMobile ? status?.vaultId ?? null : null; setSearchOpen(false); void openNote(id); },
+    onShortcutFocusBlur: searchPresentation === "shortcut"
+      ? () => setSearchPresentation(current => current === "shortcut" ? "open" : current)
+      : undefined,
+    onOpenNote: id => { searchNoteReturn.current = isMobile ? status?.vaultId ?? null : null; setSearchPresentation("closed"); void openNote(id); },
   };
   const deletionProps: NoteDeleteProps | null = noteToDelete ? {
     target: noteToDelete,
@@ -835,7 +843,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const onRequestDelete = editing?.baseHash && status?.vaultId && capabilities.has("deleteNote") ? () => setNoteToDelete({ id: editing.id, title, vaultId: status.vaultId!, vaultBinding: editing.vaultBinding ?? environment?.vaultBinding }) : undefined;
   return <TagColorProvider vaultId={status?.vaultId} vaultBinding={environment?.vaultBinding}>{renderView({
     view, title, backLabel: isMobile && searchNoteReturn.current ? "返回搜索结果" : returnView.current === "home" ? "返回主页" : "返回笔记列表", isMobile, detailView, openingNote, loading, working, switchingVault, refreshingPages,
-    openingNoteId, openingTitle, status, environment, capabilities, error, notice, selectionNotice, pinReadError, needsPermission, unsupportedBrowser,
+    openingNoteId, openingTitle, openingContentHash: openingSummary?.contentHash, status, environment, capabilities, error, notice, selectionNotice, pinReadError, needsPermission, unsupportedBrowser,
     localWebReconnectRequired, connectionState, detailReadFailed, canRetryDetail,
     retryableError, canRefresh: isConnectedClient && !loading && !working,
     pinRetryDisabled: pinWorking || refreshingPages || switchingVault,

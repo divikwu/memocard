@@ -21,7 +21,7 @@
   --color-background-sidebar: var(--color-background-card);
 }
 
-:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) .ui-note-cards[data-slot=collection-skeleton] {
+:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) :is(.ui-note-cards[data-slot=collection-skeleton], [data-slot=home-capture-skeleton]) {
   --color-skeleton: var(--color-neutral-200);
 }
 

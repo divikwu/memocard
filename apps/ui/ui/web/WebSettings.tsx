@@ -15,6 +15,7 @@ import { WebSettingSelect } from "./WebSettingSelect";
 import { WebTypographySettings } from "./WebTypographySettings";
 import { ReopenLocalWeb } from "./ReopenLocalWeb";
 import { useAppearanceCatalog, useWorkspaceAppearance } from "./appearance/AppearanceRuntime";
+import "./web-settings-layout.css";
 import "./web-settings.css";
 
 const indexedDate = new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });

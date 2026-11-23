@@ -1,0 +1,4 @@
+.ui-quick-capture { position: relative; z-index: 10; isolation: isolate; width: 100%; }
+.ui-capture-group { overflow: visible; border-radius: calc(var(--radius-element) * 3); }
+.ui-capture-editor-content { min-height: calc(var(--spacing-1) * 28); max-height: 20rem; overflow-y: auto; padding: calc(var(--spacing-1) * 4); white-space: pre-wrap; overflow-wrap: anywhere; outline: none; font: inherit; font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
+.ui-capture-footer { gap: var(--spacing-1); padding: var(--spacing-1) calc(var(--spacing-1) * 2) calc(var(--spacing-1) * 2); cursor: default; }

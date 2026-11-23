@@ -17,6 +17,7 @@ export type NoteSearchProps = {
   vaultName: string;
   available: boolean;
   returnFocus: RefObject<HTMLElement | null>;
+  onShortcutFocusBlur?: () => void;
   onOpenNote: (id: string) => void;
   preserveSession?: boolean;
   sessionRef?: RefObject<NoteSearchSession | null>;

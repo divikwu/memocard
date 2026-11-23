@@ -13,6 +13,7 @@ import { validPropertyNumber } from './property-numbers';
 import { PropertyOptionsLoading } from './PropertyOptionsLoading';
 import { usePropertyLayout, type PropertyLayoutConnection } from './use-property-layout';
 import { orderProperties, isPropertyVisible, propertyVisibility } from './property-layout';
+import { noteDetailPropertyPreviewRows, notePropertyPreviewKey, readNotePropertyPreviewRows, rememberNotePropertyPreviewRows } from './note-property-preview';
 
 type PropertyDrag = {
   pointerId: number;
@@ -33,9 +34,6 @@ function resetDrag(drag:PropertyDrag) {
   delete drag.rows[drag.source].element.dataset.dragging;
   for (const {element} of drag.rows) if (element.style.translate) element.style.translate = '';
 }
-
-const propertyRowCounts = new Map<string, number>();
-const propertyPreviewRows = 6;
 
 type View = {
   ConfirmationPortal?: ComponentType<ComponentProps<typeof AlertDialog.Portal>>;
@@ -237,7 +235,7 @@ function applyPendingChange(current:Properties | undefined, change:PropertyChang
   return {...current,properties:change.remove ? current.properties.filter(property => property.name !== change.name) : existing ? current.properties.map(property => property.name === change.name ? updated : property) : [...current.properties,updated]};
 }
 
-function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, saveError, renderHeader, pendingChanges = [], tags: bodyValues, inheritedTags = [], relativePath, vaultBinding, layoutConnection, iconAccess = false, reserveBodySpace = false, canEdit, canRead = canEdit, busy, onApply, onApplyValue, onLocateTag, onChangeTag }: { note?:Note; scopeKey?:string; savedProperties?:Properties; saveError?:string; renderHeader?:(notice:ReactNode, ownsSaveError:boolean)=>ReactNode; pendingChanges?:PropertyChange[]; tags:string[]; inheritedTags?:string[]; relativePath?:string; vaultBinding?:string; layoutConnection?:PropertyLayoutConnection; iconAccess?:boolean; reserveBodySpace?:boolean; canEdit:boolean; canRead?:boolean; busy:boolean; onApply:(change:PropertyChange)=>Promise<void>; onApplyValue?:(change:PropertyChange, previous:PropertyChange)=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
+function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, saveError, renderHeader, children, pendingChanges = [], tags: bodyValues, inheritedTags = [], relativePath, vaultBinding, layoutConnection, iconAccess = false, reserveBodySpace = false, waitForPropertyLayout = false, canEdit, canRead = canEdit, busy, onApply, onApplyValue, onLocateTag, onChangeTag }: { note?:Note; scopeKey?:string; savedProperties?:Properties; saveError?:string; renderHeader?:(notice:ReactNode, ownsSaveError:boolean)=>ReactNode; children?:ReactNode; pendingChanges?:PropertyChange[]; tags:string[]; inheritedTags?:string[]; relativePath?:string; vaultBinding?:string; layoutConnection?:PropertyLayoutConnection; iconAccess?:boolean; reserveBodySpace?:boolean; waitForPropertyLayout?:boolean; canEdit:boolean; canRead?:boolean; busy:boolean; onApply:(change:PropertyChange)=>Promise<void>; onApplyValue?:(change:PropertyChange, previous:PropertyChange)=>Promise<void>; onLocateTag?:(tag:string)=>void; onChangeTag?:(from:string,to:string | null)=>Promise<void> }) {
   const tags = [...new Set(bodyValues.map(tagKey))];
   const inheritedKey = JSON.stringify(inheritedTags);
   const tooltipId = useId();
@@ -309,18 +307,22 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
   const shownKeys = orderedKeys.filter(key => open || key === editingKey || imageInteractions.has(key) || !hiddenKeys.has(key));
   const layoutPending = canRead && !presentation.ready;
   const rowsPending = layoutPending || (loading && !data);
-  const countKey = !reserveBodySpace && vaultBinding && note?.contentHash ? JSON.stringify([dataScope, note.contentHash]) : undefined;
+  const [bodyShown, setBodyShown] = useState(false);
+  const [readingBodyFirst, setReadingBodyFirst] = useState(false);
+  const bodyPending = waitForPropertyLayout && reserveBodySpace && rowsPending && !bodyShown && !readingBodyFirst;
+  useLayoutEffect(() => {
+    // Once revealed, keep the editor mounted through subsequent property reads.
+    if (!bodyPending && !bodyShown) setBodyShown(true);
+  }, [bodyPending, bodyShown]);
+  const countKey = notePropertyPreviewKey(layoutConnection?.vaultId ?? vaultBinding, scopeKey, note?.contentHash);
   const settledCount = orderedKeys.length - hiddenKeys.size;
-  const placeholderCount = reserveBodySpace
-    ? propertyPreviewRows
-    : (countKey ? propertyRowCounts.get(countKey) : undefined) ?? Math.max(4, Math.min(orderedKeys.length, 8));
+  const placeholderCount = reserveBodySpace ? noteDetailPropertyPreviewRows(countKey)
+    : readNotePropertyPreviewRows(countKey) ?? Math.max(4, Math.min(orderedKeys.length, 8));
   const skeletonRows = Math.min(placeholderCount, 8);
   useEffect(() => {
-    if (!countKey || !data || rowsPending || readError || presentation.error) return;
-    propertyRowCounts.delete(countKey);
-    propertyRowCounts.set(countKey, settledCount);
-    if (propertyRowCounts.size > 64) propertyRowCounts.delete(propertyRowCounts.keys().next().value!);
-  }, [countKey, data, rowsPending, readError, presentation.error, settledCount]);
+    if (!countKey || !data || data.contentHash !== note?.contentHash || pendingChanges.length || rowsPending || readError || presentation.error) return;
+    rememberNotePropertyPreviewRows(countKey, settledCount);
+  }, [countKey, data, note?.contentHash, pendingChanges.length, rowsPending, readError, presentation.error, presentation.layout.contentHash, settledCount]);
   const canArrange = canEdit && presentation.writable && !presentation.saving && !busy && !loading;
   useEffect(() => { setOpen(false); setEditing(null); setAdding(false); setRemoving(null); setRenaming(null); setIconPickerOpen(false); setTypeChange(null); setImageInteractions(new Set()); setLayoutAnnouncement(''); keyboardFocus.current = null; blurClosing.current = null; inlineCell.current = null; }, [scopeKey,vaultBinding]);
   useLayoutEffect(() => {
@@ -630,7 +632,7 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
   rowNodes.set('system:updatedAt', <>{systemName('system:updatedAt')}<dd className="note-property-value tabular-nums">{updated ? <time dateTime={note?.updatedAt}>{updated}</time> : note ? '未提供' : '尚未保存'}</dd></>);
   rowNodes.set('system:createdAt', <>{systemName('system:createdAt')}<dd className="note-property-value tabular-nums">{noteTime(note?.createdAt) ?? '未提供'}</dd></>);
   rowNodes.set('system:filename', <>{systemName('system:filename')}<dd className="note-property-value tabular-nums">{note ? (relativePath ?? note.relativePath)?.split('/').pop() : '尚未保存'}</dd></>);
-  const renderedKeys = new Set(rowsPending ? [] : shownKeys);
+  const renderedKeys = new Set(rowsPending || readingBodyFirst ? [] : shownKeys);
   for (const property of data?.properties ?? []) {
           if (!renderedKeys.has(`property:${property.name}`)) continue;
           const {Icon} = propertyTypes[property.type === 'list' ? 'multiSelect' : property.type];
@@ -682,7 +684,7 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
     {layoutAnnouncement && <span className="sr-only" role="status" aria-live="polite">{layoutAnnouncement}</span>}
     {rowsPending && <span role="status" aria-label="正在读取属性" className="sr-only">正在读取属性…</span>}
     <Collapsible open={open} onOpenChange={setOpen} aria-label="笔记属性" aria-busy={loading || layoutPending} className="note-properties" data-updating={canEdit && note?.contentHash && (busy || loading) ? '' : undefined}>
-      {reserveBodySpace ? <div
+      {readingBodyFirst ? null : reserveBodySpace ? <div
         className="note-property-viewport"
         role="region"
         aria-label="属性列表"
@@ -692,7 +694,11 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
         <Popover open={adding} onOpenChange={value => { if (!busy) { setAdding(value); setEditing(null); setError(''); } }}><PopoverTrigger render={<Button variant="ghost" size="sm" className="note-property-action text-secondary" disabled={(!note ? !data : !data?.writable) || busy || loading || layoutPending} />}><Plus className="size-4" />添加属性</PopoverTrigger><PopoverContent align="start" aria-label="添加属性" className="note-property-popup note-property-create-popup"><PropertyCreator error={error} busy={busy || loading} onSave={apply} /></PopoverContent></Popover>
       </div>}
     </CollapsibleContent>
-    <div className="note-property-footer"><CollapsibleTrigger aria-controls={`${propertyListId} ${propertyActionId}`} render={<Button variant="ghost" size="sm" ref={panelTrigger} disabled={reserveBodySpace && !open && rowsPending} className="note-property-action note-property-toggle text-secondary" />}><span className="flex size-4 shrink-0 items-center justify-center">{rowsPending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : open ? <ChevronUp /> : <ChevronDown />}</span>{open ? '收起' : '更多属性'}</CollapsibleTrigger></div>
+    <div className="note-property-footer">
+      {bodyPending ? <Button variant="ghost" size="sm" className="note-property-action note-property-toggle text-secondary" onClick={() => setReadingBodyFirst(true)}>先查看正文</Button>
+        : readingBodyFirst ? <Button variant="ghost" size="sm" className="note-property-action note-property-toggle text-secondary" disabled={rowsPending} onClick={() => setReadingBodyFirst(false)}>显示属性</Button>
+        : <CollapsibleTrigger aria-controls={`${propertyListId} ${propertyActionId}`} render={<Button variant="ghost" size="sm" ref={panelTrigger} disabled={reserveBodySpace && !open && rowsPending} className="note-property-action note-property-toggle text-secondary" />}><span className="flex size-4 shrink-0 items-center justify-center">{rowsPending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : open ? <ChevronUp /> : <ChevronDown />}</span>{open ? '收起' : '更多属性'}</CollapsibleTrigger>}
+    </div>
     {renaming && <NameEditor key={renaming.key} initialName={renaming.name} anchor={renaming.anchor} side="bottom" align="start" sideOffset={4} className="w-80 p-2" title="重命名属性" inputLabel="新属性名" maxLength={100} selectOnFocus busy={busy || iconSaving} onSave={saveLabel} onClose={() => { setRenaming(current => current === renaming ? null : current); setError(''); }}
       leading={renaming.iconKey ? disabled => <Button ref={iconPickerTrigger} type="button" size="icon-sm" variant="secondary" className="note-property-icon-trigger border-0" aria-label="更换图标" aria-expanded={iconPickerOpen} aria-controls={iconPickerOpen ? iconPickerId : undefined} disabled={disabled} onClick={() => setIconPickerOpen(value => !value)}>
         <PropertyIconGlyph value={renameIcon} fallback={<renaming.Icon />} />
@@ -715,7 +721,9 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
     <AlertDialog.Root open={Boolean(removing)} onOpenChange={value => { if (!busy && !value) setRemoving(null); }}>
       <ConfirmationPortal><AlertDialog.Backdrop className="note-property-backdrop bg-overlay backdrop-blur-sm" /><ConfirmationPopup className="note-property-confirm surface-floating shadow-high"><AlertDialog.Title className="break-words font-semibold">删除属性「{removing ? label(`property:${removing.name}`) : ''}」？</AlertDialog.Title><AlertDialog.Description className="mt-2 break-words text-sm text-secondary">将从所有笔记中删除此属性及已填写的值，此操作无法撤销。</AlertDialog.Description>{error && <p role="alert" className="mt-2 break-words text-sm text-error">{error}</p>}<div className="note-property-confirm-actions"><AlertDialog.Close render={<Button variant="outline" size="sm" disabled={busy} />}>取消</AlertDialog.Close><Button variant="outline" size="sm" className="text-error" disabled={busy} onClick={() => { if (removing) void apply({name:removing.name,remove:true}).catch(() => undefined); }}>确认删除</Button></div></ConfirmationPopup></ConfirmationPortal>
     </AlertDialog.Root>
-  </Collapsible></>;
+  </Collapsible>
+    {!bodyPending && children}
+  </>;
 }
 
   return NoteProperties;

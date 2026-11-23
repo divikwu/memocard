@@ -51,7 +51,7 @@
 | `scale-0` | `--shadow-flat` / `shadow-flat` | PC 快速记录默认面板；透明边框，无可见外缘 |
 | `outlined-3` | `--shadow-med` / `shadow-med` | 通用 Card 表面 |
 | `outlined-3`（经 med） | `--shadow-input-focus` / `shadow-input-focus` | 通用输入聚焦表面 |
-| `scale-2`（组件内覆盖） | `--shadow-input-focus` | PC 快速记录聚焦面板；纯投影，无装饰外缘 |
+| `scale-2`（组件内覆盖） | `--shadow-input-focus` | 快速记录组件的聚焦配方。桌面 Web 首页和 H5 弹窗使用平面样式 |
 | `outlined-4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog 等浮层；搭配 surface-floating 维护透明布局边框与内侧高光 |
 | `outlined-2` | `--shadow-floating` / `shadow-floating` | 富文本浮动工具条、Mermaid 切换工具条 |
 | `outlined-3` | `--shadow-document` / `shadow-document` | 回收站笔记预览等独立文档表面；全屏编辑区保持平面 |
@@ -67,7 +67,7 @@ z-index 管理前后顺序，阴影等级表达感知高度；嵌套菜单与弹
 
 键盘焦点使用独立的 `--focus-outline-*`。默认使用紧贴控件边缘的 2px 实线，偏移为 0。浅色为不透明 `blue-600`，深色为不透明 `blue-400`。强制颜色模式的焦点与浮层布局边框使用系统前景色 `CanvasText`，与 `Canvas` 背景配对，使浏览器清除投影后仍有边界。焦点与投影分别验证。
 
-控件白色 1px 内侧高光由 `--surface-highlight-control` 单独维护，浅色 / 深色透明度为 88% / 4%，不属于外投影高度。笔记卡片 hover 使用 `--shadow-card-hover → scale-2`，通用输入聚焦使用 `--shadow-input-focus → med → outlined-3`；快速记录默认使用 `shadow-flat → scale-0`，聚焦时在组件内将 `--shadow-input-focus` 映射到 `scale-2`。状态角色复用统一尺度，缩放独立维护。完整浅深色标尺与可交互组件示例见 [Elevation Storybook](../apps/ui/ui/stories/elevation.stories.tsx)。该示例仅使用内存与静态内容，不接入真实笔记库；Web CSS 接入不代表原生系统表面或全部设备已验收。
+控件白色 1px 内侧高光由 `--surface-highlight-control` 单独维护，浅色 / 深色透明度为 88% / 4%，不属于外投影高度。笔记卡片 hover 使用 `--shadow-card-hover → scale-2`，通用输入聚焦使用 `--shadow-input-focus → med → outlined-3`；快速记录默认使用 `shadow-flat → scale-0`，组件内将 `--shadow-input-focus` 映射到 `scale-2`，桌面 Web 首页和 H5 弹窗聚焦时使用平面样式。状态角色复用统一尺度，缩放独立维护。完整浅深色标尺与可交互组件示例见 [Elevation Storybook](../apps/ui/ui/stories/elevation.stories.tsx)。该示例仅使用内存与静态内容，不接入真实笔记库；Web CSS 接入不代表原生系统表面或全部设备已验收。
 
 ## 当前语义角色与运行时输出
 

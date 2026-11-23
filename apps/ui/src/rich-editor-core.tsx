@@ -34,7 +34,7 @@ import { arrangeImageRows, imageRow, isLayoutImage } from './rich-image-layout';
 import { RichNoteHistory, noteEdit, type NoteEdit } from './rich-note-history';
 
 export type RichEditorProps = {
-  value: string; notePath: string; disabled: boolean; autoFocus?: boolean;
+  value: string; notePath: string; disabled: boolean; autoFocus?: boolean | 'if-visible';
   onChange: (value: string) => void; onSave: () => void; onError: (message: string) => void;
   onImage?: (insert: (markdown: string) => void) => void;
   title?: string; onEditorReady?: (editor: TiptapEditor | null) => void;
@@ -488,9 +488,16 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
       editor.chain().setMeta('addToHistory', false).setContent(source.current.parse(editor, latest.current.value), { emitUpdate: false }).setMeta('noteHistorySeed', true).command(({ tr }) => { tr.setDocAttribute('noteEdit', { title: latest.current.title, properties: {} }); return true; }).run();
       initialized.current = true;
       setRevision(n => n + 1);
-      if (latest.current.autoFocus !== false) {
+      const autoFocus = latest.current.autoFocus;
+      if (autoFocus !== false) {
+        const selection = editor.state.tr.setSelection(TextSelection.atStart(editor.state.doc));
+        if (autoFocus === 'if-visible') {
+          const { ownerDocument } = editor.view.dom;
+          const { top, bottom } = editor.view.dom.getBoundingClientRect();
+          if (ownerDocument.activeElement !== ownerDocument.body || top >= window.innerHeight || bottom <= 0) return;
+        } else selection.scrollIntoView();
         // This already runs after React commits; a second deferred focus can steal user focus.
-        editor.view.dispatch(editor.state.tr.setSelection(TextSelection.atStart(editor.state.doc)).scrollIntoView());
+        editor.view.dispatch(selection);
         editor.view.focus();
       }
     });

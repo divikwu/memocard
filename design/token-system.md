@@ -52,7 +52,7 @@
 
 这遵循 [Tailwind 的 shadow 主题变量接口](https://tailwindcss.com/docs/box-shadow#customizing-your-theme)。新组件直接使用语义角色，由角色选择基础高度；不在组件中直接引用数字尺度。
 
-`shadow-flat` / `--shadow-flat` 映射 `scale-0`，用于需要平滑过渡的平面表面；`shadow-none` / `box-shadow: none` 用于明确清除阴影，两者职责不同。快速记录默认使用 `shadow-flat` 和透明边框，聚焦时在组件内将 `--shadow-input-focus` 覆盖为 `scale-2`；全局角色映射保持不变。Card 默认使用 `shadow-med`。高层浮窗显式使用 `surface-floating shadow-high`；前者拥有布局边框与独立高光，后者选择含外缘的投影。覆盖成 `shadow-low / shadow-document` 时保留高光；`shadow-none / shadow-flat` 恢复普通边框；仅需要投影的普通表面直接使用 `shadow-high`。
+`shadow-flat` / `--shadow-flat` 映射 `scale-0`，用于需要平滑过渡的平面表面；`shadow-none` / `box-shadow: none` 用于明确清除阴影，两者职责不同。快速记录默认使用 `shadow-flat` 和透明边框，组件内将 `--shadow-input-focus` 覆盖为 `scale-2`。桌面 Web 首页和 H5 弹窗聚焦时使用平面样式。Card 默认使用 `shadow-med`。高层浮窗显式使用 `surface-floating shadow-high`；前者拥有布局边框与独立高光，后者选择含外缘的投影。覆盖成 `shadow-low / shadow-document` 时保留高光；`shadow-none / shadow-flat` 恢复普通边框；仅需要投影的普通表面直接使用 `shadow-high`。
 
 目标模式只开放同名语义工具类，不保留旧尺寸别名。`@theme reference inline` 首先以 `--shadow-*: initial` 清空 Tailwind 默认阴影命名空间，再显式登记 `flat / low / med / high` 和已有专用角色，避免删除映射后重新启用上游默认值。命名空间重置属于编译配置，不是运行时 token；基础尺度仍由主题 CSS 拥有。`shadow-none` 继续作为清除工具使用。
 
@@ -70,7 +70,7 @@ z-index 决定实际的前后顺序，阴影等级表达感知高度；嵌套菜
 
 键盘焦点由 `--focus-outline-*` 独立维护。默认使用紧贴控件边缘的 2px 实线，偏移为 0。浅色使用不透明 `blue-600`，深色使用不透明 `blue-400`。强制颜色模式的焦点与浮层布局边框使用系统前景色 `CanvasText`，与 `Canvas` 背景配对。浏览器移除投影后，焦点边界仍然可辨识。
 
-输入焦点统一由 PreviewModeProvider（产品外观、Preview 与 Storybook 的共同入口）安装页面级输入方式检测。整个 document 只维护一组 keydown / pointerdown / focusin 捕获监听，兼容嵌套 provider 和 portal；最后一个 provider 卸载后清理监听并恢复原属性。鼠标与触控不显示焦点框，Tab、选择器选项导航、单行提交与 Escape 切换为键盘方式；文本输入、IME、文本光标移动和多行换行保留当前方式。单行、多行、复合、搜索、选择、富文本弹层及自动聚焦字段共享同一规则，复合字段只由容器绘制焦点框，校验边框与错误 ring 独立保留。快速记录的 contenteditable 保留 `data-slot=input-group-control`，pointer 聚焦继续增强 `input-focus` 投影。不能单靠 `:focus-visible` 区分输入方式，因为文本编辑区通过鼠标聚焦也可能匹配。
+输入焦点统一由 PreviewModeProvider（产品外观、Preview 与 Storybook 的共同入口）安装页面级输入方式检测。整个 document 只维护一组 keydown / pointerdown / focusin 捕获监听，兼容嵌套 provider 和 portal；最后一个 provider 卸载后清理监听并恢复原属性。鼠标与触控不显示焦点框，Tab、选择器选项导航、单行提交与 Escape 切换为键盘方式；文本输入、IME、文本光标移动和多行换行保留当前方式。单行、多行、复合、搜索、选择、富文本弹层及自动聚焦字段共享同一规则，复合字段只由容器绘制焦点框，校验边框与错误 ring 独立保留。快速记录的 contenteditable 使用 `data-slot=input-group-control` 将键盘焦点框交给容器绘制。快捷键打开搜索时，输入框初次自动聚焦使用光标提示，失焦后恢复常规焦点描边。强制颜色模式沿用系统焦点描边。不能单靠 `:focus-visible` 区分输入方式，因为文本编辑区通过鼠标聚焦也可能匹配。
 
 文章卡片、Preview 入口与 Elevation 示例共同消费 [card-hover.css](../apps/ui/ui/components/card-hover.css) 的两项独立能力：`ui-card-hover-shadow` 只提供 flat → card-hover（纯投影第 2 档）投影，`ui-card-hover-scale` 只提供 1.02 倍缩放。文章卡片和 Preview 显式组合两者，Elevation 阴影示例只使用前者；仅桌面精细指针悬停时生效，过渡使用 600ms，减少动态效果时为 0ms 且取消缩放。键盘焦点保持独立描边；列表布局和不可打开卡片不接入 hover 配方。
 

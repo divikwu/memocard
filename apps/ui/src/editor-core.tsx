@@ -17,6 +17,7 @@ const DraftFolderDialog = recoverableLazy(() => import('@ui/business/DraftFolder
 export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void>; prepareDelete: () => Promise<{id:string; contentHash:string} | null> };
 export type EditorProps = {
   initial: Draft; initialNote?: Note; capabilities: Set<string>; pendingLink?: boolean;
+  waitForPropertyLayout?: boolean;
   onClose: () => void; onSaved: (note: Note) => void;
   onTagsChanged?: (from:string, to:string | null) => void;
   onCommitted?: (note: Note) => void; onTitleChange?: (title: string | undefined) => void; handle?: React.RefObject<EditorHandle | null>;
@@ -32,7 +33,7 @@ export type EditorUI = {
 
 // Create each view once at its entry point; the save session and history stay shared.
 export function createEditor({ Button, PageNotice, NoteProperties, RichMarkdownEditor, className = 'note-editor', contentClassName = 'typeset-content' }: EditorUI) {
-return function Editor({ initial, initialNote, capabilities, pendingLink = false, onClose, onSaved, onCommitted, onTitleChange, onTagsChanged, handle }: EditorProps) {
+return function Editor({ initial, initialNote, capabilities, pendingLink = false, waitForPropertyLayout = false, onClose, onSaved, onCommitted, onTitleChange, onTagsChanged, handle }: EditorProps) {
   const isMobile = useIsMobile();
   const vaultId = useTagColorVault();
   const vaultBinding = useTagVaultBinding();
@@ -47,6 +48,8 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   const lastEnteredTitle = useRef<string | null>(null);
   const initialDraft = useRef(initial).current;
   const autoFocus = useRef(!isMobile || !initialDraft.baseHash).current;
+  const reserveBodySpace = Boolean(initialDraft.baseHash && capabilities.has('getNoteProperties'));
+  const stableBodyPosition = waitForPropertyLayout && reserveBodySpace;
   const titleFirst = initialDraft.title !== undefined && !initialDraft.baseHash;
   const [, render] = useState(0);
   const [working, setWorking] = useState(false);
@@ -104,7 +107,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   });
   useEffect(() => {
     session.activate();
-    if (autoFocus) { if (titleFirst) titleField.current?.focus(); else field.current?.focus(); }
+    if (autoFocus) { if (titleFirst) titleField.current?.focus(); else if (!stableBodyPosition) field.current?.focus(); }
     else page.current?.focus({preventScroll:true});
     if (!initialDraft.baseHash && initialDraft.title !== undefined && canSave) void session.save().catch(() => undefined);
     if (initialDraft.updatedAt && canSave) session.update(session.current.body);
@@ -119,7 +122,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       document.removeEventListener('visibilitychange', hidden);
       window.removeEventListener(localWebReconnected, reconnected);
     };
-  }, [session, initialDraft, canSave, titleFirst, autoFocus]);
+  }, [session, initialDraft, canSave, titleFirst, autoFocus, stableBodyPosition]);
   function applyNoteEdit(next: NoteEdit, previous: NoteEdit) {
     if (recordingSavedValue.current) return;
     if (next.title !== previous.title) {
@@ -274,7 +277,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   const saveStatus = session.state === 'conflict' ? '存在冲突，尚未保存' : propertyRejected ? '属性未更改' : canChooseFolder ? error : '保存失败，请重试';
   const showSaveStatus = isMobile && canSave && (session.state === 'error' || session.state === 'conflict');
   return <section ref={page} tabIndex={!autoFocus ? -1 : undefined} aria-label={initial.baseHash ? '编辑笔记' : '新建笔记'} className={className} onKeyDownCapture={undoKey}>
-    <NoteProperties scopeKey={initialDraft.id} reserveBodySpace={Boolean(initialDraft.baseHash && capabilities.has('getNoteProperties'))} saveError={error} renderHeader={(notice, ownsSaveError) => <>
+    <NoteProperties scopeKey={initialDraft.id} reserveBodySpace={reserveBodySpace} waitForPropertyLayout={waitForPropertyLayout} saveError={error} renderHeader={(notice, ownsSaveError) => <>
       {error && (!ownsSaveError || canChooseFolder) && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : propertyRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !propertyRejected || session.state === 'conflict') ? <>
         {canChooseFolder ? <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => setFolderPickerOpen(true)}>重新选择目录</Button> :
           session.state === 'error' && !propertyRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
@@ -291,8 +294,9 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       const range = document.createRange(); range.selectNodeContents(target);
       const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range);
       target.scrollIntoView({block:'center'});
-    }} />
-    <div className={contentClassName}><RichMarkdownEditor autoFocus={autoFocus && !titleFirst} ref={field} value={body} title={title} onEditorReady={editor => { richEditor.current = editor; }} onNoteEdit={applyNoteEdit} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
+    }}>
+      <div className={contentClassName}><RichMarkdownEditor autoFocus={autoFocus && !titleFirst && (stableBodyPosition ? 'if-visible' : true)} ref={field} value={body} title={title} onEditorReady={editor => { richEditor.current = editor; }} onNoteEdit={applyNoteEdit} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
+    </NoteProperties>
     {folderPickerOpen && <Suspense fallback={null}><DraftFolderDialog onClose={() => setFolderPickerOpen(false)} onSave={folder => { setFolderPickerOpen(false); void flush(folder); }} /></Suspense>}
   </section>;
 }

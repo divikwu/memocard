@@ -376,7 +376,7 @@ it("flushes unfinished edits before opening settings and preserves them across a
   await screen.findByRole("heading", { name: "设置", level: 1 });
   expect(screen.queryByRole("navigation", { name: "当前位置" })).toBeNull();
   expect(fixture.snapshot().notes.find(note => note.title === "今天的手冲记录")?.body).toBe("离开编辑页前必须保留的正文");
-  await user.click(screen.getByRole("combobox", { name: "颜色模式" }));
+  await user.click(await screen.findByRole("combobox", { name: "颜色模式" }));
   await user.click(await screen.findByRole("option", { name: "深色" }));
   await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
   await user.click(screen.getByRole("combobox", { name: "界面主题" }));
