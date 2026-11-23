@@ -796,7 +796,7 @@ test.each([
     const body = within(document.body);
     const dialog = await body.findByRole("dialog", { name: "搜索笔记" });
     const input = within(dialog).getByRole("combobox", { name: "搜索笔记" });
-    await waitFor(() => expect(document.activeElement).toBe(input));
+    expect(input).toHaveFocus();
     expect(getComputedStyle(input).outlineStyle).toBe("none");
     await userEvent.keyboard("coffee");
     expect(input).toHaveValue("coffee");
