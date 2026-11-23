@@ -23,7 +23,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
   return index < 0 ? text : <>{text.slice(0, index)}<mark className="ui-note-search-mark rounded-inner">{text.slice(index, index + query.length)}</mark>{text.slice(index + query.length)}</>;
 }
 
-export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onOpenNote, preserveSession = false, sessionRef }: NoteSearchDialogProps) {
+export function NoteSearchDialog({ open, onOpenChange, vaultName, available, returnFocus, onShortcutFocusBlur, onOpenNote, preserveSession = false, sessionRef }: NoteSearchDialogProps) {
   const isMobile = useIsMobile() || isIOSNative;
   const { input, resultScroll, attachList, mobileViewport, listId, query, setQuery, page, selected, setSelected, loading, paging, error, previewError, setPreviewError, retrySearch, searchQuery, notes, active, groups, loadMore, moveSelection } = useNoteSearch({ open, available, preserveSession, sessionRef, isMobile });
   const SearchContent = isMobile ? SheetContent : DialogContent;
@@ -60,7 +60,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
       <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
       <div className="ui-note-search-field flex shrink-0 items-center gap-3 border-b border-divider px-4 py-2">
         <SearchIcon aria-hidden="true" className="size-5 shrink-0 text-icon-secondary" />
-        <Input ref={input} role="combobox" name="note-search" autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
+        <Input ref={input} role="combobox" name="note-search" autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} data-shortcut-focus={onShortcutFocusBlur ? "" : undefined} onBlur={onShortcutFocusBlur} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); moveSelection(event.key === "ArrowDown" ? 1 : -1); }
           if (event.key === "Enter" && event.nativeEvent.keyCode !== 229 && active && !loading && available) { event.preventDefault(); onOpenNote(active.id); }

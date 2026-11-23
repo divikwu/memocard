@@ -134,7 +134,7 @@ export function FoundationContent({ section }: { section: ContentSection }) {
       ["control · shadow-control", "Switch 与 Slider 滑块、小型圆形控件；outlined 1 与独立控件高光组合。"],
       ["low · shadow-low", "通用轻浮起表面映射 outlined 2。"],
       ["med · shadow-med", "通用内容卡片；映射 outlined 3。"],
-      ["input-focus · --shadow-input-focus", "通用角色映射 med；PC 快速记录在组件内覆盖为 outlined 2，默认使用 shadow-flat（尺度 0）和透明边框。鼠标点击只增强阴影，Tab 导航进入编辑区时才显示独立焦点框。"],
+      ["input-focus · --shadow-input-focus", "通用角色映射 med。快速记录组件映射到纯投影 scale-2，桌面 Web 首页和 H5 弹窗聚焦时使用平面样式。Tab 导航进入编辑区时显示独立焦点框。"],
       ["high · shadow-high + surface-floating", "菜单、Popover 与对话框组合 outlined 4 和独立浮层高光，模态遮罩单独定义。"],
       ["floating · shadow-floating", "富文本浮动工具条与图表切换工具条；映射 outlined 2。"],
       ["document · shadow-document", "回收站笔记预览等独立文档表面；映射 outlined 3，普通全屏编辑器保持平面。"],

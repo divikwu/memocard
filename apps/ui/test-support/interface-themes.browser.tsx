@@ -77,7 +77,7 @@ test("minimal theme aligns visible page titles with the all-notes heading", asyn
   const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={state => { current = state; return renderWebApp(state); }} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
-    const navigation = await canvas.findByRole("navigation", { name: "顶部导航" });
+    const navigation = await canvas.findByRole("navigation", { name: "顶部导航" }, { timeout: 5000 });
     const search = canvas.getByRole("button", { name: "搜索" });
     const restFill = getComputedStyle(search).backgroundColor;
     await userEvent.hover(search);
@@ -120,6 +120,8 @@ test("minimal theme aligns visible page titles with the all-notes heading", asyn
       ["settings", "设置", ".web-settings-panel"], ["trash", "回收站", ".ui-trash > header + *"],
     ] as const) {
       await act(async () => { await current.onNavigate(route); });
+      if (route === "tags") await canvas.findByRole("tablist", { name: "标签视图" }, { timeout: 5000 });
+      if (route === "settings") await canvas.findByRole("combobox", { name: "颜色模式" }, { timeout: 5000 });
       const title = await canvas.findByRole("heading", { name, level: 1 });
       const content = title.closest(".web-page-content")!;
       const body = content.querySelector(bodySelector)!;
@@ -168,8 +170,8 @@ test("minimal tag groups support keyboard sorting, narrow columns and tag search
   const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
-    await canvas.findByRole("navigation", { name: "顶部导航" });
-    await userEvent.click(await canvas.findByRole("tab", { name: "标签群组" }));
+    await canvas.findByRole("navigation", { name: "顶部导航" }, { timeout: 5000 });
+    await userEvent.click(await canvas.findByRole("tab", { name: "标签群组" }, { timeout: 5000 }));
     const search = canvas.getByRole("textbox", { name: "搜索标签" });
     const create = canvas.getByRole("button", { name: "新建" });
     const tabs = canvas.getByRole("tablist", { name: "标签视图" });

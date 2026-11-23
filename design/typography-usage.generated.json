@@ -97,7 +97,7 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/QuickCapture.css",
+          "source": "apps/ui/ui/business/QuickCaptureLayout.css",
           "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
@@ -516,12 +516,12 @@
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings-layout.css",
           "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-family-heading)"
         },
         {
-          "source": "apps/ui/ui/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings-layout.css",
           "scope": ".web-settings-title",
           "value": "var(--font-family-heading)"
         }
@@ -992,7 +992,7 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/QuickCapture.css",
+          "source": "apps/ui/ui/business/QuickCaptureLayout.css",
           "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
@@ -1494,17 +1494,17 @@
         },
         {
           "source": "apps/ui/ui/business/QuickCapture.css",
-          "scope": ".ui-capture-editor-content",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/business/QuickCapture.css",
           "scope": ".ui-capture-editor[data-empty]::before",
           "value": "var(--font-size-sm)"
         },
         {
           "source": "apps/ui/ui/business/QuickCapture.css",
           "scope": ".ui-capture-error",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/QuickCaptureLayout.css",
+          "scope": ".ui-capture-editor-content",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1758,6 +1758,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/web/web-settings-layout.css",
+          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-appearance-fields label",
           "value": "var(--font-size-sm)"
@@ -1785,11 +1790,6 @@
         {
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-setting-description",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-settings.css",
-          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-size-sm)"
         },
         {
@@ -2235,7 +2235,7 @@
           "value": "var(--workspace-title-font-size, var(--font-size-2xl))"
         },
         {
-          "source": "apps/ui/ui/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings-layout.css",
           "scope": ".web-settings-title",
           "value": "var(--workspace-title-font-size, var(--font-size-2xl))"
         }
@@ -2580,7 +2580,7 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings-layout.css",
           "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-weight-normal)"
         },
@@ -3013,7 +3013,7 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings-layout.css",
           "scope": ".web-settings-title",
           "value": "var(--font-weight-semibold)"
         },
@@ -3070,7 +3070,7 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/QuickCapture.css",
+          "source": "apps/ui/ui/business/QuickCaptureLayout.css",
           "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
@@ -3546,7 +3546,7 @@
           "value": "inherit"
         },
         {
-          "source": "apps/ui/ui/business/QuickCapture.css",
+          "source": "apps/ui/ui/business/QuickCaptureLayout.css",
           "scope": ".ui-capture-editor-content",
           "value": "inherit"
         },
@@ -3761,12 +3761,12 @@
         },
         {
           "source": "apps/ui/ui/business/QuickCapture.css",
-          "scope": ".ui-capture-editor-content",
+          "scope": ".ui-capture-error",
           "value": "var(--text-body-leading)"
         },
         {
-          "source": "apps/ui/ui/business/QuickCapture.css",
-          "scope": ".ui-capture-error",
+          "source": "apps/ui/ui/business/QuickCaptureLayout.css",
+          "scope": ".ui-capture-editor-content",
           "value": "var(--text-body-leading)"
         },
         {
@@ -4629,7 +4629,7 @@
           "value": "var(--workspace-title-line-height, var(--text-heading-2-leading))"
         },
         {
-          "source": "apps/ui/ui/web/web-settings.css",
+          "source": "apps/ui/ui/web/web-settings-layout.css",
           "scope": ".web-settings-title",
           "value": "var(--workspace-title-line-height, var(--text-heading-2-leading))"
         }

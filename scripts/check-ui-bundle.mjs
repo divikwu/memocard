@@ -107,12 +107,13 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "search", entries: ["ui/business/NoteSearchDialog.tsx"], raw: 1800, gzip: 530 },
     { name: "trash", entries: ["ui/business/TrashPage.tsx"], raw: 1800, gzip: 535 },
     { name: "settings", entries: ["ui/web/WebSettings.tsx"], raw: 1850, gzip: 545 },
-    { name: "detail editor", entries: ["ui/business/Editor.tsx"], raw: 2250, gzip: 675 },
+    // The initial shell includes the themed page skeletons and their shared layout styles.
+    { name: "detail editor", entries: ["ui/business/Editor.tsx"], raw: 2264, gzip: 675 },
     { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
     { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", ...minimalLayout], raw: 2700, gzip: 820 },
     // Both desktop layouts carry the refresh action used when the old drawer chunk is gone.
-    { name: "classic detail with all property editors", entries: [...propertyEditors, ...classicLayout], raw: 2760, gzip: 822 },
-    { name: "minimal detail with all property editors", entries: [...propertyEditors, ...minimalLayout], raw: 2760, gzip: 821 },
+    { name: "classic detail with all property editors", entries: [...propertyEditors, ...classicLayout], raw: 2774, gzip: 825 },
+    { name: "minimal detail with all property editors", entries: [...propertyEditors, ...minimalLayout], raw: 2774, gzip: 824 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";

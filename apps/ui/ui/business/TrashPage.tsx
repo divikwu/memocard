@@ -12,7 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import { NoteMarkdown } from "./NoteMarkdown";
 import { PageNotice } from "./PageNotice";
-import "./trash.css";
+import { TrashRowsLoading } from "./TrashLoading";
 
 const title = (item: { title?: string }) => item.title || "新内容";
 const date = (value: string) => Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value)) : "未知时间";
@@ -28,13 +28,7 @@ export function TrashPage(props: TrashPageProps) {
   return <section className="ui-trash" aria-label="回收站"><header><h1>回收站</h1><Button ref={m.refreshButton} variant="outline" aria-busy={m.loading} disabled={m.loading || m.busy} onClick={() => void m.load()}>{m.loading ? <Spinner aria-hidden="true" /> : <HugeiconsIcon icon={RefreshIcon} aria-hidden="true" />}刷新回收站</Button></header>
     {m.error != null && <PageNotice title="回收站操作未完成">{errorMessage(m.error)}</PageNotice>}{m.notice && <p role="status">{m.notice}</p>}
     {m.data.issues.length > 0 && <PageNotice tone="info" title="部分回收记录无法读取">{m.data.issues.length} 条记录已保留，请检查回收目录后刷新。</PageNotice>}
-    {m.loading && <div role="status" aria-label="正在读取回收站" className={m.data.notes.length ? "sr-only" : undefined}><span className="sr-only">正在读取回收站…</span>{!m.data.notes.length && <div className="ui-trash-list" aria-hidden="true">
-      {[0, 1, 2].map(index => <div key={index} className="ui-trash-card">
-        <div className="ui-trash-summary ui-trash-open"><Skeleton className="h-5 w-40 max-w-full" /><Skeleton className="h-4 w-48 max-w-full" /></div>
-        <Skeleton className="ui-trash-date h-4 w-32" />
-        <div className="ui-trash-actions"><Skeleton className="h-8 w-14" />{props.canPermanentlyDelete && <Skeleton className="h-8 w-24" />}</div>
-      </div>)}
-    </div>}</div>}
+    {m.loading && <div role="status" aria-label="正在读取回收站" className={m.data.notes.length ? "sr-only" : undefined}><span className="sr-only">正在读取回收站…</span>{!m.data.notes.length && <TrashRowsLoading canPermanentlyDelete={Boolean(props.canPermanentlyDelete)} />}</div>}
     {!m.loading && !m.error && !m.data.notes.length && <Card className="py-0 shadow-none"><Empty className="ui-trash-empty"><EmptyHeader><EmptyMedia variant="icon"><DeleteIcon aria-hidden="true" /></EmptyMedia><EmptyTitle><h2>回收站是空的</h2></EmptyTitle><EmptyDescription>删除的笔记会保留在这里，随时恢复。</EmptyDescription></EmptyHeader></Empty></Card>}
     {m.data.notes.length > 0 && <ul className="ui-trash-list" aria-label="已删除笔记" aria-busy={m.loading}>{m.data.notes.map(item => <li key={item.trashKey} className="ui-trash-card">
       <h2 className="ui-trash-summary" aria-label={title(item)}>

@@ -3,6 +3,7 @@ import type { PropertyLayout, PropertyLayoutPreferences } from '@memocard/contra
 import { request } from './bridge';
 import { localWebReconnected } from './web-connection';
 import { validatePropertyLayout } from './property-layout';
+import { clearNotePropertyPreviewRows } from './note-property-preview';
 
 export const propertyLayoutEvent = 'memocard:property-layout';
 const emptyLayout:PropertyLayout = {order:[],visibility:{},contentHash:''};
@@ -70,7 +71,10 @@ export function usePropertyLayout(scopeKey:string, canRead:boolean, vaultBinding
         }
         const value = await readLayout(session);
         if (revision !== session.revision || session.pending) return;
-        if (session.layout.contentHash !== value.contentHash) session.layout = value;
+        if (session.layout.contentHash !== value.contentHash) {
+          if (session.layout.contentHash) clearNotePropertyPreviewRows();
+          session.layout = value;
+        }
         session.ready = true; session.writable = session.canWrite; session.error = '';
       } catch (cause) {
         if (session.active && revision === session.revision) {
@@ -116,6 +120,7 @@ export function usePropertyLayout(scopeKey:string, canRead:boolean, vaultBinding
             check(session);
             const saved = readState(await request('setPropertyLayout', {...next,baseHash:base.contentHash,...session.params}));
             check(session);
+            clearNotePropertyPreviewRows();
             session.layout = saved; session.error = ''; publish(session);
             window.dispatchEvent(new CustomEvent(propertyLayoutEvent, {detail:{vaultId:session.params?.vaultId,source:session.token}}));
             return;

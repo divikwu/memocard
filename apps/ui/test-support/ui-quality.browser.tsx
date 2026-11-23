@@ -20,6 +20,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "..
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../ui/components/dropdown-menu";
 import { WebSettings } from "../ui/web/WebSettings";
 import { App, type AppViewState } from "../src/App";
+import { clearNotePropertyPreviewRows } from "../src/note-property-preview";
 import { richBlockBody } from "../src/rich-block-frame";
 import { WebAppearanceProvider } from "../ui/web/WebAppearance";
 import { preloadWebEditor, renderWebApp } from "../ui/web/WebAppView";
@@ -767,6 +768,52 @@ for (const [kind, block] of [
     await userEvent.keyboard(keys);
     expect(scrollPositions()).toEqual(before);
     expect(document.activeElement).toBe(target);
+  }
+});
+
+test.each([
+  { theme: "classic", navigation: "桌面导航", modifier: "Meta" },
+  { theme: "classic", navigation: "桌面导航", modifier: "Control" },
+  { theme: "minimal", navigation: "顶部导航", modifier: "Meta" },
+  { theme: "minimal", navigation: "顶部导航", modifier: "Control" },
+])("$theme $modifier+K focuses search without an outline until keyboard focus returns", async ({ theme, navigation, modifier }) => {
+  await page.viewport(1280, 900);
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: theme }));
+  history.replaceState(null, "", "#/home");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByRole("navigation", { name: navigation });
+    const trigger = await canvas.findByRole("button", { name: "搜索" });
+    await waitFor(() => expect(trigger).toBeEnabled());
+    trigger.focus();
+    await userEvent.keyboard(`{${modifier}>}k{/${modifier}}`);
+    const body = within(document.body);
+    const dialog = await body.findByRole("dialog", { name: "搜索笔记" });
+    const input = within(dialog).getByRole("combobox", { name: "搜索笔记" });
+    await waitFor(() => expect(document.activeElement).toBe(input));
+    expect(getComputedStyle(input).outlineStyle).toBe("none");
+    await userEvent.keyboard("coffee");
+    expect(input).toHaveValue("coffee");
+    expect(getComputedStyle(input).outlineStyle).toBe("none");
+    await userEvent.keyboard(server.browser === "webkit" ? "{Alt>}{Tab}{/Alt}" : "{Tab}");
+    expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "清空搜索" }));
+    await userEvent.keyboard(server.browser === "webkit" ? "{Alt>}{Shift>}{Tab}{/Shift}{/Alt}" : "{Shift>}{Tab}{/Shift}");
+    expect(document.activeElement).toBe(input);
+    expect(getComputedStyle(input).outlineStyle).toBe("solid");
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(body.queryByRole("dialog", { name: "搜索笔记" })).toBeNull());
+  } finally {
+    view.unmount();
+    release();
+    history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
   }
 });
 
@@ -2464,6 +2511,7 @@ test("Web collection headings align with the sidebar brand and retain compact sp
       await page.viewport(width, 900);
       for (const name of ["所有笔记", "标签"]) {
         await userEvent.click(within(canvas.getByRole("navigation", {name: "主要导航"})).getByRole("button", {name}));
+        if (name === "标签") await canvas.findByRole("textbox", {name: "搜索标签"}, {timeout: 5000});
         const title = await canvas.findByRole("heading", {name, level: 1});
         await waitFor(() => {
           const brand = view.container.querySelector(".ui-sidebar-brand-header")!.getBoundingClientRect();
@@ -3095,6 +3143,59 @@ test("Web tag directory supports flat labels, shared pins, renaming and responsi
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/" ); }
 }, 30_000);
 
+test.each([
+  { theme: "classic", navigation: "桌面导航" },
+  { theme: "minimal", navigation: "顶部导航" },
+])("$theme home reserves the capture area while the note grid loads", async ({ theme, navigation }) => {
+  await commands.setReducedMotion("reduce");
+  await page.viewport(1280, 900);
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: theme }));
+  history.replaceState(null, "", "#/home");
+  const fixture = await createWorkspaceFixture();
+  let finishRead!: () => void;
+  const read = new Promise<void>(resolve => { finishRead = resolve; });
+  const release = setStorybookRequestHandler(async (operation, params) => {
+    if (operation === "queryNotes") await read;
+    return fixture.request(operation, params);
+  });
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  const canvas = within(view.container);
+  try {
+    await canvas.findByRole("navigation", { name: navigation });
+    const capture = await canvas.findByRole("status", { name: "正在准备快速记录" });
+    const shell = capture.querySelector(".ui-capture-group")!;
+    const skeletonColor = getComputedStyle(capture.querySelector('[data-slot="skeleton"]')!).backgroundColor;
+    const shellColor = getComputedStyle(shell).backgroundColor;
+    expect(skeletonColor).not.toBe(shellColor);
+    const loadingShell = shell.getBoundingClientRect();
+    const loadingCard = view.container.querySelector('[data-slot="collection-skeleton"] .ui-note-card')!.getBoundingClientRect();
+    finishRead();
+    const field = await canvas.findByRole("textbox", { name: "快速输入内容" });
+    const readyShell = field.closest(".ui-capture-group")!;
+    const list = await canvas.findByRole("list", { name: "笔记列表" });
+    expect(readyShell.getBoundingClientRect().width).toBeCloseTo(loadingShell.width, 1);
+    expect(readyShell.getBoundingClientRect().height).toBeCloseTo(loadingShell.height, 1);
+    expect(getComputedStyle(readyShell).backgroundColor).toBe(shellColor);
+    expect(list.querySelector(".ui-note-card")!.getBoundingClientRect().top).toBeCloseTo(loadingCard.top, 1);
+    await userEvent.click(field);
+    expect(getComputedStyle(readyShell).boxShadow).toBe("none");
+    await userEvent.tab();
+    await userEvent.tab({ shift: true });
+    expect(field).toHaveFocus();
+    expect(getComputedStyle(readyShell).outlineStyle).toBe("solid");
+  } finally {
+    finishRead();
+    view.unmount();
+    release();
+    history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
+});
+
 test("Web home and all-notes collections share responsive widths", async () => {
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -3191,12 +3292,13 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
   const view = render(<AppearanceCatalogProvider catalog={expandedSidebarFixture}><WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider></AppearanceCatalogProvider>);
   try {
     const canvas = within(view.container);
-    const title = await canvas.findByRole("heading", {name: "设置", level: 1});
-    const advanced = canvas.getByText("高级排版").closest("details")!;
+    const advanced = (await canvas.findByText("高级排版")).closest("details")!;
+    const title = canvas.getByRole("heading", {name: "设置", level: 1});
     const card = canvas.getByRole("combobox", {name: "行宽"}).closest<HTMLElement>('[data-slot="card"]')!;
     const panel = card.closest<HTMLElement>(".web-settings-panel")!;
+    const groupCards = [...panel.querySelectorAll(':scope > section > [data-slot="card"]')];
     expect(advanced.closest('[data-slot="card"]')).toBe(card);
-    for (const width of [320, 768, 1440]) {
+    for (const width of [320, 655, 768, 1440]) {
       await page.viewport(width, 900);
       await waitFor(() => expect(title.getBoundingClientRect().height).toBeGreaterThanOrEqual(32));
       expect(title.parentElement!.getBoundingClientRect().width).toBeCloseTo(panel.getBoundingClientRect().width, 1);
@@ -3204,9 +3306,21 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
       expect(disclosure.left).toBeGreaterThanOrEqual(bounds.left);
       expect(disclosure.right).toBeLessThanOrEqual(bounds.right);
       const panelBounds = panel.getBoundingClientRect();
-      expect(bounds.left).toBeGreaterThan(panelBounds.left);
-      expect(bounds.right).toBeLessThan(panelBounds.right);
-      expect(bounds.left - panelBounds.left).toBeCloseTo(panelBounds.right - bounds.right, 1);
+      if (width < 768) {
+        expect(getComputedStyle(panel).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        const groupBackground = getComputedStyle(card).backgroundColor;
+        expect(groupCards.length).toBeGreaterThanOrEqual(3);
+        for (const groupCard of groupCards) {
+          expect(groupCard.getBoundingClientRect().left).toBeCloseTo(panelBounds.left, 1);
+          expect(groupCard.getBoundingClientRect().right).toBeCloseTo(panelBounds.right, 1);
+          expect(getComputedStyle(groupCard).backgroundColor).toBe(groupBackground);
+        }
+        if (mode === "light") expect(groupBackground).toBe("rgb(255, 255, 255)");
+      } else {
+        expect(bounds.left).toBeGreaterThan(panelBounds.left);
+        expect(bounds.right).toBeLessThan(panelBounds.right);
+        expect(bounds.left - panelBounds.left).toBeCloseTo(panelBounds.right - bounds.right, 1);
+      }
       await userEvent.click(within(advanced).getByText("高级排版"));
       const controls = ["行宽", "字号", "行高", "段落间距"].map(name => canvas.getByRole("combobox", {name}));
       for (const control of controls) expect(control.getBoundingClientRect().width).toBeCloseTo(controls[0].getBoundingClientRect().width, 1);
@@ -3989,11 +4103,18 @@ test("collapsing properties preserves always-visible tags and custom properties"
   } finally { fixture.release(); }
 }, 20_000);
 
-for (const width of [390, 1100]) test(`cold Web detail shows the body during slow reads and scrolls 40 properties with the note at ${width}px`, async () => {
+test.each([
+  { theme: "classic", width: 390 },
+  { theme: "minimal", width: 390 },
+  { theme: "classic", width: 1100 },
+  { theme: "minimal", width: 1100 },
+])("$theme detail can show the body first during slow reads and scrolls 40 properties at $width px", async ({ theme, width }) => {
   await page.viewport(width, 900);
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
-  localStorage.removeItem("memocard-web-appearance-v1");
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: theme }));
   const fixture = await createWorkspaceFixture();
   const note = fixture.snapshot().notes[0];
   const properties: Properties = {
@@ -4031,10 +4152,13 @@ for (const width of [390, 1100]) test(`cold Web detail shows the body during slo
   const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
+    const skip = await canvas.findByRole("button", {name:"先查看正文"});
+    await waitFor(() => expect(pendingProperties && pendingLayout).toBe(true));
+    expect(canvas.queryByRole("textbox", {name:"笔记内容"})).toBeNull();
+    await userEvent.click(skip);
     const body = await canvas.findByRole("textbox", {name:"笔记内容"});
     const title = await canvas.findByRole("textbox", {name:"页面标题"});
-    await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-interface-theme", "minimal"));
-    await waitFor(() => expect(pendingProperties && pendingLayout).toBe(true));
+    expect(view.container.querySelector(".web-app")).toHaveAttribute("data-interface-theme", theme);
     await document.fonts.ready;
     expect(body.textContent?.trim()).toBeTruthy();
     expect(body.getAttribute("contenteditable")).toBe("true");
@@ -4042,7 +4166,7 @@ for (const width of [390, 1100]) test(`cold Web detail shows the body during slo
     const initialBodyTop = body.getBoundingClientRect().top;
     const initialTitleTop = title.getBoundingClientRect().top;
     expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
-    expect(canvas.getByRole("button", {name:"更多属性"})).toBeDisabled();
+    expect(canvas.getByRole("button", {name:"显示属性"})).toBeDisabled();
     expect(view.container.querySelector("[data-property-key]")).toBeNull();
     if (width < 768) finishLayout(); else finishProperties();
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -4050,6 +4174,11 @@ for (const width of [390, 1100]) test(`cold Web detail shows the body during slo
     expect(Math.abs(body.getBoundingClientRect().top - initialBodyTop), "body position while one read remains pending").toBeLessThanOrEqual(0.5);
     finishProperties();
     finishLayout();
+    const showProperties = canvas.getByRole("button", {name:"显示属性"});
+    await waitFor(() => expect(showProperties).toBeEnabled());
+    expect(view.container.querySelector("[data-property-key]")).toBeNull();
+    expect(body.getBoundingClientRect().top).toBeCloseTo(initialBodyTop, 0);
+    await userEvent.click(showProperties);
     const lastField = await canvas.findByRole("button", {name:"编辑属性 字段39"});
     expect(view.container.querySelector("[data-property-key]")?.getAttribute("data-property-key")).toBe("property:字段0");
     expect(canvas.queryByRole("button", {name:"编辑属性 字段1"})).toBeNull();
@@ -4080,8 +4209,93 @@ for (const width of [390, 1100]) test(`cold Web detail shows the body during slo
   } finally {
     finishProperties(); finishLayout(); view.unmount(); release();
     history.replaceState(null, "", previousHash || "#/notes");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
   }
 }, 25_000);
+
+test.each([
+  { theme: "classic", layout: "rail", rows: 5, width: 1280 },
+  { theme: "minimal", layout: "topbar", rows: 5, width: 1280 },
+  { theme: "classic", layout: "rail", rows: 9, width: 1100 },
+  { theme: "minimal", layout: "topbar", rows: 9, width: 1100 },
+  { theme: "classic", layout: "rail", rows: 9, width: 390 },
+  { theme: "minimal", layout: "topbar", rows: 9, width: 390 },
+])("$theme detail first shows the body with the height of $rows property rows at $width px", async ({ theme, layout, rows, width }) => {
+  await page.viewport(width, width === 1100 ? 520 : 900);
+  await commands.setReducedMotion("reduce");
+  clearNotePropertyPreviewRows();
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: theme }));
+  const fixture = await createWorkspaceFixture();
+  const note = fixture.snapshot().notes[0];
+  history.replaceState(null, "", `#/notes/${note.id}`);
+  let finishNote!: () => void;
+  let finishProperties!: () => void;
+  let finishLayout!: () => void;
+  const noteRead = new Promise<void>(resolve => { finishNote = resolve; });
+  const propertyRead = new Promise<void>(resolve => { finishProperties = resolve; });
+  const layoutRead = new Promise<void>(resolve => { finishLayout = resolve; });
+  const wrapped = rows === 9;
+  const fields = Array.from({ length: rows - 3 }, (_, index) => ({
+    name: `字段${index}`, type: "text" as const, value: wrapped && !index ? "需要换行的属性内容".repeat(12) : "属性内容", editable: true,
+  }));
+  const release = setStorybookRequestHandler(async (operation, params) => {
+    if (operation === "getStatus") {
+      const status = await fixture.request<VaultStatus>(operation, params);
+      return { ...status, capabilities: [...status.capabilities, "getPropertyLayout"] };
+    }
+    if (operation === "getNote") await noteRead;
+    if (operation === "getPropertyLayout") {
+      await layoutRead;
+      return { ...emptyPropertyLayout(), visibility: { [`property:${fields.at(-1)!.name}`]: "hidden" } };
+    }
+    if (operation === "getNoteProperties") {
+      await propertyRead;
+      return { ...preferenceProperties, contentHash: note.contentHash, properties: fields };
+    }
+    return fixture.request(operation, params);
+  });
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await waitFor(() => {
+      const workspace = view.container.querySelector(".web-app");
+      expect(workspace).toHaveAttribute("data-interface-theme", theme);
+      expect(workspace).toHaveAttribute("data-workspace-layout", width < 768 ? "drawer" : layout);
+    });
+    await waitFor(() => expect(view.container.querySelector('[data-slot="note-detail-skeleton"]')).toBeTruthy());
+    expect(view.container.querySelector(".web-note-loading-body")).toBeNull();
+    finishNote();
+    const title = await canvas.findByRole("textbox", { name: "页面标题" });
+    await canvas.findByRole("status", { name: "正在读取属性" });
+    if (wrapped) finishProperties(); else finishLayout();
+    await document.fonts.ready;
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    expect(canvas.queryByRole("textbox", { name: "笔记内容" })).toBeNull();
+    if (!wrapped) title.focus();
+    if (wrapped) finishLayout(); else finishProperties();
+    const body = await canvas.findByRole("textbox", { name: "笔记内容" });
+    const firstRow = canvas.getByRole("button", { name: "编辑属性 字段0" }).closest(".note-property-row")!;
+    expect(canvas.queryByRole("button", { name: `编辑属性 ${fields.at(-1)!.name}` })).toBeNull();
+    expect(view.container.querySelectorAll("[data-property-key]")).toHaveLength(rows);
+    expect(firstRow.getBoundingClientRect().height > 32).toBe(wrapped);
+    const position = () => body.getBoundingClientRect().top - title.getBoundingClientRect().top;
+    const readyTop = position();
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    expect(position()).toBeCloseTo(readyTop, 0);
+    expect(title.closest(".web-app-scroll")!.scrollTop).toBe(0);
+    if (!wrapped) expect(title).toHaveFocus();
+  } finally {
+    finishNote(); finishProperties(); finishLayout(); view.unmount(); release();
+    clearNotePropertyPreviewRows();
+    history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
+});
 
 test("Web detail fits a short property list without blank rows above the body", async () => {
   await page.viewport(390, 900);
@@ -4564,6 +4778,8 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
       ["trash", "回收站", ".ui-trash > header + *"],
     ] as const) {
       await act(async () => { await current!.onNavigate(route); });
+      if (route === "tags") await canvas.findByRole("tablist", { name: "标签视图" }, { timeout: 5000 });
+      if (route === "settings") await canvas.findByRole("combobox", { name: "颜色模式" }, { timeout: 5000 });
       const title = await canvas.findByRole("heading", { name, level: 1 });
       const content = title.closest(".web-page-content")!;
       const panel = content.querySelector(mainContent)!;

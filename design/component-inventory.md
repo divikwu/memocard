@@ -74,7 +74,9 @@
 | `apps/ui/ui/business/NoteOutline.tsx` | Web 笔记浮动目录 | 自动标题层级、悬停/键盘展开、跳转、滚动高亮与折叠章节定位 | navigation / editor / selection | `apps/ui/test-support/note-typography.browser.tsx` | 桌面 Web；移动端和原生不展示 |
 | `apps/ui/ui/business/TagColorStyles.tsx` | 当前标签样式接线 | 共享动态颜色规则与当前note-properties样式 | tag / color | `apps/ui/ui/business/tag-colors.test.tsx` | 全部颜色组合与跨窗口另验 |
 | `apps/ui/ui/business/TagsPage.tsx` | 当前标签目录 | 层级浏览、路径搜索、笔记计数、置顶、名称与图标编辑 | tag / table / state / responsive | `apps/ui/ui/business/TagsPage.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 真实大库性能、软键盘与辅助技术另验 |
+| `apps/ui/ui/business/TagsLoading.tsx` | 标签加载 | 标签目录布局和标签组占位；保留读取状态 | tag / state / theme | `apps/ui/ui/stories/web-workspace.stories.tsx` | 页面模块和标签数据读取共用标签组占位 |
 | `apps/ui/ui/business/TrashPage.tsx` | 当前回收站视图与原生投影 | 读取、只读预览、恢复、永久删除与确认/失败 | trash / state / destructive | `apps/ui/ui/business/TrashPage.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 真实回收文件和跨进程状态另验 |
+| `apps/ui/ui/business/TrashLoading.tsx` | 回收站加载 | 标题、日期与操作列占位 | trash / state / responsive | `apps/ui/ui/business/TrashPage.test.tsx` | 操作占位随永久删除能力调整 |
 | `apps/ui/ui/business/property-confirmation.tsx` | 当前属性内部控件 | 共享属性控制器的控件/确认/Popover→Sheet适配 | property / overlay / state | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 内部组合无需独立Story；嵌套弹层/软键盘另验 |
 | `apps/ui/ui/business/property-editors.tsx` | 当前属性内部控件 | 共享属性控制器的控件/确认/Popover→Sheet适配 | property / overlay / state | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/stories/business-note-properties.stories.tsx` | 内部组合无需独立Story；嵌套弹层/软键盘另验 |
 | `apps/ui/ui/business/property-icon-catalog.tsx` | 属性与标签图标 | 默认图标、Emoji 与按需加载的已选图标 | property / tag / icon | `apps/ui/test-support/ui-quality.browser.tsx` | 随属性与标签维护 |
@@ -122,6 +124,7 @@
 | `apps/ui/ui/preview-mode.tsx` | 当前产品与Storybook共享外观上下文 | 模式、字体加载结果、重试及CSS偏好输出 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx` | 生产偏好与示例存储隔离；真实字体加载另验 |
 | `apps/ui/ui/showcase-icons.tsx` | 当前图标适配与目录 | 生产图标引用、运行时组件和静态映射 | icon / color / size | `apps/ui/ui/stories/icons.stories.tsx` | 内部映射无需独立Story；全图标组合另验 |
 | `apps/ui/ui/web/WebAppView.tsx` | 当前产品视图编排 | AppViewState；主页/编辑/设置/回收站、通知和草稿 | theme / layout / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 内存夹具不替代真实库和WKWebView生命周期 |
+| `apps/ui/ui/web/WorkspaceLoading.tsx` | 首页与设置加载 | 快速记录和设置分组占位；复用页面布局 | theme / layout / state | `apps/ui/test-support/ui-quality.browser.tsx` | 模拟慢读取检查加载前后首页位置 |
 | `apps/ui/ui/web/DraftReminderToast.tsx` | Web 草稿提醒 | 桌面笔记列表按需加载；打开草稿与关闭提醒 | layout / state | `apps/ui/ui/web/WebApp.test.tsx` | 按会话处理提醒，草稿保留在原入口 |
 | `apps/ui/ui/web/WorkspaceFrame.tsx` | 稳定工作区宿主 | 固定内容路径、布局区域与外观作用域 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 编辑器和业务弹层不因主题更换宿主 |
 | `apps/ui/ui/web/appearance/AppearanceRuntime.tsx` | 外观解析与资源提交 | 只读目录、环境回退、按需加载、竞态和重试 | theme / layout / state | `apps/ui/ui/web/appearance/AppearanceRuntime.test.tsx` | 不迁移偏好 v2，不注册第三方运行时代码 |

@@ -1,6 +1,7 @@
 import { Fragment, Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-labels";
+import { noteDetailPropertyPreviewRows, notePropertyPreviewKey } from "../../src/note-property-preview";
 import { errorMessage } from "../../src/error-messages";
 import { tagKey } from "../../src/inline-tags";
 import { useTagPreferences } from "../../src/hooks/use-tag-preferences";
@@ -22,6 +23,8 @@ import TagColorStyles from "../business/TagColorStyles";
 import { MobileTagActions } from "../business/MobileTagActions";
 import { NoteCollection } from "../business/NoteCollection";
 import { PageNotice } from "../business/PageNotice";
+import { TrashRowsLoading } from "../business/TrashLoading";
+import { TagsLoading } from "../business/TagsLoading";
 import { TagIcon } from "../business/property-icon-catalog";
 import { AddIcon, CheckIcon, DeleteIcon, DocumentIcon, FolderIcon, SearchIcon, SettingsIcon } from "../icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -37,6 +40,7 @@ import { useNoteAppearance } from "./note-appearance";
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { WorkspaceFrame, LayoutDetailNavigation, LayoutNavigationControls } from "./WorkspaceFrame";
 import { useWorkspaceAppearance } from "./appearance/AppearanceRuntime";
+import { HomeCaptureLoading, SettingsLoading } from "./WorkspaceLoading";
 import "../business/NotePageTitle.css";
 import "./web-app.css";
 
@@ -61,11 +65,7 @@ export function Notice({ title, children, action, error = false }: { title: stri
   return <section className="web-notice" role="status"><div><p className="font-medium">{title}</p>{children && <div className="mt-1 text-sm text-secondary">{children}</div>}</div>{action && <div className="web-notice-actions">{action}</div>}</section>;
 }
 
-function PageLoading() {
-  return <div className="web-page-loading" role="status" aria-label="正在读取内容"><Skeleton className="h-8 w-40" /><Skeleton className="h-5 w-3/4" /><Skeleton className="h-5 w-full" /><Skeleton className="h-5 w-5/6" /><span className="sr-only">正在读取内容…</span></div>;
-}
-
-function NoteDetail({ title, titleKnown, showProperties, children }: { title: string; titleKnown: boolean; showProperties: boolean; children?: ReactNode }) {
+function NoteDetail({ title, titleKnown, showProperties, propertyRows, children }: { title: string; titleKnown: boolean; showProperties: boolean; propertyRows: number; children?: ReactNode }) {
   const [showSkeleton, setShowSkeleton] = useState(false);
   useEffect(() => {
     // Keep one delay across the note read and the editor's lazy load.
@@ -79,13 +79,16 @@ function NoteDetail({ title, titleKnown, showProperties, children }: { title: st
     {showSkeleton && <div data-slot="note-detail-skeleton" aria-hidden="true">
       {!titleKnown && <div className="note-page-title web-note-loading-title"><Skeleton className="h-6 w-1/2" /></div>}
       {showProperties && <div className="web-note-loading-properties">
-        {[0, 1, 2, 3, 4, 5].map(row => <div className="web-note-loading-property" key={row}>
-          <Skeleton className="h-4 w-20 max-w-full" /><Skeleton className={row % 2 ? "h-4 w-24 max-w-full" : "h-4 w-32 max-w-full"} />
-        </div>)}
+        {propertyRows > 0 && <div className="web-note-loading-property-rows">
+          {Array.from({ length: propertyRows }, (_, row) => <div className="web-note-loading-property" key={row}>
+            <Skeleton className="h-4 w-20 max-w-full" /><Skeleton className={row % 2 ? "h-4 w-24 max-w-full" : "h-4 w-32 max-w-full"} />
+          </div>)}
+        </div>}
+        <div className="web-note-loading-property-footer"><Skeleton className="h-4 w-20" /></div>
       </div>}
-      <div className="web-note-loading-body">
+      {!showProperties && <div className="web-note-loading-body">
         <Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" />
-      </div>
+      </div>}
     </div>}
   </div>;
   return children ? <Suspense fallback={loading}>{children}</Suspense> : loading;
@@ -128,20 +131,31 @@ function DraftReminder({ state: s }: { state: AppViewState }) {
 }
 
 function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?: ReactNode }) {
-  const layoutId = useWorkspaceAppearance()?.applied.layoutId;
+  const appearance = useWorkspaceAppearance()?.applied;
+  const layoutId = appearance?.layoutId;
   const compactNavigation = layoutId === "rail" || layoutId === "topbar";
   if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection illustration={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "query" : undefined} title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
   const editor = s.editor;
+  const previewKey = notePropertyPreviewKey(s.status?.vaultId, editor?.initial.id ?? s.openingNoteId, editor?.initial.baseHash ?? s.openingContentHash);
   if (s.openingNote || editor) return <NoteDetail
     key={editor?.initial.id ?? s.openingNoteId}
     title={s.title}
     titleKnown={Boolean(editor ? editor.initial.title?.trim() : s.openingTitle)}
     showProperties={!s.status || s.capabilities.has("getNoteProperties")}
+    propertyRows={noteDetailPropertyPreviewRows(previewKey)}
   >
-    {editor && <><h1 className="sr-only">{s.title}</h1><Editor {...editor} /></>}
+    {editor && <><h1 className="sr-only">{s.title}</h1><Editor {...editor} waitForPropertyLayout /></>}
   </NoteDetail>;
-  if (s.view === "settings") return <Suspense fallback={<PageLoading />}><WebSettings state={s} /></Suspense>;
-  if (s.view === "trash") return s.trash ? <Suspense fallback={<PageLoading />}><TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} /></Suspense> : <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
+  if (s.view === "settings") return <Suspense fallback={<SettingsLoading connected={Boolean(s.status?.connected)} />}><WebSettings state={s} /></Suspense>;
+  if (s.view === "trash") {
+    if (!s.trash) return <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
+    return <Suspense fallback={<section className="ui-trash" aria-label="回收站">
+      <header><h1>回收站</h1><Button variant="outline" disabled><Spinner aria-hidden="true" />刷新回收站</Button></header>
+      <div role="status" aria-label="正在读取回收站"><span className="sr-only">正在读取回收站…</span><TrashRowsLoading canPermanentlyDelete={Boolean(s.trash.canPermanentlyDelete)} /></div>
+    </section>}>
+      <TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} />
+    </Suspense>;
+  }
   const pageHeading = heading && <div className="web-collection-heading">{heading}</div>;
   if (s.connectionState) return <>{pageHeading}<WorkspaceEmpty role="status" illustration={s.localWebReconnectRequired ? "plug" : undefined} title={s.localWebReconnectRequired ? "需要重新连接本机服务" : s.needsPermission ? "需要文件夹访问权限" : "文件夹授权未完成"} description={[s.selectionNotice, s.localWebReconnectRequired ? "从 MemoCard 本机服务重新打开此页面，恢复访问。" : s.needsPermission ? "重新授权笔记文件夹后，可继续读取与保存。" : "重新选择笔记文件夹后，可继续读取与保存。"].filter(Boolean).join("\n")}>
     {s.localWebReconnectRequired ? <ReopenLocalWeb /> : <Button onClick={s.needsPermission ? s.sidebar.onReauthorize : () => s.sidebar.onSelectVault(false)} disabled={s.working}>{s.needsPermission ? "重新授权" : "重新选择文件夹"}</Button>}
@@ -150,10 +164,12 @@ function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?
   if (!s.loading && !s.status?.connected && !(s.view === "tags" ? s.sidebar.tags : s.collection.notes).length) return <>{pageHeading}<WorkspaceEmpty guide title={s.unsupportedBrowser ? "通过本机服务连接笔记库" : "打开你的笔记文件夹"} description={s.unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或使用 memocard serve。" : "打开已有的 Markdown / Obsidian 文件夹，或创建一个新笔记库。内容保存在你授权的文件夹中。"}>
     {!s.unsupportedBrowser && <div className="web-workspace-actions">{s.sidebar.canCreateVault && <CreateButton disabled={s.working} onClick={() => s.sidebar.onSelectVault(true)}>创建笔记库</CreateButton>}<Button variant="outline" disabled={!s.sidebar.canChooseVault || s.working} onClick={() => s.sidebar.onSelectVault(false)}><FolderIcon aria-hidden="true" />打开已有笔记库</Button></div>}
   </WorkspaceEmpty></>;
-  if (s.view === "tags") return <Suspense fallback={<PageLoading />}><WorkspaceTags state={s} heading={heading} /></Suspense>;
+  if (s.view === "tags") return <Suspense fallback={<TagsLoading heading={heading} minimal={appearance?.themeId === "minimal" && layoutId !== "sidebar"} />}><WorkspaceTags state={s} heading={heading} /></Suspense>;
   const headingInToolbar = !s.collection.filters && s.collection.recentTags === undefined;
   return <>
-    {!s.isMobile && s.view === "home" && s.capture && <Suspense fallback={<PageLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} draftCount={compactNavigation ? s.drafts.records.length : s.capture.draftCount} draftLabel={compactNavigation ? "草稿" : undefined} /></Suspense>}
+    {!s.isMobile && s.view === "home" && (s.capture
+      ? <Suspense fallback={<HomeCaptureLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} draftCount={compactNavigation ? s.drafts.records.length : s.capture.draftCount} draftLabel={compactNavigation ? "草稿" : undefined} /></Suspense>
+      : s.loading && <HomeCaptureLoading />)}
     {!headingInToolbar && pageHeading}
     <NoteCollection key={s.view === "home" ? "home" : "notes"} {...s.collection} heading={headingInToolbar ? pageHeading : undefined}
       showCreateInToolbar={!compactNavigation}>{s.error ? null : <CollectionEmpty state={s} />}</NoteCollection>

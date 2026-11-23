@@ -217,7 +217,8 @@
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/action-group.tsx",
         "apps/ui/ui/web/WebSettings.tsx",
-        "apps/ui/ui/web/WebTypographySettings.tsx"
+        "apps/ui/ui/web/WebTypographySettings.tsx",
+        "apps/ui/ui/web/WorkspaceLoading.tsx"
       ]
     },
     {
@@ -277,6 +278,7 @@
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
+        "apps/ui/ui/business/TagsLoading.tsx",
         "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/components/dialog.tsx",
@@ -291,7 +293,8 @@
         "apps/ui/ui/components/tabs.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx",
         "apps/ui/ui/web/WebAppView.tsx",
-        "apps/ui/ui/web/WebMoreDrawer.tsx"
+        "apps/ui/ui/web/WebMoreDrawer.tsx",
+        "apps/ui/ui/web/WorkspaceLoading.tsx"
       ]
     },
     {
@@ -709,7 +712,8 @@
       "step": null,
       "value": "auto",
       "consumers": [
-        "apps/ui/ui/business/NoteCollection.tsx"
+        "apps/ui/ui/business/NoteCollection.tsx",
+        "apps/ui/ui/web/WorkspaceLoading.tsx"
       ]
     },
     {
@@ -807,7 +811,8 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/ui/business/sidebar.tsx"
+        "apps/ui/ui/business/sidebar.tsx",
+        "apps/ui/ui/web/WorkspaceLoading.tsx"
       ]
     },
     {
@@ -881,7 +886,7 @@
         "apps/ui/ui/business/NameEditor.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
-        "apps/ui/ui/business/TagsPage.tsx",
+        "apps/ui/ui/business/TagsLoading.tsx",
         "apps/ui/ui/components/sidebar.tsx"
       ]
     },
@@ -1210,7 +1215,8 @@
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/business/TrashPage.tsx",
         "apps/ui/ui/web/WebSettings.tsx",
-        "apps/ui/ui/web/WebTypographySettings.tsx"
+        "apps/ui/ui/web/WebTypographySettings.tsx",
+        "apps/ui/ui/web/WorkspaceLoading.tsx"
       ]
     },
     {
