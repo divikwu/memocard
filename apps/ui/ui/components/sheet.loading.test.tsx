@@ -33,7 +33,7 @@ it("keeps mobile vault content, navigation and closing available when swipe load
     const popup = await screen.findByRole("dialog", {name: "笔记库"});
     await act(async () => { swipe.reject(new TypeError("Failed to fetch dynamically imported module")); });
     const alert = await within(popup).findByRole("alert");
-    expect(alert.textContent).toContain("无法打开滑动关闭");
+    expect(alert.textContent).toBe("重试加载滑动关闭");
     expect(document.querySelector('nav[aria-label="主要导航"]')).toBe(navigation);
     expect(within(popup).getByRole("button", {name: "打开已有笔记库"})).toBeTruthy();
     expect(uncaught).not.toHaveBeenCalled();

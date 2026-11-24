@@ -607,8 +607,9 @@ describe("note workspace", () => {
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: ["生活"], exactTags: true, includeCardPreview: true, limit: 30 }));
     window.location.hash = "#/settings";
     fireEvent(window, new Event("hashchange"));
-    fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));
-    await waitFor(() => expect((screen.getByRole("button", { name: "切换笔记库" }) as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(await screen.findByRole("button", { name: "笔记库操作（切换）" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "切换笔记库" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "笔记库操作（切换）" }) as HTMLButtonElement).disabled).toBe(false));
 
     if (cancelled) {
       expect(screen.queryByText("文件夹授权未完成")).toBeNull();
@@ -656,11 +657,11 @@ describe("note workspace", () => {
     const implementation = bridge.request.getMockImplementation()!;
     bridge.request.mockImplementation((operation, params) => operation === "getEnvironment" ? Promise.resolve({ platform: "web", phase: "browser", vaultBinding: "current-browser-vault", mcpEnabled: false, capabilities: ["selectVault", "createVault"] }) : implementation(operation, params));
     render(<App />);
-    await screen.findByRole("button", { name: "切换笔记库" });
+    await screen.findByRole("button", { name: "笔记库操作（切换）" });
     await createNote();
     await screen.findByRole("textbox", { name: "笔记内容" });
     replaceEditorText("仅写入当前笔记库");
-    expect(screen.queryByRole("button", { name: "切换笔记库" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "笔记库操作（切换）" })).toBeNull();
     fireEvent.click(noteSourceButton());
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("saveDraft", expect.objectContaining({ body: "仅写入当前笔记库", vaultBinding: "current-browser-vault" })));
   });
@@ -693,8 +694,9 @@ describe("note workspace", () => {
     });
     window.history.replaceState(null, "", "#/settings");
     render(<App />);
-    expect(await screen.findByRole("button", { name: "新建笔记库" })).toBeTruthy();
-    fireEvent.click(await screen.findByRole("button", { name: "切换笔记库" }));
+    fireEvent.click(await screen.findByRole("button", { name: "笔记库操作（切换）" }));
+    expect(await screen.findByRole("menuitem", { name: "新建笔记库" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("menuitem", { name: "切换笔记库" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("selectVault", { create: false }));
     expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=next");
   });
@@ -1500,6 +1502,7 @@ it('removes a deleted mobile search result while retaining the query and other r
   await screen.findByRole('button', { name: '打开 搜索后删除' });
   await user.click(screen.getByRole('button', { name: '搜索全部笔记' }));
   await user.type(await screen.findByRole('combobox', { name: '搜索笔记' }), '散步');
+  await screen.findByRole('listbox', { name: '搜索结果', busy: false });
   await user.click(await screen.findByRole('option', { name: searched.title }));
   await screen.findByRole('textbox', { name: '笔记内容' });
   await user.click(screen.getByRole('button', { name: '页面操作' }));

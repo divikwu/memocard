@@ -52,8 +52,8 @@
 | `outlined-3` | `--shadow-med` / `shadow-med` | 通用 Card 表面 |
 | `outlined-3`（经 med） | `--shadow-input-focus` / `shadow-input-focus` | 通用输入聚焦表面 |
 | `scale-2`（组件内覆盖） | `--shadow-input-focus` | 快速记录组件的聚焦配方。桌面 Web 首页和 H5 弹窗使用平面样式 |
-| `outlined-4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog 等浮层；搭配 surface-floating 维护透明布局边框与内侧高光 |
-| `outlined-2` | `--shadow-floating` / `shadow-floating` | 富文本浮动工具条、Mermaid 切换工具条 |
+| `outlined-4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog、文字格式浮动工具条等浮层。`surface-floating` 维护透明布局边框与内侧高光 |
+| `outlined-2` | `--shadow-floating` / `shadow-floating` | 富文本表格工具条、Mermaid 切换工具条 |
 | `outlined-3` | `--shadow-document` / `shadow-document` | 回收站笔记预览等独立文档表面；全屏编辑区保持平面 |
 | `scale-2` | `--shadow-card-hover` / `shadow-card-hover` | 笔记卡片与 Preview 入口的鼠标悬停反馈；纯投影，无装饰外缘 |
 

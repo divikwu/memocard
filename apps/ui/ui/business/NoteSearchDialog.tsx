@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowUpRight01Icon from "@hugeicons/core-free-icons/ArrowUpRight01Icon";
 import { useNoteSearch, type NoteSearchProps } from "../../src/use-note-search";
@@ -10,13 +10,23 @@ import { SheetCloseButton, SheetContent, SheetHeader, SheetTitle } from "../comp
 import { Input } from "../components/input";
 import { Kbd, KbdGroup } from "../components/kbd";
 import { Spinner } from "../components/spinner";
-import { CloseIcon, DocumentIcon, SearchIcon } from "../icons";
+import { DocumentIcon, SearchIcon } from "../icons";
 import { cn } from "../lib/utils";
 import { EmptyIllustration } from "./EmptyIllustration";
-import { NoteMarkdown } from "./NoteMarkdown";
+import { Skeleton } from "../components/skeleton";
+import { recoverableLazy } from "../components/recoverable-lazy";
 import "./note-search.css";
 
 export type NoteSearchDialogProps = NoteSearchProps;
+
+const PreviewMarkdown = recoverableLazy(() => import("./NoteMarkdown").then(module => ({ default: module.NoteMarkdown })), "预览正文",
+  ({ body }) => <p className="whitespace-pre-wrap">{body}</p>);
+
+function PreviewLines() {
+  return <div aria-hidden="true" className="ui-search-loading space-y-3">
+    <Skeleton className="h-3 w-full" /><Skeleton className="h-3 w-5/6" /><Skeleton className="h-3 w-2/3" />
+  </div>;
+}
 
 function Highlight({ text, query }: { text: string; query: string }) {
   const index = query ? text.toLocaleLowerCase().indexOf(query.toLocaleLowerCase()) : -1;
@@ -40,9 +50,9 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
     kind:"search",title:"搜索笔记",presented:open,loading:loading || paging,error,
     message:!available ? "请先连接笔记库，再搜索内容。" : loading ? "正在搜索笔记…" : !notes.length ? searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记" : undefined,
     sections:[{id:"query",fields:[{id:"query",title:`在 ${vaultName} 中搜索…`,value:query,disabled:!available}]},
-      ...Array.from(groups,([label,items])=>({id:label,title:label,actions:items.map(({note,index})=>({id:`note:${note.id}`,title:note.title?.trim() || "新内容",selected:selected === index,disabled:loading || !available}))})),
+      ...Array.from(loading ? [] : groups,([label,items])=>({id:label,title:label,actions:items.map(({note,index})=>({id:`note:${note.id}`,title:note.title?.trim() || "新内容",selected:selected === index,disabled:loading || !available}))})),
       {id:"more",message:page && !page.coverage.complete ? "部分文件尚未读入，搜索结果可能不完整。" : undefined,actions:[
-        ...(error ? [{id:"retry",title:"重试"}] : page?.nextCursor ? [{id:"more",title:paging ? "正在加载…" : "加载更多结果",disabled:paging}] : []),
+        ...(error ? [{id:"retry",title:"重试"}] : !loading && page?.nextCursor ? [{id:"more",title:paging ? "正在加载…" : "加载更多结果",disabled:paging}] : []),
         {id:"up",title:"上一条",disabled:loading || !notes.length},{id:"down",title:"下一条",disabled:loading || !notes.length},
       ]}],
   }),async(action,value)=>{
@@ -60,40 +70,44 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
       <DialogDescription className="sr-only">{isMobile ? "搜索当前笔记库的标题与正文。选择结果查看笔记，返回后可继续搜索。" : "搜索当前笔记库的标题与正文。用上下方向键选择，回车打开，Escape 关闭。"}</DialogDescription>
       <div className="ui-note-search-field flex shrink-0 items-center gap-3 border-b border-divider px-4 py-2">
         <SearchIcon aria-hidden="true" className="size-5 shrink-0 text-icon-secondary" />
-        <Input ref={input} role="combobox" name="note-search" autoFocus={Boolean(onShortcutFocusBlur)} autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active ? `${listId}-${selected}` : undefined} data-shortcut-focus={onShortcutFocusBlur ? "" : undefined} onBlur={onShortcutFocusBlur} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
+        <Input ref={input} role="combobox" name="note-search" autoFocus={Boolean(onShortcutFocusBlur)} autoComplete="off" aria-label="搜索笔记" aria-autocomplete="list" aria-expanded="true" aria-controls={listId} aria-activedescendant={active && !loading ? `${listId}-${selected}` : undefined} data-shortcut-focus={onShortcutFocusBlur ? "" : undefined} onBlur={onShortcutFocusBlur} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => {
           if (event.nativeEvent.isComposing) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") { event.preventDefault(); moveSelection(event.key === "ArrowDown" ? 1 : -1); }
           if (event.key === "Enter" && event.nativeEvent.keyCode !== 229 && active && !loading && available) { event.preventDefault(); onOpenNote(active.id); }
         }} disabled={!available} placeholder={`在 ${vaultName} 中搜索…`} className="ui-note-search-input h-element-lg min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none" />
+        {loading && available && notes.length > 0 && <span aria-hidden="true" className="ui-search-loading flex shrink-0"><Spinner className="size-4 text-secondary motion-reduce:animate-none" /></span>}
         {query && <Button variant="ghost" size="sm" className="ui-note-search-control text-secondary" aria-label="清空搜索" onClick={() => { setQuery(""); input.current?.focus(); }}>清空</Button>}
-        {!isMobile && <Button variant="ghost" size="icon-sm" className="ui-note-search-control ui-note-search-desktop-close" aria-label="退出搜索" onClick={() => onOpenChange(false)}><CloseIcon aria-hidden="true" /></Button>}
       </div>
       <div className="flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
           <div ref={attachList} onScroll={event=>{resultScroll.current=event.currentTarget.scrollTop;}} className="ui-note-search-results min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
             {!loading && available && !notes.length && !error && <div className="flex justify-center pt-8"><EmptyIllustration compact kind={searchQuery ? "loupe" : "drawer"} /></div>}
-            <p role="status" className={loading || !notes.length ? cn("text-center text-sm text-secondary", !loading && available && !error && !notes.length ? "px-3 pb-3" : "ui-note-search-status") : "sr-only"}>
-              {!available ? "请先连接笔记库，再搜索内容。" : loading ? <><Spinner aria-hidden="true" className="mx-auto mb-3 size-5 animate-spin motion-reduce:animate-none" />正在搜索笔记…</> : error && !notes.length ? "搜索未完成" : notes.length ? `已显示 ${notes.length} 条${page?.nextCursor ? "，还有更多结果" : "结果"}` : searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记"}
+            <p role="status" className={!loading && !notes.length ? cn("text-center text-sm text-secondary", available && !error ? "px-3 pb-3" : "ui-note-search-status") : "sr-only"}>
+              {!available ? "请先连接笔记库，再搜索内容。" : loading ? "正在搜索笔记…" : error && !notes.length ? "搜索未完成" : notes.length ? `已显示 ${notes.length} 条${page?.nextCursor ? "，还有更多结果" : "结果"}` : searchQuery ? "没有找到相关笔记" : "笔记库中还没有笔记"}
             </p>
             {!loading && available && !notes.length && !error && searchQuery && <p className="pb-8 text-center text-xs text-secondary">试试其他关键词，搜索标题或正文。</p>}
             <div id={listId} role="listbox" aria-label={searchQuery ? "搜索结果" : "最近更新的笔记"} aria-busy={loading} className="space-y-2">
+              {available && loading && !notes.length && <div aria-hidden="true" className="ui-search-loading px-2">
+                <div className="flex h-10 items-center"><Skeleton className="h-3 w-12" /></div>
+                {["w-3/4", "w-5/6", "w-1/2", "w-2/3"].map(width => <div key={width} className="flex h-9 items-center"><Skeleton className={cn("h-3", width)} /></div>)}
+              </div>}
               {Array.from(groups, ([label, items]) => <div key={label} role="group" aria-label={label}>
-                <p aria-hidden="true" className="px-3 pb-2 pt-3 text-xs font-medium text-secondary">{label}</p>
-                {items.map(({ note, index }) => <button key={note.id} type="button" role="option" aria-selected={selected === index} aria-label={note.title?.trim() || "新内容"} id={`${listId}-${index}`} data-result-index={index} tabIndex={-1} onPointerMove={event => { if (event.pointerType === "mouse" && selected !== index) setSelected(index); }} onClick={() => onOpenNote(note.id)} className={cn("flex w-full items-center rounded-element px-3 py-2.5 text-left outline-none hover:bg-overlay-hover focus-visible:focus-ring", selected === index && "bg-muted")}>
+                <p aria-hidden="true" className="px-2 pb-2 pt-3 text-xs font-medium text-secondary">{label}</p>
+                {items.map(({ note, index }) => <button key={note.id} type="button" role="option" aria-selected={selected === index} aria-label={note.title?.trim() || "新内容"} id={`${listId}-${index}`} data-result-index={index} tabIndex={-1} disabled={loading} onPointerMove={event => { if (!loading && event.pointerType === "mouse" && selected !== index) setSelected(index); }} onClick={() => onOpenNote(note.id)} className={cn("flex w-full items-center rounded-element p-2 text-left outline-none hover:bg-overlay-hover focus-visible:focus-ring", selected === index && "bg-muted")}>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium"><Highlight text={note.title?.trim() || "新内容"} query={searchQuery} /></span>
                 </button>)}
               </div>)}
             </div>
             {error && <div role="alert" className="space-y-2 px-3 py-4 text-sm"><p className="text-error">{error}</p><Button variant="outline" size="sm" className="ui-note-search-control" onClick={() => void retrySearch()}>重试</Button></div>}
-            {page?.nextCursor && !error && <div className="p-3 text-center"><Button variant="ghost" size="sm" className="ui-note-search-control" disabled={paging} onClick={() => void loadMore()}>{paging ? "正在加载…" : "加载更多结果"}</Button></div>}
-            {page && !page.coverage.complete && <p className="px-3 py-3 text-xs text-secondary">部分文件尚未读入，搜索结果可能不完整。</p>}
+            {!loading && page?.nextCursor && !error && <div className="p-3 text-center"><Button variant="ghost" size="sm" className="ui-note-search-control" disabled={paging} onClick={() => void loadMore()}>{paging ? "正在加载…" : "加载更多结果"}</Button></div>}
+            {!loading && page && !page.coverage.complete && <p className="px-3 py-3 text-xs text-secondary">部分文件尚未读入，搜索结果可能不完整。</p>}
           </div>
         </div>
         {!isMobile && showPreview && <aside aria-label="笔记预览" className="ui-note-search-preview min-h-0 shrink-0 p-4">
           {active && available ? <div className="ui-note-search-preview-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
             <div className="ui-note-search-preview-header">
               <DocumentIcon aria-hidden="true" className="ui-note-search-preview-icon" />
-              <Button variant="outline" size="icon-sm" className="ui-note-search-control" aria-label="打开笔记" data-ui-tooltip="打开笔记" onClick={() => onOpenNote(active.id)}><HugeiconsIcon icon={ArrowUpRight01Icon} aria-hidden="true" /></Button>
+              <Button variant="outline" size="icon-sm" className="ui-note-search-control" disabled={loading} aria-label="打开笔记" data-ui-tooltip="打开笔记" onClick={() => onOpenNote(active.id)}><HugeiconsIcon icon={ArrowUpRight01Icon} aria-hidden="true" /></Button>
             </div>
             <div className="ui-note-search-preview-content min-h-0 flex-1 p-5" key={active.id}>
               <div className="break-words">
@@ -101,15 +115,20 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
                   <p className="ui-note-search-preview-vault">{vaultName}</p>
                   {(active.title || !active.body.trim()) && <h2 className="ui-note-search-preview-title">{active.title || "新内容"}</h2>}
                 </div>
-                <div inert><NoteMarkdown body={active.body || "还没有正文"} notePath={active.relativePath} onError={setPreviewError} /></div>
+                <div inert><Suspense fallback={<PreviewLines />}><PreviewMarkdown body={active.body || "还没有正文"} notePath={active.relativePath} onError={setPreviewError} /></Suspense></div>
               </div>
               <p className="mt-6 text-xs text-secondary">更新于 {new Date(active.updatedAt).toLocaleString()}</p>
               {previewError && <p role="alert" className="mt-3 text-sm text-error">{previewError}</p>}
             </div>
+          </div> : loading && available ? <div aria-hidden="true" className="ui-search-loading ui-note-search-preview-card flex flex-1 flex-col overflow-hidden rounded-xl">
+            <div className="ui-note-search-preview-header" />
+            <div className="ui-note-search-preview-content space-y-4 p-5">
+              <Skeleton className="h-3 w-16" /><Skeleton className="h-5 w-3/4" /><PreviewLines />
+            </div>
           </div> : <div className="ui-note-search-empty text-center text-sm text-secondary"><DocumentIcon aria-hidden="true" className="mx-auto mb-3 size-7 opacity-50" />选择笔记以预览</div>}
         </aside>}
       </div>
-      {!isMobile && <div className="ui-note-search-footer flex shrink-0 items-center justify-between gap-3 border-t border-divider px-4 py-3 text-xs text-secondary">
+      {!isMobile && <div className="ui-note-search-footer flex shrink-0 items-center justify-between gap-3 border-t border-divider px-4 py-2 text-xs text-secondary">
         <span className="ui-note-search-keyboard-hints flex items-center gap-4"><span className="flex items-center gap-2"><KbdGroup><Kbd aria-label="向上方向键">↑</Kbd><Kbd aria-label="向下方向键">↓</Kbd></KbdGroup>选择</span><span className="flex items-center gap-2"><Kbd aria-label="回车键">↵</Kbd>打开</span></span>
         <span className="ui-note-search-escape ml-auto flex shrink-0 items-center gap-2"><Kbd>Esc</Kbd>关闭</span>
         <Button variant="ghost" size="sm" className="ui-note-search-control ui-note-search-dismiss ml-auto" aria-label="关闭搜索" onClick={() => onOpenChange(false)}>取消</Button>

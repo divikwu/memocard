@@ -5,6 +5,42 @@
 .web-top-brand, .web-top-actions { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-width: 0; }
 .web-topbar .web-top-logo { width: calc(var(--spacing-1) * 9); height: calc(var(--spacing-1) * 9); padding: 0; border-radius: var(--radius-full); }
 .web-topbar .web-top-logo img { width: calc(var(--spacing-1) * 7); height: calc(var(--spacing-1) * 7); flex-shrink: 0; object-fit: contain; }
+.web-top-links {
+  --nav-index: 0;
+  --nav-direction: 1;
+  --nav-gap: calc(var(--spacing-1) / 2);
+  display: inline-grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--nav-gap);
+  position: relative;
+  isolation: isolate;
+}
+.web-top-links:dir(rtl) { --nav-direction: -1; }
+.web-top-links:has(> :nth-child(2)[aria-current=page]) { --nav-index: 1; }
+.web-top-links:has(> :nth-child(3)[aria-current=page]) { --nav-index: 2; }
+.web-top-links:has(> [aria-current=page])::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: calc((100% - 2 * var(--nav-gap)) / 3);
+  border-radius: var(--radius-full);
+  background: var(--color-tab-active);
+  pointer-events: none;
+  translate: calc(var(--nav-index) * var(--nav-direction) * (100% + var(--nav-gap)));
+}
+.web-top-links > button { transition-property: color, translate; }
+.web-top-links > [aria-current=page] { background-color: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  .web-top-links::before { transition: translate var(--duration-fast-max) var(--ease-standard); }
+}
+@media (forced-colors: active) {
+  .web-top-links::before {
+    outline: var(--border-width) solid Highlight;
+    outline-offset: calc(-1 * var(--border-width));
+  }
+}
 .web-top-actions { justify-content: flex-end; }
 .web-top-icon { width: calc(var(--spacing-1) * 9); height: calc(var(--spacing-1) * 9); border-radius: var(--radius-full); background: var(--color-background-surface); color: var(--color-black); }
 [data-ui-theme=dark] .web-top-icon { color: var(--color-text-primary); }

@@ -226,17 +226,17 @@ it('uses the current link controls while preserving the text selection and undoi
   const input = await screen.findByRole('textbox', { name: '链接地址' });
   expect(input.dataset.slot).toBe('input');
   fireEvent.change(input, { target: { value: 'javascript:alert(1)' } });
-  fireEvent.click(screen.getByRole('button', { name: /^保存$/ }));
+  fireEvent.keyDown(input, { key: 'Enter' });
   expect(await screen.findByRole('alert')).toHaveProperty('textContent', '请输入有效的网页地址或相对路径。');
   expect(onChange).not.toHaveBeenCalled();
   fireEvent.change(input, { target: { value: 'https://example.com/notes' } });
-  fireEvent.click(screen.getByRole('button', { name: /^保存$/ }));
+  fireEvent.keyDown(input, { key: 'Enter' });
   expect(onChange).toHaveBeenLastCalledWith('[alpha](https://example.com/notes) beta');
   act(() => { editor.commands.undo(); });
   expect(onChange).toHaveBeenLastCalledWith('alpha beta');
 });
 
-it('keeps the mobile link-type portal in the editor style scope and cancels without changing content', async () => {
+it('shows one link address input in the mobile sheet and cancels without changing content', async () => {
   vi.stubGlobal('innerWidth', 390);
   vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
   const { editor, field, onChange } = await rich('alpha beta');
@@ -247,13 +247,11 @@ it('keeps the mobile link-type portal in the editor style scope and cancels with
   expect(dialog.dataset.side).toBe('bottom');
   expect(within(dialog).getByRole('button', { name: '关闭弹窗' }).classList.contains('ui-sheet-close-button')).toBe(true);
   const user = userEvent.setup();
-  await user.click(within(dialog).getByRole('combobox', { name: '链接类型' }));
-  const option = await screen.findByRole('option', { name: 'Wiki 笔记链接' });
-  expect(option.closest('.ui-rich-ui.rich-type-options')).not.toBeNull();
-  expect(dialog.contains(option)).toBe(false);
-  await user.click(option);
-  expect(within(dialog).getByRole('textbox', { name: '搜索目标笔记' })).toBeTruthy();
-  await user.click(within(dialog).getByRole('button', { name: '取消' }));
+  expect(within(dialog).getAllByRole('textbox')).toEqual([within(dialog).getByRole('textbox', { name: '链接地址' })]);
+  expect(within(dialog).queryByRole('combobox')).toBeNull();
+  expect(within(dialog).queryByRole('button', { name: '取消' })).toBeNull();
+  expect(within(dialog).queryByRole('button', { name: '保存' })).toBeNull();
+  await user.click(within(dialog).getByRole('button', { name: '关闭弹窗' }));
   await waitFor(() => expect(screen.queryByRole('dialog', { name: '编辑链接' })).toBeNull());
   await waitFor(() => expect(document.activeElement).toBe(field));
   expect(editor.state.selection.toJSON()).toMatchObject({ anchor: 1, head: 6 });

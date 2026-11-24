@@ -530,10 +530,13 @@
         "apps/ui/ui/business/note-properties.css",
         "apps/ui/ui/business/note-search.css",
         "apps/ui/ui/business/rich-editor.css",
+        "apps/ui/ui/business/rich-link.css",
         "apps/ui/ui/business/sidebar.css",
         "apps/ui/ui/business/trash.css",
         "apps/ui/ui/components/sheet-swipe.css",
         "apps/ui/ui/components/sheet.css",
+        "apps/ui/ui/components/sliding-hover.css",
+        "apps/ui/ui/components/tabs-indicator.css",
         "apps/ui/ui/native/native-chrome.css",
         "apps/ui/ui/styles.css",
         "apps/ui/ui/typeset-theme.css",
@@ -542,6 +545,7 @@
         "apps/ui/ui/web/web-settings.css",
         "apps/ui/ui/web/web-settings-layout.css",
         "apps/ui/ui/web/web-typography.css",
+        "apps/ui/ui/web/NoteAppearanceMenu.css",
         "apps/ui/ui/web/WebMoreDrawer.css",
         "apps/ui/ui/components/theme-scope.css",
         "apps/ui/ui/components/toast.css",
@@ -892,6 +896,16 @@
     }
   ],
   "externalSources": [
+    {
+      "source": "apps/ui/node_modules/@base-ui/react/tabs/indicator/TabsIndicatorCssVars.d.ts",
+      "contract": "platform.positioning",
+      "tokens": {
+        "--active-tab-left": { "type": "dimension" },
+        "--active-tab-top": { "type": "dimension" },
+        "--active-tab-width": { "type": "dimension" },
+        "--active-tab-height": { "type": "dimension" }
+      }
+    },
     {
       "source": "apps/ui/node_modules/@base-ui/react/accordion/panel/AccordionPanelCssVars.d.ts",
       "contract": "platform.positioning",

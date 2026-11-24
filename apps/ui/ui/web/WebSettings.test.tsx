@@ -48,9 +48,9 @@ it("keeps file count units, zero values, full vault names and the same index tim
   expect(within(details).getByText("—")).toBeTruthy();
 });
 
-it("keeps vault open/create actions and their busy, editor and unsupported-browser guards", async () => {
+it("keeps native vault buttons and their busy, editor and unsupported-browser guards", async () => {
   const user = userEvent.setup();
-  const model = state();
+  const model = { ...state(), nativeChrome: {} as NonNullable<AppViewState["nativeChrome"]> };
   const view = render(<WebSettings state={model} />);
   await user.click(screen.getByRole("button", { name: "切换笔记库" }));
   await user.click(screen.getByRole("button", { name: "新建笔记库" }));
@@ -64,6 +64,25 @@ it("keeps vault open/create actions and their busy, editor and unsupported-brows
   view.rerender(<WebSettings state={{ ...model, unsupportedBrowser: true }} />);
   expect(screen.queryByRole("button", { name: "切换笔记库" })).toBeNull();
   expect(screen.queryByRole("button", { name: "新建笔记库" })).toBeNull();
+});
+
+it.each([false, true])("opens Web vault actions with the default label (mobile=%s)", async (isMobile) => {
+  const user = userEvent.setup();
+  const model = { ...state(), isMobile };
+  const view = render(<WebSettings state={model} />);
+  const trigger = screen.getByRole("button", { name: "笔记库操作（切换）" });
+  expect(trigger.textContent).toBe("切换");
+  for (const action of ["切换笔记库", "新建笔记库"]) {
+    await user.click(trigger);
+    await user.click(await screen.findByRole("menuitem", { name: action }));
+    expect(trigger.textContent).toBe("切换");
+  }
+  expect(model.sidebar.onSelectVault).toHaveBeenNthCalledWith(1, false);
+  expect(model.sidebar.onSelectVault).toHaveBeenNthCalledWith(2, true);
+  view.rerender(<WebSettings state={{ ...model, working: true }} />);
+  expect((trigger as HTMLButtonElement).disabled).toBe(true);
+  view.rerender(<WebSettings state={{ ...model, status: null }} />);
+  expect(screen.getByRole("button", { name: "笔记库操作（打开）" }).textContent).toBe("打开");
 });
 
 it("keeps Mac MCP scope and the updating status while guarding actions during a pending update", async () => {

@@ -6,13 +6,17 @@ import { Sheet, SheetCloseButton, SheetContent, SheetHeader, SheetTitle } from '
 import { Input } from '../components/input';
 import { Button } from '../components/button';
 import { ActionGroup, useMobileActionGroup } from '../components/action-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/select';
 import { cnState } from '../lib/utils';
-import { richIcons } from './rich-icons';
-
-function RichSelectContent({ className, ...props }: ComponentProps<typeof SelectContent>) {
-  return <SelectContent {...props} className={cnState(className, 'ui-rich-ui')} />;
-}
+import TextSuperscriptIcon from "@hugeicons/core-free-icons/TextSuperscriptIcon";
+import TextSubscriptIcon from "@hugeicons/core-free-icons/TextSubscriptIcon";
+import TextBoldIcon from "@hugeicons/core-free-icons/TextBoldIcon";
+import TextItalicIcon from "@hugeicons/core-free-icons/TextItalicIcon";
+import TextStrikethroughIcon from "@hugeicons/core-free-icons/TextStrikethroughIcon";
+import Unlink01Icon from "@hugeicons/core-free-icons/Unlink01Icon";
+import RemoveFormattingIcon from "@hugeicons/core-free-icons/RemoveFormattingIcon";
+import Globe02Icon from "@hugeicons/core-free-icons/Globe02Icon";
+import { richIcon, richIcons } from './rich-icons';
+import './rich-link.css';
 
 function RichSheetContent({ className, style, ...props }: ComponentProps<typeof DialogContent>) {
   const sheetStyle = typeof style === 'object' ? style : undefined;
@@ -31,8 +35,18 @@ function RichToolbar(props: ComponentProps<'div'>) {
 }
 
 export const RichFormatTools = createRichFormatTools({
-  PopoverPortal, icons: richIcons, uiClassName: 'ui-rich-ui',
+  PopoverPortal, icons: {
+    ...richIcons,
+    Superscript: richIcon(TextSuperscriptIcon),
+    Subscript: richIcon(TextSubscriptIcon),
+    Bold: richIcon(TextBoldIcon),
+    Italic: richIcon(TextItalicIcon),
+    Strikethrough: richIcon(TextStrikethroughIcon),
+    Unlink: richIcon(Unlink01Icon),
+    RemoveFormatting: richIcon(RemoveFormattingIcon),
+    Globe: richIcon(Globe02Icon),
+  }, uiClassName: 'ui-rich-ui',
   Dialog: Sheet, DialogContent: RichSheetContent, DialogTitle: SheetTitle, MobileDialogHeader: RichSheetHeader,
   Toolbar: RichToolbar,
-  Input, Button, Select, SelectContent: RichSelectContent, SelectItem, SelectTrigger, SelectValue,
+  Input, Button,
 });

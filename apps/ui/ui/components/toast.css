@@ -3,6 +3,8 @@
 .ui-toast[data-limited] { display: none; }
 .ui-toast:focus-visible, .ui-toast-viewport:focus-visible { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .ui-toast-content { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); padding: calc(var(--spacing-1) * 3); }
+.ui-toast-content:has(.ui-toast-actions) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+.ui-toast-actions { grid-area: 2 / 1 / auto / -1; display: flex; flex-wrap: wrap; gap: var(--spacing-1); }
 .ui-toast-message { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
 .ui-toast [data-slot=toast-title] { font-weight: var(--font-weight-medium); }
 .ui-toast [data-slot=toast-description], .ui-toast [data-slot=toast-close] { color: var(--color-text-secondary); }

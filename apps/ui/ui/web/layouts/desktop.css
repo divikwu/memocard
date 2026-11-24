@@ -1,5 +1,5 @@
 .web-desktop-rail button, .web-top-icon, .web-topbar .web-top-logo { --focus-outline-offset: calc(var(--focus-outline-width) * -1); }
-:is(.web-rail-group > button, .web-top-icon):enabled:is(:hover, [aria-current=page], [aria-expanded=true]) { background-color: var(--color-background-control); }
+.web-top-icon:enabled:is(:hover, [aria-current=page], [aria-expanded=true]) { background-color: var(--color-background-control); }
 
 @media (min-width: 768px) {
   .web-app[data-web-client]:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) {

@@ -91,6 +91,7 @@ it("navigates a tag, edits and saves a note, then finds its committed body throu
   await user.click(screen.getByRole("button", { name: "搜索" }));
   const dialog = await screen.findByRole("dialog", { name: "搜索笔记" });
   await user.type(within(dialog).getByRole("combobox", { name: "搜索笔记" }), "集成验收唯一");
+  await within(dialog).findByRole("listbox", { name: "搜索结果", busy: false });
   await within(dialog).findByRole("option", { name: "让设计语言走进真实页面" });
   expect(request.mock.calls.some(([operation, params = {}]) => operation === "queryNotes" && params.query === "集成验收唯一")).toBe(true);
   await user.click(within(dialog).getByRole("option", { name: "让设计语言走进真实页面" }));
@@ -320,6 +321,7 @@ it("preserves an H5 search session across detail navigation, then records a new 
   await user.click(await screen.findByRole("button", { name: "搜索全部笔记" }));
   let search = await screen.findByRole("dialog", { name: "搜索笔记" });
   await user.type(within(search).getByRole("combobox", { name: "搜索笔记" }), "咖啡");
+  await within(search).findByRole("listbox", { name: "搜索结果", busy: false });
   await user.click(await within(search).findByRole("option", { name: "今天的手冲记录" }));
   await screen.findByRole("textbox", { name: "笔记内容" });
   await user.click(screen.getByRole("button", { name: "返回搜索结果" }));
@@ -347,6 +349,7 @@ it("keeps the H5 search trigger mounted through note navigation and restores foc
   await user.click(trigger);
   let search = await screen.findByRole("dialog", { name: "搜索笔记" });
   await user.type(within(search).getByRole("combobox", { name: "搜索笔记" }), "咖啡");
+  await within(search).findByRole("listbox", { name: "搜索结果", busy: false });
   await user.click(await within(search).findByRole("option", { name: "今天的手冲记录" }));
   await screen.findByRole("textbox", { name: "笔记内容" });
   expect(trigger.isConnected).toBe(true);
@@ -517,6 +520,23 @@ it.each(["查看草稿", "关闭提醒", "切页"])("shows the desktop list draf
   await screen.findByRole("heading", { name: "所有笔记", level: 1 });
   expect(screen.queryByRole("region", { name: "通知" })).toBeNull();
   expect(request.mock.calls.some(([operation]) => ["deleteDraft", "dismissDraftReminder", "saveNote"].includes(operation))).toBe(false);
+});
+
+it("keeps editor recovery available after dismissing the load-error toast", async () => {
+  const user = userEvent.setup();
+  const retry = vi.fn();
+  const { default: EditorLoadErrorToast } = await import("./EditorLoadErrorToast");
+  render(<EditorLoadErrorToast retry={retry} />);
+
+  const notification = within(await screen.findByRole("region", { name: "通知" }));
+  expect(notification.getByText("笔记编辑器加载失败")).toBeDefined();
+  expect(notification.getByRole("button", { name: "刷新页面" })).toBeDefined();
+  await user.click(notification.getByRole("button", { name: "重试加载" }));
+  expect(retry).toHaveBeenCalledTimes(1);
+
+  await user.click(notification.getByRole("button", { name: "关闭提醒" }));
+  await user.click(await screen.findByRole("button", { name: "重试加载编辑器" }));
+  expect(retry).toHaveBeenCalledTimes(2);
 });
 
 it("restores useful focus after confirming deletion and retains the other drafts", async () => {

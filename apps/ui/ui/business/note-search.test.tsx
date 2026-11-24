@@ -63,7 +63,7 @@ it("queries all notes by update time, previews keyboard selection and opens on E
   const { onOpenNote } = setup();
   await screen.findByRole("option", { name: "项目计划" });
   expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: [], sort: "updatedAt", limit: 30 });
-  expect(screen.getByText("计划正文")).toBeTruthy();
+  expect(await screen.findByText("计划正文")).toBeTruthy();
   const input = screen.getByRole("combobox", { name: "搜索笔记" });
   await waitFor(() => expect(document.activeElement).toBe(input));
   fireEvent.keyDown(input, { key: "ArrowDown" });
@@ -91,11 +91,14 @@ it("keeps the search open when WebKit confirms an IME candidate", async () => {
 it("discards late responses after a new query and clears back to recent notes", async () => {
   let finishOld!: (value: unknown) => void;
   bridge.request.mockImplementation((_operation, params) => params.query === "旧" ? new Promise(resolve => { finishOld = resolve; }) : Promise.resolve({ notes: params.query ? [second] : [note], nextCursor: null, coverage }));
-  setup();
+  const { onOpenNote } = setup();
   await screen.findByRole("option", { name: "项目计划" });
   const input = screen.getByRole("combobox", { name: "搜索笔记" });
   fireEvent.change(input, { target: { value: "旧" } });
   await waitFor(() => expect(finishOld).toBeTypeOf("function"));
+  expect(screen.getByRole("option", { name: "项目计划" })).toHaveProperty("disabled", true);
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(onOpenNote).not.toHaveBeenCalled();
   fireEvent.change(input, { target: { value: "散步" } });
   await screen.findByRole("option", { name: "周末散步" });
   await act(async () => finishOld({ notes: [note], nextCursor: null, coverage }));
@@ -163,7 +166,7 @@ it("provides a dismissal action and preserves input during focus navigation", as
   expect(onOpenChange).toHaveBeenCalledWith(false);
 });
 
-it.each(["Escape", "close button"])("closes via %s and returns focus to the connected search trigger", async method => {
+it("closes desktop search with Escape and returns focus to the connected search trigger", async () => {
   const trigger = document.createElement("button");
   trigger.textContent = "打开搜索";
   document.body.append(trigger);
@@ -173,13 +176,9 @@ it.each(["Escape", "close button"])("closes via %s and returns focus to the conn
   try {
     const input = screen.getByRole("combobox", { name: "搜索笔记" });
     await waitFor(() => expect(document.activeElement).toBe(input));
-    if (method === "Escape") {
-      await userEvent.setup().keyboard("{Escape}");
-      expect(onOpenChange).toHaveBeenCalledWith(false, expect.objectContaining({ reason: "escape-key" }));
-    } else {
-      await userEvent.setup().click(screen.getByRole("button", {name: "退出搜索"}));
-      expect(onOpenChange).toHaveBeenCalledWith(false);
-    }
+    expect(screen.queryByRole("button", { name: "退出搜索" })).toBeNull();
+    await userEvent.setup().keyboard("{Escape}");
+    expect(onOpenChange).toHaveBeenCalledWith(false, expect.objectContaining({ reason: "escape-key" }));
     view.rerender(<NoteSearchDialog {...props} open={false} />);
     await waitFor(() => expect(document.activeElement).toBe(trigger));
   } finally {
@@ -219,6 +218,8 @@ it("announces pending search and opens results only after loading finishes", asy
   const input = screen.getByRole("combobox", { name: "搜索笔记" });
   expect(screen.getByRole("listbox").getAttribute("aria-busy")).toBe("true");
   expect(screen.getByRole("status").textContent).toContain("正在搜索笔记");
+  expect(screen.getByRole("listbox").querySelector('[data-slot="skeleton"]')).toBeTruthy();
+  expect(screen.queryByText("选择笔记以预览")).toBeNull();
   fireEvent.keyDown(input, { key: "Enter" });
   expect(onOpenNote).not.toHaveBeenCalled();
   await waitFor(() => expect(finish).toBeTypeOf("function"));
@@ -276,7 +277,7 @@ it('preserves mobile query, pagination, selection and result scroll while visiti
   await waitFor(()=>expect(document.activeElement).toBe(input));
   fireEvent.change(input,{target:{value:'项目'}});
   await screen.findByRole('option',{name:'项目计划'});
-  await userEvent.setup().click(screen.getByRole('button',{name:'加载更多结果'}));
+  await userEvent.setup().click(await screen.findByRole('button',{name:'加载更多结果'}));
   await screen.findByRole('option',{name:'周末散步'});
   fireEvent.keyDown(input,{key:'ArrowDown'});
   fireEvent.scroll(screen.getByRole('listbox',{name:'搜索结果'}).parentElement!,{target:{scrollTop:275}});

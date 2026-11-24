@@ -24,7 +24,7 @@ export function SettingsLoading({ connected }: { connected: boolean }) {
       <span role="status" className="sr-only">正在读取设置…</span>
       <section aria-hidden="true"><h2>笔记库</h2>
         <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content">
-          <div className="web-setting-row">
+          <div className="web-setting-row web-setting-vault-picker">
             <Skeleton className="h-4 w-32" />
             <div className="web-setting-vault-actions"><Skeleton className="h-element-md w-16" /><Skeleton className="h-element-md w-16" /></div>
           </div>

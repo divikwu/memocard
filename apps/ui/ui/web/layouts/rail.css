@@ -1,10 +1,43 @@
 .web-app[data-workspace-layout=rail] { --workspace-content-top: calc(var(--spacing-1) * 14); height: 100dvh; min-height: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .web-app[data-workspace-layout=rail] > .web-app-shell { grid-area: 1 / 2; height: auto; min-width: 0; }
 .web-desktop-rail { grid-area: 1 / 1; display: grid; grid-template-rows: minmax(min-content, 1fr) auto minmax(min-content, 1fr); justify-items: center; align-items: start; gap: calc(var(--spacing-1) * 4); overflow-y: auto; padding: calc(var(--spacing-1) * 2); }
-.web-rail-group { display: grid; gap: var(--spacing-1); border-radius: var(--radius-full); background: var(--color-background-surface); }
+.web-rail-group {
+  --web-rail-button-size: calc(var(--spacing-1) * 10);
+  --web-rail-gap: calc(var(--spacing-1) / 2);
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  row-gap: var(--web-rail-gap);
+  border-radius: var(--radius-full);
+  background: var(--color-background-surface);
+}
 .web-rail-footer { align-self: end; }
-.web-rail-group > button { width: calc(var(--spacing-1) * 10); height: calc(var(--spacing-1) * 10); color: var(--color-text-secondary); border-radius: var(--radius-full); }
-.web-rail-group > button:is([aria-current=page], [aria-expanded=true]) { background-color: color-mix(in srgb, var(--color-overlay-pressed) 40%, transparent); color: var(--color-icon-primary); }
+.web-rail-group > button { width: var(--web-rail-button-size); height: var(--web-rail-button-size); color: var(--color-text-secondary); border-radius: var(--radius-full); transition-property: color, translate; }
+.web-rail-group > button:is(:hover, [aria-current=page], [aria-expanded=true]) { background-color: transparent; color: var(--color-icon-primary); }
+.web-rail-group:has(> [aria-current=page], > [aria-expanded=true])::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto;
+  block-size: var(--web-rail-button-size);
+  border-radius: var(--radius-full);
+  background: var(--color-background-control);
+  pointer-events: none;
+  translate: 0 calc(var(--web-rail-row, 0) * (var(--web-rail-button-size) + var(--web-rail-gap)));
+}
+.web-rail-group:has(> :nth-child(4)[aria-current=page]) { --web-rail-row: 3; }
+.web-rail-group:has(> :nth-child(5)[aria-current=page]) { --web-rail-row: 4; }
+.web-rail-group:has(> :nth-child(3)[aria-expanded=true]) { --web-rail-row: 2; }
+.web-rail-footer:not(:has(> [aria-expanded=true])):has(> :nth-child(2)[aria-current=page]) { --web-rail-row: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .web-rail-group::before { transition: translate var(--duration-fast-max) var(--ease-standard); }
+}
+@media (forced-colors: active) {
+  .web-rail-group::before {
+    outline: var(--border-width) solid Highlight;
+    outline-offset: calc(-1 * var(--border-width));
+  }
+}
 .web-app[data-ui-theme=light] .web-rail-group > button { color: var(--color-black); }
 .web-rail-group > button svg { width: calc(var(--spacing-1) * 4.5); height: calc(var(--spacing-1) * 4.5); }
 .web-desktop-rail .web-top-logo { width: calc(var(--spacing-1) * 9); height: calc(var(--spacing-1) * 9); padding: 0; border-radius: var(--radius-full); }

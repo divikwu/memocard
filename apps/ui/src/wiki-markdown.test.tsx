@@ -18,9 +18,9 @@ it("renders a wiki alias, resolves its target and dispatches the existing protec
   vi.mocked(request).mockResolvedValue({ kind: "note", id: "11111111-1111-4111-8111-111111111111", path: "Projects/Target.md" });
   const opened = vi.fn(); window.addEventListener("memocard:open-note", opened);
   try {
-    render(<Markdown body={'[[Projects/Target|目标]]\n\n`[[literal]]`\n\n```\n[[code]]\n```'} notePath="Home.md" />);
+    render(<Markdown body={'[[Projects/Target|目标 | 说明]]\n\n`[[literal]]`\n\n```\n[[code]]\n```'} notePath="Home.md" />);
     expect(screen.getAllByRole("link")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("link", { name: "目标" }));
+    fireEvent.click(screen.getByRole("link", { name: "目标 | 说明" }));
     await waitFor(() => expect(opened).toHaveBeenCalled());
     expect(request).toHaveBeenCalledWith("resolveLink", { target: "Projects/Target", sourcePath: "Home.md", wiki: true });
   } finally { window.removeEventListener("memocard:open-note", opened); }

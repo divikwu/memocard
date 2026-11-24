@@ -1147,17 +1147,17 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
-          "value": "var(--font-size-base)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
           "scope": "@media (max-width: 767px) → .ui-rich-ui :is(input, textarea, select),\n  .ui-rich-ui:is(input, textarea, select)",
           "value": "var(--font-size-base)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": "@media (max-width: 767px) → .ui-rich-ui.rich-insert-menu input",
+          "value": "var(--font-size-base)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
           "value": "var(--font-size-base)"
         },
         {
@@ -1764,6 +1764,11 @@
         },
         {
           "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-app[data-web-client] .web-settings → .web-setting-list-value",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-appearance-fields label",
           "value": "var(--font-size-sm)"
         },
@@ -2006,21 +2011,6 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-hint, .rich-format-error)",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-preview)",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-link-results small)",
-          "value": "var(--font-size-xs)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-preserved-label)",
           "value": "var(--font-size-xs)"
         },
@@ -2032,6 +2022,21 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ".ui-rich-ui .rich-editor-content .tableWrapper[data-overflow=\"true\"]::after",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-hint, .rich-format-error)",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-link-results-label)",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ".ui-rich-ui.rich-link-edit-card .rich-format-field label",
           "value": "var(--font-size-xs)"
         },
         {
@@ -2411,22 +2416,12 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
-          "value": "var(--font-weight-normal)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-menu)",
           "value": "var(--font-weight-normal)"
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-inline-tools)",
-          "value": "var(--font-weight-normal)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-link-results button)",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2475,8 +2470,18 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ".ui-rich-ui.rich-properties button",
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-field label)",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-link-results button)",
+          "value": "var(--font-weight-normal)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ".ui-rich-ui.rich-link-edit-card .rich-property-remove",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2688,6 +2693,11 @@
         {
           "source": "apps/ui/ui/business/QuickCapture.css",
           "scope": ".ui-capture-footer .ui-capture-submit",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-link-results-label)",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2948,6 +2958,11 @@
           "value": "var(--font-weight-semibold)"
         },
         {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
+          "value": "var(--font-weight-semibold)"
+        },
+        {
           "source": "apps/ui/ui/business/sidebar.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
@@ -3042,6 +3057,11 @@
       "value": "var(--font-weight-bold)",
       "utilities": [],
       "locations": [
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-preview)",
+          "value": "var(--font-weight-bold)"
+        },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-3",
@@ -3781,16 +3801,6 @@
         },
         {
           "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
-          "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
-          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-hint, .rich-format-error)",
-          "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-menu)",
           "value": "var(--text-body-leading)"
         },
@@ -3822,6 +3832,16 @@
         {
           "source": "apps/ui/ui/business/rich-editor.css",
           "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-tag-suggestions)",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-header h2)",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/rich-link.css",
+          "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-hint, .rich-format-error)",
           "value": "var(--text-body-leading)"
         },
         {
@@ -3867,6 +3887,11 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-label",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings.css",
+          "scope": ".web-app[data-web-client] .web-settings → .web-setting-list-row > .web-setting-list-label",
           "value": "var(--text-body-leading)"
         },
         {
@@ -4809,7 +4834,7 @@
       "property": "font-family",
       "expression": "getPreviewFont(choice.value).fontFamily",
       "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
-      "scope": "line 14"
+      "scope": "line 18"
     }
   ],
   "native": [

@@ -6,7 +6,6 @@ import { createRichHeadingFolding } from '../../src/rich-heading-fold-core';
 import { createRichHeadingFoldButton } from '../../src/rich-heading-fold-button-core';
 import { VaultImage } from './NoteMedia';
 import { RichCodeBlock } from './RichCodeBlock';
-import { RichImageTools } from './RichImageTools';
 import { CalloutColorsMenu } from './CalloutColorsMenu';
 import { NoteOutline } from './NoteOutline';
 import { richIcons } from './rich-icons';
@@ -14,6 +13,7 @@ import './rich-editor.css';
 
 const NoteMarkdown = recoverableLazy(() => import('./NoteMarkdown').then(module => ({ default: module.NoteMarkdown })), '原格式内容');
 const RichFormatTools = recoverableLazy(() => import('./RichFormatTools').then(module => ({ default: module.RichFormatTools })), '格式工具');
+const RichImageTools = recoverableLazy(() => import('./RichImageTools').then(module => ({ default: module.RichImageTools })), '图片布局工具');
 const CalloutIconPicker = recoverableLazy(() => import('./CalloutIconPicker').then(module => ({ default: module.CalloutIconPicker })), '图标选择');
 const RichHeadingFoldButton = createRichHeadingFoldButton(richIcons.ChevronRight);
 const RichHeadingFolding = createRichHeadingFolding(RichHeadingFoldButton);

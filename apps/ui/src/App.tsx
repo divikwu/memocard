@@ -560,7 +560,8 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
         try {
           const updated = await request<NotePins>("setNotePinned", { id, pinned: desired, baseHash: current.contentHash, vaultId, ...(isBrowserVault ? { vaultBinding: editing.vaultBinding ?? environment?.vaultBinding } : {}) });
           if (epoch === pinEpoch.current && loadedVaultId.current === vaultId && !selectingVault.current) {
-            setNotePins({ ...updated, vaultId }); setNotice(desired ? "已固定到主页" : "已取消固定");
+            setNotePins({ ...updated, vaultId });
+            if (isNative || isIOSNative) setNotice(desired ? "已固定到主页" : "已取消固定");
             if (refreshCount.current > 0) pendingRefresh.current = true; else void refresh(true);
           }
           break;

@@ -22,6 +22,7 @@ it("preserves the full Markdown preview inside an inert region and keeps only th
   render(<NoteSearchDialog open available vaultName="测试库" returnFocus={{ current: null }} onOpenChange={vi.fn()} onOpenNote={onOpenNote} />);
   await screen.findByRole("option", { name: note.title! });
   const preview = screen.getByRole("complementary", { name: "笔记预览" });
+  await within(preview).findByText("参考链接");
   const content = preview.querySelector("[inert]")!;
   expect(content.querySelector("a")?.textContent).toBe("参考链接");
   expect(content.querySelector("a")).toHaveProperty("href", "https://example.com/");
@@ -44,6 +45,7 @@ it("keeps a body-only note free from an invented preview title", async () => {
   await screen.findByRole("option", { name: "新内容" });
   const preview = screen.getByRole("complementary", { name: "笔记预览" });
   expect(preview.querySelector(".ui-note-search-preview-title")).toBeNull();
+  await within(preview).findByText("正文标题");
   expect(preview.querySelector("h1")?.textContent).toBe("正文标题");
   expect(within(preview).getByRole("button", { name: "打开笔记" })).toBeTruthy();
 });

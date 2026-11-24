@@ -30,7 +30,7 @@ const status: VaultStatus = {
 
 beforeAll(async () => {
   // Keep cold module transformation outside the UI assertion timeout.
-  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/NoteSearchDialog"), import("@ui/business/Editor"), import("@ui/web/WebSettings")]);
+  await Promise.all([import("@ui/business/NoteCollection"), import("@ui/business/NoteCardPreview"), import("@ui/business/NoteSearchDialog"), import("@ui/business/Editor"), import("@ui/web/WebSettings")]);
 }, 30_000);
 
 beforeEach(() => {
@@ -105,6 +105,8 @@ describe("sidebar workspace actions", () => {
   });
 
   it("opens global search with Ctrl K while keeping the editor and unsaved input", async () => {
+    const original = bridge.request.getMockImplementation()!;
+    bridge.request.mockImplementation((operation, params) => operation === "saveNote" ? new Promise(() => {}) : original(operation, params));
     const user = userEvent.setup();
     render(<App />);
     await screen.findByText(note.body);

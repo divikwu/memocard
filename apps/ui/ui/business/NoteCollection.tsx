@@ -23,6 +23,7 @@ import { EmptyIllustration } from "./EmptyIllustration";
 import { cn } from "../lib/utils";
 import "./NoteCollection.css";
 const NoteCardPreview = recoverableLazy(() => import("./NoteCardPreview").then(module => ({ default: module.NoteCardPreview })), "笔记卡片预览");
+const TabsIndicator = recoverableLazy(() => import("../components/tabs-indicator"), "选中指示器", () => null);
 
 function clearCardPress(event: PointerEvent<HTMLButtonElement>) {
   if (event.pointerType === "touch" && event.isPrimary) event.currentTarget.removeAttribute("data-touch-pressed");
@@ -146,7 +147,7 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
   </TooltipHints>;
 
   if (home) return <Tabs value={home.tab} onValueChange={value => { if (value === "recent" || value === "pinned") home.onTabChange(value); }} className="ui-note-collection" data-slot="note-collection" data-layout={layout}>
-    <div className="ui-note-toolbar"><div className="ui-note-home-tabs"><TabsList variant="line" activateOnFocus aria-label="主页内容"><TabsTrigger value="recent"><HugeiconsIcon icon={Clock03Icon} aria-hidden="true" strokeWidth={2} />最近更新</TabsTrigger><TabsTrigger value="pinned"><HugeiconsIcon icon={PinIcon} aria-hidden="true" strokeWidth={2} />已固定<span className="text-xs text-secondary tabular-nums">{home.pinnedCount}</span></TabsTrigger></TabsList></div><div className="ui-note-actions">{loading && notes.length > 0 && <Spinner aria-hidden="true" className="text-icon-secondary" />}{layoutButtons}</div></div>
+    <div className="ui-note-toolbar"><div className="ui-note-home-tabs"><TabsList variant="line" activateOnFocus aria-label="主页内容"><TabsTrigger value="recent"><HugeiconsIcon icon={Clock03Icon} aria-hidden="true" strokeWidth={2} />最近更新</TabsTrigger><TabsTrigger value="pinned"><HugeiconsIcon icon={PinIcon} aria-hidden="true" strokeWidth={2} />已固定<span className="text-xs text-secondary tabular-nums">{home.pinnedCount}</span></TabsTrigger><Suspense fallback={null}><TabsIndicator /></Suspense></TabsList></div><div className="ui-note-actions">{loading && notes.length > 0 && <Spinner aria-hidden="true" className="text-icon-secondary" />}{layoutButtons}</div></div>
     <TabsContent value={home.tab}>{content}</TabsContent>
   </Tabs>;
 
@@ -156,7 +157,7 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
       if (filters && (value === "all" || value === "untagged" || value === "images" || value === "links")) filters.onChange(filters.activeTags, value === "all" ? [] : [value]);
     }}>
     <div className="ui-note-toolbar">
-      {filters ? <NoteTypeTabs disabled={tagFiltersDisabled} scrollerRef={recentTagScroller} /> : recentTags !== undefined && <div ref={recentTagScroller} className={cn(tabsListVariants({ variant: "pill" }), "ui-note-recent-tags w-full justify-start")} data-variant="pill" data-transparent-inactive role="group" aria-label="最近使用的笔记标签">
+      {filters ? <NoteTypeTabs disabled={tagFiltersDisabled} scrollerRef={recentTagScroller}><Suspense fallback={null}><TabsIndicator /></Suspense></NoteTypeTabs> : recentTags !== undefined && <div ref={recentTagScroller} className={cn(tabsListVariants({ variant: "pill" }), "ui-note-recent-tags w-full justify-start")} data-variant="pill" data-transparent-inactive role="group" aria-label="最近使用的笔记标签">
           <Button type="button" variant="ghost" data-slot="tabs-trigger" className={recentTagButtonStyles}
             data-active={!activeTag || undefined} aria-pressed={!activeTag} disabled={tagFiltersDisabled} onClick={onSelectAll}>all</Button>
           {recentTags.map(name => <Button key={name} type="button" variant="ghost" data-slot="tabs-trigger" className={recentTagButtonStyles}

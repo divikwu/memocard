@@ -18,6 +18,3 @@
   --typeset-flow: .85em;
 }
 :root[data-web-typography] .ui-note-markdown .note-mermaid-source pre { font-family: var(--font-family-code); }
-.web-note-font-choice[aria-checked=true] { background: var(--color-accent-muted); color: var(--color-text-accent); }
-.web-note-font-choice > [data-slot=dropdown-menu-radio-item-indicator],
-.web-note-small-text > [data-slot=dropdown-menu-checkbox-item-indicator] { display: none; }

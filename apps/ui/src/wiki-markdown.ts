@@ -1,4 +1,9 @@
 type Node = { type: string; value?: string; url?: string; alt?: string; children?: Node[] };
+export function splitWikiTarget(value: string): [string, string?] {
+  const separator = value.indexOf("|");
+  return separator < 0 ? [value] : [value.slice(0, separator), value.slice(separator + 1)];
+}
+
 /** Render wikilinks without rewriting the saved source. Code and existing links are left alone. */
 export function wikiMarkdown() {
   return (tree: Node) => {
@@ -10,7 +15,7 @@ export function wikiMarkdown() {
         let offset = 0;
         for (const match of text.matchAll(/(!?)\[\[([^\]\n]+)\]\]/g)) {
           nodes.push({ type: "text", value: text.slice(offset, match.index) });
-          const [target, label] = match[2].split("|");
+          const [target, label] = splitWikiTarget(match[2]);
           if (match[1] && /\.(png|jpe?g|webp|gif|heic|heif)$/i.test(target)) nodes.push({ type: "image", url: `memocard-wiki:${encodeURIComponent(target)}`, alt: label ?? target });
           else if (!match[1]) nodes.push({ type: "link", url: `memocard-wiki:${encodeURIComponent(target)}`, children: [{ type: "text", value: label ?? target }] });
           else nodes.push({ type: "text", value: match[0] });
