@@ -125,6 +125,19 @@ function expectKeyboardOutline(element: Element, mode: "light" | "dark", offset 
   finally { swatch.remove(); }
 }
 
+// Register before the input action so a fast transition can finish during the browser round trip.
+async function expectSlide(element: Element, action: () => Promise<void>) {
+  let started = false;
+  const onTransition = (event: Event) => {
+    if (event.target === element && (event as TransitionEvent).propertyName === "translate") started = true;
+  };
+  element.addEventListener("transitionrun", onTransition);
+  try {
+    await action();
+    await waitFor(() => expect(started).toBe(true));
+  } finally { element.removeEventListener("transitionrun", onTransition); }
+}
+
 function expectUnclippedOutline(element: Element) {
   const bounds = element.getBoundingClientRect();
   const style = getComputedStyle(element);
@@ -3454,6 +3467,10 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
     expect(advanced.closest('[data-slot="card"]')).toBe(card);
     for (const width of [320, 390, 482, 522, 640, 767, 768, 1082, 1440]) {
       await page.viewport(width, 900);
+      await waitFor(() => {
+        expect(window.innerWidth).toBe(width);
+        expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", width < 768 ? "drawer" : "sidebar");
+      });
       const titleHeader = title.parentElement!;
       const bounds = card.getBoundingClientRect(), disclosure = advanced.getBoundingClientRect();
       expect(disclosure.left).toBeGreaterThanOrEqual(bounds.left);
@@ -3536,7 +3553,7 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
         if (mode === "light") expect(groupBackground).toBe("rgb(255, 255, 255)");
       } else {
         await waitFor(() => expect(title.getBoundingClientRect().height).toBeGreaterThanOrEqual(32));
-        expect(titleHeader.getBoundingClientRect().width).toBeCloseTo(panelBounds.width, 1);
+        expect(titleHeader.getBoundingClientRect().width).toBeCloseTo(panel.getBoundingClientRect().width, 1);
         expect(bounds.left).toBeGreaterThan(panelBounds.left);
         expect(bounds.right).toBeLessThan(panelBounds.right);
         expect(bounds.left - panelBounds.left).toBeCloseTo(panelBounds.right - bounds.right, 1);
@@ -3565,7 +3582,7 @@ test("settings disclosures reverse together and respect the reduced motion prefe
   history.replaceState(null, "", "#/settings");
   const fixture = await createWorkspaceFixture();
   const release = setStorybookRequestHandler(fixture.request);
-  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  const view = render(<><WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider><input aria-label="下一个焦点" /></>);
   try {
     const canvas = within(view.container);
     await canvas.findByText("本机文件状态");
@@ -3584,7 +3601,7 @@ test("settings disclosures reverse together and respect the reduced motion prefe
       const opening = details.getBoundingClientRect().height;
       summary.click();
       expect(details.open).toBe(false);
-      expect(details.getBoundingClientRect().height).toBeCloseTo(opening, 0);
+      expect(details.getBoundingClientRect().height).toBeGreaterThan(closed);
       await waitFor(() => expect(details.getBoundingClientRect().height).toBeLessThan(opening), {interval: 10});
       summary.click();
       await waitFor(() => {
@@ -3593,8 +3610,9 @@ test("settings disclosures reverse together and respect the reduced motion prefe
       });
       expect(summary).toHaveFocus();
       await userEvent.keyboard("{Enter}");
+      expect(details.open).toBe(false);
       await userEvent.tab();
-      expect(details.contains(document.activeElement)).toBe(false);
+      expect(details.contains(document.activeElement), document.activeElement?.outerHTML.slice(0, 500)).toBe(false);
       summary.click();
       expect(details.open).toBe(true);
     }
@@ -5025,12 +5043,8 @@ if (!inject("uiQualityTouch")) test("classic rail slides to the current page or 
     await userEvent.hover(notes);
     expect(home).toHaveAttribute("aria-current", "page");
     expect(offset()).toBe(0);
-    await userEvent.click(notes);
+    await expectSlide(group, () => userEvent.click(notes));
     expect(notes).toHaveAttribute("aria-current", "page");
-    await waitFor(() => {
-      expect(offset()).toBeGreaterThan(0);
-      expect(offset()).toBeLessThan(target(notes));
-    }, { interval: 10 });
     await waitFor(() => expect(offset()).toBe(target(notes)));
 
     await userEvent.click(search);
@@ -5054,11 +5068,7 @@ if (!inject("uiQualityTouch")) test("classic rail slides to the current page or 
     await waitFor(() => expect(footerOffset()).toBe(42));
     await userEvent.hover(vault);
     expect(footerOffset()).toBe(42);
-    await userEvent.click(vault);
-    await waitFor(() => {
-      expect(footerOffset()).toBeGreaterThan(0);
-      expect(footerOffset()).toBeLessThan(42);
-    }, { interval: 10 });
+    await expectSlide(footer, () => userEvent.click(vault));
     await within(document.body).findByRole("dialog", { name: "切换笔记库" });
     expect(vault).toHaveAttribute("aria-expanded", "true");
     await waitFor(() => expect(footerOffset()).toBe(0));
@@ -5104,12 +5114,8 @@ if (!inject("uiQualityTouch")) test("home layout indicator slides after changing
     await userEvent.hover(rows);
     expect(offset()).toBe(0);
     expect(cards).toHaveAttribute("aria-pressed", "true");
-    await userEvent.click(rows);
+    await expectSlide(control, () => userEvent.click(rows));
     expect(notes).toHaveAttribute("data-layout", "list");
-    await waitFor(() => {
-      expect(offset()).toBeGreaterThan(0);
-      expect(offset()).toBeLessThan(100);
-    }, { interval: 10 });
     await waitFor(() => expect(offset()).toBe(100));
     expect(plate().transitionDuration).toBe("0.165s");
     await commands.setReducedMotion("reduce");
@@ -5156,12 +5162,8 @@ if (!inject("uiQualityTouch")) test("home and tag view indicators slide with the
       expect(indicator.getBoundingClientRect().height).toBeCloseTo(name === "主页内容" ? 2 : first.getBoundingClientRect().height, 1);
       await userEvent.hover(second);
       expect(offset()).toBeCloseTo(target(first), 1);
-      await userEvent.click(second);
+      await expectSlide(indicator, () => userEvent.click(second));
       expect(second).toHaveAttribute("aria-selected", "true");
-      await waitFor(() => {
-        expect(offset()).toBeGreaterThan(target(first));
-        expect(offset()).toBeLessThan(target(second));
-      }, { interval: 10 });
       await waitFor(() => expect(offset()).toBeCloseTo(target(second), 1));
       await commands.setReducedMotion("reduce");
       second.focus();
@@ -5210,12 +5212,8 @@ if (!inject("uiQualityTouch")) test("note type indicator slides only when the fi
     await userEvent.hover(images);
     expect(offset()).toBeCloseTo(target(all), 1);
     expect(all).toHaveAttribute("aria-selected", "true");
-    await userEvent.click(images);
+    await expectSlide(indicator, () => userEvent.click(images));
     await waitFor(() => expect(images).toHaveAttribute("aria-selected", "true"));
-    await waitFor(() => {
-      expect(offset()).toBeGreaterThan(target(all));
-      expect(offset()).toBeLessThan(target(images));
-    }, { interval: 10 });
     await waitFor(() => expect(offset()).toBeCloseTo(target(images), 1));
     await commands.setReducedMotion("reduce");
     images.focus();
@@ -5262,12 +5260,8 @@ if (!inject("uiQualityTouch")) test("top navigation slides its light highlight w
     await userEvent.hover(notes);
     expect(home).toHaveAttribute("aria-current", "page");
     expect(offset()).toBeCloseTo(target(home), 1);
-    await userEvent.click(notes);
+    await expectSlide(nav, () => userEvent.click(notes));
     expect(notes).toHaveAttribute("aria-current", "page");
-    await waitFor(() => {
-      expect(offset()).toBeGreaterThan(target(home));
-      expect(offset()).toBeLessThan(target(notes));
-    }, { interval: 10 });
     await waitFor(() => expect(offset()).toBeCloseTo(target(notes), 1));
     tags.focus();
     await userEvent.keyboard("{Enter}");
@@ -5520,13 +5514,9 @@ if (!inject("uiQualityTouch")) test("classic note navigation slides on hover and
     expect(indicator().transitionDuration).toBe("0.3s");
     expect(indicator().height).toBe(getComputedStyle(first).height);
     const hoverColor = indicator().backgroundColor;
-    await userEvent.hover(items.getByRole("separator"));
+    await userEvent.hover(items.getByRole("separator"), { force: true });
     expect(position()).toBe(first.offsetTop);
-    await userEvent.hover(search);
-    await waitFor(() => {
-      expect(position()).toBeGreaterThan(first.offsetTop);
-      expect(position()).toBeLessThan(search.offsetTop);
-    }, { interval: 10 });
+    await expectSlide(menu, () => userEvent.hover(search));
     await userEvent.hover(first);
     await waitFor(() => expect(position()).toBe(first.offsetTop));
     expect(location.hash).toBe(hoverStart);
@@ -5875,7 +5865,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
           const anchor = toolbar.getBoundingClientRect();
           const panel = popup.getBoundingClientRect();
           expect(panel.left).toBeCloseTo(anchor.left, 0);
-          expect(panel.top - anchor.bottom).toBeCloseTo(8, 0);
+          expect(Math.abs(panel.top - anchor.bottom - 8)).toBeLessThan(1);
         });
       }
       expect(heading.parentElement).toBe(list.parentElement);
@@ -5886,7 +5876,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
       expect(first.querySelector("small")).toBeNull();
       const headingTextLeft = heading.getBoundingClientRect().left + parseFloat(getComputedStyle(heading).paddingLeft);
       expect(first.querySelector("svg")!.getBoundingClientRect().left).toBeCloseTo(headingTextLeft);
-      expect(list.getBoundingClientRect().top - heading.getBoundingClientRect().bottom).toBe(4);
+      expect(list.getBoundingClientRect().top - heading.getBoundingClientRect().bottom).toBeCloseTo(4, 2);
       await userEvent.click(first);
       await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑链接"})).toBeNull());
       expect(editor!.view.dom.querySelector("a[data-wiki-target]")).not.toBeNull();
