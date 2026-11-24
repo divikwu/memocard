@@ -31,7 +31,7 @@ export function NoteTypeTabs({ disabled, scrollerRef, children }: Pick<NoteColle
   return <TabsList ref={scrollerRef} variant="pill" activateOnFocus aria-label="类型" data-transparent-inactive
     className="ui-note-recent-tags gap-2 justify-start">
     {options.map(option => <TabsTrigger key={option.id} value={option.id} disabled={disabled} aria-label={option.label}
-      className="group/type-tab flex-none gap-1.5 bg-control font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:bg-surface data-active:font-medium data-active:hover:bg-surface">
+      className="group/type-tab flex-none gap-1.5 bg-control px-2 font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:bg-surface data-active:font-medium data-active:hover:bg-surface">
       <span className="text-secondary group-data-active/type-tab:text-primary"><SidebarIcon name={option.icon} /></span>
       {option.label}
     </TabsTrigger>)}

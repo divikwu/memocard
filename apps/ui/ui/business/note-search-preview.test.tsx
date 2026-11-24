@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import type { Note } from "@memocard/contracts";
 import { NoteSearchDialog } from "./NoteSearchDialog";
 
@@ -9,6 +9,7 @@ const bridge = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("../../src/bridge", () => ({ request: bridge.request, errorMessage: (cause: unknown) => String(cause) }));
 const note: Note = { id: "first", title: "完整笔记预览", body: "# 正文标题\n\n[参考链接](https://example.com)\n\n- [x] 已完成\n\n<details><summary>折叠说明</summary><p>折叠正文</p></details>\n\n```ts\nconst answer = 42;\n```\n\n| 项目 | 状态 |\n| --- | --- |\n| 搜索 | 保留 |", tags: [], relativePath: "notes/preview.md", createdAt: "2026-10-15T00:00:00Z", updatedAt: "2026-10-16T00:00:00Z", contentHash: "hash", sourceUrl: "" };
 const coverage = { complete: true, indexed: 1, pending: 0, issues: 0, indexedAt: note.updatedAt };
+beforeAll(async () => { await import("./NoteMarkdown"); });
 beforeEach(() => {
   bridge.request.mockReset();
   bridge.request.mockResolvedValue({ notes: [note], nextCursor: null, coverage });

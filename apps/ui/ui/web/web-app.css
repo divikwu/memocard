@@ -67,7 +67,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
   :where(.web-app[data-web-client]) .web-app-main > .web-app-header:not(:has(button)) ~ .web-app-scroll { padding-block-start: 0; scroll-padding-block-start: calc(var(--spacing-1) * 4); }
   :where(.web-app[data-web-client]) .web-app-main > .web-app-header:not(:has(button)) ~ .web-app-scroll > .web-page-content { padding-block-start: calc(var(--spacing-1) * 6); }
   :where(.web-app[data-web-client]) .web-app-main > .web-app-header:not(:has(button)) ~ .web-app-scroll > .web-page-content:not([data-view=home]) { padding-block-start: calc(var(--spacing-1) * 3); }
-  :where(.web-app[data-web-client]) .web-app-main > .web-app-header:not(:has(button)) ~ .web-app-scroll .web-collection-heading { min-height: calc(var(--size-element-md) + var(--spacing-1)); padding: 0; }
+  :where(.web-app[data-web-client]) .web-app-main > .web-app-header:not(:has(button)) ~ .web-app-scroll .web-collection-heading { min-height: calc(var(--size-element-md) + var(--spacing-1)); padding: 0; padding-inline-start: var(--collection-heading-inset, 0px); }
   :where(.web-app[data-web-client]) .web-app-main > .web-app-header:not(:has(button)) ~ .web-app-scroll .ui-trash > header { min-height: calc(var(--size-element-md) + var(--spacing-1) * 4); }
   :where(.web-app[data-web-client]) .web-page-content:has(> .web-collection-heading) > .ui-note-collection { padding-block-start: calc(var(--spacing-1) * 2); }
   :where(.web-app[data-web-client]) .web-page-content > section.ui-note-collection { row-gap: calc(var(--spacing-1) * 4); }

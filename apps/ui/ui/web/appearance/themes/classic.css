@@ -13,6 +13,8 @@
 }
 
 @media (min-width: 768px) {
+  .web-app[data-interface-theme=classic] .ui-tag-directory-toolbar.web-collection-heading { --collection-heading-inset: calc(var(--spacing-1) * 2); }
+  .web-app[data-interface-theme=classic] .web-page-content[data-view=notes] > .web-collection-heading { --collection-heading-inset: var(--spacing-1); }
   .web-app:where([data-web-client][data-interface-theme=classic][data-workspace-layout=rail]) .web-page-content:is([data-view=settings], [data-view=tags]) { --workspace-max-width: 45rem; }
   .web-app:where([data-web-client][data-interface-theme=classic][data-workspace-layout=rail]) .web-settings-panel { padding-block-start: 0; padding-inline: 0; }
 }

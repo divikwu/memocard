@@ -155,7 +155,7 @@ it("shows a global search miss and clears the search", async () => {
   await user.type(input, "不存在的关键词");
   await waitFor(() => expect(request.mock.calls.some(([operation, params]) =>
     operation === "queryNotes" && params?.query === "不存在的关键词")).toBe(true));
-  expect(await dialog.findAllByText("没有找到相关笔记")).not.toHaveLength(0);
+  expect(await dialog.findByText("没有找到相关笔记或标签")).toBeDefined();
   expect(await dialog.findByRole("img", { name: "在空白纸上寻找的放大镜" })).toBeDefined();
   await user.click(dialog.getByRole("button", { name: "清空搜索" }));
   expect(input).toHaveProperty("value", "");
