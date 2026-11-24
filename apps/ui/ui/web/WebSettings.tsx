@@ -44,7 +44,7 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
   const vaultActionsDisabled = s.working || !!s.editor;
   const chooseVaultDisabled = !s.sidebar.canChooseVault || vaultActionsDisabled;
   return <div className="web-settings"><header className="web-collection-heading"><h1 className="web-settings-title text-balance">设置</h1></header><div className="web-settings-panel">
-    <section aria-labelledby={field("vault-heading")}><h2 id={field("vault-heading")}>笔记库</h2>
+    <section aria-labelledby={field("vault-heading")}><h2 id={field("vault-heading")} className="web-setting-vault-heading">笔记库</h2>
       <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content">
         {s.localWebReconnectRequired ? <div className="web-setting-row">
           <p className="web-setting-description font-medium" role="status">需要重新连接本机服务</p>

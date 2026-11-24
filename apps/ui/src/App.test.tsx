@@ -373,7 +373,7 @@ describe("note workspace", () => {
     fireEvent.change(await screen.findByRole("combobox", { name: "搜索笔记" }), { target: { value: "不存在的关键词" } });
 
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在的关键词", tags: [], sort: "updatedAt", limit: 30 }));
-    expect(await screen.findByText("没有找到相关笔记")).toBeTruthy();
+    expect(await screen.findByText("没有找到相关笔记或标签")).toBeTruthy();
     expect(within(screen.getByRole("dialog", { name: "搜索笔记" })).queryByText(note.body)).toBeNull();
   });
 

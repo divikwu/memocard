@@ -4,18 +4,25 @@ import "./TagDirectoryList.css";
 
 export type DirectoryTag = { name: string; count: number };
 
-export function TagDirectoryList({ tags, renderTag, className = "" }: { className?: string; tags: DirectoryTag[]; renderTag: (tag: DirectoryTag, initial: string) => ReactNode }) {
+const compareSortKeys = new Intl.Collator("en", {numeric: true, sensitivity: "accent"}).compare;
+
+export function TagDirectoryList({ tags, renderTag, className = "", getSortKey }: {
+  className?: string; tags: DirectoryTag[]; renderTag: (tag: DirectoryTag, initial: string) => ReactNode;
+  getSortKey?: (name: string) => string;
+}) {
   const groups = useMemo(() => {
+    const sorted = tags.map(tag => ({tag, key: getSortKey?.(tag.name) ?? tag.name}));
+    sorted.sort((a, b) => (getSortKey ? compareSortKeys(a.key, b.key) : 0) || a.tag.name.localeCompare(b.tag.name));
     const grouped = new Map<string, DirectoryTag[]>();
-    for (const tag of [...tags].sort((a, b) => a.name.localeCompare(b.name))) {
-      const initial = tag.name.normalize("NFD").charAt(0).toUpperCase();
+    for (const {tag, key} of sorted) {
+      const initial = key.normalize("NFD").charAt(0).toUpperCase();
       const group = /^[0-9A-Z]$/.test(initial) ? initial : "其他";
       const entries = grouped.get(group);
       if (entries) entries.push(tag);
       else grouped.set(group, [tag]);
     }
     return [...grouped].sort(([a], [b]) => a === "其他" ? 1 : b === "其他" ? -1 : a.localeCompare(b));
-  }, [tags]);
+  }, [getSortKey, tags]);
   return <div className={`ui-tag-directory-groups ${className}`}>
     {groups.map(([initial, entries]) => <div key={initial} className="ui-tag-directory-group">
       <h2>{initial}</h2>

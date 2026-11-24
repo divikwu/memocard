@@ -1143,6 +1143,7 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
+        "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",

@@ -217,9 +217,9 @@ it("announces pending search and opens results only after loading finishes", asy
   const { onOpenNote } = setup();
   const input = screen.getByRole("combobox", { name: "搜索笔记" });
   expect(screen.getByRole("listbox").getAttribute("aria-busy")).toBe("true");
-  expect(screen.getByRole("status").textContent).toContain("正在搜索笔记");
+  expect(screen.getByRole("status").textContent).toContain("正在搜索");
   expect(screen.getByRole("listbox").querySelector('[data-slot="skeleton"]')).toBeTruthy();
-  expect(screen.queryByText("选择笔记以预览")).toBeNull();
+  expect(screen.queryByText("选择结果以预览")).toBeNull();
   fireEvent.keyDown(input, { key: "Enter" });
   expect(onOpenNote).not.toHaveBeenCalled();
   await waitFor(() => expect(finish).toBeTypeOf("function"));

@@ -235,6 +235,17 @@ test("editor keyboard exit hint stays screen-reader-only while editing", async (
   }
 });
 
+test("compact heading fold controls start at the text inset", async () => {
+  typography("16");
+  const { field } = await editorFixture("##### Five\n\nBody\n\n###### Six\n\nBody");
+  for (const level of [5, 6]) {
+    const heading = field.querySelector(`h${level}`)!;
+    const text = heading.querySelector(".rich-heading-text")!;
+    const fold = text.querySelector(".rich-heading-fold-widget")!;
+    expect(parseFloat(getComputedStyle(fold).top)).toBe(parseFloat(getComputedStyle(heading).paddingTop) + parseFloat(getComputedStyle(text).paddingTop));
+  }
+});
+
 for (const size of ["14", "16"]) test(`heading fold stays visible across the gutter and block grip at ${size}px`, async () => {
   typography(size);
   const { container, field, editor, findByRole } = await outlineFixture("## Heading\n\nSection body\n\n## Next\n\nOther body");
@@ -320,8 +331,10 @@ for (const size of ["14", "16"]) for (const tail of ["```txt\ncode\n```", "> quo
     fireEvent.click(await findByRole("button", { name: "收起“A”章节" }));
     await waitFor(() => expect(field.querySelector(".rich-folded-content")).not.toBeNull());
     const [a, b] = Array.from(field.querySelectorAll("h2"));
+    expect(getComputedStyle(a).padding).toBe("20px 6px 2px");
+    expect(getComputedStyle(b).padding).toBe("20px 6px 2px");
     expect(b.getBoundingClientRect().top - a.getBoundingClientRect().bottom).toBeCloseTo(4, 1);
-    expect(visibleBlock(b).top - visibleBlock(a).bottom).toBeCloseTo(36, 1);
+    expect(visibleBlock(b).top - visibleBlock(a).bottom).toBeCloseTo(30, 1);
     expect(editor.state.doc.eq(original)).toBe(true);
     fireEvent.click(await findByRole("button", { name: "展开“A”章节" }));
     await waitFor(() => expect(field.querySelector(".rich-folded-content")).toBeNull());
@@ -345,7 +358,7 @@ test("saved relative paragraph spacing follows root font size in reading and edi
     for (const [root, editing] of [[reader.container.querySelector(".ui-note-markdown")!, false], [field, true]] as const) {
       const [a, b, after] = Array.from(root.querySelectorAll("p"));
       expect(parseFloat(getComputedStyle(a).fontSize)).toBe(bodySize);
-      const textGap = editing ? gap + rootSize : gap;
+      const textGap = editing ? gap + rootSize / 2 : gap;
       expect(visibleBlock(b).top - visibleBlock(a).bottom).toBeCloseTo(textGap, 1);
       expect(visibleBlock(after).top - visibleBlock(root.querySelector("h1")!).bottom).toBeCloseTo(textGap, 1);
       if (editing) {
@@ -363,12 +376,12 @@ for (const size of ["14", "16"]) test(`paragraphs keep the same padding around H
   const { field } = await editorFixture("First\n\nSecond\n\nBefore H1\n\n# Heading\n\nBody");
   const [first, second, beforeH1, heading, afterH1] = Array.from(field.children) as HTMLElement[];
   for (const paragraph of [first, second, beforeH1, afterH1]) {
-    expect(getComputedStyle(paragraph).padding).toBe("6px");
+    expect(getComputedStyle(paragraph).padding).toBe("2px 6px");
     expect(getComputedStyle(paragraph.firstElementChild!).padding).toBe("2px");
   }
-  for (const [previous, next] of [[first, second], [second, beforeH1], [beforeH1, heading], [heading, afterH1]]) {
+  for (const [previous, next, textGap] of [[first, second, 12], [second, beforeH1, 12], [beforeH1, heading, 34], [heading, afterH1, 12]] as const) {
     expect(next.getBoundingClientRect().top - previous.getBoundingClientRect().bottom).toBe(4);
-    expect(visibleBlock(next).top - visibleBlock(previous).bottom).toBe(next === heading ? 40 : 20);
+    expect(visibleBlock(next).top - visibleBlock(previous).bottom).toBe(textGap);
   }
 });
 
@@ -380,12 +393,12 @@ for (const size of ["14", "16"]) test(`headings and paragraphs use the same sele
   const next = body.nextElementSibling as HTMLElement;
   expect(body.matches(".rich-paragraph-block")).toBe(true);
   expect(field.querySelector("blockquote .rich-paragraph-block")).toBeNull();
-  expect(getComputedStyle(heading).paddingBottom).toBe("6px");
+  expect(getComputedStyle(heading).paddingBottom).toBe("2px");
   expect(getComputedStyle(heading.querySelector(".rich-heading-text")!).padding).toBe("2px");
   expect(getComputedStyle(body.querySelector(":scope > p")!).padding).toBe("2px");
-  expect(getComputedStyle(next).padding).toBe("6px");
-  expect(visibleBlock(body).top - visibleBlock(heading).bottom).toBe(20);
-  expect(visibleBlock(next).top - visibleBlock(body).bottom).toBe(20);
+  expect(getComputedStyle(next).padding).toBe("2px 6px");
+  expect(visibleBlock(body).top - visibleBlock(heading).bottom).toBe(12);
+  expect(visibleBlock(next).top - visibleBlock(body).bottom).toBe(12);
 
   const path = () => field.closest(".rich-editor")!.querySelector<SVGPathElement>(".rich-block-highlights > path");
   const { doc } = editor.state;
@@ -642,9 +655,12 @@ for (const size of ["14", "16"]) for (const width of [390, 1024]) {
           expect(path.getAttribute("d")?.match(/A4 4 0 0 1/g)).toHaveLength(4);
           if (element.parentElement === field) {
             const style = getComputedStyle(element);
+            const compact = ["paragraph", "heading", "bulletList", "orderedList", "taskList"].includes(node.type.name);
+            const blockPadding = compact ? "2px" : "6px";
+            const headingPadding = node.type.name === "heading" ? [24, 20, 16, 6][node.attrs.level - 1] : undefined;
             expect(style.paddingInline).toBe("6px");
-            expect(style.paddingBottom).toBe("6px");
-            if (!element.matches("h1, h2, h3, h4")) expect(style.paddingTop).toBe("6px");
+            expect(style.paddingBottom).toBe(blockPadding);
+            expect(style.paddingTop).toBe(headingPadding === undefined ? blockPadding : `${headingPadding}px`);
             const inner = element.firstElementChild!;
             expect(getComputedStyle(inner).paddingInlineEnd).toBe("2px");
             expect(inner.getBoundingClientRect().left - element.getBoundingClientRect().left).toBeCloseTo(6, 1);

@@ -77,8 +77,8 @@ export const SearchFailure: Story = { args: { scenario: "review-search-error", i
 export const SettingsReview: Story = { args: { scenario: "loading", initialRoute: "#/settings" } };
 export const TagDirectory: Story = { args: { scenario: "loading", initialRoute: "#/tags" }, play: async ({ canvasElement }) => {
   const directory = within(await within(canvasElement).findByRole("region", { name: "标签目录" }, { timeout: 10_000 }));
-  await expect(await directory.findByRole("button", { name: "查看标签 生活/咖啡 的笔记" })).toBeVisible();
-  await expect(directory.getByRole("list", { name: "其他" })).toBeVisible();
+  const group = within(await directory.findByRole("list", { name: "S" }));
+  await expect(group.getByRole("button", { name: "查看标签 生活/咖啡 的笔记" })).toBeVisible();
 } };
 export const TrashReview: Story = { args: { scenario: "review-trash", initialRoute: "#/trash" } };
 export const TrashLoading: Story = { args: { scenario: "review-trash-loading", initialRoute: "#/trash" } };

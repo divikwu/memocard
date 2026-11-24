@@ -40,6 +40,9 @@
   [data-slot=settings-skeleton] .web-setting-vault-picker .web-setting-vault-actions > :last-child { display: none; }
   [data-slot=settings-skeleton] .web-appearance-fields > div > :last-child { width: calc(var(--spacing-1) * 20); }
 }
+@media (min-width: 768px) {
+  .web-app[data-web-client] .web-settings-panel > section > .web-setting-vault-heading { padding-inline-start: 0; }
+}
 @media (max-width: 767px) {
   .web-app[data-web-client] .web-settings > .web-collection-heading { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .web-app[data-web-client] .web-settings-panel { padding: 0; border-radius: 0; background: transparent; }

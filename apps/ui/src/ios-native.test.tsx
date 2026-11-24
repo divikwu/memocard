@@ -144,6 +144,20 @@ it("preserves the native search session and rejects an older query reply",async(
 });
 
 
+it("publishes and activates a pinyin tag match in native search", async () => {
+  bridge.request.mockImplementation(async op => op === "queryNotes"
+    ? {notes: [], nextCursor: null, coverage: {complete: true}}
+    : {});
+  const onOpenTag = vi.fn();
+  render(<NoteSearchDialog open onOpenChange={vi.fn()} onOpenNote={vi.fn()} vaultName="测试库"
+    available returnFocus={{current: null}} tags={[{name: "测试", count: 2}]} onOpenTag={onOpenTag} />);
+  send("search", "query", "cs");
+  await waitFor(() => expect(surface("search").sections?.find(section => section.id === "results")?.actions)
+    .toEqual([expect.objectContaining({id: "tag:测试", title: "测试", selected: true})]));
+  send("search", "tag:测试");
+  expect(onOpenTag).toHaveBeenCalledExactlyOnceWith("测试");
+});
+
 it("uses native note deletion confirmation and prevents duplicate delete requests", async () => {
   let finish!: () => void;
   bridge.request.mockImplementation((op: string) => op === "deleteNote" ? new Promise<void>(resolve => { finish = resolve; }) : Promise.resolve({}));

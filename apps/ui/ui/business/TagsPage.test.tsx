@@ -30,7 +30,7 @@ it("defaults to alphabetical tags and keeps search when switching to independent
   const user = userEvent.setup(), args = props();
   render(<TagsPage {...args} tags={[{name: "生活/咖啡", count: 4}, {name: "3d", count: 2}, ...tags]} />);
   expect(screen.getByRole("tab", {name: "全部", selected: true})).toBeTruthy();
-  expect(screen.getAllByRole("heading", {level: 2}).map(heading => heading.textContent)).toEqual(["3", "A", "J", "其他"]);
+  expect(screen.getAllByRole("heading", {level: 2}).map(heading => heading.textContent)).toEqual(["3", "A", "J", "S"]);
   const coffee = within(screen.getByRole("list", {name: "A"})).getByRole("button", {name: "查看标签 area/coffee 的笔记"});
   expect(coffee.textContent).toContain("area/coffee2");
   await user.click(coffee);
@@ -46,6 +46,41 @@ it("defaults to alphabetical tags and keeps search when switching to independent
   await user.click(screen.getByRole("button", {name: "清空标签搜索"}));
   await user.click(screen.getByRole("tab", {name: "全部"}));
   expect(screen.getByRole("button", {name: "查看标签 3d 的笔记"})).toBeTruthy();
+});
+
+it("groups Chinese and English together and sorts by full pinyin with parents before children", () => {
+  const names = ["重量", "重庆", "cake", "车计划/测试", "测试10", "测试/笔", "测试2", "策划师", "测试", "车计划", "旅途/北京", "绿", "路", "Ωmega"];
+  render(<TagsPage {...props()} tags={names.map(name => ({name, count: 1}))} />);
+  const entries = (name: string) => within(screen.getByRole("list", {name}))
+    .getAllByRole("button", {name: /^查看标签 /}).map(button => button.getAttribute("data-tag-path"));
+  expect(screen.getAllByRole("heading", {level: 2}).map(heading => heading.textContent)).toEqual(["C", "L", "Z", "其他"]);
+  expect(entries("C")).toEqual(["cake", "策划师", "测试", "测试/笔", "测试2", "测试10", "车计划", "车计划/测试", "重庆"]);
+  expect(entries("L")).toEqual(["路", "绿", "旅途/北京"]);
+  expect(entries("Z")).toEqual(["重量"]);
+  expect(entries("其他")).toEqual(["Ωmega"]);
+});
+
+it("searches tags by original name, full pinyin and initials", () => {
+  const names = ["测试", "测试/笔", "AI测试", "重庆", "重量", "绿色", "work"];
+  render(<TagsPage {...props()} tags={names.map(name => ({name, count: 1}))} />);
+  const search = screen.getByRole("textbox", {name: "搜索标签"});
+  for (const [query, expected] of [
+    ["ceshi", ["AI测试", "测试", "测试/笔"]],
+    ["CS", ["AI测试", "测试", "测试/笔"]],
+    ["ce shi", ["AI测试", "测试", "测试/笔"]],
+    ["测试", ["AI测试", "测试", "测试/笔"]],
+    ["csb", ["测试/笔"]],
+    ["ceshi/bi", ["测试/笔"]],
+    ["aics", ["AI测试"]],
+    ["cq", ["重庆"]],
+    ["zl", ["重量"]],
+    ["lvse", ["绿色"]],
+    ["WORK", ["work"]],
+  ] as const) {
+    fireEvent.change(search, {target: {value: query}});
+    const matches = screen.getAllByRole("button", {name: /^查看标签 /}).map(button => button.getAttribute("data-tag-path"));
+    expect(matches, query).toEqual(expected);
+  }
 });
 
 it("creates a tag inline from the alphabetical view even when search has no results", async () => {
@@ -66,6 +101,18 @@ it("creates a tag inline from the alphabetical view even when search has no resu
   expect(created.getAttribute("aria-description")).toBe("0 条笔记");
   expect(all.queryByRole("textbox", {name: "标签名称"})).toBeNull();
   expect(JSON.parse(localStorage.getItem(key)!).labels).toEqual({reading: "Books to read"});
+});
+
+it("keeps a pinyin search when a newly created tag matches it", async () => {
+  const user = userEvent.setup();
+  render(<TagsPage {...props()} />);
+  const search = screen.getByRole("textbox", {name: "搜索标签"});
+  await user.type(search, "cs");
+  await user.click(screen.getByRole("button", {name: "新建标签"}));
+  fireEvent.change(screen.getByRole("textbox", {name: "标签名称"}), {target: {value: "测试"}});
+  await user.keyboard("{Enter}");
+  expect(await screen.findByRole("button", {name: "查看标签 测试 的笔记"})).toBeTruthy();
+  expect(search).toHaveProperty("value", "cs");
 });
 
 it("searches legacy names without a hierarchy", async () => {

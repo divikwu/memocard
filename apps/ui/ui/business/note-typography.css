@@ -135,6 +135,7 @@
 }
 
 .ui-note-markdown.typeset-memocard.rich-editor-content {
+  --note-heading-top-padding: var(--editor-block-space);
   --note-frame-padding: var(--editor-block-gutter, var(--editor-block-space));
   --note-frame-gap: var(--note-editor-gap, var(--spacing-1));
   display: flex;
@@ -146,6 +147,10 @@
     min-width: 0;
     margin: 0;
     padding: var(--note-frame-padding);
+  }
+
+  & > :is(.rich-paragraph-block, .rich-block-frame:has(> :is(ul, ol))) {
+    padding-block: var(--editor-block-space);
   }
 
   /* Keep the cursor in the existing gap without adding another row of space. */
@@ -163,18 +168,11 @@
     inset-inline: calc(var(--editor-block-gutter, 0px) + var(--editor-block-inline-inset));
   }
 
-  & > :not(.ProseMirror-gapcursor, .ProseMirror-widget) ~ :is(h1, h2, h3, h4) {
-    --note-heading-top-padding: max(0px, calc(var(--note-before) - var(--note-frame-gap) - var(--note-frame-padding) - var(--note-heading-previous-inner, 0px) - var(--editor-block-space)));
-    padding-block-start: var(--note-heading-top-padding);
-  }
-
-  /* Text and list items have an extra inset inside their block frame. */
-  & > :is(h1, h2, h3, h4, h5, h6, .rich-paragraph-block, .rich-block-frame:has(> :is(ul, ol, .rich-footnote)), .rich-folded-content) {
-    & + :is(h1, h2, h3, h4),
-    & + :is(.ProseMirror-gapcursor, .ProseMirror-widget) + :is(h1, h2, h3, h4) {
-      --note-heading-previous-inner: var(--editor-block-space);
-    }
-  }
+  & > h1 { --note-heading-top-padding: calc(var(--spacing-1) * 6); }
+  & > h2 { --note-heading-top-padding: calc(var(--spacing-1) * 5); }
+  & > h3 { --note-heading-top-padding: calc(var(--spacing-1) * 4); }
+  & > h4 { --note-heading-top-padding: calc(var(--spacing-1) * 1.5); }
+  & > :is(h1, h2, h3, h4, h5, h6) { padding-block: var(--note-heading-top-padding) var(--editor-block-space); }
 
   & > :is(h1, h2, h3, h4, h5, h6) > .rich-heading-text {
     display: block;

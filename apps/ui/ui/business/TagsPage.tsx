@@ -1,4 +1,4 @@
-import { Fragment, Suspense, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowDown02Icon from "@hugeicons/core-free-icons/ArrowDown02Icon";
 import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon";
@@ -10,6 +10,7 @@ import type { AppViewState } from "../../src/App";
 import type { TagGroup } from "@memocard/contracts";
 import { createId } from "../../src/uuid";
 import { normalizePropertyTag, tagKey } from "../../src/inline-tags";
+import { tagSearchKeys, tagSearchRank } from "../../src/tag-search";
 import { Button } from "../components/button";
 import { AddIcon } from "../icons";
 import { EmptyIllustration } from "./EmptyIllustration";
@@ -72,6 +73,8 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
     const unused = Object.keys(preferences.labels ?? {}).filter(name => !known.has(name));
     return unused.length ? [...indexedTags, ...unused.map(name => ({name, count: 0}))] : indexedTags;
   }, [indexedTags, preferences.labels]);
+  const searchKeys = useMemo(() => new Map(tags.map(tag => [tag.name, tagSearchKeys(tag.name)])), [tags]);
+  const getSortKey = useCallback((name: string) => searchKeys.get(name)!.sortKey, [searchKeys]);
   const [sort, setSort] = useState<GroupSort>({column: "name", descending: false});
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
@@ -88,7 +91,10 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   const returnPath = useRef("");
   const fallbackFocus = () => search.current ?? tabs.current?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]');
   const needle = query.trim().toLocaleLowerCase();
-  const matches = useMemo(() => tags.filter(tag => tag.name.toLocaleLowerCase().includes(needle)), [tags, needle]);
+  const matches = useMemo(() => {
+    const rank = tagSearchRank(needle);
+    return tags.filter(tag => rank(searchKeys.get(tag.name)!) >= 0);
+  }, [tags, searchKeys, needle]);
   const descriptions = new Map(Object.entries(preferences.labels ?? {}));
   const tagGroups = preferences.groups ?? [];
   const editedGroup = tagGroups.find(group => group.id === editing?.groupId);
@@ -181,7 +187,10 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
     }}
     onSaveLabel={async (name, description) => {
       await saveLabel(name, description, true);
-      if (view === "all") setQuery(current => name.toLocaleLowerCase().includes(current.trim().toLocaleLowerCase()) ? current : "");
+      if (view === "all") {
+        const keys = tagSearchKeys(name);
+        setQuery(current => tagSearchRank(current)(keys) >= 0 ? current : "");
+      }
     }} updateGroups={updateGroups} />;
   const groupSection = (group: TagGroup, entries: Tag[]) => {
     const { id, name } = group;
@@ -302,7 +311,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
           <colgroup><col /><col className="ui-tag-directory-description-column" /><col span={2} className="w-0" /></colgroup>
           {draftRows(draft)}
         </Table>}
-        {status ?? <TagDirectoryList tags={matches} renderTag={chip} />}
+        {status ?? <TagDirectoryList tags={matches} renderTag={chip} getSortKey={getSortKey} />}
       </TabsContent>
       <TabsContent value="groups" aria-busy={loading} className="ui-tag-directory-panel">
         {visibleGroups.length || draft ? <TagDirectoryTable label="群组标签列表" sort={sort} onSort={column => setSort(current => ({

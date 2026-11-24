@@ -2537,6 +2537,8 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
       expect(list.getAttribute("data-layout")).toBe("list");
       const open = within(list).getAllByRole("button", {name: /^打开 /})[0];
       await waitFor(() => expect(open).toHaveProperty("disabled", false));
+      expect(getComputedStyle(open).paddingInline).toBe("8px");
+      if (scenario.width < 768) expect(open.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
       const card = open.closest<HTMLElement>(".ui-note-list-card")!;
       const root = card.closest<HTMLElement>(".web-app")!;
       expect(root.getAttribute("data-web-client")).toBe("true");
@@ -2556,8 +2558,6 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
           const color = getComputedStyle(tag).color;
           const rowHover = getComputedStyle(tag).backgroundImage;
           expect(rowHover).not.toBe("none");
-          expect(getComputedStyle(open).paddingInlineStart).toBe("12px");
-          expect(getComputedStyle(open).paddingInlineEnd).toBe("12px");
           expect(getComputedStyle(card).borderRadius).toBe("8px");
           expect(getComputedStyle(open).borderRadius).toBe(getComputedStyle(card).borderRadius);
           await userEvent.hover(tag);
@@ -2656,7 +2656,7 @@ test("Web collection headings align with the sidebar brand and retain compact sp
         });
         expect(getComputedStyle(title.parentElement!).marginBottom).toBe("0px");
         expect(getComputedStyle(header, "::after").height).toBe("16px");
-        const content = title.closest(".web-page-content")!;
+        const content = title.closest<HTMLElement>(".web-page-content")!;
         await waitFor(() => expect(content.querySelector(".ui-note-toolbar, .ui-tag-directory-toolbar")).not.toBeNull());
         const toolbar = content.querySelector(".ui-note-toolbar, .ui-tag-directory-tab-header")!.getBoundingClientRect();
         const results = content.querySelector(".ui-note-results, .ui-tag-directory-panel")!.getBoundingClientRect();
@@ -2673,8 +2673,10 @@ test("Web collection headings align with the sidebar brand and retain compact sp
           expect(tabs.top).toBeCloseTo(toolbar.top, 1);
           expect(results.top).toBeGreaterThan(tabs.bottom);
         } else {
-          const recentTags = content.querySelector(".ui-note-recent-tags")!.getBoundingClientRect();
-          expect(recentTags.left).toBeCloseTo(title.parentElement!.getBoundingClientRect().left, 1);
+          const types = within(content).getByRole("tablist", {name: "类型"});
+          expect(getComputedStyle(title.parentElement!).paddingInlineStart).toBe("4px");
+          for (const tab of within(types).getAllByRole("tab")) expect(getComputedStyle(tab).paddingInline).toBe("8px");
+          expect(types.getBoundingClientRect().left).toBeCloseTo(title.parentElement!.getBoundingClientRect().left, 1);
           expect(toolbar.top - title.parentElement!.getBoundingClientRect().bottom).toBeCloseTo(8, 1);
         }
         expect(toolbar.right).toBeLessThanOrEqual(content.getBoundingClientRect().right);
@@ -3459,6 +3461,7 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
     const canvas = within(view.container);
     const advanced = (await canvas.findByText("高级排版")).closest("details")!;
     const vaultGroup = within(canvas.getByRole("region", {name: "笔记库"}));
+    const vaultHeading = vaultGroup.getByRole("heading", {name: "笔记库"});
     const vault = await vaultGroup.findByText(vaultName);
     const title = canvas.getByRole("heading", {name: "设置", level: 1});
     const card = canvas.getByRole("combobox", {name: "行宽"}).closest<HTMLElement>('[data-slot="card"]')!;
@@ -3472,6 +3475,7 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
         expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", width < 768 ? "drawer" : "sidebar");
       });
       const titleHeader = title.parentElement!;
+      expect(getComputedStyle(vaultHeading).paddingInlineStart).toBe(width < 768 ? "8px" : "0px");
       const bounds = card.getBoundingClientRect(), disclosure = advanced.getBoundingClientRect();
       expect(disclosure.left).toBeGreaterThanOrEqual(bounds.left);
       expect(disclosure.right).toBeLessThanOrEqual(bounds.right);
@@ -5375,7 +5379,7 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
         expect(content.getBoundingClientRect().width).toBe(720);
         const body = route === "settings" ? panel.querySelector("[data-slot=card]")! : panel;
         expect(body.getBoundingClientRect().width).toBe(720);
-        expect(body.getBoundingClientRect().left).toBe(title.getBoundingClientRect().left);
+        expect(body.getBoundingClientRect().left + (route === "tags" ? 8 : 0)).toBe(title.getBoundingClientRect().left);
       }
       if (route === "tags") {
         expect(canvas.getByRole("tablist", { name: "标签视图" })).toHaveAttribute("data-variant", "default");

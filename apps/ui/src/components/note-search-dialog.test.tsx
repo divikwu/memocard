@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import type { Note } from "@memocard/contracts";
 import { NoteSearchDialog } from "@ui/business/NoteSearchDialog";
+import type { NoteSearchProps } from "../use-note-search";
 import { swipeSheet } from "@ui/components/sheet-swipe.test-utils";
 
 const bridge = vi.hoisted(() => ({ request: vi.fn() }));
@@ -12,9 +13,9 @@ vi.mock("@ui/business/NoteMarkdown", () => ({ NoteMarkdown: ({ body }: { body: s
 const coverage = { complete: true, indexed: 2, pending: 0, issues: 0, indexedAt: "2026-10-16T00:00:00Z" };
 const note: Note = { id: "first", title: "项目计划", body: "计划正文", tags: ["工作"], relativePath: "projects/计划.md", createdAt: "2026-10-15T00:00:00Z", updatedAt: "2026-10-16T00:00:00Z", contentHash: "hash", sourceUrl: "" };
 const second = { ...note, id: "second", title: "周末散步", body: "散步正文", relativePath: "生活/散步.md" };
-function setup() {
+function setup(overrides: Partial<NoteSearchProps> = {}) {
   const onOpenNote = vi.fn(), onOpenChange = vi.fn();
-  const props = { open: true, onOpenNote, onOpenChange, vaultName: "测试库", available: true, returnFocus: { current: null } };
+  const props = { open: true, onOpenNote, onOpenChange, vaultName: "测试库", available: true, returnFocus: { current: null }, ...overrides };
   const view = render(<NoteSearchDialog {...props} />);
   return { ...view, props, onOpenNote, onOpenChange };
 }
@@ -26,6 +27,75 @@ beforeEach(() => {
   vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("(min-width: 1024px)"), addEventListener: vi.fn(), removeEventListener: vi.fn() })));
 });
 afterEach(()=>{cleanup();vi.unstubAllGlobals();});
+
+it("finds tags by name, pinyin and initials, and opens the selected result type", async () => {
+  const onOpenTag = vi.fn();
+  bridge.request.mockImplementation(async (_operation, {query}) => ({
+    notes: query === "ceshi" ? [] : [{ ...note, title: "测试" }],
+    nextCursor: null,
+    coverage,
+  }));
+  const { onOpenNote } = setup({ tags: [{name: "测试/笔", count: 5}, {name: "测试", count: 2}], onOpenTag });
+  await screen.findByRole("option", { name: "测试" });
+  expect(screen.queryByRole("group", {name: "标签"})).toBeNull();
+  const input = screen.getByRole("combobox", {name: "搜索笔记"});
+  for (const query of ["测试", "ceshi", "cs"]) {
+    fireEvent.change(input, { target: { value: query } });
+    const group = await screen.findByRole("listbox", { name: "搜索结果" });
+    await waitFor(() => expect(screen.getByRole("listbox", {name: "搜索结果"}).getAttribute("aria-busy")).toBe("false"));
+    const options = within(group).getAllByRole("option");
+    expect(options[0].getAttribute("aria-label")).toBe("标签 测试");
+    expect(options[0].getAttribute("aria-selected")).toBe("true");
+    expect(within(screen.getByRole("complementary", {name: "标签预览"})).getByText("2 条笔记")).toBeTruthy();
+    expect(screen.queryByText("没有找到相关笔记或标签")).toBeNull();
+  }
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(onOpenTag).toHaveBeenCalledExactlyOnceWith("测试");
+  fireEvent.keyDown(input, { key: "ArrowDown" });
+  fireEvent.keyDown(input, { key: "ArrowDown" });
+  fireEvent.keyDown(input, { key: "Enter" });
+  expect(onOpenNote).toHaveBeenCalledExactlyOnceWith(note.id);
+});
+
+it("waits for the first pinyin lookup before opening a result and falls back to literal matches on failure", async () => {
+  let failDictionary!: () => void;
+  vi.doMock("../tag-search", () => new Promise((_, reject) => {
+    failDictionary = () => reject(new Error("Dictionary unavailable"));
+  }));
+  try {
+    const onOpenTag = vi.fn();
+    const {onOpenNote} = setup({tags: [{name: "测试", count: 1}], onOpenTag});
+    const input = screen.getByRole("combobox");
+    fireEvent.change(input, {target: {value: "测试"}});
+    await screen.findByRole("option", {name: "项目计划"});
+    expect(screen.getByRole("listbox").getAttribute("aria-busy")).toBe("true");
+    fireEvent.keyDown(input, {key: "Enter"});
+    expect(onOpenTag).not.toHaveBeenCalled();
+    expect(onOpenNote).not.toHaveBeenCalled();
+    await act(async () => failDictionary());
+    await waitFor(() => expect(screen.getByRole("listbox").getAttribute("aria-busy")).toBe("false"));
+    fireEvent.keyDown(input, {key: "Enter"});
+    expect(onOpenTag).toHaveBeenCalledExactlyOnceWith("测试");
+  } finally {
+    vi.doUnmock("../tag-search");
+  }
+});
+
+it("mixes notes and tags in one ranked list and identifies both types", async () => {
+  bridge.request.mockResolvedValue({notes: [{...note, title: "测试"}, {...second, title: "正文命中"}], nextCursor: null, coverage});
+  setup({tags: [{name: "测试", count: 1}, {name: "测试/笔", count: 4}], onOpenTag: vi.fn()});
+  const input = screen.getByRole("combobox");
+  fireEvent.change(input, {target: {value: "测试"}});
+  const list = screen.getByRole("listbox", {name: "搜索结果"});
+  await waitFor(() => expect(list.getAttribute("aria-busy")).toBe("false"));
+  const options = within(list).getAllByRole("option");
+  expect(options.map(row => row.getAttribute("aria-label"))).toEqual(["标签 测试", "测试", "标签 测试/笔", "正文命中"]);
+  expect(options.every(row => row.querySelector("svg[aria-hidden=true]"))).toBe(true);
+  expect(within(list).queryByRole("group")).toBeNull();
+  expect(screen.queryByRole("group", {name: "搜索范围"})).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", {name: "清空搜索"}));
+  expect(await screen.findByRole("listbox", {name: "最近更新的笔记"})).toBeTruthy();
+});
 
 it("queries all notes by update time, previews keyboard selection and opens on Enter", async () => {
   const { onOpenNote } = setup();

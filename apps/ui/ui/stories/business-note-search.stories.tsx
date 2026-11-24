@@ -97,7 +97,7 @@ export const LoadingRegression: Story = {
   play: async ({ canvasElement }) => {
     const { search, input } = await searchDialog(canvasElement);
     await waitFor(() => expect(fixture.calls).toHaveLength(1));
-    await expect(search.getByRole("status")).toHaveTextContent("正在搜索笔记");
+    await expect(search.getByRole("status")).toHaveTextContent("正在搜索…");
     await expect(search.getByRole("listbox")).toHaveAttribute("aria-busy", "true");
     await expect(search.queryByRole("option")).not.toBeInTheDocument();
     await userEvent.type(input, "计划");

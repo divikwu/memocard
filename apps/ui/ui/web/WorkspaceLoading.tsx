@@ -22,7 +22,7 @@ export function SettingsLoading({ connected }: { connected: boolean }) {
     <header className="web-collection-heading"><h1 className="web-settings-title text-balance">设置</h1></header>
     <div className="web-settings-panel" data-slot="settings-skeleton">
       <span role="status" className="sr-only">正在读取设置…</span>
-      <section aria-hidden="true"><h2>笔记库</h2>
+      <section aria-hidden="true"><h2 className="web-setting-vault-heading">笔记库</h2>
         <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content">
           <div className="web-setting-row web-setting-vault-picker">
             <Skeleton className="h-4 w-32" />

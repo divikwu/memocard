@@ -821,11 +821,12 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   };
   const searchProps: NoteSearchProps = {
     open: searchOpen, preserveSession: isMobile, sessionRef: searchSession, onOpenChange: changeSearchOpen, vaultName: status?.vaultName || "笔记库",
-    available: searchAvailable, returnFocus: searchReturnFocus,
+    available: searchAvailable, returnFocus: searchReturnFocus, tags,
     onShortcutFocusBlur: searchPresentation === "shortcut"
       ? () => setSearchPresentation(current => current === "shortcut" ? "open" : current)
       : undefined,
     onOpenNote: id => { searchNoteReturn.current = isMobile ? status?.vaultId ?? null : null; setSearchPresentation("closed"); void openNote(id); },
+    onOpenTag: name => { setSearchPresentation("closed"); void navigate("notes", name); },
   };
   const deletionProps: NoteDeleteProps | null = noteToDelete ? {
     target: noteToDelete,

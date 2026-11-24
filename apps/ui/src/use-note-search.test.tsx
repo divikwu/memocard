@@ -23,7 +23,7 @@ it("keeps query, scroll and loaded pages while removing the last active result a
     ? page(deleted ? ["second", "third"] : ["third", "deleted"], deleted ? "fresh-tail" : "old-tail")
     : page(deleted ? ["new-before", "first"] : ["first", "second"], deleted ? "fresh-page" : "old-page"));
   const { result, sessionRef } = setup();
-  await waitFor(() => expect(result.current.notes).toHaveLength(2));
+  await waitFor(() => expect(result.current.page?.notes).toHaveLength(2));
   act(() => result.current.setQuery("query retained"));
   await waitFor(() => expect(result.current.loading).toBe(false));
   await act(async () => result.current.loadMore());
@@ -35,12 +35,12 @@ it("keeps query, scroll and loaded pages while removing the last active result a
   act(() => result.current.attachList(list));
   deleted = true;
   act(() => sessionRef.current!.removeNote("deleted"));
-  expect(result.current.notes.map(note => note.id)).toEqual(["first", "second", "third"]);
-  expect(result.current.active?.id).toBe("third");
+  expect(result.current.page?.notes.map(note => note.id)).toEqual(["first", "second", "third"]);
+  expect(result.current.active?.key).toBe("note:third");
   await waitFor(() => expect(result.current.page?.nextCursor).toBe("fresh-tail"));
   expect(result.current.query).toBe("query retained");
   expect(result.current.selected).toBe(3);
-  expect(result.current.active?.id).toBe("third");
+  expect(result.current.active?.key).toBe("note:third");
   expect(result.current.resultScroll.current).toBe(275);
   expect(list.scrollTop).toBe(275);
   expect(reveal).not.toHaveBeenCalled();
@@ -58,9 +58,9 @@ it("ignores a pre-deletion query response arriving after fresh results", async (
   const { result, sessionRef } = setup();
   await waitFor(() => expect(finishOld).toBeTypeOf("function"));
   act(() => sessionRef.current!.removeNote("deleted"));
-  await waitFor(() => expect(result.current.notes.map(note => note.id)).toEqual(["kept"]));
+  await waitFor(() => expect(result.current.page?.notes.map(note => note.id)).toEqual(["kept"]));
   await act(async () => finishOld(page(["deleted"])));
-  expect(result.current.notes.map(note => note.id)).toEqual(["kept"]);
+  expect(result.current.page?.notes.map(note => note.id)).toEqual(["kept"]);
   expect(result.current.loading).toBe(false);
 });
 
@@ -73,33 +73,33 @@ it("discards late pagination, keeps the surviving active identity and allows fre
     return Promise.resolve(page(deleted ? ["kept", "third"] : ["deleted", "kept"], deleted ? "fresh-page" : "old-page"));
   });
   const { result, sessionRef } = setup();
-  await waitFor(() => expect(result.current.notes).toHaveLength(2));
+  await waitFor(() => expect(result.current.page?.notes).toHaveLength(2));
   act(() => result.current.setSelected(1));
   let oldPage!: Promise<void>;
   act(() => { oldPage = result.current.loadMore(); });
   await waitFor(() => expect(finishOld).toBeTypeOf("function"));
   deleted = true;
   act(() => sessionRef.current!.removeNote("deleted"));
-  expect(result.current.active?.id).toBe("kept");
+  expect(result.current.active?.key).toBe("note:kept");
   await waitFor(() => expect(result.current.page?.nextCursor).toBe("fresh-page"));
   await act(async () => { finishOld(page(["deleted", "stale"])); await oldPage; });
-  expect(result.current.notes.map(note => note.id)).toEqual(["kept", "third"]);
+  expect(result.current.page?.notes.map(note => note.id)).toEqual(["kept", "third"]);
   await act(async () => result.current.loadMore());
-  expect(result.current.notes.map(note => note.id)).toEqual(["kept", "third", "fourth"]);
+  expect(result.current.page?.notes.map(note => note.id)).toEqual(["kept", "third", "fourth"]);
 });
 
 it("does not blacklist a restored identity from a later query", async () => {
   let deleted = false;
   bridge.request.mockImplementation(async (_operation, params) => page(params.query === "restored" || !deleted ? ["restored"] : []));
   const { result, sessionRef } = setup();
-  await waitFor(() => expect(result.current.notes).toHaveLength(1));
+  await waitFor(() => expect(result.current.page?.notes).toHaveLength(1));
   deleted = true;
   act(() => sessionRef.current!.removeNote("restored"));
   await waitFor(() => expect(result.current.paging).toBe(false));
-  expect(result.current.notes).toEqual([]);
+  expect(result.current.page?.notes).toEqual([]);
   expect(result.current.active).toBeUndefined();
   act(() => result.current.setQuery("restored"));
-  await waitFor(() => expect(result.current.notes[0]?.id).toBe("restored"));
+  await waitFor(() => expect(result.current.page?.notes[0]?.id).toBe("restored"));
 });
 
 it("retries a fresh cursor chain without clearing retained pages or query on a stale cursor", async () => {
@@ -110,7 +110,7 @@ it("retries a fresh cursor chain without clearing retained pages or query on a s
     return Promise.resolve(page(deleted ? ["kept"] : ["deleted", "kept"], deleted ? "fresh-page" : "old-page"));
   });
   const { result, sessionRef } = setup();
-  await waitFor(() => expect(result.current.notes).toHaveLength(2));
+  await waitFor(() => expect(result.current.page?.notes).toHaveLength(2));
   act(() => result.current.setQuery("same query"));
   await waitFor(() => expect(result.current.loading).toBe(false));
   await act(async () => result.current.loadMore());
@@ -118,7 +118,7 @@ it("retries a fresh cursor chain without clearing retained pages or query on a s
   act(() => sessionRef.current!.removeNote("deleted"));
   await waitFor(() => expect(result.current.paging).toBe(false));
   expect(result.current.query).toBe("same query");
-  expect(result.current.notes.map(note => note.id)).toEqual(["kept", "third"]);
+  expect(result.current.page?.notes.map(note => note.id)).toEqual(["kept", "third"]);
   expect(result.current.error).toBe("");
   expect(bridge.request.mock.calls.filter(([, params]) => params.cursor === "fresh-page")).toHaveLength(2);
 });
@@ -131,7 +131,7 @@ it.each(["old-tail", null])("retries a failed retained refresh without using the
     return Promise.resolve(page(deleted ? ["first"] : ["first", "deleted"], deleted ? "fresh-page" : "old-page"));
   });
   const { result, sessionRef } = setup();
-  await waitFor(() => expect(result.current.notes).toHaveLength(2));
+  await waitFor(() => expect(result.current.page?.notes).toHaveLength(2));
   act(() => result.current.setQuery("same query"));
   await waitFor(() => expect(result.current.loading).toBe(false));
   await act(async () => result.current.loadMore());
@@ -145,8 +145,8 @@ it.each(["old-tail", null])("retries a failed retained refresh without using the
   expect(result.current.page?.nextCursor).toBe(nextCursor);
   await act(async () => result.current.retrySearch());
   await waitFor(() => expect(result.current.page?.nextCursor).toBe("fresh-tail"));
-  expect(result.current.notes.map(note => note.id)).toEqual(["first", "third"]);
-  expect(result.current.active?.id).toBe("third");
+  expect(result.current.page?.notes.map(note => note.id)).toEqual(["first", "third"]);
+  expect(result.current.active?.key).toBe("note:third");
   expect(result.current.query).toBe("same query");
   expect(result.current.resultScroll.current).toBe(225);
   expect(list.scrollTop).toBe(225);

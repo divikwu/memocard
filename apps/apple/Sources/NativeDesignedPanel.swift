@@ -170,13 +170,18 @@ struct NativeDesignedPanel: View {
         .onChange(of: searchPosition) { _, value in host.nativeSearchPosition[instance] = value }
     }
 
+    private var selectedSearchResult: String? {
+        surface?.sections?.filter { $0.id != "query" && $0.id != "more" }.flatMap { $0.actions ?? [] }
+            .first { $0.selected == true }?.id
+    }
+
     private var searchContent: some View {
         VStack(spacing: 16) {
             if let field = section("query")?.fields?.first {
                 HStack(spacing: 12) {
                     NativeSearchInput(text: binding(field), prompt: field.title, accessibilityName: "搜索笔记", enabled: field.disabled != true,
                         focused: $searchFocused,
-                        submit: { if let selected = surface?.sections?.flatMap({ $0.actions ?? [] }).first(where: { $0.selected == true && $0.id.hasPrefix("note:") }) { send(selected.id) } },
+                        submit: { if let selectedSearchResult { send(selectedSearchResult) } },
                         move: { send($0 < 0 ? "up" : "down") })
                         .frame(height: 44)
                     NativeCloseButton(label: "退出搜索", size: 44) { send("close") }
@@ -191,21 +196,26 @@ struct NativeDesignedPanel: View {
                             VStack(spacing: 12) {
                                 if surface?.loading == true { ProgressView() }
                                 Text(message).font(.system(size: 14)).foregroundStyle(color("muted-foreground"))
-                                if !query.isEmpty && surface?.loading != true { Text("试试其他关键词，搜索标题或正文。").font(.system(size: 12)).foregroundStyle(color("muted-foreground")) }
+                                if !query.isEmpty && surface?.loading != true { Text("试试其他关键词，搜索标题、正文或标签。").font(.system(size: 12)).foregroundStyle(color("muted-foreground")) }
                             }.frame(maxWidth: .infinity).padding(.vertical, 40)
                         }
                         ForEach(Array((surface?.sections ?? []).filter { $0.id != "query" && $0.id != "more" }.enumerated()), id: \.element.id) { index, group in
                             if let title = group.title { Text(title).font(.system(size: 12, weight: .medium)).foregroundStyle(color("muted-foreground")).frame(height: 16).padding(.horizontal, 12).padding(.top, index == 0 ? 12 : 20).padding(.bottom, 8) }
                             ForEach(group.actions ?? []) { item in
                                 Button { send(item.id) } label: {
-                                    highlighted(item.title).font(.system(size: 14, weight: .medium)).lineLimit(1)
+                                    HStack(spacing: 8) {
+                                        Image(systemName: item.id.hasPrefix("tag:") ? "tag" : "doc")
+                                            .font(.system(size: 14)).frame(width: 16).foregroundStyle(color("muted-foreground")).accessibilityHidden(true)
+                                        highlighted(item.title).font(.system(size: 14, weight: .medium)).lineLimit(1)
+                                    }
                                         .frame(height: 20)
                                         .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 12).padding(.vertical, 10)
                                         .background(item.selected == true ? color("accent") : .clear, in: RoundedRectangle(cornerRadius: 8))
                                         .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain).disabled(item.disabled == true).id(item.id)
-                                .accessibilityLabel(item.title).accessibilityAddTraits(item.selected == true ? .isSelected : [])
+                                .accessibilityLabel(item.id.hasPrefix("tag:") ? "标签 \(item.title)" : item.title)
+                                .accessibilityAddTraits(item.selected == true ? .isSelected : [])
                             }
                         }
                         if let error = surface?.error, !error.isEmpty {
@@ -222,7 +232,7 @@ struct NativeDesignedPanel: View {
                 .scrollPosition(id: $searchPosition, anchor: .top)
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: query) { searchPosition = nil; proxy.scrollTo("top", anchor: .top) }
-                .onChange(of: surface?.sections?.flatMap { $0.actions ?? [] }.first { $0.selected == true && $0.id.hasPrefix("note:") }?.id) { previous, selected in
+                .onChange(of: selectedSearchResult) { previous, selected in
                     if previous != nil, let selected { proxy.scrollTo(selected, anchor: .center) }
                 }
             }
