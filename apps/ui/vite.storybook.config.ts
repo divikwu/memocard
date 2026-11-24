@@ -17,7 +17,7 @@ export default defineConfig({
       "CheckmarkCircle02", "Code", "Comment01", "Database01", "Dumbbell01", "Files01", "Fire", "GameController01",
       "Gift", "Grid2x2", "Headphones", "HeartAdd", "Home01", "LaptopMinimal", "Leaf01", "ListChecks", "Location01",
       "Mail01", "Moon02", "MusicNote01", "NotebookTabs", "PaintBrush01", "Presentation01", "Restaurant01", "Rocket01",
-      "Settings01", "ShoppingBag01", "SmartPhone01", "Star", "StickyNote01", "Subtitle", "Sun01", "Target01", "Task01",
+      "Settings01", "ShoppingBag01", "SmartPhone01", "Star", "StickyNote01", "Subtitle", "Sun01", "Target01", "Task01", "TextBold", "TextItalic",
       "UserGroup", "Video01", "Wallet01", "Wrench01",
     ].map(icon => `@hugeicons/core-free-icons/${icon}Icon`),
   ] },

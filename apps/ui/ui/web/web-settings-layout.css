@@ -1,13 +1,12 @@
-.web-settings { display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 4); min-width: 0; }
-.web-settings-panel { flex: 1; min-width: 0; padding: calc(var(--spacing-1) * 4); border-radius: var(--radius-item); background: var(--color-background-surface); }
+.web-settings { --web-settings-card-inset: calc(var(--spacing-1) * 4); display: flex; flex-direction: column; gap: calc(var(--spacing-1) * 4); min-width: 0; }
+.web-settings-panel { display: flex; flex: 1; flex-direction: column; gap: calc(var(--spacing-1) * 6); min-width: 0; padding: calc(var(--spacing-1) * 4); border-radius: var(--radius-item); background: var(--color-background-surface); }
 .web-settings-title { display: flex; align-items: center; min-height: calc(var(--size-element-md) + var(--spacing-1)); margin: 0; font-family: var(--font-family-heading); font-size: var(--workspace-title-font-size, var(--font-size-2xl)); font-weight: var(--font-weight-semibold); line-height: var(--workspace-title-line-height, var(--text-heading-2-leading)); }
 .web-settings-panel > section { display: grid; width: 100%; max-width: 45rem; margin-inline: auto; min-width: 0; gap: calc(var(--spacing-1) * 2); }
-.web-settings-panel > section + section { margin-block-start: calc(var(--spacing-1) * 6); }
 .web-settings-panel > section > [data-slot="card"] { min-width: 0; border: 0; border-radius: var(--radius-item); background: var(--color-background-body); }
 .web-settings-panel > section > :is(h2, .web-setting-section-heading) { padding-inline: calc(var(--spacing-1) * 2) 0; }
 .web-settings-panel > section > h2, .web-setting-section-heading h2 { display: flex; align-items: center; min-height: var(--size-element-sm); margin: 0; color: var(--color-text-secondary); font-family: var(--font-family-heading); font-size: var(--font-size-sm); font-weight: var(--font-weight-normal); }
 .web-setting-section-heading { align-self: start; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: calc(var(--spacing-1) * 2); min-width: 0; }
-.web-setting-card-content { padding-inline: calc(var(--spacing-1) * 4); }
+.web-setting-card-content { padding-inline: var(--web-settings-card-inset); }
 .web-setting-card-content > :not(:last-child) { border-bottom: var(--border-width) solid var(--color-divider); }
 .web-setting-row, .web-appearance-fields > div:not(.web-font-status), .web-advanced-fields > div { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; min-width: 0; gap: calc(var(--spacing-1) * 3); padding-block: calc(var(--spacing-1) * 3); }
 .web-setting-vault-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: calc(var(--spacing-1) * 2); }
@@ -15,7 +14,35 @@
   .web-setting-row, .web-appearance-fields > div:not(.web-font-status), .web-advanced-fields > div { flex-direction: row; align-items: center; gap: calc(var(--spacing-1) * 6); }
 }
 @media (min-width: 640px) { .web-settings-panel { padding: calc(var(--spacing-1) * 8) calc(var(--spacing-1) * 6); } }
+.web-app[data-web-client] .web-settings {
+  --web-settings-card-inset: calc(var(--spacing-1) * 2);
+  --web-settings-row-min: var(--size-element-md);
+  --web-settings-list-gap: calc(var(--web-settings-card-inset) * 2 + var(--border-width));
+  .web-settings-panel { gap: calc(var(--spacing-1) * 4); }
+  .web-settings-panel > section { gap: var(--spacing-1); }
+  .web-setting-card-content { display: flex; flex-direction: column; gap: var(--web-settings-list-gap); padding: var(--web-settings-card-inset); }
+  .web-setting-card-content > :not(.web-setting-list-row, .web-file-status) { padding-inline: var(--web-settings-card-inset); }
+  .web-setting-card-content > :not(:last-child) { position: relative; border-bottom: 0; }
+  .web-setting-card-content > :not(:last-child)::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--web-settings-card-inset);
+    inset-block-start: calc(100% + var(--web-settings-card-inset));
+    border-block-start: var(--border-width) solid var(--color-divider);
+    pointer-events: none;
+  }
+  .web-setting-row { flex-flow: row wrap; align-items: center; gap: calc(var(--spacing-1) * 2); }
+  .web-setting-row:not(.web-setting-list-row) { padding-block: var(--spacing-1); }
+  .web-setting-row > .web-setting-description { flex: 1 1 auto; }
+  .web-setting-row > .web-setting-description > .truncate { white-space: normal; overflow-wrap: anywhere; }
+  [data-slot=settings-skeleton] :is(.web-setting-vault-picker, .web-appearance-fields > div) { flex-direction: row; align-items: center; min-block-size: var(--web-settings-row-min); padding-block: 0; }
+  [data-slot=settings-skeleton] .web-setting-vault-picker .web-setting-vault-actions > :first-child { width: calc(var(--spacing-1) * 12); height: var(--font-size-base); }
+  [data-slot=settings-skeleton] .web-setting-vault-picker .web-setting-vault-actions > :last-child { display: none; }
+  [data-slot=settings-skeleton] .web-appearance-fields > div > :last-child { width: calc(var(--spacing-1) * 20); }
+}
 @media (max-width: 767px) {
+  .web-app[data-web-client] .web-settings > .web-collection-heading { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .web-app[data-web-client] .web-settings-panel { padding: 0; border-radius: 0; background: transparent; }
+  .web-app[data-web-client] .web-settings-panel > section { max-width: none; }
   .web-app[data-web-client] .web-settings-panel > section > [data-slot="card"] { background: var(--color-background-surface); }
 }

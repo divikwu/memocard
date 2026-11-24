@@ -61,7 +61,7 @@ export const DesktopResultsRegression: Story = {
     await search.findByRole("option", { name: "周末散步" });
     const preview = search.getByRole("complementary", { name: "笔记预览" });
     await expect(within(preview).getByRole("heading", { name: "项目计划" })).toBeVisible();
-    await expect(within(preview).getByText(/这是项目计划正文/)).toBeVisible();
+    await expect(await within(preview).findByText(/这是项目计划正文/)).toBeVisible();
     await expect(fixture.calls[0]).toEqual({ operation: "queryNotes", params: { query: "", tags: [], sort: "updatedAt", limit: 30 } });
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(body.queryByRole("dialog", { name: "搜索笔记" })).not.toBeInTheDocument());

@@ -1,6 +1,6 @@
 # 已使用组件维护表
 
-本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **103 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
+本表按唯一生产入口 `apps/ui/src/main.tsx` 的运行时依赖图维护。当前为 **138 个生产可达 TSX 模块**，同时遍历保留的 `src` 共享业务和 `ui` 当前组件。排除声明级 type-only、测试、故事、预览专属和不可达历史代码；字面量动态 import 包含在图中。图按模块保守追踪，不模拟导出级 tree shaking，也不表示所有组件都在每条路由挂载。
 
 当前产品和唯一 Storybook 共用当前组件。iOS 的 SwiftUI/UIKit 导航、搜索、快速记录及系统确认通过表面协议保持；正文继续消费同一 Web 输出。共享core仍可直接消费Base UI/Tiptap，不称作无界面依赖的纯算法。
 
@@ -14,6 +14,7 @@
 | `apps/ui/src/DatePropertyPicker.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/ImagePropertyEditor.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/NoteProperties.core.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
+| `apps/ui/src/PropertySortMotion.tsx` | Web 属性排序动效 | 拖动让位、松手落位和减少动态效果 | property / motion | `apps/ui/test-support/ui-quality.browser.tsx` | 随可写属性排序按需加载 |
 | `apps/ui/src/PropertyOptionList.tsx` | 保留共享实现；由当前UI消费 | 属性共享状态、提交/取消、保存与控件注入 | editor / property / runtime | `apps/ui/ui/business/NoteProperties.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内部模块随所属组合维护；不新增独立Story，真实设备另验 |
 | `apps/ui/src/PropertyOptionsLoading.tsx` | 共享属性选项加载占位 | 标签和选项编辑器加载时保留已选值，以骨架占位呈现列表 | property / loading / state | `apps/ui/ui/business/TagPropertyEditor.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 随属性弹层维护；尊重减少动态效果设置 |
 | `apps/ui/src/PropertyOptionsFailure.tsx` | 共享属性选项失败状态 | 在属性弹层下部显示加载失败与重试入口，保留顶部已选值 | property / error / recovery | `apps/ui/ui/business/NoteProperties.loading.test.tsx`；`apps/ui/ui/business/TagPropertyEditor.test.tsx` | 随属性弹层维护；重试保留选择与搜索内容 |
@@ -116,6 +117,7 @@
 | `apps/ui/ui/components/switch.tsx` | 当前Base UI/HTML控件适配 | switch；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-switch.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/table.tsx` | 当前 HTML 表格适配 | 原生表头/单元格语义与横向溢出容器；标签目录消费 | table / type / size / responsive | `apps/ui/ui/business/TagsPage.test.tsx`；`apps/ui/ui/stories/luma-table.stories.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 组合测试由消费端维护；辅助技术与大数据量另验 |
 | `apps/ui/ui/components/tabs.tsx` | 当前Base UI/HTML控件适配 | tabs；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-tabs.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
+| `apps/ui/ui/components/tabs-indicator.tsx` | Base UI 选中指示器 | 主页和标签页的选中位置、尺寸和过渡 | motion / size / color | `apps/ui/test-support/ui-quality.browser.tsx` | 随启用指示器的标签页按需加载 |
 | `apps/ui/ui/components/textarea.tsx` | 当前Base UI/HTML控件适配 | textarea；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-textarea.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/tooltip.tsx` | 当前Base UI/HTML控件适配 | tooltip；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-tooltip.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/toast.tsx` | 当前 Base UI 通知适配 | 基于 shadcn/ui Base Luma Toast，复用项目按钮、图标和主题 | theme / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 消费端控制显示时机和操作 |
@@ -126,6 +128,7 @@
 | `apps/ui/ui/web/WebAppView.tsx` | 当前产品视图编排 | AppViewState；主页/编辑/设置/回收站、通知和草稿 | theme / layout / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 内存夹具不替代真实库和WKWebView生命周期 |
 | `apps/ui/ui/web/WorkspaceLoading.tsx` | 首页与设置加载 | 快速记录和设置分组占位；复用页面布局 | theme / layout / state | `apps/ui/test-support/ui-quality.browser.tsx` | 模拟慢读取检查加载前后首页位置 |
 | `apps/ui/ui/web/DraftReminderToast.tsx` | Web 草稿提醒 | 桌面笔记列表按需加载；打开草稿与关闭提醒 | layout / state | `apps/ui/ui/web/WebApp.test.tsx` | 按会话处理提醒，草稿保留在原入口 |
+| `apps/ui/ui/web/EditorLoadErrorToast.tsx` | Web 编辑器加载错误 | 加载失败时按需显示常驻 Toast；提供重试和刷新 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 关闭后在页面保留重试入口 |
 | `apps/ui/ui/web/WorkspaceFrame.tsx` | 稳定工作区宿主 | 固定内容路径、布局区域与外观作用域 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 编辑器和业务弹层不因主题更换宿主 |
 | `apps/ui/ui/web/appearance/AppearanceRuntime.tsx` | 外观解析与资源提交 | 只读目录、环境回退、按需加载、竞态和重试 | theme / layout / state | `apps/ui/ui/web/appearance/AppearanceRuntime.test.tsx` | 不迁移偏好 v2，不注册第三方运行时代码 |
 | `apps/ui/ui/web/layouts/sidebar.tsx` | 侧栏及抽屉布局出口 | 复用 AppSidebar 和现有页头入口 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 原生仍走已有外框 |
@@ -138,6 +141,7 @@
 | `apps/ui/ui/web/WebTopNavigation.tsx` | Web 轻简顶部导航 | 主页/笔记/标签，新建/搜索/更多与详情返回 | theme / layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 窄屏沿用抽屉，原生端不消费顶部导航 |
 | `apps/ui/ui/web/WebAppearance.tsx` | 当前外观偏好 | 界面主题、明暗/系统、强调色、中性色、字体与圆角；兼容旧设备值 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/web/WebFontRecovery.test.tsx` | 全字体与所有组合不等于已逐项真机验收 |
 | `apps/ui/ui/web/WebSettingSelect.tsx` | 当前设置选择控件 | label关联、受控值、键盘和回焦 | input / focus / type | `apps/ui/ui/web/WebAppearance.test.tsx` | 内部组合无需独立Story；辅助技术另验 |
+| `apps/ui/ui/web/WebSettingsDisclosure.tsx` | 当前设置折叠控件 | 原生展开、可反向过渡和收起时的焦点管理 | settings / motion / focus | `apps/ui/test-support/ui-quality.browser.tsx` | 随设置页维护 |
 | `apps/ui/ui/web/WebSettings.tsx` | 当前设置页面 | 库操作、文件状态、外观、正文风格、MCP和本机Web | theme / property / state | `apps/ui/ui/web/WebSettings.test.tsx`；`apps/ui/ui/web/WebAppearance.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 系统授权、跨窗口与全部字体矩阵另验 |
 | `apps/ui/ui/web/ReopenLocalWeb.tsx` | 本机 Web 重新打开入口 | 连接提示及设置页中的原生链接 | navigation / state | `apps/ui/ui-state-fixtures/app-controller-states.test.tsx` | 跳转由本机菜单栏服务处理 |
 | `apps/ui/ui/web/WebTypographyProvider.tsx` | 正文风格适配 | 共享TypographyProvider；实际字体与笔记变量 | typeset / typography | `apps/ui/ui/web/WebTypography.test.tsx` | 浏览器实际字形与字体失败另验 |

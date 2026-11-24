@@ -1,4 +1,4 @@
-import { Fragment, Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Fragment, Suspense, useEffect, useRef, useState, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
 import type { AppViewState } from "../../src/App";
 import { noteFilterEmptyTitles, noteFilterLabels } from "../../src/note-filter-labels";
 import { noteDetailPropertyPreviewRows, notePropertyPreviewKey } from "../../src/note-property-preview";
@@ -35,6 +35,7 @@ import RefreshIcon from "@hugeicons/core-free-icons/RefreshIcon";
 import AlertCircleIcon from "@hugeicons/core-free-icons/AlertCircleIcon";
 import TextFontIcon from "@hugeicons/core-free-icons/TextFontIcon";
 import { WebTypographyProvider } from "./WebTypographyProvider";
+import { localWebEntryMissing } from "./local-web-entry-missing";
 import { ReopenLocalWeb } from "./ReopenLocalWeb";
 import { useNoteAppearance } from "./note-appearance";
 import { recoverableLazy } from "../components/recoverable-lazy";
@@ -44,9 +45,31 @@ import { HomeCaptureLoading, SettingsLoading } from "./WorkspaceLoading";
 import "../business/NotePageTitle.css";
 import "./web-app.css";
 
-const WebSettings = recoverableLazy(() => import("./WebSettings").then(module => ({ default: module.WebSettings })), "设置");
-const Editor = recoverableLazy(() => import("../business/Editor").then(module => ({ default: module.Editor })), "笔记编辑器");
-const QuickCapture = recoverableLazy(() => import("../business/QuickCapture").then(module => ({ default: module.QuickCapture })), "快速记录");
+function lazyWorkspaceFeature<Props extends object>(title: string, load: () => Promise<ComponentType<Props>>) {
+  return recoverableLazy(async () => {
+    try {
+      return { default: await load() };
+    } catch (error) {
+      if (!await localWebEntryMissing()) throw error;
+      return { default: () => <PageNotice tone="info" title="本机服务已更新" actions={
+        <Button variant="outline" size="sm" onClick={() => window.location.reload()}>刷新页面</Button>
+      }>刷新后即可使用{title}。</PageNotice> };
+    }
+  }, title, (_, retry) => <PageNotice title={`${title}未能打开`} actions={<>
+    <Button variant="outline" size="sm" onClick={retry}>重新加载{title}</Button>
+    <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>刷新页面</Button>
+  </>}>如果重新加载后仍无法打开，请刷新页面。</PageNotice>);
+}
+
+const WebSettings = lazyWorkspaceFeature("设置页", async () => (await import("./WebSettings")).WebSettings);
+const QuickCapture = lazyWorkspaceFeature("快速记录", async () => (await import("../business/QuickCapture")).QuickCapture);
+const EditorLoadErrorToast = recoverableLazy(() => import("./EditorLoadErrorToast"), "编辑器加载提示",
+  ({ retry }) => <PageNotice title="笔记编辑器加载失败" actions={<>
+    <Button variant="outline" size="sm" onClick={retry}>重试加载</Button>
+    <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>刷新页面</Button>
+  </>}>如果重试后仍无法打开，请刷新当前页面。</PageNotice>);
+const Editor = recoverableLazy(() => import("../business/Editor").then(module => ({ default: module.Editor })), "笔记编辑器",
+  (_props, retry) => <Suspense fallback={null}><EditorLoadErrorToast retry={retry} /></Suspense>);
 const NoteSearchDialog = recoverableLazy(() => import("../business/NoteSearchDialog").then(module => ({ default: module.NoteSearchDialog })), "搜索");
 const TrashPage = recoverableLazy(() => import("../business/TrashPage").then(module => ({ default: module.TrashPage })), "回收站");
 const WorkspaceTags = recoverableLazy(() => import("../business/TagsPage").then(module => ({ default: module.WorkspaceTags })), "标签");
@@ -78,13 +101,10 @@ function NoteDetail({ title, titleKnown, showProperties, propertyRows, children 
     <span className="sr-only" role="status" aria-label="正在读取内容">正在读取内容…</span>
     {showSkeleton && <div data-slot="note-detail-skeleton" aria-hidden="true">
       {!titleKnown && <div className="note-page-title web-note-loading-title"><Skeleton className="h-6 w-1/2" /></div>}
-      {showProperties && <div className="web-note-loading-properties">
-        {propertyRows > 0 && <div className="web-note-loading-property-rows">
-          {Array.from({ length: propertyRows }, (_, row) => <div className="web-note-loading-property" key={row}>
-            <Skeleton className="h-4 w-20 max-w-full" /><Skeleton className={row % 2 ? "h-4 w-24 max-w-full" : "h-4 w-32 max-w-full"} />
-          </div>)}
-        </div>}
-        <div className="web-note-loading-property-footer"><Skeleton className="h-4 w-20" /></div>
+      {showProperties && propertyRows > 0 && <div className="web-note-loading-properties">
+        {Array.from({ length: propertyRows }, (_, row) => <div className="web-note-loading-property" key={row}>
+          <Skeleton className="h-4 w-20 max-w-full" /><Skeleton className={row % 2 ? "h-4 w-24 max-w-full" : "h-4 w-32 max-w-full"} />
+        </div>)}
       </div>}
       {!showProperties && <div className="web-note-loading-body">
         <Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-5/6" /><Skeleton className="h-4 w-2/3" />
@@ -247,7 +267,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
               {showNoteAppearance && <>
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger><HugeiconsIcon icon={TextFontIcon} strokeWidth={2} aria-hidden="true" />外观和布局</DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent aria-label="外观和布局" side={s.isMobile ? "bottom" : "left"} align={s.isMobile ? "end" : "start"} sideOffset={4} className="w-72 max-w-[calc(100dvw-1.5rem)]">
+                  <DropdownMenuSubContent aria-label="外观和布局" side={s.isMobile ? "bottom" : "left"} align={s.isMobile ? "end" : "start"} sideOffset={4} className="w-72 max-w-[calc(100dvw-1.5rem)] p-2">
                     <Suspense fallback={<p className="px-2 py-2.5 text-xs text-secondary" role="status">正在读取笔记外观…</p>}><NoteAppearanceMenu appearance={noteAppearance} /></Suspense>
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>

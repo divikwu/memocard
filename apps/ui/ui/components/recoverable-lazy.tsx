@@ -1,5 +1,18 @@
-import { Component, lazy, type ComponentProps, type ComponentType, type ReactNode } from "react";
+import { Component, lazy, useEffect, useState, type ComponentProps, type ComponentType, type ReactNode } from "react";
+import { localWebEntryMissing } from "../web/local-web-entry-missing";
 import { Button } from "./button";
+
+function LoadRecovery({ title, retry }: { title: string; retry: () => void }) {
+  const [needsRefresh, setNeedsRefresh] = useState(false);
+  useEffect(() => {
+    void localWebEntryMissing().then(setNeedsRefresh);
+  }, []);
+  return <div role="alert">
+    {needsRefresh
+      ? <Button variant="outline" onClick={() => window.location.reload()}>刷新页面</Button>
+      : <Button variant="outline" onClick={retry}>重试加载{title}</Button>}
+  </div>;
+}
 
 // Match React.lazy's component constraint while preserving each loader's props.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,10 +32,7 @@ export function recoverableLazy<View extends ComponentType<any>>(load: () => Pro
 
     render() {
       if (this.state.failed && fallback) return fallback(this.props, this.retry);
-      if (this.state.failed) return <section role="alert" className="space-y-3 p-4">
-        <p>无法打开{title}，请检查连接后重试。</p>
-        <Button variant="outline" onClick={this.retry} aria-label={`重试加载${title}`}>重试</Button>
-      </section>;
+      if (this.state.failed) return <LoadRecovery title={title} retry={this.retry} />;
       const Loaded = this.state.View as ComponentType<Props>;
       return <Loaded {...this.props as Props} />;
     }

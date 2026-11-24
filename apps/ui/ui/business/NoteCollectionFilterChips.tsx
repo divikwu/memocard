@@ -26,7 +26,7 @@ export function FilterChip({ label, icon, count, ariaLabel = label, description,
   </Button>;
 }
 
-export function NoteTypeTabs({ disabled, scrollerRef }: Pick<NoteCollectionFiltersProps, "disabled"> & { scrollerRef: Ref<HTMLDivElement> }) {
+export function NoteTypeTabs({ disabled, scrollerRef, children }: Pick<NoteCollectionFiltersProps, "disabled"> & { scrollerRef: Ref<HTMLDivElement>; children: ReactNode }) {
   const options = [{ id: "all", label: "全部类型", icon: "layers" as const }, ...workspaceFilters];
   return <TabsList ref={scrollerRef} variant="pill" activateOnFocus aria-label="类型" data-transparent-inactive
     className="ui-note-recent-tags gap-2 justify-start">
@@ -35,5 +35,6 @@ export function NoteTypeTabs({ disabled, scrollerRef }: Pick<NoteCollectionFilte
       <span className="text-secondary group-data-active/type-tab:text-primary"><SidebarIcon name={option.icon} /></span>
       {option.label}
     </TabsTrigger>)}
+    {children}
   </TabsList>;
 }

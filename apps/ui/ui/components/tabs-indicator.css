@@ -1,0 +1,85 @@
+[data-slot=tabs-list]:has(> [data-slot=tabs-indicator]) { position: relative; isolation: isolate; }
+[data-slot=tabs-indicator] {
+  position: absolute;
+  left: 0;
+  top: var(--active-tab-top);
+  width: var(--active-tab-width);
+  height: var(--active-tab-height);
+  translate: var(--active-tab-left) 0;
+  border-radius: var(--radius-full);
+  background: var(--color-tab-active);
+  z-index: -1;
+  pointer-events: none;
+}
+[data-variant=pill] > [data-slot=tabs-indicator] { background: var(--color-background-surface); }
+[data-variant=line] > [data-slot=tabs-indicator] {
+  top: auto;
+  bottom: 0;
+  height: calc(var(--spacing-1) / 2);
+  border-radius: 0;
+  background: var(--color-text-primary);
+  z-index: 0;
+}
+[data-slot=tabs-list]:has(> [data-slot=tabs-indicator]:not([hidden])) > [data-active] { background: transparent; }
+[data-variant=line]:has(> [data-slot=tabs-indicator]:not([hidden])) > [data-slot=tabs-trigger]::after { display: none; }
+.ui-note-recent-tags:has(> [data-slot=tabs-indicator]:not([hidden])) > [role=tab] {
+  background: transparent;
+  transition-property: color;
+
+  &:not([data-active])::before {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--color-background-control);
+    pointer-events: none;
+  }
+  &:not([data-active]):hover::before {
+    background: color-mix(in oklch, var(--color-background-control), var(--color-text-primary) 5%);
+  }
+}
+.ui-note-home-tabs + .ui-note-actions .ui-note-layout {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset-block: calc(var(--spacing-1) / 2);
+    inset-inline-start: calc(var(--spacing-1) / 2);
+    inline-size: calc(50% - var(--spacing-1) / 2);
+    border-radius: var(--radius-full);
+    background: var(--color-background-surface);
+    pointer-events: none;
+    translate: 0;
+  }
+  &:has(> button + button[aria-pressed=true])::before { translate: 100%; }
+  &:dir(rtl):has(> button + button[aria-pressed=true])::before { translate: -100%; }
+  & > button { transition-property: color, translate; }
+  & > [aria-pressed=true] { background-color: transparent; }
+}
+@media (max-width: 767px) {
+  .web-app .ui-note-home-tabs [data-slot=tabs-indicator] {
+    top: var(--active-tab-top);
+    bottom: auto;
+    height: var(--active-tab-height);
+    border-radius: var(--radius-full);
+    background: var(--color-background-surface);
+    z-index: -1;
+  }
+  .web-app .ui-note-home-tabs [data-slot=tabs-list]:has(> [data-slot=tabs-indicator]:not([hidden])) > [data-active] { background: transparent; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ui-note-home-tabs + .ui-note-actions .ui-note-layout::before {
+    transition: translate var(--duration-fast-max) var(--ease-standard);
+  }
+  [data-slot=tabs-indicator] {
+    transition: translate var(--duration-fast-max) var(--ease-standard), width var(--duration-fast-max) var(--ease-standard);
+  }
+}
+@media (forced-colors: active) {
+  .ui-note-home-tabs + .ui-note-actions .ui-note-layout::before,
+  [data-slot=tabs-indicator] { outline: var(--border-width) solid Highlight; outline-offset: calc(-1 * var(--border-width)); }
+}

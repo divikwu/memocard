@@ -327,7 +327,7 @@ it.each(['disconnected','unauthorized'])('%s keeps the settings reconnect action
   const action=within(vault).getByRole('link',{name:'重新打开'});
   expect(action.getAttribute('href')).toBe('memocard-service://open-web');
   expect(within(vault).getByRole('status').textContent).toBe('需要重新连接本机服务');
-  expect(within(vault).queryByRole('button',{name:'打开已有笔记库'})).toBeNull();
+  expect(within(vault).queryByRole('button',{name:/笔记库操作/})).toBeNull();
   expect(screen.queryByRole('alert')).toBeNull();
   expect(screen.getByRole('region',{name:'内容风格'})).toBeTruthy();
 });
@@ -377,7 +377,8 @@ it('keeps the original list when selecting another folder is not authorized',asy
   expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();
   const original=mock.snapshot();
   window.history.replaceState(null,'','#/settings');fireEvent(window,new HashChangeEvent('hashchange'));
-  fireEvent.click(await screen.findByRole('button',{name:'切换笔记库'}));
+  fireEvent.click(await screen.findByRole('button',{name:'笔记库操作（切换）'}));
+  fireEvent.click(await screen.findByRole('menuitem',{name:'切换笔记库'}));
   expect(await screen.findByText('模拟：未授予文件夹访问权限')).toBeTruthy();
   fireEvent.click(within(await screen.findByRole('navigation',{name:'桌面导航'})).getByRole('button',{name:'笔记'}));
   expect(await screen.findByText('模拟笔记 · 产品验收')).toBeTruthy();

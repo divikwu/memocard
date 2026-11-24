@@ -31,7 +31,7 @@ it("queries all notes by update time, previews keyboard selection and opens on E
   const { onOpenNote } = setup();
   await screen.findByRole("option", { name: "项目计划" });
   expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "", tags: [], sort: "updatedAt", limit: 30 });
-  expect(screen.getByText("计划正文")).toBeTruthy();
+  expect(await screen.findByText("计划正文")).toBeTruthy();
   const input = screen.getByRole("combobox", { name: "搜索笔记" });
   await waitFor(() => expect(document.activeElement).toBe(input));
   fireEvent.keyDown(input, { key: "ArrowDown" });
@@ -151,7 +151,7 @@ it('preserves mobile query, pagination, selection and result scroll while visiti
   await waitFor(()=>expect(document.activeElement).toBe(input));
   fireEvent.change(input,{target:{value:'项目'}});
   await screen.findByRole('option',{name:'项目计划'});
-  await userEvent.setup().click(screen.getByRole('button',{name:'加载更多结果'}));
+  await userEvent.setup().click(await screen.findByRole('button',{name:'加载更多结果'}));
   await screen.findByRole('option',{name:'周末散步'});
   fireEvent.keyDown(input,{key:'ArrowDown'});
   fireEvent.scroll(screen.getByRole('listbox',{name:'搜索结果'}).parentElement!,{target:{scrollTop:275}});

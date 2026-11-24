@@ -864,8 +864,7 @@
         "apps/ui/ui/business/sidebar.tsx",
         "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/select.tsx",
-        "apps/ui/ui/components/tabs.tsx",
-        "apps/ui/ui/web/NoteAppearanceMenu.tsx"
+        "apps/ui/ui/components/tabs.tsx"
       ]
     },
     {
@@ -887,7 +886,8 @@
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsLoading.tsx",
-        "apps/ui/ui/components/sidebar.tsx"
+        "apps/ui/ui/components/sidebar.tsx",
+        "apps/ui/ui/web/WebAppView.tsx"
       ]
     },
     {
@@ -911,7 +911,6 @@
         "apps/ui/ui/components/dialog.tsx",
         "apps/ui/ui/components/drawer.tsx",
         "apps/ui/ui/components/popover.tsx",
-        "apps/ui/ui/components/recoverable-lazy.tsx",
         "apps/ui/ui/web/loadWebMoreDrawer.tsx"
       ]
     },
@@ -1145,6 +1144,7 @@
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
+        "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/business/tag-navigation-editor.tsx",
@@ -1241,6 +1241,7 @@
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/tabs.tsx",
         "apps/ui/ui/components/tooltip.tsx",
+        "apps/ui/ui/web/NoteAppearanceMenu.tsx",
         "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
@@ -1275,7 +1276,6 @@
       "step": "2.5",
       "value": "2.5",
       "consumers": [
-        "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/dropdown-menu.tsx",
         "apps/ui/ui/components/input-group.tsx",
         "apps/ui/ui/components/select.tsx",
@@ -1348,7 +1348,7 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/ui/components/recoverable-lazy.tsx",
+        "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/web/loadWebMoreDrawer.tsx"
       ]
     },
@@ -1357,6 +1357,7 @@
       "step": "4",
       "value": "4",
       "consumers": [
+        "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     }

@@ -826,7 +826,13 @@ for (const width of [390, 1280]) test(`search preview remains stationary and exc
     render(<PreviewModeProvider mode="light"><NoteSearchDialog open available vaultName="预览检查库" returnFocus={{ current: null }} onOpenChange={() => {}} onOpenNote={() => {}} /></PreviewModeProvider>);
     const dialog = await within(document.body).findByRole("dialog", { name: "搜索笔记" });
     const search = within(dialog);
-    await search.findByRole("option", { name: fixture.notes[0].title! });
+    const option = await search.findByRole("option", { name: fixture.notes[0].title! });
+    expect(getComputedStyle(option).padding).toBe("8px");
+    if (width >= 1024) {
+      expect(getComputedStyle(dialog.querySelector(".ui-note-search-field")!).padding).toBe("8px 16px");
+      expect(getComputedStyle(dialog.querySelector(".ui-note-search-footer")!).padding).toBe("8px 16px");
+      await search.findByText("参考链接");
+    }
     const preview = dialog.querySelector<HTMLElement>(".ui-note-search-preview-content");
     const containers = preview ? [preview, ...preview.querySelectorAll<HTMLElement>("div,pre")] : [];
     const scrollPositions = () => containers.map(element => [element.scrollLeft, element.scrollTop]);
@@ -1229,9 +1235,11 @@ for (const mode of ["light", "dark"] as const) {
     expect(card.matches(":hover")).toBe(false);
     expect(getComputedStyle(card).borderTopWidth).toBe("0px");
     const surface = getComputedStyle(canvas.getByTestId("expected-surface")).backgroundColor;
-    await waitFor(() => expect(getComputedStyle(canvas.getByRole("button", { name: "卡片布局" })).backgroundColor).toBe(surface));
+    const layout = canvas.getByRole("group", { name: "主页布局" });
+    await waitFor(() => expect(getComputedStyle(layout, "::before").backgroundColor).toBe(surface));
     await page.viewport(390, 844);
-    await waitFor(() => expect(getComputedStyle(canvas.getByRole("tab", { name: "最近更新" })).backgroundColor).toBe(surface));
+    const homeTabs = canvas.getByRole("tablist", { name: "主页内容" });
+    await waitFor(() => expect(getComputedStyle(homeTabs.querySelector('[data-slot="tabs-indicator"]')!).backgroundColor).toBe(surface));
   });
 
   test(`mobile capture distinguishes pointer and keyboard focus in ${mode}`, async () => {
@@ -2165,11 +2173,14 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
     for (const scenario of [{name: "Web mobile", width: 390, provider: true}, {name: "Web desktop", width: 1024, provider: true}, {name: "without provider", width: 390, provider: false}]) {
       await page.viewport(scenario.width, 900);
       const grouped = scenario.provider && scenario.width < 768;
+      const formatEdge = grouped ? "var(--surface-highlight-control)" : "var(--surface-edge-floating)";
       const changes: string[] = [], errors: string[] = [];
       let editor: import("@tiptap/react").Editor | null = null;
       const content = <main className="ui-theme grid gap-4 p-4" data-ui-theme={mode}>
         <div data-testid="group-shadow" className="bg-surface shadow-control" /><div data-testid="no-shadow" className="shadow-none" /><div data-testid="page-color" className="bg-body" />
         <div data-testid="group-token-shadow" style={{boxShadow: "var(--shadow-control)"}} />
+        <div data-testid="format-shadow" style={{boxShadow: `var(--shadow-high), ${formatEdge}`}} />
+        <p>编辑器外部</p>
         <QuickCapture vaultId={`actions-disabled-${scenario.name}-${mode}`} rootNotes docked tags={[]} disabled canImage={false} handle={{current: null}} onRecorded={() => errors.push("disabled capture recorded")} />
         <Sheet><SheetTrigger render={<Button />}>打开自定义面板</SheetTrigger><SheetContent side="bottom" swipeToClose showCloseButton={false}><SheetHeader><SheetTitle>自定义面板</SheetTitle><SheetDescription>真实自定义关闭控件。</SheetDescription><SheetCloseButton /></SheetHeader></SheetContent></Sheet>
         <Sheet><SheetTrigger render={<Button />}>打开默认面板</SheetTrigger><SheetContent><SheetHeader><SheetTitle>默认面板</SheetTitle><SheetDescription>真实默认关闭控件。</SheetDescription></SheetHeader></SheetContent></Sheet>
@@ -2177,13 +2188,13 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         <Dialog><DialogTrigger render={<Button />}>打开默认对话框</DialogTrigger><DialogContent><DialogHeader><DialogTitle>默认对话框</DialogTitle><DialogDescription>真实默认对话框关闭控件。</DialogDescription></DialogHeader></DialogContent></Dialog>
         <VaultImage source="memocard-asset://vault/assets/actions.png" alt="内存封面" width={80} height={40} />
         <MermaidContent source={"graph LR\nA[开始] --> B[结束]"}><pre>graph LR A--&gt;B</pre></MermaidContent>
-        <RichMarkdownEditor value={"说明文字\n\n![编辑封面](memocard-asset://vault/assets/actions.png)"} notePath="notes/actions.md" disabled={false} autoFocus={false} onChange={value => changes.push(value)} onSave={() => {}} onError={error => errors.push(error)} onEditorReady={value => { editor = value; }} />
+        <RichMarkdownEditor value={"说明[文字](https://example.test)\n\n![编辑封面](memocard-asset://vault/assets/actions.png)"} notePath="notes/actions.md" disabled={false} autoFocus={false} onChange={value => changes.push(value)} onSave={() => {}} onError={error => errors.push(error)} onEditorReady={value => { editor = value; }} />
       </main>;
       const view = render(<PreviewModeProvider mode={mode}>{scenario.provider ? <MobileActionGroupProvider enabled={scenario.width < 768}>{content}</MobileActionGroupProvider> : content}</PreviewModeProvider>);
       const canvas = within(view.container), body = within(document.body);
-      const checkFrame = (group: HTMLElement) => {
+      const checkFrame = (group: HTMLElement, shadowReferences = ["group-shadow", "group-token-shadow"]) => {
         const style = getComputedStyle(group);
-        expect([getComputedStyle(canvas.getByTestId("group-shadow")).boxShadow, getComputedStyle(canvas.getByTestId("group-token-shadow")).boxShadow]).toContain(style.boxShadow);
+        expect(shadowReferences.map(id => getComputedStyle(canvas.getByTestId(id)).boxShadow)).toContain(style.boxShadow);
         expect(style.backgroundColor).toBe(getComputedStyle(canvas.getByTestId("group-shadow")).backgroundColor);
         expect(style.borderTopWidth).toBe("0px");
         expect(style.backgroundColor).not.toBe(getComputedStyle(canvas.getByTestId("page-color")).backgroundColor);
@@ -2338,30 +2349,141 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         if (grouped) {
           expect(format.getBoundingClientRect().height).toBe(40);
           expect(getComputedStyle(format).padding).toBe("2px");
-          checkFrame(format);
+          checkFrame(format, ["format-shadow"]);
           for (const button of format.querySelectorAll("button")) { expect(button.getBoundingClientRect().width).toBe(36); expect(button.getBoundingClientRect().height).toBe(36); }
+        } else {
+          expect(getComputedStyle(format).boxShadow).toBe(getComputedStyle(canvas.getByTestId("format-shadow")).boxShadow);
+        }
+        for (const button of within(format).getAllByRole("button")) {
+          expect(button.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
         }
         const bold = within(format).getByRole("button", {name: "粗体"});
+        const italic = within(format).getByRole("button", {name: "斜体"});
+        const link = within(format).getByRole("button", {name: /^链接$/});
+        const unadornedShadows = ["none", getComputedStyle(canvas.getByTestId("no-shadow")).boxShadow];
+        const idleBackground = getComputedStyle(italic).backgroundColor;
+        await userEvent.hover(italic);
+        const hoverBackground = getComputedStyle(italic).backgroundColor;
+        expect(hoverBackground).not.toBe(idleBackground);
+        expect(unadornedShadows).toContain(getComputedStyle(italic).boxShadow);
         await userEvent.click(bold);
         await waitFor(() => expect(bold.getAttribute("aria-pressed")).toBe("true"));
         expect(changes.at(-1)).toContain("**说明**");
+        const selectedBackground = getComputedStyle(bold).backgroundColor;
+        expect(selectedBackground).not.toBe(hoverBackground);
+        expect(selectedBackground).not.toBe(idleBackground);
+        expect(unadornedShadows).toContain(getComputedStyle(bold).boxShadow);
+        await userEvent.hover(italic);
+        expect(getComputedStyle(bold).backgroundColor).toBe(selectedBackground);
         editor!.chain().focus().setTextSelection({from: 1, to: 5}).run();
         await waitFor(() => expect(bold.getAttribute("aria-pressed")).toBe("mixed"));
-        const mixed = getComputedStyle(bold);
-        expect(mixed.boxShadow).toContain("-2px");
-        expect(mixed.boxShadow).toContain("inset");
-        const mixedBackground = mixed.backgroundColor;
-        await userEvent.hover(bold);
-        expect(getComputedStyle(bold).backgroundColor).toBe(mixedBackground);
-        expect(getComputedStyle(bold).boxShadow).toContain("-2px");
+        expect(link.getAttribute("aria-pressed")).toBe("mixed");
+        expect(getComputedStyle(bold).backgroundColor).toBe(selectedBackground);
+        expect(unadornedShadows).toContain(getComputedStyle(bold).boxShadow);
+        await userEvent.hover(link);
+        expect(getComputedStyle(link).backgroundColor).toBe(selectedBackground);
+        expect(unadornedShadows).toContain(getComputedStyle(link).boxShadow);
         bold.focus();
         await userEvent.keyboard("{ArrowRight}");
-        const italic = within(format).getByRole("button", {name: "斜体"});
         expect(document.activeElement).toBe(italic);
         expectKeyboardOutline(italic, mode);
         await userEvent.keyboard("{Escape}");
         await waitFor(() => expect(getComputedStyle(format).visibility).toBe("hidden"));
         expect(document.activeElement).toBe(editor!.view.dom);
+        editor!.chain().focus().setTextSelection({from: 1, to: 3}).run();
+        await userEvent.click(await within(format).findByRole("button", {name: /^链接$/}));
+        const dialog = await body.findByRole("dialog", {name: "编辑链接"});
+        const form = within(dialog);
+        expect(form.queryByRole("combobox")).toBeNull();
+        const address = form.getByRole("textbox", {name: "链接地址"});
+        expect(form.queryByRole("button", {name: "保存"})).toBeNull();
+        expect(form.queryByRole("button", {name: "取消"})).toBeNull();
+        const [header, fields] = Array.from(dialog.children);
+        expect(header.matches(".sr-only, [data-slot='sheet-header']")).toBe(true);
+        expect(fields.matches(".rich-format-form") && fields.contains(address)).toBe(true);
+        expect(dialog.querySelector(".rich-format-footer")).toBeNull();
+        const dialogStyle = getComputedStyle(dialog);
+        expect(dialogStyle.rowGap).toBe("16px");
+        expect(dialogStyle.padding).toBe(scenario.width < 768 ? "16px" : "8px");
+        expect(fields.querySelector(".rich-format-preview")).toBeNull();
+        expect(fields.querySelector("label, .rich-format-hint:not([role='status'])")).toBeNull();
+        expect(address.hasAttribute("aria-describedby")).toBe(false);
+        expect(address.getBoundingClientRect().height).toBe(scenario.width < 768 ? 44 : 32);
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑链接"})).toBeNull());
+        expect(document.activeElement).toBe(editor!.view.dom);
+        await act(async () => { editor!.commands.setTextSelection(3); });
+        const markedLink = editor!.view.dom.querySelector<HTMLAnchorElement>('a[href="https://example.test"]')!;
+        // Leave room on both sides to check centering without viewport collision shifts.
+        if (scenario.width >= 768) view.container.style.paddingInline = "180px";
+        await userEvent.hover(markedLink);
+        const linkActions = await body.findByRole("dialog", {name: "链接操作"});
+        expect(getComputedStyle(linkActions).columnGap).toBe("2px");
+        const addressStyle = getComputedStyle(within(linkActions).getByRole("button", {name: "https://example.test"}));
+        expect(addressStyle.width).toBe("240px");
+        expect(addressStyle.borderRadius).toBe("8px");
+        expect(addressStyle.paddingInline).toBe("8px");
+        const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(undefined);
+        try {
+          await userEvent.click(within(linkActions).getByRole("button", {name: "复制链接"}));
+          expect(writeText).toHaveBeenCalledWith("https://example.test");
+          expect(within(linkActions).getByRole("status").textContent).toBe("已复制链接");
+        } finally { writeText.mockRestore(); }
+        const edit = within(linkActions).getByRole("button", {name: "编辑"});
+        await userEvent.hover(edit);
+        const previewBounds = linkActions.getBoundingClientRect();
+        await userEvent.click(edit);
+        const linkEditor = await body.findByRole("dialog", {name: "编辑链接"});
+        const linkFields = within(linkEditor).getAllByRole("textbox");
+        expect(linkFields.map(field => (field as HTMLInputElement).value)).toEqual(["https://example.test", "文字"]);
+        expect(body.queryByRole("dialog", {name: "链接操作"})).toBeNull();
+        expect(editor!.state.doc.textBetween(editor!.state.selection.from, editor!.state.selection.to)).toBe("文字");
+        expect(within(linkEditor).queryByRole("button", {name: "取消"})).toBeNull();
+        expect(within(linkEditor).queryByRole("button", {name: "保存"})).toBeNull();
+        const removeLink = within(linkEditor).getByRole("button", {name: "移除链接"});
+        expect(removeLink).toBeVisible();
+        const footer = removeLink.parentElement!;
+        const footerStyle = getComputedStyle(footer);
+        expect(removeLink.getBoundingClientRect().width).toBeCloseTo(footer.clientWidth - parseFloat(footerStyle.paddingLeft) - parseFloat(footerStyle.paddingRight), 0);
+        expect(getComputedStyle(linkFields[1]).paddingInline).toBe("8px");
+        expect(getComputedStyle(removeLink).justifyContent).toBe("flex-start");
+        expect(getComputedStyle(linkFields[0]).borderTopLeftRadius).toBe(getComputedStyle(removeLink).borderTopLeftRadius);
+        if (scenario.width >= 768) {
+          await waitFor(() => {
+            const bounds = linkEditor.getBoundingClientRect();
+            const anchor = markedLink.getBoundingClientRect();
+            const center = anchor.left + anchor.width / 2;
+            for (const panel of [previewBounds, bounds]) {
+              expect(Math.abs(panel.left + panel.width / 2 - center)).toBeLessThanOrEqual(1);
+            }
+            expect(bounds.top).toBeCloseTo(previewBounds.top, 0);
+          });
+          expect(linkEditor.getBoundingClientRect().width).toBe(320);
+          expect(linkEditor.querySelector(".rich-format-header")).toBeNull();
+          expect(getComputedStyle(linkEditor.querySelector(".rich-format-form")!).padding).toBe("4px 8px");
+          expect(footer.clientWidth).toBe(linkEditor.clientWidth);
+          expect(footerStyle.paddingInline).toBe("4px");
+          expect(removeLink.getBoundingClientRect().height).toBe(32);
+          expect(linkFields[0].getBoundingClientRect().height).toBe(32);
+        }
+        const outside = () => document.querySelector<HTMLElement>('[data-slot="sheet-overlay"]') ?? canvas.getByText("编辑器外部");
+        await userEvent.clear(linkFields[0]);
+        await userEvent.click(outside());
+        expect(await within(linkEditor).findByRole("alert")).toHaveTextContent("请输入链接地址。");
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑链接"})).toBeNull());
+        expect(editor!.view.dom.querySelector('a[href="https://example.test"]')).toBe(markedLink);
+
+        await act(async () => { editor!.commands.setTextSelection(3); });
+        await userEvent.hover(markedLink);
+        const reopen = within(await body.findByRole("dialog", {name: "链接操作"})).getByRole("button", {name: "编辑"});
+        await userEvent.hover(reopen);
+        await userEvent.click(reopen);
+        const reopened = within(await body.findByRole("dialog", {name: "编辑链接"}));
+        await userEvent.fill(reopened.getByRole("textbox", {name: "链接地址"}), "https://example.test/updated");
+        await userEvent.click(outside());
+        await waitFor(() => expect(editor!.view.dom.querySelector('a[href="https://example.test/updated"]')).toHaveTextContent("文字"));
+        await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑链接"})).toBeNull());
       } finally { view.unmount(); }
     }
   } finally { releaseAssets(); }
@@ -2779,11 +2901,36 @@ test("Web tag groups save shared membership without changing any notes", async (
     const canvas = within(view.container), body = within(document.body);
     await canvas.findByRole("button", {name: "查看标签 生活/咖啡 的笔记"});
     expect(canvas.queryByRole("button", {name: "新建群组"})).toBeNull();
-    await userEvent.click(canvas.getByRole("tab", {name: "标签群组"}));
+    const groupsTab = canvas.getByRole("tab", {name: "标签群组"});
+    if (!inject("uiQualityTouch")) {
+      await userEvent.hover(groupsTab);
+      expect(getComputedStyle(groupsTab.querySelector("svg")!).color).toBe(getComputedStyle(groupsTab).color);
+    }
+    await userEvent.click(groupsTab);
     const create = canvas.getByRole("button", {name: "新建"});
     await userEvent.hover(create);
     const createMenu = await body.findByRole("menu", {name: "新建"});
-    await userEvent.click(within(createMenu).getByRole("menuitem", {name: "新建标签"}));
+    const createLabel = within(createMenu).getByRole("menuitem", {name: "新建标签"});
+    if (!inject("uiQualityTouch")) {
+      const createGroup = within(createMenu).getByRole("menuitem", {name: "新建群组"});
+      const indicator = () => getComputedStyle(createMenu, "::before");
+      const offset = () => Number.parseFloat(indicator().translate.split(" ")[1]);
+      await commands.setReducedMotion("no-preference");
+      await userEvent.hover(createLabel);
+      await waitFor(() => expect(offset()).toBe(createLabel.offsetTop));
+      expect(indicator().transitionDuration).toBe("0.3s");
+      await userEvent.hover(createGroup);
+      await waitFor(() => {
+        expect(offset()).toBeGreaterThan(createLabel.offsetTop);
+        expect(offset()).toBeLessThan(createGroup.offsetTop);
+      }, { interval: 10 });
+      expect(canvas.queryByRole("rowgroup", {name: "新建群组"})).toBeNull();
+      await commands.setReducedMotion("reduce");
+      await userEvent.hover(createLabel);
+      expect(offset()).toBe(createLabel.offsetTop);
+      expect(indicator().transitionDuration).toBe("0s");
+    }
+    await userEvent.click(createLabel);
     const newLabel = within(await canvas.findByRole("rowgroup", {name: "新建标签"}));
     expect(body.queryByRole("dialog", {name: "新建标签"})).toBeNull();
     await userEvent.type(newLabel.getByRole("textbox", {name: "标签名称"}), "brewing");
@@ -3288,25 +3435,96 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({theme: mode, interfaceTheme: "classic"}));
   history.replaceState(null, "", "#/settings");
   const fixture = await createWorkspaceFixture();
-  const release = setStorybookRequestHandler(fixture.request);
+  const vaultName = "ProjectArchive".repeat(5);
+  const release = setStorybookRequestHandler(async (operation, params) => {
+    if (operation !== "getStatus") return fixture.request(operation, params);
+    const status = await fixture.request<VaultStatus>(operation, params);
+    return { ...status, vaultName, capabilities: [...status.capabilities, "createVault"] };
+  });
   const view = render(<AppearanceCatalogProvider catalog={expandedSidebarFixture}><WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider></AppearanceCatalogProvider>);
   try {
     const canvas = within(view.container);
     const advanced = (await canvas.findByText("高级排版")).closest("details")!;
+    const vaultGroup = within(canvas.getByRole("region", {name: "笔记库"}));
+    const vault = await vaultGroup.findByText(vaultName);
     const title = canvas.getByRole("heading", {name: "设置", level: 1});
     const card = canvas.getByRole("combobox", {name: "行宽"}).closest<HTMLElement>('[data-slot="card"]')!;
     const panel = card.closest<HTMLElement>(".web-settings-panel")!;
     const groupCards = [...panel.querySelectorAll(':scope > section > [data-slot="card"]')];
     expect(advanced.closest('[data-slot="card"]')).toBe(card);
-    for (const width of [320, 655, 768, 1440]) {
+    for (const width of [320, 390, 482, 522, 640, 767, 768, 1082, 1440]) {
       await page.viewport(width, 900);
-      await waitFor(() => expect(title.getBoundingClientRect().height).toBeGreaterThanOrEqual(32));
-      expect(title.parentElement!.getBoundingClientRect().width).toBeCloseTo(panel.getBoundingClientRect().width, 1);
+      const titleHeader = title.parentElement!;
       const bounds = card.getBoundingClientRect(), disclosure = advanced.getBoundingClientRect();
       expect(disclosure.left).toBeGreaterThanOrEqual(bounds.left);
       expect(disclosure.right).toBeLessThanOrEqual(bounds.right);
       const panelBounds = panel.getBoundingClientRect();
+      expect(vault.scrollWidth).toBeLessThanOrEqual(vault.clientWidth);
+      const vaultAction = await vaultGroup.findByRole("button", {name: "笔记库操作（切换）"});
+      expect(vaultAction.textContent).toBe("切换");
+      const trigger = canvas.getByRole("combobox", {name: "颜色模式"});
+      const triggerBounds = trigger.getBoundingClientRect();
+      const vaultActionBounds = vaultAction.getBoundingClientRect();
+      const vaultSummary = vaultGroup.getByText("本机文件状态");
+      const vaultSummaryBounds = vaultSummary.getBoundingClientRect();
+      const vaultContent = vaultAction.closest(".web-setting-card-content")!;
+      expect(vaultActionBounds.left).toBeCloseTo(vaultSummaryBounds.left, 1);
+      expect(vaultActionBounds.right).toBeCloseTo(vaultSummaryBounds.right, 1);
+      expect(getComputedStyle(vaultContent).padding).toBe("8px");
+      expect(vaultSummaryBounds.top - vaultActionBounds.bottom).toBeCloseTo(Number.parseFloat(getComputedStyle(vaultContent).rowGap), 1);
+      expect(getComputedStyle(panel).rowGap).toBe("16px");
+      expect(getComputedStyle(vaultAction).paddingInlineStart).toBe(getComputedStyle(vaultSummary).paddingInlineStart);
+      expect(vaultActionBounds.right).toBeCloseTo(triggerBounds.right, 1);
+      if (width === 482 || width === 1082) {
+        await userEvent.click(vaultAction);
+        const menu = await within(document.body).findByRole("menu", {name: "笔记库操作"});
+        expect(within(menu).getByRole("menuitem", {name: "切换笔记库"})).toBeTruthy();
+        expect(within(menu).getByRole("menuitem", {name: "新建笔记库"})).toBeTruthy();
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(within(document.body).queryByRole("menu", {name: "笔记库操作"})).toBeNull());
+      }
+      const labelBounds = trigger.parentElement!.querySelector("label")!.getBoundingClientRect();
+      const value = trigger.querySelector('[data-slot="select-value"]')!;
+      const valueBounds = value.getBoundingClientRect();
+      expect(getComputedStyle(value).fontSize).toBe("14px");
+      expect(triggerBounds.height).toBe(36);
+      expect(labelBounds.right).toBeLessThanOrEqual(valueBounds.left);
+      expect(valueBounds.top + valueBounds.height / 2).toBeCloseTo(labelBounds.top + labelBounds.height / 2, 1);
+      for (const x of [triggerBounds.left + 2, labelBounds.left + 4, triggerBounds.right - 2]) {
+        const hit = document.elementFromPoint(x, triggerBounds.top + triggerBounds.height / 2);
+        expect(hit?.closest('[role="combobox"]')).toBe(trigger);
+      }
+      if (width === 522 || width === 1082) {
+        const fontSize = canvas.getByRole("combobox", {name: "字号"});
+        const summary = advanced.querySelector("summary")!;
+        await Promise.all(summary.getAnimations({subtree: true}).map(animation => animation.finished));
+        const arrow = fontSize.querySelector("svg")!;
+        const selectBounds = fontSize.getBoundingClientRect();
+        const summaryBounds = summary.getBoundingClientRect();
+        expect(selectBounds.height).toBeCloseTo(summaryBounds.height, 1);
+        expect(selectBounds.left).toBeCloseTo(summaryBounds.left, 1);
+        expect(selectBounds.right).toBeCloseTo(summaryBounds.right, 1);
+        const summaryArrow = summary.querySelector("svg")!;
+        await waitFor(() => expect(arrow.getBoundingClientRect().right).toBeCloseTo(summaryArrow.getBoundingClientRect().right, 1));
+        await userEvent.hover(summary);
+        const summaryHover = getComputedStyle(summary, "::before");
+        const { backgroundColor, borderRadius, top, left, right } = summaryHover;
+        await userEvent.hover(fontSize);
+        const selectHover = getComputedStyle(fontSize, "::before");
+        expect([selectHover.backgroundColor, selectHover.borderRadius, selectHover.top]).toEqual([backgroundColor, borderRadius, top]);
+        expect(selectBounds.left + Number.parseFloat(selectHover.left)).toBeCloseTo(summaryBounds.left + Number.parseFloat(left), 1);
+        expect(selectBounds.right - Number.parseFloat(selectHover.right)).toBeCloseTo(summaryBounds.right - Number.parseFloat(right), 1);
+        const body = within(document.body);
+        await userEvent.click(fontSize);
+        await body.findByRole("listbox");
+        expect(getComputedStyle(fontSize).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        expect(getComputedStyle(fontSize, "::before").backgroundColor).toBe("rgba(0, 0, 0, 0)");
+        expect(getComputedStyle(arrow).rotate).toBe("180deg");
+        await userEvent.keyboard("{Escape}");
+        await waitFor(() => expect(body.queryByRole("listbox")).toBeNull());
+      }
       if (width < 768) {
+        expect(titleHeader.getBoundingClientRect().height).toBe(1);
         expect(getComputedStyle(panel).backgroundColor).toBe("rgba(0, 0, 0, 0)");
         const groupBackground = getComputedStyle(card).backgroundColor;
         expect(groupCards.length).toBeGreaterThanOrEqual(3);
@@ -3317,21 +3535,80 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
         }
         if (mode === "light") expect(groupBackground).toBe("rgb(255, 255, 255)");
       } else {
+        await waitFor(() => expect(title.getBoundingClientRect().height).toBeGreaterThanOrEqual(32));
+        expect(titleHeader.getBoundingClientRect().width).toBeCloseTo(panelBounds.width, 1);
         expect(bounds.left).toBeGreaterThan(panelBounds.left);
         expect(bounds.right).toBeLessThan(panelBounds.right);
         expect(bounds.left - panelBounds.left).toBeCloseTo(panelBounds.right - bounds.right, 1);
       }
       await userEvent.click(within(advanced).getByText("高级排版"));
+      const appearanceAdvanced = canvas.getByText("高级外观").closest("details")!;
+      for (const group of [advanced, appearanceAdvanced]) {
+        expect(getComputedStyle(group.querySelector(".web-advanced-fields")!).paddingBlockStart).toBe("8px");
+      }
       const controls = ["行宽", "字号", "行高", "段落间距"].map(name => canvas.getByRole("combobox", {name}));
       for (const control of controls) expect(control.getBoundingClientRect().width).toBeCloseTo(controls[0].getBoundingClientRect().width, 1);
       if (width >= 768) {
-        const row = controls[0].parentElement!;
-        expect(advanced.querySelector("summary")!.getBoundingClientRect().height).toBe(row.getBoundingClientRect().height - Number.parseFloat(getComputedStyle(row).borderBottomWidth));
         const scroller = view.container.querySelector<HTMLElement>("#web-main-content")!;
         expect(title.getBoundingClientRect().top + title.getBoundingClientRect().height / 2 + scroller.scrollTop).toBeCloseTo(view.container.querySelector(".ui-sidebar-brand-header")!.getBoundingClientRect().top + 20, 1);
       }
       expect(document.documentElement.scrollWidth).toBeLessThanOrEqual(width);
       await userEvent.click(within(advanced).getByText("高级排版"));
+    }
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+});
+
+test("settings disclosures reverse together and respect the reduced motion preference", async () => {
+  await page.viewport(1024, 900);
+  await commands.setReducedMotion("no-preference");
+  const previousHash = location.hash;
+  history.replaceState(null, "", "#/settings");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await canvas.findByText("本机文件状态");
+    for (const label of ["本机文件状态", "高级外观", "高级排版"]) {
+      const summary = canvas.getByText(label) as HTMLElement;
+      const details = summary.closest("details")!;
+      const arrow = summary.querySelector("svg")!;
+      const closed = details.getBoundingClientRect().height;
+      summary.focus();
+      summary.click();
+      expect(details.open).toBe(true);
+      await waitFor(() => {
+        expect(details.getBoundingClientRect().height).toBeGreaterThan(closed);
+        expect(arrow.getAnimations()).toHaveLength(1);
+      }, {interval: 10});
+      const opening = details.getBoundingClientRect().height;
+      summary.click();
+      expect(details.open).toBe(false);
+      expect(details.getBoundingClientRect().height).toBeCloseTo(opening, 0);
+      await waitFor(() => expect(details.getBoundingClientRect().height).toBeLessThan(opening), {interval: 10});
+      summary.click();
+      await waitFor(() => {
+        expect(details.getBoundingClientRect().height).toBeGreaterThan(opening);
+        expect(arrow.getAnimations()).toHaveLength(0);
+      });
+      expect(summary).toHaveFocus();
+      await userEvent.keyboard("{Enter}");
+      await userEvent.tab();
+      expect(details.contains(document.activeElement)).toBe(false);
+      summary.click();
+      expect(details.open).toBe(true);
+    }
+    await commands.setReducedMotion("reduce");
+    for (const details of canvas.getByRole("heading", {name: "设置"}).closest(".web-settings")!.querySelectorAll("details")) {
+      const summary = details.querySelector("summary")!;
+      summary.focus();
+      await userEvent.keyboard(" ");
+      expect(details.open).toBe(false);
+      expect(details.getBoundingClientRect().height).toBeCloseTo(summary.getBoundingClientRect().height, 0);
+      expect(details.getAnimations({subtree: true})).toHaveLength(0);
+      expect(summary).toHaveFocus();
+      await userEvent.tab();
+      expect(details.contains(document.activeElement)).toBe(false);
     }
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 });
@@ -3567,8 +3844,10 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
       }
       await userEvent.click(pin);
       await waitFor(() => expect(controls.getByRole("button", {name: "取消固定"}).getAttribute("aria-pressed")).toBe("true"));
+      expect(canvas.queryByText("已固定到主页")).toBeNull();
       await userEvent.click(pin);
       await waitFor(() => expect(controls.getByRole("button", {name: "固定到主页"}).getAttribute("aria-pressed")).toBe("false"));
+      expect(canvas.queryByText("已取消固定")).toBeNull();
       await userEvent.click(more);
       const menu = await body.findByRole("menu");
       const moveToTrash = within(menu).getByRole("menuitem", {name: "移入回收站"});
@@ -4108,7 +4387,7 @@ test.each([
   { theme: "minimal", width: 390 },
   { theme: "classic", width: 1100 },
   { theme: "minimal", width: 1100 },
-])("$theme detail can show the body first during slow reads and scrolls 40 properties at $width px", async ({ theme, width }) => {
+])("$theme detail reveals the body automatically after slow reads and scrolls 40 properties at $width px", async ({ theme, width }) => {
   await page.viewport(width, 900);
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -4152,40 +4431,33 @@ test.each([
   const view = render(<WebAppearanceProvider><App renderView={renderWebApp} preloadEditor={preloadWebEditor} /></WebAppearanceProvider>);
   try {
     const canvas = within(view.container);
-    const skip = await canvas.findByRole("button", {name:"先查看正文"});
     await waitFor(() => expect(pendingProperties && pendingLayout).toBe(true));
+    expect(canvas.queryByRole("button", {name:"先查看正文"})).toBeNull();
     expect(canvas.queryByRole("textbox", {name:"笔记内容"})).toBeNull();
-    await userEvent.click(skip);
-    const body = await canvas.findByRole("textbox", {name:"笔记内容"});
     const title = await canvas.findByRole("textbox", {name:"页面标题"});
-    expect(view.container.querySelector(".web-app")).toHaveAttribute("data-interface-theme", theme);
+    await waitFor(() => {
+      const workspace = view.container.querySelector(".web-app");
+      expect(workspace).toHaveAttribute("data-interface-theme", theme);
+      expect(workspace).toHaveAttribute("data-workspace-layout", width < 768 ? "drawer" : theme === "classic" ? "rail" : "topbar");
+    });
     await document.fonts.ready;
-    expect(body.textContent?.trim()).toBeTruthy();
-    expect(body.getAttribute("contenteditable")).toBe("true");
-    expect(body.getBoundingClientRect().top).toBeLessThan(window.innerHeight);
-    const initialBodyTop = body.getBoundingClientRect().top;
     const initialTitleTop = title.getBoundingClientRect().top;
-    expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
-    expect(canvas.getByRole("button", {name:"显示属性"})).toBeDisabled();
-    expect(view.container.querySelector("[data-property-key]")).toBeNull();
     if (width < 768) finishLayout(); else finishProperties();
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     expect(canvas.getByRole("status", {name:"正在读取属性"})).toBeTruthy();
-    expect(Math.abs(body.getBoundingClientRect().top - initialBodyTop), "body position while one read remains pending").toBeLessThanOrEqual(0.5);
+    expect(view.container.querySelector(".note-property-footer")).toBeNull();
+    expect(canvas.queryByRole("textbox", {name:"笔记内容"})).toBeNull();
     finishProperties();
     finishLayout();
-    const showProperties = canvas.getByRole("button", {name:"显示属性"});
-    await waitFor(() => expect(showProperties).toBeEnabled());
-    expect(view.container.querySelector("[data-property-key]")).toBeNull();
-    expect(body.getBoundingClientRect().top).toBeCloseTo(initialBodyTop, 0);
-    await userEvent.click(showProperties);
+    const body = await canvas.findByRole("textbox", {name:"笔记内容"});
+    expect(body.textContent?.trim()).toBeTruthy();
+    expect(body.getAttribute("contenteditable")).toBe("true");
     const lastField = await canvas.findByRole("button", {name:"编辑属性 字段39"});
     expect(view.container.querySelector("[data-property-key]")?.getAttribute("data-property-key")).toBe("property:字段0");
     expect(canvas.queryByRole("button", {name:"编辑属性 字段1"})).toBeNull();
     expect(view.container.querySelectorAll('[data-property-key^="property:"]')).toHaveLength(39);
     expect(canvas.getByRole("textbox", {name:"笔记内容"})).toBe(body);
     expect(title.getBoundingClientRect().top).toBeCloseTo(initialTitleTop, 1);
-    expect(body.getBoundingClientRect().top).toBeGreaterThan(initialBodyTop);
     const viewport = lastField.closest<HTMLElement>(".note-property-viewport")!;
     const scroll = viewport.closest<HTMLElement>(".web-app-scroll")!;
     expect(viewport.scrollHeight).toBe(viewport.clientHeight);
@@ -4374,12 +4646,13 @@ test("property grips move a row vertically and shift its neighbors before saving
   let finishSave!: () => void;
   const saving = new Promise<void>(resolve => { finishSave = resolve; });
   const fixture = propertyLayoutFixture("layout-pointer-drag", () => saving), changes: unknown[] = [];
+  const releaseMode = setStorybookClientMode("local-web");
   const view = render(<PreviewModeProvider mode="light"><main className="ui-theme p-4">
     <NoteProperties note={editorNote} tags={[]} canEdit busy={false} savedProperties={preferenceProperties} onApply={async change => { changes.push(change); }} />
   </main></PreviewModeProvider>);
   try {
     const canvas = within(view.container);
-    const target = (await canvas.findByRole("button", {name: "属性菜单 零值"})).closest<HTMLElement>(".note-property-row")!;
+    const target = (await canvas.findByRole("button", {name: "属性菜单 未完成"})).closest<HTMLElement>(".note-property-row")!;
     const name = canvas.getByRole("button", {name: "属性菜单 摘要"});
     const textLeft = within(name).getByText("摘要").getBoundingClientRect().left;
     await userEvent.click(name);
@@ -4397,10 +4670,13 @@ test("property grips move a row vertically and shift its neighbors before saving
     const source = grip.closest<HTMLElement>(".note-property-row")!;
     const start = source.getBoundingClientRect();
     const targetStart = target.getBoundingClientRect();
+    const neighbor = source.nextElementSibling!;
+    expect(neighbor).not.toBe(target);
+    const targetShiftedTop = targetStart.top - (neighbor.getBoundingClientRect().top - start.top);
     const bodyBounds = document.body.getBoundingClientRect();
     let pointerId = 0;
     grip.addEventListener("pointerdown", event => { pointerId = event.pointerId; });
-    for (const cancel of [true, false]) {
+    for (const action of ["cancel", "reverse", "commit"]) {
       await userEvent.hover(grip);
       await commands.pressLeftMouseButton();
       try {
@@ -4410,12 +4686,16 @@ test("property grips move a row vertically and shift its neighbors before saving
         } });
         expect(source.getBoundingClientRect().left).toBeCloseTo(start.left, 1);
         await waitFor(() => expect(source.getBoundingClientRect().top).toBeGreaterThan(start.top));
+        expect(target.getAnimations().some(animation => !(animation instanceof CSSTransition))).toBe(true);
         expect(getComputedStyle(source).backgroundColor).toBe("rgba(0, 0, 0, 0)");
         expect(getComputedStyle(name).borderRadius).toBe("6px");
         expect(getComputedStyle(grip).opacity).toBe("1");
-        await waitFor(() => expect(target.getBoundingClientRect().top).toBeCloseTo(start.top, 1));
+        await waitFor(() => {
+          expect(neighbor.getBoundingClientRect().top).toBeCloseTo(start.top, 1);
+          expect(target.getBoundingClientRect().top).toBeCloseTo(targetShiftedTop, 1);
+        });
         expect(fixture.writes).toHaveLength(0);
-        if (cancel) {
+        if (action === "cancel") {
           const list = source.parentElement!;
           const bounds = vi.spyOn(list,"getBoundingClientRect");
           try {
@@ -4428,24 +4708,36 @@ test("property grips move a row vertically and shift its neighbors before saving
           await userEvent.keyboard("{Escape}");
           expect(source.getBoundingClientRect().top).toBeCloseTo(start.top, 1);
           expect(target.getBoundingClientRect().top).toBeCloseTo(targetStart.top, 1);
+        } else if (action === "reverse") {
+          await userEvent.hover(document.body, { force: true, position: {
+            x: start.left + start.width / 2 - bodyBounds.left,
+            y: start.top + start.height / 2 - bodyBounds.top,
+          } });
+          await waitFor(() => expect(target.getBoundingClientRect().top).toBeCloseTo(targetStart.top, 1));
         }
       } finally { await commands.releaseLeftMouseButton(); }
+      if (action === "reverse") {
+        await waitFor(() => expect(source.getBoundingClientRect().top).toBeCloseTo(start.top, 1));
+        expect(fixture.writes).toHaveLength(0);
+        expect(grip).toHaveFocus();
+      }
     }
     await waitFor(() => expect(fixture.writes).toHaveLength(1));
     expect(source.hasAttribute("data-dragging")).toBe(false);
     expect(getComputedStyle(name).borderRadius).toBe("8px");
-    expect(source.getBoundingClientRect().top).toBeCloseTo(targetStart.bottom - start.height, 1);
+    expect(source.getAnimations().some(animation => !(animation instanceof CSSTransition))).toBe(true);
+    await waitFor(() => expect(source.getBoundingClientRect().top).toBeCloseTo(targetStart.bottom - start.height, 1));
     finishSave();
     await waitFor(() => {
       const order = fixture.layout().order;
-      expect(order.indexOf("property:零值")).toBeGreaterThanOrEqual(0);
-      expect(order.indexOf("property:零值")).toBeLessThan(order.indexOf("property:摘要"));
+      expect(order.indexOf("property:未完成")).toBeGreaterThanOrEqual(0);
+      expect(order.indexOf("property:未完成")).toBeLessThan(order.indexOf("property:摘要"));
     });
-    grip.focus();
+    expect(grip).toHaveFocus();
     await userEvent.keyboard("{ArrowUp}");
     await waitFor(() => {
       const order = fixture.layout().order;
-      expect(order.indexOf("property:摘要")).toBeLessThan(order.indexOf("property:零值"));
+      expect(order.indexOf("property:摘要")).toBeLessThan(order.indexOf("property:未完成"));
     });
     expect(document.activeElement).toBe(grip);
     expect(changes).toEqual([]);
@@ -4456,7 +4748,7 @@ test("property grips move a row vertically and shift its neighbors before saving
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(body.queryByRole("menu", {name: "管理属性 标签"})).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(trigger));
-  } finally { finishSave(); fixture.release(); }
+  } finally { finishSave(); fixture.release(); releaseMode(); }
 }, 20_000);
 
 for (const direction of ["ArrowUp", "ArrowDown"] as const) {
@@ -4699,6 +4991,304 @@ test("lazy vault images wait for every ancestor clip and read once after nested 
 }
 
 
+if (!inject("uiQualityTouch")) test("classic rail slides to the current page or open panel", async () => {
+  await page.viewport(1024, 900);
+  await commands.setReducedMotion("no-preference");
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: "classic" }));
+  history.replaceState(null, "", "#/home");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    const rail = await canvas.findByRole("navigation", { name: "桌面导航" });
+    const group = within(rail).getByRole("group", { name: "主要入口" });
+    const footer = within(rail).getByRole("group", { name: "笔记库和设置" });
+    const home = within(group).getByRole("button", { name: "主页" });
+    const notes = within(group).getByRole("button", { name: "笔记" });
+    const tags = within(group).getByRole("button", { name: "标签" });
+    const search = within(group).getByRole("button", { name: "搜索" });
+    const vault = within(footer).getByRole("button", { name: /^笔记库：/ });
+    const settings = within(footer).getByRole("button", { name: "设置" });
+    const indicator = () => getComputedStyle(group, "::before");
+    const offset = () => Number.parseFloat(indicator().translate.split(" ")[1] ?? "0");
+    const target = (button: HTMLElement) => button.getBoundingClientRect().top - group.getBoundingClientRect().top;
+    expect(getComputedStyle(group).rowGap).toBe("2px");
+    expect(getComputedStyle(footer).rowGap).toBe("2px");
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(indicator().content).toBe('""');
+    expect(indicator().transitionDuration).toBe("0.165s");
+    const fill = indicator().backgroundColor;
+    await userEvent.hover(notes);
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(offset()).toBe(0);
+    await userEvent.click(notes);
+    expect(notes).toHaveAttribute("aria-current", "page");
+    await waitFor(() => {
+      expect(offset()).toBeGreaterThan(0);
+      expect(offset()).toBeLessThan(target(notes));
+    }, { interval: 10 });
+    await waitFor(() => expect(offset()).toBe(target(notes)));
+
+    await userEvent.click(search);
+    await within(document.body).findByRole("dialog", { name: "搜索笔记" });
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    expect(notes).toHaveAttribute("aria-current", "page");
+    await waitFor(() => expect(offset()).toBe(target(search)));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(search).toHaveFocus());
+    await waitFor(() => expect(offset()).toBe(target(notes)));
+
+    const footerIndicator = () => getComputedStyle(footer, "::before");
+    const footerOffset = () => Number.parseFloat(footerIndicator().translate.split(" ")[1] ?? "0");
+    await userEvent.hover(settings);
+    expect(footerIndicator().content).toBe("none");
+    await userEvent.click(settings);
+    expect(indicator().content).toBe("none");
+    expect(settings).toHaveAttribute("aria-current", "page");
+    expect(footerIndicator().backgroundColor).toBe(fill);
+    expect(footerIndicator().transitionDuration).toBe("0.165s");
+    await waitFor(() => expect(footerOffset()).toBe(42));
+    await userEvent.hover(vault);
+    expect(footerOffset()).toBe(42);
+    await userEvent.click(vault);
+    await waitFor(() => {
+      expect(footerOffset()).toBeGreaterThan(0);
+      expect(footerOffset()).toBeLessThan(42);
+    }, { interval: 10 });
+    await within(document.body).findByRole("dialog", { name: "切换笔记库" });
+    expect(vault).toHaveAttribute("aria-expanded", "true");
+    await waitFor(() => expect(footerOffset()).toBe(0));
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(vault).toHaveFocus());
+    await waitFor(() => expect(footerOffset()).toBe(42));
+
+    await commands.setReducedMotion("reduce");
+    tags.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(tags).toHaveAttribute("aria-current", "page");
+    expect(tags).toHaveFocus();
+    expect(indicator().transitionDuration).toBe("0s");
+    expect(offset()).toBe(target(tags));
+    expect(footerIndicator().content).toBe("none");
+    if (server.browser !== "webkit") {
+      await commands.setForcedColors("active");
+      expect(indicator().outlineStyle).toBe("solid");
+    }
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
+});
+
+if (!inject("uiQualityTouch")) test("home layout indicator slides after changing the layout", async () => {
+  await page.viewport(1280, 900);
+  await commands.setReducedMotion("no-preference");
+  const key = "memocard:note-layout";
+  const previous = localStorage.getItem(key);
+  localStorage.setItem(key, "cards");
+  const view = render(<PreviewModeProvider mode="light"><NoteCollection home={{ tab: "recent", pinnedCount: 0, onTabChange: () => {} }} notes={[editorNote]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
+  try {
+    const canvas = within(view.container);
+    const control = canvas.getByRole("group", { name: "主页布局" });
+    const cards = within(control).getByRole("button", { name: "卡片布局" });
+    const rows = within(control).getByRole("button", { name: "列表布局" });
+    const notes = canvas.getByRole("list", { name: "笔记列表" });
+    const plate = () => getComputedStyle(control, "::before");
+    const offset = () => Number.parseFloat(plate().translate);
+    await waitFor(() => expect(plate().content).toBe('""'));
+    await userEvent.hover(rows);
+    expect(offset()).toBe(0);
+    expect(cards).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(rows);
+    expect(notes).toHaveAttribute("data-layout", "list");
+    await waitFor(() => {
+      expect(offset()).toBeGreaterThan(0);
+      expect(offset()).toBeLessThan(100);
+    }, { interval: 10 });
+    await waitFor(() => expect(offset()).toBe(100));
+    expect(plate().transitionDuration).toBe("0.165s");
+    await commands.setReducedMotion("reduce");
+    cards.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(cards).toHaveFocus();
+    expect(notes).toHaveAttribute("data-layout", "cards");
+    expect(plate().transitionDuration).toBe("0s");
+    expect(offset()).toBe(0);
+  } finally {
+    view.unmount();
+    if (previous === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, previous);
+  }
+});
+
+if (!inject("uiQualityTouch")) test("home and tag view indicators slide with the selected tab", async () => {
+  await page.viewport(1280, 900);
+  await commands.setReducedMotion("no-preference");
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: "classic" }));
+  history.replaceState(null, "", "#/tags");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  const canvas = within(view.container);
+  try {
+    await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", "rail"));
+    for (const [name, firstLabel, secondLabel] of [
+      ["标签视图", "全部", "标签群组"],
+      ["主页内容", "最近更新", /^已固定/],
+    ] as const) {
+      const list = await canvas.findByRole("tablist", { name });
+      const first = within(list).getByRole("tab", { name: firstLabel });
+      const second = within(list).getByRole("tab", { name: secondLabel });
+      await waitFor(() => expect(list.querySelector('[data-slot="tabs-indicator"]:not([hidden])')).toBeVisible());
+      const indicator = list.querySelector<HTMLElement>('[data-slot="tabs-indicator"]')!;
+      const offset = () => Number.parseFloat(getComputedStyle(indicator).translate);
+      const target = (tab: HTMLElement) => tab.getBoundingClientRect().left - list.getBoundingClientRect().left;
+      await waitFor(() => expect(offset()).toBeCloseTo(target(first), 1));
+      expect(first).toHaveAttribute("aria-selected", "true");
+      expect(indicator.getBoundingClientRect().height).toBeCloseTo(name === "主页内容" ? 2 : first.getBoundingClientRect().height, 1);
+      await userEvent.hover(second);
+      expect(offset()).toBeCloseTo(target(first), 1);
+      await userEvent.click(second);
+      expect(second).toHaveAttribute("aria-selected", "true");
+      await waitFor(() => {
+        expect(offset()).toBeGreaterThan(target(first));
+        expect(offset()).toBeLessThan(target(second));
+      }, { interval: 10 });
+      await waitFor(() => expect(offset()).toBeCloseTo(target(second), 1));
+      await commands.setReducedMotion("reduce");
+      second.focus();
+      await userEvent.keyboard("{ArrowLeft}");
+      expect(first).toHaveFocus();
+      expect(first).toHaveAttribute("aria-selected", "true");
+      await waitFor(() => expect(offset()).toBeCloseTo(target(first), 1));
+      expect(getComputedStyle(indicator).transitionDuration).toBe("0s");
+      if (name === "标签视图") {
+        await commands.setReducedMotion("no-preference");
+        await userEvent.click(within(canvas.getByRole("navigation", { name: "桌面导航" })).getByRole("button", { name: "主页" }));
+      } else {
+        await page.viewport(390, 844);
+        await waitFor(() => expect(indicator.getBoundingClientRect().height).toBeCloseTo(first.getBoundingClientRect().height, 1));
+      }
+    }
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
+});
+
+if (!inject("uiQualityTouch")) test("note type indicator slides only when the filter changes", async () => {
+  await page.viewport(1280, 900);
+  await commands.setReducedMotion("no-preference");
+  const previousHash = location.hash;
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    const list = await canvas.findByRole("tablist", { name: "类型" });
+    const all = within(list).getByRole("tab", { name: "全部类型" });
+    const images = within(list).getByRole("tab", { name: "有图片" });
+    const links = within(list).getByRole("tab", { name: "有链接" });
+    await waitFor(() => expect(list.querySelector('[data-slot="tabs-indicator"]:not([hidden])')).toBeVisible());
+    const indicator = list.querySelector<HTMLElement>('[data-slot="tabs-indicator"]')!;
+    const plate = () => getComputedStyle(indicator);
+    const offset = () => Number.parseFloat(plate().translate);
+    const target = (tab: HTMLElement) => tab.getBoundingClientRect().left - list.getBoundingClientRect().left + list.scrollLeft;
+    expect(all).toHaveAttribute("aria-selected", "true");
+    await waitFor(() => expect(offset()).toBeCloseTo(target(all), 1));
+    expect(plate().transitionDuration).toBe("0.165s, 0.165s");
+    await userEvent.hover(images);
+    expect(offset()).toBeCloseTo(target(all), 1);
+    expect(all).toHaveAttribute("aria-selected", "true");
+    await userEvent.click(images);
+    await waitFor(() => expect(images).toHaveAttribute("aria-selected", "true"));
+    await waitFor(() => {
+      expect(offset()).toBeGreaterThan(target(all));
+      expect(offset()).toBeLessThan(target(images));
+    }, { interval: 10 });
+    await waitFor(() => expect(offset()).toBeCloseTo(target(images), 1));
+    await commands.setReducedMotion("reduce");
+    images.focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await waitFor(() => expect(links).toHaveAttribute("aria-selected", "true"));
+    expect(links).toHaveFocus();
+
+    await page.viewport(390, 844);
+    list.scrollLeft = list.scrollWidth;
+    await waitFor(() => expect(list.scrollLeft).toBeGreaterThan(0));
+    await waitFor(() => expect(offset()).toBeCloseTo(target(links), 1));
+    expect(plate().transitionDuration).toBe("0s");
+    expect(Number.parseFloat(plate().width)).toBeCloseTo(links.getBoundingClientRect().width, 1);
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+});
+
+if (!inject("uiQualityTouch")) test("top navigation slides its light highlight when the current page changes", async () => {
+  await page.viewport(1024, 900);
+  await commands.setReducedMotion("no-preference");
+  const previousHash = location.hash;
+  const appearanceKey = "memocard-web-appearance-v1";
+  const previousAppearance = localStorage.getItem(appearanceKey);
+  localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: "minimal", mode: "light" }));
+  history.replaceState(null, "", "#/home");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const nav = await within(view.container).findByRole("navigation", { name: "顶部导航" });
+    const home = within(nav).getByRole("button", { name: "主页" });
+    const notes = within(nav).getByRole("button", { name: "笔记" });
+    const tags = within(nav).getByRole("button", { name: "标签" });
+    const indicator = () => getComputedStyle(nav, "::before");
+    const offset = () => {
+      const style = indicator();
+      return Array.from(style.translate.matchAll(/([\d.]+)(%|px)/g)).reduce((x, [, value, unit]) => (
+        x + Number(value) * (unit === "%" ? Number.parseFloat(style.width) / 100 : 1)
+      ), 0);
+    };
+    const target = (button: HTMLElement) => button.getBoundingClientRect().left - nav.getBoundingClientRect().left;
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(indicator().content).toBe('""');
+    expect(indicator().transitionDuration).toBe("0.165s");
+    await userEvent.hover(notes);
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(offset()).toBeCloseTo(target(home), 1);
+    await userEvent.click(notes);
+    expect(notes).toHaveAttribute("aria-current", "page");
+    await waitFor(() => {
+      expect(offset()).toBeGreaterThan(target(home));
+      expect(offset()).toBeLessThan(target(notes));
+    }, { interval: 10 });
+    await waitFor(() => expect(offset()).toBeCloseTo(target(notes), 1));
+    tags.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(tags).toHaveAttribute("aria-current", "page");
+    expect(tags).toHaveFocus();
+    await waitFor(() => expect(offset()).toBeCloseTo(target(tags), 1));
+    expect(Number.parseFloat(indicator().width)).toBeCloseTo(tags.getBoundingClientRect().width, 1);
+    await commands.setReducedMotion("reduce");
+    home.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(home).toHaveFocus();
+    expect(home).toHaveAttribute("aria-current", "page");
+    expect(indicator().transitionDuration).toBe("0s");
+    expect(offset()).toBeCloseTo(target(home), 1);
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    if (previousAppearance === null) localStorage.removeItem(appearanceKey);
+    else localStorage.setItem(appearanceKey, previousAppearance);
+  }
+});
+
 test("classic Web theme aligns navigation, collections and detail surfaces across breakpoints", async () => {
   await commands.setReducedMotion("reduce");
   const previousHash = location.hash;
@@ -4839,8 +5429,67 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 }, 30_000);
 
-if (!inject("uiQualityTouch")) test("classic note navigation opens on hover and remains keyboard operable", async () => {
+if (!inject("uiQualityTouch")) test("note appearance font rows slide independently on hover", async () => {
+  await page.viewport(1280, 900);
+  await commands.setReducedMotion("no-preference");
+  const previousHash = location.hash;
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container), body = within(document.body);
+    await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
+    await userEvent.click(await canvas.findByRole("button", { name: "页面操作" }));
+    await userEvent.click(await body.findByRole("menuitem", { name: "外观和布局" }));
+    const menu = await body.findByRole("menu", { name: "外观和布局" });
+    const row = (label: string) => within(menu).findByRole("group", { name: label });
+    const font = (group: HTMLElement, name: string) => within(group).getByRole("menuitemradio", { name });
+    const heading = await row("标题字体"), text = await row("正文字体");
+    expect(getComputedStyle(menu).padding).toBe("8px");
+    for (const [group, label] of [[heading, "标题字体"], [text, "正文字体"]] as const) {
+      expect(getComputedStyle(group).paddingInline).toBe("0px");
+      expect(getComputedStyle(within(group).getByText(label)).paddingInline).toBe("8px");
+    }
+    const headingSans = font(heading, "无衬线体"), headingMono = font(heading, "等宽体");
+    const textSans = font(text, "无衬线体"), textSerif = font(text, "衬线体");
+    const plate = (item: HTMLElement) => getComputedStyle(item.parentElement!, "::before");
+    const offset = (item: HTMLElement) => Number.parseFloat(plate(item).translate);
+    const target = (item: HTMLElement) => item.getBoundingClientRect().left - item.parentElement!.getBoundingClientRect().left;
+    const headingSelected = within(heading).getByRole("menuitemradio", { checked: true });
+    const textSelected = within(text).getByRole("menuitemradio", { checked: true });
+    const selectedColor = getComputedStyle(headingSelected).backgroundColor;
+    await waitFor(() => expect(menu.getAnimations().some(animation => animation.playState === "running")).toBe(false));
+    await userEvent.hover(headingSans);
+    await waitFor(() => expect(offset(headingSans)).toBeCloseTo(target(headingSans), 1));
+    expect(plate(headingSans).backgroundColor).toBe(selectedColor);
+    expect(plate(headingSans).transitionDuration).toBe("0.3s");
+    await userEvent.hover(headingMono);
+    await waitFor(() => {
+      expect(offset(headingMono)).toBeGreaterThan(target(headingSans));
+      expect(offset(headingMono)).toBeLessThan(target(headingMono));
+    }, { interval: 10 });
+    expect(headingSelected).toHaveAttribute("aria-checked", "true");
+    await userEvent.hover(textSans);
+    expect(plate(headingSans).content).toBe("none");
+    expect(getComputedStyle(headingSelected).backgroundColor).toBe(selectedColor);
+    expect(plate(textSans).content).toBe('""');
+    await commands.setReducedMotion("reduce");
+    await userEvent.hover(textSerif);
+    expect(plate(textSerif).transitionDuration).toBe("0s");
+    expect(offset(textSerif)).toBeCloseTo(target(textSerif), 1);
+    expect(textSelected).toHaveAttribute("aria-checked", "true");
+    await userEvent.hover(within(menu).getByRole("menuitemcheckbox", { name: "小字号" }));
+    await userEvent.keyboard("{ArrowDown}");
+    expect(plate(textSerif).content).toBe("none");
+    await userEvent.keyboard("{Escape}{Escape}");
+    await expect.element(canvas.getByRole("button", { name: "页面操作" })).toHaveFocus();
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+});
+
+if (!inject("uiQualityTouch")) test("classic note navigation slides on hover and remains keyboard operable", async () => {
   await page.viewport(1440, 900);
+  await commands.setReducedMotion("no-preference");
   const previousHash = location.hash;
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/notes");
@@ -4858,8 +5507,29 @@ if (!inject("uiQualityTouch")) test("classic note navigation opens on hover and 
     const menu = await body.findByRole("menu", { name: "导航菜单" });
     expect(editor).toHaveFocus();
     expect(body.queryByRole("tooltip", { name: "导航菜单" })).toBeNull();
-    await userEvent.hover(within(menu).getByRole("menuitem", { name: "主页" }));
-    expect(menu).toBeVisible();
+    const items = within(menu);
+    const first = items.getByRole("menuitem", { name: "主页" });
+    const search = items.getByRole("menuitem", { name: "搜索" });
+    const indicator = () => getComputedStyle(menu, "::before");
+    const position = () => Number.parseFloat(indicator().translate.split(" ")[1]);
+    const hoverStart = location.hash;
+    expect(indicator().content).toBe("none");
+    await waitFor(() => expect(menu.getAnimations().some(animation => animation.playState === "running")).toBe(false));
+    await userEvent.hover(first);
+    await waitFor(() => expect(position()).toBe(first.offsetTop));
+    expect(indicator().transitionDuration).toBe("0.3s");
+    expect(indicator().height).toBe(getComputedStyle(first).height);
+    const hoverColor = indicator().backgroundColor;
+    await userEvent.hover(items.getByRole("separator"));
+    expect(position()).toBe(first.offsetTop);
+    await userEvent.hover(search);
+    await waitFor(() => {
+      expect(position()).toBeGreaterThan(first.offsetTop);
+      expect(position()).toBeLessThan(search.offsetTop);
+    }, { interval: 10 });
+    await userEvent.hover(first);
+    await waitFor(() => expect(position()).toBe(first.offsetTop));
+    expect(location.hash).toBe(hoverStart);
     await userEvent.hover(editor);
     await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
     await waitFor(() => expect(menu).not.toBeInTheDocument());
@@ -4867,6 +5537,18 @@ if (!inject("uiQualityTouch")) test("classic note navigation opens on hover and 
     await userEvent.keyboard("{ArrowDown}");
     const home = await body.findByRole("menuitem", { name: "主页" });
     await expect.element(home).toHaveFocus();
+    const reopened = await body.findByRole("menu", { name: "导航菜单" });
+    const reopenedIndicator = () => getComputedStyle(reopened, "::before");
+    expect(reopenedIndicator().content).toBe("none");
+    expect(getComputedStyle(home).backgroundColor).toBe(hoverColor);
+    const notes = within(reopened).getByRole("menuitem", { name: "笔记" });
+    await commands.setReducedMotion("reduce");
+    await userEvent.hover(home);
+    await userEvent.hover(notes);
+    expect(reopenedIndicator().transitionDuration).toBe("0s");
+    expect(Number.parseFloat(reopenedIndicator().translate.split(" ")[1])).toBe(notes.offsetTop);
+    await userEvent.keyboard("{ArrowDown}");
+    expect(reopenedIndicator().content).toBe("none");
     await userEvent.keyboard("{Escape}");
     await expect.element(trigger).toHaveFocus();
     expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -4898,8 +5580,9 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
     stateSwatch.style.backgroundColor = "var(--color-background-control)";
     stateSwatch.style.color = trigger.closest("[data-ui-theme=dark]") ? "var(--color-icon-primary)" : "var(--color-black)";
     trigger.parentElement!.append(stateSwatch);
+    const currentBackground = () => getComputedStyle(trigger.parentElement!, "::before").backgroundColor;
     await waitFor(() => {
-      expect(getComputedStyle(trigger).backgroundColor).toBe(getComputedStyle(stateSwatch).backgroundColor);
+      expect(currentBackground()).toBe(getComputedStyle(stateSwatch).backgroundColor);
       expect(getComputedStyle(trigger).color).toBe(getComputedStyle(stateSwatch).color);
       expect(getComputedStyle(trigger).outlineStyle).toBe("none");
     });
@@ -4911,7 +5594,7 @@ if (!inject("uiQualityTouch")) test("desktop notes navigate directly and collect
     const search = nav.getByRole("button", { name: "搜索" });
     expect(getComputedStyle(search).color).toBe(getComputedStyle(trigger).color);
     await userEvent.hover(search);
-    await waitFor(() => expect(getComputedStyle(search).backgroundColor).toBe(getComputedStyle(trigger).backgroundColor));
+    await waitFor(() => expect(Number.parseFloat(getComputedStyle(trigger.parentElement!, "::before").translate.split(" ")[1])).toBeCloseTo(trigger.getBoundingClientRect().top - trigger.parentElement!.getBoundingClientRect().top, 1));
     expect(search.getBoundingClientRect().bottom).toBeLessThan(trigger.getBoundingClientRect().top);
     expect(more.getBoundingClientRect().top).toBeGreaterThan(trigger.getBoundingClientRect().bottom);
     await userEvent.hover(more);
@@ -5022,8 +5705,39 @@ test("drawer inherits semantic tokens in both themes and supports all four direc
   }
 });
 
-if (!inject("uiQualityTouch")) test("drawer dismisses with a downward swipe and restores focus", async () => {
+if (!inject("uiQualityTouch")) test("menu and drawer can reopen during exit and restore trigger focus", async () => {
   await page.viewport(390, 844);
+  await commands.setReducedMotion("no-preference");
+  const view = render(<div className="ui-theme">
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button />}>菜单</DropdownMenuTrigger>
+      <DropdownMenuContent aria-label="快速菜单"><DropdownMenuItem>选项</DropdownMenuItem></DropdownMenuContent>
+    </DropdownMenu>
+    <Drawer>
+      <DrawerTrigger render={<Button />}>抽屉</DrawerTrigger>
+      <DrawerContent><DrawerHeader><DrawerTitle>快速抽屉</DrawerTitle></DrawerHeader>
+        <DrawerFooter><DrawerClose render={<Button />}>关闭</DrawerClose></DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  </div>);
+  const body = within(document.body);
+  for (const [label, role, name] of [["菜单", "menu", "快速菜单"], ["抽屉", "dialog", "快速抽屉"]] as const) {
+    const trigger = within(view.container).getByRole("button", {name: label});
+    trigger.focus();
+    await userEvent.keyboard("{Enter}{Escape}");
+    await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
+    trigger.focus();
+    await userEvent.keyboard("{Enter}");
+    const popup = await body.findByRole(role, {name});
+    await settlePropertyPopup(popup);
+    expect(body.getAllByRole(role, {name})).toHaveLength(1);
+    await dismissPropertyPopup(popup, trigger);
+  }
+});
+
+if (!inject("uiQualityTouch")) test("drawer rebounds from a partial downward swipe and restores focus on dismissal", async () => {
+  await page.viewport(390, 844);
+  await commands.setReducedMotion("no-preference");
   const view = render(<Drawer showSwipeHandle>
     <DrawerTrigger render={<Button />}>打开滑动抽屉</DrawerTrigger>
     <DrawerContent><DrawerHeader><DrawerTitle>滑动抽屉</DrawerTitle><DrawerDescription>向下滑动关闭。</DrawerDescription></DrawerHeader>
@@ -5037,6 +5751,16 @@ if (!inject("uiQualityTouch")) test("drawer dismisses with a downward swipe and 
   await settlePropertyPopup(dialog);
   const handle = dialog.querySelector<HTMLElement>('[data-slot="drawer-swipe-handle"]')!;
   const start = handle.getBoundingClientRect();
+  const initialTop = dialog.getBoundingClientRect().top;
+  await userEvent.hover(handle);
+  await commands.pressLeftMouseButton();
+  try {
+    for (const distance of [24, 36]) await userEvent.hover(document.documentElement, { force: true, position: { x: start.left + start.width / 2, y: start.top + start.height / 2 + distance } });
+    await waitFor(() => expect(dialog.getBoundingClientRect().top).toBeGreaterThan(initialTop));
+    await new Promise(resolve => setTimeout(resolve, 180));
+  } finally { await commands.releaseLeftMouseButton(); }
+  await waitFor(() => expect(dialog.getBoundingClientRect().top).toBeCloseTo(initialTop, 1));
+  expect(dialog).toBeVisible();
   await userEvent.hover(handle);
   await commands.pressLeftMouseButton();
   try {
@@ -5117,13 +5841,56 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
     if (entry) await userEvent.click(body.getByRole("button", {name: "收起快速记录"}));
     await userEvent.click(canvas.getByRole("textbox", {name: "笔记内容"}));
     act(() => { editor!.chain().focus().setTextSelection({from: 1, to: 3}).run(); });
-    await userEvent.click(await body.findByRole("button", {name: "链接"}));
-    const input = await body.findByRole("textbox", {name: "链接地址"});
-    const popup = input.closest<HTMLElement>('[role="dialog"]')!;
-    expect(parseFloat(getComputedStyle(popup).borderTopLeftRadius)).toBeCloseTo(width < 768 ? 20.8 : 12, 4);
-    if (width >= 768) expect(getComputedStyle(input).height).toBe("32px");
-    for (const button of popup.querySelectorAll("button")) expect(getComputedStyle(button).fontWeight).toBe("400");
-    await userEvent.click(within(popup).getByRole("button", {name: "取消"}));
+    const fixture = await createWorkspaceFixture();
+    const release = setStorybookRequestHandler(fixture.request);
+    try {
+      if (width >= 768) {
+        await userEvent.click(await body.findByRole("button", {name: "更多格式"}));
+        const menu = await body.findByRole("dialog", {name: "更多格式"});
+        const groups = menu.querySelectorAll<HTMLElement>(".rich-format-group + .rich-format-group");
+        expect(groups).toHaveLength(2);
+        const bounds = menu.getBoundingClientRect();
+        for (const group of groups) {
+          const divider = group.getBoundingClientRect();
+          expect(divider.left - bounds.left).toBeCloseTo(menu.clientLeft, 0);
+          expect(bounds.right - divider.right).toBeCloseTo(menu.clientLeft, 0);
+          expect(getComputedStyle(group).paddingInline).toBe("4px");
+        }
+        await userEvent.keyboard("{Escape}");
+      }
+      await userEvent.click(await body.findByRole("button", {name: "链接"}));
+      const input = await body.findByRole("textbox", {name: "链接地址"});
+      const popup = input.closest<HTMLElement>('[role="dialog"]')!;
+      expect(parseFloat(getComputedStyle(popup).borderTopLeftRadius)).toBeCloseTo(width < 768 ? 20.8 : 12, 4);
+      expect(getComputedStyle(popup).padding).toBe(width < 768 ? "16px" : "8px");
+      expect(getComputedStyle(input).height).toBe(width < 768 ? "44px" : "32px");
+      expect(getComputedStyle(input).paddingInline).toBe("8px");
+      expect(getComputedStyle(input).borderTopLeftRadius).toBe("8px");
+      expect(popup.querySelector(".rich-format-footer")).toBeNull();
+      const list = await within(popup).findByRole("listbox", {name: "最近更新的笔记"});
+      const heading = within(popup).getByText("最近更新的笔记");
+      if (width >= 768) {
+        const toolbar = body.getByRole("toolbar", {name: "文字格式"});
+        await waitFor(() => {
+          const anchor = toolbar.getBoundingClientRect();
+          const panel = popup.getBoundingClientRect();
+          expect(panel.left).toBeCloseTo(anchor.left, 0);
+          expect(panel.top - anchor.bottom).toBeCloseTo(8, 0);
+        });
+      }
+      expect(heading.parentElement).toBe(list.parentElement);
+      expect(getComputedStyle(heading).paddingBlock).toBe("4px");
+      const [first] = within(list).getAllByRole("option");
+      expect(getComputedStyle(first).rowGap).toBe("2px");
+      expect(getComputedStyle(first).columnGap).toBe("8px");
+      expect(first.querySelector("small")).toBeNull();
+      const headingTextLeft = heading.getBoundingClientRect().left + parseFloat(getComputedStyle(heading).paddingLeft);
+      expect(first.querySelector("svg")!.getBoundingClientRect().left).toBeCloseTo(headingTextLeft);
+      expect(list.getBoundingClientRect().top - heading.getBoundingClientRect().bottom).toBe(4);
+      await userEvent.click(first);
+      await waitFor(() => expect(body.queryByRole("dialog", {name: "编辑链接"})).toBeNull());
+      expect(editor!.view.dom.querySelector("a[data-wiki-target]")).not.toBeNull();
+    } finally { release(); }
   });
 }
 

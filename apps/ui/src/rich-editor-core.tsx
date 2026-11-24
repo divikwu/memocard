@@ -1,3 +1,4 @@
+import { splitWikiTarget } from './wiki-markdown';
 import { Suspense, forwardRef, useCallback, useEffect, useId, useLayoutEffect, useImperativeHandle, useRef, useState, type ComponentType, type ComponentProps, type CSSProperties, type SVGProps, type DragEventHandler } from 'react';
 import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, useEditorState, type NodeViewProps, type ReactNodeViewProps, type NodeViewRendererProps, type ChainedCommands, type Editor as TiptapEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -49,7 +50,7 @@ export type RichEditorUI = {
   Markdown: ComponentType<{ body: string; notePath: string; onError?: (message: string) => void }>;
   NoteImage: ComponentType<{ source: string; alt: string; width?: number | string; height?: number | string; onDragStart?: DragEventHandler<HTMLElement> }>;
   RichCodeBlock: ComponentType<ReactNodeViewProps>;
-  RichFormatTools: ComponentType<{ editor: TiptapEditor }>;
+  RichFormatTools: ComponentType<{ editor: TiptapEditor; mobile: boolean; onOpenLink: (link: HTMLAnchorElement) => void; onError: (message: string) => void }>;
   RichImageTools: ComponentType<{ editor: TiptapEditor; getPos: () => number | undefined; alt: string; onEditCaption: () => void }>;
   CalloutColorsMenu: ComponentType<{ editor: TiptapEditor; pos: number; onClose: () => void }>;
   CalloutIconPicker: ComponentType<{ editor: TiptapEditor; target: CalloutIconTarget; onClose: () => void }>;
@@ -92,7 +93,7 @@ function SafeImage({ node, extension, editor, getPos }: NodeViewProps) {
         event.currentTarget.blur();
         editor.view.focus();
       }} /> : caption && <span className="note-image-caption">{caption}</span>}
-    <RichImageTools editor={editor} getPos={getPos} alt={alt} onEditCaption={() => setEditingCaption(true)} />
+    <Suspense fallback={null}><RichImageTools editor={editor} getPos={getPos} alt={alt} onEditCaption={() => setEditingCaption(true)} /></Suspense>
   </NodeViewWrapper>;
 }
 function PreservedContent({ node, extension }: NodeViewProps) {
@@ -122,7 +123,7 @@ const WikiImageExtension = SafeImageExtension.extend({
     name: 'wikiImage', level: 'block', start: src => src.indexOf('![['),
     tokenize: src => { const match = /^!\[\[([^\]\n]+)\]\](?:\n|$)/.exec(src); return match ? { type: 'wikiImage', raw: match[0], text: match[1] } : undefined; },
   },
-  parseMarkdown: token => { const [src, alt] = String(token.text).split('|'); return { type: 'wikiImage', attrs: { src, alt: alt ?? '' } }; },
+  parseMarkdown: token => { const [src, alt] = splitWikiTarget(String(token.text)); return { type: 'wikiImage', attrs: { src, alt: alt ?? '' } }; },
   renderMarkdown: node => `![[${node.attrs?.src}${node.attrs?.alt ? `|${node.attrs.alt}` : ''}]]`,
 });
 const PreservedExtension = PreservedMarkdown.extend({
@@ -222,6 +223,12 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
   const pastePlain = useRef(false);
   const tabExit = useRef(false);
   const keyboardHintId = useId();
+  function followLink(link: HTMLAnchorElement) {
+    const wiki = link.getAttribute('data-wiki-target'), href = link.getAttribute('href');
+    const url = href && externalUrl(href);
+    const work = wiki ? openVaultLink(wiki, latest.current.notePath, true) : url ? request('openExternal', { url }) : href ? openVaultLink(href, latest.current.notePath, false) : null;
+    void work?.catch(() => latest.current.onError('无法打开链接。'));
+  }
   const editor: TiptapEditor | null = useEditor({
     immediatelyRender: false,
     // Plain Markdown is parsed explicitly; rich/literal clipboard content must not run Markdown paste rules.
@@ -346,13 +353,11 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
           if (destination !== null) editorRef.current?.chain().focus().setTextSelection(destination).scrollIntoView().run();
           return true;
         }
-        const link = (event.target as HTMLElement).closest('a');
+        const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a');
         if (!link) return false;
         event.preventDefault();
         if (!(event.metaKey || event.ctrlKey)) return true;
-        const wiki = link.getAttribute('data-wiki-target'), href = link.getAttribute('href');
-        const work = wiki ? openVaultLink(wiki, latest.current.notePath, true) : href && externalUrl(href) ? request('openExternal', { url: externalUrl(href) }) : href ? openVaultLink(href, latest.current.notePath, false) : null;
-        void work?.catch(() => latest.current.onError('无法打开链接。'));
+        followLink(link);
         return true;
       },
       handlePaste(view, event, slice) {
@@ -865,7 +870,7 @@ return forwardRef<HTMLDivElement, RichEditorProps>(function RichMarkdownEditor(p
     {selectionBox && <div className="rich-selection-box" aria-hidden="true" style={selectionBox} />}
     {!props.disabled && <RichTagSuggestions editor={editor} />}
     {dropTop != null && <div className="block-drop-indicator" style={{ top: dropTop }} />}
-    {!props.disabled && editor.state.selection instanceof TextSelection && !editor.state.selection.empty && !menu && !tableMenuOpen && <Suspense fallback={null}><RichFormatTools editor={editor} /></Suspense>}
+    {!props.disabled && !menu && !tableMenuOpen && <Suspense fallback={null}><RichFormatTools editor={editor} mobile={isMobile} onOpenLink={followLink} onError={props.onError} /></Suspense>}
     {/* Gutter menus slide inside the viewport instead of flipping their horizontal alignment. */}
     {menu === 'insert' && <PopoverPortal><Popover.Positioner anchor={controlsRef} side="bottom" align="start" sideOffset={6} collisionPadding={12} collisionAvoidance={{ side: 'flip', align: 'shift', fallbackAxisSide: 'none' }} className="z-50"><Popover.Popup ref={menuRef} initialFocus={() => slash.current ? false : true} finalFocus={false} className={`rich-menu block-menu rich-insert-menu ${uiClassName}`} role="menu" aria-label="插入内容块菜单" onKeyDown={event => {
       if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;

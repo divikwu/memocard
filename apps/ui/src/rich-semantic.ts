@@ -1,3 +1,4 @@
+import { splitWikiTarget } from './wiki-markdown';
 import { Mark, Node, type Editor } from '@tiptap/react';
 import { DOMSerializer } from '@tiptap/pm/model';
 import { Plugin } from '@tiptap/pm/state';
@@ -61,7 +62,7 @@ export const WikiLink = Mark.create({
     tokenize: src => { const match = /^\[\[([^\]\n]+)\]\]/.exec(src); return match ? { type: 'wikiLink', raw: match[0], text: match[1] } : undefined; },
   },
   parseMarkdown: token => {
-    const [target, label] = String(token.text).split('|');
+    const [target, label] = splitWikiTarget(String(token.text));
     return { type: 'text', text: label ?? target, marks: [{ type: 'wikiLink', attrs: { target } }] };
   },
   renderMarkdown: (node, helpers) => {

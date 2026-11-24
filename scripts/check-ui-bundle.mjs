@@ -105,6 +105,7 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "iOS home with native chrome", entries: ["ui/native/IOSAppChrome.tsx", "ui/business/QuickCapture.tsx"], raw: 1520, gzip: 455 },
     { name: "mobile home with swipe capture", entries: ["ui/business/QuickCapture.tsx", "ui/components/sheet-swipe.tsx"], raw: 1510, gzip: 450 },
     { name: "search", entries: ["ui/business/NoteSearchDialog.tsx"], raw: 1800, gzip: 530 },
+    { name: "search with Markdown preview", entries: ["ui/business/NoteSearchDialog.tsx", "ui/business/NoteMarkdown.tsx"], raw: 1800, gzip: 530 },
     { name: "trash", entries: ["ui/business/TrashPage.tsx"], raw: 1800, gzip: 535 },
     { name: "settings", entries: ["ui/web/WebSettings.tsx"], raw: 1850, gzip: 545 },
     // The initial shell includes the themed page skeletons and their shared layout styles.

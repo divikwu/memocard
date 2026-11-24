@@ -1,0 +1,25 @@
+.ui-slide-hover { position: relative; isolation: isolate; }
+.ui-slide-hover[data-hovering]::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 var(--hover-inset, 0) auto;
+  inline-size: var(--hover-width, auto);
+  block-size: var(--hover-height, var(--size-element-sm));
+  border-radius: var(--hover-radius, var(--radius-full));
+  background: var(--hover-color, var(--color-background-control));
+  pointer-events: none;
+  translate: var(--hover-translate);
+}
+.ui-slide-hover[role=menu] {
+  --hover-inset: var(--spacing-1);
+  --hover-radius: var(--radius-element);
+  --hover-color: var(--color-accent-muted);
+}
+.ui-slide-hover[data-hovering] > [role=menuitem]:focus { background-color: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  .ui-slide-hover::before { transition: translate var(--duration-medium) ease-out; }
+}
+@media (forced-colors: active) {
+  .ui-slide-hover::before { outline: var(--border-width) solid Highlight; outline-offset: calc(-1 * var(--border-width)); }
+}

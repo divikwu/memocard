@@ -6,12 +6,17 @@ import { RichMarkdownEditor, type RichEditorProps } from '@ui/business/RichMarkd
 import userEvent from '@testing-library/user-event';
 import { canWrapCallout, unwrapCallout, wrapCallout } from './rich-callout';
 import { applyImageTransaction, arrangeImageRows, imageMoveTransaction, setImageWidths, splitImageRow } from './rich-image-layout';
+import { request as bridgeRequest } from './bridge';
 import { blockSpacingBody } from '../ui-state-fixtures/block-spacing';
 vi.mock('./client-mode', () => ({ isBrowserVault: false, isLocalWeb: false }));
-vi.mock('./bridge', () => ({ request: vi.fn() }));
+vi.mock('./bridge', () => ({ request: vi.fn(async (operation: string) => {
+ if(operation === 'queryNotes')return {notes:[]};
+ throw new Error('No fixture for '+operation);
+}) }));
 // Compile the shared picker before timing editor interactions on cold CI workers.
 beforeAll(async()=>{await import('@ui/business/tag-navigation-editor');},15000);
 beforeEach(() => {
+ vi.mocked(bridgeRequest).mockReset();
  vi.stubGlobal('DragEvent', MouseEvent);
  vi.stubGlobal('PointerEvent', class extends MouseEvent { pointerId=1; pointerType='mouse'; });
  HTMLElement.prototype.setPointerCapture=vi.fn();
@@ -450,7 +455,7 @@ function imagePos(editor: Editor, alt: string) {
 it('joins images from their layout menu with one-step undo and saves a reopenable row',async()=>{
  const original='开头\n\n![甲](../assets/a.png)\n\n![乙](../assets/b.png)\n\n结束';
  const {editor,field,change}=await setup(original);
- fireEvent.click(screen.getByRole('button',{name:'图片布局 甲'}));
+ fireEvent.click(await screen.findByRole('button',{name:'图片布局 甲'}));
  fireEvent.click(await screen.findByRole('menuitem',{name:'与下一行并排'}));
  await waitFor(()=>expect(field.querySelectorAll('figure img')).toHaveLength(2));
  const saved=change.mock.lastCall![0] as string;expect(saved).not.toContain('style=');
@@ -476,7 +481,7 @@ it('reorders, extracts and splits grouped images without losing captions or surr
 });
 it('keeps an open image menu attached to its image when preceding text changes',async()=>{
  const {editor,field}=await setup('开头\n\n![甲](../assets/a.png)\n\n![乙](../assets/b.png)\n\n结束');
- fireEvent.click(screen.getByRole('button',{name:'图片布局 甲'}));
+ fireEvent.click(await screen.findByRole('button',{name:'图片布局 甲'}));
  await screen.findByRole('menuitem',{name:'与下一行并排'});
  act(()=>editor.commands.insertContentAt(2,'新增文字'));
  fireEvent.click(screen.getByRole('menuitem',{name:'与下一行并排'}));
@@ -1123,8 +1128,9 @@ it('creates and removes a link through properties without losing selected text',
  const {editor,field,change}=await setup('正文');
  act(()=>{editor.commands.setTextSelection({from:1,to:3});});
  fireEvent.click(await screen.findByRole('button',{name:'更多格式'}));fireEvent.click(screen.getByRole('button',{name:'编辑链接'}));
- fireEvent.change(screen.getByRole('textbox',{name:'链接地址'}),{target:{value:'https://example.com'}});
- fireEvent.click(screen.getByRole('button',{name:'保存'}));
+ const address=screen.getByRole('textbox',{name:'链接地址'});
+ fireEvent.change(address,{target:{value:'https://example.com'}});
+ fireEvent.keyDown(address,{key:'Enter'});
  expect(field.querySelector('a')?.getAttribute('href')).toContain('https://example.com');
  expect(change).toHaveBeenLastCalledWith('[正文](https://example.com)');
  act(()=>{editor.commands.setTextSelection({from:1,to:3});});
@@ -1828,7 +1834,7 @@ it('keeps a cross-paragraph selection while entering link properties, applies on
  fireEvent.change(address,{target:{value:'https://example.com'}});
  expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
  expect(field.querySelector('.rich-text-selected')).toBeTruthy();
- fireEvent.click(screen.getByRole('button',{name:'保存'}));
+ fireEvent.keyDown(address,{key:'Enter'});
  expect([...field.querySelectorAll('a')].map(node=>node.textContent)).toEqual(['pha','Be']);
  expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
  act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith('Alpha\n\nBeta');
@@ -1868,6 +1874,8 @@ it('offers a compact mobile toolbar and a sheet without losing the text selectio
  expect(screen.queryByRole('button',{name:'行内代码'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:'更多格式'}));
  const sheet=await screen.findByRole('dialog',{name:'更多格式'});expect(sheet.classList.contains('rich-format-sheet')).toBe(true);
+ expect(within(sheet).queryByRole('button',{name:'缩写说明'})).toBeNull();
+ expect(within(sheet).queryByRole('button',{name:'键盘标记'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:'删除线'}));
  expect([...field.querySelectorAll('s')].map(node=>node.textContent)).toEqual(['pha','Be']);
  expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
@@ -1875,7 +1883,7 @@ it('offers a compact mobile toolbar and a sheet without losing the text selectio
  fireEvent.click(await screen.findByRole('button',{name:'编辑链接'}));
  expect((await screen.findByRole('dialog',{name:'编辑链接'})).classList.contains('rich-format-sheet')).toBe(true);
  await waitFor(()=>expect(document.activeElement).toBe(screen.getByRole('textbox',{name:'链接地址'})));
- fireEvent.click(screen.getByRole('button',{name:'取消'}));expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
+ fireEvent.click(screen.getByRole('button',{name:'关闭弹窗'}));expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
 });
 
 it('keeps invalid link input local, preserves selection and saves a corrected trimmed address with Enter', async () => {
@@ -1883,7 +1891,7 @@ it('keeps invalid link input local, preserves selection and saves a corrected tr
  act(()=>editor.commands.setTextSelection({from:3,to:10}));
  await userEvent.setup().click(await screen.findByRole('button',{name:'链接'}));
  const address=await screen.findByRole('textbox',{name:'链接地址'});
- fireEvent.change(address,{target:{value:'javascript:alert(1)'}});fireEvent.click(screen.getByRole('button',{name:'保存'}));
+ fireEvent.change(address,{target:{value:'javascript:alert(1)'}});fireEvent.keyDown(address,{key:'Enter'});
  expect(screen.getByRole('alert').textContent).toContain('有效的网页地址');expect(address.getAttribute('aria-invalid')).toBe('true');
  expect(address.getAttribute('aria-describedby')).toBe(screen.getByRole('alert').id);
  expect(change).not.toHaveBeenCalled();expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
@@ -1892,40 +1900,86 @@ it('keeps invalid link input local, preserves selection and saves a corrected tr
  expect([...field.querySelectorAll('a')].map(node=>[node.textContent,node.getAttribute('href')])).toEqual([['pha','https://example.com'],['Be','https://example.com']]);
  act(()=>editor.commands.undo());expect(change).toHaveBeenLastCalledWith('Alpha\n\nBeta');
 });
-it('edits abbreviation meaning in an anchored popup and removes it with independent undo', async () => {
- const {editor,field}=await setup('Alpha\n\nBeta');
- act(()=>editor.commands.setTextSelection({from:3,to:10}));
- fireEvent.click(await screen.findByRole('button',{name:'更多格式'}));fireEvent.click(await screen.findByRole('button',{name:'缩写说明'}));
- const popup=await screen.findByRole('dialog',{name:'缩写说明'});expect(popup.classList.contains('rich-link-popup')).toBe(true);
- fireEvent.click(screen.getByRole('button',{name:'保存'}));expect(screen.getByRole('alert').textContent).toContain('完整含义');
- fireEvent.change(screen.getByRole('textbox',{name:'缩写说明'}),{target:{value:'完整说明'}});fireEvent.click(screen.getByRole('button',{name:'保存'}));
- expect([...field.querySelectorAll('abbr')].map(node=>[node.textContent,node.title])).toEqual([['pha','完整说明'],['Be','完整说明']]);
- expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
- act(()=>editor.commands.undo());expect(field.querySelector('abbr')).toBeNull();act(()=>editor.commands.redo());
- fireEvent.click(screen.getByRole('button',{name:'更多格式'}));fireEvent.click(await screen.findByRole('button',{name:'缩写说明'}));
- expect((await screen.findByRole('textbox',{name:'缩写说明'}) as HTMLInputElement).value).toBe('完整说明');
- fireEvent.click(screen.getByRole('button',{name:'移除说明'}));expect(field.querySelector('abbr')).toBeNull();
- act(()=>editor.commands.undo());expect(field.querySelectorAll('abbr')).toHaveLength(2);
+it('preserves abbreviation and keyboard markup from existing notes when editing other text', async () => {
+ const abbreviation='<abbr title="完整说明">API</abbr>';
+ const keyboard='<kbd>Enter</kbd>';
+ const {editor,field,change}=await setup(`Alpha\n\n<p>${abbreviation} ${keyboard}</p>\n\nBeta`);
+ expect(field.querySelector('abbr')?.title).toBe('完整说明');
+ expect(field.querySelector('kbd')?.textContent).toBe('Enter');
+
+ const start=editor.state.doc.child(0).nodeSize+1;
+ act(()=>editor.commands.setTextSelection({from:start,to:start+3}));
+ fireEvent.click(await screen.findByRole('button',{name:'更多格式'}));
+ expect(await screen.findByRole('button',{name:'编辑链接'})).toBeTruthy();
+ expect(screen.queryByRole('button',{name:'缩写说明'})).toBeNull();
+ expect(screen.queryByRole('button',{name:'键盘标记'})).toBeNull();
+
+ act(()=>editor.commands.insertContentAt(editor.state.doc.content.size-1,' updated'));
+ expect(change.mock.lastCall?.[0]).toContain(abbreviation);
+ expect(change.mock.lastCall?.[0]).toContain(keyboard);
+ expect(change.mock.lastCall?.[0]).toContain('Beta updated');
 });
 it('shows empty and failed Wiki searches and supports keyboard selection of a matching note', async () => {
  const {request}=await import('./bridge');
- vi.mocked(request).mockReset().mockResolvedValueOnce({notes:[]}).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({notes:[{id:'target',title:'项目计划',body:'<aside>正文第一行</aside>',relativePath:'notes/project.md'},{id:'untitled',body:'# 正文标题',relativePath:'notes/备用笔记.md'}]});
+ vi.mocked(request).mockReset().mockResolvedValueOnce({notes:[{id:'recent',title:'最近更新',relativePath:'notes/recent.md'}]}).mockResolvedValueOnce({notes:[]}).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({notes:[{id:'target',title:'项目计划',body:'<aside>正文第一行</aside>',relativePath:'notes/project.md'},{id:'untitled',body:'# 正文标题',relativePath:'notes/备用笔记.md'}]});
  const {editor,field}=await setup('Alpha\n\nBeta');const user=userEvent.setup();
  act(()=>editor.commands.setTextSelection({from:3,to:10}));
- await user.click(await screen.findByRole('button',{name:'链接'}));await user.click(screen.getByRole('combobox',{name:'链接类型'}));
- await user.click(await screen.findByRole('option',{name:'Wiki 笔记链接'}));
+ await user.click(await screen.findByRole('button',{name:'链接'}));
+ expect(within(await screen.findByRole('listbox',{name:'最近更新的笔记'})).getByRole('option',{name:'最近更新'}).textContent).toBe('最近更新');
+ expect(request).toHaveBeenCalledWith('queryNotes',{sort:'updatedAt',limit:4});
+ const address=screen.getByRole('textbox',{name:'链接地址'});
+ fireEvent.change(address,{target:{value:'no match'}});
  expect(await screen.findByText('正在查找笔记…')).toBeTruthy();
  expect(await screen.findByText('没有匹配的笔记，可直接输入路径。')).toBeTruthy();
- const search=screen.getByRole('textbox',{name:'搜索目标笔记'});
- fireEvent.change(search,{target:{value:'failed'}});expect(await screen.findByText('无法读取笔记，请直接输入目标路径。')).toBeTruthy();
- fireEvent.change(search,{target:{value:'project'}});const result=await screen.findByRole('option',{name:/项目计划/});expect(screen.getByRole('option',{name:/备用笔记/})).toBeTruthy();expect(screen.queryByRole('option',{name:/正文第一行|正文标题/})).toBeNull();
- search.focus();await user.keyboard('{ArrowDown}');expect(document.activeElement).toBe(result);await user.keyboard('{Enter}');
- const address=screen.getByRole('textbox',{name:'链接地址'});expect((address as HTMLInputElement).value).toBe('notes/project.md');expect(document.activeElement).toBe(address);
- await user.click(screen.getByRole('button',{name:'保存'}));
+ fireEvent.change(address,{target:{value:'failed'}});expect(await screen.findByText('无法读取笔记，请直接输入目标路径。')).toBeTruthy();
+ fireEvent.change(address,{target:{value:'project'}});const result=await screen.findByRole('option',{name:'项目计划'});expect(screen.getByRole('option',{name:'备用笔记'})).toBeTruthy();expect(screen.queryByRole('option',{name:/正文第一行|正文标题/})).toBeNull();
+ address.focus();await user.keyboard('{ArrowDown}');expect(document.activeElement).toBe(result);await user.keyboard('{Enter}');
+ await waitFor(()=>expect(screen.queryByRole('dialog',{name:'编辑链接'})).toBeNull());
+ expect(document.activeElement).toBe(field);
  expect([...field.querySelectorAll('a[data-wiki-target]')].map(node=>node.getAttribute('data-wiki-target'))).toEqual(['notes/project.md','notes/project.md']);
  expect(editor.state.selection.from).toBe(3);expect(editor.state.selection.to).toBe(10);
 });
-it('navigates formatting actions by keyboard and closes a nested type selector before its parent popup', async () => {
+it('edits the text and destination of a fully selected inline link in one undo step', async () => {
+ const {editor,field}=await setup('alpha beta');
+ act(()=>editor.chain().setTextSelection({from:1,to:6}).setMark('bold').setMark('link',{href:'https://example.test'}).run());
+ fireEvent.click(await screen.findByRole('button',{name:'链接'}));
+ const title=await screen.findByRole('textbox',{name:'链接文字'});
+ expect(title).toHaveProperty('value','alpha');
+ await waitFor(()=>expect(document.activeElement).toBe(title));
+ await userEvent.setup().tab();
+ const address=screen.getByRole('textbox',{name:'链接地址'});
+ expect(document.activeElement).toBe(address);
+ fireEvent.change(title,{target:{value:''}});
+ fireEvent.click(screen.getByRole('button',{name:'保存'}));
+ expect(screen.getByRole('alert').textContent).toBe('请输入链接文字。');
+ expect(title.getAttribute('aria-invalid')).toBe('true');
+ fireEvent.change(address,{target:{value:'[[notes/project.md]]'}});
+ fireEvent.change(title,{target:{value:'test]'}});
+ fireEvent.click(screen.getByRole('button',{name:'保存'}));
+ expect(screen.getByRole('alert').textContent).toBe('笔记链接文字不能包含右方括号。');
+ fireEvent.change(title,{target:{value:'updated'}});
+ fireEvent.change(address,{target:{value:'https://example.test/new'}});
+ fireEvent.click(screen.getByRole('button',{name:'保存'}));
+ expect(field.querySelector('a')?.getAttribute('href')).toBe('https://example.test/new');
+ expect(field.querySelector('strong a, a strong')?.textContent).toBe('updated');
+ act(()=>editor.commands.undo());
+ expect(field.querySelector('a')?.getAttribute('href')).toBe('https://example.test');
+ expect(field.querySelector('strong a, a strong')?.textContent).toBe('alpha');
+});
+it.each([
+ ['account@example.com','href','mailto:account@example.com'],
+ ['notes/project.md','href','notes/project.md'],
+ ['[[notes/project.md]]','data-wiki-target','notes/project.md'],
+])('interprets %s from the same link field', async (value, attribute, expected) => {
+ const {editor,field}=await setup('正文');
+ act(()=>editor.commands.setTextSelection({from:1,to:3}));
+ fireEvent.click(await screen.findByRole('button',{name:'链接'}));
+ const address=await screen.findByRole('textbox',{name:'链接地址'});
+ fireEvent.change(address,{target:{value}});
+ fireEvent.keyDown(address,{key:'Enter'});
+ expect(field.querySelector('a')?.getAttribute(attribute)).toBe(expected);
+});
+it('navigates formatting actions by keyboard and dismisses the link popup without editing', async () => {
  const {editor,field,change}=await setup('正文');const user=userEvent.setup();
  act(()=>editor.commands.setTextSelection({from:1,to:3}));
  fireEvent.click(await screen.findByRole('button',{name:'更多格式'}));
@@ -1933,9 +1987,7 @@ it('navigates formatting actions by keyboard and closes a nested type selector b
  expect(document.activeElement).toBe(screen.getByRole('button',{name:'清除文字样式'}));fireEvent.keyDown(document.activeElement!,{key:'ArrowDown'});
  expect(document.activeElement).toBe(screen.getByRole('button',{name:'上标'}));await user.keyboard('{Escape}');
  expect(screen.queryByRole('dialog',{name:'更多格式'})).toBeNull();expect(document.activeElement).toBe(field);
- await user.click(screen.getByRole('button',{name:'链接'}));await user.click(screen.getByRole('combobox',{name:'链接类型'}));
- await screen.findByRole('option',{name:'Wiki 笔记链接'});await user.keyboard('{Escape}');
- expect(screen.queryByRole('option',{name:'Wiki 笔记链接'})).toBeNull();expect(screen.getByRole('dialog',{name:'编辑链接'})).toBeTruthy();
+ await user.click(screen.getByRole('button',{name:'链接'}));await screen.findByRole('textbox',{name:'链接地址'});
  await user.keyboard('{Escape}');expect(screen.queryByRole('dialog',{name:'编辑链接'})).toBeNull();expect(document.activeElement).toBe(field);
  expect(editor.state.selection.from).toBe(1);expect(editor.state.selection.to).toBe(3);expect(change).not.toHaveBeenCalled();
 });
@@ -1943,9 +1995,7 @@ it('closes mobile link layers without opening the format sheet and returns to th
  vi.stubGlobal('matchMedia',vi.fn(()=>({matches:true,addEventListener:vi.fn(),removeEventListener:vi.fn()})));
  const {editor,field}=await setup('正文');const user=userEvent.setup();
  act(()=>editor.commands.setTextSelection({from:1,to:3}));
- await user.click(await screen.findByRole('button',{name:'链接'}));await user.click(screen.getByRole('combobox',{name:'链接类型'}));
- await screen.findByRole('option',{name:'Wiki 笔记链接'});await user.keyboard('{Escape}');
- await waitFor(()=>expect(screen.queryByRole('option',{name:'Wiki 笔记链接'})).toBeNull());expect(screen.getByRole('dialog',{name:'编辑链接'})).toBeTruthy();
+ await user.click(await screen.findByRole('button',{name:'链接'}));await screen.findByRole('textbox',{name:'链接地址'});
  await user.keyboard('{Escape}');await waitFor(()=>expect(screen.queryByRole('dialog')).toBeNull());expect(document.activeElement).toBe(field);
  expect(editor.state.selection.from).toBe(1);expect(editor.state.selection.to).toBe(3);
  await user.click(screen.getByRole('button',{name:'更多格式'}));expect(await screen.findByRole('dialog',{name:'更多格式'})).toBeTruthy();

@@ -167,8 +167,7 @@ it("uses labelled MemoCard UI appearance selectors and restores the last indexed
 
 it("hides unsupported folder-picking actions in settings", () => {
   render(<WebAppearanceProvider><WebSettings state={{ ...settingsState(), unsupportedBrowser: true }} /></WebAppearanceProvider>);
-  expect(screen.queryByRole("button", { name: "打开已有笔记库" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "创建笔记库" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /笔记库操作/ })).toBeNull();
 });
 
 it("offers the curated fonts in UI appearance without separate note font selectors", async () => {

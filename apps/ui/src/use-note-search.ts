@@ -92,9 +92,8 @@ export function useNoteSearch({ open, available, preserveSession = false, sessio
     retainedRefreshFailed.current = false;
     const pageCount = retain ? loadedPages.current : 1;
     if (!retain) {
-      setPage(null); setSelected(0); loadedPages.current = 1;
-      resultScroll.current = 0;
-      if (list.current) list.current.scrollTop = 0;
+      if (!available || !searchActive) { setPage(null); setSelected(0); }
+      loadedPages.current = 1;
     }
     setError(""); setPreviewError(""); setLoading(!retain); setPaging(retain);
     pagingLock.current = retain;
@@ -130,11 +129,19 @@ export function useNoteSearch({ open, available, preserveSession = false, sessio
             const next = activeIndex >= 0 ? activeIndex : Math.max(0, Math.min(anchor.index, result.notes.length - 1));
             retainScroll.current = next !== anchor.index;
             setSelected(next);
+          } else {
+            resultScroll.current = 0;
+            if (list.current) list.current.scrollTop = 0;
+            setSelected(0);
           }
           setPage(result);
         }
       }).catch(cause => {
-        if (epoch.current === current) { retainedRefreshFailed.current = retain; setError(errorMessage(cause)); }
+        if (epoch.current === current) {
+          if (!retain) { setPage(null); setSelected(0); }
+          retainedRefreshFailed.current = retain;
+          setError(errorMessage(cause));
+        }
       }).finally(() => { if (epoch.current === current) { setLoading(false); setPaging(false); pagingLock.current = false; } });
     }, retain ? 0 : searchQuery ? 200 : 0);
     return () => { clearTimeout(timer); epoch.current += 1; };

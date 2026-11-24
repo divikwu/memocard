@@ -21,6 +21,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from "
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/tabs";
 import { useThemeScopeProps } from "../components/theme-scope";
+import { useSlidingHover } from "../components/sliding-hover";
 import { SidebarIcon } from "./sidebar-icons";
 import { TreeMoreButton, TreeRow, TreeToggleButton } from "./sidebar-tree-item";
 import { TagIcon } from "./property-icon-catalog";
@@ -31,9 +32,11 @@ import "./note-properties.css";
 import "./TagsPage.css";
 
 const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
+const TabsIndicator = recoverableLazy(() => import("../components/tabs-indicator"), "选中指示器", () => null);
 
 const groupIcon = <HugeiconsIcon icon={FoldersIcon} className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" />;
 const viewTabStyles = "group/view-tab flex-none gap-1.5 bg-control font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:bg-surface data-active:font-medium data-active:hover:bg-surface";
+const viewTabIconStyles = "text-secondary group-data-active/view-tab:text-primary group-hover/view-tab:text-inherit";
 
 type Tag = { name: string; count: number };
 type TagDraft = { kind: "label" | "group"; anchor: HTMLElement; group?: TagGroup };
@@ -284,8 +287,9 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
       <div className="ui-tag-directory-tab-header">
         <TabsList ref={tabs} variant={classicTheme ? "default" : "pill"} activateOnFocus aria-label="标签视图"
           data-transparent-inactive={!classicTheme || undefined} className={classicTheme ? "w-full" : "gap-2"}>
-          <TabsTrigger value="all" className={viewTabClassName}><span className="text-secondary group-data-active/view-tab:text-primary"><TagIcon /></span>全部</TabsTrigger>
-          <TabsTrigger value="groups" className={viewTabClassName}><span className="text-secondary group-data-active/view-tab:text-primary">{groupIcon}</span>标签群组</TabsTrigger>
+          <TabsTrigger value="all" className={viewTabClassName}><span className={viewTabIconStyles}><TagIcon /></span>全部</TabsTrigger>
+          <TabsTrigger value="groups" className={viewTabClassName}><span className={viewTabIconStyles}>{groupIcon}</span>标签群组</TabsTrigger>
+          <Suspense fallback={null}><TabsIndicator /></Suspense>
         </TabsList>
         {minimalTheme && searchActions}
         {!hasCreateMenu && <div className="ui-tag-directory-tools">
@@ -344,13 +348,16 @@ function TagActionsMenu({ label, className = "ui-tag-directory-menu", triggerPro
   const pendingAction = useRef<(() => void) | null>(null);
   const handoffFocus = useRef(false);
   const openedByHover = useRef(false);
+  const hover = useSlidingHover();
   // Base UI 1.9 reads initialFocus at runtime but omits it from Menu.Popup's type.
-  const hoverFocusProps = triggerProps?.openOnHover ? { initialFocus: () => !openedByHover.current } : undefined;
+  const hoverProps = triggerProps?.openOnHover ? {
+    ...hover, className: "ui-slide-hover", initialFocus: () => !openedByHover.current, onKeyDownCapture: hover.onPointerLeave,
+  } : undefined;
   return <DropdownMenu onOpenChange={(open, event) => {
     if (open) {
       handoffFocus.current = false;
       openedByHover.current = event.reason === "trigger-hover";
-    }
+    } else hover.onPointerLeave();
   }} onOpenChangeComplete={open => {
     if (!open) {
       const action = pendingAction.current;
@@ -359,7 +366,7 @@ function TagActionsMenu({ label, className = "ui-tag-directory-menu", triggerPro
     }
   }}>
     <DropdownMenuTrigger ref={trigger} aria-label={label} render={<TreeMoreButton className={className} />} {...triggerProps} />
-    <DropdownMenuContent align="end" aria-label={label} {...hoverFocusProps} finalFocus={() => !handoffFocus.current}>{children(() => trigger.current, action => {
+    <DropdownMenuContent align="end" aria-label={label} {...hoverProps} finalFocus={() => !handoffFocus.current}>{children(() => trigger.current, action => {
       handoffFocus.current = true;
       pendingAction.current = action;
     })}</DropdownMenuContent>

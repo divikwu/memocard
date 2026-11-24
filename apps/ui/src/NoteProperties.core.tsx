@@ -4,6 +4,7 @@ import type { Note, NoteProperties as Properties, NoteProperty, PropertyChange, 
 import type { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { request, errorMessage } from './bridge';
+import { isBrowserVault, isLocalWeb } from './client-mode';
 import { localWebReconnected } from './web-connection';
 import { tagKey } from './inline-tags';
 import { propertyTypeChange, listAsMultiSelect } from './property-type-change';
@@ -14,6 +15,7 @@ import { PropertyOptionsLoading } from './PropertyOptionsLoading';
 import { usePropertyLayout, type PropertyLayoutConnection } from './use-property-layout';
 import { orderProperties, isPropertyVisible, propertyVisibility } from './property-layout';
 import { noteDetailPropertyPreviewRows, notePropertyPreviewKey, readNotePropertyPreviewRows, rememberNotePropertyPreviewRows } from './note-property-preview';
+import type { SlidePropertyRow } from './PropertySortMotion';
 
 type PropertyDrag = {
   pointerId: number;
@@ -27,15 +29,22 @@ type PropertyDrag = {
   active: boolean;
   frame?: number;
   clientY: number;
+  slide: SlidePropertyRow | null;
 };
+const rowOffset = (element: HTMLElement) => parseFloat(getComputedStyle(element).translate.split(' ')[1]) || 0;
+const rowTranslate = (offset: number) => offset ? `0px ${offset}px` : '';
 function resetDrag(drag:PropertyDrag) {
   if (drag.frame !== undefined) cancelAnimationFrame(drag.frame);
   delete drag.list.dataset.reordering;
   delete drag.rows[drag.source].element.dataset.dragging;
-  for (const {element} of drag.rows) if (element.style.translate) element.style.translate = '';
+  for (const {element} of drag.rows) {
+    if (drag.slide) drag.slide(element, '', '');
+    else if (element.style.translate) element.style.translate = '';
+  }
 }
 
 type View = {
+  PropertySortMotion: ComponentType<{ slide: RefObject<SlidePropertyRow | null> }>;
   ConfirmationPortal?: ComponentType<ComponentProps<typeof AlertDialog.Portal>>;
   ConfirmationPopup?: ComponentType<ComponentProps<typeof AlertDialog.Popup>>;
   Checkbox: { Root: ComponentType<CheckboxPrimitive.Root.Props>; Indicator: ComponentType<CheckboxPrimitive.Indicator.Props> };
@@ -289,11 +298,29 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
   const blurClosing = useRef<string | null>(null);
   const focusAfterLayout = useRef<string | null>(null);
   const dragging = useRef<PropertyDrag | null>(null);
+  const landing = useRef<PropertyDrag | null>(null);
+  const slideRow = useRef<SlidePropertyRow | null>(null);
   const suppressGripClick = useRef(false);
   useEffect(() => () => {
     if (dragging.current) resetDrag(dragging.current);
+    if (landing.current) resetDrag(landing.current);
     dragging.current = null;
+    landing.current = null;
   }, [scopeKey, vaultBinding]);
+  useLayoutEffect(() => {
+    const drag = landing.current;
+    if (!drag?.slide || presentation.saving) return;
+    landing.current = null;
+    if (!drag.list.isConnected) { resetDrag(drag); return; }
+    const listTop = drag.list.getBoundingClientRect().top;
+    // Saving replaces the DOM order. Rebase each moving row from its current visual position.
+    const offsets = drag.rows.map(({element, top}) => {
+      const offset = rowOffset(element);
+      const newTop = element.getBoundingClientRect().top - listTop - offset;
+      return rowTranslate(top + offset - newTop);
+    });
+    drag.rows.forEach(({element}, index) => drag.slide?.(element, '', offsets[index]));
+  }, [presentation.saving, presentation.layout.order]);
   const updated = noteTime(note?.updatedAt);
   const propertyTags = Array.isArray(data?.tagProperty?.value) ? [...new Set(data.tagProperty.value.map(tagKey))] : [];
   const mergedTags = [...new Set([...propertyTags, ...tags, ...(!data && !note?.contentHash ? inheritedTags : [])])];
@@ -308,8 +335,7 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
   const layoutPending = canRead && !presentation.ready;
   const rowsPending = layoutPending || (loading && !data);
   const [bodyShown, setBodyShown] = useState(false);
-  const [readingBodyFirst, setReadingBodyFirst] = useState(false);
-  const bodyPending = waitForPropertyLayout && reserveBodySpace && rowsPending && !bodyShown && !readingBodyFirst;
+  const bodyPending = waitForPropertyLayout && reserveBodySpace && rowsPending && !bodyShown;
   useLayoutEffect(() => {
     // Once revealed, keep the editor mounted through subsequent property reads.
     if (!bodyPending && !bodyShown) setBodyShown(true);
@@ -462,14 +488,16 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
     const list = row?.parentElement;
     if (!list) return;
     const listTop = list.getBoundingClientRect().top;
+    const slide = slideRow.current;
     const rows = Array.from(list.querySelectorAll<HTMLElement>(':scope > [data-property-key]'), element => {
       const {top,height} = element.getBoundingClientRect();
-      return {element,key:element.dataset.propertyKey!,top:top-listTop,height};
+      return {element,key:element.dataset.propertyKey!,top:top-listTop-(slide ? rowOffset(element) : 0),height};
     });
     const source = rows.findIndex(item => item.element === row);
     if (source < 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragging.current = {pointerId:event.pointerId,grip:event.currentTarget,list,rows,source,target:source,clientY:event.clientY,startY:event.clientY-listTop,gap:parseFloat(getComputedStyle(list).rowGap),active:false};
+    const startY = event.clientY - listTop - (slide ? rowOffset(rows[source].element) : 0);
+    dragging.current = {pointerId:event.pointerId,grip:event.currentTarget,list,rows,source,target:source,clientY:event.clientY,startY,gap:parseFloat(getComputedStyle(list).rowGap),active:false,slide};
   }
   function updatePropertyDrag(event:PointerEvent<HTMLButtonElement>) {
     const drag = dragging.current;
@@ -487,9 +515,10 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
       if (Math.abs(delta) < 4) return;
       drag.active = true;
       suppressGripClick.current = true;
-      drag.list.dataset.reordering = '';
+      if (!drag.slide) drag.list.dataset.reordering = '';
       source.element.dataset.dragging = '';
       drag.grip.focus({preventScroll:true});
+      drag.slide?.(source.element, rowTranslate(delta), rowTranslate(delta));
     }
     const center = source.top + source.height / 2 + delta;
     let target = drag.source;
@@ -498,14 +527,17 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
       if (index < drag.source && center < midpoint) { target = index; break; }
       if (index > drag.source && center > midpoint) target = index;
     }
-    source.element.style.translate = delta ? `0 ${delta}px` : '';
+    source.element.style.translate = rowTranslate(delta);
     if (target === drag.target) return;
     const space = source.height + drag.gap;
     for (let index = Math.min(drag.source,drag.target,target); index <= Math.max(drag.source,drag.target,target); index++) {
       if (index === drag.source) continue;
-      const translate = target <= index && index < drag.source ? `0 ${space}px` : drag.source < index && index <= target ? `0 ${-space}px` : '';
+      const translate = rowTranslate(target <= index && index < drag.source ? space : drag.source < index && index <= target ? -space : 0);
       const {element} = drag.rows[index];
-      if (element.style.translate !== translate) element.style.translate = translate;
+      if (element.style.translate !== translate) {
+        if (drag.slide) drag.slide(element, translate);
+        else element.style.translate = translate;
+      }
     }
     drag.target = target;
   }
@@ -529,10 +561,19 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
       const save = moveProperty(source.key,target.key,after);
       if (save) {
         const offset = target.top - source.top + (after ? target.height - source.height : 0);
-        source.element.style.translate = `0 ${offset}px`;
-        void save.finally(reset);
+        if (drag.slide) {
+          landing.current = drag;
+          drag.slide(source.element, rowTranslate(offset));
+        } else {
+          source.element.style.translate = rowTranslate(offset);
+          void save.finally(reset);
+        }
         return;
       }
+    }
+    if (commit && drag.slide) {
+      drag.slide(source.element, '');
+      return;
     }
     reset();
   }
@@ -632,7 +673,7 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
   rowNodes.set('system:updatedAt', <>{systemName('system:updatedAt')}<dd className="note-property-value tabular-nums">{updated ? <time dateTime={note?.updatedAt}>{updated}</time> : note ? '未提供' : '尚未保存'}</dd></>);
   rowNodes.set('system:createdAt', <>{systemName('system:createdAt')}<dd className="note-property-value tabular-nums">{noteTime(note?.createdAt) ?? '未提供'}</dd></>);
   rowNodes.set('system:filename', <>{systemName('system:filename')}<dd className="note-property-value tabular-nums">{note ? (relativePath ?? note.relativePath)?.split('/').pop() : '尚未保存'}</dd></>);
-  const renderedKeys = new Set(rowsPending || readingBodyFirst ? [] : shownKeys);
+  const renderedKeys = new Set(rowsPending ? [] : shownKeys);
   for (const property of data?.properties ?? []) {
           if (!renderedKeys.has(`property:${property.name}`)) continue;
           const {Icon} = propertyTypes[property.type === 'list' ? 'multiSelect' : property.type];
@@ -680,11 +721,12 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
     {Array.from({length:skeletonRows}, (_,index) => <div className="note-property-row note-property-skeleton-row" key={index}><Skeleton className="h-4 w-20 max-w-full" /><Skeleton className={`h-4 max-w-full ${index % 2 ? 'w-24' : 'w-32'}`} /></div>)}
   </div> : <dl id={propertyListId} className="note-property-group">{shownKeys.map(key => <div key={key} className="note-property-row" data-property-key={key} data-property-hidden={hiddenKeys.has(key) ? '' : undefined}>{rowNodes.get(key)}</div>)}</dl>;
   return <>
+    {canEdit && presentation.writable && (isBrowserVault || isLocalWeb) && <Suspense fallback={null}><view.PropertySortMotion slide={slideRow} /></Suspense>}
     {renderHeader ? renderHeader(notice, Boolean(error && error === saveError && contextualError)) : notice}
     {layoutAnnouncement && <span className="sr-only" role="status" aria-live="polite">{layoutAnnouncement}</span>}
     {rowsPending && <span role="status" aria-label="正在读取属性" className="sr-only">正在读取属性…</span>}
     <Collapsible open={open} onOpenChange={setOpen} aria-label="笔记属性" aria-busy={loading || layoutPending} className="note-properties" data-updating={canEdit && note?.contentHash && (busy || loading) ? '' : undefined}>
-      {readingBodyFirst ? null : reserveBodySpace ? <div
+      {reserveBodySpace ? <div
         className="note-property-viewport"
         role="region"
         aria-label="属性列表"
@@ -694,11 +736,9 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
         <Popover open={adding} onOpenChange={value => { if (!busy) { setAdding(value); setEditing(null); setError(''); } }}><PopoverTrigger render={<Button variant="ghost" size="sm" className="note-property-action text-secondary" disabled={(!note ? !data : !data?.writable) || busy || loading || layoutPending} />}><Plus className="size-4" />添加属性</PopoverTrigger><PopoverContent align="start" aria-label="添加属性" className="note-property-popup note-property-create-popup"><PropertyCreator error={error} busy={busy || loading} onSave={apply} /></PopoverContent></Popover>
       </div>}
     </CollapsibleContent>
-    <div className="note-property-footer">
-      {bodyPending ? <Button variant="ghost" size="sm" className="note-property-action note-property-toggle text-secondary" onClick={() => setReadingBodyFirst(true)}>先查看正文</Button>
-        : readingBodyFirst ? <Button variant="ghost" size="sm" className="note-property-action note-property-toggle text-secondary" disabled={rowsPending} onClick={() => setReadingBodyFirst(false)}>显示属性</Button>
-        : <CollapsibleTrigger aria-controls={`${propertyListId} ${propertyActionId}`} render={<Button variant="ghost" size="sm" ref={panelTrigger} disabled={reserveBodySpace && !open && rowsPending} className="note-property-action note-property-toggle text-secondary" />}><span className="flex size-4 shrink-0 items-center justify-center">{rowsPending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : open ? <ChevronUp /> : <ChevronDown />}</span>{open ? '收起' : '更多属性'}</CollapsibleTrigger>}
-    </div>
+    {!bodyPending && <div className="note-property-footer">
+      <CollapsibleTrigger aria-controls={`${propertyListId} ${propertyActionId}`} render={<Button variant="ghost" size="sm" ref={panelTrigger} disabled={reserveBodySpace && !open && rowsPending} className="note-property-action note-property-toggle text-secondary" />}><span className="flex size-4 shrink-0 items-center justify-center">{rowsPending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" /> : open ? <ChevronUp /> : <ChevronDown />}</span>{open ? '收起' : '更多属性'}</CollapsibleTrigger>
+    </div>}
     {renaming && <NameEditor key={renaming.key} initialName={renaming.name} anchor={renaming.anchor} side="bottom" align="start" sideOffset={4} className="w-80 p-2" title="重命名属性" inputLabel="新属性名" maxLength={100} selectOnFocus busy={busy || iconSaving} onSave={saveLabel} onClose={() => { setRenaming(current => current === renaming ? null : current); setError(''); }}
       leading={renaming.iconKey ? disabled => <Button ref={iconPickerTrigger} type="button" size="icon-sm" variant="secondary" className="note-property-icon-trigger border-0" aria-label="更换图标" aria-expanded={iconPickerOpen} aria-controls={iconPickerOpen ? iconPickerId : undefined} disabled={disabled} onClick={() => setIconPickerOpen(value => !value)}>
         <PropertyIconGlyph value={renameIcon} fallback={<renaming.Icon />} />
