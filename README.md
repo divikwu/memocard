@@ -49,7 +49,7 @@ pnpm build:ios
 
 `build:mac` / `build:ios` 先构建 React 静态资源，再复制进应用并生成 Xcode 工程。页面通过 `memocard-ui://app` 加载，应用运行不依赖 Vite。`scripts/generate-project.py` 只使用 Python 标准库，不依赖 xcodegen；工程变更应编辑该脚本后重新生成。
 
-CI 根据 PR 的累计差异选择设计、Web、原生测试和需要构建的平台。推送到 `main` 时，只有前一个提交已通过同一工作流才使用增量验证。共享配置、无法识别的路径或无法确认的基线触发全量验证。`release` 汇总所有适用检查。本地运行 `pnpm verify:release` 可执行完整测试、三端构建和签名检查。详见 [CI 验证与耗时](docs/CI_VERIFICATION.md)。
+CI 根据 PR 的累计差异选择设计、Web、原生测试和需要构建的平台。推送到 `main` 时，只有前一个提交已通过同一工作流才使用增量验证。共享配置、无法识别的路径或无法确认的基线触发全量验证。`release` 汇总所有适用检查。提交前运行 `pnpm verify:changed`，可按暂存路径选择检查并验证当前工作树；加 `--plan` 可预览命令。完整发布检查仍使用 `pnpm verify:release`。详见 [CI 验证与耗时](docs/CI_VERIFICATION.md)。
 
 Simulator 首次 runtime 枚举包含 CoreSimulator 初始化，限时 180 秒；后续环境查询/工程读取 30 秒，创建设备 60 秒；既有 runtime cache / boot / install / spawn 与业务断言预算不变，不重试。每条命令记录阶段、命令、期限、耗时和退出状态，环境失败后执行有界诊断。CI 在探针内完成一次 Simulator 启动和就绪检查，不再预检后关闭重启；上传环境阶段日志、探针标准输出/错误、源文件 SHA256 与断言结果，保留 7 天（失败阶段尚未产生的文件可能缺失），不上传整个 App/DerivedData。
 

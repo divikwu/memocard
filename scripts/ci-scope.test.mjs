@@ -10,11 +10,13 @@ import { classifyDiff, gatePasses, scopeForEvent } from './ci-scope.mjs';
 const entry = (path, status = 'M', from = '100644', to = '100644') => `:${from} ${to} ${'a'.repeat(40)} ${'b'.repeat(40)} ${status}\0${path}\0`;
 
 const platforms = ['mac', 'ios', 'service'];
-const docsOnly = { design: 'docs', web: false, native: false, surfaces: false, platforms: [] };
-const full = { design: 'ui', web: true, native: true, surfaces: true, platforms };
+const docsOnly = { design: 'docs', web: false, unit: false, smoke: false, native: false, surfaces: false, platforms: [] };
+const full = { design: 'ui', web: true, unit: false, smoke: false, native: true, surfaces: true, platforms };
 const core = { ...full, design: 'none', web: false };
 const ui = { ...docsOnly, design: 'ui', web: true, platforms };
 const nativeTests = { ...docsOnly, design: 'none', native: true };
+const unit = { ...docsOnly, design: 'none', unit: true };
+const smoke = { ...docsOnly, design: 'none', smoke: true };
 const service = { ...nativeTests, platforms: ['service'] };
 
 for (const path of ['README.md', 'docs/LOCAL_WEB.md', 'docs/example image.png', 'design/component-inventory.md', 'design/token-consumption.md']) {
@@ -31,8 +33,17 @@ test('schedule source consumers and combine both sides of a rename or mixed chan
     ['apps/apple/Service/ServiceHost.swift', service], ['packages/local-service/Sources/memocard/main.swift', service],
     ['apps/apple/Tunnel/run-tunnel.sh', service], ['apps/apple/Tests/ServiceHostHarness.swift', nativeTests],
     ['packages/native-core/Tests/VaultStoreTests.swift', nativeTests], ['packages/native-core/Sources/MemoCardCore/VaultStore.swift', core],
-    ['apps/ui/src/components/ui/button.tsx', ui], ['apps/ui/src/App.test.tsx', { ...ui, platforms: [] }],
+    ['apps/ui/src/components/ui/button.tsx', ui], ['apps/ui/src/App.test.tsx', unit],
+    ['apps/ui/ui/web/WebApp.test.tsx', unit], ['apps/ui/ui/business/NoteSearchDialog.tsx', ui],
+    ['apps/ui/ui/web/layouts/rail.css', ui], ['scripts/test-default-ui.mjs', smoke],
+    ['apps/ui/test-support/ui-quality.browser.tsx', { ...unit, design: 'ui' }],
+    ['apps/ui/ui-state-fixtures/mock.test.ts', unit], ['apps/ui/ui/web/workspace-fixture.ts', { ...unit, design: 'ui' }],
   ]) assert.deepEqual(classifyDiff(entry(path)), expected, path);
+  for (const pair of [['scripts/test-default-ui.mjs', 'apps/ui/ui/web/WebApp.test.tsx'],
+    ['apps/ui/ui/web/WebApp.test.tsx', 'scripts/test-default-ui.mjs']]) {
+    assert.deepEqual(classifyDiff(pair.map(path => entry(path)).join('')), { ...unit, smoke: true });
+  }
+  assert.deepEqual(classifyDiff(entry('apps/ui/test-support/ui-quality.browser.tsx') + entry('apps/ui/ui/business/NoteSearchDialog.tsx')), ui);
   assert.deepEqual(classifyDiff(entry('README.md') + entry('apps/apple/Service/ServiceHost.swift')), { ...service, design: 'docs' });
   assert.deepEqual(classifyDiff(entry('packages/native-core/Sources/Core.swift', 'D', '100644', '000000')
     + entry('apps/ui/src/app.tsx', 'A', '000000')), full);
@@ -54,7 +65,7 @@ function jobResults(plan, successful) {
 
 test('gate requires successes and skips for exactly the jobs selected', () => {
   for (const [plan, jobs] of [
-    [docsOnly, ['design']], [ui, ['design', 'release-web', 'native-build']],
+    [docsOnly, ['design']], [unit, ['release-web']], [smoke, ['release-web']], [ui, ['design', 'release-web', 'native-build']],
     [nativeTests, ['release-native']], [service, ['release-native', 'release-web', 'native-build']],
     [core, ['release-native', 'release-web', 'native-build', 'native-surfaces']],
     [full, ['design', 'release-web', 'release-native', 'native-surfaces', 'native-build']],

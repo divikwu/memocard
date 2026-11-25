@@ -12,13 +12,13 @@ export function isDocumentation(path) {
 }
 
 const platforms = ['mac', 'ios', 'service'];
-const full = { design: 'ui', web: true, native: true, surfaces: true, platforms };
+const full = { design: 'ui', web: true, unit: false, smoke: false, native: true, surfaces: true, platforms };
 
 export function classifyDiff(raw) {
   if (!raw || !raw.endsWith('\0')) return full;
   const fields = raw.slice(0, -1).split('\0');
   if (fields.length % 2) return full;
-  const plan = { design: 'none', web: false, native: false, surfaces: false, platforms: [] };
+  const plan = { design: 'none', web: false, unit: false, smoke: false, native: false, surfaces: false, platforms: [] };
   const builds = new Set();
   for (let index = 0; index < fields.length; index += 2) {
     const entry = /^:(\d{6}) (\d{6}) [0-9a-f]+ [0-9a-f]+ ([AMD])$/.exec(fields[index]);
@@ -28,10 +28,20 @@ export function classifyDiff(raw) {
     if (isDocumentation(path)) {
       if (path.startsWith('apps/ui/')) plan.design = 'ui';
       else if (plan.design === 'none') plan.design = 'docs';
-    } else if (/^apps\/ui\/src\/(?!generated\/).+\.(tsx?|css)$/s.test(path)) {
-      plan.design = 'ui';
-      plan.web = true;
-      if (!/\.test\.tsx?$/.test(path)) platforms.forEach(platform => builds.add(platform));
+    } else if (path === 'scripts/test-default-ui.mjs') {
+      plan.smoke = true;
+    } else if (path === 'apps/ui/ui/web/workspace-fixture.ts'
+        || /^apps\/ui\/(test-support|ui-state-fixtures)\/.+\.(tsx?|css)$/s.test(path)) {
+      if (!/\.test\.tsx?$/.test(path)) plan.design = 'ui';
+      plan.unit = true;
+    } else if (/^apps\/ui\/(src\/(?!generated\/)|ui\/(business|web)\/).+\.(tsx?|css)$/s.test(path)) {
+      if (/\.test\.tsx?$/.test(path)) {
+        plan.unit = true;
+      } else {
+        plan.design = 'ui';
+        plan.web = true;
+        platforms.forEach(platform => builds.add(platform));
+      }
     } else if (/^packages\/native-core\/Sources\/.+\.swift$/.test(path)) {
       plan.native = true;
       plan.surfaces = true;
@@ -45,6 +55,11 @@ export function classifyDiff(raw) {
     } else {
       return full;
     }
+  }
+  // verify:web includes both UI unit tests and the production browser smoke suite.
+  if (plan.web) {
+    plan.unit = false;
+    plan.smoke = false;
   }
   plan.platforms = platforms.filter(platform => builds.has(platform));
   return plan;
@@ -75,10 +90,10 @@ export function gatePasses(needs) {
   if (needs.changes?.result !== 'success') return false;
   let plan;
   try { plan = JSON.parse(needs.changes.outputs.plan); } catch { return false; }
-  if (!plan || !['none', 'docs', 'ui'].includes(plan.design) || !['web', 'native', 'surfaces'].every(key => typeof plan[key] === 'boolean')
+  if (!plan || !['none', 'docs', 'ui'].includes(plan.design) || !['web', 'unit', 'smoke', 'native', 'surfaces'].every(key => typeof plan[key] === 'boolean')
       || !Array.isArray(plan.platforms) || !plan.platforms.every(platform => platforms.includes(platform))) return false;
   const build = plan.platforms.length > 0;
-  const required = { design: plan.design !== 'none', 'release-web': plan.web || build, 'release-native': plan.native,
+  const required = { design: plan.design !== 'none', 'release-web': plan.web || plan.unit || plan.smoke || build, 'release-native': plan.native,
     'native-surfaces': plan.surfaces, 'native-build': build };
   return Object.values(required).some(Boolean) && Object.entries(required).every(([job, run]) =>
     needs[job]?.result === (run ? 'success' : 'skipped'));
