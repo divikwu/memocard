@@ -1,8 +1,7 @@
-.web-app[data-workspace-layout=rail] { --workspace-content-top: calc(var(--spacing-1) * 14); height: 100dvh; min-height: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.web-app[data-workspace-layout=rail] { --web-rail-button-size: calc(var(--spacing-1) * 10); --web-rail-inset: calc(var(--spacing-1) * 2); --workspace-content-top: calc(var(--spacing-1) * 14); height: 100dvh; min-height: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 .web-app[data-workspace-layout=rail] > .web-app-shell { grid-area: 1 / 2; height: auto; min-width: 0; }
-.web-desktop-rail { grid-area: 1 / 1; display: grid; grid-template-rows: minmax(min-content, 1fr) auto minmax(min-content, 1fr); justify-items: center; align-items: start; gap: calc(var(--spacing-1) * 4); overflow-y: auto; padding: calc(var(--spacing-1) * 2); }
+.web-desktop-rail { grid-area: 1 / 1; display: grid; grid-template-rows: minmax(min-content, 1fr) auto minmax(min-content, 1fr); justify-items: center; align-items: start; gap: calc(var(--spacing-1) * 4); overflow-y: auto; padding: var(--web-rail-inset); }
 .web-rail-group {
-  --web-rail-button-size: calc(var(--spacing-1) * 10);
   --web-rail-gap: calc(var(--spacing-1) / 2);
   position: relative;
   isolation: isolate;
@@ -13,8 +12,8 @@
 }
 .web-rail-footer { align-self: end; }
 .web-rail-group > button { width: var(--web-rail-button-size); height: var(--web-rail-button-size); color: var(--color-text-secondary); border-radius: var(--radius-full); transition-property: color, translate; }
-.web-rail-group > button:is(:hover, [aria-current=page], [aria-expanded=true]) { background-color: transparent; color: var(--color-icon-primary); }
-.web-rail-group:has(> [aria-current=page], > [aria-expanded=true])::before {
+.web-rail-primary > button:is(:hover, [aria-current=page]) { background-color: transparent; color: var(--color-icon-primary); }
+.web-rail-primary:has(> [aria-current=page])::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -25,15 +24,13 @@
   pointer-events: none;
   translate: 0 calc(var(--web-rail-row, 0) * (var(--web-rail-button-size) + var(--web-rail-gap)));
 }
-.web-rail-group:has(> :nth-child(4)[aria-current=page]) { --web-rail-row: 3; }
-.web-rail-group:has(> :nth-child(5)[aria-current=page]) { --web-rail-row: 4; }
-.web-rail-group:has(> :nth-child(3)[aria-expanded=true]) { --web-rail-row: 2; }
-.web-rail-footer:not(:has(> [aria-expanded=true])):has(> :nth-child(2)[aria-current=page]) { --web-rail-row: 1; }
+.web-rail-primary:has(> :nth-child(4)[aria-current=page]) { --web-rail-row: 3; }
+.web-rail-primary:has(> :nth-child(5)[aria-current=page]) { --web-rail-row: 4; }
 @media (prefers-reduced-motion: no-preference) {
-  .web-rail-group::before { transition: translate var(--duration-fast-max) var(--ease-standard); }
+  .web-rail-primary::before { transition: translate var(--duration-fast-max) var(--ease-standard); }
 }
 @media (forced-colors: active) {
-  .web-rail-group::before {
+  .web-rail-primary::before {
     outline: var(--border-width) solid Highlight;
     outline-offset: calc(-1 * var(--border-width));
   }
@@ -44,3 +41,17 @@
 .web-desktop-rail .web-top-logo img { width: var(--size-element-sm); height: var(--size-element-sm); flex-shrink: 0; object-fit: contain; }
 .web-app[data-workspace-layout=rail][data-detail] > .web-app-shell { grid-column: 1 / -1; }
 .web-app[data-workspace-layout=rail][data-detail] .web-app-main { margin: 0; border-radius: 0; }
+
+/* Balance the rail on the opposite edge of wide collection pages. */
+.web-app[data-workspace-layout=rail] .web-app-scroll:has(> .web-page-content:is([data-view=home], [data-view=notes]):not([data-detail])) {
+  padding-inline-end: calc(var(--page-gutter) + var(--web-rail-button-size) + 2 * var(--web-rail-inset));
+}
+.web-app[data-ui-theme=dark] .web-rail-group { background: transparent; }
+.web-app[data-ui-theme=dark] .web-rail-primary::before,
+.web-app[data-ui-theme=dark] .web-rail-footer > :is([aria-current=page], [aria-expanded=true]) {
+  background-color: var(--color-tab-active);
+}
+@media (hover: hover) {
+  .web-app[data-ui-theme=dark] .web-rail-primary > button:enabled:hover:not([aria-current=page], [aria-expanded=true]) { background-color: var(--color-overlay-hover); }
+}
+.web-app[data-ui-theme=dark] .web-rail-group > [aria-current=page] { color: var(--color-icon-primary); }

@@ -308,7 +308,7 @@
   --shadow-card-hover: var(--shadow-scale-2);
   --shadow-input-focus: var(--shadow-med);
   --color-border-floating: transparent;
-  --surface-edge-floating: 0 0 0 0 transparent, inset 0 0 0 0 transparent;
+  --surface-edge-floating: 0 0 0 0 transparent;
   /* State rings remain separate from elevation and outline focus. */
   --shadow-inset-hover: inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 30%, transparent);
   --shadow-inset-selected: inset 0px 0px 0px 2px color-mix(in srgb, var(--color-icon-blue) 50%, transparent);
@@ -375,7 +375,7 @@
   --color-outline-surface: transparent;
   --color-outline-hover: color-mix(in oklab, var(--color-neutral) 30%, transparent);
   --color-tab-muted: var(--color-text-secondary);
-  --color-tab-active: color-mix(in oklab, var(--color-neutral) 30%, transparent);
+  --color-tab-active: var(--color-neutral);
   --color-tab-active-border: var(--color-border-emphasized);
   --color-switch-checked: var(--color-on-accent);
   --color-switch-unchecked: var(--color-text-primary);
@@ -458,7 +458,6 @@
   --surface-highlight-control: inset color-mix(in srgb, var(--color-white) 4%, transparent) 0px 0px 0px 1px;
   --focus-outline-color: var(--color-blue-400);
   --color-border-floating: transparent;
-  --surface-edge-floating: 0 0 0 0 transparent, inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent);
 }
 
 /* Register aliases without overwriting the system variables they reference. */
@@ -708,7 +707,7 @@
 
 @custom-variant dark (&:where([data-ui-theme="dark"], [data-ui-theme="dark"] *));
 
-/* Raised shadows own the outer edge; floating surfaces add only highlights. */
+/* Raised shadows own the single edge; flat surfaces use their border. */
 @utility surface-floating {
   border-color: var(--color-border-floating);
   --tw-inset-shadow: var(--surface-edge-floating);

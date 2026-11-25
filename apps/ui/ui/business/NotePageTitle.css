@@ -8,6 +8,6 @@
   color: var(--color-text-primary);
   font-family: var(--note-font-heading, var(--font-family-heading));
   font-size: var(--workspace-title-font-size, var(--font-size-note-title));
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   line-height: var(--workspace-title-line-height, var(--text-note-title-leading));
 }

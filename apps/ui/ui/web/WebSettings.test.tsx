@@ -13,6 +13,7 @@ function state() {
   return {
     status: { connected: true, vaultName: "工作/个人/".repeat(20), coverage: { indexed: 0, pending: 3, issues: 2, indexedAt: "2026-10-23T08:30:00Z" } },
     sidebar: { canChooseVault: true, canCreateVault: true, onSelectVault: vi.fn() },
+    drafts: { records: [] }, search: { available: false, open: false },
     capabilities: new Set<string>(), environment: null, working: false, editor: null, unsupportedBrowser: false,
     onOpenLocalWeb: vi.fn(), onToggleMCP: vi.fn(),
   } as unknown as AppViewState;
@@ -72,9 +73,10 @@ it.each([false, true])("opens Web vault actions with the default label (mobile=%
   const view = render(<WebSettings state={model} />);
   const trigger = screen.getByRole("button", { name: "笔记库操作（切换）" });
   expect(trigger.textContent).toBe("切换");
-  for (const action of ["切换笔记库", "新建笔记库"]) {
+  for (const action of ["打开已有笔记库", "创建新笔记库"]) {
     await user.click(trigger);
-    await user.click(await screen.findByRole("menuitem", { name: action }));
+    const panel = await screen.findByRole("dialog", { name: "切换笔记库" });
+    await user.click(within(panel).getByRole("button", { name: action }));
     expect(trigger.textContent).toBe("切换");
   }
   expect(model.sidebar.onSelectVault).toHaveBeenNthCalledWith(1, false);

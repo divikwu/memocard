@@ -8,12 +8,13 @@ import { Drawer, DrawerClose, DrawerContent, DrawerHeader, DrawerTitle } from ".
 import { Separator } from "../components/separator";
 import "./WebMoreDrawer.css";
 
-export default function WebMoreDrawer({ navigation: p, open, onOpenChange, finalFocus, fromTopbar }: {
+export default function WebMoreDrawer({ navigation: p, open, onOpenChange, finalFocus, fromTopbar, swipeDirection = "right" }: {
   navigation: WorkspaceNavigationProps; open: boolean; onOpenChange: (open: boolean) => void; finalFocus: RefObject<HTMLButtonElement | null>;
   fromTopbar?: boolean;
+  swipeDirection?: "left" | "right";
 }) {
   const actions = workspaceActions(p);
-  return <Drawer open={open} onOpenChange={onOpenChange} swipeDirection={fromTopbar ? "right" : "left"}>
+  return <Drawer open={open} onOpenChange={onOpenChange} swipeDirection={swipeDirection}>
     <DrawerContent finalFocus={finalFocus}>
       <DrawerHeader className="flex-row items-center justify-between gap-2 px-4 py-1 text-start md:pl-6 md:pr-3.5 md:pt-4 md:pb-0">
         <DrawerTitle className="min-w-0 text-base font-semibold md:text-xl md:font-medium">{fromTopbar ? "更多" : "切换笔记库"}</DrawerTitle>

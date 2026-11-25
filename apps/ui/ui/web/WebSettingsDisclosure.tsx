@@ -1,14 +1,12 @@
-import { useRef, type ReactNode, type Ref } from "react";
+import { useRef, type ReactNode } from "react";
 import { ChevronDownIcon } from "../icons";
 
-export function WebSettingsDisclosure({ label, advanced, children, ref }: {
+export function WebSettingsDisclosure({ label, children }: {
   label: string;
-  advanced?: boolean;
   children: ReactNode;
-  ref?: Ref<HTMLDetailsElement>;
 }) {
   const body = useRef<HTMLDivElement>(null);
-  return <details ref={ref} className={advanced ? "web-file-status web-appearance-advanced" : "web-file-status"}
+  return <details className="web-file-status"
     onToggle={event => {
       const details = event.currentTarget;
       if (!details.open && body.current?.contains(document.activeElement)) details.querySelector("summary")?.focus();

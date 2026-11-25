@@ -3,8 +3,11 @@
   --note-block-gap: var(--note-flow, 16px);
   --note-inline-radius: 4px;
   --typeset-flow: var(--note-block-gap);
+  font-weight: var(--font-weight-medium);
   font-size: var(--note-size, var(--font-size-base));
   line-height: var(--note-line-height, 1.5rem);
+
+  & :where(h1, h2, h3, h4, h5, h6, strong, b) { font-weight: var(--font-weight-bold); }
 
   & :where(code:not(pre code), kbd) {
     font-size: calc(1em - 0.125rem);

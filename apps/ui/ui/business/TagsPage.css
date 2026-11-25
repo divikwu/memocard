@@ -31,9 +31,6 @@
   margin-block: auto;
 }
 @media (hover: hover) and (pointer: fine) {
-  .ui-tag-directory-group li:has(> .ui-tag-directory-chip-menu):not(:hover, :has(:focus-visible, > .ui-tag-directory-chip-menu[aria-expanded="true"])) > .ui-tag-directory-chip {
-    padding-inline-end: calc(var(--spacing-1) * 3);
-  }
   .ui-tag-directory-group li:not(:hover, :has(:focus-visible)) > .ui-tag-directory-chip-menu:not([aria-expanded="true"]) {
     opacity: 0;
     pointer-events: none;

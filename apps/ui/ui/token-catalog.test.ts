@@ -140,8 +140,8 @@ it("does not duplicate the elevation edge in floating borders or highlights", ()
     light: "transparent", dark: "transparent", projectExtension: true,
   });
   expect(tokens.find(token => token.name === "--surface-edge-floating")).toMatchObject({
-    light: "0 0 0 0 transparent, inset 0 0 0 0 transparent",
-    dark: "0 0 0 0 transparent, inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent)",
+    light: "0 0 0 0 transparent",
+    dark: "0 0 0 0 transparent",
     category: "elevation",
   });
   expect(tokens.find(token => token.name === "--shadow-high")).toMatchObject({ light: "var(--shadow-outlined-4)", dark: "var(--shadow-outlined-4)" });

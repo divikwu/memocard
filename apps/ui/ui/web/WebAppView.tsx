@@ -13,9 +13,9 @@ import { CreateButton } from "../business/CreateButton";
 import { ActionGroup, MobileActionGroupProvider } from "../components/action-group";
 import { isNative } from "../../src/bridge";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "../components/breadcrumb";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "../components/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../components/empty";
+import { useThemeScopeProps } from "../components/theme-scope";
 import { Skeleton } from "../components/skeleton";
 import { Spinner } from "../components/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
@@ -76,6 +76,7 @@ const WorkspaceTags = recoverableLazy(() => import("../business/TagsPage").then(
 const TagEditor = recoverableLazy(() => import("../business/tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
 const TagAppearanceNotice = recoverableLazy(() => import("../business/tag-navigation-editor").then(module => ({ default: module.TagAppearanceNotice })), "标签外观重试");
 const NoteDeleteDialog = recoverableLazy(() => import("../business/NoteDeleteDialog").then(module => ({ default: module.NoteDeleteDialog })), "删除确认");
+const Drafts = lazyWorkspaceFeature("草稿列表", async () => (await import("./WebDraftsDialog")).WebDraftsDialog);
 const DraftReminderToast = recoverableLazy(() => import("./DraftReminderToast"), "草稿提醒", () => null);
 const NoteAppearanceMenu = recoverableLazy(() => import("./NoteAppearanceMenu").then(module => ({ default: module.NoteAppearanceMenu })), "笔记外观",
   (_props, retry) => <DropdownMenuItem closeOnClick={false} onClick={retry}>重试加载笔记外观</DropdownMenuItem>);
@@ -151,8 +152,7 @@ function DraftReminder({ state: s }: { state: AppViewState }) {
 }
 
 function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?: ReactNode }) {
-  const appearance = useWorkspaceAppearance()?.applied;
-  const layoutId = appearance?.layoutId;
+  const { "data-interface-theme": themeId, "data-workspace-layout": layoutId } = useThemeScopeProps();
   const compactNavigation = layoutId === "rail" || layoutId === "topbar";
   if (s.openingNote && s.error) return <><h1 className="sr-only">{s.title}</h1>{s.detailReadFailed && <WorkspaceEmpty role="alert" connection illustration={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "query" : undefined} title={(s.error as { code?: string })?.code === "NOTE_NOT_FOUND" ? "笔记不存在" : "无法打开笔记"} description={errorMessage(s.error)}><div className="web-workspace-actions">{s.canRetryDetail && <Button disabled={s.loading || s.working || s.switchingVault} onClick={s.onRetryDetail}>重试</Button>}<Button variant="outline" onClick={s.onBack}>{s.backLabel}</Button></div></WorkspaceEmpty>}</>;
   const editor = s.editor;
@@ -184,7 +184,10 @@ function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?
   if (!s.loading && !s.status?.connected && !(s.view === "tags" ? s.sidebar.tags : s.collection.notes).length) return <>{pageHeading}<WorkspaceEmpty guide title={s.unsupportedBrowser ? "通过本机服务连接笔记库" : "打开你的笔记文件夹"} description={s.unsupportedBrowser ? "此浏览器无法直接读写文件夹。请从 MemoCard 菜单栏打开，或使用 memocard serve。" : "打开已有的 Markdown / Obsidian 文件夹，或创建一个新笔记库。内容保存在你授权的文件夹中。"}>
     {!s.unsupportedBrowser && <div className="web-workspace-actions">{s.sidebar.canCreateVault && <CreateButton disabled={s.working} onClick={() => s.sidebar.onSelectVault(true)}>创建笔记库</CreateButton>}<Button variant="outline" disabled={!s.sidebar.canChooseVault || s.working} onClick={() => s.sidebar.onSelectVault(false)}><FolderIcon aria-hidden="true" />打开已有笔记库</Button></div>}
   </WorkspaceEmpty></>;
-  if (s.view === "tags") return <Suspense fallback={<TagsLoading heading={heading} minimal={appearance?.themeId === "minimal" && layoutId !== "sidebar"} />}><WorkspaceTags state={s} heading={heading} /></Suspense>;
+  if (s.view === "tags") {
+    const docked = s.isMobile && layoutId === "drawer" && (themeId === "classic" || themeId === "minimal");
+    return <Suspense fallback={<TagsLoading heading={heading} docked={docked} minimal={themeId === "minimal" && layoutId !== "sidebar"} />}><WorkspaceTags state={s} heading={heading} /></Suspense>;
+  }
   const headingInToolbar = !s.collection.filters && s.collection.recentTags === undefined;
   return <>
     {!s.isMobile && s.view === "home" && (s.capture
@@ -220,6 +223,9 @@ function TagCollectionHeading({ tag, state: s }: { tag: string; state: AppViewSt
 export function WebAppView({ state: s }: { state: AppViewState }) {
   const pendingAppearance = useSyncExternalStore(subscribeTagAppearance, () => pendingTagAppearance(s.status?.vaultId, s.environment?.vaultBinding));
   const menuDelete = useRef(false);
+  const [draftsMounted, setDraftsMounted] = useState(false);
+  const showDrafts = s.drafts.open || Boolean(s.drafts.deleteTarget);
+  useEffect(() => { if (showDrafts) setDraftsMounted(true); }, [showDrafts]);
   const savedNoteId = s.editor?.initial.baseHash ? s.editor.initial.id : undefined;
   const loadingNoteId = s.openingNoteId === "new" ? undefined : s.openingNoteId;
   const noteAppearance = useNoteAppearance(s.status?.vaultId, savedNoteId ?? loadingNoteId);
@@ -248,7 +254,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
   </>} overlays={<>
     {s.searchMounted && <Suspense fallback={null}><NoteSearchDialog key={s.status?.vaultId} {...s.search} /></Suspense>}
     {s.deletion && <Suspense fallback={null}><NoteDeleteDialog {...s.deletion} /></Suspense>}
-    {!s.nativeChrome && <Drafts state={s} />}
+    {!s.nativeChrome && (showDrafts || draftsMounted) && <Suspense fallback={null}><Drafts state={s} /></Suspense>}
     {s.nativeChrome && s.capture && <Suspense fallback={null}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
     {s.notice && <div className="web-toast" data-record-bar={s.isMobile && !s.detailView && (s.view === "home" || s.view === "notes") || undefined} role="status"><CheckIcon aria-hidden="true" />{s.notice}</div>}
   </>}>
@@ -297,22 +303,4 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
         {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录">{mobileActions ? <ActionGroup size="lg">{searchControl}</ActionGroup> : searchControl}<div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
   </WorkspaceFrame></MobileActionGroupProvider>;
 
-}
-
-function Drafts({ state: s }: { state: AppViewState }) {
-  const d = s.drafts;
-  const deleteFocus = useRef<HTMLButtonElement | null>(null);
-  const doneFocus = useRef<HTMLButtonElement | null>(null);
-  const name = (draft: (typeof d.records)[number]) => draft.title || draft.body.slice(0, 80) || "空正文";
-  return <><Dialog open={d.open} onOpenChange={d.onOpenChange}><DialogContent className="web-drafts-dialog"><DialogHeader><DialogTitle>保留的草稿</DialogTitle><DialogDescription>继续未完成的记录。关闭提醒会保留内容。</DialogDescription></DialogHeader>
-    {d.error != null && <Notice title="草稿操作未完成" error>{errorMessage(d.error)}</Notice>}
-    <div className="web-drafts-list">{d.records.length ? d.records.map(draft => <article key={`${draft.recoveryScope ?? (draft.unscoped ? "legacy" : "current")}:${draft.draftKey ?? draft.id}`}><DocumentIcon aria-hidden="true" /><div>
-      <h3>{name(draft)}</h3>{draft.title && <p>{draft.body.slice(0, 120)}</p>}
-      {draft.updatedAt && Number.isFinite(Date.parse(draft.updatedAt)) && <p><time dateTime={draft.updatedAt}>{new Intl.DateTimeFormat("zh-CN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(draft.updatedAt))}</time></p>}
-      {draft.unscoped && <p className="text-warning">所属笔记库待确认</p>}
-      {draft.pendingProperties?.length ? <p>未保存属性：{draft.pendingProperties.map(change => `${change.name}：${change.value === undefined ? "属性更改" : Array.isArray(change.value) ? change.value.join("、") : String(change.value)}`).join("；")}</p> : null}
-      <div className="flex flex-wrap gap-2"><Button size="sm" aria-label={`继续编辑：${name(draft)}`} disabled={d.busy} onClick={() => void d.onResume(draft)}>继续编辑</Button>{draft.reminderDismissed ? <span className="text-sm text-secondary">已关闭提醒</span> : draft.unscoped && draft.draftKey && draft.revision && s.capabilities.has("dismissDraftReminder") && <Button size="sm" variant="ghost" disabled={d.busy} onClick={() => void d.onDismiss(draft)}>不再提醒</Button>}{draft.draftKey && draft.revision && s.status?.vaultId && s.capabilities.has("deleteDraft") && <Button size="sm" aria-label={`删除草稿：${name(draft)}`} variant="ghost" disabled={d.busy} onClick={event => { deleteFocus.current = event.currentTarget; d.onDelete(draft); }}>删除草稿</Button>}</div>
-    </div></article>) : <p>暂无保留草稿。</p>}</div>
-    <DialogFooter><Button variant="outline" disabled={d.busy} onClick={() => void d.onRefresh()}>刷新草稿</Button><Button ref={doneFocus} onClick={() => d.onOpenChange(false)} disabled={d.busy}>完成</Button></DialogFooter>
-  </DialogContent></Dialog><Dialog open={!!d.deleteTarget} onOpenChange={open => { if (!open) d.onCancelDelete(); }}><DialogContent finalFocus={() => deleteFocus.current?.isConnected ? deleteFocus.current : doneFocus.current ?? true}><DialogHeader><DialogTitle>删除这条草稿？</DialogTitle><DialogDescription>草稿删除后无法恢复，已保存的笔记不受影响。</DialogDescription></DialogHeader><p>{d.deleteTarget ? name(d.deleteTarget) : "空正文"}</p><DialogFooter><Button variant="outline" autoFocus disabled={d.busy} onClick={d.onCancelDelete}>取消</Button><Button variant="destructive" disabled={d.busy} onClick={() => void d.onConfirmDelete()}>{d.busy ? "正在删除…" : "确认删除"}</Button></DialogFooter></DialogContent></Dialog></>;
 }

@@ -2,6 +2,7 @@
 .ui-business-sidebar .ui-sidebar-row { border-radius: var(--radius-element); }
 .ui-business-sidebar .ui-sidebar-row { height: auto; min-height: max(var(--ui-sidebar-row-min), calc(1lh + var(--spacing-1) * 3)); gap: calc(var(--spacing-1) * 2); padding-block: calc(var(--spacing-1) * 1.5); padding-inline: calc(var(--spacing-1) * 2.5); font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
 .ui-business-sidebar .ui-sidebar-row:is(:hover, :active, [data-active]) { background: var(--color-overlay-hover); }
+[data-ui-theme=dark] .ui-business-sidebar .ui-sidebar-row[data-active] { background: var(--color-tab-active); }
 .ui-business-sidebar .ui-sidebar-row > svg:first-child, .ui-business-sidebar .ui-sidebar-row-icon > svg { color: var(--color-icon-secondary); }
 .ui-business-sidebar .ui-sidebar-row:not(:disabled, [aria-disabled="true"]):hover > svg:first-child, .ui-business-sidebar .ui-sidebar-tree-row:hover > .ui-sidebar-row:not(:disabled, [aria-disabled="true"]) .ui-sidebar-row-icon > svg { color: var(--color-icon-primary); }
 .ui-business-sidebar .ui-sidebar-row:is(:disabled, [aria-disabled="true"]) { color: var(--color-text-disabled); opacity: 1; }

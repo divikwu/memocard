@@ -429,7 +429,7 @@ for (const size of ["14", "16"]) test(`headings and paragraphs use the same sele
 for (const size of ["14", "16"]) for (const rootSize of [16, 20]) {
   test(`even note type and block metrics retain root scaling: size ${size}, root ${rootSize}`, async () => {
     document.documentElement.style.fontSize = `${rootSize}px`;
-    const source = '# H1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\nbody and `inline`\n\n1. ordered\n\n- [ ] task\n\n> quote one\n>\n> quote two\n\n<aside data-callout="gray" data-callout-icon="💡"><p>callout</p><p>second line</p></aside>\n\n```txt\ncode\n```\n\n| A | B |\n| --- | --- |\n| a | b |\n\n---\n\n<figure><figcaption>caption</figcaption></figure>\n\n[^x]: footnote';
+    const source = '# H1\n\n## H2\n\n### H3\n\n#### H4\n\n##### H5\n\n###### H6\n\nbody with **bold** and `inline`\n\n1. ordered\n\n- [ ] task\n\n> quote one\n>\n> quote two\n\n<aside data-callout="gray" data-callout-icon="💡"><p>callout</p><p>second line</p></aside>\n\n```txt\ncode\n```\n\n| A | B |\n| --- | --- |\n| a | b |\n\n---\n\n<figure><figcaption>caption</figcaption></figure>\n\n[^x]: footnote';
     const reading = render(<NoteMarkdown body={source} />);
     const { field, editor } = await editorFixture(source);
     const original = editor.state.doc;
@@ -441,10 +441,13 @@ for (const size of ["14", "16"]) for (const rootSize of [16, 20]) {
     for (const [index, leading] of ["1.5", "1.6", "1.75", "1.9"].entries()) {
       typography(size, "16px", leading);
       for (const [root, editing] of [[reader, false], [field, true]] as const) {
+        expect(getComputedStyle(root.querySelector("p")!).fontWeight).toBe("500");
+        expect(getComputedStyle(root.querySelector("p strong")!).fontWeight).toBe("700");
         expect(parseFloat(getComputedStyle(root).fontSize)).toBe(Number(size) * scale);
         expect(parseFloat(getComputedStyle(root).lineHeight)).toBeCloseTo(lines[index] * scale, 3);
         for (let level = 1; level <= 6; level++) {
           const style = getComputedStyle(root.querySelector(`h${level}`)!);
+          expect(style.fontWeight).toBe("700");
           const metrics = headings[level - 1] ?? [Number(size), lines[index]];
           expect(parseFloat(style.fontSize)).toBe(metrics[0] * scale);
           expect(parseFloat(style.lineHeight)).toBeCloseTo(metrics[1] * scale, 3);

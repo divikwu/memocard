@@ -608,7 +608,7 @@ describe("note workspace", () => {
     window.location.hash = "#/settings";
     fireEvent(window, new Event("hashchange"));
     fireEvent.click(await screen.findByRole("button", { name: "笔记库操作（切换）" }));
-    fireEvent.click(await screen.findByRole("menuitem", { name: "切换笔记库" }));
+    fireEvent.click(await screen.findByRole("button", { name: "打开已有笔记库" }));
     await waitFor(() => expect((screen.getByRole("button", { name: "笔记库操作（切换）" }) as HTMLButtonElement).disabled).toBe(false));
 
     if (cancelled) {
@@ -694,9 +694,10 @@ describe("note workspace", () => {
     });
     window.history.replaceState(null, "", "#/settings");
     render(<App />);
+    await screen.findByRole("navigation", { name: "桌面导航" });
     fireEvent.click(await screen.findByRole("button", { name: "笔记库操作（切换）" }));
-    expect(await screen.findByRole("menuitem", { name: "新建笔记库" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("menuitem", { name: "切换笔记库" }));
+    expect(await screen.findByRole("button", { name: "创建新笔记库" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "打开已有笔记库" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("selectVault", { create: false }));
     expect(bridge.reconnect).toHaveBeenCalledWith("http://127.0.0.1:5194/#/connect?token=next");
   });
@@ -712,7 +713,8 @@ describe("note workspace", () => {
     });
     render(<App />);
     await screen.findByText(note.body);
-    await userEvent.click(screen.getByRole("button", { name: `笔记库：${status.vaultName}` }));
+    await userEvent.click(screen.getByRole("button", { name: "设置" }));
+    await userEvent.click(await screen.findByRole("button", { name: "笔记库操作（切换）" }));
     const vaultDrawer = await screen.findByRole("dialog", { name: "切换笔记库" });
     fireEvent.click(within(vaultDrawer).getByRole("button", { name: "另一个库" }));
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("activateVault", { vaultId: "other-vault" }));

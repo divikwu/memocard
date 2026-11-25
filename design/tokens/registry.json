@@ -353,7 +353,7 @@
       "axes": [
         "mode"
       ],
-      "description": "Independent inset highlight for floating surfaces; decorative outer edges are supplied by the selected elevation recipe.",
+      "description": "Transparent composition slot for floating surfaces. The selected elevation recipe supplies the single 1px edge.",
       "consumers": [
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/business/rich-editor.css"
@@ -546,6 +546,7 @@
         "apps/ui/ui/web/web-settings-layout.css",
         "apps/ui/ui/web/web-typography.css",
         "apps/ui/ui/web/NoteAppearanceMenu.css",
+        "apps/ui/ui/web/WebDraftsDialog.css",
         "apps/ui/ui/web/WebMoreDrawer.css",
         "apps/ui/ui/components/theme-scope.css",
         "apps/ui/ui/components/toast.css",

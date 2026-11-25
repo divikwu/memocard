@@ -52,7 +52,7 @@
 | `outlined-3` | `--shadow-med` / `shadow-med` | 通用 Card 表面 |
 | `outlined-3`（经 med） | `--shadow-input-focus` / `shadow-input-focus` | 通用输入聚焦表面 |
 | `scale-2`（组件内覆盖） | `--shadow-input-focus` | 快速记录组件的聚焦配方。桌面 Web 首页和 H5 弹窗使用平面样式 |
-| `outlined-4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog、文字格式浮动工具条等浮层。`surface-floating` 维护透明布局边框与内侧高光 |
+| `outlined-4` | `--shadow-high` / `shadow-high` | 菜单、Popover、Dialog、文字格式浮动工具条等浮层。`surface-floating` 维护透明布局边框 |
 | `outlined-2` | `--shadow-floating` / `shadow-floating` | 富文本表格工具条、Mermaid 切换工具条 |
 | `outlined-3` | `--shadow-document` / `shadow-document` | 回收站笔记预览等独立文档表面；全屏编辑区保持平面 |
 | `scale-2` | `--shadow-card-hover` / `shadow-card-hover` | 笔记卡片与 Preview 入口的鼠标悬停反馈；纯投影，无装饰外缘 |
@@ -61,9 +61,9 @@
 
 z-index 管理前后顺序，阴影等级表达感知高度；嵌套菜单与弹层可复用同一档。嵌入式移动面板、表格与图片工具条保持平面，反色 Tooltip 依靠实心底色和箭头区分内容，不自动增加投影。
 
-`surface-floating` 承载透明布局边框和独立内侧高光，通过组合槽和 `shadow-high` 搭配；装饰外缘由 outlined 配方组合。显式使用 `shadow-none` 或 `shadow-flat` 时恢复普通边框。投影颜色由主题 `--color-shadow` 管理，不提供 shadow-颜色 工具类契约。
+`surface-floating` 保留透明布局边框，和 `shadow-high` 搭配；装饰外缘由 outlined 配方组合。显式使用 `shadow-none` 或 `shadow-flat` 时恢复普通边框。投影颜色由主题 `--color-shadow` 管理，不提供 shadow-颜色 工具类契约。
 
-`--surface-edge-floating` 只补充深色 white / 4% 内侧高光，浅色为透明；`--color-border-floating` 在常规浅深色下均为透明，保留原 1px 布局尺寸，避免与投影内置外缘叠加。笔记卡片保持无边框，移动端无投影输入面板保留弱边框，交互状态和键盘焦点独立。原生 `NativeElevation` 由 SwiftUI / UIKit 消费，浅色采用原生深色基准的 75%，保留快速记录向下和抽屉向左、随进度变化的参数。
+`--surface-edge-floating` 在深浅色下均为透明；`--color-border-floating` 在常规浅深色下均为透明，保留原 1px 布局尺寸，避免与投影内置外缘叠加。笔记卡片保持无边框，移动端无投影输入面板保留弱边框，交互状态和键盘焦点独立。原生 `NativeElevation` 由 SwiftUI / UIKit 消费，浅色采用原生深色基准的 75%，保留快速记录向下和抽屉向左、随进度变化的参数。
 
 键盘焦点使用独立的 `--focus-outline-*`。默认使用紧贴控件边缘的 2px 实线，偏移为 0。浅色为不透明 `blue-600`，深色为不透明 `blue-400`。强制颜色模式的焦点与浮层布局边框使用系统前景色 `CanvasText`，与 `Canvas` 背景配对，使浏览器清除投影后仍有边界。焦点与投影分别验证。
 

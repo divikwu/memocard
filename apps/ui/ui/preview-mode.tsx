@@ -29,6 +29,8 @@ export function PreviewModeProvider({ mode, appearance = DEFAULT_PREVIEW_APPEARA
     for (const [name, value] of Object.entries(previewAppearanceStyle({ radius, headingFont: resolvedHeading, bodyFont }))) root.style.setProperty(name, String(value));
     root.dataset.uiAppearance = "";
     root.dataset.uiTheme = mode;
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute("content", mode);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", mode === "dark" ? "#0a0a0a" : "#ffffff");
   }, [mode, radius, resolvedHeading, bodyFont]);
   useEffect(() => {
     let current = true;

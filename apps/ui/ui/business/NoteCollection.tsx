@@ -99,8 +99,8 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
   const cards = layout === "cards";
   const recentTagButtonStyles = cn(tabsPillTriggerStyles, "ui-note-recent-tag");
   const layoutButtons = <div role="group" aria-label={home ? "主页布局" : "笔记布局"} data-variant="default" className={cn(tabsListVariants(), "ui-note-layout")}>
-    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="卡片布局" data-ui-tooltip="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
-    <Button type="button" variant="ghost" className={cn(tabsTriggerStyles, "aria-pressed:bg-surface dark:aria-pressed:bg-surface")} aria-label="列表布局" data-ui-tooltip="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
+    <Button type="button" variant="ghost" className={tabsTriggerStyles} aria-label="卡片布局" data-ui-tooltip="卡片布局" aria-pressed={cards} onClick={() => changeLayout("cards")}><HugeiconsIcon icon={GridViewIcon} aria-hidden="true" strokeWidth={2} /></Button>
+    <Button type="button" variant="ghost" className={tabsTriggerStyles} aria-label="列表布局" data-ui-tooltip="列表布局" aria-pressed={!cards} onClick={() => changeLayout("list")}><HugeiconsIcon icon={LeftToRightListBulletIcon} aria-hidden="true" strokeWidth={2} /></Button>
   </div>;
   const content = <TooltipHints>
     {loading && <span role="status" aria-label="正在读取笔记库" className="sr-only">正在读取笔记库…</span>}

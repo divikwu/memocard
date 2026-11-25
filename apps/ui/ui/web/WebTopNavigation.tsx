@@ -19,7 +19,6 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
   const activeView = p.detailView ? undefined : p.view;
   const notesActive = activeView === "notes" && (!p.tag || Boolean(p.quickFilter));
   const tagsCurrent = activeView === "tags" || (activeView === "notes" && p.tag && !p.quickFilter) ? "page" : undefined;
-  const moreActive = activeView === "settings" || activeView === "trash";
   return <><header className="web-topbar" data-ui-tooltip-side="bottom"><div className="web-topbar-inner">
     <div className="web-top-brand">
       {p.detailBack
@@ -37,7 +36,7 @@ export function WebTopNavigation(p: WorkspaceNavigationProps) {
       <Button variant="ghost" size="icon" className="web-top-icon" aria-label={actions.newNote.label}
         data-ui-tooltip={actions.newNote.label} disabled={actions.newNote.disabled} onClick={actions.newNote.run}><SidebarIcon name="add" /></Button>
       <Button variant="ghost" size="icon" className="web-top-icon" aria-label="搜索" data-ui-tooltip="搜索" aria-haspopup="dialog" aria-expanded={p.searchOpen} disabled={actions.search.disabled} onClick={actions.search.run}><SidebarIcon name="search" /></Button>
-      <Button ref={moreTrigger} variant="ghost" size="icon" className="web-top-icon" aria-label="更多" data-ui-tooltip="更多" aria-haspopup="dialog" aria-expanded={Boolean(moreOpen)} aria-current={moreActive ? "page" : undefined} onClick={() => setMoreOpen(true)}><HugeiconsIcon icon={EqualIcon} strokeWidth={2} aria-hidden="true" /></Button>
+      <Button ref={moreTrigger} variant="ghost" size="icon" className="web-top-icon" aria-label="更多" data-ui-tooltip="更多" aria-haspopup="dialog" aria-expanded={Boolean(moreOpen)} onClick={() => setMoreOpen(true)}><HugeiconsIcon icon={EqualIcon} strokeWidth={2} aria-hidden="true" /></Button>
     </div>
   </div></header>
     {moreOpen !== null && <Suspense fallback={<span role="status" className="sr-only">正在打开更多…</span>}>

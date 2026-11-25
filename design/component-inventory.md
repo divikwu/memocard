@@ -118,6 +118,8 @@
 | `apps/ui/ui/components/table.tsx` | 当前 HTML 表格适配 | 原生表头/单元格语义与横向溢出容器；标签目录消费 | table / type / size / responsive | `apps/ui/ui/business/TagsPage.test.tsx`；`apps/ui/ui/stories/luma-table.stories.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 组合测试由消费端维护；辅助技术与大数据量另验 |
 | `apps/ui/ui/components/tabs.tsx` | 当前Base UI/HTML控件适配 | tabs；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-tabs.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/tabs-indicator.tsx` | Base UI 选中指示器 | 主页和标签页的选中位置、尺寸和过渡 | motion / size / color | `apps/ui/test-support/ui-quality.browser.tsx` | 随启用指示器的标签页按需加载 |
+| `apps/ui/ui/components/toggle.tsx` | 切换按钮 | 按下状态、尺寸和焦点样式 | theme / size / focus | `apps/ui/ui/stories/luma-toggle.stories.tsx` | 提供选项按钮共用样式 |
+| `apps/ui/ui/components/toggle-group.tsx` | 切换按钮组 | 互斥选择及键盘导航 | theme / size / focus | `apps/ui/ui/stories/luma-toggle-group.stories.tsx` | 设置页的标题和正文字体选择 |
 | `apps/ui/ui/components/textarea.tsx` | 当前Base UI/HTML控件适配 | textarea；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-textarea.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/tooltip.tsx` | 当前Base UI/HTML控件适配 | tooltip；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-tooltip.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/toast.tsx` | 当前 Base UI 通知适配 | 基于 shadcn/ui Base Luma Toast，复用项目按钮、图标和主题 | theme / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 消费端控制显示时机和操作 |
@@ -126,6 +128,7 @@
 | `apps/ui/ui/preview-mode.tsx` | 当前产品与Storybook共享外观上下文 | 模式、字体加载结果、重试及CSS偏好输出 | theme / font / radius | `apps/ui/ui/web/WebAppearance.test.tsx` | 生产偏好与示例存储隔离；真实字体加载另验 |
 | `apps/ui/ui/showcase-icons.tsx` | 当前图标适配与目录 | 生产图标引用、运行时组件和静态映射 | icon / color / size | `apps/ui/ui/stories/icons.stories.tsx` | 内部映射无需独立Story；全图标组合另验 |
 | `apps/ui/ui/web/WebAppView.tsx` | 当前产品视图编排 | AppViewState；主页/编辑/设置/回收站、通知和草稿 | theme / layout / state | `apps/ui/ui/web/WebApp.test.tsx`；`apps/ui/ui/stories/web-workspace.stories.tsx` | 内存夹具不替代真实库和WKWebView生命周期 |
+| `apps/ui/ui/web/WebDraftsDialog.tsx` | 草稿列表与删除确认 | 草稿恢复、提醒与删除 | theme / state | `apps/ui/ui/web/WebApp.test.tsx` | Web 工作区按需挂载 |
 | `apps/ui/ui/web/WorkspaceLoading.tsx` | 首页与设置加载 | 快速记录和设置分组占位；复用页面布局 | theme / layout / state | `apps/ui/test-support/ui-quality.browser.tsx` | 模拟慢读取检查加载前后首页位置 |
 | `apps/ui/ui/web/DraftReminderToast.tsx` | Web 草稿提醒 | 桌面笔记列表按需加载；打开草稿与关闭提醒 | layout / state | `apps/ui/ui/web/WebApp.test.tsx` | 按会话处理提醒，草稿保留在原入口 |
 | `apps/ui/ui/web/EditorLoadErrorToast.tsx` | Web 编辑器加载错误 | 加载失败时按需显示常驻 Toast；提供重试和刷新 | layout / focus / state | `apps/ui/ui/web/WebApp.test.tsx` | 关闭后在页面保留重试入口 |

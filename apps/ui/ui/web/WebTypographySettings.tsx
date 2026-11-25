@@ -5,7 +5,6 @@ import { noteLineHeights, noteParagraphGap, STANDARD_PARAGRAPH_GAP } from "../..
 import { Button } from "../components/button";
 import { Card, CardContent } from "../components/card";
 import { WebSettingSelect } from "./WebSettingSelect";
-import { WebSettingsDisclosure } from "./WebSettingsDisclosure";
 
 const labels: Record<keyof Typography, string> = { measure: "行宽", size: "字号", leading: "行高", flow: "段落间距" };
 const names: Record<string, string> = { "1.5": "标准", "1.6": "舒适", "1.75": "宽松", "1.9": "更宽松" };
@@ -19,8 +18,8 @@ export function WebTypographySettings() {
   return <section aria-labelledby={`${id}-section-heading`}>
     <div className="web-setting-section-heading"><h2 id={`${id}-section-heading`}>内容风格</h2><Button variant="ghost" className="text-secondary" aria-label="恢复默认风格" onClick={() => save({ ...defaults })}>恢复默认</Button></div>
     {error && <p role="status" className="text-sm text-error">{error}</p>}
-    <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">{field("measure")}{field("size")}
-      <WebSettingsDisclosure label="高级排版" advanced><div className="web-setting-card-content web-advanced-fields">{field("leading")}{field("flow")}</div></WebSettingsDisclosure>
+    <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">
+      {field("measure")}{field("size")}{field("leading")}{field("flow")}
     </CardContent></Card>
   </section>;
 }

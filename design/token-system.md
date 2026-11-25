@@ -56,13 +56,13 @@
 
 目标模式只开放同名语义工具类，不保留旧尺寸别名。`@theme reference inline` 首先以 `--shadow-*: initial` 清空 Tailwind 默认阴影命名空间，再显式登记 `flat / low / med / high` 和已有专用角色，避免删除映射后重新启用上游默认值。命名空间重置属于编译配置，不是运行时 token；基础尺度仍由主题 CSS 拥有。`shadow-none` 继续作为清除工具使用。
 
-纯投影 `--shadow-scale-0…4` 与带外缘 `--shadow-outlined-0…4` 分别表达高度和表面轮廓。`--shadow-edge` 单独拥有 1px 装饰外缘，浅色黑色 4%、深色白色 8%；outlined 配方将它与同档 scale 组合，0 档仅包含外缘。它与结构分隔、控件边框、键盘焦点及校验状态独立。`effects.surface-edge` 继续管理浮层内侧高光，`effects.state-feedback` 保留现有预留状态定义；原生阴影由各平台适配器维护。
+纯投影 `--shadow-scale-0…4` 与带外缘 `--shadow-outlined-0…4` 分别表达高度和表面轮廓。`--shadow-edge` 单独拥有 1px 装饰外缘，浅色黑色 4%、深色白色 8%；outlined 配方将它与同档 scale 组合，0 档仅包含外缘。它与结构分隔、控件边框、键盘焦点及校验状态独立。`effects.surface-edge` 的透明占位让浮层统一使用投影自带的轮廓，`effects.state-feedback` 保留现有预留状态定义；原生阴影由各平台适配器维护。
 
 纯投影 0 档保留六层透明占位。浅色 1–4 采用 Figma Section 5 的 2 / 2 / 3 / 3 层投影，保留负扩展值，移除每档末尾的装饰外缘；深色共用相同几何与层数，黑色透明度为浅色的 4 倍。outlined 1–4 始终引用对应 scale 和同一 `--shadow-edge`，不维护第二份投影数值。完整参数由主题 CSS 拥有。
 
 语义角色映射为 `flat → scale-0`、`control → outlined-1`、`low / floating → outlined-2`、`med / document → outlined-3`、`high → outlined-4`。`card-hover → scale-2`、`input-focus → med` 复用已有高度，不维护独立投影配方。控件高光由 `--surface-highlight-control` 单独拥有，白色 1px inset 的浅色 / 深色透明度为 88% / 4%，仅由 `control` 组合，不列入高度尺度。旧尺度名称已移除，不保留兼容别名。普通全屏编辑区保持平面。Storybook 的 [Elevation](../apps/ui/ui/stories/elevation.stories.tsx) 提供完整参数与浅深色真实组件对照，示例内容不连接真实笔记库。
 
-浮起表面的装饰外缘由 outlined 配方组合，避免重复叠加。`--color-border-floating` 在常规浅深色模式下为透明，保留 1px 布局占位；`--surface-edge-floating` 只补充深色 white / 4% 内侧高光，浅色为透明。`surface-floating` utility 使用独立组合槽承载高光，浮层组件另显式选择 `shadow-high`。显式覆盖为 `shadow-none` 或 `shadow-flat` 时恢复普通边框；强制颜色模式使用系统色边界。菜单、Popover、Select、Combobox、Dialog、Sheet、编辑器弹层与快速记录建议框共用该配方；文档弹窗保留 `document` 投影并组合相同轮廓。输入与按钮的状态边框、结构分隔和焦点环独立。普通浮起卡片和 PC 快速记录保留透明布局边框；笔记卡片默认无边框，hover 使用纯投影第 2 档；移动端无投影输入面板恢复弱边框。
+浮起表面的装饰外缘由 outlined 配方组合，避免重复叠加。`--color-border-floating` 在常规浅深色模式下为透明，保留 1px 布局占位；`--surface-edge-floating` 在深浅色下均为透明。浮层组件使用 `surface-floating shadow-high`，仅由投影绘制 1px 外缘。显式覆盖为 `shadow-none` 或 `shadow-flat` 时恢复普通边框；强制颜色模式使用系统色边界。菜单、Popover、Select、Combobox、Dialog、Sheet、编辑器弹层与快速记录建议框共用该配方；文档弹窗保留 `document` 投影并组合相同轮廓。输入与按钮的状态边框、结构分隔和焦点环独立。普通浮起卡片和 PC 快速记录保留透明布局边框；笔记卡片默认无边框，hover 使用纯投影第 2 档；移动端无投影输入面板恢复弱边框。
 
 z-index 决定实际的前后顺序，阴影等级表达感知高度；嵌套菜单、Popover 与 Dialog 可以复用 `high`，不要求每叠加一层就提高尺度。嵌入式移动面板、表格与图片工具条保持平面；反色 Tooltip 通过实心底色与箭头分离内容。这些例外不因定位悬浮就自动添加投影。
 
@@ -80,7 +80,7 @@ z-index 决定实际的前后顺序，阴影等级表达感知高度；嵌套菜
 
 ## 主题、偏好和单位
 
-主题由 CSS 的 `:root` / `.ui-theme` 与 `data-ui-theme` 解析；WebAppearance 管理产品偏好，PreviewModeProvider 应用当前明暗、字体和圆角。产品存储键为 `memocard-web-appearance-v1`，旧 `memocard-appearance-v1` 只作兼容读取；已有字体与圆角选择保留，恢复默认采用当前 Luma 默认值。新字体选项统一为系统默认、Noto Sans、Noto Serif、Geist Mono；标题另提供跟随正文；笔记字体跟随 UI 外观，代码使用 `--font-family-code` 的系统等宽字体栈。系统默认使用设备的 system-ui 字体栈，该选项不请求自定义字体，项目初始字体仍为 Noto Sans。旧字体只在已保存为当前值时显示为「已有设置」，资源继续按需加载。Storybook 使用相同字体选项，globals 与 fixture 存储独立。
+主题由 CSS 的 `:root` / `.ui-theme` 与 `data-ui-theme` 解析；WebAppearance 管理产品偏好，PreviewModeProvider 应用当前明暗、字体和圆角。产品存储键为 `memocard-web-appearance-v1`，旧 `memocard-appearance-v1` 只作兼容读取；已有字体与圆角选择保留，恢复默认采用当前 Luma 默认值。产品设置与笔记详情以「无衬线体 / 衬线体 / 等宽体」分别选择标题和正文字体，映射为系统默认、Noto Serif 和系统等宽。已有偏好按字体类别显示，保留原字体直到用户更改。笔记默认跟随全局外观，代码使用 `--font-family-code` 的系统等宽字体栈。外观中的「小字号」与内容风格中的字号共用 14/16 px 设置。Storybook 使用独立的字体目录、globals 与 fixture 存储。
 
 产品与 Storybook 的新圆角选项统一为默认 8px 与 None 0px，以 16px 根字号为基准；其他已保存值继续生效，只作为当前「已有设置」显示。派生角色在主题 CSS 中维护，兼容旧设备值不代表仍有一套旧主题。间距基础为 `.25rem`，标准控件高度由 `--size-element-*` 拥有。CSS 长度、Swift 逻辑点与物理设备像素不能直接混同。
 
