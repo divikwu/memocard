@@ -123,6 +123,16 @@ it("persists note styles independently, retains a live editor and undo history, 
   expect(document.documentElement.style.getPropertyValue("--note-measure")).toBe("528px");
 });
 
+it("restores the appearance size while preserving independent reading preferences", async () => {
+  const user = userEvent.setup();
+  const saved = { measure: "70", size: "14", leading: "1.9", flow: "1.25em" };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+  mount();
+  await user.click(within(screen.getByRole("region", { name: "外观" })).getByRole("button", { name: "恢复默认" }));
+  expect(screen.getByRole("switch", { name: "小字号" }).getAttribute("aria-checked")).toBe("false");
+  expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ ...saved, size: "16" });
+});
+
 it("offers two sizes and always-visible rhythm choices, and resets without changing UI appearance", async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...defaults, size:"14", leading:"1.9", flow:"2em" }));
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ bodyFont: "geist", theme: "dark", radius: "none" }));

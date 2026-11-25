@@ -68,7 +68,7 @@ function Diagram({ svg, enlarged = false }: { svg: string; enlarged?: boolean })
   return <span ref={element} role="img" aria-label="Mermaid 图表" />;
 }
 
-function MermaidDiagram({ source }: { source: string }) {
+function MermaidDiagram({ source, interactive = true }: { source: string; interactive?: boolean }) {
   const [result, setResult] = useState<{ source: string; svg?: string; failed?: boolean }>();
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -88,8 +88,8 @@ function MermaidDiagram({ source }: { source: string }) {
   }, [source]);
   const current = result?.source === source ? result : undefined;
   return <div className="note-mermaid-diagram">
-    {current?.svg ? <div className="note-diagram-scroll" role="region" aria-label="Mermaid 图形预览，可横向滚动" tabIndex={0}>
-      <Button variant="ghost" className="note-diagram-trigger" aria-label="放大 Mermaid 图表" onClick={() => setOpen(true)}><Diagram svg={current.svg} /></Button>
+    {current?.svg ? <div className="note-diagram-scroll" role="region" aria-label="Mermaid 图形预览，可横向滚动" tabIndex={interactive ? 0 : -1}>
+      {interactive ? <Button variant="ghost" className="note-diagram-trigger" aria-label="放大 Mermaid 图表" onClick={() => setOpen(true)}><Diagram svg={current.svg} /></Button> : <Diagram svg={current.svg} />}
     </div> : <p className="text-sm text-secondary" role={current?.failed ? "alert" : "status"}>{current?.failed ? "暂时无法预览，请检查语法或图表类型。源码已保留。" : "正在生成图表预览…"}</p>}
     {open && current?.svg && <Dialog open onOpenChange={value => { if (!value) setOpen(false); }}>
       <DialogContent className="ui-note-viewer" aria-describedby={undefined} showCloseButton={false} onClick={event => { if (event.target === event.currentTarget) setOpen(false); }}>
@@ -107,9 +107,10 @@ const mermaidModes = [
   { value: "both", label: "源码与图形", icon: Layout2RowIcon },
 ] as const;
 
-export function MermaidContent({ source, children }: { source: string; children: React.ReactNode }) {
+export function MermaidContent({ source, children, interactive = true }: { source: string; children: React.ReactNode; interactive?: boolean }) {
   const [mode, setMode] = useState("both");
   const grouped = useMobileActionGroup();
+  if (!interactive) return <div className="ui-note-mermaid">{children}<MermaidDiagram source={source} interactive={false} /></div>;
   const modes = <TabsList contentEditable={false} aria-label="Mermaid 显示模式" activateOnFocus>
     {mermaidModes.map(({ value, label, icon }) => <TabsTrigger key={value} value={value} aria-label={label} data-ui-tooltip={label}><HugeiconsIcon icon={icon} strokeWidth={2} aria-hidden="true" /></TabsTrigger>)}
   </TabsList>;

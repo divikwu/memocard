@@ -103,6 +103,26 @@ it("creates a tag inline from the alphabetical view even when search has no resu
   expect(JSON.parse(localStorage.getItem(key)!).labels).toEqual({reading: "Books to read"});
 });
 
+it("keeps invalid input on its tab and saves the corrected name and description before switching", async () => {
+  const user = userEvent.setup();
+  render(<TagsPage {...props()} />);
+  await user.click(screen.getByRole("button", {name: "新建标签"}));
+  const name = screen.getByRole("textbox", {name: "标签名称"});
+  const groups = screen.getByRole("tab", {name: "标签群组"});
+  await user.type(name, "area");
+  await user.click(screen.getByRole("button", {name: "添加标签说明"}));
+  await user.type(screen.getByRole("textbox", {name: "标签说明"}), "Keep this");
+  await user.click(groups);
+  expect(await screen.findByText("这个标签已存在。")).toBeTruthy();
+  expect(name).toHaveProperty("value", "area");
+  expect(groups.getAttribute("aria-selected")).toBe("false");
+  await user.clear(name);
+  await user.type(name, "reading");
+  await user.click(groups);
+  await waitFor(() => expect(groups.getAttribute("aria-selected")).toBe("true"));
+  expect(JSON.parse(localStorage.getItem(key)!).labels).toEqual({reading: "Keep this"});
+});
+
 it("keeps a pinyin search when a newly created tag matches it", async () => {
   const user = userEvent.setup();
   render(<TagsPage {...props()} />);

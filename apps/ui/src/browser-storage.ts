@@ -4,7 +4,7 @@ import type { Draft } from "./bridge";
 
 export type BrowserDraft = Draft & { updatedAt: string; draftKey: string };
 export type StoredSelection = { directoryId: string; vaultId: string; handle: BrowserDirectoryHandle };
-export type RenameJournal = { changes: { path: string; before: string | null; after: string | null }[]; identities: FileIdentity[] };
+export type RenameJournal = { changes: { path: string; before: string | null; after: string | null; exactName?: boolean }[]; identities: FileIdentity[] };
 export type BrowserVaultStorage = {
   renameJournal(scope: string): Promise<RenameJournal | undefined>;
   saveRenameJournal(scope: string, journal: RenameJournal | undefined, retainBackup?: boolean): Promise<void>;

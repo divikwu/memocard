@@ -158,7 +158,7 @@ export function useNoteSearch({ open, available, tags = emptyTags, preserveSessi
           let cursor: string | null = null;
           let pages = 0;
           for (let index = 0; index < pageCount; index++) {
-            result = await request<NotePage>("queryNotes", { query: searchQuery, tags: [], sort: "updatedAt", limit: 30, ...(cursor ? { cursor } : {}) });
+            result = await request<NotePage>("queryNotes", { query: searchQuery, tags: [], sort: searchQuery ? "relevance" : "updatedAt", limit: 30, ...(cursor ? { cursor } : {}) });
             if (epoch.current !== current) return null;
             notes.push(...result.notes);
             pages = index + 1;
@@ -214,7 +214,7 @@ export function useNoteSearch({ open, available, tags = emptyTags, preserveSessi
     setSelectedKey(active?.key ?? null);
     pagingLock.current = true; setPaging(true); setError("");
     try {
-      const next = await request<NotePage>("queryNotes", { query: searchQuery, tags: [], sort: "updatedAt", limit: 30, cursor: page.nextCursor });
+      const next = await request<NotePage>("queryNotes", { query: searchQuery, tags: [], sort: searchQuery ? "relevance" : "updatedAt", limit: 30, cursor: page.nextCursor });
       if (epoch.current === current) {
         setPage(previous => previous && ({ ...next, notes: [...previous.notes, ...next.notes] }));
         loadedPages.current++;

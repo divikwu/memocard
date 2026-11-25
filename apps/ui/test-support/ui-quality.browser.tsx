@@ -3196,7 +3196,14 @@ test("Web tag groups save shared membership without changing any notes", async (
     const editor = within(await canvas.findByRole("rowgroup", {name: "编辑群组"}));
     expect(editor.getByRole("button", {name: "编辑群组说明"})).toHaveTextContent("群组测试说明");
     await userEvent.click(editor.getByRole("button", {name: "删除群组"}));
+    const confirmation = within(await body.findByRole("dialog", {name: "删除群组「饮品」？"}));
+    await waitFor(() => expect(confirmation.getByRole("button", {name: "取消"})).toHaveFocus());
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(editor.getByRole("button", {name: "删除群组"})).toHaveFocus());
+    await userEvent.click(editor.getByRole("button", {name: "删除群组"}));
+    await userEvent.click(within(await body.findByRole("dialog", {name: "删除群组「饮品」？"})).getByRole("button", {name: "确认删除"}));
     await waitFor(() => expect(canvas.queryByRole("heading", {name: "饮品"})).toBeNull());
+    await waitFor(() => expect(groupsTab).toHaveFocus());
     expect(canvas.queryByRole("button", {name: "查看标签 生活/咖啡 的笔记"})).toBeNull();
     await userEvent.click(canvas.getByRole("button", {name: "编辑群组说明 收藏"}));
     const groupDescription = canvas.getByRole("textbox", {name: "群组说明"});
@@ -5869,7 +5876,7 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
     let editor: import("@tiptap/react").Editor | null = null;
     const view = render(<PreviewModeProvider mode={mode}><main className="ui-theme p-4" data-ui-theme={mode}>
       <span data-testid="muted-icon" className="text-secondary" />
-      <QuickCapture vaultId={`compact-popups-${width}-${mode}`} rootNotes tags={["设计"]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
+      <QuickCapture vaultId={`compact-popups-${width}-${mode}`} rootNotes docked={width === 390} tags={["设计", "摄影", "工作", "感想", "旅行", "生活", "阅读"]} disabled={false} canImage={false} handle={{ current: null }} onRecorded={() => {}} />
       <RichMarkdownEditor value="验证链接属性" notePath="notes/popup-style.md" disabled={false} onChange={() => {}} onSave={() => {}} onError={() => {}} onEditorReady={value => { editor = value; }} />
     </main></PreviewModeProvider>);
     const canvas = within(view.container), body = within(document.body);
@@ -5884,14 +5891,28 @@ for (const mode of ["light", "dark"] as const) for (const width of [390, 1024]) 
     expect(getComputedStyle(option.querySelector("svg")!).color).toBe(getComputedStyle(canvas.getByTestId("muted-icon")).color);
     await userEvent.keyboard("{Escape}");
     await userEvent.type(body.getByRole("textbox", {name: "快速输入内容"}), "#设");
-    const suggestions = await body.findByRole("group", {name: "标签建议"});
+    const suggestions = await body.findByRole("listbox", {name: "标签建议"});
     expect(getComputedStyle(suggestions).borderRadius).toBe("12px");
-    for (const button of within(suggestions).getAllByRole("button")) {
+    for (const button of within(suggestions).getAllByRole("option")) {
       expect(getComputedStyle(button).height).toBe("32px");
       expect(getComputedStyle(button).fontWeight).toBe("400");
     }
     await userEvent.keyboard("{Escape}");
-    if (entry) await userEvent.click(body.getByRole("button", {name: "收起快速记录"}));
+    if (entry) {
+      const input = body.getByRole("textbox", {name: "快速输入内容"});
+      await userEvent.type(input, "{End}{Enter}" + "一行正文{Enter}".repeat(8) + "#");
+      await userEvent.keyboard("{ArrowDown>6/}");
+      await waitFor(() => {
+        const selected = within(body.getByRole("listbox", {name: "标签建议"})).getByRole("option", {selected: true});
+        expect(selected).toHaveTextContent("#阅读");
+        const rect = selected.getBoundingClientRect();
+        expect(selected.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2))).toBe(true);
+        expect(input).toHaveFocus();
+      });
+      await userEvent.keyboard("{Enter}");
+      expect(input).toHaveTextContent("#阅读");
+      await userEvent.click(body.getByRole("button", {name: "收起快速记录"}));
+    }
     await userEvent.click(canvas.getByRole("textbox", {name: "笔记内容"}));
     act(() => { editor!.chain().focus().setTextSelection({from: 1, to: 3}).run(); });
     const fixture = await createWorkspaceFixture();

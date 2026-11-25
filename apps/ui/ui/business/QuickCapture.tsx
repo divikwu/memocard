@@ -1,6 +1,6 @@
 import { recoverableLazy } from "../components/recoverable-lazy";
 import { isIOSNative } from "../../src/ios-native";
-import { Suspense, useRef } from "react";
+import { Suspense, useLayoutEffect, useMemo, useRef } from "react";
 import { EditorContent, type Editor } from "@tiptap/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Add01Icon from "@hugeicons/core-free-icons/Add01Icon";
@@ -40,7 +40,7 @@ export function QuickCapture(props: QuickCaptureProps & { draftLabel?: string })
   const mobileActions = useMobileActionGroup();
   const { preferences } = useTagPreferences(props.vaultId);
   const { tags: options, canImage, onContinue, draftCount = 0, draftLabel = "保留草稿", onOpenDrafts, docked = false, active = true } = props;
-  const { expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
+  const { offerLegacy, importLegacy, expanded, setExpanded, sheetViewport, capture, captureCurrent, draftError, restoreFailed, recordedLocally, busy, error, tagQuery, setTagQuery, tagPickerOpen, setTagPickerOpen, textarea, editorRef, working, continuing, blocked, canRecord, record, continueInPage, image, changeCapture, retryProtection, toggleTag, normalized, known, matches, isMobile } = useQuickCapture(props);
   const [, setTagOptions] = useScrollOverflow(`${matches.length}:${tagQuery}`);
   const savedTags = new Set(options);
   if (isIOSNative) return null;
@@ -71,6 +71,7 @@ export function QuickCapture(props: QuickCaptureProps & { draftLabel?: string })
         <InputGroupButton type="submit" variant="default" size="sm" className="ui-capture-submit" disabled={!canRecord} aria-label={busy ? "处理中" : "记录"}><Icon name={busy ? "loading" : "send"} className={busy ? "size-4 animate-spin motion-reduce:animate-none" : undefined} /><span>{busy ? "处理中" : "记录"}</span></InputGroupButton>
       </InputGroupAddon>
     </InputGroup>
+    {offerLegacy && <Button type="button" variant="outline" disabled={blocked} onClick={importLegacy}>将旧版快速草稿恢复到当前库</Button>}
     {draftCount > 0 && onOpenDrafts && <div className="ui-capture-drafts"><Button type="button" variant="ghost" size="sm" disabled={docked && busy} onClick={() => { if (docked) setExpanded(false); onOpenDrafts(); }}><Icon name="folder" />{`${draftLabel}（${draftCount}）`}</Button></div>}
     {docked && isMobile && onContinue && <Button type="button" variant="outline" className="ui-capture-continue" disabled={blocked || restoreFailed} onClick={() => void continueInPage()}><Icon name="continue" />切换为页面</Button>}
     {error && <p role="alert" className="ui-capture-error">{error}</p>}
@@ -94,7 +95,24 @@ function CaptureEditor(props: CaptureEditorProps) {
 }
 
 function CaptureSuggestions({ editor, names: providedNames, host }: { editor: Editor; names: string[]; host: React.RefObject<HTMLDivElement | null> }) {
-  const { active, index, names, options, choose } = useRichTagSuggestions(editor, providedNames, host);
-  if (!active) return null;
-  return <div role="group" aria-label="标签建议" className="ui-capture-suggestions" style={{ left: `min(${active.left}px, max(0px, 100% - 240px))`, top: active.top }}>{options.length ? options.map((name, item) => <Button key={name} type="button" size="sm" variant="ghost" className={item === index ? "bg-muted" : ""} onMouseDown={event => event.preventDefault()} onClick={() => choose(name)}><span>#{name}</span>{!names.includes(name) && <span className="text-xs text-secondary">新标签</span>}</Button>) : <p className="text-xs text-secondary">输入标签名称，空格结束</p>}</div>;
+  const { active, index, listId, names, options, choose } = useRichTagSuggestions(editor, providedNames, host);
+  const list = useRef<HTMLDivElement>(null);
+  const anchor = useMemo(() => active && ({
+    contextElement: editor.view.dom,
+    getBoundingClientRect() {
+      const {left, right, top, bottom} = editor.view.coordsAtPos(editor.state.selection.from);
+      return new DOMRect(left, top, Math.max(1, right - left), bottom - top);
+    },
+  }), [active, editor]);
+  useLayoutEffect(() => {
+    const panel = list.current;
+    const selected = panel?.querySelector('[aria-selected="true"]');
+    if (!panel || !selected) return;
+    const item = selected.getBoundingClientRect();
+    const bounds = panel.getBoundingClientRect();
+    if (item.bottom > bounds.bottom) panel.scrollTop += item.bottom - bounds.bottom;
+    else if (item.top < bounds.top) panel.scrollTop -= bounds.top - item.top;
+  }, [index, active]);
+  if (!anchor) return null;
+  return <Popover open><PopoverContent ref={list} anchor={anchor} align="start" collisionPadding={8} initialFocus={false} finalFocus={false} id={listId} role="listbox" aria-label="标签建议" className="ui-capture-suggestions">{options.length ? options.map((name, item) => <Button key={name} role="option" tabIndex={-1} id={`${listId}-${item}`} aria-selected={item === index} type="button" size="sm" variant="ghost" className={item === index ? "bg-muted" : ""} onMouseDown={event => event.preventDefault()} onClick={() => choose(name)}><span>#{name}</span>{!names.includes(name) && <span className="text-xs text-secondary">新标签</span>}</Button>) : <p className="text-xs text-secondary">输入标签名称，空格结束</p>}</PopoverContent></Popover>;
 }

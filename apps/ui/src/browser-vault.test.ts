@@ -1333,6 +1333,31 @@ it('resolves rewritten Wiki and Markdown links when a filename stem ends in .md'
   }
 });
 
+it('restores a case-only rename after a failed write and preserves identity on retry', async () => {
+  const root = new TestDirectory('case-preserving'), h = harness(root);
+  root.children.set('Plan.md', new TestFile('Plan.md', 'before'));
+  root.children.set('Ref.md', new TestFile('Ref.md', '[[Plan]]'));
+  const getFile = root.getFileHandle.bind(root);
+  vi.spyOn(root, 'getFileHandle').mockImplementation((name, options) => {
+    const actual = [...root.children.keys()].find(key => key.toLowerCase() === name.toLowerCase());
+    return getFile(actual ?? name, options);
+  });
+  await call(h.core, 'selectVault');
+  const note = (await call<NotePage>(h.core, 'queryNotes')).notes.find(item => item.relativePath === 'Plan.md')!;
+  root.createdFile = file => { if (file.name === 'plan.md') file.closeError = true; };
+  const rename = { ...save(note, 'after'), title: 'plan' };
+  await expect(call(h.core, 'saveNote', rename)).rejects.toBeDefined();
+  expect(root.children.has('plan.md')).toBe(false);
+  expect((await root.getFileHandle('Plan.md')).text).toBe('before');
+  expect((await root.getFileHandle('Ref.md')).text).toBe('[[Plan]]');
+
+  root.createdFile = undefined;
+  expect(await call(h.core, 'saveNote', rename)).toMatchObject({ id: note.id, relativePath: 'plan.md' });
+  expect(root.children.has('Plan.md')).toBe(false);
+  expect((await root.getFileHandle('Ref.md')).text).toBe('[[plan]]');
+  expect(await call(harness(root, h.storage).core, 'getNote', { id: note.id })).toMatchObject({ relativePath: 'plan.md', body: 'after' });
+});
+
 it('recovers an interrupted rename before scanning and preserves external edits', async () => {
   const h = await open();
   const scope = `${h.storage.selection!.directoryId}:${h.storage.selection!.vaultId}`;
@@ -1982,4 +2007,19 @@ it('settles an interrupted archive transaction before permanent deletion so late
   await call(h.core,'permanentlyDeleteNote',{trashKey:item.trashKey,baseHash:item.contentHash});
   expect(h.storage.journals.size).toBe(0);
   await call(h.core,'queryNotes');expect((await call<import('@memocard/contracts').TrashList>(h.core,'getTrash')).notes).toEqual([]);
+});
+
+it('paginates exact title, partial title and body matches in global relevance order', async () => {
+  const h = await open();
+  for (const title of ['会议', '会议计划', '今天']) {
+    await call(h.core, 'saveNote', {id:createId(), title, body:'开会议', tags:[], baseHash:null});
+  }
+  const query = {query:'会议', sort:'relevance', limit:1};
+  let cursor: string | null = null;
+  for (const title of ['会议', '会议计划', '今天']) {
+    const page: NotePage = await call(h.core, 'queryNotes', {...query, ...(cursor && {cursor})});
+    expect(page.notes.map(note => note.title)).toEqual([title]);
+    cursor = page.nextCursor;
+  }
+  expect(cursor).toBeNull();
 });

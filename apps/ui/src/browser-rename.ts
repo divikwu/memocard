@@ -15,7 +15,15 @@ async function transactionFile(root:BrowserDirectoryHandle, path:string, compati
   if (path === '.memocard/pins.json') return (await root.getDirectoryHandle('.memocard',{create})).getFileHandle('pins.json',{create});
   return fileAt(root,path,compatible ? 'vault' : 'notes',create);
 }
-export async function renameSource(root: BrowserDirectoryHandle, path: string, compatible: boolean): Promise<string | null> {
+export async function renameSource(root: BrowserDirectoryHandle, path: string, compatible: boolean, exactName = false): Promise<string | null> {
+  if (exactName) {
+    const parts = path.split('/');
+    let parent = root;
+    for (const part of parts.slice(0, -1)) parent = await parent.getDirectoryHandle(part);
+    let found = false;
+    for await (const [name] of parent.entries()) if (name === parts.at(-1)) { found = true; break; }
+    if (!found) return null;
+  }
   try { return decode(await readBytes(await transactionFile(root,path,compatible))); }
   catch (error) { if (error instanceof Error && error.name === 'NotFoundError') return null; throw error; }
 }
@@ -47,11 +55,11 @@ async function write(root: BrowserDirectoryHandle, path: string, before: string 
 export async function recoverRename(root: BrowserDirectoryHandle, compatible: boolean, storage: BrowserVaultStorage, scope: string, active: () => Promise<unknown>) {
   const journal = await storage.renameJournal(scope); if (!journal) return;
   for (const change of journal.changes) {
-    const current = await renameSource(root, change.path, compatible);
+    const current = await renameSource(root, change.path, compatible, change.exactName);
     if (current !== change.before && current !== change.after && !(change.before === null && current === '')) throw new BrowserVaultError('RENAME_RECOVERY_REQUIRED', '重命名期间出现外部修改，恢复备份已保留。');
   }
   for (const change of [...journal.changes].reverse()) {
-    const current = await renameSource(root, change.path, compatible);
+    const current = await renameSource(root, change.path, compatible, change.exactName);
     if (current !== change.before) await write(root, change.path, current, change.before, compatible, active);
   }
   if (compatible) await storage.saveIdentities(scope, journal.identities);
@@ -63,9 +71,10 @@ export async function commitRename(root: BrowserDirectoryHandle, compatible: boo
   try {
     for (const change of journal.changes) await write(root, change.path, change.before, change.after, compatible, active);
     if (compatible) {
-      const from = journal.changes.at(-1)!.path, to = journal.changes[0].path;
+      const from = journal.changes.find(change => change.after === null)?.path;
+      const to = journal.changes.find(change => change.before === null)?.path;
       const next = await Promise.all(journal.identities.filter(item=>move || !journal.changes.some(change=>change.path===item.path && change.after===null)).map(async item => {
-        const path = move && item.path === from ? to : item.path, changed = journal.changes.find(change => change.path === path && change.after !== null);
+        const path = move && to && item.path === from ? to : item.path, changed = journal.changes.find(change => change.path === path && change.after !== null);
         return { ...item, path, hash: changed ? await sha256(new TextEncoder().encode(changed.after!)) : item.hash };
       }));
       await storage.saveIdentities(scope,restoredIdentity ? [...next.filter(item=>item.id!==restoredIdentity.id && item.path!==restoredIdentity.path),restoredIdentity] : next);
@@ -92,7 +101,8 @@ export async function renameNote(root: BrowserDirectoryHandle, compatible: boole
   const old = existing.note.relativePath, paths = notes.map(item => item.note.relativePath);
   const before = await renameSource(root, old, compatible);
   if (before === null || await sha256(textBytes(before)) !== save.baseHash) throw new BrowserVaultError('HASH_CONFLICT', '原文件已改变，原文与草稿已保留。');
-  if (await renameSource(root, path, compatible) !== null) throw new BrowserVaultError('HASH_CONFLICT', '目标文件已存在。');
+  const caseOnly = old.toLowerCase() === path.toLowerCase();
+  if (await renameSource(root, path, compatible, caseOnly) !== null) throw new BrowserVaultError('HASH_CONFLICT', '目标文件已存在。');
   const sourceFile = await fileAt(root, old, compatible ? 'vault' : 'notes');
   const original = compatible ? await parseObsidianNote(textBytes(before), old, vaultId, { id: save.id, path: old, hash: save.baseHash!, createdAt: existing.note.createdAt }, (await sourceFile.getFile()).lastModified) : await parseBrowserNote(textBytes(before), old, vaultId);
   if (!compatible) original.frontmatter.set('updatedAt', now());
@@ -100,7 +110,7 @@ export async function renameNote(root: BrowserDirectoryHandle, compatible: boole
   const encoded = compatible ? encodeObsidianNote(original, save.body, title) : encodeBrowserNote(original.frontmatter, save.body, title);
   const after = rewriteNoteLinks(decode(encoded), old, paths, { [old]: path });
   if (textBytes(after).length > 8 * 1024 * 1024) throw new BrowserVaultError('NOTE_TOO_LARGE', '单条 Markdown 最大支持 8 MiB。');
-  const changes: import('./browser-storage').RenameJournal['changes'] = [{ path, before: null, after }];
+  const changes: import('./browser-storage').RenameJournal['changes'] = [{ path, before: null, after, ...(caseOnly && {exactName:true}) }];
   for (const item of notes) {
     if (item.note.relativePath === old) continue;
     const source = await renameSource(root, item.note.relativePath, compatible);
@@ -121,7 +131,9 @@ export async function renameNote(root: BrowserDirectoryHandle, compatible: boole
       changes.push({ path: '.memocard/pins.json', before, after: JSON.stringify(pins) });
     }
   }
-  changes.push({ path: old, before, after: null });
+  const removal = { path: old, before, after: null, ...(caseOnly && {exactName:true}) };
+  if (caseOnly) changes.unshift(removal);
+  else changes.push(removal);
   await commitRename(root, compatible, storage, scope, { changes, identities: await storage.identities(scope) }, active);
   const saved = compatible ? await parseObsidianNote(textBytes(after), path, vaultId, { id: save.id, path, hash: await sha256(textBytes(after)), createdAt: existing.note.createdAt }, Date.now()) : await parseBrowserNote(textBytes(after), path, vaultId);
   return saved.note;

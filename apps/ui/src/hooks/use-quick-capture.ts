@@ -5,17 +5,17 @@ import { errorMessage, request, type Attachment, type Draft } from '../bridge';
 import { createId } from '../uuid';
 import { inlineTags, normalizePropertyTag } from '../inline-tags';
 import { commitQuickCapture } from '../quick-capture-operation';
-import { createQuickCaptureDraftProtection, hasCapture, type Capture } from '../quick-capture-draft';
+import { createQuickCaptureDraftProtection, readQuickCaptureDraft, hasCapture, type Capture } from '../quick-capture-draft';
 import { insertCaptureTag, removeCaptureTags, restoreCaptureTags } from '../quick-capture-tags';
 import { useIsMobile } from './use-mobile';
 import { isIOSNative, useIOSSurface } from '../ios-native';
 import { parseTagColors, readTagColors } from '../tag-colors';
 
 export type QuickCaptureHandle = {isBusy:()=>boolean};
-export type QuickCaptureMemory = {vaultId:string; vaultBinding?:string; capture:Capture};
+export type QuickCaptureMemory = {vaultId:string; draftScope?:string; vaultBinding?:string; capture:Capture};
 
 export type QuickCaptureProps = {
-  vaultId:string; vaultBinding?:string; rootNotes:boolean; tags:string[]; disabled:boolean; canImage:boolean;
+  vaultId:string; draftScope?:string; vaultBinding?:string; rootNotes:boolean; tags:string[]; disabled:boolean; canImage:boolean;
   onRecorded:(note:Note)=>void; handle:React.RefObject<QuickCaptureHandle | null>;
   onContinue?:(draft:Draft)=>void;
   draftCount?:number; onOpenDrafts?:()=>void;
@@ -23,7 +23,7 @@ export type QuickCaptureProps = {
   memory?:React.RefObject<QuickCaptureMemory | null>;
 };
 
-export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options, disabled, canImage, onRecorded, onContinue, handle, draftCount=0, onOpenDrafts, docked=false, active=true, memory}: QuickCaptureProps) {
+export function useQuickCapture({vaultId, draftScope, vaultBinding, rootNotes, tags:options, disabled, canImage, onRecorded, onContinue, handle, draftCount=0, onOpenDrafts, docked=false, active=true, memory}: QuickCaptureProps) {
   const isMobile = useIsMobile() || isIOSNative;
   const [expanded,setExpanded] = useState(false);
   const [sheetViewport,setSheetViewport] = useState<{bottom:number; maxHeight:number} | null>(null);
@@ -36,10 +36,10 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
     return ()=>{viewport.removeEventListener('resize',place);viewport.removeEventListener('scroll',place);};
   },[docked,expanded]);
   const blank = useCallback(():Capture => {const id=createId(); return {id,text:'',tags:[],images:[],relativePath:`${rootNotes ? '' : 'notes/'}${id}.md`};}, [rootNotes]);
-  const [protection] = useState(() => createQuickCaptureDraftProtection(vaultId));
+  const [protection] = useState(() => createQuickCaptureDraftProtection(draftScope ?? vaultId));
   const [restored] = useState(() => {
     const cached=memory?.current;
-    if (cached?.vaultId === vaultId && cached.vaultBinding === vaultBinding && hasCapture(cached.capture)) return {capture:cached.capture,error:'',cached:true,unprotected:false};
+    if (cached?.vaultId === vaultId && cached.draftScope === draftScope && cached.vaultBinding === vaultBinding && hasCapture(cached.capture)) return {capture:cached.capture,error:'',cached:true,unprotected:false};
     try { return {capture:isMobile ? protection.read() : null,error:'',cached:false,unprotected:protection.unprotected}; }
     catch { return {capture:null,error:'无法恢复本机草稿，请保持页面打开。',cached:false,unprotected:false}; }
   });
@@ -48,6 +48,26 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
   captureCurrent.current = capture;
   const [draftError, setDraftError] = useState(restored.error || (restored.unprotected ? '草稿保护暂不可用，请保持页面打开。' : ''));
   const [restoreFailed, setRestoreFailed] = useState(Boolean(restored.error));
+  // Older quick drafts lack directory identity. Import one only after an explicit choice.
+  const [legacyAvailable, setLegacyAvailable] = useState(() => {
+    if (!draftScope || !isMobile) return false;
+    try { return Boolean(readQuickCaptureDraft(vaultId)); } catch { return false; }
+  });
+  const offerLegacy = legacyAvailable && !hasCapture(capture) && !restoreFailed;
+  function importLegacy() {
+    if (!offerLegacy || working.current || disabled) return;
+    try {
+      const previous = readQuickCaptureDraft(vaultId);
+      if (previous) {
+        const next = restoreCaptureTags(previous);
+        protection.write(next);
+        captureCurrent.current = next;
+        setCapture(next);
+        createQuickCaptureDraftProtection(vaultId).complete(previous);
+      }
+      setLegacyAvailable(false); setDraftError('');
+    } catch { setDraftError('旧草稿恢复未完成，请保持页面打开。'); }
+  }
   const [recordedLocally, setRecordedLocally] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -74,7 +94,7 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
   const recorded = useRef(onRecorded);
   const wasMobile = useRef(isMobile && !restored.cached);
   const pendingCompletion = useRef<Capture | null>(null);
-  useEffect(()=>{if(memory && !restoreFailed)memory.current={vaultId,vaultBinding,capture};},[memory,vaultId,vaultBinding,capture,restoreFailed]);
+  useEffect(()=>{if(memory && !restoreFailed)memory.current={vaultId,draftScope,vaultBinding,capture};},[memory,vaultId,draftScope,vaultBinding,capture,restoreFailed]);
   const protect = useCallback((next:Capture, completed?:Capture) => {
     try {
       if (completed) { protection.complete(completed); pendingCompletion.current = null; }
@@ -198,7 +218,7 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
           ...(normalized && !known.includes(normalized) ? [{id:'new-tag',title:`新建标签 ${normalized}`,disabled:blocked}] : []),
         ],message:!known.length && !tagQuery ? '输入名称，创建第一个标签。' : undefined},
         {id:'images',actions:[{id:'image',title:'添加图片',disabled:blocked || !canImage},...capture.images.map((image,index)=>({id:`remove-image:${image.relativePath}`,title:`移除图片 ${index+1}`,imagePath:image.relativePath,disabled:blocked}))]},
-        {id:'more',actions:[...(onContinue ? [{id:'continue',title:'切换为页面',disabled:blocked || restoreFailed}] : []),...(draftCount>0 ? [{id:'drafts',title:`保留草稿（${draftCount}）`,disabled:busy}] : []),...(draftError ? [{id:'retry',title:'重试草稿保护',disabled:blocked}] : [])]},
+        {id:'more',actions:[...(offerLegacy ? [{id:'import-legacy',title:'将旧版快速草稿恢复到当前库',disabled:blocked}] : []),...(onContinue ? [{id:'continue',title:'切换为页面',disabled:blocked || restoreFailed}] : []),...(draftCount>0 ? [{id:'drafts',title:`保留草稿（${draftCount}）`,disabled:busy}] : []),...(draftError ? [{id:'retry',title:'重试草稿保护',disabled:blocked}] : [])]},
       ],
     };
   },async(action,value)=>{
@@ -212,8 +232,9 @@ export function useQuickCapture({vaultId, vaultBinding, rootNotes, tags:options,
     if(action === 'image')await image();
     if(action.startsWith('remove-image:')){const current=captureCurrent.current;changeCapture({...current,images:current.images.filter(image=>image.relativePath !== action.slice(13))});}
     if(action === 'continue')await continueInPage();
+    if(action === 'import-legacy')importLegacy();
     if(action === 'drafts'){setExpanded(false);onOpenDrafts?.();}
     if(action === 'retry')retryProtection();
   });
-  return {expanded,setExpanded,sheetViewport,capture,captureCurrent,draftError,restoreFailed,recordedLocally,busy,error,tagQuery,setTagQuery,tagPickerOpen,setTagPickerOpen,textarea,editorRef,working,continuing,blocked,canRecord,record,continueInPage,image,changeCapture,retryProtection,toggleTag,normalized,known,matches,isMobile};
+  return {offerLegacy,importLegacy,expanded,setExpanded,sheetViewport,capture,captureCurrent,draftError,restoreFailed,recordedLocally,busy,error,tagQuery,setTagQuery,tagPickerOpen,setTagPickerOpen,textarea,editorRef,working,continuing,blocked,canRecord,record,continueInPage,image,changeCapture,retryProtection,toggleTag,normalized,known,matches,isMobile};
 }

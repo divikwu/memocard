@@ -23,6 +23,7 @@ import { loadWebMoreDrawer } from "./loadWebMoreDrawer";
 import { ReopenLocalWeb } from "./ReopenLocalWeb";
 import { useAppearanceCatalog, useWorkspaceAppearance } from "./appearance/AppearanceRuntime";
 import { fontPreset, noteFontChoices, type NoteFont } from "./note-appearance";
+import { defaults as defaultTypography } from "../../src/features/typography/preferences";
 import { useTypography } from "../../src/features/typography/TypographyProvider";
 import "./web-settings-layout.css";
 import "./web-settings.css";
@@ -96,7 +97,10 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
         </>}
       </CardContent></Card>
     </section>
-    {appearance && <section aria-labelledby={field("appearance-heading")}><div className="web-setting-section-heading"><h2 id={field("appearance-heading")}>外观</h2><Button variant="ghost" className="text-secondary" onClick={appearance.resetAppearance}>恢复默认</Button></div><Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">
+    {appearance && <section aria-labelledby={field("appearance-heading")}><div className="web-setting-section-heading"><h2 id={field("appearance-heading")}>外观</h2><Button variant="ghost" className="text-secondary" onClick={() => {
+      appearance.resetAppearance();
+      if (typography.value.size !== defaultTypography.size) typography.save({ ...typography.value, size: defaultTypography.size });
+    }}>恢复默认</Button></div><Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">
       {!isNative && !s.nativeChrome && <WebSettingSelect id={field("interface-theme")} label="界面主题" value={appearance.value.interfaceTheme} onValueChange={interfaceTheme => workspaceAppearance ? workspaceAppearance.select(interfaceTheme) : appearance.onChange({ ...appearance.value, interfaceTheme })} options={themeOptions} />}
       <WebSettingSelect id={field("theme")} label={isNative || s.nativeChrome ? "主题" : "颜色模式"} value={appearance.value.theme} onValueChange={theme => appearance.onChange({ ...appearance.value, theme })} options={[{ value: "light", label: "浅色" }, { value: "dark", label: "深色" }, { value: "system", label: "跟随系统" }]} />
       <WebSettingSelect id={field("palette")} label="强调色" value={appearance.value.palette} onValueChange={palette => appearance.onChange({ ...appearance.value, palette })} options={WEB_PALETTES} />

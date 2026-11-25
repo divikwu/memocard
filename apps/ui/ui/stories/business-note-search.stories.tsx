@@ -193,7 +193,7 @@ export const MobilePreservedSessionRegression: Story = {
     await search.findByRole("option", { name: "项目计划" });
     await userEvent.type(input, "计划");
     await search.findByRole("listbox", { name: "搜索结果" });
-    await waitFor(() => expect(fixture.calls.at(-1)?.params).toEqual({ query: "计划", tags: [], sort: "updatedAt", limit: 30 }));
+    await waitFor(() => expect(fixture.calls.at(-1)?.params).toEqual({ query: "计划", tags: [], sort: "relevance", limit: 30 }));
     await waitFor(() => expect(search.getByRole("listbox")).toHaveAttribute("aria-busy", "false"));
     await userEvent.click(search.getByRole("button", { name: "加载更多结果" }));
     await search.findByRole("option", { name: "计划复盘" });

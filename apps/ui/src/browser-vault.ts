@@ -370,11 +370,11 @@ export class BrowserVault {
     if (!selected) return base;
     this.requireBinding(selected);
     if (await selected.handle.queryPermission({ mode: "readwrite" }).catch(() => "denied") !== "granted") {
-      return { ...base, syncState: "unauthorized", capabilities: ["saveDraft", "getDrafts", "deleteDraft", "reauthorizeVault"] };
+      return { ...base, draftScope: this.scope(selected), syncState: "unauthorized", capabilities: ["saveDraft", "getDrafts", "deleteDraft", "reauthorizeVault"] };
     }
     const snapshot = await this.scan(selected);
     this.seedRefreshSnapshot(snapshot);
-    return { ...base, connected: true, syncState: snapshot.coverage.complete ? "localReadComplete" : "incomplete", capabilities: operations, coverage: snapshot.coverage };
+    return { ...base, connected: true, draftScope: this.scope(selected), syncState: snapshot.coverage.complete ? "localReadComplete" : "incomplete", capabilities: operations, coverage: snapshot.coverage };
   }
 
   private saveParams(params: Record<string, unknown>): Save {
@@ -587,7 +587,7 @@ export class BrowserVault {
 
   private async query(selected: Binding, params: Record<string, unknown>): Promise<NotePage> {
     const sort = params.sort ?? 'createdAt';
-    if (typeof sort !== 'string' || !['createdAt', 'updatedAt', 'pinnedAt'].includes(sort) || (params.pinned !== undefined && typeof params.pinned !== 'boolean')) throw new BrowserVaultError('INVALID_PARAMS', '笔记排序或固定筛选无效。');
+    if (typeof sort !== 'string' || !['createdAt', 'updatedAt', 'pinnedAt', 'relevance'].includes(sort) || (params.pinned !== undefined && typeof params.pinned !== 'boolean')) throw new BrowserVaultError('INVALID_PARAMS', '笔记排序或固定筛选无效。');
     const query = params.query === undefined ? "" : checkString(params.query, "query");
     const tags = params.tags === undefined ? [] : validatedTags(params.tags);
     const exactTags = params.exactTags === true;
@@ -605,10 +605,11 @@ export class BrowserVault {
     const snapshot = await this.snapshotFor("queryNotes", selected);
     const pins = params.pinned !== undefined || sort === 'pinnedAt' ? resolvedNotePins(await readNotePins(selected.handle), snapshot.parsed.map(item => item.note), this.compatible) : { pins: {} as Record<string, string>, contentHash: '' };
     await this.active(selected);
-    const sortAt = (note: Note) => sort === 'updatedAt' ? note.updatedAt : sort === 'pinnedAt' ? pins.pins[note.id] ?? note.createdAt : note.createdAt;
+    const byUpdate = sort === 'updatedAt' || sort === 'relevance';
+    const sortAt = (note: Note) => byUpdate ? note.updatedAt : sort === 'pinnedAt' ? pins.pins[note.id] ?? note.createdAt : note.createdAt;
     const sortDates = new Map(snapshot.parsed.map(({ note }) => [note.id, parseDate(sortAt(note))]));
     const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, ...(exactTags ? {exactTags} : {}), quickFilter, quickFilters, tagMatch, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned, ...(params.includeCardPreview === true && {includeCardPreview:true}) })));
-    const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(sort === 'updatedAt' ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
+    const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(byUpdate ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
     let after: { id: string; createdAt: string } | undefined;
     if (params.cursor !== undefined) {
       let cursor: unknown;
@@ -623,6 +624,14 @@ export class BrowserVault {
     const folder = params.folder === undefined ? undefined : checkString(params.folder, "folder");
     if (folder) safeParts(folder, this.compatible ? "vault" : "notes");
     const normalized = query.normalize("NFC").toLowerCase();
+    const ranks = new Map<string, number>();
+    if (sort === 'relevance' && normalized) for (const { note } of snapshot.parsed) {
+      const title = (note.title ?? '').normalize('NFC').toLowerCase();
+      ranks.set(note.id, title === normalized ? 0 : title.includes(normalized) ? 1 : 2);
+    }
+    const rank = (id: string) => ranks.get(id) ?? 0;
+    const afterRank = after ? rank(after.id) : 0;
+    const afterDate = after ? parseDate(after.createdAt) : 0;
     const { noteQuickFilters } = await import("./note-filters");
     const filters = new Map(snapshot.parsed.map(({ note }) => {
       const cached = this.parsedCache.get(note.relativePath)!;
@@ -645,9 +654,9 @@ export class BrowserVault {
         && (!quickFilters.length || quickFilters.some(filter => filters.get(note.id)!.includes(filter)))
         && ((note.title ?? "") + "\n" + note.body).normalize("NFC").toLowerCase().includes(normalized) && (!tags.length || tags[tagMatch === "any" ? "some" : "every"]((tag) => note.tags.some(value => value === tag || (!exactTags && value.startsWith(tag + "/")))))
         && (from === undefined || createdDate >= from) && (to === undefined || createdDate < to)
-        && (!after || date < parseDate(after.createdAt) || (date === parseDate(after.createdAt) && note.id > after.id));
+        && (!after || rank(note.id) > afterRank || (rank(note.id) === afterRank && (date < afterDate || (date === afterDate && note.id > after.id))));
     });
-    if (sort !== 'createdAt') matching.sort((a, b) => sortDates.get(b.id)! - sortDates.get(a.id)! || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    if (sort !== 'createdAt') matching.sort((a, b) => rank(a.id) - rank(b.id) || sortDates.get(b.id)! - sortDates.get(a.id)! || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     const page = matching.slice(0, limit);
     const previews = params.includeCardPreview === true && page.length
       ? await import("./browser-properties").then(module => module.cardPreviewProperties(selected.handle, this.compatible, snapshot.parsed, page, () => this.active(selected))).catch(() => undefined)

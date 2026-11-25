@@ -811,17 +811,19 @@ public actor VaultStore {
             let connected: Bool
             let vaultId: String?
             let vaultName: String?
+            var draftScope: String? = nil
             let coverage: Coverage
             var indexing: IndexingProgress? = nil
             let phase: String
             let syncState: String
             let capabilities: [String]
-            private enum CodingKeys: String, CodingKey { case connected, vaultId, vaultName, coverage, indexing, phase, syncState, capabilities }
+            private enum CodingKeys: String, CodingKey { case connected, vaultId, vaultName, draftScope, coverage, indexing, phase, syncState, capabilities }
             func encode(to encoder: Encoder) throws {
                 var values = encoder.container(keyedBy: CodingKeys.self)
                 try values.encode(connected, forKey: .connected)
                 try values.encode(vaultId, forKey: .vaultId)
                 try values.encode(vaultName, forKey: .vaultName)
+                try values.encodeIfPresent(draftScope, forKey: .draftScope)
                 try values.encode(coverage, forKey: .coverage)
                 try values.encodeIfPresent(indexing, forKey: .indexing)
                 try values.encode(phase, forKey: .phase)
@@ -839,7 +841,7 @@ public actor VaultStore {
         let snapshot = try scan()
         seedRefreshSnapshot(snapshot)
         let coverage = snapshot.coverage
-        return try encode(Status(connected: true, vaultId: metadata.vaultId, vaultName: root.lastPathComponent,
+        return try encode(Status(connected: true, vaultId: metadata.vaultId, vaultName: root.lastPathComponent, draftScope: localScope,
             coverage: coverage, indexing: indexing, phase: "M1", syncState: coverage.complete ? "localReadComplete" : "incomplete",
             capabilities: capabilities))
     }
@@ -847,12 +849,25 @@ public actor VaultStore {
     private func queryNotes(_ query: Query) throws -> Data {
         let snapshot = try snapshot(for: "queryNotes")
         let sort = query.sort ?? "createdAt"
-        guard ["createdAt", "updatedAt", "pinnedAt"].contains(sort) else { throw VaultError(code: "INVALID_PARAMS", message: "笔记排序无效。") }
+        guard ["createdAt", "updatedAt", "pinnedAt", "relevance"].contains(sort) else { throw VaultError(code: "INVALID_PARAMS", message: "笔记排序无效。") }
         let pins = query.pinned != nil || sort == "pinnedAt" ? try readNotePins(snapshot: snapshot) : NotePins(pins: [:], contentHash: "")
+        let byUpdate = sort == "updatedAt" || sort == "relevance"
+        var ranks: [String: Int] = [:]
+        if sort == "relevance", let text = query.query, !text.isEmpty {
+            let needle = text.lowercased()
+            for parsed in snapshot.notes {
+                let title = (parsed.note.title ?? "").lowercased()
+                ranks[parsed.note.id] = title == needle ? 0 : title.contains(needle) ? 1 : 2
+            }
+        }
         let sortDates = try Dictionary(uniqueKeysWithValues: snapshot.notes.map { parsed in
-            (parsed.note.id, sort == "updatedAt" ? try parseDate(parsed.note.updatedAt) : sort == "pinnedAt" ? try parseDate(pins.pins[parsed.note.id] ?? parsed.note.createdAt) : parsed.createdDate)
+            (parsed.note.id, byUpdate ? try parseDate(parsed.note.updatedAt) : sort == "pinnedAt" ? try parseDate(pins.pins[parsed.note.id] ?? parsed.note.createdAt) : parsed.createdDate)
         })
-        let ordered = sort == "createdAt" ? snapshot.notes : snapshot.notes.sorted { sortDates[$0.note.id] == sortDates[$1.note.id] ? $0.note.id < $1.note.id : sortDates[$0.note.id]! > sortDates[$1.note.id]! }
+        let ordered = sort == "createdAt" ? snapshot.notes : snapshot.notes.sorted {
+            let lhs = ranks[$0.note.id] ?? 0, rhs = ranks[$1.note.id] ?? 0
+            if lhs != rhs { return lhs < rhs }
+            return sortDates[$0.note.id] == sortDates[$1.note.id] ? $0.note.id < $1.note.id : sortDates[$0.note.id]! > sortDates[$1.note.id]!
+        }
         if let folder = query.folder, !folder.isEmpty {
             let parts = folder.split(separator: "/", omittingEmptySubsequences: false)
             guard (compatible || parts.first == "notes"), !parts.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }), !folder.contains("\\"), !folder.contains("\0") else {
@@ -871,7 +886,7 @@ public actor VaultStore {
         // Source hashes cover the whole Markdown; do not encode every body again to fingerprint a page.
         struct Fingerprint: Encodable { let id: String; let hash: String; let path: String; let source: String; let updatedAt: String? }
         let fingerprints = snapshot.notes.map {
-            Fingerprint(id: $0.note.id, hash: $0.note.contentHash, path: $0.note.relativePath, source: $0.note.sourceUrl, updatedAt: sort == "updatedAt" ? $0.note.updatedAt : nil)
+            Fingerprint(id: $0.note.id, hash: $0.note.contentHash, path: $0.note.relativePath, source: $0.note.sourceUrl, updatedAt: byUpdate ? $0.note.updatedAt : nil)
         }
         let snapshotHash = sha256(try encode(fingerprints) + Data("\(snapshot.coverage.pending):\(snapshot.coverage.issues):\(pins.contentHash)".utf8))
         var cursor: PageCursor?
@@ -922,7 +937,10 @@ public actor VaultStore {
             }
             if let from, parsed.createdDate < from { return false }
             if let to, parsed.createdDate >= to { return false }
-            if let cursor, let cursorDate, !(date < cursorDate || (date == cursorDate && note.id > cursor.id)) { return false }
+            if let cursor, let cursorDate {
+                let rank = ranks[note.id] ?? 0, afterRank = ranks[cursor.id] ?? 0
+                return rank > afterRank || (rank == afterRank && (date < cursorDate || (date == cursorDate && note.id > cursor.id)))
+            }
             return true
         }
         // Limit actual JSON bytes as well as count. A single large legal note must still advance the cursor.
@@ -944,7 +962,7 @@ public actor VaultStore {
         }
         notesData.append(contentsOf: "]".utf8)
         let next = matches.count > page.count ? try page.last.map {
-            try encode(PageCursor(createdAt: $0.createdAt, id: $0.id, queryHash: queryHash, snapshotHash: snapshotHash, sortAt: sort == "updatedAt" ? $0.updatedAt : sort == "pinnedAt" ? pins.pins[$0.id] : nil)).base64EncodedString()
+            try encode(PageCursor(createdAt: $0.createdAt, id: $0.id, queryHash: queryHash, snapshotHash: snapshotHash, sortAt: byUpdate ? $0.updatedAt : sort == "pinnedAt" ? pins.pins[$0.id] : nil)).base64EncodedString()
         } : nil
         // Reuse encoded notes instead of serializing potentially multi-megabyte bodies twice.
         var result = Data("{\"coverage\":".utf8)
@@ -1558,15 +1576,16 @@ public actor VaultStore {
         }
     }
 
-    private struct RenameChange: Codable { let path: String; let before: Data?; let after: Data? }
+    private struct RenameChange: Codable { let path: String; let before: Data?; let after: Data?; var exactName: Bool? = nil }
     private struct RenameJournal: Codable { let root: String; let scope: String?; let changes: [RenameChange]; let identities: [FileIdentity] }
     private var renameJournalURL: URL { identityURL.appendingPathExtension("rename.json") }
 
-    private func renameBytes(_ path: String, root: URL) throws -> Data? {
+    private func renameBytes(_ path: String, root: URL, exactName: Bool? = nil) throws -> Data? {
         if path.hasPrefix(".memocard/trash/") { _ = try trashLocation(String(path.dropFirst(".memocard/trash/".count))) }
         else if path != propertyDefinitionPath && path != ".memocard/pins.json" { _ = try newNotePath(path, id: "", root: root) }
         let url = root.appendingPathComponent(path)
         try validate(url, inside: root)
+        if exactName == true, try !fm.contentsOfDirectory(atPath: url.deletingLastPathComponent().path).contains(url.lastPathComponent) { return nil }
         return fm.fileExists(atPath: url.path) ? try readSource(url) : nil
     }
 
@@ -1577,13 +1596,13 @@ public actor VaultStore {
         try coordinateWrite(root, inside: root, options: .forMerging) { _ in
             // Never roll back over an external edit. The durable journal remains available.
             for change in journal.changes {
-                let current = try self.renameBytes(change.path, root: root)
+                let current = try self.renameBytes(change.path, root: root, exactName: change.exactName)
                 guard current == change.before || current == change.after else { throw VaultError(code: "RENAME_RECOVERY_REQUIRED", message: "保存事务期间文件被外部修改，事务记录和草稿已保留，请先处理恢复记录。") }
             }
             for change in journal.changes.reversed() {
-                if try self.renameBytes(change.path, root: root) == change.before { continue }
+                if try self.renameBytes(change.path, root: root, exactName: change.exactName) == change.before { continue }
                 let url = root.appendingPathComponent(change.path)
-                if let data = change.before { try data.write(to: url, options: .atomic) }
+                if let data = change.before { try data.write(to: url, options: change.exactName == true ? .withoutOverwriting : .atomic) }
                 else if self.fm.fileExists(atPath: url.path) { try self.fm.removeItem(at: url) }
             }
             if self.compatible { try self.persistIdentities(journal.identities) }
@@ -1596,7 +1615,8 @@ public actor VaultStore {
         let old = existing.note.relativePath, renames = [old: path], paths = snapshot.notes.map { $0.note.relativePath }
         let original = try readSource(root.appendingPathComponent(old))
         guard sha256(original) == request.baseHash else { throw VaultError(code: "HASH_CONFLICT", message: "文件已在其他位置修改，原文未被覆盖。") }
-        guard try renameBytes(path, root: root) == nil else { throw VaultError(code: "HASH_CONFLICT", message: "重命名目标已存在，原文未被覆盖。") }
+        let caseOnly = old.lowercased() == path.lowercased()
+        guard try renameBytes(path, root: root, exactName: caseOnly) == nil else { throw VaultError(code: "HASH_CONFLICT", message: "重命名目标已存在，原文未被覆盖。") }
         let parsed = try compatible ? parseObsidianNote(original, relativePath: old, vaultID: metadata.vaultId, identity: FileIdentity(id: existing.note.id, path: old, hash: sha256(original), createdAt: existing.note.createdAt), modified: Date()) : parseNote(original, relativePath: old, vaultID: metadata.vaultId)
         var frontmatter = parsed.frontmatter
         if !compatible { frontmatter["updatedAt"] = Node(timestamp(), Tag(.str), .doubleQuoted) }
@@ -1604,7 +1624,7 @@ public actor VaultStore {
         let encoded = try compatible ? encodedObsidianNote(parsed, body: request.body, displayTitle: displayTitle) : encodedNote(frontmatter: frontmatter, body: request.body, originalHeader: parsed.originalHeader, displayTitle: displayTitle)
         let data = Data(rewriteNoteLinks(String(decoding: encoded, as: UTF8.self), sourcePath: old, paths: paths, renames: renames).utf8)
         guard data.count <= 8 * 1024 * 1024 else { throw VaultError(code: "NOTE_TOO_LARGE", message: "单条 Markdown 最大支持 8 MiB。") }
-        var changes = [RenameChange(path: path, before: nil, after: data)]
+        var changes = [RenameChange(path: path, before: nil, after: data, exactName: caseOnly ? true : nil)]
         for note in snapshot.notes where note.note.relativePath != old {
             let source = try readSource(root.appendingPathComponent(note.note.relativePath))
             let next = Data(rewriteNoteLinks(String(decoding: source, as: UTF8.self), sourcePath: note.note.relativePath, paths: paths, renames: renames).utf8)
@@ -1623,7 +1643,9 @@ public actor VaultStore {
                 changes.append(RenameChange(path: ".memocard/pins.json", before: before, after: try encode(pins)))
             }
         }
-        changes.append(RenameChange(path: old, before: original, after: nil))
+        let removal = RenameChange(path: old, before: original, after: nil, exactName: caseOnly ? true : nil)
+        // A case-insensitive volume must release the old spelling before creating the new one.
+        if caseOnly { changes.insert(removal, at: 0) } else { changes.append(removal) }
         let journal = RenameJournal(root: root.path, scope: localScope, changes: changes, identities: identities)
         let backup = localDataURL.appendingPathComponent("renames/\(UUID().uuidString.lowercased()).json")
         try fm.createDirectory(at: backup.deletingLastPathComponent(), withIntermediateDirectories: true)

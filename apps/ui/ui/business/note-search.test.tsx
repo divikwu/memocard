@@ -49,7 +49,7 @@ it("retries a failed deletion refresh from fresh cursors while retaining the mob
   expect(screen.queryByRole("option", { name: second.title })).toBeNull();
   expect(screen.getByRole("combobox")).toHaveProperty("value", "保留搜索词");
   expect(screen.getByRole("listbox").parentElement!.scrollTop).toBe(275);
-  expect(bridge.request.mock.calls.at(-1)?.[1]).toEqual({ query: "保留搜索词", tags: [], sort: "updatedAt", limit: 30, cursor: "fresh-page" });
+  expect(bridge.request.mock.calls.at(-1)?.[1]).toEqual({ query: "保留搜索词", tags: [], sort: "relevance", limit: 30, cursor: "fresh-page" });
 });
 beforeEach(() => {
   vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
@@ -235,7 +235,7 @@ it("highlights the first literal case-insensitive title match using the trimmed 
   setup();
   await screen.findByRole("option", { name: matching.title });
   fireEvent.change(screen.getByRole("combobox"), { target: { value: " [A] " } });
-  await waitFor(() => expect(bridge.request).toHaveBeenLastCalledWith("queryNotes", { query: "[A]", tags: [], sort: "updatedAt", limit: 30 }));
+  await waitFor(() => expect(bridge.request).toHaveBeenLastCalledWith("queryNotes", { query: "[A]", tags: [], sort: "relevance", limit: 30 }));
   const result = await screen.findByRole("option", { name: matching.title });
   const marks = result.querySelectorAll("mark");
   expect(marks).toHaveLength(1);

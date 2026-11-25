@@ -372,7 +372,7 @@ describe("note workspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "搜索" }));
     fireEvent.change(await screen.findByRole("combobox", { name: "搜索笔记" }), { target: { value: "不存在的关键词" } });
 
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在的关键词", tags: [], sort: "updatedAt", limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "不存在的关键词", tags: [], sort: "relevance", limit: 30 }));
     expect(await screen.findByText("没有找到相关笔记或标签")).toBeTruthy();
     expect(within(screen.getByRole("dialog", { name: "搜索笔记" })).queryByText(note.body)).toBeNull();
   });
@@ -1198,7 +1198,8 @@ it('ignores blank new-page recovery while retaining title-only and cleared exist
   render(<App />);
   await screen.findByText('有尚未完成的草稿');
   fireEvent.click(screen.getByRole('button', { name: '查看草稿' }));
-  fireEvent.click(await screen.findByRole('button', { name: /^继续编辑：/ }));
+  expect(await screen.findAllByRole('button', {name:/^继续编辑：/})).toHaveLength(2);
+  fireEvent.click(await screen.findByRole('button', { name: '继续编辑：保留标题' }));
   const title = await screen.findByRole('textbox', { name: '页面标题' });
   expect((title as HTMLTextAreaElement).value).toBe('保留标题');
   fireEvent.click(noteSourceButton());
@@ -1616,4 +1617,20 @@ it("lets migrated MCP users revoke legacy read access without granting writes", 
   fireEvent.click(await screen.findByRole("button", { name: "关闭旧版读取" }));
   await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("setMCPEnabled", { enabled: false }));
   expect(bridge.request).not.toHaveBeenCalledWith("setMCPEnabled", { enabled: true });
+});
+
+it('offers a single versioned draft after its source disappears', async () => {
+  const implementation = bridge.request.getMockImplementation()!;
+  pendingDrafts = [{ id:note.id, body:'保留在本机的编辑', tags:[], baseHash:note.contentHash }];
+  bridge.request.mockImplementation((op, params) => {
+    if (op === 'getNote') return Promise.reject({code:'NOTE_NOT_FOUND'});
+    if (op === 'queryNotes') return {notes:[], nextCursor:null, coverage:status.coverage};
+    return implementation(op, params);
+  });
+  render(<App />);
+  await screen.findByRole('heading',{name:'所有笔记'});
+  await openRetainedDrafts();
+  fireEvent.click(await screen.findByRole('button',{name:'继续编辑：保留在本机的编辑'}));
+  await screen.findByRole('textbox',{name:'笔记内容'});
+  expect(readEditorText()).toBe('保留在本机的编辑');
 });

@@ -12,6 +12,7 @@ import { changeNoteProperty, changeNoteTitle, endNoteTyping, resetNoteHistory, t
 import { useIsMobile } from './hooks/use-mobile';
 import { recoverableLazy } from '@ui/components/recoverable-lazy';
 
+const ReloadConflictDialog = recoverableLazy(() => import('@ui/business/ReloadConflictDialog'), '重新加载确认框');
 const DraftFolderDialog = recoverableLazy(() => import('@ui/business/DraftFolderDialog'), '目录选择器');
 
 export type EditorHandle = { flush: () => Promise<boolean>; finish: () => Promise<void>; prepareDelete: () => Promise<{id:string; contentHash:string} | null> };
@@ -56,6 +57,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   const [propertyData, setPropertyData] = useState<Properties>();
   const restoreImageFocus = useRef(false);
   const [localError, setLocalError] = useState('');
+  const [confirmReload, setConfirmReload] = useState(false);
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
   const lastNote = useRef<Note | null>(null);
   const callbacks = useRef({ onCommitted, onTitleChange });
@@ -216,7 +218,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     finally { busy.current = false; restoreImageFocus.current = true; setWorking(false); }
   }
   async function reload() {
-    if (!window.confirm('重新加载将放弃当前未保存的修改，是否继续？')) return;
+    setConfirmReload(false);
     setWorking(true);
     try {
       await session.recover();
@@ -281,7 +283,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
       {error && (!ownsSaveError || canChooseFolder) && <PageNotice title={session.state === 'conflict' ? '笔记存在冲突' : propertyRejected ? '属性未更改' : session.state === 'error' ? '保存未完成' : '操作未完成'} actions={(session.state === 'error' && !propertyRejected || session.state === 'conflict') ? <>
         {canChooseFolder ? <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => setFolderPickerOpen(true)}>重新选择目录</Button> :
           session.state === 'error' && !propertyRejected && <Button variant="outline" size="sm" disabled={working || !canSave} onClick={() => { if (session.current.pendingProperties?.length) void flush(); else void finish(); }}>重试保存</Button>}
-        {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="outline" size="sm" disabled={working} onClick={() => void reload()}>重新加载</Button><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
+        {session.state === 'conflict' && <><Button variant="outline" size="sm" disabled={working} onClick={() => void copy()}>另存副本</Button><Button variant="outline" size="sm" disabled={working} onClick={() => setConfirmReload(true)}>重新加载</Button><Button variant="outline" size="sm" onClick={() => field.current?.focus()}>继续编辑</Button></>}
       </> : undefined}>{error}</PageNotice>}
       {notice}
       {pendingLink && <PageNotice tone="info" title="有待打开的笔记">完成当前记录后，将打开收到的笔记链接。</PageNotice>}
@@ -297,6 +299,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     }}>
       <div className={contentClassName}><RichMarkdownEditor autoFocus={autoFocus && !titleFirst && (stableBodyPosition ? 'if-visible' : true)} ref={field} value={body} title={title} onEditorReady={editor => { richEditor.current = editor; }} onNoteEdit={applyNoteEdit} notePath={relativePath!} disabled={working || !canSave} onChange={value => update(value)} onSave={() => void finish()} onError={setLocalError} onImage={capabilities.has('pickImage') ? insert => void image(insert) : undefined} /></div>
     </NoteProperties>
+    {confirmReload && <Suspense fallback={null}><ReloadConflictDialog onCancel={() => setConfirmReload(false)} onConfirm={() => void reload()} /></Suspense>}
     {folderPickerOpen && <Suspense fallback={null}><DraftFolderDialog onClose={() => setFolderPickerOpen(false)} onSave={folder => { setFolderPickerOpen(false); void flush(folder); }} /></Suspense>}
   </section>;
 }

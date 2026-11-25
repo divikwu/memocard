@@ -128,7 +128,7 @@ export function NoteSearchDialog({ open, onOpenChange, vaultName, available, ret
                   <p className="ui-note-search-preview-vault">{vaultName}</p>
                   {(previewTag || previewNote?.title || !previewNote?.body.trim()) && <h2 className="ui-note-search-preview-title">{previewTag?.name ?? (previewNote?.title || "新内容")}</h2>}
                 </div>
-                {previewNote && <div inert><Suspense fallback={<PreviewLines />}><PreviewMarkdown body={previewNote.body || "还没有正文"} notePath={previewNote.relativePath} onError={setPreviewError} /></Suspense></div>}
+                {previewNote && <Suspense fallback={<PreviewLines />}><PreviewMarkdown interactive={false} body={previewNote.body || "还没有正文"} notePath={previewNote.relativePath} onError={setPreviewError} /></Suspense>}
                 {previewTag && <p className="text-sm text-secondary">{previewTag.count} 条笔记</p>}
               </div>
               {previewNote && <p className="mt-6 text-xs text-secondary">更新于 {new Date(previewNote.updatedAt).toLocaleString()}</p>}

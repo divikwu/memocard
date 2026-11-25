@@ -15,16 +15,20 @@ function renderImage(interactive: boolean): Components["img"] {
 }
 const imageRenderer = renderImage(true);
 const compactImageRenderer = renderImage(false);
-const preRenderer: Components["pre"] = ({ children }) => {
-  const code = children as ReactElement<{ className?: string; children?: string }>;
-  return code?.props?.className === "language-mermaid" ? <MermaidContent source={String(code.props.children ?? "").replace(/\n$/, "")}><pre>{children}</pre></MermaidContent> : <pre>{children}</pre>;
-};
+function renderPre(interactive: boolean): Components["pre"] {
+  return ({ children }) => {
+    const code = children as ReactElement<{ className?: string; children?: string }>;
+    return code?.props?.className === "language-mermaid" ? <MermaidContent interactive={interactive} source={String(code.props.children ?? "").replace(/\n$/, "")}><pre>{children}</pre></MermaidContent> : <pre>{children}</pre>;
+  };
+}
+const preRenderer = renderPre(true);
+const previewPreRenderer = renderPre(false);
 const compactTableRenderer: Components["table"] = ({ children }) => <div className="typeset-scroll" tabIndex={-1}><table>{children}</table></div>;
 const compactPreRenderer: Components["pre"] = ({ children }) => <pre tabIndex={-1}>{children}</pre>;
 const compactTaskRenderer: Components["input"] = ({ checked }) => <span className="note-task-indicator" aria-hidden="true" data-checked={checked === true} />;
 
 export function NoteMarkdown({ compact = false, interactive = true, ...props }: Pick<MarkdownContentProps, "body" | "notePath" | "onError" | "omitImages"> & { compact?: boolean; interactive?: boolean }) {
   return <div className="markdown typeset typeset-memocard ui-note-markdown" data-compact={compact || undefined}>
-    <MarkdownContent {...props} interactive={interactive} components={interactive ? { img: imageRenderer, pre: preRenderer } : { img: compactImageRenderer, pre: compactPreRenderer, table: compactTableRenderer, input: compactTaskRenderer }} />
+    <MarkdownContent {...props} interactive={interactive} components={interactive ? { img: imageRenderer, pre: preRenderer } : { img: compactImageRenderer, pre: compact ? compactPreRenderer : previewPreRenderer, table: compactTableRenderer, ...(compact && {input: compactTaskRenderer}) }} />
   </div>;
 }
