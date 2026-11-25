@@ -27,6 +27,7 @@ beforeEach(() => {
   Object.defineProperty(document, "fonts", { configurable: true, value: { load: vi.fn(async () => [{}]) } });
   vi.stubGlobal("innerWidth", 1200);
   vi.stubGlobal("matchMedia", vi.fn((query: string) => ({ matches: query.includes("max-width") && window.innerWidth < 768, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
+  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
   vi.stubGlobal("scrollBy", vi.fn());
   vi.spyOn(window, "confirm").mockReturnValue(true);
