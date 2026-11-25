@@ -18,7 +18,10 @@ const newNote = async page => {
   await openNotes(page);
   await topbarCreate(page).click();
 };
-const returnToNotes = page => page.getByRole('navigation', {name: '当前位置'}).getByRole('button', {name: '所有笔记', exact: true}).click();
+const returnToNotes = async page => {
+  await page.getByRole('navigation', {name: '当前位置'}).getByRole('button', {name: '所有笔记', exact: true}).click();
+  await page.getByRole('heading', {name: '所有笔记', level: 1, exact: true}).waitFor();
+};
 before(async () => {
   manifest = JSON.parse(await readFile(`${uiRoot}dist/.vite/manifest.json`, 'utf8'));
   const { preview } = await import(require.resolve('vite'));
@@ -178,7 +181,6 @@ for (const [engine, width] of [[chromium, 1440], [webkit, 390]]) {
         assert.equal(await page.getByRole('navigation', { name: '桌面导航' }).count(), 0);
         assert.equal(await page.getByRole('button', { name: '返回笔记列表', exact: true }).count(), 1);
         await returnToNotes(page);
-        await page.getByRole('heading', { name: '所有笔记', exact: true }).waitFor();
         assert.equal(await page.getByRole('button', { name: /^打开 新内容/ }).count(), 0);
         assert.equal(await page.evaluate(async () => {
           const root = await navigator.storage.getDirectory();
