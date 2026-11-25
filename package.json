@@ -6,7 +6,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
-    "test:ci": "node --test scripts/ci-scope.test.mjs scripts/verified-web.test.mjs scripts/check-ui-bundle.test.mjs scripts/benchmark-sidebar-tags.test.mjs scripts/migrate-uuid-notes.test.mjs && pnpm test:memocard-skill",
+    "test:ci": "node --test scripts/ci-scope.test.mjs scripts/verify-changed.test.mjs scripts/verified-web.test.mjs scripts/check-ui-bundle.test.mjs scripts/benchmark-sidebar-tags.test.mjs scripts/migrate-uuid-notes.test.mjs && pnpm test:memocard-skill",
     "test:memocard-skill": "python3 skills/memocard/tests/check_vault_switch_results.py && python3 skills/memocard/tests/test_vault_switch_checker.py",
     "test:apple-build": "node --test scripts/apple-build.test.mjs",
     "test:native": "swift test --package-path packages/native-core",
@@ -47,9 +47,12 @@
     "verify:web": "pnpm check:design-inventory && pnpm test:design-inventory && pnpm tokens:check && pnpm test:tokens && pnpm check:ui-primitives && pnpm test:ci && pnpm test:apple-build && pnpm typecheck && pnpm lint && pnpm test && pnpm build && pnpm check:bundle && pnpm test:default-ui",
     "verify:ui": "pnpm verify:ui:preview && pnpm --filter @memocard/ui test:ui",
     "verify:ui:preview": "pnpm --filter @memocard/ui typecheck:ui && pnpm --filter @memocard/ui typecheck:states && pnpm --filter @memocard/ui exec eslint ui .storybook test-support ui-state-fixtures mascot-fixtures/catalog.ts vite.storybook.config.ts vite.config.ts vite.preview.config.ts && pnpm --filter @memocard/ui build:states",
+    "verify:changed": "node scripts/verify-changed.mjs",
+    "verify:native:all": "pnpm test:native && pnpm test:native-network && pnpm test:service && pnpm test:sidebar-native",
+    "check:apple-project": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj",
     "verify:native": "pnpm test:native && pnpm test:native-network && pnpm test:local-web",
     "verify": "pnpm verify:web && pnpm verify:native",
-    "verify:release": "python3 scripts/generate-project.py && git diff --exit-code -- apps/apple/MemoCard.xcodeproj/project.pbxproj && pnpm verify && pnpm test:service && pnpm test:sidebar-native && pnpm test:native-surfaces && export MEMOCARD_USE_PREBUILT_UI=1 && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app",
+    "verify:release": "pnpm check:apple-project && pnpm verify:web && pnpm verify:native:all && pnpm test:native-surfaces && export MEMOCARD_USE_PREBUILT_UI=1 && pnpm build:mac && pnpm build:ios && pnpm build:service && codesign --verify --deep --strict build/local-service/MemoCardService.app",
     "test:default-ui": "node --test scripts/test-default-ui.mjs"
   },
   "devDependencies": { "postcss": "8.5.31", "style-dictionary": "5.7.0" }

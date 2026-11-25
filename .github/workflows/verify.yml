@@ -27,7 +27,7 @@ jobs:
           node-version: 24
       - name: Test CI routing and environment controller
         run: |
-          node --test scripts/ci-scope.test.mjs scripts/verified-web.test.mjs
+          node --test scripts/ci-scope.test.mjs scripts/verify-changed.test.mjs scripts/verified-web.test.mjs
           python3 -m unittest discover -s apps/apple/Tests -p 'test_surface_probe_*.py' -b
       - name: Find successful verification of the previous main commit
         id: baseline
@@ -64,18 +64,14 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - if: fromJSON(needs.changes.outputs.plan).design == 'docs'
-        run: pnpm check:design-inventory && pnpm test:design-inventory
       - if: fromJSON(needs.changes.outputs.plan).design == 'ui'
         run: pnpm --filter @memocard/ui exec playwright install chromium firefox webkit
-      - if: fromJSON(needs.changes.outputs.plan).design == 'ui'
-        run: pnpm verify:design && pnpm verify:ui:preview
-      # verify:web runs the same UI unit suite via the workspace test command.
-      - if: fromJSON(needs.changes.outputs.plan).design == 'ui' && !fromJSON(needs.changes.outputs.plan).web
-        run: pnpm --filter @memocard/ui test:ui
+      - run: node scripts/verify-changed.mjs design
+        env:
+          CI_PLAN: ${{ needs.changes.outputs.plan }}
   release-web:
     needs: changes
-    if: fromJSON(needs.changes.outputs.plan).web || join(fromJSON(needs.changes.outputs.plan).platforms, ',') != ''
+    if: fromJSON(needs.changes.outputs.plan).web || fromJSON(needs.changes.outputs.plan).unit || fromJSON(needs.changes.outputs.plan).smoke || join(fromJSON(needs.changes.outputs.plan).platforms, ',') != ''
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
@@ -93,16 +89,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
       - name: Install default UI browser verification
-        if: fromJSON(needs.changes.outputs.plan).web
+        if: fromJSON(needs.changes.outputs.plan).web || fromJSON(needs.changes.outputs.plan).smoke
         run: pnpm --filter @memocard/ui exec playwright install chromium webkit
-      - if: fromJSON(needs.changes.outputs.plan).web
-        run: pnpm verify:web
-      - name: Build Web resources for native packaging
-        if: ${{ !fromJSON(needs.changes.outputs.plan).web }}
-        run: pnpm --filter @memocard/ui build && pnpm check:bundle
+      - run: node scripts/verify-changed.mjs web
+        env:
+          CI_PLAN: ${{ needs.changes.outputs.plan }}
       - name: Bind Web resources to this revision
+        if: join(fromJSON(needs.changes.outputs.plan).platforms, ',') != ''
         run: node scripts/verified-web.mjs create apps/ui/dist build/verified-web
       - uses: actions/upload-artifact@v7
+        if: join(fromJSON(needs.changes.outputs.plan).platforms, ',') != ''
         with:
           name: verified-web-${{ github.sha }}-${{ github.run_id }}
           overwrite: true
