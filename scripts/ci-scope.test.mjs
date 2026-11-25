@@ -9,49 +9,74 @@ import { classifyDiff, gatePasses, scopeForEvent } from './ci-scope.mjs';
 
 const entry = (path, status = 'M', from = '100644', to = '100644') => `:${from} ${to} ${'a'.repeat(40)} ${'b'.repeat(40)} ${status}\0${path}\0`;
 
-for (const path of ['README.md', 'docs/LOCAL_WEB.md', 'docs/example image.png', 'design/component-inventory.md', 'design/token-consumption.md', 'apps/ui/.storybook/preview.tsx', 'apps/ui/.storybook/preview.css', 'apps/ui/ui/stories/button-docs.tsx', 'apps/ui/ui/stories/button.stories.tsx']) {
-  test(`documentation-only: ${path}`, () => assert.equal(classifyDiff(entry(path)).full, false));
+const platforms = ['mac', 'ios', 'service'];
+const docsOnly = { design: 'docs', web: false, native: false, surfaces: false, platforms: [] };
+const full = { design: 'ui', web: true, native: true, surfaces: true, platforms };
+const core = { ...full, design: 'none', web: false };
+const ui = { ...docsOnly, design: 'ui', web: true, platforms };
+const nativeTests = { ...docsOnly, design: 'none', native: true };
+const service = { ...nativeTests, platforms: ['service'] };
+
+for (const path of ['README.md', 'docs/LOCAL_WEB.md', 'docs/example image.png', 'design/component-inventory.md', 'design/token-consumption.md']) {
+  test(`documentation-only: ${path}`, () => assert.deepEqual(classifyDiff(entry(path)), docsOnly));
 }
-for (const path of ['apps/ui/src/components/ui/button.tsx', 'apps/apple/Sources/NativeChrome.swift', 'design/tokens/sidebar.tokens.json', 'design/TOKENS.generated.md', 'apps/ui/src/generated/tokens.css', 'package.json', 'pnpm-lock.yaml', 'apps/ui/package.json', 'scripts/build-apple.sh', 'apps/ui/vite.storybook.config.ts', '.github/workflows/verify.yml', 'docs/ui-reference/button.json', 'apps/ui/public/logo.png', 'new-unknown-file.md', 'apps/ui/ui/stories/../src/app.tsx']) {
-  test(`full validation: ${path}`, () => assert.equal(classifyDiff(entry('README.md') + entry(path)).full, true));
+for (const path of ['apps/ui/.storybook/preview.tsx', 'apps/ui/.storybook/preview.css', 'apps/ui/ui/stories/button-docs.tsx', 'apps/ui/ui/stories/button.stories.tsx']) {
+  test(`storybook: ${path}`, () => assert.deepEqual(classifyDiff(entry(path) + entry('README.md')), { ...docsOnly, design: 'ui' }));
 }
+for (const path of ['apps/apple/Sources/NativeChrome.swift', 'design/tokens/sidebar.tokens.json', 'design/TOKENS.generated.md', 'apps/ui/src/generated/tokens.css', 'package.json', 'pnpm-lock.yaml', 'apps/ui/package.json', 'scripts/build-apple.sh', 'apps/ui/vite.storybook.config.ts', '.github/workflows/verify.yml', 'docs/ui-reference/button.json', 'apps/ui/public/logo.png', 'new-unknown-file.md', 'apps/ui/ui/stories/../src/app.tsx']) {
+  test(`full validation: ${path}`, () => assert.deepEqual(classifyDiff(entry('README.md') + entry(path)), full));
+}
+test('schedule source consumers and combine both sides of a rename or mixed change', () => {
+  for (const [path, expected] of [
+    ['apps/apple/Service/ServiceHost.swift', service], ['packages/local-service/Sources/memocard/main.swift', service],
+    ['apps/apple/Tunnel/run-tunnel.sh', service], ['apps/apple/Tests/ServiceHostHarness.swift', nativeTests],
+    ['packages/native-core/Tests/VaultStoreTests.swift', nativeTests], ['packages/native-core/Sources/MemoCardCore/VaultStore.swift', core],
+    ['apps/ui/src/components/ui/button.tsx', ui], ['apps/ui/src/App.test.tsx', { ...ui, platforms: [] }],
+  ]) assert.deepEqual(classifyDiff(entry(path)), expected, path);
+  assert.deepEqual(classifyDiff(entry('README.md') + entry('apps/apple/Service/ServiceHost.swift')), { ...service, design: 'docs' });
+  assert.deepEqual(classifyDiff(entry('packages/native-core/Sources/Core.swift', 'D', '100644', '000000')
+    + entry('apps/ui/src/app.tsx', 'A', '000000')), full);
+});
 test('empty, malformed, truncated, symlink and unsupported status fail closed', () => {
-  for (const raw of ['', 'broken\0', entry('README.md').slice(0, -1), entry('README.md', 'T'), entry('README.md', 'M', '120000', '120000')]) assert.equal(classifyDiff(raw).full, true);
+  for (const raw of ['', 'broken\0', entry('README.md').slice(0, -1), entry('README.md', 'T'), entry('README.md', 'M', '120000', '120000')]) assert.deepEqual(classifyDiff(raw), full);
 });
 test('additions and deletions support NUL-delimited paths', () => {
-  assert.equal(classifyDiff(entry('docs/first\nsecond.md', 'A', '000000') + entry('docs/old.md', 'D', '100644', '000000')).full, false);
+  assert.deepEqual(classifyDiff(entry('docs/first\nsecond.md', 'A', '000000') + entry('docs/old.md', 'D', '100644', '000000')), docsOnly);
 });
-test('gate requires real successful applicable checks and rejects missing/cancelled/failed routing', () => {
-  const needs = { changes: { result: 'success', outputs: { full: 'false' } }, design: { result: 'success' }, 'release-web': { result: 'skipped' }, 'release-native': { result: 'skipped' }, 'native-surfaces': { result: 'skipped' }, 'native-build': { result: 'skipped' } };
-  assert.equal(gatePasses(needs), true);
-  for (const job of ['release-web', 'release-native', 'native-surfaces', 'native-build']) {
-    const changed = structuredClone(needs);
-    changed[job].result = 'success';
-    assert.equal(gatePasses(changed), false);
-    delete changed[job];
-    assert.equal(gatePasses(changed), false);
+
+function jobResults(plan, successful) {
+  const needs = { changes: { result: 'success', outputs: { plan: JSON.stringify(plan) } } };
+  for (const name of ['design', 'release-web', 'release-native', 'native-surfaces', 'native-build']) {
+    needs[name] = { result: successful.includes(name) ? 'success' : 'skipped' };
   }
-  needs.changes.outputs.full = 'true';
-  assert.equal(gatePasses(needs), false);
-  needs['release-native'].result = 'success';
-  assert.equal(gatePasses(needs), false);
-  needs['release-web'].result = 'success';
-  assert.equal(gatePasses(needs), false);
-  needs['native-build'].result = 'success';
-  assert.equal(gatePasses(needs), false);
-  needs['native-surfaces'].result = 'success';
-  assert.equal(gatePasses(needs), true);
-  for (const job of Object.keys(needs)) {
-    for (const result of ['failure', 'cancelled', 'skipped', undefined]) {
-      const changed = structuredClone(needs);
-      changed[job].result = result;
-      assert.equal(gatePasses(changed), false);
+  return needs;
+}
+
+test('gate requires successes and skips for exactly the jobs selected', () => {
+  for (const [plan, jobs] of [
+    [docsOnly, ['design']], [ui, ['design', 'release-web', 'native-build']],
+    [nativeTests, ['release-native']], [service, ['release-native', 'release-web', 'native-build']],
+    [core, ['release-native', 'release-web', 'native-build', 'native-surfaces']],
+    [full, ['design', 'release-web', 'release-native', 'native-surfaces', 'native-build']],
+  ]) {
+    const needs = jobResults(plan, jobs);
+    assert.ok(gatePasses(needs));
+    for (const [job, { result }] of Object.entries(needs)) {
+      for (const bad of ['success', 'failure', 'cancelled', 'skipped', undefined].filter(value => value !== result)) {
+        assert.equal(gatePasses({ ...needs, [job]: { ...needs[job], result: bad } }), false);
+      }
+      const missing = { ...needs };
+      delete missing[job];
+      assert.equal(gatePasses(missing), false);
     }
   }
-  for (const full of ['', undefined, 'invalid']) {
-    needs.changes.outputs.full = full;
+  const needs = jobResults(docsOnly, ['design']);
+  for (const plan of [null, {}, { ...docsOnly, web: 'false' }, { ...docsOnly, platforms: ['unknown'] }]) {
+    needs.changes.outputs.plan = JSON.stringify(plan);
     assert.equal(gatePasses(needs), false);
   }
+  delete needs.changes.outputs.plan;
+  assert.equal(gatePasses(needs), false);
 });
 test('real PR ranges include history and renames; main pushes cannot skip superseded production checks', t => {
   const cwd = mkdtempSync(join(tmpdir(), 'memocard-ci-scope-'));
@@ -70,28 +95,34 @@ test('real PR ranges include history and renames; main pushes cannot skip supers
   const base = commit('README.md', 'base');
   const docs = commit('docs/guide.md', 'docs');
   const pr = (base, head) => ({ pull_request: { base: { sha: base }, head: { sha: head } } });
-  assert.equal(scopeForEvent('pull_request', pr(base, docs), cwd).full, false);
-  assert.equal(scopeForEvent('push', { before: base, after: docs }, cwd).full, true);
+  const push = (before, after) => ({ ref: 'refs/heads/main', before, after });
+  assert.deepEqual(scopeForEvent('pull_request', pr(base, docs), cwd), docsOnly);
+  assert.deepEqual(scopeForEvent('push', push(base, docs), cwd), full);
+  assert.deepEqual(scopeForEvent('push', push(base, docs), cwd, base), docsOnly);
   const eventPath = join(cwd, 'event.json'), outputPath = join(cwd, 'output');
   writeFileSync(eventPath, JSON.stringify(pr(base, docs)));
   const script = fileURLToPath(new URL('./ci-scope.mjs', import.meta.url));
   execFileSync(process.execPath, [script], { cwd, env: { ...process.env, GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: eventPath, GITHUB_OUTPUT: outputPath, GITHUB_STEP_SUMMARY: join(cwd, 'summary') } });
-  assert.equal(readFileSync(outputPath, 'utf8'), 'full=false\n');
-  assert.match(readFileSync(join(cwd, 'summary'), 'utf8'), /fast path/);
-  const gate = { changes: { result: 'success', outputs: { full: 'false' } }, design: { result: 'success' }, 'release-web': { result: 'skipped' }, 'release-native': { result: 'skipped' }, 'native-surfaces': { result: 'skipped' }, 'native-build': { result: 'skipped' } };
+  assert.deepEqual(JSON.parse(readFileSync(outputPath, 'utf8').replace(/^plan=/, '')), docsOnly);
+  assert.match(readFileSync(join(cwd, 'summary'), 'utf8'), /Verification scope/);
+  const gate = jobResults(docsOnly, ['design']);
   execFileSync(process.execPath, [script, '--gate'], { env: { ...process.env, CI_NEEDS: JSON.stringify(gate) } });
   gate.design.result = 'failure';
   assert.throws(() => execFileSync(process.execPath, [script, '--gate'], { env: { ...process.env, CI_NEEDS: JSON.stringify(gate) }, stdio: 'pipe' }), error => error.status === 1);
   const production = commit('apps/ui/src/app.tsx', 'production');
   const latestDocs = commit('README.md', 'latest docs');
-  assert.equal(scopeForEvent('pull_request', pr(base, latestDocs), cwd).full, true);
-  assert.equal(scopeForEvent('push', { before: production, after: latestDocs }, cwd).full, true);
+  assert.deepEqual(scopeForEvent('pull_request', pr(base, latestDocs), cwd), ui);
+  assert.deepEqual(scopeForEvent('push', push(docs, latestDocs), cwd, docs), ui);
+  assert.deepEqual(scopeForEvent('push', push(production, latestDocs), cwd, docs), full);
+  assert.deepEqual(scopeForEvent('push', push(base, docs), cwd, base), full, 'checkout differs from the pushed revision');
   git('mv', 'apps/ui/src/app.tsx', 'docs/renamed.md');
   git('commit', '-qm', 'rename');
   const rename = git('rev-parse', 'HEAD');
-  assert.equal(scopeForEvent('pull_request', pr(latestDocs, rename), cwd).full, true);
-  assert.equal(scopeForEvent('pull_request', pr(base, 'c'.repeat(40)), cwd).full, true);
-  assert.equal(scopeForEvent('push', { before: '0'.repeat(40), after: rename }, cwd).full, true);
-  assert.equal(scopeForEvent('other', {}, cwd).full, true);
-  assert.equal(scopeForEvent('pull_request', pr(base, base), cwd).full, true);
+  assert.deepEqual(scopeForEvent('pull_request', pr(latestDocs, rename), cwd), ui);
+  assert.deepEqual(scopeForEvent('pull_request', pr(base, 'c'.repeat(40)), cwd), full);
+  assert.deepEqual(scopeForEvent('push', push('0'.repeat(40), rename), cwd, '0'.repeat(40)), full);
+  git('checkout', '-q', base);
+  assert.deepEqual(scopeForEvent('push', push(rename, base), cwd, rename), full, 'force push to an older commit');
+  assert.deepEqual(scopeForEvent('other', {}, cwd), full);
+  assert.deepEqual(scopeForEvent('pull_request', pr(base, base), cwd), full);
 });

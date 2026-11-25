@@ -13,8 +13,11 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
     outputs:
-      full: ${{ steps.scope.outputs.full }}
+      plan: ${{ steps.scope.outputs.plan }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -26,10 +29,25 @@ jobs:
         run: |
           node --test scripts/ci-scope.test.mjs scripts/verified-web.test.mjs
           python3 -m unittest discover -s apps/apple/Tests -p 'test_surface_probe_*.py' -b
+      - name: Find successful verification of the previous main commit
+        id: baseline
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREVIOUS: ${{ github.event.before }}
+        run: |
+          baseline=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/verify.yml/runs" \
+            -f branch=main -f event=push -f status=success -f head_sha="$PREVIOUS" -f per_page=1 \
+            --jq '.workflow_runs[0].head_sha // ""') || baseline=""
+          echo "sha=$baseline" >> "$GITHUB_OUTPUT"
       - name: Classify complete change range
         id: scope
+        env:
+          VERIFIED_MAIN: ${{ steps.baseline.outputs.sha }}
         run: node scripts/ci-scope.mjs
   design:
+    needs: changes
+    if: fromJSON(needs.changes.outputs.plan).design != 'none'
     runs-on: ubuntu-latest
     # The Playwright image supplies browser libraries without using the runner's APT mirrors.
     container:
@@ -46,12 +64,18 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @memocard/ui exec playwright install chromium firefox webkit
-      - run: pnpm verify:design
-      - run: pnpm verify:ui
+      - if: fromJSON(needs.changes.outputs.plan).design == 'docs'
+        run: pnpm check:design-inventory && pnpm test:design-inventory
+      - if: fromJSON(needs.changes.outputs.plan).design == 'ui'
+        run: pnpm --filter @memocard/ui exec playwright install chromium firefox webkit
+      - if: fromJSON(needs.changes.outputs.plan).design == 'ui'
+        run: pnpm verify:design && pnpm verify:ui:preview
+      # verify:web runs the same UI unit suite via the workspace test command.
+      - if: fromJSON(needs.changes.outputs.plan).design == 'ui' && !fromJSON(needs.changes.outputs.plan).web
+        run: pnpm --filter @memocard/ui test:ui
   release-web:
     needs: changes
-    if: needs.changes.outputs.full == 'true'
+    if: fromJSON(needs.changes.outputs.plan).web || join(fromJSON(needs.changes.outputs.plan).platforms, ',') != ''
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
@@ -69,8 +93,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod
       - name: Install default UI browser verification
+        if: fromJSON(needs.changes.outputs.plan).web
         run: pnpm --filter @memocard/ui exec playwright install chromium webkit
-      - run: pnpm verify:web
+      - if: fromJSON(needs.changes.outputs.plan).web
+        run: pnpm verify:web
+      - name: Build Web resources for native packaging
+        if: ${{ !fromJSON(needs.changes.outputs.plan).web }}
+        run: pnpm --filter @memocard/ui build && pnpm check:bundle
       - name: Bind Web resources to this revision
         run: node scripts/verified-web.mjs create apps/ui/dist build/verified-web
       - uses: actions/upload-artifact@v7
@@ -83,7 +112,7 @@ jobs:
           if-no-files-found: error
   native-surfaces:
     needs: changes
-    if: needs.changes.outputs.full == 'true'
+    if: fromJSON(needs.changes.outputs.plan).surfaces
     runs-on: macos-26
     timeout-minutes: 45
     defaults:
@@ -115,7 +144,7 @@ jobs:
             build/verification/native-surfaces/*.json
   release-native:
     needs: changes
-    if: needs.changes.outputs.full == 'true'
+    if: fromJSON(needs.changes.outputs.plan).native
     runs-on: macos-26
     timeout-minutes: 45
     defaults:
@@ -134,8 +163,8 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Verify native core and bridge contracts
-        run: pnpm verify:native
+      - name: Test native core and TCP bridge
+        run: pnpm test:native && pnpm test:native-network
       - name: Test local service
         run: pnpm test:service
       - name: Test native sidebar index
@@ -143,13 +172,13 @@ jobs:
   # Each matrix entry has its own checkout, Web resources and DerivedData.
   native-build:
     needs: [changes, release-web]
-    if: needs.changes.outputs.full == 'true'
+    if: join(fromJSON(needs.changes.outputs.plan).platforms, ',') != ''
     runs-on: macos-26
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        platform: [mac, ios, service]
+        platform: ${{ fromJSON(needs.changes.outputs.plan).platforms }}
     defaults:
       run:
         shell: bash
