@@ -140,7 +140,7 @@ public actor VaultStore {
         }
     }
 
-    public func open(url: URL, create: Bool, binding: UUID = UUID()) throws {
+    public func open(url: URL, create: Bool, binding: UUID = UUID(), expectedVaultID: String? = nil) throws {
         cancelIndexing()
         localIndex = nil
         invalidateSnapshot()
@@ -160,7 +160,7 @@ public actor VaultStore {
         let candidate = selected.resolvingSymlinksInPath()
         let manifest = candidate.appendingPathComponent(".memocard/vault.json")
         try validate(manifest, inside: candidate)
-        if !fm.fileExists(atPath: manifest.path) {
+        if expectedVaultID == nil, !fm.fileExists(atPath: manifest.path) {
 
             try coordinateWrite(candidate, inside: candidate) { coordinated in
                 let contents = try self.fm.contentsOfDirectory(atPath: coordinated.path).filter { $0 != ".DS_Store" }
@@ -174,7 +174,14 @@ public actor VaultStore {
                 try encode(value).write(to: coordinated.appendingPathComponent(".memocard/vault.json"), options: .atomic)
             }
         }
-        let value = try readMetadata(at: candidate)
+        let value: VaultMetadata
+        do { value = try readMetadata(at: candidate) }
+        catch let error as CocoaError where expectedVaultID != nil && [.fileNoSuchFile, .fileReadNoSuchFile].contains(error.code) {
+            throw VaultError(code: "VAULT_METADATA_MISSING", message: "缺少笔记库元数据 .memocard/vault.json。")
+        }
+        if let expectedVaultID, value.vaultId != expectedVaultID {
+            throw VaultError(code: "VAULT_CHANGED", message: "文件夹内的笔记库身份已变化。")
+        }
         for directory in value.formatVersion == 1 ? ["notes", "assets"] : [] {
             let path = candidate.appendingPathComponent(directory)
             try validate(path, inside: candidate)

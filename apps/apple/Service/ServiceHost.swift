@@ -2,9 +2,13 @@ import AppKit
 import Foundation
 import MemoCardCore
 import MemoCardLocalWeb
+import OSLog
 
 @MainActor
 final class ServiceHost {
+    private static let vaultLogger = Logger(subsystem: "dev.divikwu.memocard.service", category: "VaultSelection")
+    private static let reselectVault = "请通过「切换笔记库…」或「打开已有笔记库」重新选择原文件夹。"
+
     private let defaults: UserDefaults
     private let localDataURL: URL
     private let mcpDirectoryPicker: @MainActor () async throws -> URL
@@ -105,26 +109,25 @@ final class ServiceHost {
         var restored: URL?
         var pendingStore: VaultStore?
         do {
-            let url = try restore(bookmark)
+            let (url, updatedBookmark) = try restore(bookmark, renewIfStale: true)
             restored = url
             let candidate = try VaultStore(localDataURL: localDataURL)
             pendingStore = candidate
             let resumedBinding = record.flatMap { LocalWebServer.restoredBinding(from: webRestartFile, vaultID: $0.id) }
             let generation = resumedBinding ?? UUID()
-            try await candidate.open(url: url, create: false, binding: generation)
+            try await candidate.open(url: url, create: false, binding: generation, expectedVaultID: record?.id)
             try await vaultRestoreCheckpoint?(candidate)
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库恢复已被新的选择取代") }
             let status = try await status(of: candidate, binding: generation)
             guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库恢复已被新的选择取代") }
             guard let id = status["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
-            guard resumedBinding == nil || id == record?.id else { throw fault("UNAUTHORIZED", "笔记库身份已经变化，请重新打开文件夹") }
             let previous = store
             store = candidate
             pendingStore = nil
             vaultGeneration = generation
             vaultURL = url
             vaultID = id
-            rememberVault(id: id, name: url.lastPathComponent, bookmark: bookmark)
+            rememberVault(id: id, name: url.lastPathComponent, bookmark: updatedBookmark)
             restored = nil
             watch(url)
             await previous.close()
@@ -255,24 +258,53 @@ final class ServiceHost {
         do { selected = try await pickVault(create: create) }
         catch let error as NSError where error.domain == "CANCELLED" { return ["cancelled": true] }
 
-        let bookmark = try authorize(selected)
+        let name = selected.lastPathComponent
+        let bookmark: Data
+        do { bookmark = try authorize(selected) }
+        catch {
+            logVaultFailure("authorize folder", error)
+            throw fault("UNAUTHORIZED", "无法取得「\(name)」的文件夹访问权限。请确认文件夹可读写，然后重新选择它。")
+        }
+        return try await switchVault(to: selected, bookmark: bookmark, create: create, reconnect: reconnect)
+    }
+
+    private func activateVault(id: String, reconnect: Bool) async throws -> [String: Any] {
+        guard id != vaultID else { return ["vaultId": id] }
+        guard !selectingVault else { throw fault("BUSY", "请先完成当前笔记库选择") }
+        guard let record = vaultRegistry.record(id: id) else {
+            throw fault("NOT_FOUND", "找不到这条笔记库记录。\(Self.reselectVault)")
+        }
+        selectingVault = true
+        defer { selectingVault = false }
+
+        let selected: URL, bookmark: Data
+        do { (selected, bookmark) = try restore(record.bookmark, renewIfStale: true) }
+        catch {
+            logVaultFailure("restore folder authorization", error)
+            if let cocoa = error as? CocoaError, [.fileNoSuchFile, .fileReadNoSuchFile].contains(cocoa.code) {
+                throw fault("NOT_FOUND", "找不到「\(record.name)」原先授权的文件夹。请先连接磁盘或等同步目录可用，再重试。\(Self.reselectVault)")
+            }
+            throw fault("UNAUTHORIZED", "无法恢复「\(record.name)」保存的文件夹授权。\(Self.reselectVault)")
+        }
+        return try await switchVault(to: selected, bookmark: bookmark, create: false, reconnect: reconnect, expectedVaultID: id)
+    }
+
+    private func switchVault(to selected: URL, bookmark: Data, create: Bool, reconnect: Bool, expectedVaultID: String? = nil) async throws -> [String: Any] {
         let candidate: VaultStore
         do { candidate = try VaultStore(localDataURL: localDataURL) }
         catch {
             selected.stopAccessingSecurityScopedResource()
-            throw error
+            logVaultFailure("initialize local vault data", error)
+            throw VaultError(code: "STORE_UNAVAILABLE", message: "无法准备本机笔记库数据。请检查 Mac 的可用空间和本机资料夹权限，然后再切换。")
         }
         let candidateGeneration = UUID()
         let attempt = UUID()
         vaultAttempt = attempt
         do {
-            try await candidate.open(url: selected, create: create, binding: candidateGeneration)
-            let candidateStatus = try await status(of: candidate, binding: candidateGeneration)
-            guard let id = candidateStatus["vaultId"] as? String else { throw fault("STORE_UNAVAILABLE", "笔记库身份不可用") }
-            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
-
+            let id = try await openVaultCandidate(candidate, at: selected, create: create, binding: candidateGeneration, expectedVaultID: expectedVaultID)
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消。请重新选择笔记库。") }
             let reconnectURL = try await rotateAuthorization(reconnect: reconnect, vaultID: id, binding: candidateGeneration)
-            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
+            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消。请重新选择笔记库。") }
             let previousStore = store
             let previousURL = vaultURL
             stopMCP()
@@ -295,59 +327,67 @@ final class ServiceHost {
         }
     }
 
-    private func activateVault(id: String, reconnect: Bool) async throws -> [String: Any] {
-        guard id != vaultID else { return ["vaultId": id] }
-        guard !selectingVault else { throw fault("BUSY", "请先完成当前笔记库选择") }
-        guard let record = vaultRegistry.record(id: id) else { throw fault("NOT_FOUND", "找不到这个笔记库") }
-        selectingVault = true
-        defer { selectingVault = false }
-
-        let selected = try restore(record.bookmark)
-        let candidate: VaultStore
-        do { candidate = try VaultStore(localDataURL: localDataURL) }
-        catch { selected.stopAccessingSecurityScopedResource(); throw error }
-        let candidateGeneration = UUID()
-        let attempt = UUID()
-        vaultAttempt = attempt
+    private func openVaultCandidate(_ candidate: VaultStore, at url: URL, create: Bool, binding: UUID, expectedVaultID: String?) async throws -> String {
+        let name = "「\(url.lastPathComponent)」"
+        let id: String?
         do {
-            try await candidate.open(url: selected, create: false, binding: candidateGeneration)
-            let candidateStatus = try await status(of: candidate, binding: candidateGeneration)
-            guard candidateStatus["vaultId"] as? String == id else { throw fault("UNAUTHORIZED", "笔记库身份已经变化，请重新打开文件夹") }
-            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
-            let reconnectURL = try await rotateAuthorization(reconnect: reconnect, vaultID: id, binding: candidateGeneration)
-            guard attempt == vaultAttempt else { throw fault("CANCELLED", "笔记库选择已取消") }
-            let previousStore = store
-            let previousURL = vaultURL
-            stopMCP()
-            store = candidate
-            vaultGeneration = candidateGeneration
-            vaultURL = selected
-            vaultID = id
-            _ = vaultRegistry.activate(id: id)
-            defaults.set(id, forKey: "activeVaultID")
-            watch(selected)
-            await previousStore.close()
-            previousURL?.stopAccessingSecurityScopedResource()
-            stateChanged?()
-            await restoreMCP()
-            if let reconnectURL { return ["reconnectUrl": reconnectURL.absoluteString] }
-            return ["vaultId": id]
+            try await candidate.open(url: url, create: create, binding: binding, expectedVaultID: expectedVaultID)
+            id = try await status(of: candidate, binding: binding)["vaultId"] as? String
+        } catch let error as VaultError {
+            let recovery: String
+            switch error.code {
+            case "VAULT_METADATA_MISSING", "INVALID_VAULT", "INVALID_ID":
+                recovery = "请确认所选的是原笔记库文件夹。如果元数据或目录结构受损，请从备份恢复后重试。"
+            case "UNSUPPORTED_FORMAT":
+                recovery = "请用支持此格式的 MemoCard 版本打开该笔记库。"
+            case "INVALID_LOCAL_DATA":
+                recovery = "请检查本机数据目录权限与可用空间，保留本机草稿后再重试。"
+            case "VAULT_NOT_EMPTY":
+                recovery = "请选择一个空文件夹再创建。"
+            default:
+                recovery = Self.reselectVault
+            }
+            throw VaultError(code: error.code, message: "\(name)\(error.message)\(recovery)", retryable: error.retryable)
         } catch {
-            await candidate.close()
-            selected.stopAccessingSecurityScopedResource()
-            throw error
+            logVaultFailure("open vault folder", error)
+            let system = error as NSError
+            switch (system.domain, system.code) {
+            case (NSCocoaErrorDomain, NSFileReadNoPermissionError), (NSCocoaErrorDomain, NSFileWriteNoPermissionError),
+                 (NSPOSIXErrorDomain, Int(EACCES)), (NSPOSIXErrorDomain, Int(EPERM)):
+                throw fault("UNAUTHORIZED", "MemoCard 无权读写\(name)。请检查文件夹权限。\(Self.reselectVault)")
+            case (NSCocoaErrorDomain, NSFileNoSuchFileError), (NSCocoaErrorDomain, NSFileReadNoSuchFileError):
+                throw fault("NOT_FOUND", "\(name)的文件夹或库文件已不可用。请先在 Finder 确认文件夹可访问，再重新选择。")
+            case (NSCocoaErrorDomain, NSFileWriteOutOfSpaceError), (NSPOSIXErrorDomain, Int(ENOSPC)):
+                throw VaultError(code: "STORE_UNAVAILABLE", message: "打开\(name)时磁盘空间不足。请释放空间后重试。")
+            default:
+                throw VaultError(code: "STORE_UNAVAILABLE", message: "无法读取\(name)的文件夹或库文件。请在 Finder 确认磁盘已连接、同步已完成且文件可读，再重新选择。")
+            }
         }
+        guard let id else {
+            throw VaultError(code: "STORE_UNAVAILABLE", message: "无法读取\(name)的笔记库身份。\(Self.reselectVault)")
+        }
+        return id
     }
 
     private func rotateAuthorization(reconnect: Bool, vaultID: String, binding: UUID) async throws -> URL? {
-        if let webStartTask { try await webStartTask.value }
-        guard let webServer else { return nil }
-        let scope = LocalWebServer.VaultScope(id: vaultID, binding: binding)
-        let reconnectURL: URL?
-        if reconnect { reconnectURL = try await webServer.makeLaunchURL(revokingSessions: true, vaultScope: scope) }
-        else { try await webServer.revokeSessions(vaultScope: scope); reconnectURL = nil }
-        webAuthorizationEpoch &+= 1
-        return reconnectURL
+        do {
+            if let webStartTask { try await webStartTask.value }
+            guard let webServer else { return nil }
+            let scope = LocalWebServer.VaultScope(id: vaultID, binding: binding)
+            let reconnectURL: URL?
+            if reconnect { reconnectURL = try await webServer.makeLaunchURL(revokingSessions: true, vaultScope: scope) }
+            else { try await webServer.revokeSessions(vaultScope: scope); reconnectURL = nil }
+            webAuthorizationEpoch &+= 1
+            return reconnectURL
+        } catch {
+            logVaultFailure("update Web session", error)
+            throw VaultError(code: "STORE_UNAVAILABLE", message: "无法更新本机网页会话。请从菜单栏退出并重启 MemoCard 服务后再切换。如果仍失败，请检查 Mac 的可用空间。")
+        }
+    }
+
+    private func logVaultFailure(_ stage: String, _ error: Error) {
+        let system = error as NSError
+        Self.vaultLogger.error("Vault selection could not \(stage, privacy: .public): \(system.domain, privacy: .public) (\(system.code, privacy: .public))")
     }
 
     private func rememberVault(id: String, name: String, bookmark: Data) {
@@ -412,7 +452,7 @@ final class ServiceHost {
         guard defaults.bool(forKey: "mcpEnabled"),
               let bookmark = defaults.data(forKey: "mcpDirectoryBookmark") else { return }
         do {
-            let directory = try restore(bookmark)
+            let (directory, _) = try restore(bookmark)
             try await startMCP(directory: directory)
         } catch {
             // A failed restore never grants consent or stops a newer attempt.
@@ -484,11 +524,13 @@ final class ServiceHost {
         catch { url.stopAccessingSecurityScopedResource(); throw error }
     }
 
-    private func restore(_ bookmark: Data) throws -> URL {
+    private func restore(_ bookmark: Data, renewIfStale: Bool = false) throws -> (URL, Data) {
         var stale = false
         let url = try URL(resolvingBookmarkData: bookmark, options: [.withSecurityScope, .withoutUI], relativeTo: nil, bookmarkDataIsStale: &stale)
-        guard !stale, url.startAccessingSecurityScopedResource() else { throw fault("UNAUTHORIZED", "文件夹授权已失效") }
-        return url
+        guard (!stale || renewIfStale), url.startAccessingSecurityScopedResource() else { throw fault("UNAUTHORIZED", "文件夹授权已失效") }
+        guard stale else { return (url, bookmark) }
+        do { return (url, try url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)) }
+        catch { url.stopAccessingSecurityScopedResource(); throw error }
     }
 
     private func status(of store: VaultStore, binding: UUID?, background: Bool = true) async throws -> [String: Any] {
