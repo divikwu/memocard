@@ -37,7 +37,7 @@
   .ui-capture-tag-row:is(:hover, :has(:focus-visible)) > .ui-capture-tag-more, .ui-capture-tag-more[aria-expanded="true"] { opacity: 1; }
 }
 .ui-capture-tag-options > p { padding: calc(var(--spacing-1) * 2); font-size: var(--font-size-xs); color: var(--color-text-secondary); }
-.ui-capture-suggestions { position: absolute; z-index: 60; display: grid; gap: var(--spacing-1); width: min(15rem, 100%); padding: var(--spacing-1); border: var(--border-width) solid var(--color-border-floating); border-radius: var(--radius-item); background: var(--color-background-popover); box-shadow: var(--shadow-high), var(--surface-edge-floating); }
+.ui-capture-suggestions { overflow-y: auto; overscroll-behavior: contain; max-height: var(--available-height); z-index: 60; display: grid; gap: var(--spacing-1); width: min(15rem, var(--available-width)); padding: var(--spacing-1); border: var(--border-width) solid var(--color-border-floating); border-radius: var(--radius-item); background: var(--color-background-popover); box-shadow: var(--shadow-high), var(--surface-edge-floating); }
 .ui-capture-suggestions > button { width: 100%; min-width: 0; justify-content: space-between; padding-inline: calc(var(--spacing-1) * 2); border-radius: var(--radius-element); min-height: var(--size-element-sm); height: auto; padding-block: var(--spacing-1); font-weight: var(--font-weight-normal); text-align: start; }
 .ui-capture-suggestions > button > span:first-child { overflow: hidden; text-overflow: ellipsis; }
 .ui-capture-suggestions > p { padding: calc(var(--spacing-1) * 2); }

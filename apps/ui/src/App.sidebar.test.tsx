@@ -96,7 +96,7 @@ describe("sidebar workspace actions", () => {
     await user.click(screen.getByRole("button", { name: "搜索" }));
     const input = await screen.findByRole("combobox", { name: "搜索笔记" });
     await user.type(input, "散步");
-    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: [], sort: "updatedAt", limit: 30 }));
+    await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("queryNotes", { query: "散步", tags: [], sort: "relevance", limit: 30 }));
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "搜索笔记" })).toBeNull());
     expect(screen.getByRole("heading", { name: "# 生活", level: 1 })).toBeTruthy();
@@ -661,7 +661,7 @@ describe('mobile page navigation',()=>{
     const query=screen.getByRole('combobox',{name:'搜索笔记'});
     await waitFor(()=>expect(document.activeElement).toBe(query));
     await user.type(query,'散步');
-    await waitFor(()=>expect(bridge.request).toHaveBeenCalledWith('queryNotes',{query:'散步',tags:[],sort:'updatedAt',limit:30}));
+    await waitFor(()=>expect(bridge.request).toHaveBeenCalledWith('queryNotes',{query:'散步',tags:[],sort:'relevance',limit:30}));
     await screen.findByRole('option',{name:'新内容'});
     const results=screen.getByRole('listbox',{name:'搜索结果'}).parentElement!;
     fireEvent.scroll(results,{target:{scrollTop:180}});

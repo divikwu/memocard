@@ -45,8 +45,8 @@ it("keeps query, scroll and loaded pages while removing the last active result a
   expect(list.scrollTop).toBe(275);
   expect(reveal).not.toHaveBeenCalled();
   expect(bridge.request.mock.calls.slice(-2)).toEqual([
-    ["queryNotes", { query: "query retained", tags: [], sort: "updatedAt", limit: 30 }],
-    ["queryNotes", { query: "query retained", tags: [], sort: "updatedAt", limit: 30, cursor: "fresh-page" }],
+    ["queryNotes", { query: "query retained", tags: [], sort: "relevance", limit: 30 }],
+    ["queryNotes", { query: "query retained", tags: [], sort: "relevance", limit: 30, cursor: "fresh-page" }],
   ]);
   act(() => result.current.moveSelection(-1));
   expect(reveal).toHaveBeenCalledOnce();
@@ -152,8 +152,8 @@ it.each(["old-tail", null])("retries a failed retained refresh without using the
   expect(list.scrollTop).toBe(225);
   expect(result.current.error).toBe("");
   expect(bridge.request.mock.calls.slice(calls)).toEqual([
-    ["queryNotes", { query: "same query", tags: [], sort: "updatedAt", limit: 30 }],
-    ["queryNotes", { query: "same query", tags: [], sort: "updatedAt", limit: 30 }],
-    ["queryNotes", { query: "same query", tags: [], sort: "updatedAt", limit: 30, cursor: "fresh-page" }],
+    ["queryNotes", { query: "same query", tags: [], sort: "relevance", limit: 30 }],
+    ["queryNotes", { query: "same query", tags: [], sort: "relevance", limit: 30 }],
+    ["queryNotes", { query: "same query", tags: [], sort: "relevance", limit: 30, cursor: "fresh-page" }],
   ]);
 });

@@ -145,13 +145,15 @@ it('tracks keyboard tag suggestions with a visible state contract and inserts th
   setStorybookRequestHandler(operation => operation === 'listTags' ? { tags: [{ name: 'design' }, { name: 'development' }] } : undefined);
   const { editor, field, onChange } = await rich('正文');
   act(() => { editor.commands.insertContentAt(3, ' #de'); editor.commands.setTextSelection(7); });
-  const options = within(await screen.findByRole('group', { name: '标签建议' }));
-  await waitFor(() => expect(options.getByRole('button', { name: '#design' }).hasAttribute('data-highlighted')).toBe(true));
+  const options = within(await screen.findByRole('listbox', { name: '标签建议' }));
+  await waitFor(() => expect(options.getByRole('option', { name: '#design' }).hasAttribute('data-highlighted')).toBe(true));
   fireEvent.keyDown(field, { key: 'ArrowDown' });
-  expect(options.getByRole('button', { name: '#development' }).hasAttribute('data-highlighted')).toBe(true);
+  expect(options.getByRole('option', { name: '#development' }).hasAttribute('data-highlighted')).toBe(true);
+  expect(field.getAttribute('aria-activedescendant')).toBe(options.getByRole('option', { selected: true }).id);
   fireEvent.keyDown(field, { key: 'Enter' });
+  expect(field.hasAttribute('aria-activedescendant')).toBe(false);
   expect(onChange.mock.lastCall?.[0]).toContain('#development');
-  expect(screen.queryByRole('group', { name: '标签建议' })).toBeNull();
+  expect(screen.queryByRole('listbox', { name: '标签建议' })).toBeNull();
 });
 
 it('folds headings with the current view without adding a Markdown write or undo entry', async () => {

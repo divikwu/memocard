@@ -1,4 +1,4 @@
-import { Fragment, Suspense, useCallback, useEffect, useEffectEvent, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useEffectEvent, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowDown02Icon from "@hugeicons/core-free-icons/ArrowDown02Icon";
 import ArrowUp02Icon from "@hugeicons/core-free-icons/ArrowUp02Icon";
@@ -11,6 +11,7 @@ import type { TagGroup } from "@memocard/contracts";
 import { createId } from "../../src/uuid";
 import { normalizePropertyTag, tagKey } from "../../src/inline-tags";
 import { tagSearchKeys, tagSearchRank } from "../../src/tag-search";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/dialog";
 import { Button } from "../components/button";
 import { AddIcon } from "../icons";
 import { EmptyIllustration } from "./EmptyIllustration";
@@ -80,6 +81,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   const [query, setQuery] = useState("");
   const [view, setView] = useState("all");
   const [draft, setDraft] = useState<TagDraft | null>(null);
+  const finishDraft = useRef<(() => Promise<boolean>) | null>(null);
   const mobile = useIsMobile();
   const docked = mobile && layout === "drawer" && hasCreateMenu;
   const [editing, setEditing] = useState<{path: string; anchor: HTMLElement; list?: string; groupId?: string; anchorIsTrigger?: boolean} | null>(null);
@@ -179,11 +181,12 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
             </>}
           </TagActionsMenu>}
   </>;
-  const draftRows = (value: TagDraft) => <TagDraftRows key={value.group?.id ?? value.kind} draft={value} disabled={!canEditGroups}
-    onClose={() => {
+  const draftRows = (value: TagDraft) => <TagDraftRows key={value.group?.id ?? value.kind} draft={value} ref={finishDraft} disabled={!canEditGroups}
+    onClose={removed => {
       setDraft(current => current === value ? null : current);
       requestAnimationFrame(() => {
-        if (value.anchor.isConnected && document.activeElement === document.body) value.anchor.focus();
+        if (removed) tabs.current?.querySelector<HTMLButtonElement>('[role="tab"][aria-selected="true"]')?.focus();
+        else if (value.anchor.isConnected && document.activeElement === document.body) value.anchor.focus();
       });
     }}
     onSaveLabel={async (name, description) => {
@@ -291,7 +294,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
       {!minimalTheme && !docked && searchActions}
     </div>}
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
-    <Tabs value={view} onValueChange={value => { setDraft(null); setView(value); }} className="ui-tag-directory-tabs">
+    <Tabs value={view} onValueChange={async value => { if (!draft || await finishDraft.current?.()) setView(value); }} className="ui-tag-directory-tabs">
       <div className="ui-tag-directory-tab-header">
         <TabsList ref={tabs} variant={classicTheme ? "default" : "pill"} activateOnFocus aria-label="标签视图"
           data-transparent-inactive={!classicTheme || undefined} className={classicTheme ? "w-full" : "gap-2"}>
@@ -562,10 +565,11 @@ function assertGroupNameAvailable(groups: TagGroup[], id: string, name: string) 
   }
 }
 
-function TagDraftRows({ draft, disabled, onClose, onSaveLabel, updateGroups }: {
+function TagDraftRows({ ref, draft, disabled, onClose, onSaveLabel, updateGroups }: {
+  ref: React.Ref<() => Promise<boolean>>;
   draft: TagDraft;
   disabled: boolean;
-  onClose: () => void;
+  onClose: (removed?: boolean) => void;
   onSaveLabel: (name: string, description: string) => Promise<void>;
   updateGroups: (update: (groups: TagGroup[]) => TagGroup[]) => Promise<void>;
 }) {
@@ -582,6 +586,9 @@ function TagDraftRows({ draft, disabled, onClose, onSaveLabel, updateGroups }: {
   const [editingDescription, setEditingDescription] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const cancelDelete = useRef<HTMLButtonElement>(null);
+  const deleteTrigger = useRef<HTMLButtonElement>(null);
   const blocked = disabled || busy;
   const descriptionLabel = isGroup ? "群组说明" : "标签说明";
   useEffect(() => { nameInput.current?.focus(); }, []);
@@ -609,7 +616,12 @@ function TagDraftRows({ draft, disabled, onClose, onSaveLabel, updateGroups }: {
   }
 
   async function commit(remove = false) {
-    if (pending.current || disabled || (!remove && !name.trim())) return;
+    if (pending.current || disabled) return false;
+    if (!remove && !name.trim()) {
+      setError(isGroup ? "请输入群组名称。" : "请输入标签名称。");
+      nameInput.current?.focus();
+      return false;
+    }
     pending.current = true;
     setBusy(true);
     setError("");
@@ -620,20 +632,30 @@ function TagDraftRows({ draft, disabled, onClose, onSaveLabel, updateGroups }: {
         if (!tag || tag.includes("/")) throw new Error("请输入有效的单层标签名称，不能包含 /、空格或使用纯数字。");
         await onSaveLabel(tag, description.trim());
       }
-      onClose();
+      onClose(remove);
+      return true;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "保存失败，请重试。");
+      if (!remove) requestAnimationFrame(() => nameInput.current?.focus());
+      return false;
     } finally {
       pending.current = false;
       setBusy(false);
     }
   }
 
+  async function finish() {
+    if (confirmDelete || pending.current) return false;
+    if (!group && !name.trim() && !description.trim()) { onClose(); return true; }
+    return commit();
+  }
+  useImperativeHandle(ref, () => finish);
+
   const finishOutside = useEffectEvent((event: MouseEvent) => {
     const target = event.target;
     if (pending.current || !(target instanceof Node) || rows.current?.contains(target) || draft.anchor.contains(target)) return;
-    if (name.trim()) void commit();
-    else onClose();
+    if (target instanceof Element && rows.current?.closest('[data-slot="tabs"]')?.contains(target) && target.closest('[role="tab"][aria-selected="false"]')) return;
+    void finish();
   });
   useEffect(() => {
     const onClick = (event: MouseEvent) => finishOutside(event);
@@ -642,7 +664,7 @@ function TagDraftRows({ draft, disabled, onClose, onSaveLabel, updateGroups }: {
   }, []);
 
   return <TableBody ref={rows} aria-label={title} onKeyDown={event => {
-    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+    if (confirmDelete || event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
     if (event.key === "Escape" && !pending.current) {
       event.preventDefault();
       event.stopPropagation();
@@ -685,8 +707,17 @@ function TagDraftRows({ draft, disabled, onClose, onSaveLabel, updateGroups }: {
     </TableRow>
     {(group || error) && <TableRow className="ui-tag-draft-details">
       <TableCell colSpan={4}>
-        {group && <div className="text-end"><Button type="button" variant="ghost" size="sm" className="text-error" disabled={blocked} onClick={() => void commit(true)}>删除群组</Button></div>}
-        {error && <p role="alert" className="px-2 text-error">{error}</p>}
+        {group && <div className="text-end"><Button ref={deleteTrigger} type="button" variant="ghost" size="sm" className="text-error" disabled={blocked} onClick={() => setConfirmDelete(true)}>删除群组</Button>
+          {confirmDelete && <Dialog open onOpenChange={open => { if (!pending.current) setConfirmDelete(open); }}>
+            <DialogContent initialFocus={cancelDelete} finalFocus={() => deleteTrigger.current ?? false}>
+              <DialogHeader><DialogTitle>删除群组「{group.name}」？</DialogTitle><DialogDescription>群组说明和分组关系将被移除，标签与笔记会保留。</DialogDescription></DialogHeader>
+              {error && <p role="alert" className="text-sm text-error">{error}</p>}
+              <DialogFooter><Button ref={cancelDelete} variant="outline" disabled={busy} onClick={() => setConfirmDelete(false)}>取消</Button>
+                <Button variant="destructive" disabled={blocked} onClick={() => void commit(true)}>确认删除</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>}
+        </div>}
+        {error && !confirmDelete && <p role="alert" className="px-2 text-error">{error}</p>}
       </TableCell>
     </TableRow>}
   </TableBody>;

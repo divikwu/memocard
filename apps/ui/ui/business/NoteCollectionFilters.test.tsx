@@ -29,6 +29,13 @@ it("supports multiple tags and one type, preserves collapsed selections, and cle
   expect(dialog.getByRole("button", { name: "无标签" }).textContent).toBe("无标签0");
   expect(dialog.getByRole("button", { name: "有图片" }).textContent).toBe("有图片123");
   expect(within(dialog.getByRole("list", { name: "C" })).getByRole("button", { name: "筛选标签 Coffee" }).getAttribute("aria-description")).toBe("5 条笔记");
+  const search = dialog.getByRole("textbox", { name: "搜索筛选标签" });
+  for (const query of ["sheji", "sj"]) {
+    await user.type(search, query);
+    expect(within(dialog.getByRole("list", { name: "S" })).getByRole("button", { name: "筛选标签 设计" })).toBeTruthy();
+    expect(dialog.queryByRole("button", { name: "筛选标签 Coffee" })).toBeNull();
+    await user.clear(search);
+  }
   await user.type(dialog.getByRole("textbox", { name: "搜索筛选标签" }), "coffee");
   expect(dialog.queryByRole("button", { name: "筛选标签 设计" })).toBeNull();
   await user.click(dialog.getByRole("button", { name: "筛选标签 Coffee" }));

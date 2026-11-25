@@ -50,7 +50,7 @@ export async function createWorkspaceFixture(scenario = "loading") {
       case "getEnvironment": { const env = await base.request<Environment>(operation, params); result = { ...env, platform: "web", storage: "browser", capabilities: [...new Set([...env.capabilities, ...extra])] }; break; }
       case "queryNotes": {
         // Search review stories start on #/notes, whose collection requests omit sort.
-        const searchQuery = params.limit === 30 && params.sort === "updatedAt";
+        const searchQuery = params.limit === 30 && (params.sort === "updatedAt" || params.sort === "relevance");
         if (searchQuery && scenario === "review-search-loading") return new Promise<T>(() => {});
         if (searchQuery && scenario === "review-search-error") throw Object.assign(new Error("预览搜索读取失败"), { code: "IO_ERROR" });
         const page = await base.request<NotePage>(operation, params);

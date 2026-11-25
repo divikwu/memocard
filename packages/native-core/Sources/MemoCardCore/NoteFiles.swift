@@ -92,10 +92,11 @@ func noteLinkCandidates(_ target: String, sourcePath: String, paths: [String], w
 
 func rewriteNoteLinks(_ source: String, sourcePath: String, paths: [String], renames: [String: String]) -> String {
     let text = source as NSString, full = NSRange(location: 0, length: text.length)
-    let literals = try! NSRegularExpression(pattern: #"(?m)^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[^\n]*(?:\n|$)|(?![\s\S]))|`+[^`\n]*`+|^ {4}[^\n]*|<!--[\s\S]*?-->"#)
-    var protected = literals.matches(in: source, range: full).map(\.range)
     let header = try! NSRegularExpression(pattern: #"^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)"#)
-    if let match = header.firstMatch(in: source, range: full) { protected.append(match.range) }
+    let bodyStart = header.firstMatch(in: source, range: full).map { NSMaxRange($0.range) } ?? 0
+    let bodyRange = NSRange(location: bodyStart, length: full.length - bodyStart)
+    let literals = try! NSRegularExpression(pattern: #"(?m)^ {0,3}(?=`{3,}[^`\n]*\n|~{3,})(([`~])\2{2,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1\2*[ \t]*\r?(?:\n|$)|(?![\s\S]))|(?<!`)(`+)(?!`)(?:(?!\r?\n(?:[ \t]*\r?\n| {0,3}(?:`{3,}|~{3,})))[\s\S])*?(?<!`)\3(?!`)|^(?: {4}| {0,3}\t)[^\n]*|<!--[\s\S]*?-->"#)
+    let protected = literals.matches(in: source, range: bodyRange).map(\.range)
     func destination(_ target: String, wiki: Bool) -> String {
         let components = target.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false)
         let raw = String(components[0]), fragment = components.count > 1 ? "#" + components[1] : ""
@@ -112,7 +113,7 @@ func rewriteNoteLinks(_ source: String, sourcePath: String, paths: [String], ren
     }
     let pattern = try! NSRegularExpression(pattern: #"(?m)!?\[\[([^\]\n]+)\]\]|!?\[(?:\\.|[^\]\\\n])*\]\([ \t]*(<[^>\n]+>|(?:\\.|[^\s()\\]|\([^()\n]*\))+)(?=[\s)])|^ {0,3}\[[^\]\n]+\]:[ \t]*(<[^>\n]+>|[^\s\n]+)"#)
     let result = NSMutableString(string: source)
-    for match in pattern.matches(in: source, range: full).reversed() {
+    for match in pattern.matches(in: source, range: bodyRange).reversed() {
         if protected.contains(where: { NSLocationInRange(match.range.location, $0) }) { continue }
         if match.range(at: 1).location != NSNotFound {
             let range = match.range(at: 1), value = text.substring(with: range)

@@ -6,8 +6,9 @@ export function safeNoteTitle(title: string): string {
   // eslint-disable-next-line no-control-regex
   let value = title.normalize('NFC').replace(/[\\/:*?"<>|#^[\]\x00-\x1f\x7f]/g, ' ').trim().replace(/^[. ]+|[. ]+$/g, '');
   if (/^(con|prn|aux|nul|(?:com|lpt)[1-9¹²³])(?:\.|$)/i.test(value)) value = `_${value}`;
-  while (new TextEncoder().encode(value).length > 200) value = [...value].slice(0, -1).join('');
-  return value || '新内容';
+  const buffer = new Uint8Array(200);
+  const { read } = new TextEncoder().encodeInto(value, buffer);
+  return value.slice(0, read) || '新内容';
 }
 export function namedNotePath(path: string, title: string, paths: string[]): string {
   const directory = path.includes('/') ? path.slice(0, path.lastIndexOf('/') + 1) : '';
@@ -29,9 +30,9 @@ export function noteSavePath(save: { id: string; title?: string; relativePath?: 
 
 /** Rewrite resolved destinations only; preserve YAML, literal code, display text and fragments. */
 export function rewriteNoteLinks(source: string, sourcePath: string, paths: string[], renames: Record<string, string>): string {
-  const protectedRanges = [...source.matchAll(/^ {0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1[^\n]*(?:\n|$)|(?![\s\S]))|`+[^`\n]*`+|^ {4}[^\n]*|<!--[\s\S]*?-->/gm)].map(match => [match.index!, match.index! + match[0].length]);
-  const header = /^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(source);
-  if (header) protectedRanges.push([0, header[0].length]);
+  const header = /^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/.exec(source)?.[0] ?? '';
+  const body = source.slice(header.length);
+  const protectedRanges = [...body.matchAll(/^ {0,3}(?=`{3,}[^`\n]*\n|~{3,})(([`~])\2{2,})[^\n]*\n[\s\S]*?(?:^ {0,3}\1\2*[ \t]*\r?(?:\n|$)|(?![\s\S]))|(?<!`)(`+)(?!`)(?:(?!\r?\n(?:[ \t]*\r?\n| {0,3}(?:`{3,}|~{3,})))[\s\S])*?(?<!`)\3(?!`)|^(?: {4}| {0,3}\t)[^\n]*|<!--[\s\S]*?-->/gm)].map(match => [match.index!, match.index! + match[0].length]);
   const destination = (target: string, wiki: boolean) => {
     const hash = target.indexOf('#'), raw = hash < 0 ? target : target.slice(0, hash), fragment = hash < 0 ? '' : target.slice(hash);
     const matches = linkCandidates(raw, sourcePath, paths, wiki);
@@ -46,7 +47,7 @@ export function rewriteNoteLinks(source: string, sourcePath: string, paths: stri
     return next + fragment;
   };
   const pattern = /!?\[\[([^\]\n]+)\]\]|!?\[(?:\\.|[^\]\\\n])*\]\([ \t]*(<[^>\n]+>|(?:\\.|[^\s()\\]|\([^()\n]*\))+)(?=[\s)])|^ {0,3}\[[^\]\n]+\]:[ \t]*(<[^>\n]+>|[^\s\n]+)/gm;
-  return source.replace(pattern, (whole: string, wikiTarget: string | undefined, inline: string | undefined, reference: string | undefined, offset: number) => {
+  return header + body.replace(pattern, (whole: string, wikiTarget: string | undefined, inline: string | undefined, reference: string | undefined, offset: number) => {
     if (protectedRanges.some(([start, end]) => offset >= start && offset < end)) return whole;
     if (wikiTarget !== undefined) {
       const pipe = wikiTarget.indexOf('|'), target = pipe < 0 ? wikiTarget : wikiTarget.slice(0, pipe);

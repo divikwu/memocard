@@ -1,0 +1,34 @@
+[
+  {
+    "source": "示例：`` use ` then [[Old]] ``。真实：[[Old]]",
+    "expected": "示例：`` use ` then [[Old]] ``。真实：[[New]]"
+  },
+  {
+    "source": "示例：`line one\n[[Old]]`\n[[Old]]",
+    "expected": "示例：`line one\n[[Old]]`\n[[New]]"
+  },
+  {
+    "source": "未闭合 `\n\n[[Old]] `",
+    "expected": "未闭合 `\n\n[[New]] `"
+  },
+  {
+    "source": "未闭合 ` [[Old]]\n~~~\n` [[Old]]\n~~~\n[[Old]]",
+    "expected": "未闭合 ` [[New]]\n~~~\n` [[Old]]\n~~~\n[[New]]"
+  },
+  {
+    "source": "```inside ` [[Old]]``` and [[Old]]\nnext",
+    "expected": "```inside ` [[Old]]``` and [[New]]\nnext"
+  },
+  {
+    "source": "~~~~md\n~~~~ not closed\n[[Old]]\n~~~~~\n[[Old]]",
+    "expected": "~~~~md\n~~~~ not closed\n[[Old]]\n~~~~~\n[[New]]"
+  },
+  {
+    "source": "---\ntitle: \"A `\"\n---\n[[Old]] and `code`",
+    "expected": "---\ntitle: \"A `\"\n---\n[[New]] and `code`"
+  },
+  {
+    "source": "\t[[Old]]\n\n[[Old]]",
+    "expected": "\t[[Old]]\n\n[[New]]"
+  }
+]

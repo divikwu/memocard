@@ -1,9 +1,10 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useId, useState, type RefObject } from 'react';
 import type { Editor } from '@tiptap/react';
 import { request } from '../bridge';
 import { inlineTagMatches, inlineTags, tagKey } from '../inline-tags';
 
 export function useRichTagSuggestions(editor: Editor, providedNames?: string[], hostRef?: RefObject<HTMLElement | null>) {
+  const listId = useId();
   const [active, setActive] = useState<{ from: number; to: number; query: string; left: number; top: number } | null>(null);
   const [fetchedNames, setNames] = useState<string[]>([]);
   const names=providedNames ?? fetchedNames;
@@ -38,6 +39,19 @@ export function useRichTagSuggestions(editor: Editor, providedNames?: string[], 
   }, [open,providedNames]);
   const options = active ? names.filter(name => inlineTags(`#${name}`)[0] === name && name.includes(active.query)).slice(0, 7) : [];
   if (active?.query && !active.query.includes("/") && inlineTags(`#${active.query}`)[0] === active.query && !options.includes(active.query)) options.push(active.query);
+  const selected = options.length ? index % options.length : -1;
+  useEffect(() => {
+    if (!open) return;
+    const input = editor.view.dom;
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-controls', listId);
+    if (selected >= 0) input.setAttribute('aria-activedescendant', `${listId}-${selected}`);
+    return () => {
+      input.removeAttribute('aria-autocomplete');
+      input.removeAttribute('aria-controls');
+      input.removeAttribute('aria-activedescendant');
+    };
+  }, [editor, listId, open, selected]);
   const choose = (name: string) => {
     if (!active) return;
     const next=editor.state.doc.textBetween(active.to,Math.min(active.to+1,editor.state.doc.content.size));
@@ -58,5 +72,5 @@ export function useRichTagSuggestions(editor: Editor, providedNames?: string[], 
     editor.view.dom.addEventListener('keydown', key, true);
     return () => editor.view.dom.removeEventListener('keydown', key, true);
   });
-  return {active,index,names,options,choose};
+  return {active,index:selected,listId,names,options,choose};
 }

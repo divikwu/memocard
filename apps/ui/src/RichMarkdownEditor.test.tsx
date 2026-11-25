@@ -1187,11 +1187,11 @@ it('suggests existing tags and confirms them without inserting a paragraph', asy
  const { editor, field, change } = await setup('正文');
  // Settle listTags and its keyboard-listener effect before sending Enter.
  await act(async () => { editor.chain().setTextSelection(3).insertContent(' #工').run(); });
- await screen.findByRole('button', { name: '#工作/项目' });
+ await screen.findByRole('option', { name: '#工作/项目' });
  fireEvent.keyDown(field, { key: 'Enter' });
  expect(editor.getText()).toBe('正文 #工作/项目 ');
  expect(change).toHaveBeenLastCalledWith('正文 #工作/项目 ');
- expect(screen.queryByRole('group', { name: '标签建议' })).toBeNull();
+ expect(screen.queryByRole('listbox', { name: '标签建议' })).toBeNull();
 });
 it('keeps a leading hashtag as tag syntax rather than a Markdown heading', async () => {
  const { editor, change } = await setup('');
@@ -1202,7 +1202,7 @@ it.each(['#/事实上', '#//', '#work//design'])('keeps malformed tag %s as plai
  const {editor,field}=await setup('正文');
  act(()=>{editor.chain().setTextSelection(3).insertContent(` ${text}`).run();});
  expect(editor.getText()).toBe(`正文 ${text}`);
- expect(screen.queryByRole('group',{name:'标签建议'})).toBeNull();
+ expect(screen.queryByRole('listbox',{name:'标签建议'})).toBeNull();
  expect(field.querySelector('.rich-inline-tag')).toBeNull();
 });
 it('keeps suggestions while entering a nested tag after its slash', async () => {
@@ -1210,9 +1210,9 @@ it('keeps suggestions while entering a nested tag after its slash', async () => 
  vi.mocked(request).mockResolvedValue({tags:[{name:'work/design'}]});
  const {editor,field}=await setup('正文');
  act(()=>{editor.chain().setTextSelection(3).insertContent(' #work/').run();});
- await screen.findByRole('button',{name:'#work/design'});
+ await screen.findByRole('option',{name:'#work/design'});
  act(()=>{editor.commands.insertContent('/');});
- expect(screen.queryByRole('group',{name:'标签建议'})).toBeNull();
+ expect(screen.queryByRole('listbox',{name:'标签建议'})).toBeNull();
  expect(editor.getText()).toBe('正文 #work//');
  fireEvent.keyDown(field,{key:'Enter'});
  expect(editor.getText()).not.toContain('#work/design');
@@ -1278,8 +1278,8 @@ it('matches and chooses lowercase suggestions from an existing uppercase tag', a
  vi.mocked(request).mockResolvedValue({tags:[{name:'Work/Design'},{name:'WORK/DESIGN'}]});
  const {editor}=await setup('正文 #Wo');
  act(()=>{editor.commands.setTextSelection(editor.state.doc.content.size-1);});
- const suggestion=await screen.findByRole('button',{name:'#work/design'});
- expect(screen.getAllByRole('button',{name:'#work/design'})).toHaveLength(1);
+ const suggestion=await screen.findByRole('option',{name:'#work/design'});
+ expect(screen.getAllByRole('option',{name:'#work/design'})).toHaveLength(1);
  fireEvent.click(suggestion);
  expect(editor.getText()).toBe('正文 #work/design ');
 });

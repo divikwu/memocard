@@ -20,7 +20,6 @@ import { Skeleton } from "../components/skeleton";
 import { Spinner } from "../components/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../components/tooltip";
 import TagColorStyles from "../business/TagColorStyles";
-import { MobileTagActions } from "../business/MobileTagActions";
 import { NoteCollection } from "../business/NoteCollection";
 import { PageNotice } from "../business/PageNotice";
 import { TrashRowsLoading } from "../business/TrashLoading";
@@ -72,6 +71,7 @@ const Editor = recoverableLazy(() => import("../business/Editor").then(module =>
   (_props, retry) => <Suspense fallback={null}><EditorLoadErrorToast retry={retry} /></Suspense>);
 const NoteSearchDialog = recoverableLazy(() => import("../business/NoteSearchDialog").then(module => ({ default: module.NoteSearchDialog })), "搜索");
 const TrashPage = recoverableLazy(() => import("../business/TrashPage").then(module => ({ default: module.TrashPage })), "回收站");
+const MobileTagActions = recoverableLazy(() => import("../business/MobileTagActions").then(module => ({ default: module.MobileTagActions })), "移动视图选项");
 const WorkspaceTags = recoverableLazy(() => import("../business/TagsPage").then(module => ({ default: module.WorkspaceTags })), "标签");
 const TagEditor = recoverableLazy(() => import("../business/tag-navigation-editor").then(module => ({ default: module.TagEditor })), "标签编辑");
 const TagAppearanceNotice = recoverableLazy(() => import("../business/tag-navigation-editor").then(module => ({ default: module.TagAppearanceNotice })), "标签外观重试");
@@ -138,14 +138,14 @@ function CollectionEmpty({ state: s }: { state: AppViewState }) {
 
 function DraftReminder({ state: s }: { state: AppViewState }) {
   const layoutId = useWorkspaceAppearance()?.applied.layoutId;
-  if (!s.drafts.reminderVisible) return null;
+  if (!s.drafts.reminderCount) return null;
   const compactNavigation = layoutId === "rail" || layoutId === "topbar";
   const toastLayout = compactNavigation && !s.isMobile && s.status?.connected;
   const inline = !s.detailView && s.view !== "settings" && !(toastLayout && s.view === "notes")
     && !(compactNavigation && s.view === "home" && !s.connectionState && s.listTimeout !== "initial" && (s.loading || s.capture));
   return <>
     {toastLayout && <Suspense fallback={null}>
-      <DraftReminderToast key={s.status?.vaultId} active={s.view === "notes" && !s.detailView && !s.drafts.open && !s.search.open} count={s.drafts.records.length} onOpen={() => s.drafts.onOpenChange(true)} onDismiss={s.drafts.onDismissReminder} />
+      <DraftReminderToast key={s.status?.vaultId} active={s.view === "notes" && !s.detailView && !s.drafts.open && !s.search.open} count={s.drafts.reminderCount} onOpen={() => s.drafts.onOpenChange(true)} onDismiss={s.drafts.onDismissReminder} />
     </Suspense>}
     {inline && <Notice title="有尚未完成的草稿" action={<><Button variant="outline" size="sm" onClick={() => s.drafts.onOpenChange(true)}>查看草稿</Button><Button variant="ghost" size="sm" onClick={s.drafts.onDismissReminder}>稍后处理</Button></>}>可继续编辑，稍后处理不会删除草稿。</Notice>}
   </>;
@@ -191,7 +191,7 @@ function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?
   const headingInToolbar = !s.collection.filters && s.collection.recentTags === undefined;
   return <>
     {!s.isMobile && s.view === "home" && (s.capture
-      ? <Suspense fallback={<HomeCaptureLoading />}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} draftCount={compactNavigation ? s.drafts.records.length : s.capture.draftCount} draftLabel={compactNavigation ? "草稿" : undefined} /></Suspense>
+      ? <Suspense fallback={<HomeCaptureLoading />}><QuickCapture key={`${s.capture.draftScope ?? s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} draftCount={compactNavigation ? s.drafts.records.length : s.capture.draftCount} draftLabel={compactNavigation ? "草稿" : undefined} /></Suspense>
       : s.loading && <HomeCaptureLoading />)}
     {!headingInToolbar && pageHeading}
     <NoteCollection key={s.view === "home" ? "home" : "notes"} {...s.collection} heading={headingInToolbar ? pageHeading : undefined}
@@ -230,7 +230,9 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
   const loadingNoteId = s.openingNoteId === "new" ? undefined : s.openingNoteId;
   const noteAppearance = useNoteAppearance(s.status?.vaultId, savedNoteId ?? loadingNoteId);
   const showNoteAppearance = Boolean(savedNoteId && noteAppearance.available);
-  const detailBreadcrumbs = s.view === "home" ? ["主页"] : ["所有笔记", ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : []), ...(s.sidebar.tag ? [s.sidebar.tag] : [])];
+  const filters = s.collection.filters;
+  const multipleFilters = filters && (filters.activeTags.length > 1 || filters.quickFilters.length > 1);
+  const detailBreadcrumbs = s.view === "home" ? ["主页"] : multipleFilters ? ["所有笔记", "筛选笔记"] : ["所有笔记", ...(s.sidebar.quickFilter ? [noteFilterLabels[s.sidebar.quickFilter]] : []), ...(s.sidebar.tag ? [s.sidebar.tag] : [])];
   const showBreadcrumb = s.isMobile || s.detailView;
   const mobileActions = s.isMobile && !s.nativeChrome && !isNative;
   const HeaderActions = mobileActions ? ActionGroup : "div";
@@ -255,7 +257,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
     {s.searchMounted && <Suspense fallback={null}><NoteSearchDialog key={s.status?.vaultId} {...s.search} /></Suspense>}
     {s.deletion && <Suspense fallback={null}><NoteDeleteDialog {...s.deletion} /></Suspense>}
     {!s.nativeChrome && (showDrafts || draftsMounted) && <Suspense fallback={null}><Drafts state={s} /></Suspense>}
-    {s.nativeChrome && s.capture && <Suspense fallback={null}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
+    {s.nativeChrome && s.capture && <Suspense fallback={null}><QuickCapture key={`${s.capture.draftScope ?? s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense>}
     {s.notice && <div className="web-toast" data-record-bar={s.isMobile && !s.detailView && (s.view === "home" || s.view === "notes") || undefined} role="status"><CheckIcon aria-hidden="true" />{s.notice}</div>}
   </>}>
         {!s.nativeChrome && <header className="web-app-header">
@@ -264,7 +266,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
             {showBreadcrumb && <Breadcrumb aria-label="当前位置" className="web-crumb" data-detail={s.detailView || undefined}><BreadcrumbList>{s.detailView ? <>
               {detailBreadcrumbs.map((label, index) => <Fragment key={index}>{index > 0 && <BreadcrumbSeparator>/</BreadcrumbSeparator>}<BreadcrumbItem><BreadcrumbLink className="h-6 rounded-element px-1 hover:bg-overlay-hover" render={<button type="button" />} onClick={() => index === detailBreadcrumbs.length - 1 ? s.onBack() : void s.onNavigate("notes", null, index ? s.sidebar.quickFilter : null)}>{label}</BreadcrumbLink></BreadcrumbItem></Fragment>)}
               <BreadcrumbSeparator>/</BreadcrumbSeparator><BreadcrumbItem><BreadcrumbPage className="px-1" data-ui-tooltip={s.title} data-ui-tooltip-overflow>{s.title}</BreadcrumbPage></BreadcrumbItem>
-            </> : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" && !s.collection.filters?.quickFilters.length && !s.sidebar.quickFilter ? s.sidebar.tag : null} title={s.title} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>}
+            </> : <BreadcrumbItem>{s.isMobile && (s.view === "home" || s.view === "notes") ? <Suspense fallback={<BreadcrumbPage>{s.title}</BreadcrumbPage>}><MobileTagActions key={`${s.status?.vaultId}:${s.view}`} tag={s.view === "notes" && !filters?.quickFilters.length && !s.sidebar.quickFilter ? s.sidebar.tag : null} title={s.title} vaultId={s.status?.vaultId} onRename={s.sidebar.onRenameTag} /></Suspense> : <BreadcrumbPage>{s.title}</BreadcrumbPage>}</BreadcrumbItem>}</BreadcrumbList></Breadcrumb>}
           </div>
           <HeaderActions aria-label={mobileActions ? "页面操作组" : undefined} className="web-header-actions">
             {s.editor && s.capabilities.has("setNotePinned") && <TooltipProvider><Tooltip><TooltipTrigger render={<span className="web-pin-tooltip-trigger" tabIndex={s.pinDisabled ? 0 : undefined} />}><Button variant="ghost" size="icon" className={`web-header-icon${s.pinned ? " text-accent" : ""}`} aria-label={s.pinned ? "取消固定" : "固定到主页"} aria-description={!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : undefined} aria-pressed={s.pinned} disabled={s.pinDisabled} onClick={s.onTogglePin}><HugeiconsIcon icon={PinIcon} fill={s.pinned ? "currentColor" : "none"} aria-hidden="true" /></Button></TooltipTrigger><TooltipContent>{!s.editor.initial.baseHash ? "保存笔记后可固定到主页" : s.pinned ? "取消固定" : "固定到主页"}</TooltipContent></Tooltip></TooltipProvider>}
@@ -300,7 +302,7 @@ export function WebAppView({ state: s }: { state: AppViewState }) {
           {!s.detailView && s.view !== "settings" && s.view !== "trash" && !showTagHeading && !showNoteHeading && (s.view === "home" ? <div className="web-home-mascot"><h1 className="sr-only">{s.title}</h1><HomeMascot /></div> : <div className={s.isMobile ? "sr-only" : "web-collection-heading"}>{collectionHeading}</div>)}
           <WorkspaceContent state={s} heading={showNoteHeading || showTagHeading ? collectionHeading : undefined} />
         </div></div>
-        {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录">{mobileActions ? <ActionGroup size="lg">{searchControl}</ActionGroup> : searchControl}<div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
+        {s.isMobile && !s.nativeChrome && <footer className="web-mobile-record" hidden={s.detailView || (s.view !== "home" && s.view !== "notes") || s.search.open} aria-label="快捷记录">{mobileActions ? <ActionGroup size="lg">{searchControl}</ActionGroup> : searchControl}<div>{s.capture ? <Suspense fallback={<Button disabled className="w-full">记下此刻的想法…</Button>}><QuickCapture key={`${s.capture.draftScope ?? s.capture.vaultId}:${s.capture.vaultBinding ?? ""}`} {...s.capture} /></Suspense> : <Button disabled className="w-full">连接笔记库后开始记录</Button>}</div></footer>}
   </WorkspaceFrame></MobileActionGroupProvider>;
 
 }

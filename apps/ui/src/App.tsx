@@ -59,7 +59,7 @@ export type AppViewState = {
     busy: boolean; error: unknown; onRefresh: () => Promise<void>; onResume: (draft: Draft) => Promise<void>;
     onDismiss: (draft: Draft) => Promise<void>; onDelete: (draft: Draft) => void;
     deleteTarget: Draft | null; onConfirmDelete: () => Promise<void>; onCancelDelete: () => void;
-    reminderVisible: boolean; onDismissReminder: () => void;
+    reminderCount: number; onDismissReminder: () => void;
   };
   deletion: NoteDeleteProps | null;
   onRequestDelete: (() => void) | undefined;
@@ -129,8 +129,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   }, [notes]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftIssues, setDraftIssues] = useState<DraftIssue[]>([]);
-  const recoveryRecords = drafts.filter(draft => (draft.unscoped || !draft.baseHash || drafts.some(other => other !== draft && other.id === draft.id)) && (draft.baseHash || draft.title?.trim() || draft.body.trim() || draft.pendingProperties?.length));
-  const recoveryChoices = recoveryRecords.filter(draft => !draft.reminderDismissed);
+  const recoveryChoices = drafts.filter(draft => !draft.reminderDismissed && (draft.unscoped || !draft.baseHash || drafts.some(other => other !== draft && other.id === draft.id)));
   const [tags, setTags] = useState<TagCount[]>([]);
   const [indexedRecentTags, setIndexedRecentTags] = useState<{ quickFilter: string | null; tags: string[] }>();
   const recentTagFallback = useRef<{ vaultId: string; quickFilter: string | null; tags: string[] } | null>(null);
@@ -747,11 +746,11 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   });
 
   const captureProps: QuickCaptureProps | null = (captureOpened || isMobile) && status?.vaultId && loadedVaultId.current === status.vaultId ? {
-    handle: quickCaptureHandle, memory: quickCaptureMemory, vaultId: status.vaultId,
+    handle: quickCaptureHandle, memory: quickCaptureMemory, vaultId: status.vaultId, draftScope: status.draftScope,
     vaultBinding: environment?.vaultBinding, rootNotes, tags: tags.map(tag => tag.name),
     disabled: !canCreate || (isMobile && working), canImage: capabilities.has('importAttachment') || capabilities.has('pickImage'),
     docked: isMobile, active: showMobileRecord,
-    draftCount: status.connected && (recoveryDismissed || recoveryChoices.length === 0) ? recoveryRecords.length : 0,
+    draftCount: status.connected && (recoveryDismissed || recoveryChoices.length === 0) ? drafts.length : 0,
     onOpenDrafts: () => setRecoveryOpen(true),
     onContinue: isMobile && capabilities.has('saveDraft') ? draft => { showEditor(draft); returnFocus.current = document.querySelector<HTMLElement>('.mobile-capture-entry'); } : undefined,
     onRecorded: () => {
@@ -860,11 +859,11 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     onNew: newNote, onSearch: searchNotes, onRefresh: refreshCurrentView, onRefreshBackground: () => void refresh(true),
     onToggleMCP: toggleMCP, onOpenLocalWeb: openLocalWeb,
     onRetryDetail: () => { routeNoteRequest.current = null; if (pendingNoteId) void openNote(pendingNoteId); },
-    drafts: { open: recoveryOpen, onOpenChange: changeRecoveryOpen, records: recoveryRecords, issues: draftIssues, busy: reminderWorking,
+    drafts: { open: recoveryOpen, onOpenChange: changeRecoveryOpen, records: drafts, issues: draftIssues, busy: reminderWorking,
       error: recoveryError, onRefresh: refreshDrafts, onResume: resumeDraft, onDismiss: dismissDraftReminder,
       onDelete: draft => { setRecoveryError(null); if (status?.vaultId) setDraftToDelete({draft, vaultId: status.vaultId, vaultBinding: draft.vaultBinding ?? environment?.vaultBinding}); },
       deleteTarget: draftToDelete?.draft ?? null, onConfirmDelete: deleteDraft, onCancelDelete: () => { if (!deletingDraft.current) setDraftToDelete(null); },
-      reminderVisible: recoveryChoices.length > 0 && !recoveryDismissed, onDismissReminder: () => setRecoveryDismissed(true),
+      reminderCount: recoveryDismissed ? 0 : recoveryChoices.length, onDismissReminder: () => setRecoveryDismissed(true),
     },
     deletion: deletionProps, onRequestDelete,
     nativeChrome: isIOSNative ? {
@@ -875,7 +874,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       pinDisabled: !editing?.baseHash || !notePins || pinWorking || switchingVault, pinned: isNotePinned, pinWorking,
       showRecord: showMobileRecord, busy: working, error: error ? errorMessage(error) : "",
       recoveryOpen, recoveryBusy: reminderWorking, recoveryError: recoveryError ? errorMessage(recoveryError) : "",
-      drafts: recoveryRecords, deleteDraftOpen: draftToDelete !== null,
+      drafts, deleteDraftOpen: draftToDelete !== null,
       onReauthorize: reauthorizeVault, onNavigate: navigate, editor: editorHandle, openingNote, onSearch: searchNotes,
       onNew: newNote, onRefresh: refreshCurrentView, onPin: () => void togglePinned(), onDelete: setNoteToDelete,
       onChoose: () => selectVault(false), onActivate: activateVault, onRenameTag: renameNavigationTag,

@@ -113,6 +113,15 @@ it.each([false,true])('retains mobile conflict feedback and recovery actions wit
   expect(screen.getByRole('button',{name:'重新加载'})).toBeTruthy();
   expect(screen.getByRole('button',{name:'继续编辑'})).toBeTruthy();
   expect(readEditorText()).toBe('本地未保存内容');
+  fireEvent.click(screen.getByRole('button',{name:'重新加载'}));
+  const cancel = await screen.findByRole('button',{name:'取消'});
+  await waitFor(() => expect(document.activeElement).toBe(cancel));
+  fireEvent.click(cancel);
+  expect(readEditorText()).toBe('本地未保存内容');
+  native.mockImplementation(async op => op === 'getNote' || op === 'saveNote' ? {...saved, body:'文件内容', tags:[]} : undefined);
+  fireEvent.click(screen.getByRole('button',{name:'重新加载'}));
+  fireEvent.click(await screen.findByRole('button',{name:'确认重新加载'}));
+  await waitFor(() => expect(readEditorText()).toBe('文件内容'));
 });
 
 async function historyEditor(waitForProperty?: () => Promise<void>) {

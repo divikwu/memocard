@@ -120,12 +120,12 @@ it('completes an existing tag with Enter and creates new body tags from suggesti
   const user=userEvent.setup();render(<QuickCapture {...props} />);
   const input=screen.getByLabelText('快速输入内容') as HTMLDivElement;
   await user.type(input,'正文 #工');
-  expect(await screen.findByRole('button',{name:'#工作'})).toBeTruthy();
+  expect(await screen.findByRole('option',{name:'#工作'})).toBeTruthy();
   await user.keyboard('{Enter}');
   expect(input.textContent).toBe('正文 #工作 ');
   expect(screen.queryByLabelText('已选标签')).toBeNull();
   await user.type(input,'#project-new');
-  await user.click(await screen.findByRole('button',{name:/#project-new.*新标签/}));
+  await user.click(await screen.findByRole('option',{name:/#project-new.*新标签/}));
   expect(input.textContent).toBe('正文 #工作 #project-new ');
   expect(screen.queryByLabelText('已选标签')).toBeNull();
   await user.click(screen.getByRole('button',{name:'记录'}));
@@ -139,12 +139,12 @@ it('skips suggestions in code and keeps composition Enter from selecting or reco
   for(const text of ['`#工作`','```\n#工作\n```','[链接](#工作)','\\#工作']) {
     const caret=text.indexOf('#工作')+3;
     changeCaptureInput(input,{target:{value:text,selectionStart:caret,selectionEnd:caret}});
-    expect(screen.queryByRole('group',{name:'标签建议'})).toBeNull();
+    expect(screen.queryByRole('listbox',{name:'标签建议'})).toBeNull();
   }
   fireEvent.compositionStart(input);
   changeCaptureInput(input,{target:{value:'正文 #工作'}});
   fireEvent.keyDown(input,{key:'Enter',isComposing:true,keyCode:229});
-  expect(screen.queryByRole('group',{name:'标签建议'})).toBeNull();
+  expect(screen.queryByRole('listbox',{name:'标签建议'})).toBeNull();
   expect(bridge.request).not.toHaveBeenCalled();
   fireEvent.compositionEnd(input);
   expect(input.textContent).toBe('正文 #工作');

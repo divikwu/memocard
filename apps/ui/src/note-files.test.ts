@@ -1,3 +1,4 @@
+import codeSpans from '../../../tests/fixtures/rename-code-spans.json';
 import { expect, it } from 'vitest';
 import { namedNotePath, rewriteNoteLinks, safeNoteTitle } from './note-files';
 
@@ -18,4 +19,13 @@ it('rewrites only resolved links, retaining YAML, code, aliases, fragments and a
 
 it('does not replace the displayed text when it matches the destination', () => {
   expect(rewriteNoteLinks('[Old.md](Old.md)\n[Old.md]: Old.md', 'Source.md', ['Old.md'], { 'Old.md': 'New.md' })).toBe('[Old.md](New.md)\n[Old.md]: New.md');
+});
+
+it.each(codeSpans)('preserves Markdown code delimiters in $source', ({ source, expected }) => {
+  expect(rewriteNoteLinks(source, 'Index.md', ['Old.md'], { 'Old.md': 'New.md' })).toBe(expected);
+});
+
+it('truncates pasted titles at the last complete UTF-8 character', () => {
+  expect(safeNoteTitle('a'.repeat(197) + '🌱'.repeat(8000))).toBe('a'.repeat(197));
+  expect(safeNoteTitle('a'.repeat(196) + '🌱🌱')).toBe('a'.repeat(196) + '🌱');
 });

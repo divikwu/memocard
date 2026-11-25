@@ -43,6 +43,7 @@
 | `apps/ui/ui/business/CreateButton.tsx` | 网页新建操作按钮 | 复用 Button 的描边样式和默认尺寸，统一加号和表面颜色 | button / action / theme | `apps/ui/ui/business/TagsPage.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 随调用页面验证 |
 | `apps/ui/ui/business/Editor.tsx` | 当前编辑器适配 | 共享 editor-core；标题/正文、保存/冲突/草稿、撤销 | editor / typeset / state | `apps/ui/ui/business/Editor.test.tsx`；`apps/ui/ui/stories/business-editor.stories.tsx` | IME、真机键盘和真实附件选择另验 |
 | `apps/ui/ui/business/DraftFolderDialog.tsx` | 草稿保存目录选择 | 读取笔记库目录并提交用户选择 | overlay / state | `apps/ui/src/App.test.tsx` | 由编辑器负责保存草稿及重试 |
+| `apps/ui/ui/business/ReloadConflictDialog.tsx` | 冲突后重新加载确认 | 默认聚焦取消，由编辑器执行重新读取 | overlay / focus | `apps/ui/src/Editor.test.tsx` | 按需加载 |
 | `apps/ui/ui/business/EmptyIllustrationArt.tsx` | 空状态插画实现 | 官方图形映射、主题与动效；按需加载 | state / illustration / motion | `apps/ui/ui/preview/scenarios.test.tsx`；`apps/ui/ui/preview/Illustrations.tsx` | 实际浏览器动效另验 |
 | `apps/ui/ui/business/EmptyIllustration.tsx` | 官方空状态插画 | 场景映射、浅深色线条层级与原版悬停动效 | state / illustration / motion | `apps/ui/ui/preview/scenarios.test.tsx`；`apps/ui/ui/preview/Illustrations.tsx` | 复用 Hairline 官方插画；真实设备指针与性能另验 |
 | `apps/ui/ui/business/HomeMascot.tsx` | 当前生产吉祥物 | 固定素材、指针方向、交互及减少动态效果 | mascot / motion | `apps/ui/mascot-fixtures/catalog.ts`；`apps/ui/ui/stories/illustrations.stories.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内容页面组合维护；真实设备指针与性能另验 |

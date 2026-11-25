@@ -2287,6 +2287,43 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertEqual(saved["body"] as? String, body)
     }
 
+    func testRenamePreservesMarkdownCodeSpans() throws {
+        let package = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let file = package.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("tests/fixtures/rename-code-spans.json")
+        struct Example: Decodable { let source: String; let expected: String }
+        for example in try JSONDecoder().decode([Example].self, from: Data(contentsOf: file)) {
+            XCTAssertEqual(rewriteNoteLinks(example.source, sourcePath: "Index.md", paths: ["Old.md"], renames: ["Old.md": "New.md"]), example.expected)
+        }
+    }
+
+    func testCaseOnlyRenameSurvivesReopenAndUpdatesLinks() async throws {
+        let core = try await store(create: false)
+        let original = try await call(core, "createNote", ["title": "meeting", "body": "Original"])
+        let index = try await call(core, "createNote", ["title": "Index", "body": "[[meeting]]"])
+        let saved = try await call(core, "updateNote", ["id": original["id"]!, "baseHash": original["contentHash"]!, "title": "Meeting", "body": "Updated"])
+        XCTAssertEqual(saved["relativePath"] as? String, "Meeting.md")
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: vault.path).contains("meeting.md"))
+        let reopened = try await store(create: false)
+        let read = try await call(reopened, "getNote", ["id": original["id"]!])
+        let link = try await call(reopened, "getNote", ["id": index["id"]!])
+        XCTAssertEqual(read["body"] as? String, "Updated")
+        XCTAssertEqual(link["body"] as? String, "[[Meeting]]")
+    }
+
+    func testRelevancePrecedesPageBoundary() async throws {
+        let core = try await store()
+        for (title, body) in [("会议", "Old"), ("会议计划", "Plan"), ("今天", "开会议")] {
+            _ = try await call(core, "createNote", ["title": title, "body": body])
+        }
+        var params: [String:Any] = ["query":"会议", "sort":"relevance", "limit":1]
+        for title in ["会议", "会议计划", "今天"] {
+            let page = try await call(core, "queryNotes", params)
+            XCTAssertEqual((page["notes"] as? [[String:Any]])?.first?["title"] as? String, title)
+            params["cursor"] = page["nextCursor"]
+        }
+        XCTAssertTrue(params["cursor"] is NSNull)
+    }
+
     func testFilenameTitleAndEmptyPageLifecycle() async throws {
         let core = try await store()
         let id = UUID().uuidString.lowercased()
@@ -2809,6 +2846,8 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertTrue(NSDictionary(dictionary: actualNote).isEqual(to: expectedNote))
         var expectedStatus = try XCTUnwrap((fixture["status"] as? [String: Any])?["data"] as? [String: Any])
         var actualStatus = try await call(store, "getStatus")
+        let scope = try XCTUnwrap(actualStatus.removeValue(forKey: "draftScope") as? String)
+        XCTAssertFalse(scope.isEmpty)
         var expectedCoverage = try XCTUnwrap(expectedStatus["coverage"] as? [String: Any])
         var actualCoverage = try XCTUnwrap(actualStatus["coverage"] as? [String: Any])
         _ = try parseDate(XCTUnwrap(actualCoverage["indexedAt"] as? String))
