@@ -89,7 +89,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-accent)",
-          "line": 470
+          "line": 469
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -145,7 +145,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-accent)",
-          "line": 483
+          "line": 482
         }
       ]
     },
@@ -189,7 +189,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-accent-muted)",
-          "line": 484
+          "line": 483
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -1153,7 +1153,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-blue)",
-          "line": 539
+          "line": 538
         }
       ]
     },
@@ -1185,7 +1185,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-blue)",
-          "line": 536
+          "line": 535
         }
       ]
     },
@@ -1217,7 +1217,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-body)",
-          "line": 475
+          "line": 474
         }
       ]
     },
@@ -1261,7 +1261,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border)",
-          "line": 502
+          "line": 501
         }
       ]
     },
@@ -1305,7 +1305,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-blue)",
-          "line": 537
+          "line": 536
         }
       ]
     },
@@ -1349,7 +1349,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-cyan)",
-          "line": 541
+          "line": 540
         }
       ]
     },
@@ -1443,7 +1443,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (forced-colors: active) / :root, .ui-theme",
           "value": "CanvasText",
-          "line": 875
+          "line": 874
         }
       ]
     },
@@ -1487,7 +1487,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-gray)",
-          "line": 545
+          "line": 544
         }
       ]
     },
@@ -1531,7 +1531,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-green)",
-          "line": 549
+          "line": 548
         }
       ]
     },
@@ -1575,7 +1575,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-orange)",
-          "line": 553
+          "line": 552
         }
       ]
     },
@@ -1619,7 +1619,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-pink)",
-          "line": 557
+          "line": 556
         }
       ]
     },
@@ -1663,7 +1663,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-purple)",
-          "line": 561
+          "line": 560
         }
       ]
     },
@@ -1707,7 +1707,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-red)",
-          "line": 565
+          "line": 564
         }
       ]
     },
@@ -1739,7 +1739,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-emphasized)",
-          "line": 505
+          "line": 504
         }
       ]
     },
@@ -1783,7 +1783,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-subtle)",
-          "line": 503
+          "line": 502
         }
       ]
     },
@@ -1827,7 +1827,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-teal)",
-          "line": 569
+          "line": 568
         }
       ]
     },
@@ -1871,7 +1871,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-border-yellow)",
-          "line": 573
+          "line": 572
         }
       ]
     },
@@ -1901,7 +1901,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-brand)",
-          "line": 651
+          "line": 650
         }
       ]
     },
@@ -1933,7 +1933,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-card)",
-          "line": 478
+          "line": 477
         }
       ]
     },
@@ -1965,7 +1965,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-1)",
-          "line": 531
+          "line": 530
         }
       ]
     },
@@ -1997,7 +1997,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-2)",
-          "line": 532
+          "line": 531
         }
       ]
     },
@@ -2029,7 +2029,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-3)",
-          "line": 533
+          "line": 532
         }
       ]
     },
@@ -2061,7 +2061,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-4)",
-          "line": 534
+          "line": 533
         }
       ]
     },
@@ -2093,7 +2093,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-5)",
-          "line": 535
+          "line": 534
         }
       ]
     },
@@ -2125,7 +2125,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-control)",
-          "line": 481
+          "line": 480
         }
       ]
     },
@@ -2169,7 +2169,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-control-error-border)",
-          "line": 516
+          "line": 515
         }
       ]
     },
@@ -2213,7 +2213,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-control-error-ring)",
-          "line": 517
+          "line": 516
         }
       ]
     },
@@ -2245,7 +2245,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-control-secondary)",
-          "line": 468
+          "line": 467
         }
       ]
     },
@@ -2277,7 +2277,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-cyan)",
-          "line": 543
+          "line": 542
         }
       ]
     },
@@ -2309,7 +2309,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-cyan)",
-          "line": 540
+          "line": 539
         }
       ]
     },
@@ -2353,7 +2353,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-danger-hover)",
-          "line": 520
+          "line": 519
         }
       ]
     },
@@ -2397,7 +2397,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-danger-surface)",
-          "line": 519
+          "line": 518
         }
       ]
     },
@@ -2429,7 +2429,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-1)",
-          "line": 610
+          "line": 609
         }
       ]
     },
@@ -2461,7 +2461,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-2)",
-          "line": 609
+          "line": 608
         }
       ]
     },
@@ -2493,7 +2493,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-3)",
-          "line": 608
+          "line": 607
         }
       ]
     },
@@ -2525,7 +2525,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-4)",
-          "line": 607
+          "line": 606
         }
       ]
     },
@@ -2557,7 +2557,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-blue-5)",
-          "line": 606
+          "line": 605
         }
       ]
     },
@@ -2589,7 +2589,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-blue)",
-          "line": 595
+          "line": 594
         }
       ]
     },
@@ -2621,7 +2621,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-brown)",
-          "line": 603
+          "line": 602
         }
       ]
     },
@@ -2653,7 +2653,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-cyan)",
-          "line": 600
+          "line": 599
         }
       ]
     },
@@ -2685,7 +2685,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-green)",
-          "line": 598
+          "line": 597
         }
       ]
     },
@@ -2717,7 +2717,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-indigo)",
-          "line": 604
+          "line": 603
         }
       ]
     },
@@ -2749,7 +2749,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-orange)",
-          "line": 596
+          "line": 595
         }
       ]
     },
@@ -2781,7 +2781,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-pink)",
-          "line": 599
+          "line": 598
         }
       ]
     },
@@ -2813,7 +2813,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-purple)",
-          "line": 597
+          "line": 596
         }
       ]
     },
@@ -2845,7 +2845,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-red)",
-          "line": 601
+          "line": 600
         }
       ]
     },
@@ -2877,7 +2877,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-categorical-teal)",
-          "line": 602
+          "line": 601
         }
       ]
     },
@@ -2915,7 +2915,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-1)",
-          "line": 650
+          "line": 649
         }
       ]
     },
@@ -2953,7 +2953,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-2)",
-          "line": 649
+          "line": 648
         }
       ]
     },
@@ -2991,7 +2991,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-3)",
-          "line": 648
+          "line": 647
         }
       ]
     },
@@ -3029,7 +3029,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-4)",
-          "line": 647
+          "line": 646
         }
       ]
     },
@@ -3067,7 +3067,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-gray-5)",
-          "line": 646
+          "line": 645
         }
       ]
     },
@@ -3105,7 +3105,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-neutral)",
-          "line": 605
+          "line": 604
         }
       ]
     },
@@ -3137,7 +3137,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-1)",
-          "line": 620
+          "line": 619
         }
       ]
     },
@@ -3169,7 +3169,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-2)",
-          "line": 619
+          "line": 618
         }
       ]
     },
@@ -3201,7 +3201,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-3)",
-          "line": 618
+          "line": 617
         }
       ]
     },
@@ -3233,7 +3233,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-4)",
-          "line": 617
+          "line": 616
         }
       ]
     },
@@ -3265,7 +3265,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-orange-5)",
-          "line": 616
+          "line": 615
         }
       ]
     },
@@ -3297,7 +3297,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-1)",
-          "line": 625
+          "line": 624
         }
       ]
     },
@@ -3329,7 +3329,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-2)",
-          "line": 624
+          "line": 623
         }
       ]
     },
@@ -3361,7 +3361,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-3)",
-          "line": 623
+          "line": 622
         }
       ]
     },
@@ -3393,7 +3393,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-4)",
-          "line": 622
+          "line": 621
         }
       ]
     },
@@ -3425,7 +3425,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-pink-5)",
-          "line": 621
+          "line": 620
         }
       ]
     },
@@ -3457,7 +3457,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-1)",
-          "line": 630
+          "line": 629
         }
       ]
     },
@@ -3489,7 +3489,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-2)",
-          "line": 629
+          "line": 628
         }
       ]
     },
@@ -3521,7 +3521,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-3)",
-          "line": 628
+          "line": 627
         }
       ]
     },
@@ -3553,7 +3553,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-4)",
-          "line": 627
+          "line": 626
         }
       ]
     },
@@ -3585,7 +3585,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-purple-5)",
-          "line": 626
+          "line": 625
         }
       ]
     },
@@ -3617,7 +3617,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-1)",
-          "line": 635
+          "line": 634
         }
       ]
     },
@@ -3649,7 +3649,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-2)",
-          "line": 634
+          "line": 633
         }
       ]
     },
@@ -3681,7 +3681,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-3)",
-          "line": 633
+          "line": 632
         }
       ]
     },
@@ -3713,7 +3713,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-4)",
-          "line": 632
+          "line": 631
         }
       ]
     },
@@ -3745,7 +3745,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-red-5)",
-          "line": 631
+          "line": 630
         }
       ]
     },
@@ -3777,7 +3777,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-1)",
-          "line": 615
+          "line": 614
         }
       ]
     },
@@ -3809,7 +3809,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-2)",
-          "line": 614
+          "line": 613
         }
       ]
     },
@@ -3841,7 +3841,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-3)",
-          "line": 613
+          "line": 612
         }
       ]
     },
@@ -3873,7 +3873,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-4)",
-          "line": 612
+          "line": 611
         }
       ]
     },
@@ -3905,7 +3905,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-shamrock-5)",
-          "line": 611
+          "line": 610
         }
       ]
     },
@@ -3937,7 +3937,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-1)",
-          "line": 640
+          "line": 639
         }
       ]
     },
@@ -3969,7 +3969,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-2)",
-          "line": 639
+          "line": 638
         }
       ]
     },
@@ -4001,7 +4001,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-3)",
-          "line": 638
+          "line": 637
         }
       ]
     },
@@ -4033,7 +4033,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-4)",
-          "line": 637
+          "line": 636
         }
       ]
     },
@@ -4065,7 +4065,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-teal-5)",
-          "line": 636
+          "line": 635
         }
       ]
     },
@@ -4097,7 +4097,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-1)",
-          "line": 645
+          "line": 644
         }
       ]
     },
@@ -4129,7 +4129,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-2)",
-          "line": 644
+          "line": 643
         }
       ]
     },
@@ -4161,7 +4161,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-3)",
-          "line": 643
+          "line": 642
         }
       ]
     },
@@ -4193,7 +4193,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-4)",
-          "line": 642
+          "line": 641
         }
       ]
     },
@@ -4225,7 +4225,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-data-yellow-5)",
-          "line": 641
+          "line": 640
         }
       ]
     },
@@ -4257,7 +4257,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-disabled)",
-          "line": 469
+          "line": 468
         }
       ]
     },
@@ -4301,7 +4301,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-divider)",
-          "line": 504
+          "line": 503
         }
       ]
     },
@@ -4345,7 +4345,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-error)",
-          "line": 498
+          "line": 497
         }
       ]
     },
@@ -4377,7 +4377,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-error-fill)",
-          "line": 500
+          "line": 499
         }
       ]
     },
@@ -4447,7 +4447,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-error-inverted)",
-          "line": 514
+          "line": 513
         }
       ]
     },
@@ -4491,7 +4491,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-error-muted)",
-          "line": 499
+          "line": 498
         }
       ]
     },
@@ -4523,7 +4523,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--focus-outline-color)",
-          "line": 506
+          "line": 505
         }
       ]
     },
@@ -4555,7 +4555,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-gray)",
-          "line": 547
+          "line": 546
         }
       ]
     },
@@ -4587,7 +4587,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-gray)",
-          "line": 544
+          "line": 543
         }
       ]
     },
@@ -4619,7 +4619,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-green)",
-          "line": 551
+          "line": 550
         }
       ]
     },
@@ -4651,7 +4651,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-green)",
-          "line": 548
+          "line": 547
         }
       ]
     },
@@ -4695,7 +4695,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-accent)",
-          "line": 474
+          "line": 473
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -4763,7 +4763,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-blue)",
-          "line": 538
+          "line": 537
         }
       ]
     },
@@ -4807,7 +4807,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-cyan)",
-          "line": 542
+          "line": 541
         }
       ]
     },
@@ -4851,7 +4851,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-disabled)",
-          "line": 473
+          "line": 472
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -4907,7 +4907,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-gray)",
-          "line": 546
+          "line": 545
         }
       ]
     },
@@ -4951,7 +4951,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-green)",
-          "line": 550
+          "line": 549
         }
       ]
     },
@@ -4995,7 +4995,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-orange)",
-          "line": 554
+          "line": 553
         }
       ]
     },
@@ -5039,7 +5039,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-pink)",
-          "line": 558
+          "line": 557
         }
       ]
     },
@@ -5083,7 +5083,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-primary)",
-          "line": 471
+          "line": 470
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -5139,7 +5139,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-purple)",
-          "line": 562
+          "line": 561
         }
       ]
     },
@@ -5183,7 +5183,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-red)",
-          "line": 566
+          "line": 565
         }
       ]
     },
@@ -5227,7 +5227,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-secondary)",
-          "line": 472
+          "line": 471
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -5283,7 +5283,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-teal)",
-          "line": 570
+          "line": 569
         }
       ]
     },
@@ -5327,7 +5327,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-icon-yellow)",
-          "line": 574
+          "line": 573
         }
       ]
     },
@@ -5359,7 +5359,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-inverted)",
-          "line": 513
+          "line": 512
         }
       ]
     },
@@ -5403,7 +5403,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-menu-focus)",
-          "line": 518
+          "line": 517
         }
       ]
     },
@@ -5435,7 +5435,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-muted)",
-          "line": 480
+          "line": 479
         }
       ]
     },
@@ -5479,7 +5479,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-neutral)",
-          "line": 486
+          "line": 485
         }
       ]
     },
@@ -5523,7 +5523,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-accent)",
-          "line": 485
+          "line": 484
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -5591,7 +5591,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-accent-overlay-hover)",
-          "line": 653
+          "line": 652
         }
       ]
     },
@@ -5635,7 +5635,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-accent-overlay-pressed)",
-          "line": 654
+          "line": 653
         }
       ]
     },
@@ -5679,7 +5679,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-dark)",
-          "line": 507
+          "line": 506
         }
       ]
     },
@@ -5723,7 +5723,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-error)",
-          "line": 501
+          "line": 500
         }
       ]
     },
@@ -5767,7 +5767,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-light)",
-          "line": 508
+          "line": 507
         }
       ]
     },
@@ -5811,7 +5811,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-success)",
-          "line": 493
+          "line": 492
         }
       ]
     },
@@ -5855,7 +5855,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-on-warning)",
-          "line": 497
+          "line": 496
         }
       ]
     },
@@ -5887,7 +5887,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-orange)",
-          "line": 555
+          "line": 554
         }
       ]
     },
@@ -5919,7 +5919,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-orange)",
-          "line": 552
+          "line": 551
         }
       ]
     },
@@ -5963,7 +5963,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-outline-hover)",
-          "line": 523
+          "line": 522
         }
       ]
     },
@@ -6007,7 +6007,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-outline-surface)",
-          "line": 522
+          "line": 521
         }
       ]
     },
@@ -6051,7 +6051,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-overlay)",
-          "line": 487
+          "line": 486
         }
       ]
     },
@@ -6095,7 +6095,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-overlay-hover)",
-          "line": 488
+          "line": 487
         }
       ]
     },
@@ -6139,7 +6139,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-overlay-pressed)",
-          "line": 489
+          "line": 488
         }
       ]
     },
@@ -6171,7 +6171,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-pink)",
-          "line": 559
+          "line": 558
         }
       ]
     },
@@ -6203,7 +6203,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-pink)",
-          "line": 556
+          "line": 555
         }
       ]
     },
@@ -6235,7 +6235,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-popover)",
-          "line": 479
+          "line": 478
         }
       ]
     },
@@ -6267,7 +6267,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-primary)",
-          "line": 466
+          "line": 465
         }
       ]
     },
@@ -6299,7 +6299,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-purple)",
-          "line": 563
+          "line": 562
         }
       ]
     },
@@ -6331,7 +6331,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-purple)",
-          "line": 560
+          "line": 559
         }
       ]
     },
@@ -6363,7 +6363,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-red)",
-          "line": 567
+          "line": 566
         }
       ]
     },
@@ -6395,7 +6395,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-red)",
-          "line": 564
+          "line": 563
         }
       ]
     },
@@ -6427,7 +6427,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-secondary)",
-          "line": 467
+          "line": 466
         }
       ]
     },
@@ -6459,7 +6459,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-selection)",
-          "line": 482
+          "line": 481
         }
       ]
     },
@@ -6503,7 +6503,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-shadow)",
-          "line": 510
+          "line": 509
         }
       ]
     },
@@ -6535,7 +6535,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-sidebar)",
-          "line": 477
+          "line": 476
         }
       ]
     },
@@ -6579,7 +6579,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-skeleton)",
-          "line": 509
+          "line": 508
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -6635,7 +6635,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-success)",
-          "line": 490
+          "line": 489
         }
       ]
     },
@@ -6667,7 +6667,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-success-fill)",
-          "line": 492
+          "line": 491
         }
       ]
     },
@@ -6749,7 +6749,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-success-muted)",
-          "line": 491
+          "line": 490
         }
       ]
     },
@@ -6781,7 +6781,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-surface)",
-          "line": 476
+          "line": 475
         }
       ]
     },
@@ -6825,7 +6825,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-switch-checked)",
-          "line": 527
+          "line": 526
         }
       ]
     },
@@ -6869,7 +6869,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-switch-unchecked)",
-          "line": 528
+          "line": 527
         }
       ]
     },
@@ -6901,7 +6901,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-added)",
-          "line": 590
+          "line": 589
         }
       ]
     },
@@ -6933,7 +6933,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-added-marker)",
-          "line": 593
+          "line": 592
         }
       ]
     },
@@ -6971,7 +6971,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-attribute)",
-          "line": 586
+          "line": 585
         }
       ]
     },
@@ -7009,7 +7009,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-background)",
-          "line": 589
+          "line": 588
         }
       ]
     },
@@ -7047,7 +7047,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-comment)",
-          "line": 578
+          "line": 577
         }
       ]
     },
@@ -7085,7 +7085,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-constant)",
-          "line": 584
+          "line": 583
         }
       ]
     },
@@ -7117,7 +7117,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-diff-header)",
-          "line": 592
+          "line": 591
         }
       ]
     },
@@ -7155,7 +7155,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-function)",
-          "line": 580
+          "line": 579
         }
       ]
     },
@@ -7193,7 +7193,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-keyword)",
-          "line": 576
+          "line": 575
         }
       ]
     },
@@ -7231,7 +7231,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-number)",
-          "line": 579
+          "line": 578
         }
       ]
     },
@@ -7269,7 +7269,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-operator)",
-          "line": 583
+          "line": 582
         }
       ]
     },
@@ -7307,7 +7307,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-property)",
-          "line": 587
+          "line": 586
         }
       ]
     },
@@ -7345,7 +7345,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-punctuation)",
-          "line": 588
+          "line": 587
         }
       ]
     },
@@ -7377,7 +7377,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-removed)",
-          "line": 591
+          "line": 590
         }
       ]
     },
@@ -7409,7 +7409,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-removed-marker)",
-          "line": 594
+          "line": 593
         }
       ]
     },
@@ -7447,7 +7447,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-string)",
-          "line": 577
+          "line": 576
         }
       ]
     },
@@ -7485,7 +7485,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-tag)",
-          "line": 585
+          "line": 584
         }
       ]
     },
@@ -7523,7 +7523,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-type)",
-          "line": 581
+          "line": 580
         }
       ]
     },
@@ -7561,7 +7561,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-syntax-variable)",
-          "line": 582
+          "line": 581
         }
       ]
     },
@@ -7598,14 +7598,14 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "[data-ui-theme=\"dark\"]",
-          "value": "color-mix(in oklab, var(--color-neutral) 30%, transparent)",
+          "value": "var(--color-neutral)",
           "line": 378
         },
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-tab-active)",
-          "line": 525
+          "line": 524
         }
       ]
     },
@@ -7649,7 +7649,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-tab-active-border)",
-          "line": 526
+          "line": 525
         }
       ]
     },
@@ -7693,7 +7693,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-tab-muted)",
-          "line": 524
+          "line": 523
         }
       ]
     },
@@ -7725,7 +7725,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-teal)",
-          "line": 571
+          "line": 570
         }
       ]
     },
@@ -7757,7 +7757,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-teal)",
-          "line": 568
+          "line": 567
         }
       ]
     },
@@ -8443,7 +8443,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-tint-hover)",
-          "line": 652
+          "line": 651
         }
       ]
     },
@@ -8487,7 +8487,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-tooltip-text)",
-          "line": 521
+          "line": 520
         }
       ]
     },
@@ -8531,7 +8531,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-track)",
-          "line": 515
+          "line": 514
         },
         {
           "source": "apps/ui/ui/web/web-palette.css",
@@ -8587,7 +8587,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-warning)",
-          "line": 494
+          "line": 493
         }
       ]
     },
@@ -8619,7 +8619,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-warning-fill)",
-          "line": 496
+          "line": 495
         }
       ]
     },
@@ -8701,7 +8701,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-warning-muted)",
-          "line": 495
+          "line": 494
         }
       ]
     },
@@ -8733,7 +8733,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-text-yellow)",
-          "line": 575
+          "line": 574
         }
       ]
     },
@@ -8765,7 +8765,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--color-background-yellow)",
-          "line": 572
+          "line": 571
         }
       ]
     },
@@ -8789,7 +8789,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--border-width)",
-          "line": 703
+          "line": 702
         }
       ]
     },
@@ -8815,7 +8815,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--duration-fast)",
-          "line": 704
+          "line": 703
         }
       ]
     },
@@ -8839,7 +8839,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--ease-standard)",
-          "line": 705
+          "line": 704
         }
       ]
     },
@@ -8871,7 +8871,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 890
+          "line": 889
         }
       ]
     },
@@ -8903,7 +8903,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 882
+          "line": 881
         }
       ]
     },
@@ -8935,7 +8935,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 883
+          "line": 882
         }
       ]
     },
@@ -8967,7 +8967,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 881
+          "line": 880
         }
       ]
     },
@@ -8999,7 +8999,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 885
+          "line": 884
         }
       ]
     },
@@ -9031,7 +9031,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 886
+          "line": 885
         }
       ]
     },
@@ -9063,7 +9063,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 884
+          "line": 883
         }
       ]
     },
@@ -9095,7 +9095,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 888
+          "line": 887
         }
       ]
     },
@@ -9127,7 +9127,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 889
+          "line": 888
         }
       ]
     },
@@ -9159,7 +9159,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (prefers-reduced-motion: reduce) / :root, .ui-theme",
           "value": "0ms",
-          "line": 887
+          "line": 886
         }
       ]
     },
@@ -9213,7 +9213,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--ease-standard)",
-          "line": 706
+          "line": 705
         }
       ]
     },
@@ -9257,7 +9257,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@media (forced-colors: active) / :root, .ui-theme",
           "value": "CanvasText",
-          "line": 874
+          "line": 873
         }
       ]
     },
@@ -9457,7 +9457,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-family-heading)",
-          "line": 660
+          "line": 659
         }
       ]
     },
@@ -9486,7 +9486,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-family-code)",
-          "line": 661
+          "line": 660
         }
       ]
     },
@@ -9515,7 +9515,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-family-body)",
-          "line": 659
+          "line": 658
         }
       ]
     },
@@ -9955,7 +9955,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility interaction-accent",
           "value": "var(--color-on-accent-overlay-hover)",
-          "line": 745
+          "line": 744
         }
       ]
     },
@@ -9987,7 +9987,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility interaction-accent",
           "value": "var(--color-on-accent-overlay-pressed)",
-          "line": 746
+          "line": 745
         }
       ]
     },
@@ -10016,7 +10016,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "calc(var(--radius-element) * 1.8)",
-          "line": 689
+          "line": 688
         }
       ]
     },
@@ -10045,7 +10045,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "calc(var(--radius-element) * 2.2)",
-          "line": 690
+          "line": 689
         }
       ]
     },
@@ -10074,7 +10074,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-page)",
-          "line": 691
+          "line": 690
         }
       ]
     },
@@ -10109,7 +10109,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-card)",
-          "line": 682
+          "line": 681
         }
       ]
     },
@@ -10144,7 +10144,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-chat)",
-          "line": 684
+          "line": 683
         }
       ]
     },
@@ -10179,7 +10179,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-container)",
-          "line": 679
+          "line": 678
         }
       ]
     },
@@ -10214,7 +10214,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-control)",
-          "line": 676
+          "line": 675
         }
       ]
     },
@@ -10249,7 +10249,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-element)",
-          "line": 675
+          "line": 674
         },
         {
           "source": "apps/ui/ui/preview-appearance.css",
@@ -10319,7 +10319,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-inner)",
-          "line": 674
+          "line": 673
         }
       ]
     },
@@ -10354,7 +10354,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-item)",
-          "line": 680
+          "line": 679
         }
       ]
     },
@@ -10383,7 +10383,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-element)",
-          "line": 687
+          "line": 686
         }
       ]
     },
@@ -10412,7 +10412,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "calc(var(--radius-element) * 0.8)",
-          "line": 686
+          "line": 685
         }
       ]
     },
@@ -10476,7 +10476,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-page)",
-          "line": 683
+          "line": 682
         }
       ]
     },
@@ -10511,7 +10511,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-popover)",
-          "line": 681
+          "line": 680
         }
       ]
     },
@@ -10546,7 +10546,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-select-popover)",
-          "line": 678
+          "line": 677
         }
       ]
     },
@@ -10575,7 +10575,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-inner)",
-          "line": 685
+          "line": 684
         }
       ]
     },
@@ -10610,7 +10610,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-textarea)",
-          "line": 677
+          "line": 676
         }
       ]
     },
@@ -10639,7 +10639,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--radius-container)",
-          "line": 688
+          "line": 687
         }
       ]
     },
@@ -10672,7 +10672,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-card-hover)",
-          "line": 698
+          "line": 697
         }
       ]
     },
@@ -10705,7 +10705,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-control)",
-          "line": 700
+          "line": 699
         }
       ]
     },
@@ -10738,7 +10738,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-document)",
-          "line": 702
+          "line": 701
         }
       ]
     },
@@ -10803,7 +10803,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-flat)",
-          "line": 694
+          "line": 693
         }
       ]
     },
@@ -10836,7 +10836,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-floating)",
-          "line": 701
+          "line": 700
         }
       ]
     },
@@ -10869,7 +10869,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-high)",
-          "line": 697
+          "line": 696
         }
       ]
     },
@@ -10902,7 +10902,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-input-focus)",
-          "line": 699
+          "line": 698
         }
       ]
     },
@@ -11065,7 +11065,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-low)",
-          "line": 695
+          "line": 694
         }
       ]
     },
@@ -11098,7 +11098,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--shadow-med)",
-          "line": 696
+          "line": 695
         }
       ]
     },
@@ -11484,7 +11484,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--spacing-1)",
-          "line": 655
+          "line": 654
         }
       ]
     },
@@ -11532,7 +11532,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--size-element-lg)",
-          "line": 658
+          "line": 657
         }
       ]
     },
@@ -11556,7 +11556,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--size-element-md)",
-          "line": 657
+          "line": 656
         }
       ]
     },
@@ -11580,7 +11580,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--size-element-sm)",
-          "line": 656
+          "line": 655
         }
       ]
     },
@@ -11644,7 +11644,7 @@
       "axes": [
         "mode"
       ],
-      "description": "Independent inset highlight for floating surfaces; decorative outer edges are supplied by the selected elevation recipe.",
+      "description": "Transparent composition slot for floating surfaces. The selected elevation recipe supplies the single 1px edge.",
       "consumers": [
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/business/rich-editor.css"
@@ -11653,14 +11653,8 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": ":root,\n.ui-theme",
-          "value": "0 0 0 0 transparent, inset 0 0 0 0 transparent",
+          "value": "0 0 0 0 transparent",
           "line": 311
-        },
-        {
-          "source": "apps/ui/ui/theme.css",
-          "scope": "[data-ui-theme=\"dark\"]",
-          "value": "0 0 0 0 transparent, inset 0 0 0 var(--border-width) color-mix(in srgb, var(--color-white) 4%, transparent)",
-          "line": 461
         }
       ]
     },
@@ -12216,7 +12210,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-2xl)",
-          "line": 670
+          "line": 669
         }
       ]
     },
@@ -12240,7 +12234,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-2xs)",
-          "line": 664
+          "line": 663
         }
       ]
     },
@@ -12264,7 +12258,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-3xl)",
-          "line": 671
+          "line": 670
         }
       ]
     },
@@ -12288,7 +12282,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-3xs)",
-          "line": 663
+          "line": 662
         }
       ]
     },
@@ -12312,7 +12306,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-4xl)",
-          "line": 672
+          "line": 671
         }
       ]
     },
@@ -12336,7 +12330,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-4xs)",
-          "line": 662
+          "line": 661
         }
       ]
     },
@@ -12360,7 +12354,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-5xl)",
-          "line": 673
+          "line": 672
         }
       ]
     },
@@ -12384,7 +12378,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-base)",
-          "line": 667
+          "line": 666
         }
       ]
     },
@@ -12672,7 +12666,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-lg)",
-          "line": 668
+          "line": 667
         }
       ]
     },
@@ -12816,7 +12810,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-sm)",
-          "line": 666
+          "line": 665
         }
       ]
     },
@@ -12864,7 +12858,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-xl)",
-          "line": 669
+          "line": 668
         }
       ]
     },
@@ -12888,7 +12882,7 @@
           "source": "apps/ui/ui/theme.css",
           "scope": "@theme reference inline",
           "value": "var(--font-size-xs)",
-          "line": 665
+          "line": 664
         }
       ]
     },
@@ -13799,6 +13793,7 @@
         "apps/ui/ui/web/web-settings-layout.css",
         "apps/ui/ui/web/web-typography.css",
         "apps/ui/ui/web/NoteAppearanceMenu.css",
+        "apps/ui/ui/web/WebDraftsDialog.css",
         "apps/ui/ui/web/WebMoreDrawer.css",
         "apps/ui/ui/components/theme-scope.css",
         "apps/ui/ui/components/toast.css",

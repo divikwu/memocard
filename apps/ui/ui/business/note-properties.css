@@ -15,6 +15,7 @@
   border: var(--border-width) solid var(--color-border-gray);
   background: transparent;
 }
+[data-ui-theme=dark] .note-property-checkbox[aria-checked="false"] { border-color: var(--color-border-emphasized); }
 :is(.note-property-popup, .note-property-create-popup, .note-property-option-menu, .note-property-name-popup, .note-property-image-popup, .note-property-image-menu, .note-property-menu, .note-property-confirm, .ui-property-sheet, .mobile-tag-menu)
   :is(button, input, textarea, select, [role="menuitem"], [role="menuitemradio"]):where(:not(.ui-sheet-close-button)) { border-radius: var(--radius-element); }
 .ui-property-sheet { max-height: calc(100dvh - env(safe-area-inset-top) - var(--spacing-1) * 4); overflow: hidden; }

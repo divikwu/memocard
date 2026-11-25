@@ -69,7 +69,6 @@ it("restores reading layout, ignores retired font choices and uses UI font roles
   const value = { ...defaults, measure: "60", heading: "lora", body: "inter", mono: "jetbrains-mono", size: "18", leading: "1.9", flow: "2em" };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
   mount();
-  fireEvent.click(screen.getByText("高级排版"));
   for (const [label, text] of [["行宽", "窄"], ["字号", "标准（16px）"], ["行高", "更宽松（30px）"], ["段落间距", "随字号（32px）"]]) expect(screen.getByRole("combobox", { name: label }).textContent).toBe(text);
   const root = document.documentElement.style;
   expect(root.getPropertyValue("--note-measure")).toBe("448px");
@@ -97,16 +96,14 @@ it("persists note styles independently, retains a live editor and undo history, 
   const editor = noteEditor(field);
   await waitFor(() => expect(editor.getText()).toBe("正文"));
   act(() => editor.commands.insertContentAt(3, "修改"));
-  await user.click(screen.getByText("高级外观"));
-  await choose(user, "正文字体", "系统默认");
-  await choose(user, "标题字体", "Noto Serif");
+  await user.click(within(screen.getByRole("group", { name: "标题字体" })).getByRole("button", { name: "衬线体" }));
   expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toContain("system-ui");
   expect(document.documentElement.style.getPropertyValue("--ui-preview-heading")).toContain("Noto Serif Variable");
   const uiBody = document.documentElement.style.getPropertyValue("--ui-preview-body");
   const uiHeading = document.documentElement.style.getPropertyValue("--ui-preview-heading");
-  await choose(user, "字号", "小字号（14px）");
+  await user.click(screen.getByRole("switch", { name: "小字号" }));
+  expect(screen.getByRole("combobox", { name: "字号" }).textContent).toBe("小字号（14px）");
   await choose(user, "行宽", "适中");
-  await user.click(screen.getByText("高级排版"));
   await choose(user, "行高", "更宽松（28px）");
   await choose(user, "段落间距", "随字号（18px）");
   expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ measure: "70", size: "14", leading: "1.9", flow: "1.25em" });
@@ -126,14 +123,14 @@ it("persists note styles independently, retains a live editor and undo history, 
   expect(document.documentElement.style.getPropertyValue("--note-measure")).toBe("528px");
 });
 
-it("offers two sizes and advanced rhythm choices, and resets without changing UI appearance", async () => {
+it("offers two sizes and always-visible rhythm choices, and resets without changing UI appearance", async () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...defaults, size:"14", leading:"1.9", flow:"2em" }));
   localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ bodyFont: "geist", theme: "dark", radius: "none" }));
   mount();
   expect(screen.queryByRole("button",{name:"随机搭配"})).toBeNull();
   const section=screen.getByRole("region", {name:"内容风格"});
-  expect(section.querySelector("details")?.open).toBe(false);
-  expect(within(section.querySelector('[data-slot="card"]')!).getAllByRole("combobox").filter(control => !control.closest("details"))).toHaveLength(2);
+  expect(section.querySelector("details")).toBeNull();
+  expect(within(section).getAllByRole("combobox")).toHaveLength(4);
   const user=userEvent.setup();
   await user.click(screen.getByRole("combobox",{name:"字号"}));
   expect((await screen.findAllByRole("option")).map(el=>el.textContent)).toEqual(["小字号（14px）","标准（16px）"]);
@@ -149,7 +146,6 @@ it("offers two sizes and advanced rhythm choices, and resets without changing UI
 it("labels each leading preset with its even pixel height for the selected size", async () => {
   mount();
   const user = userEvent.setup();
-  await user.click(screen.getByText("高级排版"));
   for (const [size, labels] of [["小字号（14px）", ["标准（22px）", "舒适（24px）", "宽松（26px）", "更宽松（28px）"]], ["标准（16px）", ["标准（24px）", "舒适（26px）", "宽松（28px）", "更宽松（30px）"]]] as const) {
     await choose(user, "字号", size);
     await user.click(screen.getByRole("combobox", { name: "行高" }));

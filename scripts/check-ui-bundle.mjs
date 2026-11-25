@@ -73,10 +73,12 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   // Font package limits reflect all 26 current choices, including normal and
   // italic subsets plus both Chinese companions; these are not initial transfers.
   const limits = { js: 600 * 1024, css: 400 * 1024, gzip: 330 * 1024, normalFonts: 3.75 * 1024 * 1024, italicFonts: 3.75 * 1024 * 1024, cjkFonts: 10.5 * 1024 * 1024 };
+  // Parser-blocking public scripts also ship on every route, outside the Vite manifest.
+  const withHtmlAssets = files => new Set([...assets, ...files]);
   const startup = {}, firstList = {};
   for (const mode of ["native", "local-web", "browser"]) {
     let compressed = 0;
-    for (const asset of startupFiles(manifest, mode)) {
+    for (const asset of withHtmlAssets(startupFiles(manifest, mode))) {
       const bytes = await readFile(resolve(root, asset)), suffix = asset.split(".").pop();
       if (bytes.length > limits[suffix]) throw new Error(`${asset} is ${bytes.length} bytes; the initial ${suffix.toUpperCase()} budget is ${limits[suffix]} bytes.`);
       compressed += gzipSync(bytes).length;
@@ -85,7 +87,7 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     startup[mode] = compressed;
     console.log(`${mode} startup shell: ${compressed} gzip bytes.`);
     let listCompressed = 0;
-    for (const asset of firstListFiles(manifest, mode)) listCompressed += gzipSync(await readFile(resolve(root, asset))).length;
+    for (const asset of withHtmlAssets(firstListFiles(manifest, mode))) listCompressed += gzipSync(await readFile(resolve(root, asset))).length;
     if (listCompressed > limits.gzip) throw new Error(`${mode} first list JS and CSS gzip size is ${listCompressed} bytes; budget is ${limits.gzip} bytes.`);
     firstList[mode] = listCompressed;
     console.log(`${mode} first list: ${listCompressed} gzip bytes.`);
@@ -118,12 +120,13 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";
-    for (const file of firstListFiles(manifest, mode, route.entries)) {
+    const files = withHtmlAssets(firstListFiles(manifest, mode, route.entries));
+    for (const file of files) {
       const bytes = await readFile(resolve(root, file));
       raw += bytes.length; gzip += gzipSync(bytes).length;
     }
     if (raw > route.raw * 1024 || gzip > route.gzip * 1024) throw new Error(`${route.name} exceeds its route budget: ${raw} raw / ${gzip} gzip bytes.`);
-    const requests = firstListFiles(manifest, mode, route.entries).size;
+    const requests = files.size;
     metrics.push({ name: route.name, raw, gzip, requests });
     console.log(`${route.name}: ${raw} raw / ${gzip} gzip bytes; ${requests} JS/CSS files.`);
   }

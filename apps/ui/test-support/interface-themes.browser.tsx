@@ -63,6 +63,47 @@ test("interface theme scopes isolate light/dark palettes across independent stab
   expect(popup("浅色局部")).toBe(source("浅色局部"));
 });
 
+test.each(["classic", "minimal"])("%s mobile settings keep theme surfaces and open navigation from the left", async theme => {
+  await page.viewport(320, 800);
+  const key = "memocard-web-appearance-v1";
+  const previous = localStorage.getItem(key);
+  const previousHash = location.hash;
+  localStorage.setItem(key, JSON.stringify({ interfaceTheme: theme, theme: "light" }));
+  history.replaceState(null, "", "#/settings");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container);
+    await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-interface-theme", theme));
+    const trigger = await canvas.findByRole("button", { name: "打开导航" });
+    const body = within(document.body);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(body.queryByRole("dialog", { name: "笔记导航" })).toBeNull();
+    const mode = await canvas.findByRole("combobox", { name: "颜色模式" }, { timeout: 5000 });
+    const card = mode.closest('[data-slot="card"]')!;
+    const panel = card.closest(".web-settings-panel")!;
+    const main = view.container.querySelector<HTMLElement>(".web-app-scroll")!;
+    expect(main.scrollWidth).toBe(main.clientWidth);
+    await waitFor(() => {
+      const surface = getComputedStyle(main.closest("main")!).backgroundColor;
+      expect(getComputedStyle(card).backgroundColor === surface).toBe(theme === "minimal");
+      expect(getComputedStyle(panel).backgroundColor).not.toBe(getComputedStyle(card).backgroundColor);
+    });
+    await userEvent.click(trigger);
+    const drawer = await body.findByRole("dialog", { name: "笔记导航" });
+    expect(drawer).toHaveAttribute("data-side", "left");
+    await waitFor(() => expect(drawer.getBoundingClientRect().left).toBeCloseTo(0));
+    await userEvent.click(within(drawer).getByRole("button", { name: "所有笔记" }));
+    await canvas.findByRole("list", { name: "笔记列表" });
+    await waitFor(() => expect(body.queryByRole("dialog", { name: "笔记导航" })).toBeNull());
+  } finally {
+    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    if (previous === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, previous);
+  }
+});
+
 test("minimal theme aligns visible page titles with the all-notes heading", async () => {
   await commands.setReducedMotion("reduce");
   await page.viewport(1440, 1000);
@@ -114,7 +155,7 @@ test("minimal theme aligns visible page titles with the all-notes heading", asyn
       return { fontFamily, fontSize, fontWeight, lineHeight };
     };
     const baseline = typography(await canvas.findByRole("heading", { name: "所有笔记", level: 1 }));
-    expect(baseline).toMatchObject({ fontSize: "32px", fontWeight: "600" });
+    expect(baseline).toMatchObject({ fontSize: "32px", fontWeight: "700" });
     for (const [route, name, bodySelector] of [
       ["notes", "所有笔记", ".ui-note-collection"], ["tags", "标签", ".ui-tag-directory-tabs"],
       ["settings", "设置", ".web-settings-panel"], ["trash", "回收站", ".ui-trash > header + *"],
@@ -171,7 +212,11 @@ test("minimal tag groups support keyboard sorting, narrow columns and tag search
   try {
     const canvas = within(view.container);
     await canvas.findByRole("navigation", { name: "顶部导航" }, { timeout: 5000 });
+    const allPanel = await canvas.findByRole("tabpanel", { name: "全部" });
+    await waitFor(() => expect(getComputedStyle(allPanel).padding).toBe("8px"));
     await userEvent.click(await canvas.findByRole("tab", { name: "标签群组" }, { timeout: 5000 }));
+    const groupsPanel = await canvas.findByRole("tabpanel", { name: "标签群组" });
+    expect(getComputedStyle(groupsPanel).padding).toBe("8px");
     const search = canvas.getByRole("textbox", { name: "搜索标签" });
     const create = canvas.getByRole("button", { name: "新建" });
     const tabs = canvas.getByRole("tablist", { name: "标签视图" });
@@ -198,15 +243,17 @@ test("minimal tag groups support keyboard sorting, narrow columns and tag search
     await waitFor(() => expect(labelDraft).not.toBeInTheDocument());
     await waitFor(() => expect(getComputedStyle(create).backgroundColor).toBe(restingFill));
     await page.viewport(480, 844);
-    expect(create.getBoundingClientRect().top + create.getBoundingClientRect().height / 2)
-      .toBeCloseTo(tabs.getBoundingClientRect().top + tabs.getBoundingClientRect().height / 2);
-    const searchWidth = search.getBoundingClientRect().width;
-    await userEvent.hover(search);
-    await waitFor(() => expect(search.getBoundingClientRect().width).toBeGreaterThan(searchWidth + 8));
-    expect(create.getBoundingClientRect().top + create.getBoundingClientRect().height / 2)
-      .toBeCloseTo(tabs.getBoundingClientRect().top + tabs.getBoundingClientRect().height / 2);
+    await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", "drawer"));
+    const dock = within(canvas.getByLabelText("标签操作", { selector: "footer" }));
+    const mobileSearch = dock.getByRole("textbox", { name: "搜索标签" });
+    const mobileCreate = dock.getByRole("button", { name: "新建" });
+    const searchWidth = mobileSearch.getBoundingClientRect().width;
+    await userEvent.click(mobileSearch);
+    await waitFor(() => expect(mobileSearch.getBoundingClientRect().width).toBeGreaterThan(searchWidth + 8));
+    expect(mobileCreate.getBoundingClientRect().top).toBeCloseTo(mobileSearch.getBoundingClientRect().top);
     await page.viewport(1440, 1000);
-    await userEvent.type(search, "咖啡");
+    await canvas.findByRole("navigation", { name: "顶部导航" });
+    await userEvent.type(canvas.getByRole("textbox", { name: "搜索标签" }), "咖啡");
     const table = await canvas.findByRole("table", { name: "群组标签列表" });
     const grouped = within(table);
     expect(grouped.queryByRole("rowgroup", { name: "书单" })).toBeNull();
@@ -232,12 +279,14 @@ test("minimal tag groups support keyboard sorting, narrow columns and tag search
       await page.viewport(width, 844);
       const expectedLayout = width >= 768 ? "topbar" : "drawer";
       await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", expectedLayout));
+      const currentSearch = canvas.getByRole("textbox", { name: "搜索标签" });
       if (expectedLayout === "topbar") {
+        const create = canvas.getByRole("button", { name: "新建" });
         expect(create.getBoundingClientRect().top).toBeCloseTo(tabs.getBoundingClientRect().top);
         expect(create.getBoundingClientRect().left).toBeGreaterThan(tabs.getBoundingClientRect().right);
-        expect(search.getBoundingClientRect().top).toBeCloseTo(create.getBoundingClientRect().top);
+        expect(currentSearch.getBoundingClientRect().top).toBeCloseTo(create.getBoundingClientRect().top);
       } else {
-        expect(search.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
+        expect(currentSearch.getBoundingClientRect().height).toBeGreaterThanOrEqual(44);
       }
       const column = countColumn.getBoundingClientRect();
       const button = count.getBoundingClientRect();
@@ -258,7 +307,7 @@ test("minimal tag groups support keyboard sorting, narrow columns and tag search
     await userEvent.click(canvas.getByRole("button", { name: "清空标签搜索" }));
     expect(grouped.getByRole("rowgroup", { name: "书单" })).toBeVisible();
     await userEvent.click(canvas.getByRole("tab", { name: "全部" }));
-    create.focus();
+    canvas.getByRole("button", { name: "新建" }).focus();
     await userEvent.keyboard("{Enter}");
     const groupAction = await body.findByRole("menuitem", { name: "新建群组" });
     await userEvent.click(groupAction);

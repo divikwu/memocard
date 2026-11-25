@@ -48,8 +48,8 @@ function ModePreview({ mode }: { mode: "light" | "dark" }) {
       </section>
       <section className="elevation-example">
         <h3>菜单与弹层 <code>high · 4</code></h3>
-        <div className="elevation-floating-surface surface-floating shadow-high" data-shadow-role="popup"><strong>浮层轮廓</strong><p>{mode === "dark" ? "outlined 配方组合白色 8% 外缘，额外保留白色 4% 内侧高光。" : "high 使用 outlined 4，组合黑色 4% 外缘。"}</p></div>
-        <Popover><PopoverTrigger render={<Button variant="outline" />} aria-label={`${label}打开弹层`}>打开 Popover</PopoverTrigger><PopoverContent className="ui-theme" data-ui-theme={mode} data-testid={`elevation-popover-${mode}`}><PopoverTitle>整理这条笔记</PopoverTitle><PopoverDescription>实际 Popover 组件，使用 high 投影内置外缘；深色额外保留白色 4% 内侧高光。</PopoverDescription><Button variant="secondary" size="sm">添加到收藏</Button></PopoverContent></Popover>
+        <div className="elevation-floating-surface surface-floating shadow-high" data-shadow-role="popup"><strong>浮层轮廓</strong><p>{mode === "dark" ? "outlined 配方提供白色 8% 的 1px 外缘。" : "high 使用 outlined 4，组合黑色 4% 外缘。"}</p></div>
+        <Popover><PopoverTrigger render={<Button variant="outline" />} aria-label={`${label}打开弹层`}>打开 Popover</PopoverTrigger><PopoverContent className="ui-theme" data-ui-theme={mode} data-testid={`elevation-popover-${mode}`}><PopoverTitle>整理这条笔记</PopoverTitle><PopoverDescription>Popover 使用 high 投影自带的 1px 外缘。</PopoverDescription><Button variant="secondary" size="sm">添加到收藏</Button></PopoverContent></Popover>
       </section>
       <section className="elevation-example">
         <h3>文档表面 <code>document · 3</code></h3>

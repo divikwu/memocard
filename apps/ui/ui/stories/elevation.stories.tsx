@@ -94,10 +94,8 @@ export const InteractionRegression: StoryObj<typeof meta> = {
       await expect(shadow(popup)).not.toBe("none");
       await expect(getComputedStyle(popup).borderTopWidth).toBe("1px");
       await expect(getComputedStyle(popup).borderTopColor).toBe("rgba(0, 0, 0, 0)");
-      if (mode === "dark") {
-        await expect(shadow(popup)).toContain("1px inset");
-        await expect(shadow(popup)).toContain("color(srgb 1 1 1 / 0.04)");
-      }
+      await expect(shadow(popup).match(/0px 0px 0px 1px/g)).toHaveLength(1);
+      await expect(shadow(popup)).not.toContain("1px inset");
       await userEvent.keyboard("{Escape}");
       await waitFor(() => expect(popup).not.toBeInTheDocument());
       await userEvent.click(within(panel).getByRole("button", { name: `${label}打开文档预览` }));

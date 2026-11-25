@@ -59,3 +59,9 @@
   .ui-note-search-field { gap: calc(var(--spacing-1) * 2); padding: 0; }
   .ui-note-search-results { padding: 0; }
 }
+
+[data-ui-theme=dark] .ui-note-search-results [role=option][aria-selected=true] {
+  background-color: var(--color-neutral);
+  border-inline-start: 3px solid var(--color-icon-primary);
+  padding-inline-start: calc(var(--spacing-1) * 2 - 3px);
+}

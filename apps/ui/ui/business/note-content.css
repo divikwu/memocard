@@ -12,7 +12,7 @@
 .ui-note-markdown :is(blockquote, aside[data-callout]) { font-size: var(--font-size-sm); }
 .ui-note-markdown blockquote { position: relative; border-inline-start-color: transparent; }
 .ui-note-markdown blockquote::before { content: ""; position: absolute; inset-block: 0; inset-inline-start: calc(var(--border-width) * -2); width: calc(var(--border-width) * 2); border-radius: var(--border-width); background: var(--typeset-rule); pointer-events: none; }
-.ui-note-markdown :is(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"], .note-task-indicator) { appearance: none; display: inline-grid; place-items: center; width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); border: var(--border-width) solid var(--color-border-gray); border-radius: 4px; background: transparent; }
+.ui-note-markdown :is(li.task-list-item > input[type="checkbox"], li[data-type="taskItem"] > label > input[type="checkbox"], .note-task-indicator) { appearance: none; display: inline-grid; place-items: center; width: calc(var(--spacing-1) * 4); height: calc(var(--spacing-1) * 4); border: var(--border-width) solid var(--note-task-border, var(--color-border-gray)); border-radius: 4px; background: transparent; }
 .ui-note-markdown :is(li.task-list-item > input[type="checkbox"], .note-task-indicator) { margin-inline-end: .5em; vertical-align: -.1em; }
 .ui-note-markdown :is(li.task-list-item > input[type="checkbox"]:checked, li[data-type="taskItem"] > label > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"]) { border-color: var(--color-accent); background: var(--color-accent); }
 .ui-note-markdown :is(li.task-list-item > input[type="checkbox"]:checked, li[data-type="taskItem"] > label > input[type="checkbox"]:checked, .note-task-indicator[data-checked="true"])::before {
@@ -113,3 +113,5 @@
   .note-mermaid-toolbar { opacity: 1; pointer-events: auto; }
 }
 @media (hover: none) { .note-mermaid-toolbar { opacity: 1; pointer-events: auto; } }
+
+[data-ui-theme=dark] .ui-note-markdown { --note-task-border: var(--color-border-emphasized); }

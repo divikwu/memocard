@@ -35,7 +35,7 @@ function subscribe(onChange: () => void) {
   return () => { window.removeEventListener(changeEvent, onChange); window.removeEventListener("storage", onChange); };
 }
 
-function fontPreset(font: PreviewFont): NoteFont {
+export function fontPreset(font: PreviewFont): NoteFont {
   const { group } = getPreviewFont(font);
   return group === "Serif" ? "noto-serif" : group === "Mono" ? "system-mono" : "system";
 }

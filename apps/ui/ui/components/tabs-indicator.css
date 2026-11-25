@@ -11,7 +11,6 @@
   z-index: -1;
   pointer-events: none;
 }
-[data-variant=pill] > [data-slot=tabs-indicator] { background: var(--color-background-surface); }
 [data-variant=line] > [data-slot=tabs-indicator] {
   top: auto;
   bottom: 0;
@@ -39,6 +38,11 @@
     background: color-mix(in oklch, var(--color-background-control), var(--color-text-primary) 5%);
   }
 }
+[data-ui-theme=dark] [data-variant=pill][data-transparent-inactive] > [data-slot=tabs-trigger]:not([data-active], [aria-current=page]) {
+  background: transparent;
+  &::before { content: none; }
+  &:enabled:hover { background: var(--color-overlay-hover); }
+}
 .ui-note-home-tabs + .ui-note-actions .ui-note-layout {
   position: relative;
   isolation: isolate;
@@ -51,7 +55,7 @@
     inset-inline-start: calc(var(--spacing-1) / 2);
     inline-size: calc(50% - var(--spacing-1) / 2);
     border-radius: var(--radius-full);
-    background: var(--color-background-surface);
+    background: var(--color-tab-active);
     pointer-events: none;
     translate: 0;
   }
@@ -66,7 +70,7 @@
     bottom: auto;
     height: var(--active-tab-height);
     border-radius: var(--radius-full);
-    background: var(--color-background-surface);
+    background: var(--color-tab-active);
     z-index: -1;
   }
   .web-app .ui-note-home-tabs [data-slot=tabs-list]:has(> [data-slot=tabs-indicator]:not([hidden])) > [data-active] { background: transparent; }

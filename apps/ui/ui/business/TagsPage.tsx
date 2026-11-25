@@ -36,7 +36,7 @@ const TagEditor = recoverableLazy(() => import("./tag-navigation-editor").then(m
 const TabsIndicator = recoverableLazy(() => import("../components/tabs-indicator"), "选中指示器", () => null);
 
 const groupIcon = <HugeiconsIcon icon={FoldersIcon} className="size-4 shrink-0" strokeWidth={2} aria-hidden="true" />;
-const viewTabStyles = "group/view-tab flex-none gap-1.5 bg-control font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:bg-surface data-active:font-medium data-active:hover:bg-surface";
+const viewTabStyles = "group/view-tab flex-none gap-1.5 bg-control font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:font-medium data-active:hover:bg-tab-active";
 const viewTabIconStyles = "text-secondary group-data-active/view-tab:text-primary group-hover/view-tab:text-inherit";
 
 type Tag = { name: string; count: number };
@@ -81,6 +81,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
   const [view, setView] = useState("all");
   const [draft, setDraft] = useState<TagDraft | null>(null);
   const mobile = useIsMobile();
+  const docked = mobile && layout === "drawer" && hasCreateMenu;
   const [editing, setEditing] = useState<{path: string; anchor: HTMLElement; list?: string; groupId?: string; anchorIsTrigger?: boolean} | null>(null);
   const [pinning, setPinning] = useState(false);
   const [savingMembership, setSavingMembership] = useState(false);
@@ -268,12 +269,10 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
     <Input ref={search} value={query} aria-label="搜索标签" placeholder="搜索标签" className="ui-collection-search-input" onChange={event => setQuery(event.target.value)} />
     {query && <Button variant="ghost" size="icon-xs" className="ui-collection-search-clear" aria-label="清空标签搜索" onClick={() => { setQuery(""); search.current?.focus(); }}><SidebarIcon name="close" /></Button>}
   </div>;
-  const searchActions = hasCreateMenu ? <div className="ui-tag-directory-search-actions">
-    {searchControl}
-    <TagActionsMenu label="新建" triggerProps={{
-      openOnHover: true,
+  const createMenu = <TagActionsMenu label="新建" triggerProps={{
+      openOnHover: !docked,
       disabled: !canEditGroups || !!draft,
-      render: <Button variant="secondary" className="aria-expanded:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)]"><AddIcon aria-hidden="true" />新建</Button>,
+      render: <Button variant="secondary" className="ui-tag-create-trigger aria-expanded:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)]"><AddIcon aria-hidden="true" />新建</Button>,
     }}>{(getAnchor, afterClose) => ([
       ["label", "新建标签", <TagIcon />],
       ["group", "新建群组", groupIcon],
@@ -284,12 +283,12 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
         if (kind === "group") setView("groups");
         setDraft({kind, anchor});
       })}>{icon}{label}</DropdownMenuItem>
-    ))}</TagActionsMenu>
-  </div> : searchControl;
+    ))}</TagActionsMenu>;
+  const searchActions = hasCreateMenu ? <div className="ui-tag-directory-search-actions">{searchControl}{createMenu}</div> : searchControl;
   return <section ref={directory} className="ui-tag-directory" aria-label="标签目录">
-    {(heading || !minimalTheme) && <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
+    {(heading || (!minimalTheme && !docked)) && <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
       {heading}
-      {!minimalTheme && searchActions}
+      {!minimalTheme && !docked && searchActions}
     </div>}
     {error && <p role="alert" className="text-sm text-error">{error}</p>}
     <Tabs value={view} onValueChange={value => { setDraft(null); setView(value); }} className="ui-tag-directory-tabs">
@@ -300,7 +299,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
           <TabsTrigger value="groups" className={viewTabClassName}><span className={viewTabIconStyles}>{groupIcon}</span>标签群组</TabsTrigger>
           <Suspense fallback={null}><TabsIndicator /></Suspense>
         </TabsList>
-        {minimalTheme && searchActions}
+        {minimalTheme && !docked && searchActions}
         {!hasCreateMenu && <div className="ui-tag-directory-tools">
           {view === "groups" && <CreateButton className="border-transparent" disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "group", anchor: event.currentTarget})}>新建群组</CreateButton>}
           <CreateButton className="border-transparent" disabled={!canEditGroups || !!draft} onClick={event => setDraft({kind: "label", anchor: event.currentTarget})}>新建标签</CreateButton>
@@ -313,7 +312,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
         </Table>}
         {status ?? <TagDirectoryList tags={matches} renderTag={chip} getSortKey={getSortKey} />}
       </TabsContent>
-      <TabsContent value="groups" aria-busy={loading} className="ui-tag-directory-panel">
+      <TabsContent value="groups" aria-busy={loading} className="ui-tag-directory-panel p-2">
         {visibleGroups.length || draft ? <TagDirectoryTable label="群组标签列表" sort={sort} onSort={column => setSort(current => ({
           column, descending: current.column === column && !current.descending,
         }))}>
@@ -324,6 +323,7 @@ export function TagsPage({ tags: indexedTags, heading, vaultId, loading, connect
         </Empty>}
       </TabsContent>
     </Tabs>
+    {docked && <footer className="web-mobile-record ui-tag-mobile-actions" aria-label="标签操作">{searchControl}{createMenu}</footer>}
     {editing && (!editing.groupId || editedGroup) && <Suspense fallback={null}><TagEditor key={editing.groupId ? `group:${editing.groupId}` : `tag:${editing.path}`} path={editedGroup?.name ?? editing.path} anchor={editing.anchor} anchorIsTrigger={editing.anchorIsTrigger ?? true}
       icon={(editedGroup ? editedGroup.icon : preferences.icons[editing.path]) ?? ""} mobile={mobile} initialPickerOpen
       groupAppearance={editedGroup && {

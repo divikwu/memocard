@@ -18,7 +18,7 @@ export function FilterChip({ label, icon, count, ariaLabel = label, description,
   label: string; icon: ReactNode; count?: number; ariaLabel?: string; description?: string;
   selected: boolean; disabled?: boolean; onSelect: () => void;
 }) {
-  return <Button variant="outline" className="group/filter-chip min-w-0 max-w-full bg-popover font-normal aria-pressed:bg-muted"
+  return <Button variant="outline" className="group/filter-chip min-w-0 max-w-full bg-popover font-normal aria-pressed:bg-muted dark:aria-pressed:bg-tab-active"
     aria-label={ariaLabel} aria-description={description} aria-pressed={selected} disabled={disabled} onClick={onSelect}>
     <span className="flex shrink-0 items-center text-secondary group-aria-pressed/filter-chip:text-primary">{icon}</span>
     <span className="truncate group-aria-pressed/filter-chip:font-medium" title={label}>{label}</span>
@@ -31,7 +31,7 @@ export function NoteTypeTabs({ disabled, scrollerRef, children }: Pick<NoteColle
   return <TabsList ref={scrollerRef} variant="pill" activateOnFocus aria-label="类型" data-transparent-inactive
     className="ui-note-recent-tags gap-2 justify-start">
     {options.map(option => <TabsTrigger key={option.id} value={option.id} disabled={disabled} aria-label={option.label}
-      className="group/type-tab flex-none gap-1.5 bg-control px-2 font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:bg-surface data-active:font-medium data-active:hover:bg-surface">
+      className="group/type-tab flex-none gap-1.5 bg-control font-normal text-primary hover:bg-[color-mix(in_oklch,var(--color-background-control),var(--color-text-primary)_5%)] data-active:font-medium data-active:hover:bg-tab-active">
       <span className="text-secondary group-data-active/type-tab:text-primary"><SidebarIcon name={option.icon} /></span>
       {option.label}
     </TabsTrigger>)}

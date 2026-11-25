@@ -51,6 +51,26 @@ for (const [interfaceTheme, layout] of [['classic', 'rail'], ['minimal', 'topbar
   });
 }
 
+test('applies the stored system scheme before React loads and follows later system changes', { timeout: 20_000 }, async () => {
+  const browser = await chromium.launch();
+  const gate = Promise.withResolvers();
+  try {
+    const page = await browser.newPage({ colorScheme: 'dark' });
+    await page.addInitScript(() => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ theme: 'system' })));
+    await page.route(baseURL + '/' + manifest['index.html'].file, async route => { await gate.promise; await route.continue(); });
+    await page.goto(baseURL + '/#/settings', { waitUntil: 'commit' });
+    await page.locator('html[data-ui-theme=dark] body').waitFor({ state: 'attached' });
+    assert.equal(await page.locator('#root').innerHTML(), '');
+    assert.equal(await page.locator('meta[name="color-scheme"]').getAttribute('content'), 'dark');
+    assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'), '#0a0a0a');
+    gate.resolve();
+    await page.getByRole('heading', { name: '设置', exact: true }).waitFor();
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.locator('html[data-ui-theme=light]').waitFor();
+    assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'), '#ffffff');
+  } finally { gate.resolve(); await browser.close(); }
+});
+
 test('recovers from a failed layout download in the production UI', { timeout: 20_000 }, async () => {
   const browser = await chromium.launch();
   try {
@@ -86,7 +106,17 @@ for (const [interfaceTheme, oldBuild] of [['classic', true], ['minimal', true], 
         newDocument = updateAvailable;
         return route.fulfill({ contentType: 'text/html', headers: { 'cache-control': 'no-store' }, body: html });
       });
-      await page.route(baseURL + '/api/bridge', route => route.fulfill({ status: 401, json: {} }));
+      const classic = interfaceTheme === 'classic';
+      const path = classic ? '#/settings' : '#/tags';
+      await page.route(baseURL + '/api/bridge', route => {
+        if (!classic) return route.fulfill({ status: 401, json: {} });
+        const { operation } = route.request().postDataJSON();
+        const capabilities = ['getStatus', 'getEnvironment'];
+        const data = operation === 'getEnvironment' ? { platform: 'mac', storage: 'local-web', capabilities }
+          : { connected: false, capabilities, coverage: { complete: true, indexed: 0, pending: 0, issues: 0 } };
+        assert.ok(capabilities.includes(operation), operation);
+        return route.fulfill({ json: { ok: true, data } });
+      });
       await page.route(baseURL + '/' + entry, route =>
         oldBuild && updateAvailable && !newDocument ? route.fulfill({ status: 404, headers: { 'cache-control': 'no-store' }, body: '' }) : route.continue());
       await page.route(baseURL + '/' + drawer, route => {
@@ -94,10 +124,9 @@ for (const [interfaceTheme, oldBuild] of [['classic', true], ['minimal', true], 
         failedDrawerRequests++;
         return route.fulfill({ status: 404, headers: { 'cache-control': 'no-store' }, body: '' });
       });
-      await page.goto(baseURL + '/#/tags');
-      const classic = interfaceTheme === 'classic';
+      await page.goto(baseURL + '/' + path);
       const title = classic ? '切换笔记库' : '更多';
-      const trigger = page.getByRole('button', { name: classic ? /^笔记库：/ : '更多', exact: true });
+      const trigger = page.getByRole('button', { name: classic ? '笔记库操作（打开）' : '更多', exact: true });
       await trigger.waitFor();
       updateAvailable = true;
       await trigger.click();
@@ -110,10 +139,10 @@ for (const [interfaceTheme, oldBuild] of [['classic', true], ['minimal', true], 
         assert.ok(requestsBeforeRefresh > 0);
         assert.equal(newDocument, false);
         await Promise.all([page.waitForEvent('load'), refresh.click()]);
-        await page.getByRole('heading', { name: '标签', exact: true }).waitFor();
+        await page.getByRole('heading', { name: classic ? '设置' : '标签', exact: true }).waitFor();
         await trigger.click();
         await page.getByRole('dialog', { name: title, exact: true }).waitFor();
-        assert.equal(new URL(page.url()).hash, '#/tags');
+        assert.equal(new URL(page.url()).hash, path);
         assert.equal(failedDrawerRequests, requestsBeforeRefresh);
       } else {
         await retry.waitFor({ timeout: 5000 });

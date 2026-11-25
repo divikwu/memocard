@@ -210,6 +210,14 @@
       ]
     },
     {
+      "utility": "gap-[--spacing(var(--gap))]",
+      "step": null,
+      "value": "--spacing(var(--gap))",
+      "consumers": [
+        "apps/ui/ui/components/toggle-group.tsx"
+      ]
+    },
+    {
       "utility": "gap-0",
       "step": "0",
       "value": "0",
@@ -247,7 +255,9 @@
         "apps/ui/ui/components/popover.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/components/tabs.tsx",
-        "apps/ui/ui/web/NoteAppearanceMenu.tsx"
+        "apps/ui/ui/components/toggle.tsx",
+        "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+        "apps/ui/ui/web/WebSettings.tsx"
       ]
     },
     {
@@ -292,7 +302,7 @@
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/components/tabs.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx",
-        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/web/WebDraftsDialog.tsx",
         "apps/ui/ui/web/WebMoreDrawer.tsx",
         "apps/ui/ui/web/WorkspaceLoading.tsx"
       ]
@@ -376,6 +386,30 @@
       "value": "2",
       "consumers": [
         "apps/ui/ui/components/sidebar.tsx"
+      ]
+    },
+    {
+      "utility": "group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-2.5",
+      "step": "2.5",
+      "value": "2.5",
+      "consumers": [
+        "apps/ui/ui/components/toggle-group.tsx"
+      ]
+    },
+    {
+      "utility": "group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-2.5",
+      "step": "2.5",
+      "value": "2.5",
+      "consumers": [
+        "apps/ui/ui/components/toggle-group.tsx"
+      ]
+    },
+    {
+      "utility": "group-data-[spacing=0]/toggle-group:px-3",
+      "step": "3",
+      "value": "3",
+      "consumers": [
+        "apps/ui/ui/components/toggle-group.tsx"
       ]
     },
     {
@@ -519,7 +553,8 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/ui/components/button.tsx"
+        "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/components/toggle.tsx"
       ]
     },
     {
@@ -527,7 +562,8 @@
       "step": "2.5",
       "value": "2.5",
       "consumers": [
-        "apps/ui/ui/components/button.tsx"
+        "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/components/toggle.tsx"
       ]
     },
     {
@@ -535,7 +571,8 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/ui/components/button.tsx"
+        "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/components/toggle.tsx"
       ]
     },
     {
@@ -551,7 +588,8 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/ui/components/button.tsx"
+        "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/components/toggle.tsx"
       ]
     },
     {
@@ -559,7 +597,8 @@
       "step": "2.5",
       "value": "2.5",
       "consumers": [
-        "apps/ui/ui/components/button.tsx"
+        "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/components/toggle.tsx"
       ]
     },
     {
@@ -567,7 +606,8 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/ui/components/button.tsx"
+        "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/components/toggle.tsx"
       ]
     },
     {
@@ -886,6 +926,7 @@
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
         "apps/ui/ui/business/TagsLoading.tsx",
+        "apps/ui/ui/business/TagsPage.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/web/WebAppView.tsx"
       ]
@@ -1126,7 +1167,8 @@
         "apps/ui/ui/components/kbd.tsx",
         "apps/ui/ui/components/sidebar.tsx",
         "apps/ui/ui/web/NoteAppearanceMenu.tsx",
-        "apps/ui/ui/web/WebAppView.tsx"
+        "apps/ui/ui/web/WebAppView.tsx",
+        "apps/ui/ui/web/WebSettings.tsx"
       ]
     },
     {
@@ -1143,7 +1185,6 @@
       "value": "2",
       "consumers": [
         "apps/ui/src/PropertyOptionMenu.core.tsx",
-        "apps/ui/ui/business/NoteCollectionFilterChips.tsx",
         "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/business/PropertyIconPicker.tsx",
@@ -1185,6 +1226,7 @@
         "apps/ui/ui/components/table.tsx",
         "apps/ui/ui/components/tabs.tsx",
         "apps/ui/ui/components/textarea.tsx",
+        "apps/ui/ui/components/toggle.tsx",
         "apps/ui/ui/components/tooltip.tsx"
       ]
     },
@@ -1197,6 +1239,7 @@
         "apps/ui/ui/business/NoteSearchDialog.tsx",
         "apps/ui/ui/components/accordion.tsx",
         "apps/ui/ui/components/button.tsx",
+        "apps/ui/ui/components/toggle.tsx",
         "apps/ui/ui/web/WebMoreDrawer.tsx"
       ]
     },
@@ -1269,7 +1312,8 @@
         "apps/ui/ui/components/input-group.tsx",
         "apps/ui/ui/components/select.tsx",
         "apps/ui/ui/components/sidebar.tsx",
-        "apps/ui/ui/web/WebMoreDrawer.tsx"
+        "apps/ui/ui/web/WebMoreDrawer.tsx",
+        "apps/ui/ui/web/WebSettings.tsx"
       ]
     },
     {

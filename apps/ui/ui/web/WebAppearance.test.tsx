@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { AppViewState } from "../../src/App";
@@ -34,6 +34,9 @@ async function choose(user: ReturnType<typeof userEvent.setup>, label: string, o
   await user.click(screen.getByRole("combobox", { name: label }));
   await user.click(await screen.findByRole("option", { name: option }));
   await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+}
+function fontChoice(group: string, name: string) {
+  return within(screen.getByRole("group", { name: group })).getByRole("button", { name });
 }
 function receive(value: unknown, storage: Storage = localStorage, storageKey: string | null = key) {
   act(() => window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: value === null ? null : JSON.stringify(value), storageArea: storage })));
@@ -126,7 +129,7 @@ it("preserves a real editor instance, focus and undo when another tab changes ap
   fireEvent.click(retry);
   await waitFor(() => expect(screen.queryByText("所选字体暂时无法加载，当前使用回退字体。")).toBeNull());
   await waitFor(() => expect(screen.queryByText("正在加载所选字体，当前使用回退字体。")).toBeNull());
-  expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "正文字体" }));
+  expect(document.activeElement).toBe(fontChoice("正文字体", "无衬线体"));
   expect(noteEditor(field)).toBe(editor);
   act(() => { editor.commands.undo(); });
   expect(editor.getText()).toBe("正文");
@@ -154,13 +157,11 @@ it("uses labelled MemoCard UI appearance selectors and restores the last indexed
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
   await choose(user, "颜色模式", "跟随系统");
-  await user.click(screen.getByText("高级外观"));
-  await choose(user, "正文字体", "系统默认");
-  await choose(user, "标题字体", "跟随正文");
-  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "system", bodyFont: "system", headingFont: "inherit" });
-  expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(getPreviewFont("system").fontFamily);
-  expect(document.documentElement.style.getPropertyValue("--ui-preview-heading")).toBe(getPreviewFont("system").fontFamily);
-  expect(screen.getByRole("combobox", { name: "正文字体" }).getAttribute("data-slot")).toBe("select-trigger");
+  await user.click(fontChoice("正文字体", "衬线体"));
+  await user.click(fontChoice("标题字体", "等宽体"));
+  expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "system", bodyFont: "noto-serif", headingFont: "system-mono" });
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(getPreviewFont("noto-serif").fontFamily);
+  expect(document.documentElement.style.getPropertyValue("--ui-preview-heading")).toBe(getPreviewFont("system-mono").fontFamily);
   fireEvent.click(screen.getByText("本机文件状态"));
   expect(screen.getByText("最近索引时间").nextElementSibling?.querySelector("time")?.dateTime).toBe("2026-10-22T08:12:00Z");
 });
@@ -173,19 +174,18 @@ it("hides unsupported folder-picking actions in settings", () => {
 it("offers the curated fonts in UI appearance without separate note font selectors", async () => {
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  await user.click(screen.getByText("高级外观"));
-  for (const label of ["正文字体"]) {
-    await user.click(screen.getByRole("combobox", { name: label }));
-    expect((await screen.findAllByRole("option")).map(option => option.textContent)).toEqual(["系统默认", "Noto Sans", "Noto Serif", "Geist Mono"]);
-    await user.keyboard("{Escape}");
-    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  for (const label of ["标题字体", "正文字体"]) {
+    const group = within(screen.getByRole("group", { name: label }));
+    expect(group.getAllByRole("button").map(option => option.textContent)).toEqual(["Ag无衬线体", "Ag衬线体", "Ag等宽体"]);
   }
+  await user.click(fontChoice("正文字体", "衬线体"));
+  expect(fontChoice("标题字体", "无衬线体").getAttribute("aria-pressed")).toBe("true");
+
 });
 
 it("offers only default and None as new radius choices and applies both", async () => {
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  await user.click(screen.getByText("高级外观"));
   await user.click(screen.getByRole("combobox", { name: "圆角" }));
   expect((await screen.findAllByRole("option")).map(option => option.textContent)).toEqual(["默认 · 8px", "None · 0px"]);
   await user.click(screen.getByRole("option", { name: "None · 0px" }));
@@ -258,7 +258,6 @@ it("connects all eight palette choices, both neutral choices and reset to the re
     expect(document.documentElement.dataset.webPalette).toBe(value);
     expect(JSON.parse(localStorage.getItem(key)!).palette).toBe(value);
   }
-  await user.click(screen.getByText("高级外观"));
   const neutral = screen.getByRole("combobox", { name: "中性色" });
   await user.click(neutral);
   expect(await screen.findAllByRole("option")).toHaveLength(2);
@@ -277,17 +276,10 @@ it("shows existing font and radius values as real current options before the use
   localStorage.setItem("memocard-appearance-v1", JSON.stringify({ radius: "xs", headingFont: "songti", bodyFont: "pingfang" }));
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  await user.click(screen.getByText("高级外观"));
   const radius = screen.getByRole("combobox", { name: "圆角" });
-  const heading = screen.getByRole("combobox", { name: "标题字体" });
-  const body = screen.getByRole("combobox", { name: "正文字体" });
   expect(radius.textContent).toBe("已有设置 · 4px");
-  expect(heading.textContent).toBe(`${getPreviewFont("songti").label}（已有设置）`);
-  expect(body.textContent).toBe(`${getPreviewFont("pingfang").label}（已有设置）`);
-  await user.click(body);
-  expect((await screen.findByRole("option", { name: /已有设置/ })).getAttribute("aria-selected")).toBe("true");
-  await user.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  expect(fontChoice("标题字体", "衬线体").getAttribute("aria-pressed")).toBe("true");
+  expect(fontChoice("正文字体", "无衬线体").getAttribute("aria-pressed")).toBe("true");
   await choose(user, "圆角", "默认 · 8px");
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ radius: "default", headingFont: "songti", bodyFont: "pingfang" });
   expect(document.documentElement.style.getPropertyValue("--ui-preview-radius")).toBe("0.5rem");

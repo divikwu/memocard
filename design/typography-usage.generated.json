@@ -343,6 +343,11 @@
           "scope": "@layer components → .typeset-memocard:not(:where(.not-typeset, [data-not-typeset], .not-typeset *, [data-not-typeset] *))",
           "value": "var(--font-family-body)",
           "variable": "--typeset-font-body"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings-layout.css",
+          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
+          "value": "var(--font-family-body)"
         }
       ]
     },
@@ -512,17 +517,17 @@
         },
         {
           "source": "apps/ui/ui/web/web-app.css",
-          "scope": ".web-drafts-list h3",
-          "value": "var(--font-family-heading)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-settings-layout.css",
-          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
+          "scope": "@media (max-width: 767px) → .web-app[data-workspace-layout=drawer] .web-crumb:not([data-detail]) [aria-current=page]",
           "value": "var(--font-family-heading)"
         },
         {
           "source": "apps/ui/ui/web/web-settings-layout.css",
           "scope": ".web-settings-title",
+          "value": "var(--font-family-heading)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebDraftsDialog.css",
+          "scope": ".web-drafts-list h3",
           "value": "var(--font-family-heading)"
         }
       ]
@@ -1047,6 +1052,11 @@
         },
         {
           "source": "apps/ui/ui/web/WebAppView.tsx",
+          "scope": "text-2xl",
+          "value": "var(--font-size-2xl)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "text-2xl",
           "value": "var(--font-size-2xl)"
         }
@@ -1733,6 +1743,11 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/components/toggle.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/components/tooltip.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1745,11 +1760,6 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-supporting",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-app.css",
-          "scope": ".web-drafts-list p",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1809,6 +1819,16 @@
           "value": "var(--font-size-sm)"
         },
         {
+          "source": "apps/ui/ui/web/WebDraftsDialog.css",
+          "scope": ".web-drafts-list p",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebDraftsDialog.tsx",
+          "scope": "text-sm",
+          "value": "var(--font-size-sm)"
+        },
+        {
           "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "text-sm",
           "value": "var(--font-size-sm)"
@@ -1856,6 +1876,11 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-2",
+          "value": "var(--font-size-xl)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": "@media (max-width: 767px) → .web-app[data-workspace-layout=drawer] .web-crumb:not([data-detail]) [aria-current=page]",
           "value": "var(--font-size-xl)"
         },
         {
@@ -2131,6 +2156,11 @@
         },
         {
           "source": "apps/ui/ui/web/WebMoreDrawer.tsx",
+          "scope": "text-xs",
+          "value": "var(--font-size-xs)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "text-xs",
           "value": "var(--font-size-xs)"
         }
@@ -2585,8 +2615,8 @@
           "value": "var(--font-weight-normal)"
         },
         {
-          "source": "apps/ui/ui/web/web-settings-layout.css",
-          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": "@media (max-width: 767px) → .ui-tag-mobile-actions > button",
           "value": "var(--font-weight-normal)"
         },
         {
@@ -2641,23 +2671,13 @@
           "value": "var(--font-weight-medium)"
         },
         {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading h2",
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *)",
           "value": "var(--font-weight-medium)"
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-list-heading",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
-          "value": "var(--font-weight-medium)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(strong, b)",
+          "scope": ".ui-note-preview",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2811,6 +2831,11 @@
           "value": "var(--font-weight-medium)"
         },
         {
+          "source": "apps/ui/ui/components/toggle.tsx",
+          "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-label",
           "value": "var(--font-weight-medium)"
@@ -2852,12 +2877,17 @@
         },
         {
           "source": "apps/ui/ui/web/web-app.css",
-          "scope": ".web-drafts-list h3",
+          "scope": ".web-page-content",
           "value": "var(--font-weight-medium)"
         },
         {
           "source": "apps/ui/ui/web/web-app.css",
           "scope": "@media (max-width: 767px) → .web-crumb [data-slot=breadcrumb-page]",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings-layout.css",
+          "scope": ".web-settings-panel > section > h2, .web-setting-section-heading h2",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2868,6 +2898,11 @@
         {
           "source": "apps/ui/ui/web/WebAppView.tsx",
           "scope": "font-medium",
+          "value": "var(--font-weight-medium)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebDraftsDialog.css",
+          "scope": ".web-drafts-list h3",
           "value": "var(--font-weight-medium)"
         },
         {
@@ -2938,11 +2973,6 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui/business/NotePageTitle.css",
-          "scope": ".note-page-title",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
           "source": "apps/ui/ui/business/NoteSearchDialog.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
@@ -2970,11 +3000,6 @@
         {
           "source": "apps/ui/ui/business/TagDirectoryList.css",
           "scope": ".ui-tag-directory-group h2",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
-          "source": "apps/ui/ui/business/trash.css",
-          "scope": ".ui-trash h1",
           "value": "var(--font-weight-semibold)"
         },
         {
@@ -3023,16 +3048,6 @@
           "value": "var(--font-weight-semibold)"
         },
         {
-          "source": "apps/ui/ui/web/web-app.css",
-          "scope": ".web-collection-heading h1",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
-          "source": "apps/ui/ui/web/web-settings-layout.css",
-          "scope": ".web-settings-title",
-          "value": "var(--font-weight-semibold)"
-        },
-        {
           "source": "apps/ui/ui/web/WebMoreDrawer.tsx",
           "scope": "font-semibold",
           "value": "var(--font-weight-semibold)"
@@ -3058,8 +3073,43 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) → & :where(h1, h2, h3, h4, h5, h6, strong, b)",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-heading h2",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-list-heading",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(strong, b)",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/business/NotePageTitle.css",
+          "scope": ".note-page-title",
+          "value": "var(--font-weight-bold)"
+        },
+        {
           "source": "apps/ui/ui/business/rich-link.css",
           "scope": ":where(.ui-rich-ui, .ui-rich-ui *):is(.rich-format-preview)",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/business/trash.css",
+          "scope": ".ui-trash h1",
           "value": "var(--font-weight-bold)"
         },
         {
@@ -3070,6 +3120,21 @@
         {
           "source": "apps/ui/ui/theme.css",
           "scope": "@utility type-heading-4",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": ".web-collection-heading h1",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-app.css",
+          "scope": "@media (max-width: 767px) → .web-app[data-workspace-layout=drawer] .web-crumb:not([data-detail]) [aria-current=page]",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/web/web-settings-layout.css",
+          "scope": ".web-settings-title",
           "value": "var(--font-weight-bold)"
         }
       ]
@@ -3184,6 +3249,11 @@
         },
         {
           "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
+          "scope": "leading-none",
+          "value": "1"
+        },
+        {
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "leading-none",
           "value": "1"
         }
@@ -3696,7 +3766,9 @@
     {
       "property": "line-height",
       "value": "var(--text-body-leading)",
-      "utilities": [],
+      "utilities": [
+        "leading-(--text-body-leading)"
+      ],
       "locations": [
         {
           "source": "apps/ui/ui/business/note-properties.css",
@@ -3897,6 +3969,11 @@
         {
           "source": "apps/ui/ui/web/web-settings.css",
           "scope": ".web-font-status",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/ui/web/WebSettings.tsx",
+          "scope": "leading-(--text-body-leading)",
           "value": "var(--text-body-leading)"
         }
       ]
@@ -4155,6 +4232,11 @@
         },
         {
           "source": "apps/ui/ui/web/WebAppView.tsx",
+          "scope": "text-2xl",
+          "value": "var(--tw-leading, var(--text-2xl--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "text-2xl",
           "value": "var(--tw-leading, var(--text-2xl--line-height))"
         }
@@ -4434,12 +4516,22 @@
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
+          "source": "apps/ui/ui/components/toggle.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
           "source": "apps/ui/ui/components/tooltip.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
         {
           "source": "apps/ui/ui/web/WebAppView.tsx",
+          "scope": "text-sm",
+          "value": "var(--tw-leading, var(--text-sm--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/web/WebDraftsDialog.tsx",
           "scope": "text-sm",
           "value": "var(--tw-leading, var(--text-sm--line-height))"
         },
@@ -4621,6 +4713,11 @@
         },
         {
           "source": "apps/ui/ui/web/WebMoreDrawer.tsx",
+          "scope": "text-xs",
+          "value": "var(--tw-leading, var(--text-xs--line-height))"
+        },
+        {
+          "source": "apps/ui/ui/web/WebSettings.tsx",
           "scope": "text-xs",
           "value": "var(--tw-leading, var(--text-xs--line-height))"
         }
@@ -4835,6 +4932,12 @@
       "expression": "getPreviewFont(choice.value).fontFamily",
       "source": "apps/ui/ui/web/NoteAppearanceMenu.tsx",
       "scope": "line 18"
+    },
+    {
+      "property": "font-family",
+      "expression": "getPreviewFont(choice.value).fontFamily",
+      "source": "apps/ui/ui/web/WebSettings.tsx",
+      "scope": "line 53"
     }
   ],
   "native": [

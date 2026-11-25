@@ -65,6 +65,7 @@ it("supports multiple tags and one type, preserves collapsed selections, and cle
   await user.click(dialog.getByRole("button", { name: "有链接" }));
   expect(change).toHaveBeenLastCalledWith(["Coffee", "设计"], ["links"]);
   expect(trigger.getAttribute("aria-label")).toBe("筛选笔记，已选 3 项");
+  expect(trigger.hasAttribute("data-active")).toBe(false);
   await user.click(dialog.getByRole("button", { name: "有链接", pressed: true }));
   expect(change).toHaveBeenLastCalledWith(["Coffee", "设计"], ["links"]);
   await user.click(dialog.getByRole("button", { name: "清除筛选" }));

@@ -1,5 +1,6 @@
-.web-note-font-choice[aria-checked=true] { background: var(--color-accent-muted); color: var(--color-text-accent); }
-.web-note-font-choices { --hover-radius: var(--radius-element); --hover-color: var(--color-accent-muted); }
-.web-note-font-choices[data-hovering] > .web-note-font-choice:is(:focus, [aria-checked=true]) { background-color: transparent; }
+.web-note-font-choice[aria-checked=true] { background: var(--color-neutral); color: var(--color-text-primary); }
+.web-note-font-choices { --hover-radius: var(--radius-element); --hover-color: var(--color-overlay-hover); }
+.web-note-font-choices[data-hovering] > .web-note-font-choice:focus:not([aria-checked=true]) { background-color: transparent; }
+.web-note-font-choices:has(> [aria-checked=true]:hover)::before { opacity: 0; }
 .web-note-font-choice > [data-slot=dropdown-menu-radio-item-indicator],
 .web-note-small-text > [data-slot=dropdown-menu-checkbox-item-indicator] { display: none; }

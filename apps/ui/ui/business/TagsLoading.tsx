@@ -12,17 +12,18 @@ export function TagChipsLoading() {
   </div>;
 }
 
-export function TagsLoading({ heading, minimal }: { heading?: ReactNode; minimal: boolean }) {
+export function TagsLoading({ heading, minimal, docked }: { heading?: ReactNode; minimal: boolean; docked: boolean }) {
   const tools = <div className="ui-tag-directory-search-actions justify-end" aria-hidden="true"><Skeleton className="h-element-md w-40 max-w-full" /><Skeleton className="h-element-md w-16" /></div>;
   return <div className="ui-tag-directory" data-slot="tags-skeleton">
-    {(heading || !minimal) && <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
-      {heading}{!minimal && tools}
+    {(heading || (!minimal && !docked)) && <div className={heading ? "ui-tag-directory-toolbar web-collection-heading" : "ui-tag-directory-toolbar"}>
+      {heading}{!minimal && !docked && tools}
     </div>}
     <div className="ui-tag-directory-tabs flex flex-col">
       <div className="ui-tag-directory-tab-header" aria-hidden="true">
-        {minimal ? <><div className="flex gap-2"><Skeleton className="h-element-md w-16" /><Skeleton className="h-element-md w-24" /></div>{tools}</> : <Skeleton className="h-element-md w-full rounded-full" />}
+        {minimal ? <><div className="flex gap-2"><Skeleton className="h-element-md w-16" /><Skeleton className="h-element-md w-24" /></div>{!docked && tools}</> : <Skeleton className="h-element-md w-full rounded-full" />}
       </div>
       <div className="ui-tag-directory-panel"><TagChipsLoading /></div>
     </div>
+    {docked && <div className="web-mobile-record" aria-hidden="true"><span className="shrink-0"><Skeleton className="size-12 rounded-full" /></span><Skeleton className="h-12 flex-1 rounded-full" /></div>}
   </div>;
 }

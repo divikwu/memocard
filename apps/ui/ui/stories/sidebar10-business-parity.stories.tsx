@@ -60,7 +60,7 @@ export const LayoutAndCardActionsRegression: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const list = await canvas.findByRole("list", { name: "笔记列表" });
-    await waitFor(() => expect(getComputedStyle(list).gridTemplateColumns.trim().split(/\s+/)).toHaveLength(3));
+    await waitFor(() => expect(getComputedStyle(list).gridTemplateColumns.trim().split(/\s+/)).toHaveLength(4));
     await userEvent.click(canvas.getByRole("button", { name: "列表布局" }));
     for (const width of [768, 767, 390, 320]) {
       await userEvent.click(canvas.getByRole("button", { name: `宽度 ${width}` }));

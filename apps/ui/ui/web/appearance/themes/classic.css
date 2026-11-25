@@ -1,6 +1,10 @@
-.web-app[data-web-client][data-interface-theme=classic][data-workspace-layout=rail][data-ui-theme=light] {
+.web-app[data-web-client][data-interface-theme=classic]:is([data-workspace-layout=rail], [data-workspace-layout=drawer])[data-ui-theme=light] {
   --color-background-body: var(--color-white);
   --color-background-card: var(--color-neutral-100);
+}
+
+:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) .web-app-header [data-slot=action-group][data-mobile-actions] {
+  background-color: var(--color-background-card);
 }
 
 :where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) .ui-capture-group,
@@ -8,7 +12,10 @@
   --color-background-surface: var(--color-neutral-100);
 }
 
-:where(.web-app[data-web-client][data-interface-theme=classic][data-workspace-layout=rail][data-ui-theme=light]) .web-settings .web-settings-panel > section > [data-slot=card] {
+.web-app[data-web-client][data-interface-theme=classic]:is([data-workspace-layout=rail], [data-workspace-layout=drawer]) .web-settings-panel {
+  background-color: transparent;
+}
+.web-app[data-web-client][data-interface-theme=classic]:is([data-workspace-layout=rail], [data-workspace-layout=drawer]) .web-settings-panel > section > [data-slot=card] {
   background-color: var(--color-background-card);
 }
 
@@ -29,16 +36,18 @@
 
 @media (hover: hover) and (pointer: fine) {
   .web-app:where([data-web-client][data-interface-theme=classic]) .ui-note-cards .ui-note-card[data-note-openable=true]:hover {
-    background-color: color-mix(in oklab, var(--color-background-card), var(--color-black) 4%);
+    background-color: color-mix(in oklab, var(--color-background-card), var(--color-tint-hover) 4%);
     box-shadow: var(--shadow-flat);
     transform: none;
     z-index: auto;
   }
 }
 
+:where(.web-app[data-web-client][data-interface-theme=classic]) [data-slot=tabs-list][data-variant=pill][data-transparent-inactive] {
+  --color-background-control: var(--color-background-body);
+}
 :where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) [data-slot=tabs-list][data-variant=pill][data-transparent-inactive] {
-  --color-background-control: var(--color-white);
-  --color-background-surface: var(--color-background-card);
+  --color-tab-active: var(--color-background-card);
 }
 
 :where(.web-app[data-web-client][data-interface-theme=classic][data-workspace-layout=rail]) .web-page-content :is(
@@ -55,4 +64,12 @@
   [data-view=notes] .ui-note-toolbar > .ui-note-actions
 ) {
   column-gap: var(--spacing-1);
+}
+
+/* Classic collections sit on the page canvas in both color modes. */
+.web-app[data-web-client][data-interface-theme=classic]:is([data-workspace-layout=rail], [data-workspace-layout=drawer]) :is(.ui-note-list, .ui-tag-directory-panel, .ui-trash-list) {
+  background-color: var(--color-background-body);
+}
+.web-app[data-web-client][data-interface-theme=classic] .ui-tag-directory-panel .ui-empty-illustration {
+  --hairline-plate: var(--color-background-body);
 }
