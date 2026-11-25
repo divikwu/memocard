@@ -60,7 +60,10 @@ final class ServiceHostController {
             "running": host.mcpRunning, "writes": host.mcpWritesEnabled, "enabled": host.mcpEnabled,
             "consent": MCPAuthorization.allowsWrites(in: defaults), "vaultName": host.currentVaultName]
         if let requestID { result["requestID"] = requestID }
-        if let error { result["error"] = (error as? VaultError)?.code ?? (error as NSError).domain }
+        if let error {
+            result["error"] = (error as? VaultError)?.code ?? (error as NSError).domain
+            result["message"] = error.localizedDescription
+        }
         if let data { result["data"] = data }
         FileHandle.standardOutput.write(try! JSONSerialization.data(withJSONObject: result) + Data([10]))
     }
@@ -73,6 +76,7 @@ final class ServiceHostController {
             case "switch":
                 guard let vault = host.registeredVaults.first(where: { $0.name == command["name"] }) else { throw NSError(domain: "BAD_FIXTURE", code: 1) }
                 try await host.chooseRegisteredVault(id: vault.id)
+            case "web-launch": data = ["url": try await host.regressionWebLaunch().absoluteString]
             case "hold-picker": holdPicker = true
             case "release-picker":
                 let pending = picker; picker = nil; holdPicker = false

@@ -134,18 +134,29 @@ final class ServiceApp: NSObject, NSApplicationDelegate, NSMenuDelegate {
         return value
     }
 
-    private func run(_ operation: @escaping @MainActor () async throws -> Void) {
+    private func run(failureTitle: String? = nil, _ operation: @escaping @MainActor () async throws -> Void) {
         Task { @MainActor in
             do { try await operation() }
-            catch { NSAlert(error: error).runModal() }
+            catch {
+                if let failureTitle {
+                    let alert = NSAlert()
+                    alert.alertStyle = .warning
+                    alert.messageText = failureTitle
+                    alert.informativeText = error.localizedDescription
+                    alert.addButton(withTitle: "好")
+                    alert.runModal()
+                } else {
+                    NSAlert(error: error).runModal()
+                }
+            }
             rebuildMenu()
         }
     }
 
-    @objc private func selectVault() { run { try await self.host.chooseVault(create: false) } }
+    @objc private func selectVault() { run(failureTitle: "无法打开笔记库") { try await self.host.chooseVault(create: false) } }
     @objc private func activateVault(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
-        run { try await self.host.chooseRegisteredVault(id: id) }
+        run(failureTitle: "无法切换笔记库") { try await self.host.chooseRegisteredVault(id: id) }
     }
     @objc private func createVault() { run { try await self.host.chooseVault(create: true) } }
     @objc private func openWeb() { run { try await self.host.openWeb() } }

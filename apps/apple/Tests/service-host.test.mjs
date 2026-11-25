@@ -2,7 +2,7 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, readFile, rm, mkdir, writeFile, copyFile, stat, appendFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, mkdir, writeFile, copyFile, stat, appendFile, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -35,6 +35,7 @@ extension ServiceHost {
     return await webRequest(["version": 1, "requestId": "regression", "operation": "getStatus",
       "params": ["background": true], "_authorizationEpoch": webAuthorizationEpoch])
   }
+  func regressionWebLaunch() async throws -> URL { try await launchURL() }
 }
 `);
   await writeFile(join(buildDirectory, 'Package.swift'), `// swift-tools-version: 5.9
@@ -105,6 +106,88 @@ async function fixture(t) {
     async restart() { await current.stop(); current = await launch(root); return current.ready; },
   };
 }
+
+async function webSession(launchUrl) {
+  const url = new URL(launchUrl);
+  const token = new URLSearchParams(url.hash.split('?')[1]).get('token');
+  const post = (path, body, cookie) => fetch(url.origin + path, {
+    method: 'POST', body: JSON.stringify(body),
+    headers: { Origin: url.origin, 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) },
+  });
+  const session = await post('/api/session', { token });
+  assert.equal(session.status, 200);
+  const cookie = session.headers.get('set-cookie').split(';')[0];
+  return (operation, params = {}) => post('/api/bridge', { version: 1, requestId: randomUUID(), operation, params }, cookie);
+}
+
+test('renaming a registered vault refreshes its bookmark and survives restart', async t => {
+  const f = await fixture(t);
+  await rename(join(f.root, 'Vault B'), join(f.root, 'Vault B renamed'));
+  const selected = await f.host.command('switch', { name: 'Vault B' });
+  assert.equal(selected.error, undefined, selected.message);
+  assert.equal(selected.vaultName, 'Vault B renamed');
+  assert.equal((await f.restart()).vaultName, 'Vault B renamed');
+  await f.host.command('switch', { name: 'Vault A' });
+  assert.equal((await f.host.command('switch', { name: 'Vault B renamed' })).vaultName, 'Vault B renamed');
+});
+
+test('a missing registered folder gives the reason and recovery steps in the menu and Web', async t => {
+  const f = await fixture(t);
+  const before = (await f.call('getStatus')).binding;
+  const request = await webSession((await f.host.command('web-launch')).data.url);
+  const { data: { vaults } } = await (await request('listVaults')).json();
+  const vaultId = vaults.find(v => v.name === 'Vault B').vaultId;
+  await rm(join(f.root, 'Vault B'), { recursive: true });
+  const menu = await f.host.command('switch', { name: 'Vault B' });
+  assert.equal(menu.error, 'NOT_FOUND');
+  assert.match(menu.message, /找不到.*Vault B.*原先授权的文件夹.*重新选择/);
+  assert.equal(menu.vaultName, 'Vault A');
+  const web = await (await request('activateVault', { vaultId })).json();
+  assert.equal(web.ok, false);
+  assert.equal(web.error.message, menu.message);
+  assert.equal((await (await request('getStatus', { background: true })).json()).data.vaultName, 'Vault A');
+  assert.deepEqual((await f.call('getStatus')).binding, before);
+});
+
+test('a registered vault with missing or damaged metadata gives recovery steps without recreating its identity', async t => {
+  const f = await fixture(t);
+  const manifest = join(f.root, 'Vault B/.memocard/vault.json');
+  const original = await readFile(manifest);
+  await rm(manifest);
+  const missing = await f.host.command('switch', { name: 'Vault B' });
+  assert.match(missing.message, /缺少.*vault\.json.*从备份恢复/);
+  await assert.rejects(stat(manifest), { code: 'ENOENT' });
+  await writeFile(manifest, '{');
+  const corrupt = await f.host.command('switch', { name: 'Vault B' });
+  assert.match(corrupt.message, /无法解析笔记库元文件.*从备份恢复/);
+  const replacement = { ...JSON.parse(original), vaultId: randomUUID() };
+  await writeFile(manifest, JSON.stringify(replacement));
+  const replaced = await f.host.command('switch', { name: 'Vault B' });
+  assert.match(replaced.message, /笔记库身份.*重新选择/);
+  assert.equal(replaced.vaultName, 'Vault A');
+  await writeFile(manifest, original);
+  assert.equal((await f.host.command('switch', { name: 'Vault B' })).vaultName, 'Vault B');
+});
+
+test('a failed Web session update explains how to recover and permits retry', async t => {
+  const f = await fixture(t);
+  const request = await webSession((await f.host.command('web-launch')).data.url);
+  const { data: { vaults } } = await (await request('listVaults')).json();
+  const vaultId = vaults.find(v => v.name === 'Vault B').vaultId;
+  const restartFile = join(f.root, 'local/LocalWeb/restart.json');
+  await rm(restartFile);
+  await mkdir(restartFile);
+  const failed = await (await request('activateVault', { vaultId })).json();
+  assert.equal(failed.ok, false);
+  assert.match(failed.error.message, /无法更新本机网页会话.*重启 MemoCard 服务/);
+  assert.equal((await (await request('getStatus', { background: true })).json()).data.vaultName, 'Vault A');
+  await rm(restartFile, { recursive: true });
+  const retried = await (await request('activateVault', { vaultId })).json();
+  assert.equal(retried.ok, true);
+  assert.equal((await request('getStatus')).status, 401);
+  const reconnected = await webSession(retried.data.reconnectUrl);
+  assert.equal((await (await reconnected('getStatus', { background: true })).json()).data.vaultName, 'Vault B');
+});
 
 test('cancelling write authorization preserves the existing read-only connection and binding', async t => {
   const f = await fixture(t);
