@@ -149,10 +149,15 @@ return function RichFormatTools({ editor, mobile, onOpenLink, onError }: { edito
       }
       const width = toolbar.current.offsetWidth, height = toolbar.current.offsetHeight;
       left += 12; right -= 12;
-      const anchor = start.bottom > top && start.top < bottom ? start : end;
-      const visible = anchor.bottom > top && anchor.top < bottom && bottom - top >= height + 12;
+      const startVisible = start.bottom > top && start.top < bottom;
+      const endVisible = end.bottom > top && end.top < bottom;
+      const selectionVisible = Math.max(start.bottom, end.bottom) > top && Math.min(start.top, end.top) < bottom;
+      const visible = selectionVisible && bottom - top >= height + 12;
+      const below = endVisible && end.bottom + 8 + height <= bottom - 6;
+      const anchor = below || (!startVisible && endVisible) ? end : start;
       const center = start.top === end.top ? (start.left + end.right) / 2 : anchor.left;
-      setPosition({ left: Math.max(left, Math.min(center - width / 2, right - width)), top: Math.max(top + 6, Math.min(anchor.top - height - 8 >= top ? anchor.top - height - 8 : anchor.bottom + 8, bottom - height - 6)), visible, sheetBottom: Math.max(12, window.innerHeight - (viewport?.offsetTop ?? 0) - (viewport?.height ?? window.innerHeight) + 12), sheetHeight: (viewport?.height ?? window.innerHeight) - 24 });
+      const toolbarTop = below ? end.bottom + 8 : anchor.top - height - 8;
+      setPosition({ left: Math.max(left, Math.min(center - width / 2, right - width)), top: Math.max(top + 6, Math.min(toolbarTop, bottom - height - 6)), visible, sheetBottom: Math.max(12, window.innerHeight - (viewport?.offsetTop ?? 0) - (viewport?.height ?? window.innerHeight) + 12), sheetHeight: (viewport?.height ?? window.innerHeight) - 24 });
     };
     place();
     const observer = new ResizeObserver(place); if (toolbar.current) observer.observe(toolbar.current);

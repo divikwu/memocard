@@ -118,9 +118,9 @@
 .web-appearance-fields > [role=status] { padding-block: calc(var(--spacing-1) * 4); }
 .web-settings-working { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); color: var(--color-text-secondary); font-size: var(--font-size-xs); }
 
-.web-setting-font-group { display: flex; flex-direction: column; row-gap: calc(var(--spacing-1) * 2); min-inline-size: 0; padding-block: calc(var(--spacing-1) * 2); }
-.web-setting-font-choice { border-radius: inherit; }
-.web-setting-font-track::before {
+.web-setting-choice-group { display: flex; flex-direction: column; row-gap: calc(var(--spacing-1) * 2); min-inline-size: 0; padding-block: calc(var(--spacing-1) * 2); }
+.web-setting-choice { border-radius: inherit; }
+.web-setting-choice-track::before {
   content: "";
   position: absolute;
   grid-area: 1 / 1 / 2 / 2;
@@ -129,13 +129,13 @@
   pointer-events: none;
   border-radius: inherit;
   background: var(--color-neutral);
-  translate: calc(var(--font-choice-index, 0) * (100% + var(--gap) * var(--spacing-1))) 0;
+  translate: calc(var(--setting-choice-index, 0) * (100% + var(--gap) * var(--spacing-1))) 0;
 }
-.web-setting-font-track:has(> :nth-child(2)[aria-pressed=true]) { --font-choice-index: 1; }
-.web-setting-font-track:has(> :nth-child(3)[aria-pressed=true]) { --font-choice-index: 2; }
+.web-setting-choice-track:has(> :nth-child(2)[aria-pressed=true]) { --setting-choice-index: 1; }
+.web-setting-choice-track:has(> :nth-child(3)[aria-pressed=true]) { --setting-choice-index: 2; }
 @media (prefers-reduced-motion: no-preference) {
-  .web-setting-font-track::before { transition: translate var(--duration-fast-max) var(--ease-standard); }
+  .web-setting-choice-track::before { transition: translate var(--duration-fast-max) var(--ease-standard); }
 }
 @media (forced-colors: active) {
-  .web-setting-font-choice[aria-pressed=true] { box-shadow: inset 0 0 0 2px Highlight; forced-color-adjust: none; }
+  .web-setting-choice[aria-pressed=true] { box-shadow: inset 0 0 0 2px Highlight; forced-color-adjust: none; }
 }

@@ -1739,8 +1739,8 @@ it('keeps the text toolbar anchored to its selection when hovering another block
  vi.spyOn(editor.view.nodeDOM(7) as HTMLElement,'getBoundingClientRect').mockReturnValue(new DOMRect(60,400,200,30));
  vi.spyOn(editor.view,'coordsAtPos').mockReturnValue({left:60,right:160,top:200,bottom:226});
  act(()=>{editor.commands.setTextSelection({from:1,to:4});});
- const tools=screen.getByLabelText('文字格式');
- const top=tools.style.top;expect(top).toBe('192px');
+ const tools=await screen.findByLabelText('文字格式');
+ const top=tools.style.top;expect(top).toBe('234px');
  vi.spyOn(editor.view,'posAtCoords').mockReturnValue({pos:9,inside:7});
  fireEvent.mouseMove(field.closest('.rich-editor')!,{clientX:80,clientY:410});
  expect(tools.style.top).toBe(top);
@@ -1790,11 +1790,27 @@ it('updates the drop indicator while edge scrolling with a stationary pointer',a
  fireEvent.dragEnd(screen.getByRole('button',{name:'内容块操作'}));
 });
 
-it('places the text toolbar below the selection when there is no room above',async()=>{
- const {editor}=await setup('first');
- vi.spyOn(editor.view,'coordsAtPos').mockReturnValue({left:60,right:80,top:0,bottom:26});
- act(()=>{editor.commands.setTextSelection({from:1,to:4});});
- expect(screen.getByLabelText('文字格式').style.top).toBe('34px');
+it('places the text toolbar below the last selected line and flips above the first near the viewport bottom',async()=>{
+ const {editor}=await setup('first\n\nsecond');
+ vi.spyOn(HTMLElement.prototype,'offsetHeight','get').mockReturnValue(40);
+ let firstLineTop=200, lastLineTop=250;
+ vi.spyOn(editor.view,'coordsAtPos').mockImplementation(pos=>{
+  const top=pos===1 ? firstLineTop : lastLineTop;
+  return {left:60,right:80,top,bottom:top+26};
+ });
+ act(()=>{editor.commands.setTextSelection({from:1,to:10});});
+ const tools=await screen.findByLabelText('文字格式');
+ expect(tools.style.top).toBe('284px');
+ lastLineTop=window.innerHeight-30;
+ fireEvent.resize(window);
+ expect(tools.style.top).toBe('152px');
+ firstLineTop=-80;
+ fireEvent.scroll(document);
+ expect(parseFloat(tools.style.top)).toBe(lastLineTop-48);
+ lastLineTop=window.innerHeight+80;
+ fireEvent.scroll(document);
+ expect(tools.style.visibility).not.toBe('hidden');
+ expect(tools.style.top).toBe('6px');
 });
 
 it('formats only selected parts across paragraphs and preserves selection through undo and redo', async () => {
@@ -1861,7 +1877,7 @@ it('keeps the toolbar inside the viewport and hides it when the selection scroll
  vi.spyOn(editor.view,'coordsAtPos').mockReturnValue({left:1000,right:1010,top:200,bottom:226});
  act(()=>editor.commands.setTextSelection({from:1,to:3}));
  const tools=await screen.findByRole('toolbar',{name:'文字格式'});
- expect(parseFloat(tools.style.left)+232).toBeLessThanOrEqual(window.innerWidth-12);expect(tools.style.top).toBe('152px');
+ expect(parseFloat(tools.style.left)+232).toBeLessThanOrEqual(window.innerWidth-12);expect(tools.style.top).toBe('234px');
  vi.spyOn(editor.view,'coordsAtPos').mockReturnValue({left:60,right:80,top:-100,bottom:-74});
  fireEvent.scroll(document);expect(tools.style.visibility).toBe('hidden');
  vi.restoreAllMocks();

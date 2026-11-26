@@ -60,7 +60,7 @@ function CollectionSkeleton({ cards }: { cards: boolean }) {
     {[0, 1, 2, 3, 4, 5].map(item => <Card key={item} className={cn("ui-note-card", !cards && "ui-note-list-card shadow-none ring-0")}>
       {cards ? <CardContent className="ui-note-skeleton-content">
         <Skeleton className={item % 2 ? "h-5 w-3/4" : "h-5 w-2/3"} />
-        <Skeleton className="h-4 w-28" /><Skeleton className="mt-3 h-4 w-full" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-4 w-28" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" />
       </CardContent> : <CardContent className="ui-note-content ui-note-list-content">
         <div className="ui-note-list-heading">
           <div className="ui-note-row-open">

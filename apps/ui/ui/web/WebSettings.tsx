@@ -1,5 +1,7 @@
-import { Suspense, useId, useRef, useState, type Ref } from "react";
-import TextSmallcapsIcon from "@hugeicons/core-free-icons/TextSmallcapsIcon";
+import { Suspense, useId, useRef, useState, type ReactNode, type Ref } from "react";
+import ComputerIcon from "@hugeicons/core-free-icons/ComputerIcon";
+import Moon02Icon from "@hugeicons/core-free-icons/Moon02Icon";
+import Sun03Icon from "@hugeicons/core-free-icons/Sun03Icon";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { isNative } from "../../src/bridge";
 import type { AppViewState } from "../../src/App";
@@ -10,7 +12,7 @@ import { Switch } from "../components/switch";
 import { Label } from "../components/label";
 import { usePreviewFontStatus } from "../preview-mode";
 import { getPreviewRadius, PREVIEW_RADII } from "../preview-appearance";
-import { getPreviewFont, type PreviewFont } from "../preview-fonts";
+import { getPreviewFont } from "../preview-fonts";
 import { ChevronDownIcon } from "../icons";
 import { Spinner } from "../components/spinner";
 import { useWebAppearance, WEB_NEUTRALS, WEB_PALETTES } from "./WebAppearance";
@@ -22,7 +24,7 @@ import { recoverableLazy } from "../components/recoverable-lazy";
 import { loadWebMoreDrawer } from "./loadWebMoreDrawer";
 import { ReopenLocalWeb } from "./ReopenLocalWeb";
 import { useAppearanceCatalog, useWorkspaceAppearance } from "./appearance/AppearanceRuntime";
-import { fontPreset, noteFontChoices, type NoteFont } from "./note-appearance";
+import { fontPreset, noteFontChoices } from "./note-appearance";
 import { defaults as defaultTypography } from "../../src/features/typography/preferences";
 import { useTypography } from "../../src/features/typography/TypographyProvider";
 import "./web-settings-layout.css";
@@ -37,21 +39,35 @@ function formatIndexDate(value: string) {
   return Number.isNaN(date.valueOf()) ? "时间未知" : indexedDate.format(date);
 }
 
-function SettingsFontChoices({ label, font, onChange, selectedRef }: {
-  label: string; font: PreviewFont; onChange: (font: NoteFont) => void; selectedRef?: Ref<HTMLButtonElement>;
+const colorModeChoices = [
+  { value: "light", label: "浅色", icon: Sun03Icon },
+  { value: "dark", label: "深色", icon: Moon02Icon },
+  { value: "system", label: "跟随系统", icon: ComputerIcon },
+] as const;
+
+const modeOptions = colorModeChoices.map(({ value, label, icon }) => ({
+  value, label, preview: <HugeiconsIcon icon={icon} className="size-6" strokeWidth={1.75} aria-hidden="true" />,
+}));
+
+const fontOptions = noteFontChoices.map(({ value, label }) => ({
+  value, label, preview: <span aria-hidden="true" className="text-2xl leading-none" style={{ fontFamily: getPreviewFont(value).fontFamily }}>Ag</span>,
+}));
+
+function SettingsChoices<T extends string>({ label, options, selected, onChange, selectedRef }: {
+  label: string; options: readonly { value: T; label: string; preview: ReactNode }[]; selected: T;
+  onChange: (value: T) => void; selectedRef?: Ref<HTMLButtonElement>;
 }) {
-  const selected = fontPreset(font);
   const labelId = useId();
-  return <section className="web-setting-font-group">
+  return <section className="web-setting-choice-group">
     <p id={labelId} className="text-sm leading-(--text-body-leading) font-medium">{label}</p>
-    <ToggleGroup aria-labelledby={labelId} spacing={0.5} className="web-setting-font-track relative isolate grid w-full grid-cols-3 rounded-element" value={[selected]} onValueChange={([next]) => {
-      const choice = noteFontChoices.find(choice => choice.value === next);
+    <ToggleGroup aria-labelledby={labelId} spacing={0.5} className="web-setting-choice-track relative isolate grid w-full grid-cols-3 rounded-element" value={[selected]} onValueChange={([next]) => {
+      const choice = options.find(choice => choice.value === next);
       if (choice) onChange(choice.value);
     }}>
-      {noteFontChoices.map(choice => <ToggleGroupItem key={choice.value} value={choice.value}
+      {options.map(choice => <ToggleGroupItem key={choice.value} value={choice.value}
         ref={selected === choice.value ? selectedRef : undefined}
-        className="web-setting-font-choice h-auto min-w-0 flex-col gap-1 px-1 py-2 hover:bg-overlay-hover aria-pressed:bg-transparent">
-        <span aria-hidden="true" className="text-2xl leading-none" style={{ fontFamily: getPreviewFont(choice.value).fontFamily }}>Ag</span>
+        className="web-setting-choice h-auto min-w-0 flex-col gap-1 px-1 py-2 hover:bg-overlay-hover aria-pressed:bg-transparent">
+        {choice.preview}
         <span className="text-xs">{choice.label}</span>
       </ToggleGroupItem>)}
     </ToggleGroup>
@@ -102,14 +118,16 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
       if (typography.value.size !== defaultTypography.size) typography.save({ ...typography.value, size: defaultTypography.size });
     }}>恢复默认</Button></div><Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">
       {!isNative && !s.nativeChrome && <WebSettingSelect id={field("interface-theme")} label="界面主题" value={appearance.value.interfaceTheme} onValueChange={interfaceTheme => workspaceAppearance ? workspaceAppearance.select(interfaceTheme) : appearance.onChange({ ...appearance.value, interfaceTheme })} options={themeOptions} />}
-      <WebSettingSelect id={field("theme")} label={isNative || s.nativeChrome ? "主题" : "颜色模式"} value={appearance.value.theme} onValueChange={theme => appearance.onChange({ ...appearance.value, theme })} options={[{ value: "light", label: "浅色" }, { value: "dark", label: "深色" }, { value: "system", label: "跟随系统" }]} />
+      {isNative || s.nativeChrome
+        ? <WebSettingSelect id={field("theme")} label="主题" value={appearance.value.theme} onValueChange={theme => appearance.onChange({ ...appearance.value, theme })} options={modeOptions} />
+        : <SettingsChoices label="颜色模式" options={modeOptions} selected={appearance.value.theme} onChange={theme => appearance.onChange({ ...appearance.value, theme })} />}
+      <SettingsChoices label="标题字体" options={fontOptions} selected={fontPreset(appearance.value.headingFont === "inherit" ? appearance.value.bodyFont : appearance.value.headingFont)}
+        onChange={headingFont => appearance.onChange({ ...appearance.value, headingFont })} />
+      <SettingsChoices label="正文字体" options={fontOptions} selected={fontPreset(appearance.value.bodyFont)} selectedRef={bodyFont}
+        onChange={bodyFont => appearance.onChange({ ...appearance.value, headingFont: appearance.value.headingFont === "inherit" ? appearance.value.bodyFont : appearance.value.headingFont, bodyFont })} />
       <WebSettingSelect id={field("palette")} label="强调色" value={appearance.value.palette} onValueChange={palette => appearance.onChange({ ...appearance.value, palette })} options={WEB_PALETTES} />
       <WebSettingSelect id={field("neutral")} label="中性色" value={appearance.value.neutralPalette} onValueChange={neutralPalette => appearance.onChange({ ...appearance.value, neutralPalette })} options={WEB_NEUTRALS} />
-      <SettingsFontChoices label="标题字体" font={appearance.value.headingFont === "inherit" ? appearance.value.bodyFont : appearance.value.headingFont}
-        onChange={headingFont => appearance.onChange({ ...appearance.value, headingFont })} />
-      <SettingsFontChoices label="正文字体" font={appearance.value.bodyFont} selectedRef={bodyFont}
-        onChange={bodyFont => appearance.onChange({ ...appearance.value, headingFont: appearance.value.headingFont === "inherit" ? appearance.value.bodyFont : appearance.value.headingFont, bodyFont })} />
-      <div className="web-setting-row"><Label htmlFor={field("small-text")}><HugeiconsIcon icon={TextSmallcapsIcon} size={16} strokeWidth={2} aria-hidden="true" />小字号</Label>
+      <div className="web-setting-row"><Label htmlFor={field("small-text")}>小字号</Label>
         <Switch id={field("small-text")} checked={typography.value.size === "14"} onCheckedChange={checked => typography.save({ ...typography.value, size: checked ? "14" : "16" })} /></div>
       <WebSettingSelect id={field("radius")} label="圆角" value={appearance.value.radius} onValueChange={radius => appearance.onChange({ ...appearance.value, radius })} options={[...(!PREVIEW_RADII.some(option => option.value === appearance.value.radius) ? [{ value: appearance.value.radius, label: getPreviewRadius(appearance.value.radius).title }] : []), ...PREVIEW_RADII.map(option => ({ value: option.value, label: option.title }))]} />
       {fonts.status !== "ready" && <div className="web-font-status" role="status"><p>{fonts.status === "failed" ? "所选字体暂时无法加载，当前使用回退字体。" : "正在加载所选字体，当前使用回退字体。"}</p>{fonts.status === "failed" && <Button variant="outline" size="sm" onClick={() => {

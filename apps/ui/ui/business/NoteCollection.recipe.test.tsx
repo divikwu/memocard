@@ -22,14 +22,14 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); style.remove(); vi.unstubAllGlobals(); });
 
-it("uses the UI body font for card titles and the compact reading recipe for real Markdown without changing other previews", async () => {
+it("uses the UI heading font for card titles and the compact reading recipe for real Markdown without changing other previews", async () => {
   render(<NoteCollection {...props()} />);
   const previewHeading = await screen.findByRole("heading", { name: "正文中的标题" });
   const markdown = previewHeading.closest(".ui-note-markdown")!;
-  expect(getComputedStyle(screen.getByRole("heading", { name: "集合的界面标题" })).fontFamily).toContain("--font-family-body");
+  expect(getComputedStyle(screen.getByRole("heading", { name: "集合的界面标题" })).fontFamily).toContain("--font-family-heading");
   expect(getComputedStyle(previewHeading).fontSize).toBe("1em");
   expect(getComputedStyle(previewHeading).fontFamily).toBe(getComputedStyle(markdown).fontFamily);
-  expect(getComputedStyle(markdown).getPropertyValue("--typeset-flow")).toBe("var(--spacing-1)");
+  expect(getComputedStyle(markdown).getPropertyValue("--typeset-flow")).toBe("0px");
   expect(getComputedStyle(markdown).fontSize).toContain("--font-size-sm");
   expect(getComputedStyle(markdown).lineHeight).toContain("--text-body-leading");
   expect(markdown.querySelector("button, a, input, [tabindex]")).toBeNull();
