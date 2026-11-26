@@ -53,56 +53,92 @@
 .ui-note-cards { --image-gap: var(--spacing-1); display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--spacing-1) * 80)), 1fr)); gap: calc(var(--spacing-1) * 2); }
 .ui-note-list { display: flex; flex-direction: column; gap: 0; }
 .ui-note-card { position: relative; min-width: 0; padding-block: 0; gap: 0; border: 0; border-radius: var(--radius-item); box-shadow: var(--shadow-flat); }
-@media (min-width: 768px) { .ui-note-cards .ui-note-card { aspect-ratio: 1; } }
+@media (min-width: 768px) {
+  .ui-note-cards > .ui-note-card { aspect-ratio: 1; }
+  .ui-note-cards > li { container-type: inline-size; }
+  .ui-note-cards > li > .ui-note-card { min-height: 100cqi; }
+  .ui-note-cards .ui-note-content { flex: 1; height: auto; }
+  .ui-note-cards .ui-note-preview:has(> .note-preview) { flex: none; }
+  .ui-note-cards .ui-note-preview:has(> .ui-note-card-cover) { flex-basis: auto; aspect-ratio: 16 / 9; }
+  .ui-note-cards .ui-note-preview:not(:has(> .note-preview)) { display: grid; grid-template-rows: minmax(0, 1fr); contain: size; }
+}
 .ui-note-card[data-note-openable="true"]:not(.ui-card-hover-shadow, .ui-card-hover-scale) { transition: background-color var(--duration-fast) var(--ease-standard); }
 :where(.ui-note-list) .ui-note-card[data-note-openable="true"]:hover { background: var(--color-overlay-hover); }
 .ui-note-card:has(.ui-note-open:focus-visible) { outline: var(--focus-outline-width) var(--focus-outline-style) var(--focus-outline-color); outline-offset: var(--focus-outline-offset); }
 .ui-note-content { display: flex; flex-direction: column; height: 100%; min-height: 0; min-width: 0; padding: 0; gap: 0; }
-.ui-note-heading { min-width: 0; padding: calc(var(--spacing-1) * 4) calc(var(--spacing-1) * 4) calc(var(--spacing-1) * 3); }
-.ui-note-heading h2 { margin: 0; font-family: var(--font-family-body); font-size: var(--font-size-base); font-weight: var(--font-weight-bold); line-height: var(--text-body-leading); }
-.ui-note-open { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; border: 0; background: transparent; color: var(--color-text-primary); padding: 0; font: inherit; outline: none; }
+.ui-note-heading { min-width: 0; padding: calc(var(--spacing-1) * 4) calc(var(--spacing-1) * 4) var(--spacing-1); }
+.ui-note-heading h2 { margin: 0; font-family: var(--font-family-heading); font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); line-height: var(--text-heading-2-leading); }
+.ui-note-open { display: block; width: 100%; text-align: start; border: 0; background: transparent; color: var(--color-text-primary); padding: 0; font: inherit; outline: none; }
+.ui-note-heading .ui-note-open { overflow-wrap: anywhere; }
 .ui-note-open::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
 .ui-note-open:disabled { cursor: default; color: var(--color-text-disabled); }
 .ui-note-open:disabled::after { pointer-events: none; }
-.ui-note-heading time, .ui-note-list-date { display: block; margin-block-start: var(--spacing-1); color: color-mix(in srgb, var(--color-text-secondary) 80%, transparent); font-family: var(--font-family-body); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; line-height: var(--text-supporting-leading); }
-.ui-note-heading time { margin-block-start: calc(var(--spacing-1) * .5); line-height: var(--text-body-leading); }
+.ui-note-heading time, .ui-note-list-date { display: block; color: color-mix(in srgb, var(--color-text-secondary) 80%, transparent); font-family: var(--font-family-body); font-size: var(--font-size-xs); font-variant-numeric: tabular-nums; line-height: var(--text-supporting-leading); }
+.ui-note-heading time { margin-block-start: var(--spacing-1); line-height: var(--text-body-leading); }
 .ui-note-preview { flex: 1; font-weight: var(--font-weight-medium); min-height: 0; min-width: 0; overflow: hidden; padding: 0 calc(var(--spacing-1) * 4) calc(var(--spacing-1) * 4); color: var(--color-text-secondary); pointer-events: none; }
-.ui-note-preview .note-preview[data-compact] { opacity: .82; }
+.ui-note-preview .note-preview[data-compact] { height: auto; font-size: var(--font-size-sm); line-height: var(--text-body-leading); max-height: 3lh; opacity: .72; }
+.ui-note-preview .note-preview[data-compact][data-overflow] { mask-image: none; }
+@media (forced-colors: none) {
+  .ui-note-cards .ui-note-content:has(.note-preview[data-overflow="true"]) {
+    mask-image: linear-gradient(to bottom, black calc(100% - var(--spacing-1) * 6), transparent);
+  }
+}
+.ui-note-preview :is(.ui-note-preview-text, .ui-note-markdown[data-compact]) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
 .ui-note-card-cover { width: 100%; height: 100%; overflow: hidden; border-radius: calc(var(--radius-element) * 0.5); background: var(--color-background-muted); }
 .ui-note-card-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .ui-note-card-cover:not([data-image-state="loaded"]) img { visibility: hidden; }
 .ui-note-preview-text { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
-.ui-note-preview .ui-note-markdown[data-compact] { --typeset-flow: var(--spacing-1); --typeset-leading: var(--text-body-leading); font-family: var(--font-family-body); font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
+.ui-note-preview .ui-note-markdown[data-compact] { --typeset-flow: 0px; --typeset-leading: var(--text-body-leading); font-family: var(--font-family-body); font-size: var(--font-size-sm); line-height: var(--text-body-leading); }
 .ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6) { color: inherit; font-family: inherit; font-size: 1em; font-weight: var(--font-weight-bold); line-height: inherit; }
-.ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6) + p,
-.ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6, ul, ol, blockquote, aside[data-callout]) + :is(h1, h2, h3, h4, h5, h6) {
-  margin-block-start: var(--typeset-flow);
-}
+.ui-note-preview .ui-note-markdown[data-compact] :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, aside, pre, table) { margin-block: 0; }
 .ui-note-preview .ui-note-markdown[data-compact] :is(strong, b) { color: inherit; font-weight: var(--font-weight-bold); }
 .ui-note-preview .ui-note-markdown[data-compact] a { color: inherit; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); }
 .ui-note-preview .ui-note-markdown[data-compact] :is(ul, ol) { padding-inline-start: calc(var(--spacing-1) * 4); }
 .ui-note-preview .ui-note-markdown[data-compact] ul.contains-task-list { padding-inline-start: 0; }
-.ui-note-preview .ui-note-markdown[data-compact] li { margin-block-start: calc(var(--spacing-1) * .5); padding-inline-start: 0; }
-.ui-note-preview .ui-note-markdown[data-compact] li:first-child { margin-block-start: 0; }
-.ui-note-preview .ui-note-markdown[data-compact] :is(li > p, li > ul, li > ol) { margin-block-start: calc(var(--spacing-1) * .5); }
+.ui-note-preview .ui-note-markdown[data-compact] li { padding-inline-start: 0; }
+.ui-note-preview .ui-note-markdown[data-compact] li:is(:empty, :has(> p:only-child:empty)) { display: none; }
 .ui-note-preview .ui-note-markdown[data-compact] .note-task-indicator { width: calc(var(--spacing-1) * 3.5); height: calc(var(--spacing-1) * 3.5); }
-.ui-note-preview .ui-note-markdown[data-compact] blockquote { padding-inline-start: calc(var(--spacing-1) * 2); border-inline-start: var(--border-width) solid var(--color-divider); }
-.ui-note-preview .ui-note-markdown[data-compact] aside[data-callout] {
-  --note-panel-padding-block: calc(var(--typeset-flow) * 2);
-  padding-inline-start: var(--note-panel-padding-block);
+.ui-note-preview .ui-note-markdown[data-compact] :is(blockquote, aside[data-callout]) {
+  padding: 0 calc(var(--spacing-1) * 2);
+  border: 0;
+  border-inline-start: 2px solid var(--color-divider);
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  line-height: inherit;
 }
-.ui-note-preview .ui-note-markdown[data-compact] aside[data-callout][data-callout-icon] {
-  --callout-icon-size: calc(var(--typeset-flow) * 5);
-  padding-inline-start: calc(var(--note-panel-padding-block) + var(--callout-icon-size) + var(--typeset-flow));
+.ui-note-preview .ui-note-markdown[data-compact] :is(blockquote, aside[data-callout])::before { content: none; }
+.ui-note-preview .ui-note-markdown[data-compact] :is(pre, pre code) {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: inherit;
+  line-height: inherit;
+  overflow: visible;
 }
-.ui-note-preview .ui-note-markdown[data-compact] aside[data-callout][data-callout-icon]::before {
-  inset-inline-start: var(--note-panel-padding-block);
-  inline-size: var(--callout-icon-size);
-  overflow: hidden;
-  text-align: center;
-  white-space: nowrap;
+.ui-note-preview .ui-note-markdown[data-compact] :is(.typeset-scroll, table, thead, tbody, tfoot, tr) {
+  display: block;
+  overflow: visible;
 }
-.ui-note-preview .ui-note-markdown[data-compact] aside[data-callout] > p + p { margin-block-start: var(--typeset-flow); }
+.ui-note-preview .ui-note-markdown[data-compact] table { width: auto; border: 0; line-height: inherit; overflow-wrap: anywhere; }
+.ui-note-preview .ui-note-markdown[data-compact] :is(th, td) {
+  display: inline;
+  white-space: normal;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: inherit;
+  line-height: inherit;
+}
+.ui-note-preview .ui-note-markdown[data-compact] :is(th, td) p { display: inline; }
+.ui-note-preview .ui-note-markdown[data-compact] :is(th, td) + :is(th, td)::before { content: " · "; }
 .ui-note-tags { display: flex; align-items: center; gap: calc(var(--spacing-1) * 2); min-width: 0; }
 .ui-note-card .ui-note-tags .ui-note-tag { position: relative; z-index: 1; flex-shrink: 1; min-width: 0; max-width: 100%; height: calc(var(--spacing-1) * 5); min-height: calc(var(--spacing-1) * 5); padding: 0 calc(var(--spacing-1) * 1.5); border: 0; border-radius: var(--radius-full); background: var(--tag-bg, var(--tag-default-bg, transparent)); color: var(--tag-fg, var(--color-text-primary)); font-size: var(--font-size-sm); font-weight: var(--font-weight-normal); line-height: var(--text-body-leading); }
 .ui-note-tag:not(:disabled):is(:hover, :focus-visible) { background: linear-gradient(var(--color-overlay-hover), var(--color-overlay-hover)), var(--tag-bg, var(--tag-default-bg, transparent)); color: var(--tag-fg, var(--color-text-primary)); }
@@ -111,7 +147,7 @@
 .ui-note-list-card { height: auto; padding: 0; border-width: 0; border-radius: var(--radius-element); box-shadow: none; }
 .ui-note-list-content { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: calc(var(--spacing-1) * 2); }
 .ui-note-list-content:has(.ui-note-tags) { grid-template-columns: minmax(0, 1fr) fit-content(calc(100% / 3)) auto; }
-.ui-note-list-heading { display: grid; grid-area: 1 / 1 / 2 / -1; grid-template-columns: subgrid; min-width: 0; margin: 0; font-family: var(--font-family-body); font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); line-height: var(--text-body-leading); }
+.ui-note-list-heading { display: grid; grid-area: 1 / 1 / 2 / -1; grid-template-columns: subgrid; min-width: 0; margin: 0; font-family: var(--font-family-heading); font-size: var(--font-size-sm); font-weight: var(--font-weight-bold); line-height: var(--text-body-leading); }
 .ui-note-row-open { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; padding: calc(var(--spacing-1) * 2); border-radius: var(--radius-element); }
 .ui-note-row-open::after { content: none; }
 .ui-note-row-open > * { pointer-events: none; }
@@ -136,7 +172,6 @@
 @media (width < 768px) {
   .ui-note-cards .ui-note-content { height: auto; }
   .ui-note-preview { flex: none; }
-  .ui-note-preview .note-preview[data-compact] { height: auto; max-height: calc(var(--spacing-1) * 48); }
   .ui-note-card-cover { position: relative; height: auto; aspect-ratio: 16 / 9; }
   .ui-note-card-cover img { position: absolute; inset: 0; }
 }

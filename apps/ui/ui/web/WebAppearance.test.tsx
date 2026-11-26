@@ -35,7 +35,7 @@ async function choose(user: ReturnType<typeof userEvent.setup>, label: string, o
   await user.click(await screen.findByRole("option", { name: option }));
   await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
 }
-function fontChoice(group: string, name: string) {
+function settingChoice(group: string, name: string) {
   return within(screen.getByRole("group", { name: group })).getByRole("button", { name });
 }
 function receive(value: unknown, storage: Storage = localStorage, storageKey: string | null = key) {
@@ -129,7 +129,7 @@ it("preserves a real editor instance, focus and undo when another tab changes ap
   fireEvent.click(retry);
   await waitFor(() => expect(screen.queryByText("所选字体暂时无法加载，当前使用回退字体。")).toBeNull());
   await waitFor(() => expect(screen.queryByText("正在加载所选字体，当前使用回退字体。")).toBeNull());
-  expect(document.activeElement).toBe(fontChoice("正文字体", "无衬线体"));
+  expect(document.activeElement).toBe(settingChoice("正文字体", "无衬线体"));
   expect(noteEditor(field)).toBe(editor);
   act(() => { editor.commands.undo(); });
   expect(editor.getText()).toBe("正文");
@@ -156,9 +156,9 @@ const settingsState = () => ({
 it("uses labelled MemoCard UI appearance selectors and restores the last indexed timestamp", async () => {
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  await choose(user, "颜色模式", "跟随系统");
-  await user.click(fontChoice("正文字体", "衬线体"));
-  await user.click(fontChoice("标题字体", "等宽体"));
+  await user.click(settingChoice("颜色模式", "跟随系统"));
+  await user.click(settingChoice("正文字体", "衬线体"));
+  await user.click(settingChoice("标题字体", "等宽体"));
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "system", bodyFont: "noto-serif", headingFont: "system-mono" });
   expect(document.documentElement.style.getPropertyValue("--ui-preview-body")).toBe(getPreviewFont("noto-serif").fontFamily);
   expect(document.documentElement.style.getPropertyValue("--ui-preview-heading")).toBe(getPreviewFont("system-mono").fontFamily);
@@ -178,8 +178,8 @@ it("offers the curated fonts in UI appearance without separate note font selecto
     const group = within(screen.getByRole("group", { name: label }));
     expect(group.getAllByRole("button").map(option => option.textContent)).toEqual(["Ag无衬线体", "Ag衬线体", "Ag等宽体"]);
   }
-  await user.click(fontChoice("正文字体", "衬线体"));
-  expect(fontChoice("标题字体", "无衬线体").getAttribute("aria-pressed")).toBe("true");
+  await user.click(settingChoice("正文字体", "衬线体"));
+  expect(settingChoice("标题字体", "无衬线体").getAttribute("aria-pressed")).toBe("true");
 
 });
 
@@ -278,37 +278,27 @@ it("shows existing font and radius values as real current options before the use
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
   const radius = screen.getByRole("combobox", { name: "圆角" });
   expect(radius.textContent).toBe("已有设置 · 4px");
-  expect(fontChoice("标题字体", "衬线体").getAttribute("aria-pressed")).toBe("true");
-  expect(fontChoice("正文字体", "无衬线体").getAttribute("aria-pressed")).toBe("true");
+  expect(settingChoice("标题字体", "衬线体").getAttribute("aria-pressed")).toBe("true");
+  expect(settingChoice("正文字体", "无衬线体").getAttribute("aria-pressed")).toBe("true");
   await choose(user, "圆角", "默认 · 8px");
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ radius: "default", headingFont: "songti", bodyFont: "pingfang" });
   expect(document.documentElement.style.getPropertyValue("--ui-preview-radius")).toBe("0.5rem");
 });
 
-it("supports keyboard selection and Escape without losing trigger focus or changing a cancelled choice", async () => {
+it("selects a color mode with the keyboard and keeps one mode active", async () => {
   const user = userEvent.setup();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
-  const theme = screen.getByRole("combobox", { name: "颜色模式" });
-  theme.focus();
+  const group = within(screen.getByRole("group", { name: "颜色模式" }));
+  const light = group.getByRole("button", { name: "浅色", pressed: true });
+  const dark = group.getByRole("button", { name: "深色" });
+  light.focus();
+  await user.keyboard("{ArrowRight}");
+  expect(document.activeElement).toBe(dark);
   await user.keyboard("{Enter}");
-  const light = await screen.findByRole("option", { name: "浅色" });
-  await waitFor(() => expect(document.activeElement).toBe(light));
-  await user.keyboard("{ArrowDown}");
-  const dark = screen.getByRole("option", { name: "深色" });
-  await waitFor(() => expect(document.activeElement).toBe(dark));
-  await user.keyboard("{Enter}");
-  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  expect(group.getByRole("button", { pressed: true })).toBe(dark);
   expect(JSON.parse(localStorage.getItem(key)!).theme).toBe("dark");
-  expect(document.activeElement).toBe(theme);
-  await user.keyboard("{Enter}");
-  const selected = await screen.findByRole("option", { name: "深色" });
-  await waitFor(() => expect(document.activeElement).toBe(selected));
-  await user.keyboard("{ArrowDown}");
-  await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("option", { name: "跟随系统" })));
-  await user.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
-  expect(JSON.parse(localStorage.getItem(key)!).theme).toBe("dark");
-  expect(document.activeElement).toBe(theme);
+  await user.keyboard(" ");
+  expect(group.getByRole("button", { pressed: true })).toBe(dark);
 });
 
 
@@ -319,7 +309,7 @@ it("persists the interface theme independently of color mode and restores it on 
   expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("轻简");
   await choose(user, "界面主题", "经典");
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "dark", interfaceTheme: "classic" });
-  await choose(user, "颜色模式", "浅色");
+  await user.click(settingChoice("颜色模式", "浅色"));
   expect(JSON.parse(localStorage.getItem(key)!)).toMatchObject({ theme: "light", interfaceTheme: "classic" });
   view.unmount();
   render(<WebAppearanceProvider><WebSettings state={settingsState()} /></WebAppearanceProvider>);
@@ -329,5 +319,5 @@ it("persists the interface theme independently of color mode and restores it on 
   expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("轻简");
   receive({ interfaceTheme: "unknown", theme: "dark" });
   expect(screen.getByRole("combobox", { name: "界面主题" }).textContent).toContain("暂不可用");
-  expect(screen.getByRole("combobox", { name: "颜色模式" }).textContent).toContain("深色");
+  expect(settingChoice("颜色模式", "深色").getAttribute("aria-pressed")).toBe("true");
 });

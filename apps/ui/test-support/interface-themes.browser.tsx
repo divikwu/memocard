@@ -80,7 +80,7 @@ test.each(["classic", "minimal"])("%s mobile settings keep theme surfaces and op
     const body = within(document.body);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(body.queryByRole("dialog", { name: "笔记导航" })).toBeNull();
-    const mode = await canvas.findByRole("combobox", { name: "颜色模式" }, { timeout: 5000 });
+    const mode = await canvas.findByRole("group", { name: "颜色模式" }, { timeout: 5000 });
     const card = mode.closest('[data-slot="card"]')!;
     const panel = card.closest(".web-settings-panel")!;
     const main = view.container.querySelector<HTMLElement>(".web-app-scroll")!;
@@ -162,7 +162,7 @@ test("minimal theme aligns visible page titles with the all-notes heading", asyn
     ] as const) {
       await act(async () => { await current.onNavigate(route); });
       if (route === "tags") await canvas.findByRole("tablist", { name: "标签视图" }, { timeout: 5000 });
-      if (route === "settings") await canvas.findByRole("combobox", { name: "颜色模式" }, { timeout: 5000 });
+      if (route === "settings") await canvas.findByRole("group", { name: "颜色模式" }, { timeout: 5000 });
       const title = await canvas.findByRole("heading", { name, level: 1 });
       const content = title.closest(".web-page-content")!;
       const body = content.querySelector(bodySelector)!;

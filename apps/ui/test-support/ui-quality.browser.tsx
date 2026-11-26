@@ -754,31 +754,135 @@ test("global UI hints use Tooltip without mouse focus persistence or duplicate p
 
 test("all notes cards use four columns on desktop and one on mobile", async () => {
   await page.viewport(1280, 900);
-  const view = render(<PreviewModeProvider mode="light"><NoteCollection notes={[editorNote]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
+  const title = "如何让 Codex 按预期交付：五条提示词建议";
+  const longTitle = "长标题".repeat(70) + "UnbrokenWord".repeat(8);
+  const view = render(<PreviewModeProvider mode="light" appearance={{ radius: "default", headingFont: "noto-serif", bodyFont: "system" }}><NoteCollection notes={[{ ...editorNote, title }, { ...editorNote, id: "long-title", title: longTitle }]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
   const canvas = within(view.container);
   await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
   const grid = canvas.getByRole("list", { name: "笔记列表" });
-  expect(getComputedStyle(canvas.getByRole("button", { name: `打开 ${editorNote.title}` })).fontWeight).toBe("700");
-  expect(getComputedStyle(await canvas.findByText(editorNote.body)).fontWeight).toBe("500");
+  const titleStyle = () => getComputedStyle(canvas.getByRole("button", { name: `打开 ${title}` }));
+  expect(titleStyle().fontFamily).toContain("Noto Serif");
+  expect(titleStyle().fontWeight).toBe("700");
+  expect(titleStyle().fontSize).toBe("20px");
+  const longButton = canvas.getByRole("button", { name: `打开 ${longTitle}` });
+  const checkFullTitle = () => {
+    const range = document.createRange();
+    range.selectNodeContents(longButton);
+    const lines = range.getClientRects();
+    const card = longButton.closest(".ui-note-card")!.getBoundingClientRect();
+    expect(lines.length).toBeGreaterThan(1);
+    for (const line of lines) {
+      expect(line.right).toBeLessThanOrEqual(card.right);
+      expect(line.bottom).toBeLessThanOrEqual(card.bottom);
+    }
+  };
+  checkFullTitle();
+  expect(getComputedStyle((await canvas.findAllByText(editorNote.body))[0]).fontWeight).toBe("500");
   const columns = () => getComputedStyle(grid).gridTemplateColumns.split(" ").length;
   expect(columns()).toBe(4);
   const card = grid.querySelector(".ui-note-card")!;
   expect(card.clientHeight).toBe(card.clientWidth);
   await page.viewport(519, 1248);
   expect(columns()).toBe(1);
+  checkFullTitle();
   const heading = card.querySelector(".ui-note-heading")!;
   const preview = card.querySelector(".note-preview")!;
   const bottomPadding = parseFloat(getComputedStyle(card.querySelector(".ui-note-preview")!).paddingBottom);
   expect(Math.abs(card.clientHeight - heading.clientHeight - preview.clientHeight - bottomPadding)).toBeLessThanOrEqual(1);
   expect(preview.clientHeight).toBeGreaterThan(0);
+  await userEvent.click(canvas.getByRole("button", { name: "列表布局" }));
+  expect(titleStyle().fontFamily).toContain("Noto Serif");
+});
+
+test("a wrapped card title leaves room for its image cover", async () => {
+  await page.viewport(1280, 900);
+  const canvas = document.createElement("canvas");
+  const blob = await new Promise<Blob>(resolve => canvas.toBlob(value => resolve(value!), "image/png"));
+  const releaseAssets = setStorybookBrowserAssets({ "assets/cover.png": blob });
+  try {
+    const note = { ...editorNote, title: "完整标题".repeat(70), body: "![卡片封面](../assets/cover.png)" };
+    const view = render(<PreviewModeProvider mode="light"><NoteCollection notes={[note]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
+    const ui = within(view.container);
+    await userEvent.click(ui.getByRole("button", { name: "卡片布局" }));
+    const cover = await ui.findByRole("img", { name: "卡片封面", hidden: true });
+    await waitFor(() => expect(cover.getBoundingClientRect().height).toBeGreaterThan(0));
+    await waitFor(() => expect(cover.parentElement).toHaveAttribute("data-image-state", "loaded"));
+  } finally { releaseAssets(); }
+});
+
+test("card previews align at the top, truncate overflowing text with a three-line clamp", async () => {
+  await page.viewport(1280, 900);
+  const title = "如何让 Codex 按预期交付：五条提示词建议";
+  const notes = [
+    { ...editorNote, title, body: "正文跨行显示。".repeat(200) },
+    { ...editorNote, id: "short-body", title: "短笔记", body: "一行正文" },
+  ];
+  const view = render(<PreviewModeProvider mode="light"><NoteCollection notes={notes} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
+  const canvas = within(view.container);
+  await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+  await canvas.findByText("一行正文");
+  for (const width of [1280, 390]) {
+    await page.viewport(width, 900);
+    await waitFor(() => {
+      const [long, short] = view.container.querySelectorAll<HTMLElement>(".note-preview[data-compact]");
+      const paragraph = long.querySelector("p")!;
+      const lineHeight = parseFloat(getComputedStyle(paragraph).lineHeight);
+      for (const preview of [long, short]) {
+        const card = preview.closest(".ui-note-card")!;
+        const heading = card.querySelector("h2")!.getBoundingClientRect();
+        const time = card.querySelector("time")!.getBoundingClientRect();
+        expect(time.top - heading.bottom).toBeCloseTo(4, 0);
+        expect(preview.getBoundingClientRect().top - time.bottom).toBeCloseTo(4, 0);
+        expect(heading.top - card.getBoundingClientRect().top).toBeCloseTo(16, 0);
+      }
+      expect(short.clientHeight).toBe(Math.round(lineHeight));
+      expect(long.clientHeight).toBe(Math.round(lineHeight * 3));
+      const clamped = long.querySelector<HTMLElement>(".ui-note-markdown")!;
+      expect(getComputedStyle(clamped).webkitLineClamp).toBe("3");
+      expect(getComputedStyle(clamped).webkitBoxOrient).toBe("vertical");
+      expect(getComputedStyle(long).maskImage).toBe("none");
+      expect(getComputedStyle(short).maskImage).toBe("none");
+      const longContent = long.closest(".ui-note-content")!;
+      expect(getComputedStyle(longContent).maskImage).toContain("linear-gradient");
+      expect(longContent.getBoundingClientRect().bottom).toBeCloseTo(long.closest(".ui-note-card")!.getBoundingClientRect().bottom, 0);
+      expect(getComputedStyle(short.closest(".ui-note-content")!).maskImage).toBe("none");
+    });
+  }
+});
+
+test("card excerpts keep callouts and nested list text on complete lines", async () => {
+  const notes = [
+    { ...editorNote, body: '### 第一行<br>第二行\n\n<aside data-callout="gray" data-callout-icon="💡"><p>提示文字</p><p>后续说明</p></aside>' },
+    { ...editorNote, id: "nested", body: '<ul><li><p><mark>会议主题</mark></p><ul><li><p></p></li></ul></li></ul>\n\n## 内容框架\n\n- 最近的工作情况\n  - 下一层内容' },
+  ];
+  const view = render(<PreviewModeProvider mode="light"><NoteCollection notes={notes} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
+  const canvas = within(view.container);
+  await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+  const callout = await canvas.findByText("提示文字");
+  const listItem = await canvas.findByText("最近的工作情况");
+  for (const width of [1280, 390]) {
+    await page.viewport(width, 900);
+    for (const element of [callout, listItem]) {
+      const viewport = element.closest(".note-preview")!;
+      const range = document.createRange();
+      range.selectNodeContents(element.firstChild!);
+      const line = range.getBoundingClientRect();
+      expect(line.top).toBeGreaterThanOrEqual(viewport.getBoundingClientRect().top + 38);
+      expect(line.bottom).toBeLessThanOrEqual(viewport.getBoundingClientRect().bottom + 1);
+      expect(viewport.getAttribute("data-overflow")).toBe("true");
+    }
+    expect(getComputedStyle(callout.closest("aside")!).paddingTop).toBe("0px");
+    const emptyItem = view.container.querySelector("li:has(> p:only-child:empty)")!;
+    expect(emptyItem.getClientRects()).toHaveLength(0);
+  }
 });
 
 for (const [kind, block] of [
-  ["table", `| A | B |\n| --- | --- |\n| ${"wide-table-cell".repeat(30)} | value |\n| second | row |`],
+  ["table", `| ${"wide-table-heading".repeat(20)} | B |\n| --- | --- |\n| ${"wide-table-cell".repeat(30)} | value |\n| second | row |`],
   ["code", `\`\`\`txt\n${"wide-code-line".repeat(30)}\n\`\`\``],
 ] as const) test(`compact card ${kind} preview stays at the start during native Tab navigation`, async () => {
   await page.viewport(1024, 900);
-  const body = `${Array.from({ length: 6 }, (_, index) => `预览段落 ${index + 1}。`).join("\n\n")}\n\n${block}`;
+  const body = `预览段落 1。\n\n${block}`;
   const view = render(<PreviewModeProvider mode="light"><main className="ui-theme p-4" style={{ width: 384 }}>
     <NoteCollection notes={[{ ...editorNote, body, tags: ["检查"] }]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
     <Button>预览之后</Button>
@@ -789,7 +893,13 @@ for (const [kind, block] of [
   const open = canvas.getByRole("button", { name: `打开 ${editorNote.title}` });
   const preview = open.closest(".ui-note-card")!.querySelector<HTMLElement>(".ui-note-preview")!;
   const wide = preview.querySelector<HTMLElement>(kind === "table" ? ".typeset-scroll" : "pre")!;
-  expect(wide.scrollWidth).toBeGreaterThan(wide.clientWidth);
+  for (const width of [390, 1024]) {
+    await page.viewport(width, 900);
+    expect(wide.scrollWidth).toBeLessThanOrEqual(wide.clientWidth + 1);
+    const excerpt = preview.querySelector<HTMLElement>(".note-preview")!;
+    expect(excerpt.clientHeight).toBe(Math.round(parseFloat(getComputedStyle(excerpt).lineHeight) * 3));
+    await waitFor(() => expect(excerpt.getAttribute("data-overflow")).toBe("true"));
+  }
   const containers = [preview, ...preview.querySelectorAll<HTMLElement>(".note-preview, .note-preview > div, .ui-note-markdown, .typeset-scroll, pre")];
   const scrollPositions = () => containers.map(element => [element.scrollLeft, element.scrollTop]);
   const before = scrollPositions();
@@ -2381,9 +2491,10 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         const format = await body.findByRole("toolbar", {name: "文字格式"});
         await expect.element(format).toBeVisible();
         expect(format.getAttribute("data-slot")).toBe(grouped ? "action-group" : null);
+        expect(getComputedStyle(format).padding).toBe("2px");
+        expect(getComputedStyle(format).borderRadius).toBe("9999px");
         if (grouped) {
           expect(format.getBoundingClientRect().height).toBe(40);
-          expect(getComputedStyle(format).padding).toBe("2px");
           checkFrame(format, ["format-shadow"]);
           for (const button of format.querySelectorAll("button")) { expect(button.getBoundingClientRect().width).toBe(36); expect(button.getBoundingClientRect().height).toBe(36); }
         } else {
@@ -2405,6 +2516,7 @@ for (const mode of ["light", "dark"] as const) test(`mobile Web action groups cr
         await waitFor(() => expect(bold.getAttribute("aria-pressed")).toBe("true"));
         expect(changes.at(-1)).toContain("**说明**");
         const selectedBackground = getComputedStyle(bold).backgroundColor;
+        expect(selectedBackground).toBe(`color(srgb ${mode === "light" ? "0 0 0" : "1 1 1"} / 0.06)`);
         expect(selectedBackground).not.toBe(hoverBackground);
         expect(selectedBackground).not.toBe(idleBackground);
         expect(unadornedShadows).toContain(getComputedStyle(bold).boxShadow);
@@ -3507,6 +3619,14 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
     const card = canvas.getByRole("combobox", {name: "行宽"}).closest<HTMLElement>('[data-slot="card"]')!;
     const panel = card.closest<HTMLElement>(".web-settings-panel")!;
     const groupCards = [...panel.querySelectorAll(':scope > section > [data-slot="card"]')];
+    const smallText = canvas.getByRole("switch", { name: "小字号" });
+    const thumb = smallText.querySelector('[data-slot="switch-thumb"]')!;
+    if (mode === "light") expect(getComputedStyle(thumb).backgroundColor).toBe("rgb(255, 255, 255)");
+    expect(thumb.getBoundingClientRect().left - smallText.getBoundingClientRect().left).toBe(2);
+    await userEvent.click(smallText);
+    await waitFor(() => expect(smallText.getBoundingClientRect().right - thumb.getBoundingClientRect().right).toBeCloseTo(2, 1));
+    if (mode === "light") expect(getComputedStyle(thumb).backgroundColor).toBe("rgb(255, 255, 255)");
+    await userEvent.click(smallText);
     for (const width of [320, 390, 482, 522, 640, 767, 768, 1082, 1440]) {
       await page.viewport(width, 900);
       await waitFor(() => {
@@ -3519,7 +3639,16 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
         expect(getComputedStyle(heading).paddingInlineStart).toBe("4px");
         expect(getComputedStyle(heading).paddingInlineEnd).toBe("4px");
       }
-      for (const track of panel.querySelectorAll(".web-setting-font-track")) {
+      const colorModes = within(canvas.getByRole("group", { name: "颜色模式" }));
+      const tiles = colorModes.getAllByRole("button");
+      expect(tiles.map(tile => tile.textContent)).toEqual(["浅色", "深色", "跟随系统"]);
+      for (const tile of tiles) {
+        const bounds = tile.getBoundingClientRect();
+        expect(bounds.top).toBe(tiles[0].getBoundingClientRect().top);
+        expect(bounds.width).toBeCloseTo(tiles[0].getBoundingClientRect().width, 1);
+        expect(bounds.height).toBeGreaterThanOrEqual(44);
+      }
+      for (const track of panel.querySelectorAll(".web-setting-choice-track")) {
         const selected = track.querySelector('[aria-pressed="true"]')!;
         expect(getComputedStyle(track).padding).toBe("0px");
         expect(getComputedStyle(track).columnGap).toBe("2px");
@@ -3531,7 +3660,7 @@ for (const mode of ["light", "dark"] as const) test(`settings groups share card 
       expect(vault.scrollWidth).toBeLessThanOrEqual(vault.clientWidth);
       const vaultAction = await vaultGroup.findByRole("button", {name: "笔记库操作（切换）"});
       expect(vaultAction.textContent).toBe("切换");
-      const trigger = canvas.getByRole("combobox", {name: "颜色模式"});
+      const trigger = canvas.getByRole("combobox", {name: "界面主题"});
       const triggerBounds = trigger.getBoundingClientRect();
       const vaultActionBounds = vaultAction.getBoundingClientRect();
       const vaultSummary = vaultGroup.getByText("本机文件状态");
@@ -5427,7 +5556,7 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
     ] as const) {
       await act(async () => { await current!.onNavigate(route); });
       if (route === "tags") await canvas.findByRole("tablist", { name: "标签视图" }, { timeout: 5000 });
-      if (route === "settings") await canvas.findByRole("combobox", { name: "颜色模式" }, { timeout: 5000 });
+      if (route === "settings") await canvas.findByRole("group", { name: "颜色模式" }, { timeout: 5000 });
       const title = await canvas.findByRole("heading", { name, level: 1 });
       const content = title.closest(".web-page-content")!;
       const panel = content.querySelector(mainContent)!;
@@ -5486,6 +5615,30 @@ test("classic Web theme aligns navigation, collections and detail surfaces acros
     }
   } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
 }, 30_000);
+
+test("note paragraphs use the weight of the effective body font", async () => {
+  const previousHash = location.hash;
+  localStorage.clear();
+  localStorage.setItem("memocard-web-appearance-v1", JSON.stringify({ bodyFont: "system" }));
+  history.replaceState(null, "", "#/notes");
+  const fixture = await createWorkspaceFixture();
+  const release = setStorybookRequestHandler(fixture.request);
+  const view = render(<WebAppearanceProvider><App preloadEditor={preloadWebEditor} renderView={renderWebApp} /></WebAppearanceProvider>);
+  try {
+    const canvas = within(view.container), body = within(document.body);
+    await userEvent.click(await canvas.findByRole("button", { name: "打开 今天的手冲记录" }));
+    const editor = await canvas.findByRole("textbox", { name: "笔记内容" });
+    const weight = () => getComputedStyle(editor.querySelector("p")!).fontWeight;
+    expect(weight()).toBe("400");
+    await userEvent.click(canvas.getByRole("button", { name: "页面操作" }));
+    await userEvent.click(await body.findByRole("menuitem", { name: "外观和布局" }));
+    const choices = within(await body.findByRole("group", { name: "正文字体" }));
+    await userEvent.click(choices.getByRole("menuitemradio", { name: "衬线体" }));
+    expect(weight()).toBe("500");
+    await userEvent.click(choices.getByRole("menuitemradio", { name: "无衬线体" }));
+    expect(weight()).toBe("400");
+  } finally { view.unmount(); release(); history.replaceState(null, "", previousHash || "#/"); }
+});
 
 if (!inject("uiQualityTouch")) test("note appearance font rows slide independently on hover", async () => {
   await page.viewport(1280, 900);

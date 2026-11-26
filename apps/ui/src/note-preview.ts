@@ -32,7 +32,13 @@ export function useNotePreview(body: string, compact: boolean, hiddenTags: strin
     const element = content.current;
     if (!element) return;
     const measure = () => {
-      setOverflows(element.scrollHeight > (compact && viewport.current ? viewport.current.clientHeight : 360));
+      if (compact && viewport.current) {
+        // A line-clamped body clips its own overflow before it reaches the wrapper.
+        const height = Math.max(element.scrollHeight, element.firstElementChild?.scrollHeight ?? 0);
+        setOverflows(height > viewport.current.clientHeight);
+      } else {
+        setOverflows(element.scrollHeight > 360);
+      }
     };
     measure();
     const observer = new ResizeObserver(measure);

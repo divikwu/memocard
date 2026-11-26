@@ -783,7 +783,6 @@
       "step": "3",
       "value": "3",
       "consumers": [
-        "apps/ui/ui/business/NoteCollection.tsx",
         "apps/ui/ui/business/NoteSearchDialog.tsx"
       ]
     },
