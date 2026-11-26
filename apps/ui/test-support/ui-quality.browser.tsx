@@ -777,16 +777,16 @@ test("all notes cards use four columns on desktop and one on mobile", async () =
     }
   };
   checkFullTitle();
-  expect(getComputedStyle((await canvas.findAllByText(editorNote.body))[0]).fontWeight).toBe("500");
+  const card = canvas.getByRole("button", { name: `打开 ${title}` }).closest<HTMLElement>(".ui-note-card")!;
+  expect(getComputedStyle(await within(card).findByText(editorNote.body)).fontWeight).toBe("500");
   const columns = () => getComputedStyle(grid).gridTemplateColumns.split(" ").length;
   expect(columns()).toBe(4);
-  const card = grid.querySelector(".ui-note-card")!;
   expect(card.clientHeight).toBe(card.clientWidth);
   await page.viewport(519, 1248);
   expect(columns()).toBe(1);
   checkFullTitle();
   const heading = card.querySelector(".ui-note-heading")!;
-  const preview = card.querySelector(".note-preview")!;
+  const preview = (await within(card).findByText(editorNote.body)).closest(".note-preview")!;
   const bottomPadding = parseFloat(getComputedStyle(card.querySelector(".ui-note-preview")!).paddingBottom);
   expect(Math.abs(card.clientHeight - heading.clientHeight - preview.clientHeight - bottomPadding)).toBeLessThanOrEqual(1);
   expect(preview.clientHeight).toBeGreaterThan(0);
@@ -1218,8 +1218,12 @@ for (const mode of ["light", "dark"] as const) {
       if (select.getAttribute("data-slot") === "select-trigger") {
         await userEvent.keyboard("{ArrowDown}");
         const keyboardMenu = await within(document.body).findByRole("listbox");
-        await waitFor(() => expect(keyboardMenu.contains(document.activeElement)).toBe(true));
-        expectKeyboardOutline(document.activeElement!, mode);
+        await waitFor(() => {
+          const focused = document.activeElement!;
+          expect(keyboardMenu.contains(focused)).toBe(true);
+          expect(focused.getAttribute("role")).toBe("option");
+          expectKeyboardOutline(focused, mode);
+        });
       }
       await userEvent.keyboard("{Escape}");
       if (select.getAttribute("data-slot") === "select-trigger") await waitFor(() => expect(select.getAttribute("aria-expanded")).toBe("false"));

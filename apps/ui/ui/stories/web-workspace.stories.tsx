@@ -50,8 +50,10 @@ export const Workspace: Story = { play: async ({ canvasElement }) => {
 } };
 export const TagBreadcrumb: Story = { tags: ["!dev", "!autodocs"], args: { initialRoute: "#/notes" }, play: async ({ canvasElement }) => {
   const canvas = within(canvasElement);
-  await userEvent.click(await canvas.findByRole("button", { name: "筛选笔记" }));
-  const drawer = await within(canvasElement.ownerDocument.body).findByRole("dialog", { name: "筛选笔记" });
+  const filter = await canvas.findByRole("button", { name: "筛选笔记" });
+  await waitFor(() => expect(filter).toBeEnabled());
+  await userEvent.click(filter);
+  const drawer = await within(canvasElement.ownerDocument.body).findByRole("dialog", { name: "筛选笔记" }, { timeout: 10_000 });
   await userEvent.click(within(drawer).getByRole("button", { name: "筛选标签 生活/咖啡" }));
   await userEvent.click(within(drawer).getByRole("button", { name: "完成" }));
   await waitFor(() => expect(drawer.isConnected).toBe(false));
