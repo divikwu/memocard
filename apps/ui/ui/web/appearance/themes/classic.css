@@ -3,10 +3,6 @@
   --color-background-card: var(--color-neutral-100);
 }
 
-:where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) .web-app-header [data-slot=action-group][data-mobile-actions] {
-  background-color: var(--color-background-card);
-}
-
 :where(.web-app[data-web-client][data-interface-theme=classic][data-ui-theme=light]) .ui-capture-group,
 :where(.ui-capture-sheet[data-interface-theme=classic][data-ui-theme=light]) .ui-capture-group {
   --color-background-surface: var(--color-neutral-100);

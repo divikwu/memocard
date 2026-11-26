@@ -138,6 +138,7 @@ button.web-collection-tag-icon:not(:disabled):is(:hover, [aria-expanded=true]) {
   .web-app-main:has(> .web-mobile-record:not([hidden])) > .web-app-scroll,
   .web-app-main > .web-app-scroll:has(.ui-tag-mobile-actions) { padding-block-end: calc(var(--spacing-1) * 17 + env(safe-area-inset-bottom)); scroll-padding-block-end: calc(var(--spacing-1) * 17 + var(--spacing-glass-fade) + env(safe-area-inset-bottom)); }
   .web-header-leading { display: contents; }
+  .web-app-header [data-slot=action-group][data-mobile-actions] { background-color: transparent; }
   .web-app-header button:not(.web-header-icon) { min-width: calc(var(--spacing-1) * 11); min-height: calc(var(--spacing-1) * 11); }
   :where(.web-app:not([data-web-client])) .web-app-header .web-header-icon { min-width: calc(var(--spacing-1) * 11); min-height: calc(var(--spacing-1) * 11); border-color: var(--color-border); border-radius: var(--radius-full); background: var(--color-background-body); box-shadow: var(--shadow-low); }
   .web-app-header button > svg { width: calc(var(--spacing-1) * 5); height: calc(var(--spacing-1) * 5); }

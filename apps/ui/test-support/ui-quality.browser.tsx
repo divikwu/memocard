@@ -752,7 +752,7 @@ test("global UI hints use Tooltip without mouse focus persistence or duplicate p
   await waitFor(() => expect(body.queryByRole("tooltip")).toBeNull());
 });
 
-test("all notes cards use four columns on desktop and one on mobile", async () => {
+test("note cards share the row and keep long titles readable across screen sizes", async () => {
   await page.viewport(1280, 900);
   const title = "如何让 Codex 按预期交付：五条提示词建议";
   const longTitle = "长标题".repeat(70) + "UnbrokenWord".repeat(8);
@@ -779,19 +779,62 @@ test("all notes cards use four columns on desktop and one on mobile", async () =
   checkFullTitle();
   const card = canvas.getByRole("button", { name: `打开 ${title}` }).closest<HTMLElement>(".ui-note-card")!;
   expect(getComputedStyle(await within(card).findByText(editorNote.body)).fontWeight).toBe("500");
-  const columns = () => getComputedStyle(grid).gridTemplateColumns.split(" ").length;
-  expect(columns()).toBe(4);
-  expect(card.clientHeight).toBe(card.clientWidth);
-  await page.viewport(519, 1248);
-  expect(columns()).toBe(1);
-  checkFullTitle();
-  const heading = card.querySelector(".ui-note-heading")!;
-  const preview = (await within(card).findByText(editorNote.body)).closest(".note-preview")!;
-  const bottomPadding = parseFloat(getComputedStyle(card.querySelector(".ui-note-preview")!).paddingBottom);
-  expect(Math.abs(card.clientHeight - heading.clientHeight - preview.clientHeight - bottomPadding)).toBeLessThanOrEqual(1);
+  const columns = () => getComputedStyle(grid).gridTemplateColumns.split(" ").filter(track => parseFloat(track) > 0).length;
+  expect(columns()).toBe(2);
+  const longCard = longButton.closest<HTMLElement>(".ui-note-card")!;
+  await page.viewport(768, 1248);
+  expect(titleStyle().fontSize).toBe("20px");
+  for (const width of [767, 715, 519, 390, 320]) {
+    await page.viewport(width, 1248);
+    expect(titleStyle().fontSize).toBe("16px");
+    expect(columns()).toBe(2);
+    expect(grid.scrollWidth).toBeLessThanOrEqual(grid.clientWidth);
+    expect(card.getBoundingClientRect().bottom).toBeCloseTo(longCard.getBoundingClientRect().bottom, 0);
+    expect(longCard.clientHeight).toBe(longCard.clientWidth);
+    expect(longButton.clientHeight).toBeGreaterThan(0);
+    expect(longButton.getBoundingClientRect().bottom).toBeLessThanOrEqual(longCard.querySelector("time")!.getBoundingClientRect().top);
+  }
+  const preview = (await within(longCard).findByText(editorNote.body)).closest(".note-preview")!;
   expect(preview.clientHeight).toBeGreaterThan(0);
+  expect(preview.getBoundingClientRect().bottom).toBeLessThanOrEqual(longCard.getBoundingClientRect().bottom);
+  const root = document.documentElement;
+  const originalFontSize = root.style.fontSize;
+  try {
+    root.style.fontSize = "24px";
+    expect(longButton.clientHeight).toBeGreaterThanOrEqual(Math.floor(parseFloat(getComputedStyle(longButton).lineHeight)));
+  } finally {
+    root.style.fontSize = originalFontSize;
+  }
   await userEvent.click(canvas.getByRole("button", { name: "列表布局" }));
   expect(titleStyle().fontFamily).toContain("Noto Serif");
+});
+
+test("sparse note collections fill the first row and keep the last row aligned", async () => {
+  const notes = Array.from({ length: 5 }, (_, index) => ({ ...editorNote, id: `note-${index}`, title: `笔记 ${index}`, body: "一行正文" }));
+  const collection = (count: number) => <PreviewModeProvider mode="light"><NoteCollection notes={notes.slice(0, count)} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>;
+  const view = render(collection(1));
+  const canvas = within(view.container);
+  await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+  await canvas.findByText("一行正文");
+  for (const [width, capacity] of [[1298, 4], [1024, 4], [950, 3], [880, 3], [879, 2], [768, 2], [767, 2], [390, 2], [320, 2]]) {
+    await page.viewport(width, 900);
+    for (const count of [1, 2, 3, 4, 5]) {
+      view.rerender(collection(count));
+      const grid = canvas.getByRole("list", { name: "笔记列表" });
+      const cards = Array.from(grid.querySelectorAll(".ui-note-card"), card => card.getBoundingClientRect());
+      const columns = Math.min(count, capacity);
+      const gap = parseFloat(getComputedStyle(grid).columnGap);
+      const bounds = grid.getBoundingClientRect();
+      const cardWidth = (bounds.width - gap * (columns - 1)) / columns;
+      const rowHeight = (bounds.width - gap * (capacity - 1)) / capacity;
+      expect(cards).toHaveLength(count);
+      for (const [index, card] of cards.entries()) {
+        expect(card.height).toBeCloseTo(rowHeight, 0);
+        expect(card.width).toBeCloseTo(cardWidth, 0);
+        expect(card.left).toBeCloseTo(bounds.left + (index % columns) * (cardWidth + gap), 0);
+      }
+    }
+  }
 });
 
 test("a wrapped card title leaves room for its image cover", async () => {
@@ -807,6 +850,11 @@ test("a wrapped card title leaves room for its image cover", async () => {
     const cover = await ui.findByRole("img", { name: "卡片封面", hidden: true });
     await waitFor(() => expect(cover.getBoundingClientRect().height).toBeGreaterThan(0));
     await waitFor(() => expect(cover.parentElement).toHaveAttribute("data-image-state", "loaded"));
+    await page.viewport(320, 700);
+    const bounds = cover.getBoundingClientRect();
+    expect(bounds.width).toBeGreaterThan(0);
+    expect(bounds.height).toBeGreaterThan(0);
+    expect(bounds.bottom).toBeLessThanOrEqual(cover.closest(".ui-note-card")!.getBoundingClientRect().bottom);
   } finally { releaseAssets(); }
 });
 
@@ -2838,7 +2886,12 @@ test("Web collection headings align with the sidebar brand and retain compact sp
     await page.viewport(390, 900);
     await waitFor(() => expect(within(header).getByRole("button", {name: "页面操作"})).toBeDefined());
     expect(header.getBoundingClientRect().height).toBe(56);
-    await userEvent.click(within(header).getByRole("button", {name: "打开导航"}));
+    const openNavigation = within(header).getByRole("button", {name: "打开导航"});
+    const navigationGroup = openNavigation.closest('[data-slot="action-group"]')!;
+    expect(getComputedStyle(navigationGroup).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    const actionsGroup = within(header).getByRole("group", {name: "页面操作组"});
+    expect(getComputedStyle(navigationGroup).boxShadow).toBe(getComputedStyle(actionsGroup).boxShadow);
+    await userEvent.click(openNavigation);
     const mobileBrand = await within(document.body).findByRole("button", {name: "MemoCard，返回主页"});
     const mobileLogo = mobileBrand.querySelector("img")!.getBoundingClientRect();
     expect([mobileLogo.width, mobileLogo.height]).toEqual([32, 32]);
@@ -3472,6 +3525,7 @@ test.each([
   localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: theme }));
   history.replaceState(null, "", "#/home");
   const fixture = await createWorkspaceFixture();
+  await fixture.request("setNotePinned", { id: fixture.snapshot().notes[0].id, pinned: true });
   let finishRead!: () => void;
   const read = new Promise<void>(resolve => { finishRead = resolve; });
   const release = setStorybookRequestHandler(async (operation, params) => {
@@ -3503,6 +3557,22 @@ test.each([
     await userEvent.tab({ shift: true });
     expect(field).toHaveFocus();
     expect(getComputedStyle(readyShell).outlineStyle).toBe("solid");
+    await page.viewport(797, 1248);
+    await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
+    const recent = canvas.getByRole("list", { name: "笔记列表" });
+    expect(getComputedStyle(recent).gridTemplateColumns.split(" ")).toHaveLength(2);
+    const square = recent.querySelector(".ui-note-card")!.getBoundingClientRect();
+    expect(square.height).toBeCloseTo(square.width, 0);
+    const recentCount = recent.children.length;
+    expect(recentCount).toBeGreaterThan(1);
+    for (const [name, expectedCount] of [[/^已固定/, 1], [/^最近更新/, recentCount]] as const) {
+      await userEvent.click(canvas.getByRole("tab", { name }));
+      await waitFor(() => expect(canvas.getByRole("list", { name: "笔记列表" }).children).toHaveLength(expectedCount));
+      const grid = await canvas.findByRole("list", { name: "笔记列表" });
+      const card = grid.querySelector(".ui-note-card")!.getBoundingClientRect();
+      expect(card.height).toBeCloseTo(square.height, 0);
+      expect(card.width).toBeCloseTo(expectedCount === 1 ? grid.clientWidth : square.width, 0);
+    }
   } finally {
     finishRead();
     view.unmount();
@@ -3974,10 +4044,6 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
     const canvas = within(view.container), body = within(document.body);
     const title = await canvas.findByRole("textbox", {name: "页面标题"});
     const header = view.container.querySelector<HTMLElement>(".web-app-header")!;
-    const headerSurface = document.createElement("span");
-    headerSurface.hidden = true;
-    headerSurface.style.backgroundColor = mode === "light" ? "var(--color-background-card)" : "var(--color-background-surface)";
-    header.append(headerSurface);
     const controls = within(header);
     await waitFor(() => expect(controls.getByRole("button", {name: "固定到主页"})).toHaveProperty("disabled", false));
     for (const width of [320, 390, 673, 767, 768, 1024, 1440]) {
@@ -4021,8 +4087,7 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
             expect(groupStyle.padding).toBe("2px");
             expect(groupStyle.boxShadow).toBe(getComputedStyle(controlShadow).boxShadow);
             expect(groupStyle.borderTopWidth).toBe("0px");
-            expect(groupStyle.backgroundColor).toBe(getComputedStyle(headerSurface).backgroundColor);
-            expect(groupStyle.backgroundColor).not.toBe(getComputedStyle(header.closest(".web-app")!).backgroundColor);
+            expect(groupStyle.backgroundColor).toBe("rgba(0, 0, 0, 0)");
             expect(parseFloat(groupStyle.borderTopLeftRadius)).toBeGreaterThanOrEqual(rect.height / 2);
           }
         } else {
@@ -4100,6 +4165,8 @@ for (const mode of ["light", "dark"] as const) test(`Web header preserves mobile
         expect(rect.left).toBeGreaterThanOrEqual(header.getBoundingClientRect().left);
         for (const label of ["页面导航", "页面操作组"]) {
           const group = within(header).getByRole("group", {name: label});
+          expect(getComputedStyle(group).backgroundColor).toBe("rgba(0, 0, 0, 0)");
+          expect(getComputedStyle(group).boxShadow).toBe(getComputedStyle(controlShadow).boxShadow);
           expect(group.getBoundingClientRect().width).toBe(40);
           expect(group.getBoundingClientRect().height).toBe(40);
           expect(within(group).getByRole("button").getBoundingClientRect().width).toBe(36);
