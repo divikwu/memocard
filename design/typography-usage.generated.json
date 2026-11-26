@@ -1146,6 +1146,11 @@
           "value": "var(--font-size-base)"
         },
         {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": "@media (width < 768px) → .ui-note-heading h2",
+          "value": "var(--font-size-base)"
+        },
+        {
           "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
           "scope": "text-base",
           "value": "var(--font-size-base)"
