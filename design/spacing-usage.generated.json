@@ -850,8 +850,7 @@
       "step": "2",
       "value": "2",
       "consumers": [
-        "apps/ui/ui/business/sidebar.tsx",
-        "apps/ui/ui/web/WorkspaceLoading.tsx"
+        "apps/ui/ui/business/sidebar.tsx"
       ]
     },
     {

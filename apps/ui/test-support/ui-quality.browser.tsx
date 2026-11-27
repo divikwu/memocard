@@ -763,7 +763,7 @@ test("note cards share the row and keep long titles readable across screen sizes
   const titleStyle = () => getComputedStyle(canvas.getByRole("button", { name: `打开 ${title}` }));
   expect(titleStyle().fontFamily).toContain("Noto Serif");
   expect(titleStyle().fontWeight).toBe("700");
-  expect(titleStyle().fontSize).toBe("20px");
+  expect(titleStyle().fontSize).toBe("18px");
   const longButton = canvas.getByRole("button", { name: `打开 ${longTitle}` });
   const checkFullTitle = () => {
     const range = document.createRange();
@@ -783,7 +783,7 @@ test("note cards share the row and keep long titles readable across screen sizes
   expect(columns()).toBe(2);
   const longCard = longButton.closest<HTMLElement>(".ui-note-card")!;
   await page.viewport(768, 1248);
-  expect(titleStyle().fontSize).toBe("20px");
+  expect(titleStyle().fontSize).toBe("18px");
   for (const width of [767, 715, 519, 390, 320]) {
     await page.viewport(width, 1248);
     expect(titleStyle().fontSize).toBe("16px");
@@ -792,7 +792,7 @@ test("note cards share the row and keep long titles readable across screen sizes
     expect(card.getBoundingClientRect().bottom).toBeCloseTo(longCard.getBoundingClientRect().bottom, 0);
     expect(longCard.clientHeight).toBe(longCard.clientWidth);
     expect(longButton.clientHeight).toBeGreaterThan(0);
-    expect(longButton.getBoundingClientRect().bottom).toBeLessThanOrEqual(longCard.querySelector("time")!.getBoundingClientRect().top);
+    expect(longButton.getBoundingClientRect().bottom).toBeLessThanOrEqual(longCard.getBoundingClientRect().bottom);
   }
   const preview = (await within(longCard).findByText(editorNote.body)).closest(".note-preview")!;
   expect(preview.clientHeight).toBeGreaterThan(0);
@@ -811,7 +811,7 @@ test("note cards share the row and keep long titles readable across screen sizes
 
 test("sparse note collections fill the first row and keep the last row aligned", async () => {
   const notes = Array.from({ length: 5 }, (_, index) => ({ ...editorNote, id: `note-${index}`, title: `笔记 ${index}`, body: "一行正文" }));
-  const collection = (count: number) => <PreviewModeProvider mode="light"><NoteCollection notes={notes.slice(0, count)} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>;
+  const collection = (count: number, loading = false) => <PreviewModeProvider mode="light"><NoteCollection loading={loading} notes={notes.slice(0, count)} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>;
   const view = render(collection(1));
   const canvas = within(view.container);
   await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
@@ -835,26 +835,109 @@ test("sparse note collections fill the first row and keep the last row aligned",
       }
     }
   }
+  for (const [width, containerWidth, columns, height, headerHeight] of [
+    [1024, 1024, 4, 850, 20], [1024, 1024, 4, 390, 20], [1024, 1024, 4, 390, 200],
+    [1024, 880, 3, 720, 60], [1024, 500, 1, 460, 40], [390, 390, 2, 820, 20], [390, 390, 2, 200, 250],
+  ]) {
+    await page.viewport(width, 900);
+    view.rerender(<div style={{ width: containerWidth, height, overflowY: "auto", paddingBottom: 12 }}>
+      <div><div style={{ height: headerHeight }} />{collection(0, true)}</div>
+    </div>);
+    const scroller = view.container.firstElementChild!;
+    const grid = view.container.querySelector('[data-slot="collection-skeleton"]')!;
+    await waitFor(() => {
+      const available = Math.max(0, scroller.getBoundingClientRect().bottom - 12 - grid.getBoundingClientRect().top);
+      const gap = parseFloat(getComputedStyle(grid).rowGap);
+      const size = (grid.clientWidth - (columns - 1) * gap) / columns;
+      expect(grid.children.length).toBe(columns * Math.ceil(available / (size + gap)));
+      expect(grid.getBoundingClientRect().height).toBeCloseTo(available, 0);
+      if (available) {
+        expect(grid.lastElementChild!.getBoundingClientRect().right).toBeCloseTo(grid.getBoundingClientRect().right, 0);
+        expect(getComputedStyle(grid.querySelector('[data-slot="card-content"]')!).padding).toBe(width < 768 ? "12px" : "16px");
+      }
+    });
+  }
 });
 
-test("a wrapped card title leaves room for its image cover", async () => {
+test("list skeleton rows fill the available scrollport at their natural height", async () => {
+  const content = (height: number, header: number, loading: boolean) => <PreviewModeProvider mode="light">
+    <div className="web-app" data-web-client data-interface-theme="minimal"><div style={{ height, overflowY: "auto", paddingBottom: 16 }}><div>
+      <div style={{ height: header }} />
+      <NoteCollection notes={loading ? [] : [editorNote]} loading={loading} hasMore={false} paging={false} loadMoreDisabled={false}
+        canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />
+    </div></div></div>
+  </PreviewModeProvider>;
+  const view = render(content(700, 20, false));
+  const canvas = within(view.container);
+  await userEvent.click(canvas.getByRole("button", { name: "列表布局" }));
+  for (const width of [1024, 390]) {
+    await page.viewport(width, 900);
+    view.rerender(content(700, 20, false));
+    const rowHeight = canvas.getByRole("list").querySelector(".ui-note-list-card")!.getBoundingClientRect().height;
+    for (const [height, header] of [[700, 20], [320, 60], [320, 240], [320, 350], [480, 20]]) {
+      view.rerender(content(height, header, true));
+      const list = view.container.querySelector<HTMLElement>('[data-slot="collection-skeleton"]')!;
+      const scroller = list.closest('[style*="overflow-y"]')!;
+      await waitFor(() => {
+        const remaining = Math.max(0, scroller.getBoundingClientRect().bottom - 16 - list.getBoundingClientRect().top);
+        expect(list.parentElement!.getBoundingClientRect().height).toBeCloseTo(remaining, 1);
+        const style = getComputedStyle(list);
+        const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+        if (remaining > padding) {
+          expect(list.getBoundingClientRect().height).toBeCloseTo(remaining, 1);
+          expect(list.children.length).toBe(Math.ceil((remaining - padding) / rowHeight));
+          expect(list.firstElementChild!.getBoundingClientRect().height).toBeCloseTo(rowHeight, 1);
+        } else {
+          expect(list.children.length).toBe(1);
+          expect(style.overflow).toBe("clip");
+        }
+      });
+    }
+  }
+});
+
+test("image covers fill the space above short and wrapped card titles", async () => {
   await page.viewport(1280, 900);
   const canvas = document.createElement("canvas");
   const blob = await new Promise<Blob>(resolve => canvas.toBlob(value => resolve(value!), "image/png"));
   const releaseAssets = setStorybookBrowserAssets({ "assets/cover.png": blob });
   try {
     const note = { ...editorNote, title: "完整标题".repeat(70), body: "![卡片封面](../assets/cover.png)" };
-    const view = render(<PreviewModeProvider mode="light"><NoteCollection notes={[note]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>);
+    const shortNote = { ...note, id: "short-title", title: "影像记录", body: "![短标题封面](../assets/cover.png)" };
+    const collection = <NoteCollection notes={[note, shortNote]} hasMore={false} paging={false} loadMoreDisabled={false} canOpen canCreate onNewNote={() => {}} onOpen={() => {}} onSelectTag={() => {}} onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} />;
+    const view = render(<PreviewModeProvider mode="light">{collection}</PreviewModeProvider>);
     const ui = within(view.container);
     await userEvent.click(ui.getByRole("button", { name: "卡片布局" }));
     const cover = await ui.findByRole("img", { name: "卡片封面", hidden: true });
     await waitFor(() => expect(cover.getBoundingClientRect().height).toBeGreaterThan(0));
     await waitFor(() => expect(cover.parentElement).toHaveAttribute("data-image-state", "loaded"));
-    await page.viewport(320, 700);
-    const bounds = cover.getBoundingClientRect();
-    expect(bounds.width).toBeGreaterThan(0);
-    expect(bounds.height).toBeGreaterThan(0);
-    expect(bounds.bottom).toBeLessThanOrEqual(cover.closest(".ui-note-card")!.getBoundingClientRect().bottom);
+    const longCard = cover.closest(".ui-note-card")!;
+    const shortCover = await ui.findByRole("img", { name: "短标题封面", hidden: true });
+    const card = shortCover.closest(".ui-note-card")!;
+    for (const width of [1024, 768, 767, 390, 320]) {
+      await page.viewport(width, 900);
+      const textPadding = width < 768 ? 12 : 16;
+      const image = shortCover.getBoundingClientRect();
+      const bounds = card.getBoundingClientRect();
+      const title = card.querySelector("h2")!.getBoundingClientRect();
+      expect(card.querySelector("time")).toBeNull();
+      expect(image.top - bounds.top).toBeCloseTo(2, 0);
+      expect(title.left - bounds.left).toBeCloseTo(textPadding, 0);
+      expect(title.top - image.bottom).toBeCloseTo(textPadding, 0);
+      expect(image.left - bounds.left).toBeCloseTo(2, 0);
+      expect(bounds.right - image.right).toBeCloseTo(2, 0);
+      expect(bounds.bottom - title.bottom).toBeCloseTo(textPadding, 0);
+      const longImage = cover.getBoundingClientRect();
+      expect(longImage.height).toBeGreaterThan(0);
+      const longTitle = longCard.querySelector("h2")!.getBoundingClientRect();
+      expect(longTitle.top - longImage.bottom).toBeCloseTo(textPadding, 0);
+      expect(bounds.bottom - longTitle.bottom).toBeCloseTo(textPadding, 0);
+    }
+    for (const [radius, outer, inner] of [["none", "0px", "0px"], ["large", "21px", "19px"], ["default", "12px", "10px"]] as const) {
+      view.rerender(<PreviewModeProvider mode="light" appearance={{ radius, headingFont: "inherit", bodyFont: "system" }}>{collection}</PreviewModeProvider>);
+      expect(getComputedStyle(card).borderRadius).toBe(outer);
+      expect(getComputedStyle(shortCover.parentElement!).borderRadius).toBe(inner);
+    }
   } finally { releaseAssets(); }
 });
 
@@ -870,6 +953,7 @@ test("card previews align at the top, truncate overflowing text with a three-lin
   await userEvent.click(canvas.getByRole("button", { name: "卡片布局" }));
   await canvas.findByText("一行正文");
   for (const width of [1280, 390]) {
+    const textPadding = width < 768 ? 12 : 16;
     await page.viewport(width, 900);
     await waitFor(() => {
       const [long, short] = view.container.querySelectorAll<HTMLElement>(".note-preview[data-compact]");
@@ -877,11 +961,13 @@ test("card previews align at the top, truncate overflowing text with a three-lin
       const lineHeight = parseFloat(getComputedStyle(paragraph).lineHeight);
       for (const preview of [long, short]) {
         const card = preview.closest(".ui-note-card")!;
-        const heading = card.querySelector("h2")!.getBoundingClientRect();
-        const time = card.querySelector("time")!.getBoundingClientRect();
-        expect(time.top - heading.bottom).toBeCloseTo(4, 0);
-        expect(preview.getBoundingClientRect().top - time.bottom).toBeCloseTo(4, 0);
-        expect(heading.top - card.getBoundingClientRect().top).toBeCloseTo(16, 0);
+        const text = preview.closest(".ui-note-card-text")!;
+        const heading = text.querySelector(":scope > h2")!.getBoundingClientRect();
+        expect(getComputedStyle(text).padding).toBe(`${textPadding}px`);
+        expect(getComputedStyle(text).rowGap).toBe("8px");
+        expect(card.querySelector("time")).toBeNull();
+        expect(preview.getBoundingClientRect().top - heading.bottom).toBeCloseTo(8, 0);
+        expect(heading.top - card.getBoundingClientRect().top).toBeCloseTo(textPadding, 0);
       }
       expect(short.clientHeight).toBe(Math.round(lineHeight));
       expect(long.clientHeight).toBe(Math.round(lineHeight * 3));
@@ -2736,7 +2822,7 @@ for (const mode of ["light", "dark"] as const) test(`Web list rows keep transpar
       reference.style.backgroundColor = "var(--color-overlay-hover)";
       root.append(reference);
       try {
-        const outside = canvas.getByRole("button", {name: scenario.width < 768 ? "页面操作" : "MemoCard，返回主页"});
+        const outside = await canvas.findByRole("button", {name: scenario.width < 768 ? "页面操作" : "MemoCard，返回主页"});
         await userEvent.hover(outside);
         expect(getComputedStyle(card).backgroundColor).toBe("rgba(0, 0, 0, 0)");
         await userEvent.hover(open);
@@ -3614,12 +3700,14 @@ test("Web home and all-notes collections share responsive widths", async () => {
           const bounds = list.getBoundingClientRect();
           const item = list.querySelector<HTMLElement>(".ui-note-card")!;
           const tags = item.querySelector(".ui-note-tags");
+          const date = item.querySelector("time");
+          expect(date !== null).toBe(layout === "list");
           expect(tags !== null).toBe(layout === "list");
           const sample = {
             left: bounds.left, width: bounds.width, itemWidth: item.getBoundingClientRect().width,
             columns: getComputedStyle(list).gridTemplateColumns,
             tags: tags ? getComputedStyle(tags).display : "none",
-            date: getComputedStyle(item.querySelector("time")!).display,
+            date: date ? getComputedStyle(date).display : "none",
           };
           if (route === "home") measurements.set(`${layout}-${width}`, sample);
           else {
@@ -5405,11 +5493,19 @@ if (!inject("uiQualityTouch")) test("home and tag view indicators slide with the
   localStorage.setItem(appearanceKey, JSON.stringify({ interfaceTheme: "classic" }));
   history.replaceState(null, "", "#/tags");
   const fixture = await createWorkspaceFixture();
-  const release = setStorybookRequestHandler(fixture.request);
+  let finishStatus!: () => void;
+  const status = new Promise<void>(resolve => { finishStatus = resolve; });
+  const release = setStorybookRequestHandler(async (operation, params) => {
+    if (operation === "getStatus") await status;
+    return fixture.request(operation, params);
+  });
   const view = render(<WebAppearanceProvider><App renderView={renderWebApp} /></WebAppearanceProvider>);
   const canvas = within(view.container);
   try {
     await waitFor(() => expect(view.container.querySelector(".web-app")).toHaveAttribute("data-workspace-layout", "rail"));
+    await canvas.findByRole("status", { name: "正在读取标签" });
+    expect(canvas.queryByRole("tablist", { name: "标签视图" })).toBeNull();
+    finishStatus();
     for (const [name, firstLabel, secondLabel] of [
       ["标签视图", "全部", "标签群组"],
       ["主页内容", "最近更新", /^已固定/],
@@ -5445,7 +5541,7 @@ if (!inject("uiQualityTouch")) test("home and tag view indicators slide with the
       }
     }
   } finally {
-    view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
+    finishStatus(); view.unmount(); release(); history.replaceState(null, "", previousHash || "#/");
     if (previousAppearance === null) localStorage.removeItem(appearanceKey);
     else localStorage.setItem(appearanceKey, previousAppearance);
   }

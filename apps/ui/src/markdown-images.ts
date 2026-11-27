@@ -6,6 +6,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import { unified } from "unified";
 import { wikiMarkdown } from "./wiki-markdown";
+import { mayContainMarkdownImage } from "./markdown-image-hint";
 import { imageSource } from "./vault-links";
 import { markdownSchema, markdownTarget } from "./markdown-schema";
 
@@ -13,7 +14,7 @@ type ImageNode = { type: string; tagName?: string; properties?: Record<string, u
 const imageParser = unified().use(remarkParse).use(remarkGfm).use(wikiMarkdown).use(remarkMath)
   .use(remarkRehype, { allowDangerousHtml: true }).use(rehypeRaw).use(rehypeSanitize, markdownSchema);
 export function markdownImageCandidates(body: string, notePath: string) {
-  if (!body.includes("![") && !/<img\b/i.test(body)) return [];
+  if (!mayContainMarkdownImage(body)) return [];
   const images: { source: string; alt: string }[] = [];
   function visit(node: ImageNode) {
     if (node.type === "element" && node.tagName === "img" && typeof node.properties?.src === "string") {

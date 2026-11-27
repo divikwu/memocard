@@ -106,7 +106,10 @@ describe("note workspace", () => {
     });
     render(<App />);
     await waitFor(() => expect(bridge.request).toHaveBeenCalledWith("listFolders"));
-    if (!directRoute) expect(screen.getByRole("button", { name: "新建" })).toHaveProperty("disabled", true);
+    if (!directRoute) {
+      const navigation = await screen.findByRole("navigation", { name: "桌面导航" });
+      expect(within(navigation).getByRole("button", { name: "新建笔记" })).toHaveProperty("disabled", true);
+    }
     expect(screen.queryByRole("region", { name: "新建笔记" })).toBeNull();
     await act(async () => { resolveFolders({ folders: ["", "工作"] }); });
     if (!directRoute) await createNote();
@@ -342,7 +345,7 @@ describe("note workspace", () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(bridge.request.mock.calls.some(([op]) => op === 'saveNote' || op === 'saveDraft')).toBe(false);
   });
-  it("renders note cards with open, tag and date affordances", async () => {
+  it("renders note cards with a title and no timestamp", async () => {
     render(<App />);
     const pageTitle = await screen.findByRole("heading", { name: "所有笔记", level: 1 });
     expect(pageTitle.closest(".sr-only")).toBeNull();
@@ -354,7 +357,7 @@ describe("note workspace", () => {
     expect(card?.className).toContain("ui-note-card");
     expect(within(card as HTMLElement).getByRole("button", { name: "打开 新内容" })).toBeTruthy();
     expect(within(card as HTMLElement).queryByRole("button", { name: "筛选标签 生活" })).toBeNull();
-    expect(card?.querySelector("time")?.getAttribute("dateTime")).toBe(note.updatedAt);
+    expect(card?.querySelector("time")).toBeNull();
     expect(screen.queryByText("编辑")).toBeNull();
   });
 

@@ -17,6 +17,7 @@ import { ChevronDownIcon } from "../icons";
 import { Spinner } from "../components/spinner";
 import { useWebAppearance, WEB_NEUTRALS, WEB_PALETTES } from "./WebAppearance";
 import { WebSettingSelect } from "./WebSettingSelect";
+import { SettingsLoading } from "./WorkspaceLoading";
 import { WebSettingsDisclosure } from "./WebSettingsDisclosure";
 import { WebTypographySettings } from "./WebTypographySettings";
 import { workspaceNavigation } from "./WorkspaceNavigation";
@@ -92,6 +93,7 @@ export function WebSettings({ state: s }: { state: AppViewState }) {
   const vaultActionLabel = s.status?.connected ? "切换笔记库" : "打开已有笔记库";
   const vaultActionsDisabled = s.working || !!s.editor;
   const chooseVaultDisabled = !s.sidebar.canChooseVault || vaultActionsDisabled;
+  if (s.loading && !s.status) return <SettingsLoading />;
   return <div className="web-settings"><header className="web-collection-heading"><h1 className="web-settings-title text-balance">设置</h1></header><div className="web-settings-panel">
     <section aria-labelledby={field("vault-heading")}><h2 id={field("vault-heading")} className="web-setting-vault-heading">笔记库</h2>
       <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content">

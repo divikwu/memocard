@@ -17,8 +17,10 @@ export function LayoutNavigationControls(props: NavigationControlsProps) {
 }
 
 export function LayoutDetailNavigation({ state }: { state: AppViewState }) {
-  const Navigation = useWorkspaceAppearance()?.applied.adapter.DetailNavigation;
-  return Navigation ? <Navigation {...workspaceNavigation(state)} /> : null;
+  const layout = useWorkspaceAppearance()?.applied;
+  const Navigation = layout?.adapter.DetailNavigation;
+  if (Navigation) return <Navigation {...workspaceNavigation(state)} />;
+  return layout?.layoutId === "rail" ? <span className="size-element-md shrink-0" aria-hidden="true" /> : null;
 }
 
 // This component and the SidebarInset/content path stay fixed for every layout.

@@ -77,6 +77,11 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "value": "inherit"
+        },
+        {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-property-inline textarea",
           "value": "inherit"
@@ -89,11 +94,6 @@
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-open",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
           "value": "inherit"
         },
         {
@@ -193,6 +193,11 @@
           "value": "var(--font-family-body)"
         },
         {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
+          "value": "var(--font-family-body)"
+        },
+        {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties",
           "value": "var(--font-family-body)"
@@ -204,12 +209,7 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading time, .ui-note-list-date",
-          "value": "var(--font-family-body)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
+          "scope": ".ui-note-list-date",
           "value": "var(--font-family-body)"
         },
         {
@@ -410,7 +410,7 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading h2",
+          "scope": ".ui-note-card-text > h2",
           "value": "var(--font-family-heading)"
         },
         {
@@ -728,13 +728,13 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/business/note-typography.css",
-          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h5, h6)",
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
           "value": "1em"
         },
         {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "source": "apps/ui/ui/business/note-typography.css",
+          "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) :is(h5, h6)",
           "value": "1em"
         },
         {
@@ -977,6 +977,16 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(pre, pre code)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(th, td)",
+          "value": "inherit"
+        },
+        {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-name",
           "value": "inherit"
@@ -994,16 +1004,6 @@
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-open",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(pre, pre code)",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(th, td)",
           "value": "inherit"
         },
         {
@@ -1147,7 +1147,7 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": "@media (width < 768px) → .ui-note-heading h2",
+          "scope": "@media (width < 768px) → .ui-note-card-text > h2",
           "value": "var(--font-size-base)"
         },
         {
@@ -1291,6 +1291,11 @@
       ],
       "locations": [
         {
+          "source": "apps/ui/ui/business/NoteCollection.css",
+          "scope": ".ui-note-card-text > h2",
+          "value": "var(--font-size-lg)"
+        },
+        {
           "source": "apps/ui/ui/components/empty.tsx",
           "scope": "text-lg",
           "value": "var(--font-size-lg)"
@@ -1313,7 +1318,7 @@
       "utilities": [],
       "locations": [
         {
-          "source": "apps/ui/ui/web/layouts/desktop.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": "@media (min-width: 768px) → .web-app[data-web-client]:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) → & .web-page-content",
           "value": "var(--font-size-note-title)",
           "variable": "--workspace-title-font-size"
@@ -1389,6 +1394,11 @@
         {
           "source": "apps/ui/ui/business/note-content.css",
           "scope": ".ui-note-markdown[data-compact]",
+          "value": "var(--font-size-sm)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1475,11 +1485,6 @@
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-preview .note-preview[data-compact]",
-          "value": "var(--font-size-sm)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
           "value": "var(--font-size-sm)"
         },
         {
@@ -1869,11 +1874,6 @@
           "value": "var(--font-size-xl)"
         },
         {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading h2",
-          "value": "var(--font-size-xl)"
-        },
-        {
           "source": "apps/ui/ui/business/NoteCollectionFilterDrawer.tsx",
           "scope": "md:text-xl",
           "value": "var(--font-size-xl)"
@@ -1991,7 +1991,7 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading time, .ui-note-list-date",
+          "scope": ".ui-note-list-date",
           "value": "var(--font-size-xs)"
         },
         {
@@ -3098,28 +3098,28 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "value": "var(--font-weight-bold)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(strong, b)",
+          "value": "var(--font-weight-bold)"
+        },
+        {
           "source": "apps/ui/ui/business/note-typography.css",
           "scope": ".ui-note-markdown.typeset-memocard:not([data-compact], .ui-note-search-preview-content *) → & :where(h1, h2, h3, h4, h5, h6, strong, b)",
           "value": "var(--font-weight-bold)"
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading h2",
+          "scope": ".ui-note-card-text > h2",
           "value": "var(--font-weight-bold)"
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-list-heading",
-          "value": "var(--font-weight-bold)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
-          "value": "var(--font-weight-bold)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(strong, b)",
           "value": "var(--font-weight-bold)"
         },
         {
@@ -3641,6 +3641,31 @@
       "utilities": [],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(blockquote, aside[data-callout])",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(pre, pre code)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(th, td)",
+          "value": "inherit"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact] table",
+          "value": "inherit"
+        },
+        {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-edit",
           "value": "inherit"
@@ -3653,31 +3678,6 @@
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-open",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(blockquote, aside[data-callout])",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(h1, h2, h3, h4, h5, h6)",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(pre, pre code)",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] :is(th, td)",
-          "value": "inherit"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact] table",
           "value": "inherit"
         },
         {
@@ -3816,6 +3816,17 @@
       ],
       "locations": [
         {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
+          "value": "var(--text-body-leading)"
+        },
+        {
+          "source": "apps/ui/ui/business/note-content.css",
+          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
+          "value": "var(--text-body-leading)",
+          "variable": "--typeset-leading"
+        },
+        {
           "source": "apps/ui/ui/business/note-properties.css",
           "scope": ".note-properties .note-property-action",
           "value": "var(--text-body-leading)"
@@ -3857,11 +3868,6 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading time",
-          "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-list-heading",
           "value": "var(--text-body-leading)"
         },
@@ -3869,17 +3875,6 @@
           "source": "apps/ui/ui/business/NoteCollection.css",
           "scope": ".ui-note-preview .note-preview[data-compact]",
           "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
-          "value": "var(--text-body-leading)"
-        },
-        {
-          "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-preview .ui-note-markdown[data-compact]",
-          "value": "var(--text-body-leading)",
-          "variable": "--typeset-leading"
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
@@ -4078,7 +4073,7 @@
       "locations": [
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading h2",
+          "scope": ".ui-note-card-text > h2",
           "value": "var(--text-heading-2-leading)"
         },
         {
@@ -4087,7 +4082,7 @@
           "value": "var(--text-heading-2-leading)"
         },
         {
-          "source": "apps/ui/ui/web/layouts/desktop.css",
+          "source": "apps/ui/ui/web/web-app.css",
           "scope": "@media (min-width: 768px) → .web-app[data-web-client]:is([data-workspace-layout=rail], [data-workspace-layout=topbar]) → & .web-page-content",
           "value": "var(--text-heading-2-leading)",
           "variable": "--workspace-title-line-height"
@@ -4232,7 +4227,7 @@
         },
         {
           "source": "apps/ui/ui/business/NoteCollection.css",
-          "scope": ".ui-note-heading time, .ui-note-list-date",
+          "scope": ".ui-note-list-date",
           "value": "var(--text-supporting-leading)"
         },
         {
@@ -4987,7 +4982,7 @@
       "property": "font-family",
       "expression": "getPreviewFont(value).fontFamily",
       "source": "apps/ui/ui/web/WebSettings.tsx",
-      "scope": "line 53"
+      "scope": "line 54"
     }
   ],
   "native": [

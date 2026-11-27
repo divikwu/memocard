@@ -17,7 +17,7 @@ export function HomeCaptureLoading() {
   </div>;
 }
 
-export function SettingsLoading({ connected }: { connected: boolean }) {
+export function SettingsLoading({ connected }: { connected?: boolean }) {
   return <div className="web-settings">
     <header className="web-collection-heading"><h1 className="web-settings-title text-balance">设置</h1></header>
     <div className="web-settings-panel" data-slot="settings-skeleton">
@@ -28,14 +28,14 @@ export function SettingsLoading({ connected }: { connected: boolean }) {
             <Skeleton className="h-4 w-32" />
             <div className="web-setting-vault-actions"><Skeleton className="h-element-md w-16" /><Skeleton className="h-element-md w-16" /></div>
           </div>
-          {connected && <div className="web-setting-row"><Skeleton className="my-2 h-5 w-28" /></div>}
+          {connected !== false && <div className="web-setting-row"><Skeleton className="h-5 w-28" /></div>}
         </CardContent></Card>
       </section>
-      <section aria-hidden="true"><div className="web-setting-section-heading"><h2>外观</h2><Skeleton className="h-element-md w-20" /></div>
+      {connected !== undefined && <section aria-hidden="true"><div className="web-setting-section-heading"><h2>外观</h2><Skeleton className="h-element-md w-20" /></div>
         <Card className="gap-0 py-0 shadow-none"><CardContent className="web-setting-card-content web-appearance-fields">
           {[0, 1, 2].map(row => <div key={row}><Skeleton className="h-4 w-16" /><Skeleton className="h-element-md w-full sm:w-48" /></div>)}
         </CardContent></Card>
-      </section>
+      </section>}
     </div>
   </div>;
 }

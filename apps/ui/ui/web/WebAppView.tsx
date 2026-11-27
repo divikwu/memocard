@@ -166,13 +166,17 @@ function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?
   >
     {editor && <><h1 className="sr-only">{s.title}</h1><Editor {...editor} waitForPropertyLayout /></>}
   </NoteDetail>;
-  if (s.view === "settings") return <Suspense fallback={<SettingsLoading connected={Boolean(s.status?.connected)} />}><WebSettings state={s} /></Suspense>;
+  if (s.view === "settings") return <Suspense fallback={<SettingsLoading connected={s.status?.connected ?? (s.loading ? undefined : false)} />}><WebSettings state={s} /></Suspense>;
   if (s.view === "trash") {
-    if (!s.trash) return <><h1 className="sr-only">回收站</h1><WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} /></>;
-    return <Suspense fallback={<section className="ui-trash" aria-label="回收站">
-      <header><h1>回收站</h1><Button variant="outline" disabled><Spinner aria-hidden="true" />刷新回收站</Button></header>
-      <div role="status" aria-label="正在读取回收站"><span className="sr-only">正在读取回收站…</span><TrashRowsLoading canPermanentlyDelete={Boolean(s.trash.canPermanentlyDelete)} /></div>
-    </section>}>
+    const unavailable = !s.trash && (s.status !== null || !s.loading);
+    const placeholder = <section className="ui-trash" aria-label="回收站">
+      <header><h1>回收站</h1><Button variant="outline" disabled>{unavailable ? <HugeiconsIcon icon={RefreshIcon} aria-hidden="true" /> : <Spinner aria-hidden="true" />}刷新回收站</Button></header>
+      {unavailable
+        ? <WorkspaceEmpty title={s.status?.connected ? "当前服务暂不支持回收站" : "连接笔记库后查看回收站"} description={s.status?.connected ? "更新 MemoCard 后重试。" : "请选择或重新连接笔记文件夹。"} />
+        : <div role="status" aria-label="正在读取回收站"><span className="sr-only">正在读取回收站…</span><TrashRowsLoading canPermanentlyDelete={Boolean(s.trash?.canPermanentlyDelete)} /></div>}
+    </section>;
+    if (!s.trash) return placeholder;
+    return <Suspense fallback={placeholder}>
       <TrashPage key={`${s.trash.vaultId}:${s.trash.vaultBinding ?? ""}`} {...s.trash} />
     </Suspense>;
   }
@@ -186,7 +190,9 @@ function WorkspaceContent({ state: s, heading }: { state: AppViewState; heading?
   </WorkspaceEmpty></>;
   if (s.view === "tags") {
     const docked = s.isMobile && layoutId === "drawer" && (themeId === "classic" || themeId === "minimal");
-    return <Suspense fallback={<TagsLoading heading={heading} docked={docked} minimal={themeId === "minimal" && layoutId !== "sidebar"} />}><WorkspaceTags state={s} heading={heading} /></Suspense>;
+    const placeholder = <TagsLoading heading={heading} docked={docked} minimal={themeId === "minimal" && layoutId !== "sidebar"} />;
+    if (s.loading && !s.status) return placeholder;
+    return <Suspense fallback={placeholder}><WorkspaceTags state={s} heading={heading} /></Suspense>;
   }
   const headingInToolbar = !s.collection.filters && s.collection.recentTags === undefined;
   return <>
