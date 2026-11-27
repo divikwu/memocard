@@ -790,7 +790,8 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     capabilities, pendingLink: Boolean(pendingOpenNote), onClose: finishEditing, onSaved: finishEditing,
     onTitleChange: title => setEditing(current => current?.id === editing.id && current.title !== title ? { ...current, title } : current),
     onCommitted: note => {
-      setNotes(current => current.map(item => item.id === note.id ? note : item));
+      // Save responses omit list-only preview properties. Keep the last cover until the list refreshes.
+      setNotes(current => current.map(item => item.id === note.id ? {...note, cardPreview: note.cardPreview ?? item.cardPreview} : item));
       setEditing(current => current ? { ...current, id: note.id, baseHash: note.contentHash, note } : current);
       editorHash.current = `#/notes/${note.id}`;
       window.history.replaceState(null, '', editorHash.current);

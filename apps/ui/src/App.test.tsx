@@ -1298,6 +1298,29 @@ it('enters detail loading immediately on a list click and edits only the latest 
   await waitFor(() => expect(bridge.request).toHaveBeenCalledWith('saveNote', expect.objectContaining({ body: '继续编辑最新正文', baseHash: 'latest-hash' })));
 });
 
+it('preserves list-only preview properties after saving until the next list response', async () => {
+  localStorage.setItem("memocard:note-layout", "cards");
+  const original = bridge.request.getMockImplementation()!;
+  const pageWith = (text:string) => ({notes:[{...note,cardPreview:{images:[],text}}],nextCursor:null,coverage:status.coverage});
+  let resolvePage!: (page:ReturnType<typeof pageWith>) => void;
+  const nextPage = new Promise(resolve => { resolvePage = resolve; });
+  let saved = false;
+  bridge.request.mockImplementation((operation, params) => {
+    if (operation === "queryNotes") return saved ? nextPage : pageWith("属性摘要");
+    if (operation === "saveNote") saved = true;
+    return original(operation, params);
+  });
+  render(<App />);
+  await screen.findByText("属性摘要");
+  fireEvent.click(screen.getByRole("button", {name:/^打开 /}));
+  replaceEditorText("编辑后的正文", await screen.findByRole("textbox", {name:"笔记内容"}));
+  fireEvent.click(noteSourceButton());
+  await screen.findByText("属性摘要");
+  expect(saved).toBe(true);
+  await act(async () => { resolvePage(pageWith("新的属性摘要")); });
+  await screen.findByText("新的属性摘要");
+});
+
 it.each(['success', 'failure'])('cancels a loading detail on return and ignores its late %s', async outcome => {
   let resolveNote!: (value: Note) => void;
   let rejectNote!: (cause: Error) => void;
