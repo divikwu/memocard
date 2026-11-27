@@ -9,7 +9,7 @@ vi.mock("@ui/business/NotePreview", () => ({ NotePreview: ({ body }: { body: str
 const note: Note = { id: "note-1", title: "散步的想法", body: "周末散步时想到的记录", tags: ["生活"], createdAt: "2026-10-10T08:00:00Z", updatedAt: "2026-10-10T08:00:00Z", contentHash: "hash", relativePath: "notes/note-1.md", sourceUrl: "memocard://note/note-1" };
 const props = { notes: [note], hasMore: true, paging: false, loadMoreDisabled: false, canOpen: true, canCreate: true, onNewNote: vi.fn(), onOpen: vi.fn(), onSelectTag: vi.fn(), onLoadMore: vi.fn(), onError: vi.fn(), formatDate: () => "10月10日 16:00" };
 
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); localStorage.removeItem("memocard:note-layout"); localStorage.removeItem("memocard:home-layout"); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.clearAllMocks(); localStorage.removeItem("memocard:note-layout"); localStorage.removeItem("memocard:home-layout"); });
 
 it.each(["cards", "list"])("identifies notes by title even when their dates match in %s layout", layout => {
   localStorage.setItem("memocard:note-layout", layout);
@@ -27,8 +27,9 @@ it("shares the home layout across content tabs without exposing pin actions on n
   const view = render(<NoteCollection {...props} notes={[updated]} home={{tab:"recent", pinnedCount:1, onTabChange}} />);
   expect(screen.getByRole("tab", {name:"最近更新"}).getAttribute("aria-selected")).toBe("true");
   expect(screen.getByRole("list", {name:"笔记列表"}).getAttribute("data-layout")).toBe("cards");
-  expect(screen.getByText("10月10日 16:00").getAttribute("datetime")).toBe(updated.updatedAt);
+  expect(screen.queryByText("10月10日 16:00")).toBeNull();
   await user.click(screen.getByRole("button", {name:"列表布局"}));
+  expect(screen.getByText("10月10日 16:00").getAttribute("datetime")).toBe(updated.updatedAt);
   await user.click(screen.getByRole("tab", {name:/已固定/}));
   expect(onTabChange).toHaveBeenCalledWith("pinned");
   view.rerender(<NoteCollection {...props} home={{tab:"pinned", pinnedCount:1, onTabChange}} />);
@@ -65,7 +66,7 @@ it("shows titles, clickable tags and trailing time in the list and restores cont
   await user.click(screen.getByRole("button", { name: "卡片布局" }));
   expect(screen.getByRole("list", { name: "笔记列表" }).getAttribute("data-layout")).toBe("cards");
   expect(await screen.findByText(note.body)).toBeTruthy();
-  expect(screen.getByText("10月10日 16:00")).toBeTruthy();
+  expect(screen.queryByText("10月10日 16:00")).toBeNull();
   expect(screen.queryByRole("button", { name: "筛选标签 生活" })).toBeNull();
 });
 
@@ -135,6 +136,7 @@ it("defaults to cards for invalid preferences and keeps switching available with
 });
 
 it("keeps the toolbar and saved layout mounted while the first page loads", async () => {
+  vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
   localStorage.setItem("memocard:note-layout", "list");
   const view = render(<NoteCollection {...props} notes={[]} loading hasMore={false} />);
   expect(screen.queryByRole("textbox", {name:"搜索当前视图笔记"})).toBeNull();

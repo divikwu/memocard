@@ -21,6 +21,17 @@ const RuntimeContext = createContext<AppearanceRuntime | null>(null);
 export const AppearanceRuntimeProvider = RuntimeContext.Provider;
 export const useWorkspaceAppearance = () => useContext(RuntimeContext);
 
+function initialAppearance(catalog: AppearanceCatalog, requested: string, mobile: boolean): AppliedAppearance {
+  const resolution = resolveAppearance(catalog, requested, mobile);
+  const { layoutId } = resolution;
+  const adapter = layoutId === "drawer" || layoutId === "sidebar" ? sidebarLayout : {};
+  return { ...resolution, adapter };
+}
+
+function fallbackAppearance(mobile: boolean): AppliedAppearance {
+  return { themeId: "classic", layoutId: mobile ? "drawer" : "sidebar", themeFallback: null, layoutFallback: null, adapter: sidebarLayout };
+}
+
 export function useAppearanceRuntime({ requested, revision, mobile, enabled, commit }: {
   requested: string;
   revision?: number;
@@ -30,8 +41,7 @@ export function useAppearanceRuntime({ requested, revision, mobile, enabled, com
 }): AppearanceRuntime {
   const catalog = useAppearanceCatalog();
   const [intent, setIntent] = useState({ id: requested, persist: false });
-  const baseline = { ...resolveAppearance(appearanceCatalog, "classic", mobile), layoutId: mobile ? "drawer" : "sidebar", adapter: sidebarLayout };
-  const [applied, setApplied] = useState(baseline);
+  const [applied, setApplied] = useState<AppliedAppearance | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(false);
   const latestApplied = useRef(applied);
@@ -44,7 +54,7 @@ export function useAppearanceRuntime({ requested, revision, mobile, enabled, com
     let current = true;
     if (!enabled) return;
     const requestedResolution = resolveAppearance(catalog, intent.id, mobile);
-    const resolution = requestedResolution.themeFallback ? { ...resolveAppearance(catalog, latestApplied.current.themeId, mobile), themeFallback: requestedResolution.themeFallback } : requestedResolution;
+    const resolution = requestedResolution.themeFallback ? { ...resolveAppearance(catalog, latestApplied.current?.themeId ?? "classic", mobile), themeFallback: requestedResolution.themeFallback } : requestedResolution;
     const load = <T,>(run: () => Promise<T>): Promise<T> => {
       if (!resources.cache.has(run)) {
         const request = Promise.resolve().then(run).catch(cause => { resources.cache.delete(run); throw cause; });
@@ -55,10 +65,10 @@ export function useAppearanceRuntime({ requested, revision, mobile, enabled, com
     // Viewport adaptation belongs to the usable theme, even while another theme
     // is still loading. A failed target must not strand a desktop-only layout.
     const previous = latestApplied.current;
-    const usable = resolveAppearance(catalog, previous.themeId, mobile);
-    if (usable.layoutId !== previous.layoutId) {
+    const usable = previous ? resolveAppearance(catalog, previous.themeId, mobile) : resolution;
+    if (previous && catalog.layouts[previous.layoutId]?.viewport !== (mobile ? "mobile" : "desktop")) {
       const adapt = (adapter: LayoutAdapter, layout = usable) => {
-        if (current) setApplied(value => value.themeId === previous.themeId && value.layoutId === previous.layoutId
+        if (current) setApplied(value => value?.themeId === previous.themeId && value.layoutId === previous.layoutId
           ? { ...value, layoutId: layout.layoutId, layoutFallback: layout.layoutFallback, adapter } : value);
       };
       void load(catalog.layouts[usable.layoutId].load).then(adapter => {
@@ -75,9 +85,17 @@ export function useAppearanceRuntime({ requested, revision, mobile, enabled, com
       if (!current) return;
       setApplied({ ...resolution, adapter }); setPending(false);
       if (intent.persist && !resolution.themeFallback) latestCommit.current(intent.id);
-    }).catch(() => { if (current) { setPending(false); setError(true); } });
+    }).catch(() => {
+      if (!current) return;
+      setApplied(value => value ?? fallbackAppearance(mobile));
+      setPending(false); setError(true);
+    });
     return () => { current = false; };
   }, [catalog, intent, mobile, enabled, resources]);
-  return { applied: enabled ? applied : baseline, pending, error,
+  const fitsViewport = applied && catalog.layouts[applied.layoutId]?.viewport === (mobile ? "mobile" : "desktop");
+  const display = enabled
+    ? fitsViewport ? applied : initialAppearance(catalog, applied?.themeId ?? requested, mobile)
+    : fallbackAppearance(mobile);
+  return { applied: display, pending, error,
     select: id => setIntent({ id, persist: true }), retry: () => setIntent(value => ({ ...value })) };
 }

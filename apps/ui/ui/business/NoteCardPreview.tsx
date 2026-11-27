@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { Note } from "@memocard/contracts";
 import { imageSource } from "../../src/vault-links";
 import { markdownImageCandidates } from "../../src/markdown-images";
@@ -15,7 +16,7 @@ function CardCover({ source, alt, onFailure }: { source: string; alt: string; on
   </div>;
 }
 
-export function NoteCardPreview({ note, onError }: { note: Note; onError: (message: string) => void }) {
+export function NoteCardPreview({ note, coverSlot, onError }: { note: Note; coverSlot: HTMLDivElement | null; onError: (message: string) => void }) {
   const { body, cardPreview, relativePath, tags } = note;
   const [failed, setFailed] = useState<ReadonlySet<string>>(() => new Set());
   const reject = useCallback((source: string) => {
@@ -26,7 +27,10 @@ export function NoteCardPreview({ note, onError }: { note: Note; onError: (messa
   const needsBodyCover = !propertyCover;
   const bodyCovers = useMemo(() => needsBodyCover ? markdownImageCandidates(body, relativePath) : [], [needsBodyCover, body, relativePath]);
   const cover = propertyCover ? { source: propertyCover, alt: "笔记封面" } : bodyCovers.find(image => !failed.has(image.source));
-  if (cover) return <CardCover key={cover.source} {...cover} onFailure={reject} />;
-  if (cardPreview?.text) return <NotePreview compact showTitle={false} plainText body={cardPreview.text} onError={onError} />;
-  return <NotePreview compact showTitle={false} omitImages hiddenTags={tags} body={body} notePath={relativePath} onError={onError} />;
+  if (cover) return coverSlot && createPortal(<CardCover key={cover.source} {...cover} onFailure={reject} />, coverSlot);
+  if (!cardPreview?.text && !body.trim()) return null;
+  return <div className="ui-note-preview">{cardPreview?.text
+    ? <NotePreview compact showTitle={false} plainText body={cardPreview.text} onError={onError} />
+    : <NotePreview compact showTitle={false} omitImages hiddenTags={tags} body={body} notePath={relativePath} onError={onError} />}
+  </div>;
 }

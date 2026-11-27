@@ -1,5 +1,6 @@
 import { recoverableLazy } from "../components/recoverable-lazy";
-import { Suspense, useLayoutEffect, useRef, type PointerEvent, type ReactNode } from "react";
+import { Suspense, useLayoutEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import type { Note } from "@memocard/contracts";
 import { HugeiconsIcon } from "@hugeicons/react";
 import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon";
@@ -7,6 +8,7 @@ import Clock03Icon from "@hugeicons/core-free-icons/Clock03Icon";
 import GridViewIcon from "@hugeicons/core-free-icons/GridViewIcon";
 import LeftToRightListBulletIcon from "@hugeicons/core-free-icons/LeftToRightListBulletIcon";
 import PinIcon from "@hugeicons/core-free-icons/PinIcon";
+import { mayContainMarkdownImage } from "../../src/markdown-image-hint";
 import { useCollectionLayout } from "../../src/hooks/use-collection-layout";
 import { Button } from "../components/button";
 import { CreateButton } from "./CreateButton";
@@ -55,22 +57,94 @@ export type NoteCollectionProps = {
   formatDate: (value: string) => string;
 };
 
+function CardPreviewLoading({ note, coverSlot }: { note: Note; coverSlot: HTMLDivElement | null }) {
+  if (note.cardPreview?.images.length || mayContainMarkdownImage(note.body)) {
+    return coverSlot && createPortal(<Skeleton className="ui-note-card-cover" />, coverSlot);
+  }
+  return <Skeleton className="h-4 w-full rounded-lg" />;
+}
+
+function NoteCardContent({ note, title, canOpen, onOpen, onError }: Pick<NoteCollectionProps, "canOpen" | "onOpen" | "onError"> & { note: Note; title: string }) {
+  const [coverSlot, setCoverSlot] = useState<HTMLDivElement | null>(null);
+  return <>
+    <div className="ui-note-cover-slot" ref={setCoverSlot} />
+    <div className="ui-note-card-text">
+      <h2><button type="button" className="ui-note-open" aria-label={`打开 ${title}`} disabled={!canOpen}
+        onPointerDown={event => {
+          if (event.pointerType === "touch" && event.isPrimary) event.currentTarget.setAttribute("data-touch-pressed", "");
+        }}
+        onPointerUp={clearCardPress} onPointerCancel={clearCardPress} onLostPointerCapture={clearCardPress}
+        onClick={() => onOpen(note.id)}>{title}</button></h2>
+      <Suspense fallback={<CardPreviewLoading note={note} coverSlot={coverSlot} />}>
+        <NoteCardPreview key={JSON.stringify([note.sourceUrl, note.contentHash])} note={note} coverSlot={coverSlot} onError={onError} />
+      </Suspense>
+    </div>
+  </>;
+}
+
 function CollectionSkeleton({ cards }: { cards: boolean }) {
-  return <div className={cn("ui-note-items", cards ? "ui-note-cards" : "ui-note-list")} data-slot="collection-skeleton" aria-hidden="true">
-    {[0, 1, 2, 3, 4, 5].map(item => <Card key={item} className={cn("ui-note-card", !cards && "ui-note-list-card shadow-none ring-0")}>
-      {cards ? <CardContent className="ui-note-skeleton-content">
-        <Skeleton className={item % 2 ? "h-5 w-3/4" : "h-5 w-2/3"} />
-        <Skeleton className="h-4 w-28" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" />
-      </CardContent> : <CardContent className="ui-note-content ui-note-list-content">
-        <div className="ui-note-list-heading">
-          <div className="ui-note-row-open">
-            <div className="ui-note-list-title min-h-lh content-center"><Skeleton className={item % 2 ? "h-4 w-1/2" : "h-4 w-2/5"} /></div>
-            <div className="ui-note-list-date"><Skeleton className="ms-auto h-3 w-16" /></div>
+  const ref = useRef<HTMLDivElement>(null);
+  const [count, setCount] = useState(0);
+  useLayoutEffect(() => {
+    const items = ref.current;
+    if (!items) return;
+    const viewport = items.parentElement!;
+    const sampleRow = cards ? null : items.firstElementChild;
+    let scroller: HTMLElement | null = viewport;
+    const measure = () => {
+      const style = getComputedStyle(items);
+      const rowHeight = sampleRow ? sampleRow.getBoundingClientRect().height : parseFloat(style.gridAutoRows);
+      const stride = rowHeight + parseFloat(style.rowGap);
+      if (!(stride > 0)) return;
+      const viewportBottom = scroller
+        ? Math.min(window.innerHeight, scroller.getBoundingClientRect().top + scroller.clientTop + scroller.clientHeight - parseFloat(getComputedStyle(scroller).paddingBottom))
+        : window.innerHeight;
+      const top = items.getBoundingClientRect().top + (scroller?.scrollTop ?? window.scrollY);
+      const height = Math.max(0, viewportBottom - top);
+      viewport.style.height = `${height}px`;
+      const innerHeight = Math.max(0, height - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom));
+      const columns = cards ? Number(style.getPropertyValue("--card-columns")) : 1;
+      setCount(Math.ceil(innerHeight / stride) * columns);
+    };
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    });
+    observer.observe(items);
+    if (sampleRow) observer.observe(sampleRow);
+    while (scroller && scroller !== document.documentElement) {
+      observer.observe(scroller);
+      if (/auto|scroll/.test(getComputedStyle(scroller).overflowY)) break;
+      scroller = scroller.parentElement;
+    }
+    if (scroller === document.documentElement) scroller = null;
+    measure();
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+      window.removeEventListener("resize", measure);
+      viewport.style.removeProperty("height");
+    };
+  }, [cards]);
+  return <div className="ui-note-skeleton-viewport">
+    <div ref={ref} className={cn("ui-note-items", cards ? "ui-note-cards" : "ui-note-list")} data-slot="collection-skeleton" aria-hidden="true">
+      {Array.from({ length: cards ? count : Math.max(1, count) }, (_, item) => <Card key={item} className={cn("ui-note-card", !cards && "ui-note-list-card shadow-none ring-0")}>
+        {cards ? <CardContent className="ui-note-card-text">
+          <Skeleton className={item % 2 ? "h-5 w-3/4" : "h-5 w-2/3"} />
+          <Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /><Skeleton className="h-4 w-2/3" />
+        </CardContent> : <CardContent className="ui-note-content ui-note-list-content">
+          <div className="ui-note-list-heading">
+            <div className="ui-note-row-open">
+              <div className="ui-note-list-title min-h-lh content-center"><Skeleton className={item % 2 ? "h-4 w-1/2" : "h-4 w-2/5"} /></div>
+              <div className="ui-note-list-date"><Skeleton className="ms-auto h-3 w-16" /></div>
+            </div>
           </div>
-        </div>
-        <div className="ui-note-tags"><Skeleton className="h-5 w-12" /><Skeleton className="h-5 w-16" /></div>
-      </CardContent>}
-    </Card>)}
+          <div className="ui-note-tags"><Skeleton className="h-5 w-12" /><Skeleton className="h-5 w-16" /></div>
+        </CardContent>}
+      </Card>)}
+    </div>
   </div>;
 }
 
@@ -113,23 +187,12 @@ export function NoteCollection({ home, heading, notes, activeTag, recentTags, lo
           return <li key={note.id} data-note-id={note.id}>
             <Card className={cn("ui-note-card", cards && canOpen && "ui-card-hover-shadow ui-card-hover-scale", !cards && "ui-note-list-card shadow-none ring-0")} data-note-openable={canOpen}>
               <CardContent className={cn("ui-note-content", !cards && "ui-note-list-content")}>
-                {cards ? <div className="ui-note-heading">
-                  <h2><button type="button" className="ui-note-open" aria-label={`打开 ${title}`} disabled={!canOpen}
-                    onPointerDown={event => {
-                      if (event.pointerType === "touch" && event.isPrimary) event.currentTarget.setAttribute("data-touch-pressed", "");
-                    }}
-                    onPointerUp={clearCardPress} onPointerCancel={clearCardPress} onLostPointerCapture={clearCardPress}
-                    onClick={() => onOpen(note.id)}>{title}</button></h2>
-                  <time dateTime={date}>{formatDate(date)}</time>
-                </div> : <h2 className="ui-note-list-heading">
+                {cards ? <NoteCardContent note={note} title={title} canOpen={canOpen} onOpen={onOpen} onError={onError} /> : <h2 className="ui-note-list-heading">
                   <button type="button" className="ui-note-open ui-note-row-open" aria-label={`打开 ${title}`} disabled={!canOpen} onClick={() => onOpen(note.id)}>
                     <span className="ui-note-list-title">{title}</span>
                     <time className="ui-note-list-date" dateTime={date}>{formatDate(date)}</time>
                   </button>
                 </h2>}
-                {cards && <div className="ui-note-preview"><Suspense fallback={<Skeleton className="h-full w-full rounded-lg" />}>
-                  <NoteCardPreview key={JSON.stringify([note.sourceUrl, note.contentHash])} note={note} onError={onError} />
-                </Suspense></div>}
                 {tags.length > 0 && <div className="ui-note-tags">
                   {tags.slice(0, 2).map(name => <Badge key={name} variant="secondary" className="ui-note-tag" render={<button type="button" />} aria-label={`筛选标签 ${name}`} data-ui-tooltip={name} data-tag={encodeURIComponent(name)} onClick={() => onSelectTag(name)}><span data-ui-tooltip-overflow>{name}</span></Badge>)}
                   {tags.length > 2 && <span className="ui-note-tag-count" aria-label={`另有 ${tags.length - 2} 个标签`}>+{tags.length - 2}</span>}

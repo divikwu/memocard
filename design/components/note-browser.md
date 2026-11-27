@@ -4,9 +4,9 @@
 
 [NoteCollection](../../apps/ui/ui/business/NoteCollection.tsx)、[NoteCardPreview](../../apps/ui/ui/business/NoteCardPreview.tsx)、[NotePreview](../../apps/ui/ui/business/NotePreview.tsx) 和 [NoteMarkdown](../../apps/ui/ui/business/NoteMarkdown.tsx) 由桌面、H5 和 iOS WKWebView 共用。主题来自 Luma CSS，外观由 WebAppearance / PreviewModeProvider 应用，正文偏好独立。
 
-集合的查询范围、标签、分页和打开笔记由共享 App 控制器管理。主页默认列表、其他集合默认卡片，已有布局偏好继续读取；主页独立存储布局。iOS 原生标题菜单与内容集合使用同一布局 hook，不能出现菜单选中与页面布局不一致。
+集合的查询范围、标签、分页和打开笔记由共享 App 控制器管理。主页和所有笔记默认使用卡片，并共用布局偏好。iOS 原生标题菜单与内容集合使用同一布局 hook，不能出现菜单选中与页面布局不一致。
 
-卡片依次尝试属性图片、正文图片、非空的可见文本属性、正文预览，每张卡片只展示一项。图片加载失败时继续尝试下一个候选。列表保留标签筛选，移动端单列卡片按预览内容调整高度。
+卡片依次尝试属性图片、正文图片、非空的可见文本属性、正文预览，每张卡片只展示一项。图片加载失败时继续尝试下一个候选。卡片模式省略时间，手机采用两列。封面撑满标题上方的剩余空间，上、左、右各留 2px，圆角取卡片外圆角减去间距，最小为 0。标题和正文共用文字区，桌面内边距 16px、标题 18px，手机内边距 12px、标题 16px。列表模式保留标签筛选和日期，窄屏按列表规则收起。
 
 ## 预览入口
 

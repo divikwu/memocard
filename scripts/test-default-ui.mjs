@@ -31,28 +31,335 @@ before(async () => {
 after(async () => { if (server) await new Promise(resolve => server.httpServer.close(resolve)); });
 
 for (const [interfaceTheme, layout] of [['classic', 'rail'], ['minimal', 'topbar']]) {
-  test(`cold start keeps a usable fallback while the ${layout} layout loads`, { timeout: 20_000 }, async t => {
+  test(`cold start reserves the selected ${layout} layout while its navigation loads`, { timeout: 20_000 }, async () => {
     const browser = await chromium.launch();
     const gate = Promise.withResolvers();
     try {
       const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
       await page.addInitScript(interfaceTheme => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme })), interfaceTheme);
       const resource = manifest[`ui/web/layouts/${layout}.tsx`].file;
+      const other = manifest[`ui/web/layouts/${layout === 'rail' ? 'topbar' : 'rail'}.tsx`].file;
+      const requests = [];
+      page.on('request', request => requests.push(request.url()));
       await page.route(`${baseURL}/${resource}`, async route => { await gate.promise; await route.continue(); });
-      const started = performance.now();
-      await page.goto(`${baseURL}/#/settings`, { waitUntil: 'domcontentloaded' });
-      const fallback = page.getByRole('navigation', { name: '主要导航', exact: true });
-      await fallback.waitFor();
-      const fallbackAt = performance.now();
-      await page.getByRole('heading', { name: '设置', exact: true, level: 1 }).waitFor();
+      await page.goto(`${baseURL}/#/home`, { waitUntil: 'domcontentloaded' });
+      await page.locator('.web-page-content[data-view=home]').waitFor();
+      const frame = page.locator('.web-app');
+      assert.equal(await frame.getAttribute('data-workspace-layout'), layout);
+      assert.equal(await frame.getAttribute('data-interface-theme'), interfaceTheme);
+      assert.equal(await page.getByRole('navigation', { name: '主要导航', exact: true }).count(), 0);
+      const shell = frame.locator('.web-app-shell');
+      const before = await shell.boundingBox();
       gate.resolve();
-      await page.locator(`.web-app[data-interface-theme="${interfaceTheme}"][data-workspace-layout="${layout}"]`).waitFor();
       await page.getByRole('navigation', { name: layout === 'rail' ? '桌面导航' : '顶部导航', exact: true }).waitFor();
-      await fallback.waitFor({ state: 'detached' });
-      t.diagnostic(`Fallback visible at ${Math.round(fallbackAt - started)} ms, requested layout ready at ${Math.round(performance.now() - started)} ms`);
+      assert.deepEqual(await shell.boundingBox(), before);
+      assert.ok(!requests.includes(`${baseURL}/${other}`));
     } finally { gate.resolve(); await browser.close(); }
   });
 }
+
+function recordRefreshFrames() {
+  window.refreshFrames = new Set();
+  function sample() {
+    const content = document.querySelector('.web-page-content');
+    if (content) {
+      const layout = content.closest('.web-app').dataset.workspaceLayout;
+      const oldSidebar = Boolean(document.querySelector('[data-slot="sidebar-container"]'));
+      const { x, y, width } = content.getBoundingClientRect();
+      window.refreshFrames.add(JSON.stringify([layout, content.dataset.view, content.hasAttribute('data-detail'), oldSidebar, x, y, width, getComputedStyle(content).paddingTop]));
+    }
+    requestAnimationFrame(sample);
+  }
+  requestAnimationFrame(sample);
+}
+
+async function assertStableRefresh(page, view, layout) {
+  const frames = await page.evaluate(async () => {
+    await new Promise(requestAnimationFrame);
+    return Array.from(window.refreshFrames, value => JSON.parse(value));
+  });
+  assert.equal(frames.length, 1, JSON.stringify({ view, layout, frames }));
+  assert.deepEqual(frames[0].slice(0, 4), [layout, view === 'detail' ? 'notes' : view, view === 'detail', false]);
+}
+
+function refreshGeometry(selectors = ['.web-app-shell', '.web-app-main', '.web-page-content', '.web-collection-heading h1', '.web-crumb', '.ui-note-cards', '.ui-note-list', '.ui-tag-directory-panel', '.ui-tag-directory-groups', '.note-page-title']) {
+  return Object.fromEntries(selectors.flatMap(selector => {
+    const element = document.querySelector(selector);
+    if (!element) return [];
+    const { x, y, width } = element.getBoundingClientRect();
+    const { paddingTop, paddingLeft } = getComputedStyle(element);
+    return [[selector, [x, y, width, paddingTop, paddingLeft]]];
+  }));
+}
+
+for (const [interfaceTheme, desktopLayout] of [['classic', 'rail'], ['minimal', 'topbar']]) {
+  test(`refresh preserves collection and detail geometry in ${interfaceTheme}`, { timeout: 60_000 }, async () => {
+    const browser = await chromium.launch();
+    try {
+      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+      page.setDefaultTimeout(5000);
+      await page.addInitScript(theme => {
+        window.showDirectoryPicker = () => navigator.storage.getDirectory();
+        localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: theme }));
+      }, interfaceTheme);
+      await page.addInitScript(recordRefreshFrames);
+      await page.goto(baseURL + '/#/notes');
+      await page.evaluate(async () => {
+        const root = await navigator.storage.getDirectory();
+        const file = await root.getFileHandle('Refresh proof.md', { create: true });
+        const stream = await file.createWritable();
+        await stream.write('---\ntags: [refresh]\n---\nExample body.');
+        await stream.close();
+      });
+      await page.getByRole('button', { name: '打开已有笔记库', exact: true }).click();
+      const note = page.getByRole('button', { name: '打开 Refresh proof', exact: true });
+      await note.click();
+      const editor = page.getByRole('textbox', { name: '笔记内容', exact: true });
+      await editor.waitFor();
+      const routes = [
+        ['notes', '#/notes', note],
+        ['tags', '#/tags', page.locator('.ui-tag-directory-groups')],
+        ['detail', new URL(page.url()).hash, editor],
+      ];
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const [view, hash, ready] of routes) {
+          await page.goto(baseURL + '/' + hash);
+          await ready.waitFor();
+          const gate = Promise.withResolvers();
+          const layout = width < 768 ? 'drawer' : desktopLayout;
+          const resources = [manifest[`ui/web/appearance/themes/${interfaceTheme}.css?inline`].file];
+          if (layout !== 'drawer') resources.push(manifest[`ui/web/layouts/${layout}.tsx`].file);
+          const hold = async route => { await gate.promise; await route.continue(); };
+          try {
+            for (const file of resources) await page.route(baseURL + '/' + file, hold);
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            await ready.waitFor();
+            const frame = page.locator('.web-app');
+            assert.equal(await frame.getAttribute('data-workspace-layout'), layout);
+            assert.equal(await page.getByRole('navigation', { name: '主要导航', exact: true }).count(), 0);
+            const before = await page.evaluate(refreshGeometry);
+            gate.resolve();
+            await page.locator(`style[data-workspace-style="${interfaceTheme}"]`).waitFor({ state: 'attached' });
+            if (layout === 'rail' && view === 'detail') await page.getByRole('button', { name: '导航菜单' }).waitFor();
+            else if (layout !== 'drawer') await page.getByRole('navigation', { name: layout === 'rail' ? '桌面导航' : '顶部导航', exact: true }).waitFor();
+            assert.deepEqual(await page.evaluate(refreshGeometry), before, `${view}, ${width}px, ${layout}`);
+            await assertStableRefresh(page, view, layout);
+          } finally {
+            gate.resolve();
+            for (const file of resources) await page.unroute(baseURL + '/' + file, hold);
+          }
+        }
+      }
+    } finally { await browser.close(); }
+  });
+}
+
+test('refresh and layout switches keep the note toolbar and first row in place', { timeout: 60_000 }, async () => {
+  const browser = await chromium.launch();
+  const html = (await readFile(uiRoot + 'dist/index.html', 'utf8')).replace('<head>', '<head><meta name="memocard-local-web" content="1">');
+  const notes = Array.from({ length: 32 }, (_, i) => ({
+    id: String(i), sourceUrl: i + '.md', relativePath: i + '.md', contentHash: 'hash', title: 'Note ' + i, body: 'Example', tags: [],
+    createdAt: '2026-01-01', updatedAt: '2026-01-01',
+  }));
+  try {
+    for (const width of [1440, 390]) for (const theme of ['classic', 'minimal']) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      const capabilities = ['getStatus', 'queryNotes', 'getNote', 'saveNote'];
+      const coverage = { complete: true, indexed: notes.length, pending: 0, issues: 0 };
+      let pending;
+      try {
+        await page.addInitScript(theme => {
+          localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: theme }));
+          requestAnimationFrame(function firstCollectionFrame() {
+            const collection = document.querySelector('.ui-note-collection');
+            if (collection) window.firstCollectionLayout = collection.dataset.layout;
+            else requestAnimationFrame(firstCollectionFrame);
+          });
+        }, theme);
+        await page.route(baseURL + '/', route => route.fulfill({ contentType: 'text/html', body: html }));
+        await page.route(baseURL + '/api/bridge', async route => {
+          const { operation } = route.request().postDataJSON();
+          let data;
+          if (operation === 'getEnvironment') data = { platform: 'mac', storage: 'local-web', capabilities };
+          else if (operation === 'getStatus') data = { connected: true, vaultId: 'test', vaultName: 'Test', capabilities, coverage };
+          else {
+            assert.equal(operation, 'queryNotes');
+            await pending?.promise;
+            data = { notes, nextCursor: null, coverage };
+          }
+          await route.fulfill({ json: { ok: true, data } });
+        });
+        const switchTo = async layout => {
+          if (width < 768) {
+            await page.getByRole('button', { name: /^视图选项/ }).click();
+            await page.getByRole('menuitemradio', { name: layout === 'cards' ? '卡片' : '列表', exact: true }).click();
+          } else await page.getByRole('button', { name: layout === 'cards' ? '卡片布局' : '列表布局', exact: true }).click();
+        };
+        const measure = (layout, loading) => page.locator(`.ui-note-collection[data-layout=${layout}] ${loading ? '[data-slot=collection-skeleton]' : 'ul.ui-note-items'}`).evaluate((items, loading) => {
+          const scroller = items.closest('.web-app-scroll');
+          const toolbar = items.closest('.ui-note-collection').querySelector('.ui-note-toolbar');
+          const rect = element => {
+            const { x, y, width, height } = element.getBoundingClientRect();
+            return [x, y, width, height];
+          };
+          return { toolbar: rect(toolbar), first: rect(items.firstElementChild), scroll: scroller.scrollTop,
+            excess: loading ? scroller.scrollHeight - scroller.clientHeight : 0 };
+        }, loading);
+        for (const view of ['home', 'notes']) {
+          await page.goto(baseURL + '/#/' + view);
+          await page.locator('ul.ui-note-items').waitFor();
+          for (const layout of ['cards', 'list']) {
+            const other = layout === 'cards' ? 'list' : 'cards';
+            await switchTo(layout);
+            const ready = await measure(layout, false);
+            pending = Promise.withResolvers();
+            await page.reload({ waitUntil: 'domcontentloaded' });
+            const loading = await measure(layout, true);
+            assert.equal(await (await page.waitForFunction(() => window.firstCollectionLayout)).jsonValue(), layout);
+            assert.deepEqual(loading, ready, `${theme} ${view} ${width}px refresh ${layout}`);
+            if (width === 1440 && theme === 'minimal' && view === 'home' && layout === 'list') {
+              const top = await page.locator('[data-slot=collection-skeleton]').evaluate(items => items.getBoundingClientRect().top);
+              await page.setViewportSize({ width, height: Math.ceil(top) + 8 });
+              await page.waitForFunction(() => {
+                const scroller = document.querySelector('.web-app-scroll');
+                return scroller.scrollHeight === scroller.clientHeight;
+              });
+              await page.setViewportSize({ width, height: 900 });
+            }
+            await switchTo(other);
+            const switched = await measure(other, true);
+            assert.deepEqual(switched.toolbar, ready.toolbar);
+            pending.resolve();
+            assert.deepEqual(await measure(other, false), switched, `${theme} ${view} ${width}px switched to ${other}`);
+          }
+        }
+      } finally { pending?.resolve(); await page.close(); }
+    }
+  } finally { await browser.close(); }
+});
+
+for (const view of ['settings', 'trash']) {
+  test(`refresh keeps the ${view} layout while the vault, page and theme load`, { timeout: 60_000 }, async () => {
+    const browser = await chromium.launch();
+    const html = (await readFile(`${uiRoot}dist/index.html`, 'utf8')).replace('<head>', '<head><meta name="memocard-local-web" content="1">');
+    const feature = manifest[view === 'settings' ? 'ui/web/WebSettings.tsx' : 'ui/business/TrashPage.tsx'].file;
+    try {
+      for (const width of [1440, 390]) for (const [theme, desktop] of [['classic', 'rail'], ['minimal', 'topbar']]) {
+        const page = await browser.newPage({ viewport: { width, height: 900 } });
+        page.setDefaultTimeout(5000);
+        const vault = Promise.withResolvers(), featureCode = Promise.withResolvers(), appearance = Promise.withResolvers(), rows = Promise.withResolvers();
+        const layout = width < 768 ? 'drawer' : desktop;
+        const context = `${view}, ${theme}, ${width}px`;
+        const surface = page.locator(view === 'settings' ? '.web-settings' : '.ui-trash');
+        try {
+          let connected = true;
+          await page.addInitScript(recordRefreshFrames);
+          await page.addInitScript(theme => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: theme })), theme);
+          await page.goto(baseURL + '/#/' + view);
+          await page.route(baseURL + '/', route => route.fulfill({ contentType: 'text/html', body: html }));
+          await page.route(baseURL + '/api/bridge', async route => {
+            const { operation } = route.request().postDataJSON();
+            const capabilities = ['getEnvironment', 'getStatus', 'getTrash', 'restoreNote', 'permanentlyDeleteNote'];
+            let data;
+            if (operation === 'getEnvironment') data = { platform: 'mac', storage: 'local-web', capabilities };
+            else if (operation === 'getStatus') {
+              await vault.promise;
+              data = { connected, ...(connected && { vaultId: 'refresh', vaultName: 'Refresh' }), capabilities, coverage: { complete: true, indexed: 0, pending: 0, issues: 0 } };
+            } else {
+              assert.equal(operation, 'getTrash');
+              await rows.promise;
+              data = { notes: [{ trashKey: 'example', title: 'Example', relativePath: 'Example.md', deletedAt: '2026-01-01T00:00:00Z' }], issues: [] };
+            }
+            await route.fulfill({ json: { ok: true, data } });
+          });
+          await page.route(baseURL + '/' + feature, async route => { await featureCode.promise; await route.continue(); });
+          for (const file of [manifest[`ui/web/appearance/themes/${theme}.css?inline`].file, ...(layout === 'drawer' ? [] : [manifest[`ui/web/layouts/${layout}.tsx`].file])]) {
+            await page.route(baseURL + '/' + file, async route => { await appearance.promise; await route.continue(); });
+          }
+          await page.reload({ waitUntil: 'domcontentloaded' });
+          await page.locator(`.web-page-content[data-view=${view}]`).waitFor();
+          assert.equal(await page.locator('.web-app').getAttribute('data-workspace-layout'), layout, context);
+          assert.equal(await page.getByRole('navigation', { name: '主要导航', exact: true }).count(), 0, context);
+          await surface.waitFor();
+          const measure = () => page.evaluate(refreshGeometry, view === 'settings'
+            ? ['.web-settings-title', '.web-settings-panel', '.web-settings-panel > section:first-of-type > [data-slot=card]', '.web-setting-section-heading']
+            : ['.ui-trash > header', '.ui-trash h1', '.ui-trash-list', '.ui-trash-card']);
+          const initial = await measure();
+          const stages = [initial];
+          if (view === 'settings' && width < 768) {
+            const downloaded = page.waitForResponse(baseURL + '/' + feature);
+            featureCode.resolve();
+            await downloaded;
+            assert.equal(await page.getByText('尚未连接笔记库', { exact: true }).count(), 0, context);
+          }
+          vault.resolve();
+          if (view === 'settings' && width >= 768) {
+            await page.locator('[data-slot=settings-skeleton] .web-setting-section-heading').waitFor();
+            stages.push(await measure());
+          }
+          const requestedRows = view === 'trash' && page.waitForRequest(request => request.url().endsWith('/api/bridge') && request.postDataJSON()?.operation === 'getTrash');
+          featureCode.resolve();
+          if (requestedRows) await requestedRows;
+          else await page.getByText('本机文件状态', { exact: true }).waitFor();
+          stages.push(await measure());
+          appearance.resolve();
+          rows.resolve();
+          await page.locator(`style[data-workspace-style="${theme}"]`).waitFor({ state: 'attached' });
+          if (layout !== 'drawer') await page.getByRole('navigation', { name: layout === 'rail' ? '桌面导航' : '顶部导航', exact: true }).waitFor();
+          if (view === 'trash') await page.getByRole('list', { name: '已删除笔记' }).waitFor();
+          const final = await measure();
+          for (const stage of stages) {
+            for (const [selector, box] of Object.entries(stage)) assert.deepEqual(box, final[selector], `${context} ${selector}`);
+          }
+          await assertStableRefresh(page, view, layout);
+          connected = false;
+          await page.reload();
+          await page.getByText(view === 'settings' ? '尚未连接笔记库' : '连接笔记库后查看回收站', { exact: true }).waitFor();
+          const disconnected = await measure();
+          const title = view === 'settings' ? '.web-settings-title' : '.ui-trash > header';
+          assert.deepEqual(disconnected[title], final[title], context);
+        } finally {
+          for (const gate of [vault, featureCode, appearance, rows]) gate.resolve();
+          await page.close();
+        }
+      }
+    } finally { await browser.close(); }
+  });
+}
+
+test('mobile refresh can open the drawer before theme styles finish loading', { timeout: 20_000 }, async () => {
+  const browser = await chromium.launch();
+  const gate = Promise.withResolvers();
+  const desktop = Promise.withResolvers();
+  try {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await page.addInitScript(() => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: 'minimal' })));
+    const styles = manifest['ui/web/appearance/themes/minimal.css?inline'].file;
+    await page.route(`${baseURL}/${styles}`, async route => { await gate.promise; await route.continue(); });
+    await page.goto(`${baseURL}/#/home`, { waitUntil: 'domcontentloaded' });
+    const pageFrame = page.locator('.web-app');
+    await page.getByRole('button', { name: '打开导航', exact: true }).waitFor();
+    assert.equal(await pageFrame.getAttribute('data-workspace-layout'), 'drawer');
+    assert.equal(await pageFrame.getAttribute('data-interface-theme'), 'minimal');
+    assert.equal(await page.getByRole('navigation', { name: '主要导航', exact: true }).count(), 0);
+    await page.getByRole('button', { name: '打开导航', exact: true }).click();
+    await page.getByRole('dialog').getByRole('navigation', { name: '主要导航', exact: true }).waitFor();
+    gate.resolve();
+    await page.locator('style[data-workspace-style="minimal"]').waitFor({ state: 'attached' });
+    await page.keyboard.press('Escape');
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    const resource = baseURL + '/' + manifest['ui/web/layouts/topbar.tsx'].file;
+    await page.route(resource, async route => { await desktop.promise; await route.continue(); });
+    const requested = page.waitForRequest(resource);
+    await page.setViewportSize({ width: 1024, height: 844 });
+    await requested;
+    assert.equal(await pageFrame.getAttribute('data-workspace-layout'), 'topbar');
+    assert.equal(await page.getByRole('navigation', { name: '主要导航', exact: true }).count(), 0);
+    desktop.resolve();
+    await page.getByRole('navigation', { name: '顶部导航', exact: true }).waitFor();
+  } finally { gate.resolve(); desktop.resolve(); await browser.close(); }
+});
 
 test('applies the stored system scheme before React loads and follows later system changes', { timeout: 20_000 }, async () => {
   const browser = await chromium.launch();
@@ -76,6 +383,7 @@ test('applies the stored system scheme before React loads and follows later syst
 
 test('recovers from a failed layout download in the production UI', { timeout: 20_000 }, async () => {
   const browser = await chromium.launch();
+  const gate = Promise.withResolvers();
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.addInitScript(() => localStorage.setItem('memocard-web-appearance-v1', JSON.stringify({ interfaceTheme: 'classic' })));
@@ -87,11 +395,16 @@ test('recovers from a failed layout download in the production UI', { timeout: 2
     await retry.waitFor({ timeout: 5000 });
     await page.getByRole('navigation', { name: '主要导航', exact: true }).waitFor({ timeout: 5000 });
     await page.unroute(layoutURL);
+    await page.route(layoutURL, async route => { await gate.promise; await route.continue(); });
+    const requested = page.waitForRequest(layoutURL);
     await retry.click();
+    await requested;
+    assert.equal(await page.getByRole('navigation', { name: '主要导航', exact: true }).isVisible(), true);
+    gate.resolve();
     await page.getByRole('navigation', { name: '桌面导航', exact: true }).waitFor({ timeout: 5000 });
     assert.equal(await page.locator('.web-app[data-workspace-layout=rail]').evaluate(element => getComputedStyle(element).display), 'grid');
     await retry.waitFor({ state: 'detached' });
-  } finally { await browser.close(); }
+  } finally { gate.resolve(); await browser.close(); }
 });
 
 for (const [interfaceTheme, oldBuild] of [['classic', true], ['minimal', true], ['minimal', false]]) {
@@ -325,6 +638,7 @@ test('property-first new note retains empty fields, zero, false and choice edits
 
 test('home and all-notes cards show one preview and fall through unreadable images in order', { timeout: 60_000 }, async () => {
   const browser = await chromium.launch();
+  const gate = Promise.withResolvers();
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     const errors = [];
@@ -366,7 +680,7 @@ test('home and all-notes cards show one preview and fall through unreadable imag
       const bodyImage = 'BODY CONTENT\n\n![Missing body](./assets/missing-body.png)\n\n![Body cover](./assets/body.png)\n\n![Later image](./assets/later.png)';
       const rows = [
         ['Property cover', missing + image('later', 'later.png') + image('chosen', 'property.png') + fields, bodyImage],
-        ['Body cover', missing + fields, bodyImage],
+        ['Body cover', fields, bodyImage],
         ['Text fallback', missing + fields, 'BODY CONTENT\n\n![Broken body](./assets/corrupt.png)'],
         ['Body fallback', missing, 'BODY CONTENT\n\n![Broken body](./assets/corrupt.png)'],
       ];
@@ -374,7 +688,7 @@ test('home and all-notes cards show one preview and fall through unreadable imag
     });
     const preview = title => page.locator('.ui-note-card').filter({
       has: page.getByRole('button', { name: '打开 ' + title, exact: true }),
-    }).locator('.ui-note-preview');
+    }).locator('.ui-note-preview, .ui-note-cover-slot:not(:empty)');
     const color = async card => {
       const img = card.locator('[data-image-state="loaded"] img');
       await card.scrollIntoViewIfNeeded();
@@ -391,9 +705,21 @@ test('home and all-notes cards show one preview and fall through unreadable imag
     };
     for (const route of ['home', 'notes']) {
       await page.goto(baseURL + '/#/' + route);
-      await page.reload();
+      const file = baseURL + '/' + manifest['ui/business/NoteCardPreview.tsx'].file;
+      if (route === 'home') await page.route(file, async request => { await gate.promise; await request.continue(); });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      const coverTitles = ['Property cover', 'Body cover'];
+      const titleOffsets = () => Promise.all(coverTitles.map(title =>
+        page.getByRole('button', { name: '打开 ' + title, exact: true }).evaluate(button =>
+          button.getBoundingClientRect().top - button.closest('.ui-note-card').getBoundingClientRect().top)));
+      const pending = route === 'home' ? await titleOffsets() : null;
+      gate.resolve();
       assert.deepEqual(await color(preview('Property cover')), [0, 255, 0, 255]);
       assert.deepEqual(await color(preview('Body cover')), [0, 0, 255, 255]);
+      if (pending) {
+        assert.deepEqual(await titleOffsets(), pending, 'Cover titles should keep their position while the preview code loads');
+        await page.unroute(file);
+      }
       for (const [title, expected] of [['Text fallback', 'Chosen **literal** text'], ['Body fallback', 'BODY CONTENT']]) {
         const card = preview(title);
         await card.scrollIntoViewIfNeeded();
@@ -402,6 +728,14 @@ test('home and all-notes cards show one preview and fall through unreadable imag
         assert.equal(await card.locator('img').count(), 0);
       }
     }
+    const file = baseURL + '/' + manifest['ui/business/NoteCardPreview.tsx'].file;
+    await page.route(file, request => request.abort());
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const retry = page.locator('.ui-note-card').filter({ has: page.getByRole('button', { name: '打开 Property cover', exact: true }) }).getByRole('button', { name: '重试加载笔记卡片预览', exact: true });
+    await retry.waitFor();
+    await page.unroute(file);
+    await retry.click({ timeout: 3000 });
+    assert.deepEqual(await color(preview('Property cover')), [0, 255, 0, 255]);
     assert.deepEqual(errors, []);
-  } finally { await browser.close(); }
+  } finally { gate.resolve(); await browser.close(); }
 });
