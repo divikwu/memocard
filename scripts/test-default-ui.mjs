@@ -753,6 +753,11 @@ test('home and all-notes galleries start at the first readable cover and fall ba
     await carousel.scrollIntoViewIfNeeded();
     const indicator = carousel.getByRole('group', {name:'选择图片'});
     const dots = indicator.getByRole('button');
+    // Focus restoration or scrollIntoView must not offset Embla's translated track.
+    assert.equal(await carousel.locator('[data-slot="carousel-content"]').evaluate(viewport => {
+      viewport.scrollLeft = viewport.clientWidth;
+      return viewport.scrollLeft;
+    }), 0);
     await carousel.getByText('1 / 2', {exact:true}).waitFor();
     assert.equal(await dots.count(), 2);
     assert.equal(await dots.first().getAttribute('aria-current'), 'true');
@@ -870,7 +875,7 @@ test('home and all-notes galleries start at the first readable cover and fall ba
     await page.unroute(file);
     await retry.click({ timeout: 3000 });
     assert.deepEqual(await color(preview('Property cover')), [0, 255, 0, 255]);
-    await preview('Property cover').locator('.ui-gallery-slide').first().click();
+    await preview('Property cover').getByRole('button', {name:'打开笔记 · 笔记封面', exact:true}).filter({has:page.locator('[data-image-state="loaded"]')}).click();
     const type = page.getByRole('button', {name:'编辑内容类型'});
     await type.getByText('图片', {exact:true}).waitFor();
     const editor = page.getByRole('textbox', {name:'笔记内容'});
@@ -880,9 +885,15 @@ test('home and all-notes galleries start at the first readable cover and fall ba
     await page.getByRole('option', {name:'选项 文字', exact:true}).click();
     const waitForOverride = value => page.waitForFunction(async expected => {
       const root = await navigator.storage.getDirectory();
-      const file = await (await root.getFileHandle('Property cover.md')).getFile();
-      const source = await file.text();
-      return expected ? source.includes('"memocard:contentTypeOverride": "memocard:text"') : !source.includes('contentTypeOverride');
+      try {
+        const handle = await root.getFileHandle('Property cover.md');
+        const source = await (await handle.getFile()).text();
+        return expected ? source.includes('"memocard:contentTypeOverride": "memocard:text"') : !source.includes('contentTypeOverride');
+      } catch (error) {
+        // An atomic save can invalidate this OPFS File between getFile() and text().
+        if (error.name === 'NotReadableError' || error.name === 'NotFoundError') return false;
+        throw error;
+      }
     }, value);
     await waitForOverride(true);
     await editor.press('ControlOrMeta+z');
@@ -893,13 +904,13 @@ test('home and all-notes galleries start at the first readable cover and fall ba
     await editor.press('ControlOrMeta+Shift+z');
     await editor.press('ControlOrMeta+Shift+z');
     await waitForOverride(true);
-    await page.reload();
-    await type.getByText('文字', {exact:true}).waitFor();
-    await editor.waitFor();
+    // Leaving through the editor flushes the note and its recovery draft before reload.
     await returnToNotes(page);
+    await page.reload();
     assert.deepEqual(await color(preview('Property cover'), true), [0, 255, 0, 255]);
     await page.getByRole('button', {name:'打开 Property cover', exact:true}).locator('span').waitFor();
     await page.getByRole('button', {name:'打开 Property cover', exact:true}).click();
+    await type.getByText('文字', {exact:true}).waitFor();
     await page.getByRole('button', {name:'属性菜单 内容类型'}).click();
     await page.getByRole('menuitem', {name:'恢复自动判断'}).click();
     await waitForOverride(false);
@@ -909,7 +920,8 @@ test('home and all-notes galleries start at the first readable cover and fall ba
     await editor.press('ControlOrMeta+Shift+z');
     await waitForOverride(false);
     await returnToNotes(page);
-    await preview('Property cover').locator('.ui-gallery-slide').first().click();
+    assert.deepEqual(await color(preview('Property cover')), [0, 255, 0, 255]);
+    await preview('Property cover').getByRole('button', {name:'打开笔记 · 笔记封面', exact:true}).filter({has:page.locator('[data-image-state="loaded"]')}).click();
     await returnToNotes(page);
     await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === '打开 Property cover');
     assert.deepEqual(errors, []);
