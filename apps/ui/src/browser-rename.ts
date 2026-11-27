@@ -138,4 +138,3 @@ export async function renameNote(root: BrowserDirectoryHandle, compatible: boole
   const saved = compatible ? await parseObsidianNote(textBytes(after), path, vaultId, { id: save.id, path, hash: await sha256(textBytes(after)), createdAt: existing.note.createdAt }, Date.now()) : await parseBrowserNote(textBytes(after), path, vaultId);
   return saved.note;
 }
-export { propertyOperation } from './browser-properties';

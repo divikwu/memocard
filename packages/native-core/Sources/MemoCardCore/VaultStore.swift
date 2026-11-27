@@ -884,9 +884,11 @@ public actor VaultStore {
         let queryHash = sha256(try encode(fingerprintQuery))
         // indexedAt changes on every scan and must not invalidate an unchanged snapshot.
         // Source hashes cover the whole Markdown; do not encode every body again to fingerprint a page.
-        struct Fingerprint: Encodable { let id: String; let hash: String; let path: String; let source: String; let updatedAt: String? }
+        let quickFilters = Set((query.quickFilters ?? []) + (query.quickFilter.map { [$0] } ?? []))
+        let previews = (try? cardPreviewProperties(snapshot)) ?? [:]
+        struct Fingerprint: Encodable { let id: String; let hash: String; let path: String; let source: String; let updatedAt: String?; let hasCover: Bool? }
         let fingerprints = snapshot.notes.map {
-            Fingerprint(id: $0.note.id, hash: $0.note.contentHash, path: $0.note.relativePath, source: $0.note.sourceUrl, updatedAt: byUpdate ? $0.note.updatedAt : nil)
+            Fingerprint(id: $0.note.id, hash: $0.note.contentHash, path: $0.note.relativePath, source: $0.note.sourceUrl, updatedAt: byUpdate ? $0.note.updatedAt : nil, hasCover: quickFilters.contains(.images) ? previews[$0.note.id]?.images.isEmpty == false : nil)
         }
         let snapshotHash = sha256(try encode(fingerprints) + Data("\(snapshot.coverage.pending):\(snapshot.coverage.issues):\(pins.contentHash)".utf8))
         var cursor: PageCursor?
@@ -907,12 +909,12 @@ public actor VaultStore {
         let cursorDate = try cursor.map { try parseDate($0.sortAt ?? $0.createdAt) }
         let filters = Dictionary(uniqueKeysWithValues: snapshot.notes.map { parsed in
             let note = parsed.note
-            let filters = parsedCache[note.relativePath]?.quickFilters ?? (indexing != nil ? (note.tags.isEmpty ? [.untagged] : []) : noteQuickFilters(note))
+            var filters = parsedCache[note.relativePath]?.quickFilters ?? (indexing != nil ? (note.tags.isEmpty ? [.untagged] : []) : noteQuickFilters(note))
             if indexing == nil { parsedCache[note.relativePath]?.quickFilters = filters }
+            if previews[note.id]?.images.isEmpty == false { filters.insert(.images) }
             return (note.id, filters)
         })
         var filterCounts = ["untagged": 0, "images": 0, "links": 0]
-        let quickFilters = Set((query.quickFilters ?? []) + (query.quickFilter.map { [$0] } ?? []))
         var quickFilterTagDates: [String: Date] = [:]
         var quickFilterTagCounts: [String: Int] = [:]
         for parsed in snapshot.notes where parsed.note.deletedAt == nil {
@@ -945,13 +947,12 @@ public actor VaultStore {
         }
         // Limit actual JSON bytes as well as count. A single large legal note must still advance the cursor.
         let entries = matches.prefix(limit)
-        let previews = query.includeCardPreview == true ? (try? cardPreviewProperties(entries, snapshot: snapshot)) : nil
         let byteBudget = 2 * 1024 * 1024
         var notesData = Data("[".utf8)
         var page: [Note] = []
         for entry in entries {
             var note = entry.note
-            note.cardPreview = previews?[note.id]
+            note.cardPreview = query.includeCardPreview == true ? previews[note.id] : nil
             let encoded = try encode(note)
             let separatorSize = page.isEmpty ? 0 : 1
             if !page.isEmpty, notesData.count + separatorSize + encoded.count + 1 > byteBudget { break }
@@ -1153,7 +1154,7 @@ public actor VaultStore {
     private struct PropertyIcons: Encodable { let icons: [String: String]; let contentHash: String }
     private struct PropertyLayoutValue: Codable, Equatable { let order: [String]; let visibility: [String: String] }
     private struct PropertyLayout: Encodable { let order: [String]; let visibility: [String: String]; let contentHash: String }
-    private let systemPropertyLabels = ["system:tags": "标签", "system:updatedAt": "更新时间", "system:createdAt": "创建时间", "system:filename": "文件名"]
+    private let systemPropertyLabels = ["system:contentType": "内容类型", "system:tags": "标签", "system:updatedAt": "更新时间", "system:createdAt": "创建时间", "system:filename": "文件名"]
     private func defaultPropertyLabel(_ key: String) -> String { systemPropertyLabels[key] ?? String(key.dropFirst("property:".count)) }
     private func validPropertyLabel(_ value: String) -> Bool {
         !value.isEmpty && value.count <= 100 && value == value.trimmingCharacters(in: .whitespacesAndNewlines) && !value.unicodeScalars.contains { $0.value < 32 }
@@ -1381,8 +1382,8 @@ public actor VaultStore {
     private func libraryProperties(_ snapshot: Snapshot) throws -> [NoteProperty] {
         try snapshot.notes.filter { $0.note.deletedAt == nil }.sorted { $0.note.relativePath < $1.note.relativePath }.flatMap(cachedNoteProperties)
     }
-    private func cardPreviewProperties(_ entries: ArraySlice<ParsedNote>, snapshot: Snapshot) throws -> [String: CardPreviewProperties] {
-        let page = entries.map { ($0.note.id, (try? cachedNoteProperties($0)) ?? []) }.filter { !$0.1.isEmpty }
+    private func cardPreviewProperties(_ snapshot: Snapshot) throws -> [String: CardPreviewProperties] {
+        let page = snapshot.notes.map { ($0.note.id, (try? cachedNoteProperties($0)) ?? []) }.filter { !$0.1.isEmpty }
         guard !page.isEmpty else { return [:] }
         let names = Set(page.flatMap { $0.1.map(\.name) })
         let (root, _) = try active()
@@ -1527,11 +1528,11 @@ public actor VaultStore {
         guard snapshot.coverage.complete else { throw VaultError(code: "SCAN_INCOMPLETE", message: "笔记库尚未完整读取，无法安全修改属性。") }
         guard let existing = snapshot.notes.first(where: { $0.note.id == id }), existing.note.deletedAt == nil else { throw VaultError(code: "NOTE_NOT_FOUND", message: "找不到可编辑的笔记。") }
         let (root, metadata) = try active()
-        if change.definition == true || change.remove == true { return try updatePropertyDefinition(change, snapshot: snapshot, existing: existing, root: root, metadata: metadata) }
+        if change.name != ContentType.propertyKey && (change.definition == true || change.remove == true) { return try updatePropertyDefinition(change, snapshot: snapshot, existing: existing, root: root, metadata: metadata) }
         let config = try readPropertyDefinitions(root)
         guard change.definitionHash == nil || change.definitionHash == config.hash else { throw VaultError(code: "HASH_CONFLICT", message: "属性定义已在其他位置修改，请重新打开后重试。") }
         var adjusted = change
-        if let stored = config.values[change.name], change.remove != true, change.renameTo == nil {
+        if change.name != ContentType.propertyKey, let stored = config.values[change.name], change.remove != true, change.renameTo == nil {
             let definition = resolvedPropertyDefinition(stored, properties: stored.type == "list" ? try libraryProperties(snapshot).filter { $0.name == change.name } : [])
             guard change.type == definition.type else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型已变化，请重新打开后编辑。") }
             if let options = change.options, !(change.create == true && options.isEmpty) {
@@ -1548,7 +1549,7 @@ public actor VaultStore {
             if let copyFrom = adjusted.copyFrom, !raw.properties.contains(where: { $0.name == copyFrom }), let copied = effective.properties.first(where: { $0.name == copyFrom && $0.editable }), adjusted.create == true {
                 adjusted = PropertyChange(id: id, baseHash: change.baseHash, name: change.name, type: copied.type, value: copied.value, remove: nil, create: true, options: copied.options)
             }
-            if !raw.properties.contains(where: { $0.name == change.name }), let inherited = effective.properties.first(where: { $0.name == change.name && $0.editable }), change.create != true, change.renameTo == nil {
+            if change.name != ContentType.propertyKey, !raw.properties.contains(where: { $0.name == change.name }), let inherited = effective.properties.first(where: { $0.name == change.name && $0.editable }), change.create != true, change.renameTo == nil {
                 guard adjusted.type == inherited.type else { throw VaultError(code: "INVALID_PROPERTY", message: "属性类型已变化，请重新打开后编辑。") }
                 adjusted.create = true
                 adjusted.options = inherited.options

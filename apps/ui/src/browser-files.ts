@@ -1,3 +1,4 @@
+import { contentTypePropertyKey } from '@memocard/contracts';
 import { inlineTags, propertyTags } from './inline-tags';
 export { inlineTags } from './inline-tags';
 import type { Note } from "@memocard/contracts";
@@ -45,6 +46,12 @@ function bodyWithNoteTitle(body: string, title: string | undefined, newline: str
   const encoded = encodeURIComponent(title.replace(/[\uD800-\uDFFF]/gu, "\uFFFD")).replace(/[!'()*]/g, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`);
   return "<!-- memocard:title=" + encoded + " -->" + newline + body;
 }
+function contentTypeProperty(doc: Document): Pick<Note, "contentTypeOverride"> {
+  const alternate = doc.get(contentTypePropertyKey);
+  const value = alternate === 'memocard:image' ? 'image' : alternate === 'memocard:text' ? 'text' : undefined;
+  return value === 'text' || value === 'image' ? {contentTypeOverride: value} : {};
+}
+
 function documentTags(doc: Document): string[] {
   const value = doc.get('tags');
   return propertyTags(isSeq(value) ? value.items.map(item => isScalar(item) ? item.value : null) : value);
@@ -81,7 +88,7 @@ export async function parseBrowserNote(bytes: Uint8Array, relativePath: string, 
   const deletedAt = deletedNode === undefined || (isScalar(deletedNode) && deletedNode.value === null) ? undefined : scalar("deletedAt");
   if (deletedAt !== undefined) parseDate(deletedAt);
   return { frontmatter: doc, header, note: {
-    id, title, createdAt, updatedAt, tags, ...(deletedAt !== undefined ? { deletedAt } : {}),
+    ...contentTypeProperty(doc), id, title, createdAt, updatedAt, tags, ...(deletedAt !== undefined ? { deletedAt } : {}),
     body, contentHash: await sha256(bytes), relativePath,
     sourceUrl: `memocard://note/${id}?vault=${vaultId}`,
   } };
@@ -116,7 +123,7 @@ export async function parseObsidianNote(bytes: Uint8Array, path: string, vaultId
   if (doc.errors.length || (doc.contents !== null && !isMap(doc.contents))) throw new BrowserVaultError("INVALID_FRONTMATTER", "无法安全读取 YAML 属性。");
   const { title, body } = noteContent(path, header, source.slice(header.length));
   return { source, header, frontmatter: doc, note: {
-    id: identity.id, title, body, tags: [...new Set([...documentTags(doc), ...inlineTags(body)])],
+    ...contentTypeProperty(doc), id: identity.id, title, body, tags: [...new Set([...documentTags(doc), ...inlineTags(body)])],
     createdAt: identity.createdAt, updatedAt: new Date(modified || 0).toISOString(),
     contentHash: await sha256(bytes), relativePath: path, sourceUrl: `memocard://note/${identity.id}?vault=${vaultId}`,
   } };

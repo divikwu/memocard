@@ -59,7 +59,7 @@ export type NoteCollectionProps = {
 
 function CardPreviewLoading({ note, coverSlot }: { note: Note; coverSlot: HTMLDivElement | null }) {
   if (note.cardPreview?.images.length || mayContainMarkdownImage(note.body)) {
-    return coverSlot && createPortal(<Skeleton className="ui-note-card-cover" />, coverSlot);
+    return coverSlot && createPortal(<Skeleton className="ui-note-card-cover" data-text-cover={note.contentTypeOverride === "text" || undefined} />, coverSlot);
   }
   return <Skeleton className="h-4 w-full rounded-lg" />;
 }
@@ -74,9 +74,9 @@ function NoteCardContent({ note, title, canOpen, onOpen, onError }: Pick<NoteCol
           if (event.pointerType === "touch" && event.isPrimary) event.currentTarget.setAttribute("data-touch-pressed", "");
         }}
         onPointerUp={clearCardPress} onPointerCancel={clearCardPress} onLostPointerCapture={clearCardPress}
-        onClick={() => onOpen(note.id)}>{title}</button></h2>
+        onClick={() => onOpen(note.id)}><span>{title}</span></button></h2>
       <Suspense fallback={<CardPreviewLoading note={note} coverSlot={coverSlot} />}>
-        <NoteCardPreview key={JSON.stringify([note.sourceUrl, note.contentHash])} note={note} coverSlot={coverSlot} onError={onError} />
+        <NoteCardPreview key={JSON.stringify([note.sourceUrl, note.contentHash])} note={note} coverSlot={coverSlot} onOpen={canOpen ? () => onOpen(note.id) : undefined} onError={onError} />
       </Suspense>
     </div>
   </>;

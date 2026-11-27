@@ -1,7 +1,7 @@
 import { AppearanceCatalogProvider } from "../ui/web/appearance/AppearanceRuntime";
 import { expandedSidebarFixture } from "../ui-state-fixtures/appearance-fixture";
 import { afterEach, expect, inject, test, vi } from "vitest";
-import type { NoteProperties as Properties, PropertyLayout, TagPreferenceState, VaultStatus } from "@memocard/contracts";
+import type { Note, NoteProperties as Properties, PropertyLayout, TagPreferenceState, VaultStatus } from "@memocard/contracts";
 import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { commands, page, server, userEvent } from "vitest/browser";
 import { act, cleanup, render, waitFor, within } from "@testing-library/react";
@@ -896,7 +896,7 @@ test("list skeleton rows fill the available scrollport at their natural height",
   }
 });
 
-test("image covers fill the space above short and wrapped card titles", async () => {
+test("image covers fill the card and retain a named open button", async () => {
   await page.viewport(1280, 900);
   const canvas = document.createElement("canvas");
   const blob = await new Promise<Blob>(resolve => canvas.toBlob(value => resolve(value!), "image/png"));
@@ -916,29 +916,78 @@ test("image covers fill the space above short and wrapped card titles", async ()
     const card = shortCover.closest(".ui-note-card")!;
     for (const width of [1024, 768, 767, 390, 320]) {
       await page.viewport(width, 900);
-      const textPadding = width < 768 ? 12 : 16;
-      const image = shortCover.getBoundingClientRect();
-      const bounds = card.getBoundingClientRect();
-      const title = card.querySelector("h2")!.getBoundingClientRect();
-      expect(card.querySelector("time")).toBeNull();
-      expect(image.top - bounds.top).toBeCloseTo(2, 0);
-      expect(title.left - bounds.left).toBeCloseTo(textPadding, 0);
-      expect(title.top - image.bottom).toBeCloseTo(textPadding, 0);
-      expect(image.left - bounds.left).toBeCloseTo(2, 0);
-      expect(bounds.right - image.right).toBeCloseTo(2, 0);
-      expect(bounds.bottom - title.bottom).toBeCloseTo(textPadding, 0);
-      const longImage = cover.getBoundingClientRect();
-      expect(longImage.height).toBeGreaterThan(0);
-      const longTitle = longCard.querySelector("h2")!.getBoundingClientRect();
-      expect(longTitle.top - longImage.bottom).toBeCloseTo(textPadding, 0);
-      expect(bounds.bottom - longTitle.bottom).toBeCloseTo(textPadding, 0);
+      for (const [tile, img] of [[card, shortCover], [longCard, cover]] as const) {
+        const bounds = tile.getBoundingClientRect();
+        const image = img.getBoundingClientRect();
+        const open = within(tile as HTMLElement).getByRole("button", { name: /^打开 / });
+        expect(open.querySelector("span")).not.toBeVisible();
+        expect(open.getBoundingClientRect().height).toBeCloseTo(bounds.height, 0);
+        expect(image.width).toBeGreaterThan(0);
+        for (const edge of ["top", "left", "right", "bottom"] as const) {
+          expect(image[edge]).toBeCloseTo(bounds[edge], 0);
+        }
+      }
     }
-    for (const [radius, outer, inner] of [["none", "0px", "0px"], ["large", "21px", "19px"], ["default", "12px", "10px"]] as const) {
+    for (const [radius, outer] of [["none", "0px"], ["large", "21px"], ["default", "12px"]] as const) {
       view.rerender(<PreviewModeProvider mode="light" appearance={{ radius, headingFont: "inherit", bodyFont: "system" }}>{collection}</PreviewModeProvider>);
       expect(getComputedStyle(card).borderRadius).toBe(outer);
-      expect(getComputedStyle(shortCover.parentElement!).borderRadius).toBe(inner);
+      expect(getComputedStyle(shortCover.parentElement!).borderRadius).toBe(outer);
     }
   } finally { releaseAssets(); }
+});
+
+test("image cards skip broken slides and separate pagination from opening a note", async () => {
+  await page.viewport(390, 844);
+  const blob = await new Promise<Blob>(resolve => document.createElement("canvas").toBlob(value => resolve(value!)));
+  const release = setStorybookBrowserAssets({ "assets/a.png": blob, "assets/b.png": blob, "assets/c.png": blob });
+  const note = { ...editorNote, title: "多图笔记", body: "![坏图](../assets/missing.png)\n\n![第一张](../assets/a.png)\n\n![第二张](../assets/b.png)\n\n![第三张](../assets/c.png)" };
+  const onOpen = vi.fn();
+  try {
+    const collection = (item: Note) => <PreviewModeProvider mode="light"><NoteCollection notes={[item]} canOpen canCreate
+      hasMore={false} paging={false} loadMoreDisabled={false} onOpen={onOpen} onNewNote={() => {}} onSelectTag={() => {}}
+      onLoadMore={() => {}} onError={() => {}} formatDate={() => "今天"} /></PreviewModeProvider>;
+    const view = render(collection(note));
+    const ui = within(view.container);
+    await ui.findByText("1 / 3");
+    const gallery = ui.getByRole("group", { name:"笔记图片" });
+    const height = gallery.getBoundingClientRect().height;
+    expect(height).toBeGreaterThan(0);
+    await userEvent.click(ui.getByRole("button", {name:"切换到第 3 张图片"}));
+    await ui.findByRole("button", {name:"打开笔记 · 第三张"});
+    expect(ui.getByRole("button", {name:"切换到第 3 张图片"}).getAttribute("aria-current")).toBe("true");
+    const selectedImage = await ui.findByRole("img", {name:"第三张"});
+    view.rerender(collection(structuredClone(note)));
+    expect(ui.getByRole("group", {name:"笔记图片"})).toBe(gallery);
+    expect(ui.getByRole("img", {name:"第三张"})).toBe(selectedImage);
+    await userEvent.hover(gallery);
+    expect(ui.queryByRole("button", {name:/^(上一张|下一张)图片$/})).toBeNull();
+    ui.getByRole("button", {name:"切换到第 3 张图片"}).focus();
+    await userEvent.keyboard("{ArrowRight}");
+    await ui.findByText("1 / 3");
+    expect(document.activeElement).toBe(ui.getByRole("button", {name:"切换到第 1 张图片"}));
+    await userEvent.keyboard("{ArrowLeft}");
+    await ui.findByText("3 / 3");
+    await userEvent.click(ui.getByRole("button", {name:"切换到第 1 张图片"}));
+    await ui.findByText("1 / 3");
+    expect(onOpen).not.toHaveBeenCalled();
+    expect(gallery.getBoundingClientRect().height).toBe(height);
+    await userEvent.click(ui.getByRole("button", {name:"打开笔记 · 第一张"}));
+    expect(onOpen).toHaveBeenCalledWith(note.id);
+    view.rerender(collection({ ...note, contentTypeOverride: "text", cardPreview: {images:[], text:"文字摘要"} }));
+    await waitFor(() => {
+      expect(ui.queryByRole("group", {name:"笔记图片"})).toBeNull();
+      expect(ui.getAllByRole("img")).toEqual([ui.getByRole("img", {name:"第一张"})]);
+    });
+    const cover = ui.getByRole("img", {name:"第一张"}).getBoundingClientRect();
+    const bounds = view.container.querySelector(".ui-note-card")!.getBoundingClientRect();
+    for (const edge of ["top", "left", "right"] as const) expect(cover[edge]).toBeCloseTo(bounds[edge], 0);
+    expect(ui.getByText(note.title)).toBeVisible();
+    expect(ui.getByText(note.title).getBoundingClientRect().top).toBeGreaterThan(cover.bottom);
+    expect(ui.queryByText("文字摘要")).toBeNull();
+    view.rerender(collection({ ...note, body: "![坏图](../assets/missing.png)", contentTypeOverride: "text", cardPreview: {images:[], text:"文字摘要"} }));
+    await ui.findByText("文字摘要");
+    expect(ui.queryByRole("img")).toBeNull();
+  } finally { release(); }
 });
 
 test("card previews align at the top, truncate overflowing text with a three-line clamp", async () => {
@@ -4848,8 +4897,8 @@ test.each([
 }, 25_000);
 
 test.each([
-  { theme: "classic", layout: "rail", rows: 5, width: 1280 },
-  { theme: "minimal", layout: "topbar", rows: 5, width: 1280 },
+  { theme: "classic", layout: "rail", rows: 6, width: 1280 },
+  { theme: "minimal", layout: "topbar", rows: 6, width: 1280 },
   { theme: "classic", layout: "rail", rows: 9, width: 1100 },
   { theme: "minimal", layout: "topbar", rows: 9, width: 1100 },
   { theme: "classic", layout: "rail", rows: 9, width: 390 },
@@ -4872,7 +4921,7 @@ test.each([
   const propertyRead = new Promise<void>(resolve => { finishProperties = resolve; });
   const layoutRead = new Promise<void>(resolve => { finishLayout = resolve; });
   const wrapped = rows === 9;
-  const fields = Array.from({ length: rows - 3 }, (_, index) => ({
+  const fields = Array.from({ length: rows - 4 }, (_, index) => ({
     name: `字段${index}`, type: "text" as const, value: wrapped && !index ? "需要换行的属性内容".repeat(12) : "属性内容", editable: true,
   }));
   const release = setStorybookRequestHandler(async (operation, params) => {
@@ -4945,7 +4994,7 @@ test("Web detail fits a short property list without blank rows above the body", 
     await canvas.findByRole("button", {name:"编辑属性 摘要"});
     const viewport = canvas.getByRole("region", {name:"属性列表"});
     const list = viewport.querySelector("dl")!;
-    expect(list.children).toHaveLength(5);
+    expect(list.children).toHaveLength(6);
     const {paddingTop, paddingBottom} = getComputedStyle(viewport);
     const fittedHeight = list.getBoundingClientRect().height + parseFloat(paddingTop) + parseFloat(paddingBottom);
     expect(viewport.getBoundingClientRect().height).toBeCloseTo(fittedHeight, 1);

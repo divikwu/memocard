@@ -21,6 +21,20 @@ struct CardPreviewProperties: Encodable {
     var text: String?
 }
 
+enum ContentType: String, Codable {
+    case text, image
+
+    static let propertyKey = "memocard:contentTypeOverride"
+
+    static func read(from root: Node) -> Self? {
+        switch root[propertyKey]?.scalar?.string {
+        case "memocard:text": return .text
+        case "memocard:image": return .image
+        default: return nil
+        }
+    }
+}
+
 struct Note: Encodable {
     let title: String?
     let id: String
@@ -32,6 +46,7 @@ struct Note: Encodable {
     let contentHash: String
     let relativePath: String
     let sourceUrl: String
+    var contentTypeOverride: ContentType? = nil
     var cardPreview: CardPreviewProperties? = nil
 }
 
@@ -279,7 +294,8 @@ func parseNote(_ data: Data, relativePath: String, vaultID: String) throws -> Pa
     return ParsedNote(note: Note(
         title: title, id: id, body: body, tags: tags, createdAt: created, updatedAt: updated,
         deletedAt: deleted, contentHash: sha256(data), relativePath: relativePath,
-        sourceUrl: "memocard://note/\(id)?vault=\(vaultID)"
+        sourceUrl: "memocard://note/\(id)?vault=\(vaultID)",
+        contentTypeOverride: ContentType.read(from: root)
     ), frontmatter: root, createdDate: createdDate, originalHeader: header)
 }
 

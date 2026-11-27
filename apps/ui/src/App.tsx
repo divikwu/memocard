@@ -105,6 +105,11 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
   const attemptedRoute = useRef('');
   const [pendingNoteId, setPendingNoteId] = useState(() => getNoteRouteId(window.location.hash));
   const returnFocus = useRef<HTMLElement | null>(null);
+  const returnNoteId = useRef<string | undefined>(undefined);
+  function rememberReturnFocus(element: HTMLElement | null) {
+    returnFocus.current = element;
+    returnNoteId.current = element?.closest<HTMLElement>('[data-note-id]')?.dataset.noteId;
+  }
   const [recoveryOpen, setRecoveryOpen] = useState(false);
   const [recoveryDismissed, setRecoveryDismissed] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<{draft:Draft; vaultId:string; vaultBinding?:string} | null>(null);
@@ -189,9 +194,9 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
       const active = document.activeElement;
       if (active !== activeAtReturn && active !== document.body && active !== container) return;
       const previous = returnFocus.current;
-      const id = previous?.closest<HTMLElement>('[data-note-id]')?.dataset.noteId;
+      const id = returnNoteId.current;
       const row = id && container ? Array.from(container.querySelectorAll<HTMLElement>('[data-note-id]')).find(item => item.dataset.noteId === id) : undefined;
-      (previous?.isConnected ? previous : row?.querySelector<HTMLElement>('button'))?.focus({ preventScroll: true });
+      (previous?.isConnected ? previous : row?.querySelector<HTMLElement>('.ui-note-open'))?.focus({ preventScroll: true });
     });
   }, [isMobile,status?.vaultId]);
   const capabilities = useMemo(() => new Set([...(status?.capabilities ?? []), ...(environment?.capabilities ?? [])]), [status, environment]);
@@ -423,7 +428,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     editorGeneration.current++;
     if (openingLink.current && openingLink.current !== draft.id) setPendingOpenNote(openingLink.current);
     openingLink.current = null;
-    if (!editingRef.current && !editorHash.current) { returnView.current = view === 'settings' || view === 'trash' || view === 'tags' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = document.activeElement as HTMLElement; }
+    if (!editingRef.current && !editorHash.current) { returnView.current = view === 'settings' || view === 'trash' || view === 'tags' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; rememberReturnFocus(document.activeElement as HTMLElement); }
     requestAnimationFrame(() => { if (scrollContainer.current) scrollContainer.current.scrollTop = 0; });
     const hash = `#/notes/${draft.baseHash ? draft.id : 'new'}`;
     editorHash.current = hash;
@@ -445,7 +450,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     if (openingLink.current && openingLink.current !== id && !fromLink) setPendingOpenNote(openingLink.current);
     openingLink.current = fromLink ? id : null;
     const currentRequest = ++editorGeneration.current;
-    if (!wasDetail) { returnView.current = view === 'settings' || view === 'trash' || view === 'tags' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; returnFocus.current = searchOpen ? searchReturnFocus.current : document.activeElement as HTMLElement; }
+    if (!wasDetail) { returnView.current = view === 'settings' || view === 'trash' || view === 'tags' ? 'notes' : view; returnScroll.current = scrollContainer.current?.scrollTop ?? 0; rememberReturnFocus(searchOpen ? searchReturnFocus.current : document.activeElement as HTMLElement); }
     const hash = `#/notes/${id}`;
     editorHash.current = hash; attemptedRoute.current = hash;
     if (window.location.hash !== hash) window.history.pushState(null, '', hash);
@@ -752,7 +757,7 @@ export function App({ renderView = renderWebApp, preloadEditor = preloadWebEdito
     docked: isMobile, active: showMobileRecord,
     draftCount: status.connected && (recoveryDismissed || recoveryChoices.length === 0) ? drafts.length : 0,
     onOpenDrafts: () => setRecoveryOpen(true),
-    onContinue: isMobile && capabilities.has('saveDraft') ? draft => { showEditor(draft); returnFocus.current = document.querySelector<HTMLElement>('.mobile-capture-entry'); } : undefined,
+    onContinue: isMobile && capabilities.has('saveDraft') ? draft => { showEditor(draft); rememberReturnFocus(document.querySelector<HTMLElement>('.mobile-capture-entry')); } : undefined,
     onRecorded: () => {
       setNotice('已记录'); loadedPages.current = 1;
       if ((!isMobile || view === 'home') && homeTab !== 'recent') changeHomeTab('recent');

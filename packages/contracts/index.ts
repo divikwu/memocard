@@ -1,5 +1,7 @@
 export type CardPreviewProperties = {images:string[]; text?:string};
-export type Note = {id:string; title?:string; body:string; tags:string[]; createdAt:string; updatedAt:string; deletedAt?:string; contentHash:string; relativePath:string; sourceUrl:string; cardPreview?:CardPreviewProperties};
+export const contentTypePropertyKey = "memocard:contentTypeOverride";
+export type ContentType = "text" | "image";
+export type Note = {id:string; title?:string; body:string; tags:string[]; createdAt:string; updatedAt:string; deletedAt?:string; contentHash:string; relativePath:string; sourceUrl:string; contentTypeOverride?:ContentType; cardPreview?:CardPreviewProperties};
 export type TrashItem = {trashKey:string; id:string; title?:string; relativePath:string; deletedAt:string; contentHash:string; preview:string};
 export type TrashNote = {trashKey:string; deletedAt:string; note:Note};
 export type TrashList = {notes:TrashItem[]; issues:{path:string; message:string}[]};
