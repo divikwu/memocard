@@ -6,7 +6,7 @@ import type { Note } from '@memocard/contracts';
 import NoteProperties from './NoteProperties';
 import { PropertyPopover, PropertyPopoverContent, PropertyPopoverTrigger } from './property-popover';
 import { request } from '../../src/bridge';
-vi.mock('../../src/bridge', () => ({request:vi.fn(), errorMessage:(error:Error) => error.message}));
+vi.mock('../../src/bridge', () => ({isLocalWeb:false,isBrowserVault:false,request:vi.fn(), errorMessage:(error:Error) => error.message}));
 // Keep cold calendar compilation outside the property interaction deadline.
 beforeAll(async()=>{await import('./DatePropertyPicker');},15000);
 const note = {id:'note',contentHash:'hash',updatedAt:'2026-10-10T00:00:00Z'} as Note;
@@ -844,4 +844,26 @@ it('saves inline number input on blur and discards changes on Escape like text i
  expect(screen.queryByRole('textbox',{name:'属性值'})).toBeNull();
  expect(screen.getByRole('button',{name:'编辑属性 数量'}).textContent).toBe('2.5');
  expect(onApply).toHaveBeenCalledTimes(1);
+});
+
+it('lets the inferred value be fixed explicitly and restored through the row menu',async () => {
+ const user = userEvent.setup(), onApply = vi.fn().mockResolvedValue(undefined);
+ const input = {...note,body:'![设计](../assets/a.png)',relativePath:'notes/a.md',tags:[]};
+ const props = {tags:[],canEdit:true,busy:false,onApply};
+ const view = render(<NoteProperties {...props} note={input} />);
+ const trigger = await screen.findByRole('button',{name:'编辑内容类型'});
+ await waitFor(() => expect(trigger.textContent).toBe('图片'));
+ await user.click(trigger);
+ const search = await screen.findByRole('combobox',{name:'搜索选项'});
+ await user.type(search,'视频');
+ expect(screen.queryByRole('option')).toBeNull();
+ await user.clear(search);
+ expect(screen.getAllByRole('option')).toHaveLength(2);
+ await user.click(screen.getByRole('option',{name:'选项 图片'}));
+ expect(onApply).toHaveBeenCalledWith({name:'memocard:contentTypeOverride',type:'text',value:'image'});
+ view.rerender(<NoteProperties {...props} note={{...input,body:'长文'.repeat(200),contentTypeOverride:'image'}} />);
+ await waitFor(() => expect(trigger.textContent).toBe('图片'));
+ await user.click(screen.getByRole('button',{name:'属性菜单 内容类型'}));
+ await user.click(await screen.findByRole('menuitem',{name:'恢复自动判断'}));
+ expect(onApply).toHaveBeenLastCalledWith({name:'memocard:contentTypeOverride',remove:true});
 });

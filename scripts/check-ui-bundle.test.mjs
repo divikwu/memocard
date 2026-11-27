@@ -40,7 +40,7 @@ test("a bound browser first list includes format parsing and filters even when l
     "src/browser-files.ts": { file: "formats.js", imports: ["yaml"] },
     yaml: { file: "yaml.js" },
     "src/note-filters.ts": { file: "filters.js", imports: ["shared"] },
-    "src/browser-properties.ts": { file: "properties.js", imports: ["yaml"] },
+    "src/browser-card-previews.ts": { file: "properties.js", imports: ["yaml"] },
     cards: { file: "cards.js", imports: ["yaml"] },
   };
   assert.deepEqual([...firstListFiles(manifest, "browser")].sort(), ["entry.js", "filters.js", "formats.js", "properties.js", "shared.js", "storage.js", "yaml.js"].sort());

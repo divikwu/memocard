@@ -106,6 +106,14 @@
       "files": [
         "registry/base-luma/ui/drawer.tsx"
       ]
+    },
+    {
+      "name": "carousel",
+      "url": "https://ui.shadcn.com/r/styles/base-luma/carousel.json",
+      "sha256": "413029da65fac0d29f75d23fe095e4638ed2dfa7991f008e7304f4a9f5a6c88a",
+      "files": [
+        "registry/base-luma/ui/carousel.tsx"
+      ]
     }
   ]
 }

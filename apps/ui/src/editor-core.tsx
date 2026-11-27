@@ -1,3 +1,4 @@
+import { contentTypePropertyKey } from '@memocard/contracts';
 import { Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ComponentProps } from 'react';
 import { request, errorMessage, type Attachment, type Draft } from './bridge';
 import type { Note, NoteProperties as Properties, PropertyChange, PropertyUpdateResult } from '@memocard/contracts';
@@ -134,7 +135,7 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
     for (const [name, change] of Object.entries(next.properties)) {
       if (JSON.stringify(change) !== JSON.stringify(previous.properties[name])) {
         const current = propertyValues.current[name];
-        if (current?.type === change.type && JSON.stringify(current.value) === JSON.stringify(change.value)) continue;
+        if (current && current.type === change.type && JSON.stringify(current.value) === JSON.stringify(change.value)) continue;
         propertyValues.current[name] = change;
         propertyWrite.current = session.changeProperty(change);
         void propertyWrite.current.catch(() => undefined);
@@ -143,8 +144,13 @@ return function Editor({ initial, initialNote, capabilities, pendingLink = false
   }
   async function applyProperty(change: PropertyChange, previous?: PropertyChange) {
     if (busy.current || !capabilities.has('updateNoteProperty')) throw new Error('暂时无法编辑属性。');
-    if (previous && richEditor.current && !change.definition && !change.create && !change.remove && !change.renameTo) {
-      const value = { name: change.name, type: change.type, value: change.value, ...(change.definitionHash ? { definitionHash: change.definitionHash } : {}) };
+    const contentType = change.name === contentTypePropertyKey;
+    if (contentType) {
+      const override = metadata?.contentTypeOverride;
+      previous = override ? {name:change.name,type:'text',value:override} : {name:change.name,remove:true};
+    }
+    if (previous && richEditor.current && !change.definition && !change.create && (!change.remove || contentType) && !change.renameTo) {
+      const value = change.remove ? change : { name: change.name, type: change.type, value: change.value, ...(change.definitionHash ? { definitionHash: change.definitionHash } : {}) };
       propertyValues.current[change.name] = previous;
       if (changeNoteProperty(richEditor.current, value, previous)) await propertyWrite.current;
       return;

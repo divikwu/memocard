@@ -1,3 +1,4 @@
+import { contentTypePropertyKey } from '@memocard/contracts';
 import { isMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { NoteProperties, NoteProperty, PropertyChange, PropertyType, PropertyOption } from '@memocard/contracts';
 import { BrowserVaultError } from './browser-files';
@@ -11,7 +12,7 @@ const choiceColors = new Set(['default','brown','orange','yellow','green','blue'
 function validOptions(value: unknown): value is PropertyOption[] {
   return Array.isArray(value) && value.length <= 200 && value.every(option => option && typeof option.name === 'string' && option.name === option.name.trim() && option.name.length > 0 && option.name.length <= 100 && ![...option.name].some(character => character.charCodeAt(0) < 32) && choiceColors.has(option.color)) && new Set(value.map(option => option.name)).size === value.length;
 }
-const reserved = new Set(['id', 'createdAt', 'updatedAt', 'deletedAt', 'tags']);
+const reserved = new Set(['id', 'createdAt', 'updatedAt', 'deletedAt', 'tags', contentTypePropertyKey]);
 const invalid = (message: string): never => { throw new BrowserVaultError('INVALID_PROPERTY', message); };
 const date = validPropertyDate;
 export function propertySource(source: string) {
@@ -74,12 +75,21 @@ export function readProperties(source: string, contentHash: string): NotePropert
 export function patchProperty(source: string, change: PropertyChange, updatedAt?: string, retainedValues?: string[]): string {
   const parsed = propertySource(source);
   const name = change.name?.trim();
-  if (!name || name.length > 100 || [...name].some(character => character.charCodeAt(0) < 32) || (reserved.has(name) && name !== 'tags')) invalid('属性名为空、过长或属于系统保留字段。');
+  const contentType = name === contentTypePropertyKey;
+  if (contentType) {
+    const validChange = change.remove ? change.value === undefined && change.type === undefined
+      : change.type === 'text' && (change.value === 'text' || change.value === 'image');
+    if (!validChange || change.create || change.definition || change.renameTo !== undefined || change.copyFrom !== undefined || change.options) invalid('内容类型无效。');
+  }
+  if (!name || name.length > 100 || [...name].some(character => character.charCodeAt(0) < 32) || (reserved.has(name) && name !== 'tags' && !contentType)) invalid('属性名为空、过长或属于系统保留字段。');
   if (!parsed.writable) invalid('此 YAML 使用高级语法，请在源文件中编辑。');
   const existing = parsed.entries.find(entry => entry.property.name === name);
+  if (contentType && existing && !(existing.property.type === 'text' && ['memocard:text', 'memocard:image'].includes(String(existing.property.value)))) {
+    invalid('内容类型字段与现有 YAML 属性冲突。');
+  }
   if (change.create && existing) invalid('属性已存在。');
-  if (!change.create && !existing && name !== 'tags') invalid('属性已被移除，请重新加载。');
-  if (name === 'tags' ? !tagProperty(parsed).editable : existing && !existing.property.editable) invalid('此属性只能在源文件中编辑。');
+  if (!change.create && !existing && name !== 'tags' && !contentType) invalid('属性已被移除，请重新加载。');
+  if (name === 'tags' ? !tagProperty(parsed).editable : !contentType && existing && !existing.property.editable) invalid('此属性只能在源文件中编辑。');
   const copied = parsed.entries.find(entry => entry.property.name === change.copyFrom);
   if (change.copyFrom !== undefined && (!change.create || change.remove || change.renameTo !== undefined || change.definition || reserved.has(name) || reserved.has(change.copyFrom) || !copied?.property.editable)) invalid('只能复制当前笔记中可编辑的自定义属性。');
   const original = copied?.property ?? existing?.property;
@@ -96,6 +106,7 @@ export function patchProperty(source: string, change: PropertyChange, updatedAt?
   } else if (!change.remove) {
     const { type } = change;
     let { value } = change;
+    if (contentType) value = `memocard:${value}`;
     if (name === 'tags') {
       if (type !== 'list' || !Array.isArray(value) || !value.every(item => typeof item === 'string' && normalizePropertyTag(item))) invalid('标签需为有效名称列表，不能包含空格、空值或纯数字。');
       value = propertyTags(value);

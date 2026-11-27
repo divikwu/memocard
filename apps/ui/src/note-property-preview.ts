@@ -1,4 +1,4 @@
-// The first preview allows for the four system rows and three custom properties.
+// The first preview allows for the five system rows and two custom properties.
 const defaultNotePropertyPreviewRows = 7;
 
 const rowCounts = new Map<string, number>();

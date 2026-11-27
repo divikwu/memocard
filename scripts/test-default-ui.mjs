@@ -636,11 +636,12 @@ test('property-first new note retains empty fields, zero, false and choice edits
   } finally { await browser.close(); }
 });
 
-test('home and all-notes cards show one preview and fall through unreadable images in order', { timeout: 60_000 }, async () => {
+test('home and all-notes galleries start at the first readable cover and fall back to text', { timeout: 60_000 }, async () => {
   const browser = await chromium.launch();
   const gate = Promise.withResolvers();
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    page.setDefaultTimeout(8000);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(() => {
@@ -681,6 +682,9 @@ test('home and all-notes cards show one preview and fall through unreadable imag
       const rows = [
         ['Property cover', missing + image('later', 'later.png') + image('chosen', 'property.png') + fields, bodyImage],
         ['Body cover', fields, bodyImage],
+        ['Alias duplicate', image('chosen', 'body.png'), '字'.repeat(100) + '\n\n![[body.png]]'],
+        ['Property only', image('chosen', 'property.png'), '字'.repeat(100)],
+        ['Hidden cover', image('hidden', 'property.png'), '字'.repeat(100)],
         ['Text fallback', missing + fields, 'BODY CONTENT\n\n![Broken body](./assets/corrupt.png)'],
         ['Body fallback', missing, 'BODY CONTENT\n\n![Broken body](./assets/corrupt.png)'],
       ];
@@ -689,12 +693,15 @@ test('home and all-notes cards show one preview and fall through unreadable imag
     const preview = title => page.locator('.ui-note-card').filter({
       has: page.getByRole('button', { name: '打开 ' + title, exact: true }),
     }).locator('.ui-note-preview, .ui-note-cover-slot:not(:empty)');
-    const color = async card => {
-      const img = card.locator('[data-image-state="loaded"] img');
+    const color = async (card, single = false) => {
+      const img = card.locator(single ? '[data-text-cover][data-image-state="loaded"] img' : '[data-slot=carousel-item]:first-child [data-image-state="loaded"] img');
       await card.scrollIntoViewIfNeeded();
       await img.waitFor();
-      assert.equal(await card.locator('img').count(), 1);
-      assert.equal(await card.innerText(), '');
+      if (single) {
+        assert.equal(await card.locator('img').count(), 1);
+        assert.equal(await card.getByRole('group', { name: '选择图片' }).count(), 0);
+      } else await card.getByRole('group', { name: '选择图片' }).waitFor();
+      assert.equal(await card.locator('.ui-note-preview').count(), 0);
       return img.evaluate(image => {
         const canvas = document.createElement('canvas');
         canvas.width = canvas.height = 1;
@@ -709,17 +716,24 @@ test('home and all-notes cards show one preview and fall through unreadable imag
       if (route === 'home') await page.route(file, async request => { await gate.promise; await request.continue(); });
       await page.reload({ waitUntil: 'domcontentloaded' });
       const coverTitles = ['Property cover', 'Body cover'];
-      const titleOffsets = () => Promise.all(coverTitles.map(title =>
-        page.getByRole('button', { name: '打开 ' + title, exact: true }).evaluate(button =>
-          button.getBoundingClientRect().top - button.closest('.ui-note-card').getBoundingClientRect().top)));
-      const pending = route === 'home' ? await titleOffsets() : null;
+      const assertCoverLayout = async () => {
+        for (const title of coverTitles) {
+          const button = page.getByRole('button', { name: '打开 ' + title, exact: true });
+          await button.waitFor();
+          const slot = preview(title);
+          await slot.locator(':scope > *').first().waitFor();
+          assert.ok(await button.locator('span').isHidden());
+          assert.equal((await slot.boundingBox()).height, (await button.boundingBox()).height);
+        }
+      };
+      if (route === 'home') await assertCoverLayout();
       gate.resolve();
       assert.deepEqual(await color(preview('Property cover')), [0, 255, 0, 255]);
       assert.deepEqual(await color(preview('Body cover')), [0, 0, 255, 255]);
-      if (pending) {
-        assert.deepEqual(await titleOffsets(), pending, 'Cover titles should keep their position while the preview code loads');
-        await page.unroute(file);
-      }
+      await assertCoverLayout();
+      assert.deepEqual(await color(preview('Alias duplicate'), true), [0, 0, 255, 255]);
+      await page.getByRole('button', {name:'打开 Alias duplicate', exact:true}).locator('span').waitFor();
+      if (route === 'home') await page.unroute(file);
       for (const [title, expected] of [['Text fallback', 'Chosen **literal** text'], ['Body fallback', 'BODY CONTENT']]) {
         const card = preview(title);
         await card.scrollIntoViewIfNeeded();
@@ -728,6 +742,126 @@ test('home and all-notes cards show one preview and fall through unreadable imag
         assert.equal(await card.locator('img').count(), 0);
       }
     }
+    await page.getByRole('button', {name:'打开 Alias duplicate',exact:true}).click();
+    await page.getByRole('button', {name:'编辑内容类型'}).getByText('文字', {exact:true}).waitFor();
+    await returnToNotes(page);
+    await page.getByRole('tab', {name:'有图片'}).click();
+    await page.getByRole('button', {name:'打开 Property only',exact:true}).waitFor();
+    await page.getByRole('button', {name:'打开 Hidden cover',exact:true}).waitFor({state:'detached'});
+    await page.getByRole('tab', {name:'全部类型'}).click();
+    const carousel = preview('Body cover').getByRole('group', { name: '笔记图片' });
+    await carousel.scrollIntoViewIfNeeded();
+    const indicator = carousel.getByRole('group', {name:'选择图片'});
+    const dots = indicator.getByRole('button');
+    await carousel.getByText('1 / 2', {exact:true}).waitFor();
+    assert.equal(await dots.count(), 2);
+    assert.equal(await dots.first().getAttribute('aria-current'), 'true');
+    await page.mouse.move(0, 0);
+    const firstDot = await dots.first().elementHandle();
+    const idleWidth = (await dots.first().boundingBox()).width;
+    await indicator.hover();
+    await page.waitForFunction(({el, width}) => el.getBoundingClientRect().width >= width * 1.8,
+      {el:firstDot, width:idleWidth});
+    await dots.last().click();
+    await carousel.getByRole('button', {name:'打开笔记 · Later image'}).waitFor();
+    await page.mouse.move(0, 0);
+    await page.waitForFunction(({el, width}) => el.getBoundingClientRect().width <= width + 0.5,
+      {el:firstDot, width:idleWidth});
+    await dots.first().press('Enter');
+    await carousel.getByRole('button', {name:'打开笔记 · Body cover'}).waitFor();
+    assert.ok(page.url().endsWith('/#/notes'));
+    await page.mouse.move(0, 0);
+    await carousel.hover();
+    assert.equal(await carousel.getByRole('button', {name:/^(上一张|下一张)图片$/, includeHidden:true}).count(), 0);
+    await dots.first().focus();
+    await page.keyboard.press('ArrowLeft');
+    await carousel.getByText('2 / 2', { exact: true }).waitFor();
+    assert.ok(await dots.last().evaluate(button => button === document.activeElement));
+    assert.equal(await carousel.getByRole('button', {name:/打开笔记/}).count(), 1);
+    await carousel.getByRole('button', {name:'打开笔记 · Later image'}).waitFor();
+    await page.keyboard.press('ArrowRight');
+    await carousel.getByText('1 / 2', { exact: true }).waitFor();
+    assert.ok(await dots.first().evaluate(button => button === document.activeElement));
+    await carousel.getByRole('button', {name:'打开笔记 · Body cover'}).waitFor();
+    const bounds = await carousel.boundingBox();
+    const x = bounds.x + bounds.width * 0.8;
+    const y = bounds.y + bounds.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - bounds.width * 0.65, y, { steps: 10 });
+    await page.mouse.up();
+    await carousel.getByText('2 / 2', { exact: true }).waitFor();
+    assert.ok(page.url().endsWith('/#/notes'), 'Dragging a cover must keep the note list open');
+    await dots.last().focus();
+    await page.keyboard.press('ArrowLeft');
+    await carousel.getByText('1 / 2', { exact: true }).waitFor();
+    const firstSlide = carousel.getByRole('button', {name:'打开笔记 · Body cover'});
+    await page.waitForFunction(slide => Math.abs(slide.getBoundingClientRect().left -
+      slide.closest('[data-slot="carousel-content"]').getBoundingClientRect().left) < 1, await firstSlide.elementHandle());
+    await firstSlide.hover();
+    for (let step = 0; step < 8; step++) await page.mouse.wheel(bounds.width / 10, 0);
+    await carousel.getByText('2 / 2', { exact: true }).waitFor();
+
+    await page.setViewportSize({ width: 390, height: 340 });
+    await carousel.scrollIntoViewIfNeeded();
+    const viewport = await carousel.evaluateHandle(node => {
+      for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+        if (/auto|scroll/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight > parent.clientHeight) return parent;
+      }
+      return document.scrollingElement;
+    });
+    const oldScroll = await viewport.evaluate(el => el.scrollTop);
+    const scrollDown = await viewport.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop > 10);
+    await carousel.hover();
+    await page.mouse.wheel(0, scrollDown ? 110 : -110);
+    await page.waitForFunction(({ viewport, oldScroll }) =>
+      Math.abs(viewport.scrollTop - oldScroll) > 5, { viewport, oldScroll });
+    await carousel.getByText('2 / 2', { exact: true }).waitFor();
+    await carousel.scrollIntoViewIfNeeded();
+    const touch = await page.context().newCDPSession(page);
+    await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+    for (const [dot, position] of [[dots.first(), '1 / 2'], [dots.last(), '2 / 2']]) {
+      const box = await dot.boundingBox();
+      await touch.send('Input.dispatchTouchEvent', {type:'touchStart',
+        touchPoints:[{x:box.x + box.width / 2, y:box.y + box.height / 2}]});
+      await touch.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]});
+      await carousel.getByText(position, {exact:true}).waitFor();
+      assert.ok(page.url().endsWith('/#/notes'));
+    }
+    // Selection changes before the track finishes moving to the selected slide.
+    const selectedSlide = carousel.locator('[data-slot="carousel-item"]:not([inert])');
+    await page.waitForFunction(slide => Math.abs(slide.getBoundingClientRect().left -
+      slide.closest('[data-slot="carousel-content"]').getBoundingClientRect().left) < 1, await selectedSlide.elementHandle());
+    const touchBounds = await carousel.boundingBox();
+    const finger = progress => [{ x: touchBounds.x + touchBounds.width * progress, y: touchBounds.y + touchBounds.height / 2 }];
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: finger(0.85) });
+    for (const progress of [0.7, 0.5, 0.3, 0.1]) {
+      await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: finger(progress) });
+    }
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await carousel.getByText('1 / 2', { exact: true }).waitFor();
+    const priorTouchScroll = await viewport.evaluate(el => el.scrollTop);
+    const verticalSign = priorTouchScroll > 10 ? 1 : -1;
+    const verticalPoint = fraction => [{ x: touchBounds.x + touchBounds.width / 2,
+      y: touchBounds.y + touchBounds.height * (0.5 + verticalSign * fraction) }];
+    await touch.send('Input.dispatchTouchEvent', {type:'touchStart', touchPoints:verticalPoint(0)});
+    for (const fraction of [0.07, 0.15, 0.23, 0.31]) {
+      await touch.send('Input.dispatchTouchEvent', {type:'touchMove', touchPoints:verticalPoint(fraction)});
+    }
+    await touch.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]});
+    await page.waitForFunction(({ viewport, priorTouchScroll }) =>
+      Math.abs(viewport.scrollTop - priorTouchScroll) > 5, { viewport, priorTouchScroll });
+    await carousel.getByText('1 / 2', {exact:true}).waitFor();
+    await carousel.scrollIntoViewIfNeeded();
+    const tapBounds = await carousel.boundingBox();
+    await touch.send('Input.dispatchTouchEvent', {type:'touchStart',
+      touchPoints:[{x:tapBounds.x + tapBounds.width / 2, y:tapBounds.y + tapBounds.height / 2}]});
+    await touch.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]});
+    await page.waitForURL(/#\/notes\/[^/]+$/);
+    await touch.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+    await touch.detach();
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await page.goto(baseURL + '/#/notes');
     const file = baseURL + '/' + manifest['ui/business/NoteCardPreview.tsx'].file;
     await page.route(file, request => request.abort());
     await page.reload({ waitUntil: 'domcontentloaded' });
@@ -736,6 +870,48 @@ test('home and all-notes cards show one preview and fall through unreadable imag
     await page.unroute(file);
     await retry.click({ timeout: 3000 });
     assert.deepEqual(await color(preview('Property cover')), [0, 255, 0, 255]);
+    await preview('Property cover').locator('.ui-gallery-slide').first().click();
+    const type = page.getByRole('button', {name:'编辑内容类型'});
+    await type.getByText('图片', {exact:true}).waitFor();
+    const editor = page.getByRole('textbox', {name:'笔记内容'});
+    await editor.press('Home');
+    await page.keyboard.insertText('UndoHistoryProbe');
+    await type.click();
+    await page.getByRole('option', {name:'选项 文字', exact:true}).click();
+    const waitForOverride = value => page.waitForFunction(async expected => {
+      const root = await navigator.storage.getDirectory();
+      const file = await (await root.getFileHandle('Property cover.md')).getFile();
+      const source = await file.text();
+      return expected ? source.includes('"memocard:contentTypeOverride": "memocard:text"') : !source.includes('contentTypeOverride');
+    }, value);
+    await waitForOverride(true);
+    await editor.press('ControlOrMeta+z');
+    await waitForOverride(false);
+    assert.ok((await editor.innerText()).includes('UndoHistoryProbe'));
+    await editor.press('ControlOrMeta+z');
+    assert.ok(!(await editor.innerText()).includes('UndoHistoryProbe'));
+    await editor.press('ControlOrMeta+Shift+z');
+    await editor.press('ControlOrMeta+Shift+z');
+    await waitForOverride(true);
+    await page.reload();
+    await type.getByText('文字', {exact:true}).waitFor();
+    await editor.waitFor();
+    await returnToNotes(page);
+    assert.deepEqual(await color(preview('Property cover'), true), [0, 255, 0, 255]);
+    await page.getByRole('button', {name:'打开 Property cover', exact:true}).locator('span').waitFor();
+    await page.getByRole('button', {name:'打开 Property cover', exact:true}).click();
+    await page.getByRole('button', {name:'属性菜单 内容类型'}).click();
+    await page.getByRole('menuitem', {name:'恢复自动判断'}).click();
+    await waitForOverride(false);
+    await type.getByText('图片', {exact:true}).waitFor();
+    await editor.press('ControlOrMeta+z');
+    await waitForOverride(true);
+    await editor.press('ControlOrMeta+Shift+z');
+    await waitForOverride(false);
+    await returnToNotes(page);
+    await preview('Property cover').locator('.ui-gallery-slide').first().click();
+    await returnToNotes(page);
+    await page.waitForFunction(() => document.activeElement?.getAttribute('aria-label') === '打开 Property cover');
     assert.deepEqual(errors, []);
   } finally { gate.resolve(); await browser.close(); }
 });

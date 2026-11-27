@@ -18,7 +18,7 @@ function normalizeOptionName(value:string) {
   return name.length > 0 && name.length <= 100 && ![...name].some(character => character.charCodeAt(0) < 32) ? name : null;
 }
 
-function ChoicePropertyEditor({property, busy, error, onSave}: {property:NoteProperty; busy:boolean; error:string; onSave:(change:PropertyChange, keepOpen?:boolean)=>Promise<void>}) {
+function ChoicePropertyEditor({property, busy, error, fixedOptions = false, onSave}: {fixedOptions?:boolean; property:NoteProperty; busy:boolean; error:string; onSave:(change:PropertyChange, keepOpen?:boolean)=>Promise<void>}) {
   const multiple = property.type === 'multiSelect';
   const [options, setOptions] = useState(property.options ?? []);
   const [selected, setSelected] = useState(Array.isArray(property.value) ? property.value : property.value ? [String(property.value)] : []);
@@ -36,7 +36,7 @@ function ChoicePropertyEditor({property, busy, error, onSave}: {property:NotePro
   const input = useRef<HTMLInputElement>(null);
   const name = query.trim();
   const valid = normalizeOptionName(name) !== null;
-  const create = valid && options.length < 200 && !options.some(option => option.name === name) ? name : null;
+  const create = !fixedOptions && valid && options.length < 200 && !options.some(option => option.name === name) ? name : null;
   const candidates = options.filter(option => option.name.toLocaleLowerCase().includes(name.toLocaleLowerCase())).map(option => option.name);
   if (create) candidates.unshift(create);
   const disabled = busy || pending;
@@ -58,26 +58,27 @@ function ChoicePropertyEditor({property, busy, error, onSave}: {property:NotePro
       onValueChange={(next,details) => {
         if (disabled || saving.current || (details.event instanceof KeyboardEvent && (details.event.isComposing || details.event.repeat))) { details.cancel(); return; }
         const added = next.find(value => !selected.includes(value));
-        const selection = multiple ? next : added ? [added] : [];
+        if (fixedOptions && details.reason !== 'item-press') { details.cancel(); return; }
+        const selection = multiple ? next : added ? [added] : fixedOptions ? selected : [];
         const nextOptions = added === create ? [...options,{name:added,color:'default' as const}] : options;
         void save(selection,nextOptions);
       }}>
       <Combobox.Chips className="note-tag-input" aria-label="已选选项">
         <div className="note-tag-header"><div className="note-tag-selected" onClick={event => { if (event.target === event.currentTarget) input.current?.focus(); }}>
         {selected.map((value,index) => <Combobox.Chip key={`${index}:${value}`} className={`note-tag-chip note-tag-pill note-tag-color-${options.find(option => option.name === value)?.color ?? 'default'}`}>
-          <span>{value}</span><Combobox.ChipRemove className="note-tag-remove" disabled={disabled} aria-label={`移除选项 ${value}`}><X className="size-3" /></Combobox.ChipRemove>
+          <span>{value}</span>{!fixedOptions && <Combobox.ChipRemove className="note-tag-remove" disabled={disabled} aria-label={`移除选项 ${value}`}><X className="size-3" /></Combobox.ChipRemove>}
         </Combobox.Chip>)}
-        <Combobox.Input ref={input} autoFocus aria-label="搜索或创建选项" placeholder={selected.length ? '' : '搜索或创建选项…'} className="note-tag-search" onKeyDownCapture={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); } }} />
+        <Combobox.Input ref={input} autoFocus aria-label={fixedOptions ? "搜索选项" : "搜索或创建选项"} placeholder={selected.length ? '' : fixedOptions ? '搜索选项…' : '搜索或创建选项…'} className="note-tag-search" onKeyDownCapture={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); } }} />
         </div></div>
       </Combobox.Chips>
       <div className="note-tag-body">
-      <p className="note-tag-hint text-xs text-secondary">选择或创建{multiple ? '多个选项' : '一个选项'}</p>
+      <p className="note-tag-hint text-xs text-secondary">{fixedOptions ? '选择一个选项' : multiple ? '选择或创建多个选项' : '选择或创建一个选项'}</p>
       <PropertyOptionList label="可选选项" count={candidates.length} multiple={multiple}>
         {(value:string,index:number) => <div key={value} className="note-tag-option-row">
           <Combobox.Item index={index} value={value} disabled={disabled} className="note-tag-option" aria-label={value === create ? `创建选项 ${value}` : `选项 ${value}`}>
             {value === create && <span className="text-secondary">创建</span>}<ChoicePill name={value} options={options} />
           </Combobox.Item>
-          {value !== create && <PropertyOptionMenu name={value} kind="选项" color={options.find(option => option.name === value)?.color ?? 'default'} disabled={disabled} normalizeName={normalizeOptionName}
+          {!fixedOptions && value !== create && <PropertyOptionMenu name={value} kind="选项" color={options.find(option => option.name === value)?.color ?? 'default'} disabled={disabled} normalizeName={normalizeOptionName}
             onChangeName={async (from,to) => {
               if (to !== null && options.some(option => option.name === to && option.name !== from)) throw new Error('同名选项已存在。');
               const nextOptions = to === null ? options.filter(option => option.name !== from) : options.map(option => option.name === from ? {...option,name:to} : option);
@@ -90,7 +91,7 @@ function ChoicePropertyEditor({property, busy, error, onSave}: {property:NotePro
             deleteDescription={`将从库内所有「${property.name}」属性中删除此选项及对应已选值，其他属性和标签保留。`} /> }
         </div>}
       </PropertyOptionList>
-      {!candidates.length && name && <p className="note-tag-hint text-xs text-secondary">没有匹配的选项，名称最多 100 个字。</p>}
+      {!candidates.length && name && <p className="note-tag-hint text-xs text-secondary">{fixedOptions ? '没有匹配的选项。' : '没有匹配的选项，名称最多 100 个字。'}</p>}
     {error && <p role="alert" className="px-3 pb-2 text-sm text-error">{error}</p>}
       </div>
     </Combobox.Root>

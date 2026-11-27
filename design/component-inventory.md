@@ -49,6 +49,7 @@
 | `apps/ui/ui/business/HomeMascot.tsx` | 当前生产吉祥物 | 固定素材、指针方向、交互及减少动态效果 | mascot / motion | `apps/ui/mascot-fixtures/catalog.ts`；`apps/ui/ui/stories/illustrations.stories.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 内容页面组合维护；真实设备指针与性能另验 |
 | `apps/ui/ui/business/MobileTagActions.tsx` | 当前H5标题操作 | 布局切换、标签置顶/重命名/Emoji与回焦 | sidebar / menu / responsive | `apps/ui/ui/business/MobileTagActions.test.tsx`；`apps/ui/ui/web/WebApp.test.tsx` | 软键盘和真实触摸关闭另验 |
 | `apps/ui/ui/business/NoteCardPreview.tsx` | 当前卡片预览 | 按属性图片、正文图片、文本属性、正文的顺序选择单项，图片失败时继续回退 | collection / preview / media | `scripts/test-default-ui.mjs`；`apps/ui/ui/business/NoteCollection.recipe.test.tsx` | 真机附件加载另验 |
+| `apps/ui/ui/business/NoteCardGallery.tsx` | 笔记多图卡片 | 横向拖动、底部圆点与方向键循环翻页 | collection / preview / media | `scripts/test-default-ui.mjs` | 单图直接展示 |
 | `apps/ui/ui/business/NoteCollection.tsx` | 当前集合视图 | 卡片/列表、布局偏好、标签、空态与分页 | collection / type / space | `apps/ui/ui/business/NoteCollection.test.tsx`；`apps/ui/ui/stories/business-note-collection.stories.tsx` | 真实大库性能和设备滚动另验 |
 | `apps/ui/ui/business/NoteCollectionFilters.tsx` | 笔记集合筛选 | 标签多选、类型单选与清除筛选 | collection / drawer / focus / state | `apps/ui/ui/business/NoteCollectionFilters.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 真机软键盘与大字另验 |
 | `apps/ui/ui/business/NoteCollectionFilterDrawer.tsx` | 按需加载筛选抽屉 | 标签、类型组合与关闭后焦点返回 | collection / drawer / state | `apps/ui/ui/business/NoteCollectionFilters.test.tsx`；`apps/ui/test-support/ui-quality.browser.tsx` | 真机软键盘另验 |
@@ -97,6 +98,7 @@
 | `apps/ui/ui/components/button.tsx` | 当前Base UI/HTML控件适配 | button；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-button.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/calendar.tsx` | 当前Base UI/HTML控件适配 | calendar；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-calendar.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/card.tsx` | 当前Base UI/HTML控件适配 | card；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-card.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
+| `apps/ui/ui/components/carousel.tsx` | shadcn/ui Base Luma | Embla 轮播容器、分页项和键盘导航 | media / focus | `apps/ui/test-support/ui-quality.browser.tsx` | 卡片使用横向布局 |
 | `apps/ui/ui/components/checkbox.tsx` | 当前Base UI/HTML控件适配 | checkbox；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-checkbox.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/dialog.tsx` | 当前Base UI/HTML控件适配 | dialog；props、状态、样式、键盘和焦点职责 | theme / type / size / focus | `apps/ui/ui/stories/luma-dialog.stories.tsx` | 组合测试由消费端维护；设备/辅助技术/嵌套弹层矩阵另验 |
 | `apps/ui/ui/components/drawer.tsx` | 滑动抽屉 | Base UI Drawer、四向滑动、snap points、焦点管理与主题继承 | overlay / motion / tokens / focus | `apps/ui/ui/stories/luma-drawer.stories.tsx`；`apps/ui/ui/business/NoteCollectionFilters.test.tsx` | 真机软键盘另验 |

@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import type { BridgeRequest, Note, NotePage, NotePins, TagPreferenceState, VaultStatus, PropertyLabels, PropertyLayout, PropertyIcons } from "@memocard/contracts";
+import type { BridgeRequest, Note, NotePage, NoteProperties, NotePins, TagPreferenceState, VaultStatus, PropertyLabels, PropertyLayout, PropertyIcons } from "@memocard/contracts";
 import { BrowserVault } from "./browser-vault";
 import { parseBrowserNote } from "./browser-files";
 import type { BrowserDirectoryHandle, BrowserFileHandle, BrowserWritable } from "./browser-files";
@@ -2022,4 +2022,34 @@ it('paginates exact title, partial title and body matches in global relevance or
     cursor = page.nextCursor;
   }
   expect(cursor).toBeNull();
+});
+
+it.each(['', 'contentTypeOverride: image\n', 'contentTypeOverride: text\n', 'contentTypeOverride: editorial-review\n'])('preserves existing YAML when setting and clearing content type (%s)', async legacy => {
+  const root = await fixture();
+  const file = await (await root.getDirectoryHandle('notes')).getFileHandle(`${noteId}.md`);
+  file.bytes = bytes(source(noteId, '正文', '内容类型: 自定义\n' + legacy));
+  const h = harness(root);
+  await call(h.core, 'selectVault');
+  const original = file.text;
+  const before = await call<Note>(h.core, 'getNote', {id:noteId});
+  expect(file.text).toBe(original);
+  expect(before.contentTypeOverride).toBeUndefined();
+  if (legacy) {
+    const properties = await call<NoteProperties>(h.core, 'getNoteProperties', {id:noteId});
+    expect(properties.properties).toContainEqual(expect.objectContaining({name:'contentTypeOverride',editable:true}));
+  }
+  const params = {id:noteId,name:'memocard:contentTypeOverride'};
+  const fixed = await call<Note>(h.core, 'updateNoteProperty', {...params,baseHash:before.contentHash,type:'text',value:'image'});
+  expect(fixed.contentTypeOverride).toBe('image');
+  const reopened = harness(root, h.storage);
+  const page = await call<NotePage>(reopened.core, 'queryNotes', {includeCardPreview:true});
+  expect(page.notes[0].contentTypeOverride).toBe('image');
+  expect(page.notes[0].cardPreview?.text).toBe(legacy ? legacy.split(': ')[1].trim() : '自定义');
+  await expect(call(reopened.core, 'updateNoteProperty', {...params,baseHash:before.contentHash,remove:true})).rejects.toMatchObject({code:'HASH_CONFLICT'});
+  const cleared = await call<Note>(reopened.core, 'updateNoteProperty', {...params,baseHash:fixed.contentHash,remove:true});
+  expect(cleared.contentTypeOverride).toBeUndefined();
+  expect(file.text).not.toContain('memocard:contentTypeOverride');
+  if (legacy) expect(file.text).toContain(legacy);
+  else expect(file.text).not.toContain('contentTypeOverride');
+  expect(file.text).toContain('内容类型: 自定义');
 });

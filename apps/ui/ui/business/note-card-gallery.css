@@ -1,0 +1,60 @@
+.ui-note-card-cover img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; }
+.ui-note-card-cover:not([data-image-state="loaded"]) img { visibility: hidden; }
+.ui-card-gallery { position: relative; z-index: 1; min-width: 0; overflow: hidden; border-radius: var(--radius-item); pointer-events: auto; }
+.ui-card-gallery [data-slot="carousel-content"], .ui-gallery-slide { width: 100%; height: 100%; }
+.ui-card-gallery [data-slot="carousel-content"] { touch-action: pan-y pinch-zoom; }
+.ui-note-cover-slot > [role="alert"] { position: relative; z-index: 1; pointer-events: auto; }
+.ui-gallery-slide { display: block; padding: 0; border: 0; }
+.ui-gallery-slide .ui-note-card-cover { height: 100%; }
+.ui-gallery-dots {
+  --gallery-glass-opacity: 30%;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--color-white) var(--gallery-glass-opacity), transparent);
+  -webkit-backdrop-filter: blur(calc(var(--blur-glass) * 3));
+  backdrop-filter: blur(calc(var(--blur-glass) * 3));
+  color: var(--color-on-light);
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: calc(var(--spacing-1) * 2);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  width: max-content;
+  height: calc(var(--spacing-1) * 5);
+  max-width: calc(100% - var(--spacing-1) * 2);
+  padding-inline: var(--spacing-1);
+}
+.ui-gallery-dots button {
+  display: grid;
+  place-items: center;
+  width: calc(var(--spacing-1) * 6);
+  height: calc(var(--spacing-1) * 6);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.ui-gallery-dots:has(:focus-visible) { --gallery-glass-opacity: 72%; }
+.ui-gallery-dots button:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+.ui-gallery-dots button::before {
+  content: "";
+  width: calc(var(--spacing-1) * 1.5);
+  aspect-ratio: 1;
+  border-radius: var(--radius-full);
+  background: currentColor;
+  opacity: .2;
+}
+.ui-gallery-dots [aria-current="true"]::before { opacity: 1; }
+.ui-gallery-dots [data-edge]::before { transform: scale(.65); }
+@media (hover: hover) and (pointer: fine) {
+  .ui-gallery-dots:hover { --gallery-glass-opacity: 72%; }
+  .ui-gallery-dots button { width: calc(var(--spacing-1) * 3); }
+  .ui-gallery-dots:is(:hover, :has(:focus-visible)) button { width: calc(var(--spacing-1) * 5.5); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ui-gallery-dots { transition: background-color var(--duration-fast) var(--ease-standard); }
+  .ui-gallery-dots button { transition: width var(--duration-fast) var(--ease-standard); }
+}

@@ -1693,6 +1693,55 @@ final class VaultStoreTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: journal.path))
     }
 
+    func testContentTypePreservesLegacyField() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let path = try writeNote(id: id, body: "正文", extra: "contentTypeOverride: text\n")
+        let read = try await call(core, "getNote", ["id": id])
+        XCTAssertNil(read["contentTypeOverride"])
+        let fields = try await call(core, "getNoteProperties", ["id": id])
+        let custom = (fields["properties"] as? [[String: Any]])?.first { $0["name"] as? String == "contentTypeOverride" }
+        XCTAssertEqual(custom?["editable"] as? Bool, true)
+        let fixed = try await call(core, "updateNoteProperty", ["id": id, "baseHash": read["contentHash"]!, "name": ContentType.propertyKey, "type": "text", "value": "image"])
+        XCTAssertEqual(fixed["contentTypeOverride"] as? String, "image")
+        let cleared = try await call(core, "updateNoteProperty", ["id": id, "baseHash": fixed["contentHash"]!, "name": ContentType.propertyKey, "remove": true])
+        XCTAssertNil(cleared["contentTypeOverride"])
+        let source = try String(contentsOf: path, encoding: .utf8)
+        XCTAssertTrue(source.contains("contentTypeOverride: text\n"))
+        XCTAssertFalse(source.contains("memocard:contentTypeOverride"))
+    }
+
+    func testContentTypeOverrideIsNoteLocalAndVersionChecked() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        let path = try writeNote(id: id, body: "正文", extra: "内容类型: 自定义\n")
+        let original = try Data(contentsOf: path)
+        let read = try await call(core, "getNote", ["id": id])
+        XCTAssertNil(read["contentTypeOverride"])
+        XCTAssertEqual(try Data(contentsOf: path), original)
+        let fixed = try await call(core, "updateNoteProperty", ["id": id, "baseHash": read["contentHash"]!, "name": ContentType.propertyKey, "type": "text", "value": "image"])
+        XCTAssertEqual(fixed["contentTypeOverride"] as? String, "image")
+        let page = try await call(core, "queryNotes", ["includeCardPreview": true])
+        XCTAssertEqual((page["notes"] as? [[String: Any]])?.first?["contentTypeOverride"] as? String, "image")
+        await expectCode("HASH_CONFLICT") {
+            _ = try await self.call(core, "updateNoteProperty", ["id": id, "baseHash": read["contentHash"]!, "name": ContentType.propertyKey, "remove": true])
+        }
+        let cleared = try await call(core, "updateNoteProperty", ["id": id, "baseHash": fixed["contentHash"]!, "name": ContentType.propertyKey, "remove": true])
+        XCTAssertNil(cleared["contentTypeOverride"])
+        let source = try String(contentsOf: path, encoding: .utf8)
+        XCTAssertFalse(source.contains("contentTypeOverride"))
+        XCTAssertTrue(source.contains("内容类型: 自定义"))
+    }
+
+    func testPropertyOnlyImageFilterCountsVisibleCovers() async throws {
+        let core = try await store()
+        let id = UUID().uuidString.lowercased()
+        _ = try writeNote(id: id, body: String(repeating: "字", count: 100), extra: "cover: ./cover.png # memocard:type=image\n")
+        let page = try await call(core, "queryNotes", ["quickFilter": "images"])
+        XCTAssertEqual((page["notes"] as? [[String: Any]])?.first?["id"] as? String, id)
+        XCTAssertEqual((page["filterCounts"] as? [String: Int])?["images"], 1)
+    }
+
     func testHomeCardPropertiesFollowVisibleLayoutAndAreOptIn() async throws {
         let core = try await store()
         _ = try writeNote(id: UUID().uuidString.lowercased(), body: "Body", extra: """

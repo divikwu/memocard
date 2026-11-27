@@ -1,11 +1,13 @@
+import { contentTypePropertyKey } from '@memocard/contracts';
 import type { ComponentType, ComponentProps, SVGProps } from "react";
-import { Suspense, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject, type PointerEvent } from 'react';
+import { Suspense, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject, type PointerEvent } from 'react';
 import type { Note, NoteProperties as Properties, NoteProperty, PropertyChange, PropertyType, PropertyLabels, PropertyIcons, PropertyVisibility } from '@memocard/contracts';
 import type { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { request, errorMessage } from './bridge';
 import { isBrowserVault, isLocalWeb } from './client-mode';
 import { localWebReconnected } from './web-connection';
+import { mayContainMarkdownImage } from './markdown-image-hint';
 import { tagKey } from './inline-tags';
 import { propertyTypeChange, listAsMultiSelect } from './property-type-change';
 import { defaultPropertyLabel } from './property-labels';
@@ -16,6 +18,13 @@ import { usePropertyLayout, type PropertyLayoutConnection } from './use-property
 import { orderProperties, isPropertyVisible, propertyVisibility } from './property-layout';
 import { noteDetailPropertyPreviewRows, notePropertyPreviewKey, readNotePropertyPreviewRows, rememberNotePropertyPreviewRows } from './note-property-preview';
 import type { SlidePropertyRow } from './PropertySortMotion';
+
+const propertyEditClass = 'note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal';
+const choicePopupProps = {
+  align: 'center',
+  className: 'note-property-popup note-tag-popup',
+  sideOffset: ({anchor,positioner}) => -anchor.height - Math.max(0,(positioner.width - anchor.width) * .5),
+} satisfies ComponentProps<View['PopoverContent']>;
 
 type PropertyDrag = {
   pointerId: number;
@@ -133,7 +142,7 @@ const noteTime = (value?: string) => {
 };
 const display = (value: NoteProperty['value']) => Array.isArray(value) ? value.join('、') : typeof value === 'boolean' ? value ? '已勾选' : '未勾选' : value || '空';
 const editableTypes = ['text','number','select','multiSelect','date','checkbox','image'] as const;
-const systemNames = {'system:tags':Tag,'system:updatedAt':Clock,'system:createdAt':CalendarDays,'system:filename':FileText};
+const systemNames = {'system:contentType':CircleChevronDown,'system:tags':Tag,'system:updatedAt':Clock,'system:createdAt':CalendarDays,'system:filename':FileText};
 const propertyTypes = {text:{label:'文本',Icon:Text},number:{label:'数字',Icon:Hash},select:{label:'选择',Icon:CircleChevronDown},multiSelect:{label:'多选',Icon:ListChecks},date:{label:'日期',Icon:CalendarDays},checkbox:{label:'复选框',Icon:SquareCheck},image:{label:'图片',Icon:Image},unsupported:{label:'只读',Icon:Text}};
 function PropertyCreator({busy, error, onSave}: {busy:boolean; error?:string; onSave:(change:PropertyChange)=>Promise<void>}) {
   const [name, setName] = useState('');
@@ -236,7 +245,7 @@ function PropertyForm({ property, busy, onSave, onCancel, onCloseIntent, formRef
   </form>;
 }
 function applyPendingChange(current:Properties | undefined, change:PropertyChange):Properties | undefined {
-  if (!current) return current;
+  if (!current || change.name === contentTypePropertyKey) return current;
   if (change.name === 'tags') return {...current,tagProperty:{...current.tagProperty!,value:change.value ?? []}};
   const existing = current.properties.find(property => property.name === change.name);
   const updated:NoteProperty = {...existing,name:change.renameTo ?? change.name,type:change.type ?? existing?.type ?? 'text',value:change.value ?? existing?.value ?? '',editable:true,...(change.options ? {options:change.options} : {})};
@@ -324,8 +333,36 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
   const updated = noteTime(note?.updatedAt);
   const propertyTags = Array.isArray(data?.tagProperty?.value) ? [...new Set(data.tagProperty.value.map(tagKey))] : [];
   const mergedTags = [...new Set([...propertyTags, ...tags, ...(!data && !note?.contentHash ? inheritedTags : [])])];
+  const savedData = savedProperties?.contentHash === note?.contentHash && savedProperties ? savedProperties : sourceData;
+  const classificationInput = useMemo(() => {
+    if (!note || note.contentTypeOverride) return;
+    const images = savedData?.properties.flatMap(property => property.type === 'image' && typeof property.value === 'string'
+      && property.value && isPropertyVisible(presentation.layout, `property:${property.name}`, property.value) ? [property.value] : []) ?? note.cardPreview?.images ?? [];
+    if (images.length || mayContainMarkdownImage(note.body ?? '')) return {...note, vaultBinding, cardPreview:{images}};
+  }, [note, savedData, presentation.layout, vaultBinding]);
+  const [inference, setInference] = useState<{input: Note; type: 'image' | 'text'}>();
+  useEffect(() => {
+    if (!classificationInput) return;
+    let active = true;
+    void import('./markdown-images').then(({analyzeNoteContent}) => analyzeNoteContent(classificationInput)).then(({type}) => {
+      if (active) setInference({input:classificationInput, type});
+    }).catch(cause => {
+      if (active) {
+        setInference({input:classificationInput, type:'text'});
+        setError(errorMessage(cause));
+      }
+    });
+    return () => { active = false; };
+  }, [classificationInput]);
+  const pendingType = pendingChanges.filter(change => change.name === contentTypePropertyKey).at(-1)?.value;
+  const inferredType = classificationInput ? inference?.input === classificationInput && inference.type : 'text';
+  const selectedType = pendingType === 'text' || pendingType === 'image' ? pendingType
+    : note?.contentTypeOverride ?? inferredType;
+  const [contentTypeOpen, setContentTypeOpen] = useState(false);
+  const typeLabel = selectedType === 'image' ? '图片' : '文字';
+  const typeWritable = canEdit && !busy && !loading && (!note || data?.writable);
   const rowValues = new Map<string, unknown>([
-    ['system:tags',mergedTags.length || data?.tagProperty?.type !== 'unsupported' ? mergedTags : data.tagProperty.value],['system:updatedAt',note?.updatedAt],['system:createdAt',note?.createdAt],['system:filename',note ? relativePath ?? note.relativePath : undefined],
+    ['system:contentType',true],['system:tags',mergedTags.length || data?.tagProperty?.type !== 'unsupported' ? mergedTags : data.tagProperty.value],['system:updatedAt',note?.updatedAt],['system:createdAt',note?.createdAt],['system:filename',note ? relativePath ?? note.relativePath : undefined],
     ...(data?.properties.map(property => [`property:${property.name}`,property.missing ? undefined : property.value] as [string,unknown]) ?? []),
   ]);
   const orderedKeys = orderProperties([...rowValues.keys()],presentation.layout.order,key => key);
@@ -669,7 +706,40 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
     return <Tooltip key={tag}><TooltipTrigger aria-describedby={descriptionId} render={<TagPill name={tag} />} /><TooltipContent id={descriptionId} role="tooltip" className="animate-none">{source}</TooltipContent></Tooltip>;
   })}</TooltipProvider> : <span className="note-property-empty">空</span>;
   const rowNodes = new Map<string,ReactNode>();
-  rowNodes.set('system:tags', <>{systemName('system:tags')}<dd className="min-w-0">{canEdit && data?.tagProperty?.editable ? <Popover open={editing === 'tags'} onOpenChange={(value,details) => { if (busy) { details.cancel(); return; } if (value) locatingTag.current = false; setEditing(value ? 'tags' : null); setAdding(false); setError(''); }}><PopoverTrigger render={<Button variant="ghost" className="note-property-edit note-property-tags w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label="编辑标签" />}>{tagBadges}</PopoverTrigger><PopoverContent align="center" sideOffset={({anchor,positioner}) => -anchor.height - Math.max(0,(positioner.width - anchor.width) * .5)} className="note-property-popup note-tag-popup" aria-label="编辑标签" finalFocus={() => !locatingTag.current}><Suspense fallback={<SelectionLoading values={tagBadges} label="正在读取标签…" />}><TagPropertyEditor vaultBinding={vaultBinding} onChangeTag={onChangeTag} tags={propertyTags} bodyTags={tags} busy={busy || loading} error={error} onSave={value => apply({name:'tags',type:'list',value}, true)} onLocateTag={onLocateTag ? tag => { locatingTag.current = true; setEditing(null); onLocateTag(tag); } : undefined} /></Suspense></PopoverContent></Popover> : <div className="note-property-value note-property-tags">{tagBadges}{data?.tagProperty?.type === 'unsupported' && <span className="text-secondary">属性标签 {display(data.tagProperty.value)} · 只读</span>}</div>}</dd></>);
+  function saveContentType(change: PropertyChange) {
+    setError('');
+    void onApply(change).catch(cause => setError(errorMessage(cause)));
+  }
+  function choicePopover(property:NoteProperty, label:string, value:ReactNode, expanded:boolean, toggle:(open:boolean)=>void,
+    disabled:boolean, save:ComponentProps<typeof ChoicePropertyEditor>['onSave'], fixedOptions = false) {
+    return <Popover open={expanded} onOpenChange={(open, details) => {
+      if (busy) { details.cancel(); return; }
+      toggle(open);
+      if (open) { setAdding(false); setError(''); }
+    }}>
+      <PopoverTrigger render={<Button variant="ghost" className={propertyEditClass} disabled={disabled} aria-label={label} />}>{value}</PopoverTrigger>
+      <PopoverContent {...choicePopupProps} aria-label={label}>
+        <Suspense fallback={<SelectionLoading values={value} label="正在读取选项…" />}>
+          <ChoicePropertyEditor property={property} fixedOptions={fixedOptions} busy={busy || loading} error={error} onSave={save} />
+        </Suspense>
+      </PopoverContent>
+    </Popover>;
+  }
+  rowNodes.set('system:contentType', <>
+    {nameCell('system:contentType', CircleChevronDown, note?.contentTypeOverride &&
+      <DropdownMenuItem disabled={!typeWritable} onClick={() => saveContentType({name:contentTypePropertyKey,remove:true})}>恢复自动判断</DropdownMenuItem>)}
+    <dd className="min-w-0">{choicePopover(
+      {name:contentTypePropertyKey,type:'select',editable:true,value:typeLabel,options:[{name:'文字',color:'default'},{name:'图片',color:'default'}]},
+      '编辑内容类型', selectedType ? <span className="note-property-tags"><ChoicePill name={typeLabel} /></span> : <Skeleton className="h-4 w-8" aria-label="正在判断内容类型" />,
+      contentTypeOpen, setContentTypeOpen, !typeWritable || !selectedType, async ({value}) => {
+        try {
+          await onApply({name:contentTypePropertyKey,type:'text',value:value === '图片' ? 'image' : 'text'});
+          setContentTypeOpen(false);
+        } catch (cause) { setError(errorMessage(cause)); throw cause; }
+      }, true
+    )}</dd>
+  </>);
+  rowNodes.set('system:tags', <>{systemName('system:tags')}<dd className="min-w-0">{canEdit && data?.tagProperty?.editable ? <Popover open={editing === 'tags'} onOpenChange={(value,details) => { if (busy) { details.cancel(); return; } if (value) locatingTag.current = false; setEditing(value ? 'tags' : null); setAdding(false); setError(''); }}><PopoverTrigger render={<Button variant="ghost" className="note-property-edit note-property-tags w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label="编辑标签" />}>{tagBadges}</PopoverTrigger><PopoverContent {...choicePopupProps} aria-label="编辑标签" finalFocus={() => !locatingTag.current}><Suspense fallback={<SelectionLoading values={tagBadges} label="正在读取标签…" />}><TagPropertyEditor vaultBinding={vaultBinding} onChangeTag={onChangeTag} tags={propertyTags} bodyTags={tags} busy={busy || loading} error={error} onSave={value => apply({name:'tags',type:'list',value}, true)} onLocateTag={onLocateTag ? tag => { locatingTag.current = true; setEditing(null); onLocateTag(tag); } : undefined} /></Suspense></PopoverContent></Popover> : <div className="note-property-value note-property-tags">{tagBadges}{data?.tagProperty?.type === 'unsupported' && <span className="text-secondary">属性标签 {display(data.tagProperty.value)} · 只读</span>}</div>}</dd></>);
   rowNodes.set('system:updatedAt', <>{systemName('system:updatedAt')}<dd className="note-property-value tabular-nums">{updated ? <time dateTime={note?.updatedAt}>{updated}</time> : note ? '未提供' : '尚未保存'}</dd></>);
   rowNodes.set('system:createdAt', <>{systemName('system:createdAt')}<dd className="note-property-value tabular-nums">{noteTime(note?.createdAt) ?? '未提供'}</dd></>);
   rowNodes.set('system:filename', <>{systemName('system:filename')}<dd className="note-property-value tabular-nums">{note ? (relativePath ?? note.relativePath)?.split('/').pop() : '尚未保存'}</dd></>);
@@ -699,17 +769,16 @@ function NoteProperties({ note, scopeKey = note?.id ?? 'new', savedProperties, s
               <DropdownMenuItem onClick={() => { setError(''); duplicate(property); }}><Copy />创建属性副本</DropdownMenuItem>
               <DropdownMenuItem className="note-property-delete" onClick={() => { setError(''); setRemoving(property); }}><Trash2 />删除属性</DropdownMenuItem>
             </> : undefined,property)}
-            <dd className="min-w-0">{property.type === 'image' ? <Suspense fallback={<span role="status" aria-label="正在读取图片" className="note-property-image-trigger flex items-center"><Skeleton className="h-6 w-12" /></span>}><ImagePropertyEditor key={`${scopeKey}:${vaultBinding}:${property.name}`} name={name} value={typeof property.value === 'string' ? property.value : ''} noteId={note?.id} notePath={relativePath ?? note?.relativePath ?? 'notes/note.md'} vaultBinding={vaultBinding} editable={editable} busy={busy || loading} onInteractionChange={active => setImageInteractions(current => { const key = `property:${property.name}`; if (current.has(key) === active) return current; const next = new Set(current); if (active) next.add(key); else next.delete(key); return next; })} onSave={value => apply({name:property.name,type:'image',value})} /></Suspense> : property.type === 'checkbox' && property.editable ? <div className="note-property-value note-property-checkbox-value"><Checkbox.Root render={<button type="button" />} nativeButton checked={property.value === true} onCheckedChange={checked => { void toggleCheckbox(property.name,checked); }} disabled={!editable || busy || loading} aria-label={`切换属性 ${name}`} className="note-property-checkbox"><Checkbox.Indicator className="note-property-checkbox-indicator"><Check aria-hidden="true" strokeWidth={2.5} /></Checkbox.Indicator></Checkbox.Root></div> : editable ? property.type === 'text' || property.type === 'number' ? <><Button variant="ghost" className={`note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal${editing === property.name ? ' invisible' : ''}`} aria-hidden={editing === property.name || undefined} tabIndex={editing === property.name ? -1 : undefined} disabled={busy || loading} aria-label={`编辑属性 ${name}`} onClick={event => { inlineCell.current = event.currentTarget.parentElement; setEditing(property.name); setAdding(false); setError(''); }}>{value}</Button>{editing === property.name && <PropertyForm inPlace property={property} onCloseIntent={keyboard => { keyboardFocus.current = keyboard ? property.name : null; blurClosing.current = keyboard ? null : property.name; if (!keyboard) focusAfterLayout.current = null; }} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} />}</> : <Popover open={editing === property.name} onOpenChange={(value,details) => {
+            <dd className="min-w-0">{property.type === 'image' ? <Suspense fallback={<span role="status" aria-label="正在读取图片" className="note-property-image-trigger flex items-center"><Skeleton className="h-6 w-12" /></span>}><ImagePropertyEditor key={`${scopeKey}:${vaultBinding}:${property.name}`} name={name} value={typeof property.value === 'string' ? property.value : ''} noteId={note?.id} notePath={relativePath ?? note?.relativePath ?? 'notes/note.md'} vaultBinding={vaultBinding} editable={editable} busy={busy || loading} onInteractionChange={active => setImageInteractions(current => { const key = `property:${property.name}`; if (current.has(key) === active) return current; const next = new Set(current); if (active) next.add(key); else next.delete(key); return next; })} onSave={value => apply({name:property.name,type:'image',value})} /></Suspense> : property.type === 'checkbox' && property.editable ? <div className="note-property-value note-property-checkbox-value"><Checkbox.Root render={<button type="button" />} nativeButton checked={property.value === true} onCheckedChange={checked => { void toggleCheckbox(property.name,checked); }} disabled={!editable || busy || loading} aria-label={`切换属性 ${name}`} className="note-property-checkbox"><Checkbox.Indicator className="note-property-checkbox-indicator"><Check aria-hidden="true" strokeWidth={2.5} /></Checkbox.Indicator></Checkbox.Root></div> : editable ? choice ? choicePopover(property, `编辑属性 ${name}`, value, editing === property.name, open => setEditing(open ? property.name : null), busy || loading, apply) : property.type === 'text' || property.type === 'number' ? <><Button variant="ghost" className={`${propertyEditClass}${editing === property.name ? ' invisible' : ''}`} aria-hidden={editing === property.name || undefined} tabIndex={editing === property.name ? -1 : undefined} disabled={busy || loading} aria-label={`编辑属性 ${name}`} onClick={event => { inlineCell.current = event.currentTarget.parentElement; setEditing(property.name); setAdding(false); setError(''); }}>{value}</Button>{editing === property.name && <PropertyForm inPlace property={property} onCloseIntent={keyboard => { keyboardFocus.current = keyboard ? property.name : null; blurClosing.current = keyboard ? null : property.name; if (!keyboard) focusAfterLayout.current = null; }} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} />}</> : <Popover open={editing === property.name} onOpenChange={(value,details) => {
               if (value) { setEditing(property.name); setAdding(false); setError(''); }
               else if (busy) details.cancel();
-              else if (choice) setEditing(null);
               else if (details.reason !== 'escape-key') { details.cancel(); formRef.current?.requestSubmit(); }
               else setEditing(null);
-            }}><PopoverTrigger render={<Button variant="ghost" className="note-property-edit min-w-0 w-full justify-start whitespace-normal text-left font-normal" disabled={busy || loading} aria-label={`编辑属性 ${name}`} />}>{value}</PopoverTrigger><PopoverContent align={choice ? 'center' : 'start'} sideOffset={choice ? ({anchor,positioner}) => -anchor.height - Math.max(0,(positioner.width - anchor.width) * .5) : undefined} aria-label={`编辑属性 ${name}`} className={choice ? 'note-property-popup note-tag-popup' : property.type === 'date' ? 'note-property-popup note-date-popup' : 'note-property-popup'}>{choice ? <Suspense fallback={<SelectionLoading values={value} label="正在读取选项…" />}><ChoicePropertyEditor property={property} error={error} busy={busy || loading} onSave={apply} /></Suspense> : <PropertyForm property={property} formRef={formRef} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} />}</PopoverContent></Popover> : <div className="note-property-value text-secondary">{value} {!property.editable && <span className="text-xs">只读</span>}</div>}</dd>
+            }}><PopoverTrigger render={<Button variant="ghost" className={propertyEditClass} disabled={busy || loading} aria-label={`编辑属性 ${name}`} />}>{value}</PopoverTrigger><PopoverContent align="start" aria-label={`编辑属性 ${name}`} className={property.type === 'date' ? 'note-property-popup note-date-popup' : 'note-property-popup'}><PropertyForm property={property} formRef={formRef} error={error} busy={busy || loading} onSave={apply} onCancel={() => { setEditing(null); setError(''); }} /></PopoverContent></Popover> : <div className="note-property-value text-secondary">{value} {!property.editable && <span className="text-xs">只读</span>}</div>}</dd>
           </>);
   }
   const renameIcon = renaming?.iconKey ? currentIcons?.data?.icons[renaming.iconKey] : undefined;
-  const contextualError = Boolean(editing || adding || removing || renaming || typeChange);
+  const contextualError = Boolean(contentTypeOpen || editing || adding || removing || renaming || typeChange);
   const notice = <>
     {presentation.error && <PageNotice title="属性布局未更新" actions={<Button variant="outline" size="sm" onClick={presentation.retry}>重新读取设置</Button>}>{presentation.error}</PageNotice>}
     {readError && <PageNotice title="无法读取属性" actions={<Button variant="outline" size="sm" disabled={busy || loading} onClick={() => setReadRevision(value => value+1)}>重试读取</Button>}>{readError}</PageNotice>}

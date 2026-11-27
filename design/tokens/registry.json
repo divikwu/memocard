@@ -517,6 +517,7 @@
       "sources": [
         "apps/ui/ui/business/Editor.css",
         "apps/ui/ui/business/NoteCollection.css",
+        "apps/ui/ui/business/note-card-gallery.css",
         "apps/ui/ui/business/NoteOutline.css",
         "apps/ui/ui/business/NotePageTitle.css",
         "apps/ui/ui/business/TagsPage.css",

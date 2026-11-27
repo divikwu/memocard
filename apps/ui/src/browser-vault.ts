@@ -609,7 +609,10 @@ export class BrowserVault {
     const sortAt = (note: Note) => byUpdate ? note.updatedAt : sort === 'pinnedAt' ? pins.pins[note.id] ?? note.createdAt : note.createdAt;
     const sortDates = new Map(snapshot.parsed.map(({ note }) => [note.id, parseDate(sortAt(note))]));
     const queryHash = await sha256(textBytes(JSON.stringify({ query, tags, ...(exactTags ? {exactTags} : {}), quickFilter, quickFilters, tagMatch, from, to, limit, folder: params.folder, deleted: params.deleted ?? false, sort, pinned: params.pinned, ...(params.includeCardPreview === true && {includeCardPreview:true}) })));
-    const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(byUpdate ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
+    const previews = await import("./browser-card-previews").then(module => module.cardPreviewProperties(
+      selected.handle, this.compatible, snapshot.parsed, () => this.active(selected)
+    )).catch(() => undefined);
+    const snapshotHash = await sha256(textBytes(JSON.stringify({ binding: selected.binding, notes: snapshot.parsed.map(({ note }) => [note.id, note.contentHash, note.relativePath, ...(quickFilters.includes("images") ? [Boolean(previews?.get(note.id)?.images.length)] : []), ...(byUpdate ? [note.updatedAt] : [])]), pending: snapshot.coverage.pending, issues: snapshot.coverage.issues, pins: pins.contentHash })));
     let after: { id: string; createdAt: string } | undefined;
     if (params.cursor !== undefined) {
       let cursor: unknown;
@@ -635,7 +638,9 @@ export class BrowserVault {
     const { noteQuickFilters } = await import("./note-filters");
     const filters = new Map(snapshot.parsed.map(({ note }) => {
       const cached = this.parsedCache.get(note.relativePath)!;
-      return [note.id, cached.quickFilters ??= noteQuickFilters(note)];
+      const bodyFilters = cached.quickFilters ??= noteQuickFilters(note);
+      const hasCover = previews?.get(note.id)?.images.length;
+      return [note.id, hasCover && !bodyFilters.includes("images") ? [...bodyFilters, "images" as const] : bodyFilters];
     }));
     const filterCounts = { untagged: 0, images: 0, links: 0 };
     const quickFilterTagCounts: Record<string, number> = Object.create(null);
@@ -658,14 +663,11 @@ export class BrowserVault {
     });
     if (sort !== 'createdAt') matching.sort((a, b) => rank(a.id) - rank(b.id) || sortDates.get(b.id)! - sortDates.get(a.id)! || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     const page = matching.slice(0, limit);
-    const previews = params.includeCardPreview === true && page.length
-      ? await import("./browser-properties").then(module => module.cardPreviewProperties(selected.handle, this.compatible, snapshot.parsed, page, () => this.active(selected))).catch(() => undefined)
-      : undefined;
     await this.active(selected);
     const notes: Note[] = [];
     let byteCount = 0;
     for (const entry of page) {
-      const cardPreview = previews?.get(entry.id);
+      const cardPreview = params.includeCardPreview === true ? previews?.get(entry.id) : undefined;
       const note = cardPreview ? {...entry, cardPreview} : entry;
       const size = textBytes(JSON.stringify(note)).byteLength;
       if (notes.length && byteCount + size > 2 * 1024 * 1024) break;
@@ -797,7 +799,7 @@ export class BrowserVault {
       return this.lock(`memocard:browser:vault:${selected.vaultId}`, () => propertyLayoutOperation(operation, params, selected.handle, () => this.active(selected)));
     }
     if (propertyOperations.includes(operation)) {
-      const { propertyOperation } = await import('./browser-rename');
+      const { propertyOperation } = await import('./browser-properties');
       return this.lock(`memocard:browser:vault:${selected.vaultId}`, async () => {
         const snapshot = await this.scan(selected);
         return this.lock(`memocard:browser:index:${this.scope(selected)}`, () => propertyOperation(operation, params, selected, this.compatible, this.storage, () => this.active(selected), () => Promise.resolve(snapshot)));

@@ -29,7 +29,7 @@ export function startupFiles(manifest, mode) {
 export function firstListFiles(manifest, mode, entries = []) {
   // A bound browser vault needs parsers and filtering before showing its first
   // list, even though the application shell mounts before those imports finish.
-  const browser = mode === "browser" ? ["src/browser-vault.ts", "src/browser-files.ts", "src/note-filters.ts", "src/browser-properties.ts"] : [];
+  const browser = mode === "browser" ? ["src/browser-vault.ts", "src/browser-files.ts", "src/note-filters.ts", "src/browser-card-previews.ts"] : [];
   // System body/heading and code roles do not request optional Web font styles.
   return routeFiles(manifest, [...browser, ...entries]);
 }
@@ -95,13 +95,14 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
   const metrics = [];
   const classicLayout = ["ui/web/layouts/rail.tsx", "ui/web/appearance/themes/classic.css?inline"];
   const minimalLayout = ["ui/web/layouts/topbar.tsx", "ui/web/appearance/themes/minimal.css?inline"];
-  const propertyEditors = ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx"];
+  const propertyEditors = ["src/markdown-images.ts", "ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", "ui/business/DatePropertyPicker.tsx", "ui/business/TagPropertyEditor.tsx", "ui/business/ChoicePropertyEditor.tsx"];
   for (const route of [
     { name: "list", entries: [], raw: 1120, gzip: 330 },
     { name: "classic interface first list", entries: classicLayout, raw: 1200, gzip: 350 },
     { name: "minimal interface first list", entries: minimalLayout, raw: 1200, gzip: 350 },
     { name: "minimal interface with more drawer", entries: [...minimalLayout, "ui/web/WebMoreDrawer.tsx"], raw: 1200, gzip: 350 },
     { name: "list with card previews", entries: ["ui/business/NoteCardPreview.tsx"], raw: 1780, gzip: 525 },
+    { name: "list with image carousel", entries: ["ui/business/NoteCardPreview.tsx", "ui/business/NoteCardGallery.tsx"], raw: 1812, gzip: 537 },
     { name: "home with quick capture", entries: ["ui/business/QuickCapture.tsx"], raw: 1500, gzip: 450 },
     { name: "home with capture and card previews", entries: ["ui/business/QuickCapture.tsx", "ui/business/NoteCardPreview.tsx"], raw: 2140, gzip: 645 },
     { name: "iOS home with native chrome", entries: ["ui/native/IOSAppChrome.tsx", "ui/business/QuickCapture.tsx"], raw: 1520, gzip: 455 },
@@ -114,9 +115,9 @@ export async function checkUIBundle(root = resolve("apps/ui/dist")) {
     { name: "detail editor", entries: ["ui/business/Editor.tsx"], raw: 2264, gzip: 675 },
     { name: "detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx"], raw: 2700, gzip: 820 },
     { name: "minimal detail with preserved Markdown", entries: ["ui/business/Editor.tsx", "ui/business/NoteMarkdown.tsx", ...minimalLayout], raw: 2700, gzip: 820 },
-    // Both desktop layouts carry the refresh action used when the old drawer chunk is gone.
-    { name: "classic detail with all property editors", entries: [...propertyEditors, ...classicLayout], raw: 2774, gzip: 825 },
-    { name: "minimal detail with all property editors", entries: [...propertyEditors, ...minimalLayout], raw: 2774, gzip: 824 },
+    // Full property panels include on-demand Markdown analysis for the content type.
+    { name: "classic detail with all property editors", entries: [...propertyEditors, ...classicLayout], raw: 2778, gzip: 830 },
+    { name: "minimal detail with all property editors", entries: [...propertyEditors, ...minimalLayout], raw: 2778, gzip: 829 },
   ]) {
     let raw = 0, gzip = 0;
     const mode = route.name === "iOS home with native chrome" ? "native" : "browser";

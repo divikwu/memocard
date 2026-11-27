@@ -707,7 +707,7 @@ it('shows source metadata read-only and updates it only after a successful save'
  const handle = createRef<EditorHandle>();
  render(<Editor initial={source} initialNote={note} handle={handle} capabilities={new Set(['saveNote'])} onClose={vi.fn()} onSaved={vi.fn()} />);
  expect(screen.queryByRole('dialog')).toBeNull();
- expect((await screen.findByLabelText('笔记属性')).querySelectorAll('dt')).toHaveLength(4);
+ expect((await screen.findByLabelText('笔记属性')).querySelectorAll('dt')).toHaveLength(5);
  expect(screen.getByLabelText('笔记属性').textContent).not.toContain('2030');
  expect(screen.getByText('笔记.md')).toBeTruthy();
  expect(screen.getByText('更新时间')).toBeTruthy();
@@ -715,7 +715,7 @@ it('shows source metadata read-only and updates it only after a successful save'
  const panel = screen.getByLabelText('笔记属性');
  expect(panel.textContent).toContain('笔记.md');expect(panel.textContent).not.toContain('所在目录');expect(panel.textContent).not.toContain('项目');
  expect(panel.textContent).toContain('10/01/2026');expect(panel.textContent).toContain('10/02/2026');
- expect(Array.from(panel.querySelectorAll('dt'), node => node.textContent)).toEqual(['标签','更新时间','创建时间','文件名']);
+ expect(Array.from(panel.querySelectorAll('dt'), node => node.textContent)).toEqual(['内容类型','标签','更新时间','创建时间','文件名']);
  expect(native).not.toHaveBeenCalled();
  fireEvent.click(await screen.findByRole('button', {name:'收起'}));
  expect(screen.getByText('笔记.md')).toBeTruthy();

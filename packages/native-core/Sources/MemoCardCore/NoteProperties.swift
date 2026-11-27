@@ -66,7 +66,7 @@ struct PropertyUpdateResult: Encodable {
         try values.encode(propertyData, forKey: .propertyData)
     }
 }
-private let reservedProperties: Set<String> = ["id", "createdAt", "updatedAt", "deletedAt", "tags"]
+private let reservedProperties: Set<String> = ["id", "createdAt", "updatedAt", "deletedAt", "tags", ContentType.propertyKey]
 private func propertyError(_ message: String) -> VaultError { VaultError(code: "INVALID_PROPERTY", message: message) }
 func validPropertyImage(_ value: String) -> Bool {
     if value.isEmpty { return true }
@@ -207,12 +207,26 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
     let source = String(decoding: data, as: UTF8.self)
     var parsed = try propertySource(source)
     let name = change.name.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard !name.isEmpty, name.count <= 100, !name.unicodeScalars.contains(where: { $0.value < 32 }), !reservedProperties.contains(name) || name == "tags" else { throw propertyError("属性名为空、过长或属于系统保留字段。") }
+    let contentType = name == ContentType.propertyKey
+    if contentType {
+        guard change.create != true, change.definition != true, change.renameTo == nil, change.copyFrom == nil, change.options == nil else { throw propertyError("内容类型无效。") }
+        if change.remove == true {
+            guard change.value == nil, change.type == nil else { throw propertyError("内容类型无效。") }
+        } else {
+            guard change.type == "text", case .text(let value)? = change.value, ContentType(rawValue: value) != nil else { throw propertyError("内容类型无效。") }
+        }
+    }
+    guard !name.isEmpty, name.count <= 100, !name.unicodeScalars.contains(where: { $0.value < 32 }), !reservedProperties.contains(name) || name == "tags" || contentType else { throw propertyError("属性名为空、过长或属于系统保留字段。") }
     guard parsed.writable else { throw propertyError("此 YAML 使用高级语法，请在源文件中编辑。") }
     let existing = parsed.entries.first { $0.property.name == name }
+    if contentType, let field = existing?.property {
+        guard field.type == "text", case .text(let value) = field.value, ["memocard:text", "memocard:image"].contains(value) else {
+            throw propertyError("内容类型字段与现有 YAML 属性冲突。")
+        }
+    }
     if change.create == true && existing != nil { throw propertyError("属性已存在。") }
-    if change.create != true && existing == nil && name != "tags" { throw propertyError("属性已被移除，请重新加载。") }
-    if name == "tags" ? !tagProperty(parsed).editable : existing?.property.editable == false { throw propertyError("此属性只能在源文件中编辑。") }
+    if change.create != true && existing == nil && name != "tags" && !contentType { throw propertyError("属性已被移除，请重新加载。") }
+    if name == "tags" ? !tagProperty(parsed).editable : !contentType && existing?.property.editable == false { throw propertyError("此属性只能在源文件中编辑。") }
     let copied = parsed.entries.first { $0.property.name == change.copyFrom }
     if let copyFrom = change.copyFrom {
         guard change.create == true, change.remove != true, change.renameTo == nil, change.definition != true, !reservedProperties.contains(name), !reservedProperties.contains(copyFrom), copied?.property.editable == true else { throw propertyError("只能复制当前笔记中可编辑的自定义属性。") }
@@ -232,6 +246,7 @@ func patchNoteProperty(_ data: Data, change: PropertyChange, updatedAt: String? 
         replacement[0] = String(data: try encoder.encode(target), encoding: .utf8)! + line[suffix]
     } else if change.remove != true {
         guard var value = change.value else { throw propertyError("属性值与类型不匹配。") }
+        if contentType, case .text(let type) = value { value = .text("memocard:" + type) }
         if name == "tags" {
             guard change.type == "list", case .list(let tags) = value, tags.allSatisfy({ normalizedPropertyTag($0) != nil }) else { throw propertyError("标签需为有效名称列表，不能包含空格、空值或纯数字。") }
             var seen = Set<String>()
